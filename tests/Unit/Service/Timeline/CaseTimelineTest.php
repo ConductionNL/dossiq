@@ -715,17 +715,18 @@ class CaseTimelineTest extends TestCase {
 	}//end testAnEntityIsProjectedLikeARow()
 
 	/**
-	 * Every way the read can fail answers an empty list rather than throwing.
+	 * An absence the reader can ESTABLISH answers the empty list.
 	 *
-	 * The public status page has no handler behind it to read a stack trace,
-	 * and an instance a release behind is the ordinary case rather than the
-	 * exceptional one.
+	 * Each of these is a fact the method works out for itself: nothing was
+	 * asked for, OpenRegister or its reader is not on this instance, the
+	 * register is unconfigured, or the case is not there. None of them is a
+	 * failure being hidden.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
-	public function testAFailedPublicReadAnswersNothing(): void {
+	public function testAnEstablishedAbsenceAnswersNothing(): void {
 		$this->assertSame([], $this->timeline()->publicEntries(caseId: ''));
 		$this->assertSame([], $this->timeline(openRegister: false)->publicEntries(caseId: 'case-1'));
 		$this->assertSame([], $this->timeline(writerResolves: false)->publicEntries(caseId: 'case-1'));
@@ -733,11 +734,30 @@ class CaseTimelineTest extends TestCase {
 
 		$this->objects->unreadable = ['case-1'];
 		$this->assertSame([], $this->timeline()->publicEntries(caseId: 'case-1'));
+	}//end testAnEstablishedAbsenceAnswersNothing()
 
-		$this->objects->unreadable = [];
+	/**
+	 * A read that THROWS is logged and travels on, rather than reading as an
+	 * empty timeline.
+	 *
+	 * THIS IS THE ONE ASSERTION THAT SEPARATES THE TWO FACTS. "I could not
+	 * read" and "nothing here is public" have the same shape and opposite
+	 * meanings, and the wrong one on a citizen's screen says nothing has
+	 * happened on their case. The warning is asserted beside the throw,
+	 * because a rethrow nobody logged leaves the failure nameless.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAReadThatThrowsIsLoggedAndTravelsOn(): void {
 		$this->reader->throws = true;
-		$this->assertSame([], $this->timeline()->publicEntries(caseId: 'case-1'));
-	}//end testAFailedPublicReadAnswersNothing()
+
+		$this->logger->expects($this->atLeastOnce())->method('warning');
+
+		$this->expectException(RuntimeException::class);
+		$this->timeline()->publicEntries(caseId: 'case-1');
+	}//end testAReadThatThrowsIsLoggedAndTravelsOn()
 
 	/**
 	 * Every kind a writer in this app names is actually declared, and every

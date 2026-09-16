@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Portal;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
@@ -163,6 +164,25 @@ class PortalContributionProviderTest extends TestCase {
 
 		$this->assertSame($public, $provider->caseTimeline('case-1'));
 	}//end testTheTimelineIsWhatPublicEntriesAnswers()
+
+	/**
+	 * A read that threw costs the citizen the history, not the page.
+	 *
+	 * The reader deliberately rethrows so it never reports an emptiness it did
+	 * not establish. This boundary is where that decision is made, because it
+	 * is the edge of a foreign app rendering our contribution, and it is the
+	 * only place that owns the consequence.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAReadThatThrewCostsTheHistoryAndNotThePage(): void {
+		$reader = $this->createMock(CaseTimeline::class);
+		$reader->method('publicEntries')->willThrowException(new RuntimeException('OpenRegister threw'));
+
+		$this->assertSame([], (new PortalContributionProvider($reader))->caseTimeline('case-1'));
+	}//end testAReadThatThrewCostsTheHistoryAndNotThePage()
 
 	/**
 	 * Without OpenRegister there is no reader, and the timeline is empty

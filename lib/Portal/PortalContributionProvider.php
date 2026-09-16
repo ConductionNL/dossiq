@@ -62,6 +62,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use Throwable;
 
 /**
  * Declares what an external Portaliq subject may see and do in Dossiq.
@@ -148,7 +149,19 @@ class PortalContributionProvider {
 			return [];
 		}
 
-		return $this->timeline->publicEntries(caseId: $caseId);
+		try {
+			return $this->timeline->publicEntries(caseId: $caseId);
+		} catch (Throwable $e) {
+			// THE BOUNDARY OWNS THIS DECISION, AND IT IS MADE ONCE. The reader
+			// logs at warning and rethrows rather than reporting an empty
+			// timeline it did not establish. Here, at the edge of a foreign
+			// app that renders our contribution, a timeline that could not be
+			// read must cost the citizen the history and not the page. The
+			// null branch above answers the same empty list for the same
+			// reason, so the two absences a portal can meet are handled in one
+			// place instead of two.
+			return [];
+		}
 	}//end caseTimeline()
 
 	/**

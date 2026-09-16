@@ -219,14 +219,21 @@ class CaseTimeline {
 	 * happened on the case as far as the applicant is concerned, and a public
 	 * projection is the last place to hand one out.
 	 *
-	 * Answers the empty array on every failure, for the reason the writer
-	 * softens: a page that shows no history is poor, a page that 500s because
-	 * OpenRegister is a release behind is worse.
+	 * IT ANSWERS THE EMPTY LIST ONLY WHEN IT KNOWS THE LIST IS EMPTY: no case
+	 * was asked for, OpenRegister or its reader is absent, the register is
+	 * unconfigured, or the case is not there. Each of those is a fact the
+	 * method establishes, not a failure it hides. A read that THROWS is a
+	 * different fact, so it is logged at warning naming the case and then
+	 * travels on. Unlike {@see self::record()}, which softens because an entry
+	 * records something that already happened, a reader has nothing to protect
+	 * by lying about what it found.
 	 *
 	 * @param string  $caseId The case to read.
 	 * @param integer $limit  How many entries at most, newest first.
 	 *
 	 * @return array<int, array<string, mixed>> The public entries.
+	 *
+	 * @throws Throwable When the timeline could not be read at all.
 	 *
 	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
@@ -258,8 +265,17 @@ class CaseTimeline {
 				limit: $limit,
 			);
 		} catch (Throwable $e) {
+			// LOGGED AND RETHROWN, NOT SWALLOWED. "I could not read" and
+			// "there are nothing public here" are different facts, and a
+			// reader that answered the empty list for both would report the
+			// second while meaning the first. That is the conflation ADR-105
+			// and `ServiceCatchReturnsNullTest` exist to stop, and on this
+			// method it would be a citizen told nothing has happened on their
+			// case because an optional dependency threw. The caller that owns
+			// the consequence decides; see
+			// `PortalContributionProvider::caseTimeline()`.
 			$this->soften(caseId: $caseId, kind: 'public read', reason: $e->getMessage());
-			return [];
+			throw $e;
 		}
 
 		$projected = [];
