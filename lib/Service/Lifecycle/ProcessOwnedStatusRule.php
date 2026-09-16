@@ -64,36 +64,6 @@ class ProcessOwnedStatusRule {
 	}//end __construct()
 
 	/**
-	 * Refuse a hand-set status on one case, resolving its type first.
-	 *
-	 * The caseId form exists so the caller does not have to load the case to
-	 * ask the question. A caller that loaded the case in order to find out
-	 * whether it may write to it has already done the write's own read, and
-	 * the two would then have to be kept in step.
-	 *
-	 * 🔴 A CASE THAT CANNOT BE READ DOES NOT REFUSE HERE. The write path
-	 * behind this refuses an unreadable case on its own, with its own message,
-	 * and a second not-found from a rule about something else would tell the
-	 * caller the wrong thing about why their request failed.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return void
-	 *
-	 * @throws RefusedException When the process owns the status on this case's type.
-	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
-	 */
-	public function requireHandSetAllowedOn(string $caseId): void {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			return;
-		}
-
-		$this->requireHandSetAllowed(caseTypeId: (string)($case['caseType'] ?? ''));
-	}//end requireHandSetAllowedOn()
-
-	/**
 	 * Refuse a hand-set status where this case type does not accept one.
 	 *
 	 * Called by the write path, never by the transition path. A transition IS
