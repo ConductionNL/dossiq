@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
@@ -78,6 +79,10 @@ class TermijnTimerFiredListener implements IEventListener {
 	 *        the hersteltermijn belonged to, so the day it runs out is recorded
 	 *        on the request and not only on the timer. Optional, so an instance
 	 *        without the schema fires exactly as it did before.
+	 * @param PauseChaseService|null $chases The reminders on a suspended term. The
+	 *        rung only says a moment arrived; this decides whether a reminder is
+	 *        actually due, against the count the instance carries. Optional, so a
+	 *        pause with no declared reason fires exactly as it did before.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -86,6 +91,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
+		private readonly ?PauseChaseService $chases = null,
 	) {
 	}//end __construct()
 
@@ -145,6 +151,16 @@ class TermijnTimerFiredListener implements IEventListener {
 
 		$kind = (string)($metadata['kind'] ?? '');
 		if ($kind === TermijnTimerService::KIND_HERSTELTERMIJN) {
+			// Two kinds of rung live on the helper now. `slaBreached:0` is the
+			// hersteltermijn running out; every `preBreach:<days>` rung is a
+			// reminder due inside it. They are told apart by the trigger rather
+			// than by the message, because the rung KEY is the one part of a
+			// fire the engine guarantees and the listener already parses.
+			if ($this->isChaseRung(rungKey: (string)$event->getRungKey()) === true) {
+				$this->handleChase(instance: $instance);
+				return;
+			}
+
 			$this->handlePauseExpiry(instance: $instance, instanceId: $instanceId);
 			return;
 		}
@@ -188,6 +204,37 @@ class TermijnTimerFiredListener implements IEventListener {
 		$this->escalationService->notifyThreshold($latest, $bucket);
 		$this->syncPenaltyAccrual(instanceId: $instanceId);
 	}//end handleBeslistermijnRung()
+
+	/**
+	 * Whether a rung on the hersteltermijn helper is one of the reminders.
+	 *
+	 * @param string $rungKey The rung's stable key, `trigger:offset:unit`.
+	 *
+	 * @return bool True for a reminder rung.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	private function isChaseRung(string $rungKey): bool {
+		return (str_starts_with($rungKey, 'preBreach:') === true);
+	}//end isChaseRung()
+
+	/**
+	 * A reminder rung fired on a suspended term.
+	 *
+	 * THE RUNG DOES NOT DECIDE, IT ONLY ASKS. It says a moment the engine was
+	 * given has arrived; whether a reminder is due is answered against the
+	 * count on the instance, re-read here. So a rung that fires after a resume,
+	 * twice, or beside a daily sweep that already sent one, sends nothing.
+	 *
+	 * @param array<string, mixed> $instance The TermijnInstance row.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	private function handleChase(array $instance): void {
+		$this->chases?->chaseIfDue(instance: $instance);
+	}//end handleChase()
 
 	/**
 	 * The hersteltermijn helper fired: the pause ran out without an

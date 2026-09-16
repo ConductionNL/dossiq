@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Pause\ChaseSchedule;
+use OCA\Dossiq\Service\Pause\PauseReasonReader;
 use RuntimeException;
 
 /**
@@ -51,11 +53,19 @@ class DeadlinePauseService {
 	 *        `caseType.maxSuspensionDays` is where the bound is written. Optional for
 	 *        the same reason the extension service's is: a caller that builds this by
 	 *        hand keeps working, and simply gets today's unbounded behaviour.
+	 * @param PauseReasonReader|null $reasons The reasons the case type allows a term to
+	 *        be suspended for. Optional for the same reason: a case type that declares
+	 *        none, and a caller that names none, get the behaviour that was here before,
+	 *        which is a rationale and no chasing.
+	 * @param ChaseSchedule|null $schedule Turns a reason into the rung offsets the engine
+	 *        fires the reminders on. Optional beside the reader it belongs to.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermDeclarationReader $declarations = null,
+		private readonly ?PauseReasonReader $reasons = null,
+		private readonly ?ChaseSchedule $schedule = null,
 	) {
 	}//end __construct()
 
@@ -70,19 +80,23 @@ class DeadlinePauseService {
 	 * @param int $durationDays Pause days requested.
 	 * @param string $rationale Reason.
 	 * @param string $documentLink Document link (e.g. hersteltermijnbrief).
+	 * @param string $pauseReason The key of the declared reason this pause is registered
+	 *        under. The rule; `$rationale` stays the note beside it.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @throws RuntimeException When instance missing or duurDagen <= 0.
-	 * @throws RefusedException When the case type forbids the suspension, or forbids it this long.
+	 * @throws RefusedException When the case type forbids the suspension, forbids it this
+	 *         long, or does not declare the reason named.
 	 *
-	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function registerPauze(
 		string $termInstanceId,
 		int $durationDays,
 		string $rationale,
 		string $documentLink = '',
+		string $pauseReason = '',
 	): array {
 		if ($durationDays <= 0) {
 			throw new RuntimeException('Pause duration must be positive (AWB 4:5)');
@@ -98,6 +112,7 @@ class DeadlinePauseService {
 		}
 
 		$this->assertSuspensionAllowed(instance: $instance, durationDays: $durationDays);
+		$reason = $this->resolveReason(instance: $instance, key: $pauseReason);
 
 		$now = new DateTimeImmutable();
 		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $now->format('Y-m-d')));
@@ -113,12 +128,21 @@ class DeadlinePauseService {
 		// Opschorting maps onto the engine: suspend the beslistermijn timer
 		// (it banks the consumed budget, AWB 4:5) and arm the advisory
 		// hersteltermijn helper that replaces the scan's pause-expiry watch.
+		// The chase counters start at zero on every pause, not only on the first
+		// one. A case paused, answered and paused again gets its own budget: a
+		// counter carried over from the pause before would spend this pause's
+		// reminders on silence that already ended.
 		$patch = [
 			'endDateCurrent' => $newEnd,
 			'status' => 'paused',
 			'pauseDeadline' => $pauseEnd,
 			'pauzeStartDatum' => $now->format('Y-m-d'),
 			'pauzeDuurDagen' => $durationDays,
+			'pauseReason' => (string)($reason['key'] ?? ''),
+			'pauseWaitingOn' => (string)($reason['waitingOn'] ?? ''),
+			'chasesSent' => 0,
+			'lastChasedAt' => null,
+			'chaseEscalatedAt' => null,
 		];
 
 		if ($this->timerService !== null) {
@@ -127,7 +151,11 @@ class DeadlinePauseService {
 				reason: $rationale,
 				until: new DateTimeImmutable($pauseEnd)
 			);
-			$pauseTimerId = $this->timerService->armHersteltermijn(instance: $instance, durationDays: $durationDays);
+			$pauseTimerId = $this->timerService->armHersteltermijn(
+				instance: $instance,
+				durationDays: $durationDays,
+				chaseOffsets: $this->chaseOffsetsFor(reason: $reason, durationDays: $durationDays)
+			);
 			if ($pauseTimerId !== null) {
 				$patch['pauseTimerId'] = $pauseTimerId;
 			}
@@ -193,6 +221,70 @@ class DeadlinePauseService {
 	}//end assertSuspensionAllowed()
 
 	/**
+	 * The declared reason this pause is registered under.
+	 *
+	 * A CASE TYPE THAT DECLARES NO REASONS TAKES ANY PAUSE, including one that
+	 * names a reason. That is deliberate: the vocabulary is administered per
+	 * case type and most types have not been administered yet, so refusing
+	 * there would break every suspension on the day this shipped. What IS
+	 * refused is a reason a case type declares reasons and does not declare
+	 * this one: that is a handler picking from a stale list, and accepting it
+	 * would store a key nothing resolves and chase nobody.
+	 *
+	 * @param array<string, mixed> $instance The instance being suspended.
+	 * @param string $key The reason key the caller named.
+	 *
+	 * @return array<string, mixed> The normalised reason, empty when none is in force.
+	 *
+	 * @throws RefusedException When the case type declares reasons but not this one.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	private function resolveReason(array $instance, string $key): array {
+		$wanted = trim($key);
+		if ($this->reasons === null || $wanted === '') {
+			return [];
+		}
+
+		$caseId = trim((string)($instance['case'] ?? ''));
+		$declared = $this->reasons->forCase(caseId: $caseId);
+		if ($declared === []) {
+			return [];
+		}
+
+		foreach ($declared as $reason) {
+			if ($reason['key'] === $wanted) {
+				return $reason;
+			}
+		}//end foreach
+
+		throw new RefusedException(
+			rule: 'pause-reason-not-declared',
+			sentence: 'This case type does not have a pause reason called ' . $wanted
+				. '. Pick one of the reasons it declares.',
+			status: RefusedException::STATUS_UNPROCESSABLE,
+		);
+	}//end resolveReason()
+
+	/**
+	 * The rung offsets the reminders for this pause fire on.
+	 *
+	 * @param array<string, mixed> $reason The normalised reason, possibly empty.
+	 * @param int $durationDays The pause length.
+	 *
+	 * @return array<int, int> The offsets, empty when nothing is chased.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	private function chaseOffsetsFor(array $reason, int $durationDays): array {
+		if ($this->schedule === null || $reason === []) {
+			return [];
+		}
+
+		return $this->schedule->rungOffsets(reason: $reason, durationDays: $durationDays);
+	}//end chaseOffsetsFor()
+
+	/**
 	 * Resume after pauze with the aanvulling-datum.
 	 *
 	 * Computes consumed vs. unconsumed pause days; adds only the
@@ -244,6 +336,11 @@ class DeadlinePauseService {
 			reason: 'Aanvulling ontvangen; termijn hervat'
 		);
 
+		// The reason and its counters go with the pause. A resumed term that
+		// still read "chased twice" would put a reminder count beside a case
+		// nobody is waiting on any more, and the engine cannot cancel the
+		// helper timer individually: clearing the reason here is what makes the
+		// listener's re-read decide against a late rung.
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
 			[
@@ -251,6 +348,11 @@ class DeadlinePauseService {
 				'status' => 'lopend',
 				'pauseDeadline' => null,
 				'pauseTimerId' => null,
+				'pauseReason' => '',
+				'pauseWaitingOn' => '',
+				'chasesSent' => 0,
+				'lastChasedAt' => null,
+				'chaseEscalatedAt' => null,
 			]
 		);
 
