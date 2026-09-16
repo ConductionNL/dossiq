@@ -65,6 +65,39 @@
 				:clearable="false" />
 
 			<NcSelect
+				v-if="allowed.sender"
+				v-model="sender"
+				data-testid="document-sender"
+				:inputLabel="t('dossiq', 'Sender')"
+				:placeholder="senderPlaceholder"
+				:options="partyOptions"
+				label="label"
+				:disabled="partyOptions.length === 0" />
+
+			<NcSelect
+				v-if="allowed.recipients"
+				v-model="recipients"
+				data-testid="document-recipients"
+				:inputLabel="t('dossiq', 'Recipients')"
+				:placeholder="recipientsPlaceholder"
+				:options="partyOptions"
+				label="label"
+				:disabled="partyOptions.length === 0"
+				multiple />
+
+			<p
+				v-if="partyOptions.length === 0"
+				class="dossier-metadata-dialog__missing"
+				data-testid="document-no-parties">
+				{{
+					t(
+						'dossiq',
+						'Add a party on the People tab to say who this document is from or to.',
+					)
+				}}
+			</p>
+
+			<NcSelect
 				v-model="selectedClassification"
 				:inputLabel="t('dossiq', 'Confidentiality')"
 				:options="classificationOptions"
@@ -122,6 +155,13 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import { fetchCaseParties } from '../services/caseParties.js'
+import {
+	allowedFor,
+	partyOptions as buildPartyOptions,
+	identifiersOf,
+	selectedOptions,
+} from '../services/documentCorrespondents.js'
 import {
 	classificationOptions as buildClassificationOptions,
 	DEFAULT_DIRECTION,
@@ -196,6 +236,12 @@ export default {
 			title: '',
 			description: '',
 			types: [],
+			/** The parties listing, or null when OpenRegister could not answer. */
+			parties: null,
+			/** The picked sender, as the picker's own option object. */
+			sender: null,
+			/** The picked addressees, as the picker's own option objects. */
+			recipients: [],
 			uploading: false,
 			progress: {},
 			errors: {},
@@ -294,6 +340,54 @@ export default {
 		},
 
 		/**
+		 * The parties of the case, each offered once.
+		 *
+		 * @return {Array} The picker options.
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		partyOptions() {
+			return buildPartyOptions(this.parties)
+		},
+
+		/**
+		 * Which correspondent fields this direction lets a document carry.
+		 *
+		 * The server drops the contradiction either way; this stops offering
+		 * it, so nobody picks a sender on a letter that went out and watches
+		 * it disappear on save.
+		 *
+		 * @return {object} `{sender, recipients}`.
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		allowed() {
+			return allowedFor(this.selectedDirection)
+		},
+
+		/**
+		 * What the empty sender picker says.
+		 *
+		 * @return {string} The placeholder.
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		senderPlaceholder() {
+			return this.partyOptions.length === 0
+				? this.t('dossiq', 'No parties on this case yet')
+				: this.t('dossiq', 'Pick the party this document came from')
+		},
+
+		/**
+		 * What the empty addressees picker says.
+		 *
+		 * @return {string} The placeholder.
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		recipientsPlaceholder() {
+			return this.partyOptions.length === 0
+				? this.t('dossiq', 'No parties on this case yet')
+				: this.t('dossiq', 'Pick the parties this document went to')
+		},
+
+		/**
 		 * Whether the required fields are filled.
 		 *
 		 * @return {boolean} True when type and classification are selected.
@@ -355,6 +449,7 @@ export default {
 	 */
 	created() {
 		this.fetchTypes()
+		this.loadParties()
 		if (this.isEdit) {
 			this.loadRecord()
 		}
@@ -377,6 +472,44 @@ export default {
 			} catch {
 				this.types = []
 			}
+		},
+
+		/**
+		 * Read the parties of the case, which are the whole vocabulary the
+		 * two correspondent pickers offer.
+		 *
+		 * The SAME listing the People tab renders (openregister#3761), so a
+		 * party picked here and a party shown there cannot drift apart. A
+		 * failed read leaves the pickers empty and the dialog says so; it does
+		 * not fall back to a free-text field, because a typed name is exactly
+		 * what this change removes.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		async loadParties() {
+			this.parties = await fetchCaseParties(this.resolvedCaseId)
+			this.applyStoredCorrespondents()
+		},
+
+		/**
+		 * Show the correspondents the record already stores, once both the
+		 * record and the parties have arrived.
+		 *
+		 * Both reads are in flight at once and either may land first, so this
+		 * runs from both rather than from whichever one happens to be slower.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		applyStoredCorrespondents() {
+			if (this.record === null) {
+				return
+			}
+			const options = this.partyOptions
+			this.sender =
+				selectedOptions(this.record.sender, options)[0] || null
+			this.recipients = selectedOptions(this.record.recipients, options)
 		},
 
 		/**
@@ -427,6 +560,7 @@ export default {
 					: []
 				this.title = String(record.title || '')
 				this.description = String(record.description || '')
+				this.applyStoredCorrespondents()
 			} catch {
 				this.recordMissing = true
 			}
@@ -488,6 +622,13 @@ export default {
 				keywords: this.normalisedKeywords,
 				title: this.title,
 				description: this.description,
+				// Identifiers, never labels. The picker hands back its option
+				// object, and posting that would store a display name nothing
+				// can filter on.
+				sender: this.allowed.sender ? identifiersOf(this.sender)[0] || '' : '',
+				recipients: this.allowed.recipients
+					? identifiersOf(this.recipients)
+					: [],
 			}
 			this.uploading = true
 			this.progress = {}
