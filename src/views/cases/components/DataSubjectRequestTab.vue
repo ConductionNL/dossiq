@@ -29,13 +29,21 @@
 			<h3>{{ t('dossiq', 'Erasure') }}</h3>
 
 			<NcEmptyContent
-v-if="!hasPreview"
+				v-if="!hasPreview"
 				:name="t('dossiq', 'No preview yet')"
-				:description="t('dossiq', 'Ask the platform what erasing this person would touch.')" />
+				:description="
+					t(
+						'dossiq',
+						'Ask the platform what erasing this person would touch.',
+					)
+				" />
 
 			<ul v-else class="dsr-tab__counts">
 				<li>{{ t('dossiq', 'Erasable') }}: {{ total('erasable') }}</li>
-				<li>{{ t('dossiq', 'To pseudonymise') }}: {{ total('pseudonymised') }}</li>
+				<li>
+					{{ t('dossiq', 'To pseudonymise') }}:
+					{{ total('pseudonymised') }}
+				</li>
 				<li>{{ t('dossiq', 'Protected') }}: {{ total('protected') }}</li>
 			</ul>
 
@@ -51,7 +59,9 @@ v-if="!hasPreview"
 				</ul>
 			</div>
 
-			<NcNoteCard v-if="outcome" :type="outcome.complete ? 'success' : 'warning'">
+			<NcNoteCard
+				v-if="outcome"
+				:type="outcome.complete ? 'success' : 'warning'">
 				{{ outcomeSentence }}
 			</NcNoteCard>
 
@@ -60,7 +70,7 @@ v-if="!hasPreview"
 					{{ t('dossiq', 'Take the preview') }}
 				</NcButton>
 				<NcButton
-v-if="hasPreview"
+					v-if="hasPreview"
 					variant="warning"
 					:disabled="busy"
 					@click="takeRun">
@@ -70,9 +80,14 @@ v-if="hasPreview"
 		</section>
 
 		<NcEmptyContent
-v-else-if="!isRequest"
+			v-else-if="!isRequest"
 			:name="t('dossiq', 'Not a data subject request')"
-			:description="t('dossiq', 'This case answers something else, so there is nothing to erase or export here.')" />
+			:description="
+				t(
+					'dossiq',
+					'This case answers something else, so there is nothing to erase or export here.',
+				)
+			" />
 
 		<section v-else class="dsr-tab__section">
 			<h3>{{ t('dossiq', 'Subject export') }}</h3>
@@ -89,7 +104,10 @@ v-else-if="!isRequest"
 				<NcButton :disabled="busy" @click="askForExport">
 					{{ t('dossiq', 'Ask for the export') }}
 				</NcButton>
-				<NcButton v-if="exportState.downloadable" :href="downloadUrl" variant="primary">
+				<NcButton
+					v-if="exportState.downloadable"
+					:href="downloadUrl"
+					variant="primary">
 					{{ t('dossiq', 'Download the export') }}
 				</NcButton>
 			</div>
@@ -136,8 +154,16 @@ export default {
 			refusal: null,
 			counts: this.object?.erasureCounts ?? {},
 			protectedItems: this.object?.erasureProtected ?? [],
-			outcome: this.object?.erasureOutcome?.complete === undefined ? null : this.object.erasureOutcome,
-			exportState: { exportId: '', downloadable: false, expiresAt: '', expired: false },
+			outcome:
+				this.object?.erasureOutcome?.complete === undefined
+					? null
+					: this.object.erasureOutcome,
+			exportState: {
+				exportId: '',
+				downloadable: false,
+				expiresAt: '',
+				expired: false,
+			},
 		}
 	},
 
@@ -154,8 +180,9 @@ export default {
 		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 		 */
 		isRequest() {
-			return ['inzage', 'correctie', 'verwijdering']
-				.includes(this.object?.dataSubjectRequestType)
+			return ['inzage', 'correctie', 'verwijdering'].includes(
+				this.object?.dataSubjectRequestType,
+			)
 		},
 
 		/**
@@ -203,10 +230,16 @@ export default {
 				return t('dossiq', 'The platform reports the erasure complete.')
 			}
 
-			const left = ['withheld', 'refused', 'failed']
-				.reduce((sum, bucket) => sum + (this.outcome?.[bucket]?.length ?? 0), 0)
+			const left = ['withheld', 'refused', 'failed'].reduce(
+				(sum, bucket) => sum + (this.outcome?.[bucket]?.length ?? 0),
+				0,
+			)
 
-			return t('dossiq', 'The erasure did not finish. {count} records still hold this person.', { count: left })
+			return t(
+				'dossiq',
+				'The erasure did not finish. {count} records still hold this person.',
+				{ count: left },
+			)
 		},
 	},
 
@@ -311,8 +344,10 @@ export default {
 		 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 		 */
 		total(bucket) {
-			return Object.values(this.counts?.[bucket] ?? {})
-				.reduce((sum, value) => sum + Number(value ?? 0), 0)
+			return Object.values(this.counts?.[bucket] ?? {}).reduce(
+				(sum, value) => sum + Number(value ?? 0),
+				0,
+			)
 		},
 	},
 }
