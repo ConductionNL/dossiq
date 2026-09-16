@@ -55,9 +55,12 @@ const caseDetail = page('CaseDetail')
  * @param {object} object The case as the page holds it.
  * @return {Promise<object>} The mounted wrapper.
  */
-async function mountStrip(object) {
+async function mountStrip(objectData) {
 	const wrapper = mount(CaseFavouriteStrip, {
-		props: { objectId: 'case-7', object },
+		// `objectData`, spelled the way `CnDetailWidgetHost.rendererProps()`
+		// spells it. A test that mounted with `object` would pass while the
+		// real page handed the widget nothing and painted every star empty.
+		props: { objectId: 'case-7', objectData },
 		global: {
 			stubs: {
 				NcButton: {
@@ -81,6 +84,29 @@ beforeEach(() => {
 })
 
 describe('the star reads off the object it was given', () => {
+	it('declares the prop name the detail widget host actually binds', () => {
+		// `CnDetailWidgetHost.rendererProps()` hands a registry widget
+		// `objectData`. A prop called `object` is never bound, arrives null,
+		// and the star paints empty on every case the reader has starred, with
+		// nothing failing anywhere. So the name is read off the library rather
+		// than remembered.
+		const host = fs.readFileSync(
+			path.join(
+				ROOT,
+				'node_modules/@conduction/nextcloud-vue/src/components/CnDetailWidgetHost/CnDetailWidgetHost.vue',
+			),
+			'utf8',
+		)
+		expect(host).toContain('objectData: this.object,')
+
+		const strip = fs.readFileSync(
+			path.join(ROOT, 'src/components/case/CaseFavouriteStrip.vue'),
+			'utf8',
+		)
+		expect(Object.keys(CaseFavouriteStrip.props)).toContain('objectData')
+		expect(strip).not.toContain('\n\t\tobject: {')
+	})
+
 	it('makes no call on mount', async () => {
 		await mountStrip({ id: 'case-7', '@self': { favourite: true } })
 

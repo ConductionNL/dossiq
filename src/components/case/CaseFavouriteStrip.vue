@@ -67,8 +67,18 @@ export default {
 			default: '',
 		},
 
-		/** The case itself, so the star renders without a call of its own. */
-		object: {
+		/**
+		 * The case itself, so the star renders without a call of its own.
+		 *
+		 * 🔴 THE NAME IS `objectData` AND NOT `object`, WHICH IS NOT A STYLE
+		 * CHOICE. `CnDetailWidgetHost.rendererProps()` hands a registry widget
+		 * `{ content, objectId, register, schema, objectData, objectType,
+		 * store }`. A prop called `object` is never bound, arrives as null, and
+		 * `isFavourite(null)` is false, so the star would paint EMPTY on every
+		 * case including the ones this reader has starred. Nothing would fail:
+		 * the button works, the write works, only the first paint lies.
+		 */
+		objectData: {
 			type: Object,
 			default: null,
 		},
@@ -91,7 +101,7 @@ export default {
 		 * @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 		 */
 		caseId() {
-			return String(this.objectId || objectIdOf(this.object) || this.$route?.params?.id || '')
+			return String(this.objectId || objectIdOf(this.objectData) || this.$route?.params?.id || '')
 		},
 
 		/**
@@ -109,7 +119,7 @@ export default {
 				return this.local
 			}
 
-			return isFavourite(this.object)
+			return isFavourite(this.objectData)
 		},
 
 		/**
