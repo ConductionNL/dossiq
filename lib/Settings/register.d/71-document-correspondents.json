@@ -1,0 +1,67 @@
+{
+  "_note": "document-correspondents (gap register row 5.12). A document on a case says who sent it and who it went to, and it says so by POINTING AT A PARTY OF THE CASE, never by carrying a typed-in name. The `dispatch` schema beside it keeps its ZGW Verzending meaning and becomes the per-correspondent record: one row per party a document was sent to or came from, carrying the date and the role. Two fragments rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.\n\n🔴 WHY A UUID AND NOT A NAME. `dispatch.contactPersonName` has been in the register since the ZGW import and nothing has ever written it. A typed name cannot be counted, cannot be filtered, and goes stale the day the party is corrected: two letters to the same person read as two people. The roles `afzender` and `geadresseerde` are already in the case schema's `linkRoles`, so the party a document names is the same party the People tab renders, under the same label.\n\n🔴 WHY THE VALUE IS A PARTY OF THIS CASE AND NOT ANY PARTY. A correspondent that is not on the case is a correspondent nobody can open, and the parties listing is the only place a handler can add one. So the writers resolve against `GET /api/objects/{r}/{s}/{id}/parties` and drop what does not match, rather than storing a uuid the People tab cannot show.",
+  "components": {
+    "schemas": {
+      "informatieobject": {
+        "properties": {
+          "sender": {
+            "type": "string",
+            "title": "Sender",
+            "facetable": true,
+            "maxLength": 255,
+            "description": "Who sent this document, as a party of this case in the role afzender. Holds the party's uuid, or the contact uid of a link written before the party model. An incoming document gets one from the mail intake; you can set or correct it in the document's properties."
+          },
+          "recipients": {
+            "type": "array",
+            "title": "Recipients",
+            "facetable": true,
+            "description": "Who this document went to, as parties of this case in the role geadresseerde. Each entry holds the party's uuid, or the contact uid of a link written before the party model. An outgoing document gets them from the send that filed it; you can set or correct them in the document's properties.",
+            "items": {
+              "type": "string",
+              "maxLength": 255
+            }
+          }
+        }
+      },
+      "dispatch": {
+        "version": "1.1.0",
+        "description": "One correspondent of one document: the party a document was sent to, or the party it came from, with the date and the role. ZGW calls this a Verzending. Written by the send that files an outgoing document and by the mail intake that files an incoming one, and kept in step with `informatieobject.sender` and `informatieobject.recipients`, which are what the Files tab and the People tab read.",
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "facetable": true,
+            "maxLength": 255,
+            "description": "The case this dispatch is on, so a party's correspondence can be read per case without walking every document."
+          },
+          "involvedParty": {
+            "type": "string",
+            "format": "uri",
+            "title": "Involved party",
+            "facetable": true,
+            "description": "The party this dispatch names, as the uuid of a party of the case. Never a typed name: a name cannot be counted and goes stale the day the party is corrected."
+          },
+          "relationshipType": {
+            "type": "string",
+            "title": "Relationship type",
+            "facetable": true,
+            "description": "Whether this party sent the document or received it. The two values are the case schema's own link roles, so a dispatch and the People tab name the same role.",
+            "enum": [
+              "afzender",
+              "geadresseerde"
+            ],
+            "x-enum-labels": {
+              "afzender": "Sender",
+              "geadresseerde": "Addressee"
+            }
+          },
+          "contactPersonName": {
+            "type": "string",
+            "title": "Contact person name",
+            "description": "DEPRECATED, and never written by dossiq. Kept so a record imported from a ZGW source keeps its field. Read `involvedParty` instead: the party carries the name, and it stays right when the party is corrected."
+          }
+        }
+      }
+    }
+  }
+}
