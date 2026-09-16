@@ -26,6 +26,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Besluitvorming\WorkflowReferenceResolver;
+use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
+use OCA\Dossiq\Service\Starter\ShippedSets;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\SeedSummary;
 use OCP\IAppConfig;
@@ -65,6 +67,7 @@ class SeedDataService {
 	 * @param IAppConfig $appConfig The app configuration service
 	 * @param ContainerInterface $container The DI container
 	 * @param LoggerInterface $logger The logger interface
+	 * @param ShippedConfigurationService|null $shipped The provenance ledger, or null when it cannot be built
 	 *
 	 * @return void
 	 */
@@ -72,8 +75,37 @@ class SeedDataService {
 		private IAppConfig $appConfig,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
+		private ?ShippedConfigurationService $shipped = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Record that this seed wrote an object, and from which set.
+	 *
+	 * 🔑 THE STAMP IS BEST EFFORT AND THE SEED IS NOT. A provenance row that
+	 * could not be written must never take a seeded case type down with it: the
+	 * screen losing one line is a smaller failure than an install that stops.
+	 * Optional in the constructor for the same reason the seed runs from a
+	 * repair step with no session.
+	 *
+	 * @param string               $targetSchema The seeded object's schema slug.
+	 * @param string               $targetObject The seeded object's id.
+	 * @param array<string, mixed> $object       The object as it shipped.
+	 *
+	 * @return void
+	 */
+	private function stamp(string $targetSchema, string $targetObject, array $object): void {
+		if ($this->shipped === null || $targetObject === '') {
+			return;
+		}
+
+		$this->shipped->stamp(
+			set: ShippedSets::BEZWAAR_BEROEP,
+			targetSchema: $targetSchema,
+			targetObject: $targetObject,
+			object: $object,
+		);
+	}//end stamp()
 
 	/**
 	 * Seed the bezwaar and beroep case types with all related objects.
@@ -357,6 +389,8 @@ class SeedDataService {
 			$caseTypeId = $this->getObjectId(object: $caseType);
 		}
 
+		$this->stamp(targetSchema: 'caseType', targetObject: $caseTypeId, object: $caseTypeData);
+
 		$this->logger->info(
 			'Dossiq: Created case type',
 			['identifier' => $identifier, 'id' => $caseTypeId]
@@ -405,6 +439,7 @@ class SeedDataService {
 			if ($childObj !== null) {
 				$map[$childData['name']] = $childId;
 				$created++;
+				$this->stamp(targetSchema: $schemaId, targetObject: $childId, object: $childData);
 			}
 		}
 

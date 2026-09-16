@@ -306,6 +306,7 @@ $extra = [
         // Deelzaak (sub-case) parent-child relations.
     ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
     ['name' => 'deelzaak#validate', 'url' => '/api/deelzaken/validate',              'verb' => 'POST'],
+    ['name' => 'deelzaak#create',   'url' => '/api/deelzaken',                       'verb' => 'POST'],
     ['name' => 'deelzaak#list',     'url' => '/api/deelzaken/{caseId}/children',     'verb' => 'GET'],
     ['name' => 'deelzaak#parent',   'url' => '/api/deelzaken/{caseId}/parent',       'verb' => 'GET'],
     ['name' => 'deelzaak#unlink',   'url' => '/api/deelzaken/{caseId}/unlink',       'verb' => 'POST'],
@@ -315,6 +316,14 @@ $extra = [
     ['name' => 'caseRelation#create',  'url' => '/api/cases/{caseId}/relations',                          'verb' => 'POST'],
         // {aardRelatie} bound nothing: the method signs $natureRelationship. HTTP 400.
     ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{natureRelationship}', 'verb' => 'DELETE'],
+        // Live conversation on the case — Talk rooms, captures and the major declaration.
+    ['name' => 'caseConversation#availability',       'url' => '/api/conversations/availability',        'verb' => 'GET'],
+    ['name' => 'caseConversation#start',              'url' => '/api/cases/{caseId}/conversations',      'verb' => 'POST'],
+    ['name' => 'caseConversation#end',                'url' => '/api/cases/{caseId}/conversations/end',  'verb' => 'POST'],
+    ['name' => 'caseConversation#capture',            'url' => '/api/cases/{caseId}/captures',           'verb' => 'POST'],
+    ['name' => 'caseConversation#declareMajor',       'url' => '/api/cases/{caseId}/major',              'verb' => 'POST'],
+    ['name' => 'caseConversation#closeMajorChannel',  'url' => '/api/cases/{caseId}/major/channel',      'verb' => 'DELETE'],
+
         // Dashboard KPI aggregation endpoint.
     ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 
@@ -433,6 +442,19 @@ $extra = [
         // them.
     ['name' => 'acknowledgement#duty',      'url' => '/api/case/{caseId}/acknowledgement',     'verb' => 'GET'],
     ['name' => 'acknowledgement#recordMet', 'url' => '/api/case/{caseId}/acknowledgement/met', 'verb' => 'POST'],
+
+        // The attention flag a person raises and clears
+        // (markers-and-assessments-on-the-case, row 2.36). Both writes go
+        // through here rather than through an object patch, because the rule
+        // is that neither act happens without a written reason and that
+        // clearing appends rather than deleting. A browser writing the case
+        // directly could skip the first and lose the second. The risk
+        // assessment and the marker set get no route: the first is guarded by
+        // a declaration on the property, the second is derived into the save,
+        // and both arrive with the case the page already read.
+    ['name' => 'caseAttention#state', 'url' => '/api/case/{caseId}/attention',       'verb' => 'GET'],
+    ['name' => 'caseAttention#raise', 'url' => '/api/case/{caseId}/attention/raise', 'verb' => 'POST'],
+    ['name' => 'caseAttention#clear', 'url' => '/api/case/{caseId}/attention/clear', 'verb' => 'POST'],
 
         // The Actions menu's non-lifecycle gestures (case-actions-menu):
         // copy this case, start a flow its type allows, and plan a follow-up
@@ -856,6 +878,14 @@ $extra = [
         // Awb 4:5: asking the applicant and suspending the term are one act.
     ['name' => 'caseTerms#requestInformation', 'url' => '/api/cases/{caseId}/information-request',          'verb' => 'POST'],
     ['name' => 'caseTerms#receiveInformation', 'url' => '/api/cases/{caseId}/information-request/received', 'verb' => 'POST'],
+
+        // Every aanvullingsverzoek ever sent on this case, and where each one
+        // stands (aanvullingsverzoek-as-a-record, row 1.17). The two writes
+        // above are unchanged URLs on purpose: asking is ONE act that sends
+        // the letter, suspends the term and now writes the record, and a
+        // second endpoint for the record would give the app two paths to a
+        // statutory suspension.
+    ['name' => 'caseTerms#aanvullingsverzoeken', 'url' => '/api/cases/{caseId}/aanvullingsverzoeken', 'verb' => 'GET'],
         // How old the work still standing is, read live over open cases only.
     ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
@@ -931,6 +961,29 @@ $extra = [
     ['name' => 'store#install',      'url' => '/api/store/items/{slug}/install',  'verb' => 'POST', 'requirements' => ['slug' => '[a-z0-9][a-z0-9-]*[a-z0-9]']],
     ['name' => 'store#getSettings',  'url' => '/api/store/settings',              'verb' => 'GET'],
     ['name' => 'store#saveSettings', 'url' => '/api/store/settings',              'verb' => 'PUT'],
+
+        // What a new instance starts with (starter-content-and-templates).
+        // The literal `/api/starter/roles` paths sit BEFORE the `{schema}` and
+        // `{caseTypeId}` wildcards, per the ordering note at the top of this
+        // file: a wildcard declared first swallows the literal.
+    ['name' => 'municipalRoleSet#roles',      'url' => '/api/starter/roles',                            'verb' => 'GET'],
+    ['name' => 'municipalRoleSet#adoptRoles', 'url' => '/api/starter/roles/adopt',                      'verb' => 'POST'],
+    ['name' => 'municipalRoleSet#undoRoles',  'url' => '/api/starter/roles/undo',                       'verb' => 'POST'],
+    ['name' => 'starterContent#shipped',      'url' => '/api/starter/shipped/{schema}',                 'verb' => 'GET'],
+    ['name' => 'starterContent#adoptShipped', 'url' => '/api/starter/shipped/{schema}/{id}/adopt',      'verb' => 'POST'],
+    ['name' => 'starterContent#retire',       'url' => '/api/starter/case-types/{caseTypeId}/retire',   'verb' => 'POST'],
+    ['name' => 'starterContent#restore',      'url' => '/api/starter/case-types/{caseTypeId}/restore',  'verb' => 'POST'],
+    ['name' => 'starterContent#copyDomain',   'url' => '/api/starter/domains/{domainId}/copy',          'verb' => 'POST'],
+    ['name' => 'starterContent#stepUsedBy',   'url' => '/api/starter/steps/{stepId}/used-by',           'verb' => 'GET'],
+    ['name' => 'starterContent#deleteStep',   'url' => '/api/starter/steps/{stepId}',                   'verb' => 'DELETE'],
+
+        // Starting from something somebody prepared earlier.
+    ['name' => 'templateStart#caseTemplates',      'url' => '/api/case-templates',                      'verb' => 'GET'],
+    ['name' => 'templateStart#startFromTemplate',  'url' => '/api/case-templates/{templateId}/start',   'verb' => 'POST'],
+    ['name' => 'templateStart#contentTemplates',   'url' => '/api/content-templates/{kind}',            'verb' => 'GET'],
+
+        // A connection is tested from the screen that configures it.
+    ['name' => 'connectionTest#testStufEndpoint', 'url' => '/api/connections/stuf/{endpointId}/test',   'verb' => 'POST'],
 
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to

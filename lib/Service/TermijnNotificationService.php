@@ -30,6 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCP\BackgroundJob\IJobList;
@@ -76,9 +78,12 @@ class TermijnNotificationService {
 	 * @param string $termInstanceId Instance id.
 	 * @param string $recipientUserId Recipient user id.
 	 * @param array<string, mixed> $context Extra context.
+	 * @param array<string, mixed> $caseType The case type of the term's case, or
+	 *                                       [] when the caller has not resolved one.
 	 *
 	 * @return bool TRUE when the job was queued; FALSE when no job list is
-	 *              wired (callers MAY fall back to synchronous send).
+	 *              wired (callers MAY fall back to synchronous send), or when
+	 *              the case type does not send this message.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
@@ -87,6 +92,7 @@ class TermijnNotificationService {
 		string $termInstanceId,
 		string $recipientUserId,
 		array $context = [],
+		array $caseType = [],
 	): bool {
 		if ($this->jobList === null) {
 			return false;
@@ -94,6 +100,19 @@ class TermijnNotificationService {
 
 		if (in_array($type, self::TEMPLATES, true) === false) {
 			throw new InvalidArgumentException('Unknown template: ' . $type);
+		}
+
+		// The case type decides which of these go out, and CaseTypeHandling is
+		// the one reader of that decision. An empty $caseType is a caller that
+		// has not resolved one, and it queues as it always did: silently
+		// dropping a statutory message because a parameter was not threaded
+		// through would be the worst possible reading of "not configured".
+		if ($caseType !== [] && (new CaseTypeHandling())->sends(caseType: $caseType, message: $type) === false) {
+			$this->logger->info(
+				'TermijnNotification not sent: the case type does not send it',
+				['type' => $type, 'instance' => $termInstanceId]
+			);
+			return false;
 		}
 
 		$this->jobList->add(

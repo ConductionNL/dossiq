@@ -149,6 +149,7 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import { createSubCase } from '../services/deelzaakApi.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import {
@@ -403,10 +404,24 @@ export default {
 					]),
 				}
 
-				const result = await this.objectStore.saveObject('case', caseData)
-				if (result) {
-					this.$emit('created', result.id || result['@self']?.id || result)
+				// A derive, not a save. The sub-case takes the confidentiality
+				// and the handler its parent carries because case.parentCase
+				// declares that inheritance; saving the case directly would
+				// create the hierarchy and inherit nothing, silently.
+				const result = await createSubCase({
+					parentCaseUuid: this.parentCase,
+					childCaseTypeId: this.selectedCaseType.id,
+					object: caseData,
+				})
+
+				if (result?.ok === false) {
+					this.serverError =
+						result.reason || t('dossiq', 'Failed to create sub-case.')
+					return
 				}
+
+				const created = result?.object || {}
+				this.$emit('created', created.id || created['@self']?.id || created)
 			} catch (err) {
 				console.error('[DeelzaakCreateModal] Failed to create sub-case', err)
 				this.serverError =

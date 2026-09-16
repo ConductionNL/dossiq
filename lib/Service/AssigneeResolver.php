@@ -56,6 +56,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\OpenRegister\Service\Flow\FlowValueTemplate;
 use Psr\Log\LoggerInterface;
 
@@ -88,6 +89,13 @@ class AssigneeResolver {
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
+
+	/**
+	 * Lazily built reader of the case type's handling switches.
+	 *
+	 * @var CaseTypeHandling|null
+	 */
+	private ?CaseTypeHandling $handling = null;
 
 	/**
 	 * The principal an authored assignee resolves to on this case.
@@ -166,15 +174,44 @@ class AssigneeResolver {
 	 * Read through `referenceId`, never a `(string)` cast: `assignedGroup` is a
 	 * `$ref`, so an expanded read casts to the literal "Array".
 	 *
-	 * @param array<string, mixed> $case The case to read.
+	 * Falls back to the case type's declared default group when the case names
+	 * no team. That default is read through {@see CaseTypeHandling} and nowhere
+	 * else: the group a case lands in used to come from three unrelated places,
+	 * and an administrator who changed it in one of them found the other two
+	 * still answering the old value.
 	 *
-	 * @return string The team id, or '' when the case names no team.
+	 * @param array<string, mixed> $case     The case to read.
+	 * @param array<string, mixed> $caseType Its case type, or [] when the
+	 *                                       caller has not resolved one.
+	 *
+	 * @return string The team id, or '' when neither the case nor its type names one.
 	 *
 	 * @spec openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
 	 */
-	public function resolveTeam(array $case): string {
-		return $this->referenceId(value: ($case['assignedGroup'] ?? ''));
+	public function resolveTeam(array $case, array $caseType = []): string {
+		$team = $this->referenceId(value: ($case['assignedGroup'] ?? ''));
+		if ($team !== '' || $caseType === []) {
+			return $team;
+		}
+
+		return $this->handling()->defaultGroup(caseType: $caseType);
 	}//end resolveTeam()
+
+	/**
+	 * The one reader of a case type's handling switches.
+	 *
+	 * Built here rather than injected so the constructor signature stays put:
+	 * it is stateless, and twenty-five call sites construct this class. Same
+	 * reason `SeedDataService` builds its workflow resolver.
+	 *
+	 * @return CaseTypeHandling The reader.
+	 */
+	private function handling(): CaseTypeHandling {
+		$this->handling ??= new CaseTypeHandling();
+
+		return $this->handling;
+	}//end handling()
 
 	/**
 	 * Why a resolution came back empty, as a clause a person can read.

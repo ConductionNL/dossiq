@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -287,8 +288,14 @@ class UnmatchedMailIntake {
 
 		$row = $this->normaliseObjectRow(row: $caseType);
 
+		// Through CaseTypeHandling, so the block an administrator filled in on
+		// the case type wins and `defaultAssignee` is the fallback for a type
+		// nobody has migrated. Reading the raw property here is how one of the
+		// three readers of this value kept answering the old one.
 		return $this->assignees->resolve(
-			primary: $this->assignees->referenceId(value: ($row['defaultAssignee'] ?? '')),
+			primary: $this->assignees->referenceId(
+				value: (new CaseTypeHandling())->defaultHandler(caseType: $row)
+			),
 			fallback: '',
 			case: []
 		);

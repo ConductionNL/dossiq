@@ -201,6 +201,18 @@ class SchemaSlugMap {
 		// The connections Dossiq has to systems outside it
 		// (pluggable-integration-registry).
 		'dossiqIntegration' => 'dossiq_integration_schema',
+		// What a new instance starts with (starter-content-and-templates).
+		// `shippedOrigin` is the provenance ledger: one row per seeded object,
+		// carrying the set, its version and a fingerprint of what shipped, so
+		// `shipped and untouched` is a comparison rather than a guess.
+		'shippedOrigin' => 'shipped_origin_schema',
+		'starterSetAdoption' => 'starter_set_adoption_schema',
+		'reusableStep' => 'reusable_step_schema',
+		'contentTemplate' => 'content_template_schema',
+		// The domain a copy carries. The group already existed for the grant
+		// (mandaat-matrix) and was never mapped, so no service could resolve
+		// it; the domain copy is the first caller that needs to.
+		'caseTypeGroup' => 'case_type_group_schema',
 	];
 
 	/**
@@ -228,6 +240,16 @@ class SchemaSlugMap {
 		// this list would therefore not disable the badge, it would make it
 		// cry wolf, with nothing anywhere saying so.
 		'x-openregister-read-state',
+		// What a typed case link is called from each side. OpenRegister's
+		// RelationTypeResolver reads this vocabulary off
+		// `Schema::getConfiguration()` and resolves a property's
+		// `x-openregister-relation: {type: "vervolg"}` against it. A key the
+		// vocabulary does not hold is DROPPED rather than carried, so on an
+		// instance that imported the case schema before this block existed
+		// every typed relation would quietly read as the property's own title
+		// and "referenced by", with nothing anywhere reporting it. That is the
+		// same silent fallback openregister#3764 exists to end.
+		'x-openregister-relation-types',
 	];
 
 	/**

@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -152,6 +153,7 @@ class CaseTypePublishServiceTest extends TestCase {
 			store: $store,
 			acknowledgement: new CaseTypeAcknowledgement(),
 			unreadTriggers: new UnreadTriggerService(),
+			handling: new CaseTypeHandling(),
 			logger: new NullLogger(),
 		);
 	}//end service()

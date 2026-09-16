@@ -485,6 +485,14 @@
                         "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
                         "title": "IV3 Task Field"
                     },
+                    "responders": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Responders",
+                        "description": "Who is pulled into the working channel when a case of this type is declared major. A user id, or a group as group:<gid>, or a bare group id. A name that does not resolve refuses the declaration rather than opening a channel that is missing the one person who had to be in it (ADR-102). A type that names nobody cannot be declared major. NOT visible:false: this is the field an administrator fills in on the case type, and visible:false hides a property on every surface, including the editor."
+                    },
                     "startableFlows": {
                         "type": "array",
                         "items": {
@@ -1232,6 +1240,32 @@
                             "en": "Case \"{{title}}\" assigned to you"
                         }
                     },
+                    "caseDeclaredMajor": {
+                        "trigger": {
+                            "type": "updated",
+                            "condition": {
+                                "field": "isMajor",
+                                "operator": "equals",
+                                "value": true,
+                                "from": false
+                            }
+                        },
+                        "enabled": true,
+                        "channels": [
+                            "nc-notification"
+                        ],
+                        "recipients": [
+                            {
+                                "kind": "field",
+                                "field": "majorResponders"
+                            }
+                        ],
+                        "subject": {
+                            "nl": "Zaak \"{{title}}\" is opgeschaald naar calamiteit",
+                            "en": "Case \"{{title}}\" has been declared major"
+                        },
+                        "x-notes": "Declared rather than dispatched, per ADR-031. A `condition`, NOT a `filter`: AnnotationNotificationDispatcher reads `filter` only on a `created` trigger, so a filter here would be ignored in silence and every save of a major case would notify the responders again. The non-numeric field-change `condition` on `updated` has landed in the engine, which openspec/fleet-notification-plan.md still names as a gap; that doc is stale. `from: false` casts to the empty string, which is what both an absent isMajor and a false one read as, so the rule fires at the declaration and not after it."
+                    },
                     "caseHandoffIntake": {
                         "trigger": {
                             "type": "created",
@@ -1937,6 +1971,60 @@
                                 }
                             ]
                         }
+                    ],
+                    "x-openregister-relation-types": [
+                        {
+                            "key": "deelzaak",
+                            "label": {
+                                "nl": "deelzaak van",
+                                "en": "sub-case of"
+                            },
+                            "inverseLabel": {
+                                "nl": "heeft deelzaak",
+                                "en": "has sub-case"
+                            }
+                        },
+                        {
+                            "key": "vervolg",
+                            "label": {
+                                "nl": "vervolg op",
+                                "en": "follow-up to"
+                            },
+                            "inverseLabel": {
+                                "nl": "heeft vervolg",
+                                "en": "has follow-up"
+                            }
+                        },
+                        {
+                            "key": "subject",
+                            "label": {
+                                "nl": "gaat over",
+                                "en": "is about"
+                            },
+                            "inverseLabel": {
+                                "nl": "onderwerp van",
+                                "en": "subject of"
+                            }
+                        },
+                        {
+                            "key": "bijdrage",
+                            "label": {
+                                "nl": "draagt bij aan",
+                                "en": "contributes to"
+                            },
+                            "inverseLabel": {
+                                "nl": "krijgt bijdrage van",
+                                "en": "receives a contribution from"
+                            }
+                        },
+                        {
+                            "key": "samenhang",
+                            "label": {
+                                "nl": "hangt samen met",
+                                "en": "related to"
+                            },
+                            "symmetric": true
+                        }
                     ]
                 },
                 "required": [
@@ -2507,7 +2595,14 @@
                         "title": "Parent case",
                         "description": "Reference to parent case (for sub-cases)",
                         "visible": true,
-                        "order": 14
+                        "order": 14,
+                        "x-openregister-relation": {
+                            "type": "deelzaak",
+                            "inherits": {
+                                "confidentiality": "confidentiality",
+                                "responsible": "assignee"
+                            }
+                        }
                     },
                     "relatedCases": {
                         "type": "string",
@@ -2813,6 +2908,106 @@
                         "title": "Published at",
                         "description": "Timestamp of the most recent besluit publication on any channel. Declared because the store strips what the schema does not declare.",
                         "visible": false
+                    },
+                    "followUpCases": {
+                        "type": "array",
+                        "title": "Follow-up cases",
+                        "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "vervolg"
+                            }
+                        }
+                    },
+                    "subjectCases": {
+                        "type": "array",
+                        "title": "Subject cases",
+                        "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "subject"
+                            }
+                        }
+                    },
+                    "contributingCases": {
+                        "type": "array",
+                        "title": "Contributing cases",
+                        "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "bijdrage"
+                            }
+                        }
+                    },
+                    "conversations": {
+                        "type": "array",
+                        "title": "Conversations",
+                        "description": "Live conversations held on this case, one object per conversation: kind (conversation|majorChannel), subject, roomId, roomUrl, startedAt, startedBy, participants, durationSeconds and endedAt. Written by CaseConversationService so the archive sees a call that only Talk would otherwise remember. What a conversation produced is filed separately as a case document, under the case type's visibility declaration.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "visible": false
+                    },
+                    "isMajor": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "Major",
+                        "description": "Whether this case has been declared major. Declaring it is the act; the working channel is the consequence. Set by MajorCaseDeclaration through a permissioned endpoint, never by hand.",
+                        "facetable": true
+                    },
+                    "majorChannel": {
+                        "type": "object",
+                        "title": "Major channel",
+                        "description": "The one working channel a major declaration opened: roomId, roomUrl, openedAt and closedAt. One channel per case, never one per person who wants one, so a second declaration finds this one. Closing the case closes it and fills closedAt.",
+                        "visible": false
+                    },
+                    "majorDeclaredBy": {
+                        "type": "string",
+                        "title": "Major declared by",
+                        "description": "The user that declared this case major.",
+                        "visible": false
+                    },
+                    "majorDeclaredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Major declared at",
+                        "description": "The moment this case was declared major.",
+                        "visible": false
+                    },
+                    "majorResponders": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Major responders",
+                        "description": "The users pulled into the working channel when this case was declared major, resolved from the responders the case type names. Recorded so a gemeente can show afterwards who was in the room.",
+                        "visible": false
+                    },
+                    "associatedCases": {
+                        "type": "array",
+                        "title": "Associated cases",
+                        "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "samenhang"
+                            }
+                        }
                     }
                 },
                 "searchable": true
@@ -3542,7 +3737,7 @@
             "caseObject": {
                 "slug": "caseObject",
                 "icon": "CubeOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-zgw-equivalent": "ZaakObject",
                 "title": "Case Object",
                 "description": "Links an external object to a case",
@@ -3551,6 +3746,44 @@
                     "case",
                     "objectType"
                 ],
+                "configuration": {
+                    "objectNameField": "case | objectIdentification | objectType",
+                    "objectDescriptionField": "description",
+                    "x-notes": "THE NAME OF A LINK ROW IS THE CASE IT BELONGS TO, and that is what makes the reverse view readable. OpenRegister's /referenced-by groups the records that reference an object and titles each row with the stored object NAME, which it fills from objectNameField at save time. A caseObject is the row that holds the reference, so the group on a building's page is a list of link rows; naming each one after its case is what turns that list into the answer to 'which cases is this building in'. THE FIRST LINK IN THE CHAIN IS THE RELATION ITSELF, NOT A MIRROR OF IT: `case` carries a $ref, so MetadataHydrationHandler resolves the uuid to the referenced case's own name through the name cache. A calculated mirror was tried first and is wrong here, because metadata is hydrated in SaveObject BEFORE ObjectCreatingEvent materialises a calculation, so the mirror is empty on the save that names the row and the name would only arrive on the next one. The chain falls back to the identification and then to the required objectType, so a row is never unnamed.",
+                    "x-openregister-lenses": {
+                        "objectTitle": {
+                            "through": "objectUrl",
+                            "property": "name",
+                            "label": "Object"
+                        },
+                        "objectStatus": {
+                            "through": "objectUrl",
+                            "property": "status",
+                            "label": "Object status"
+                        }
+                    },
+                    "x-openregister-list": {
+                        "columns": [
+                            {
+                                "property": "objectType",
+                                "label": "Object type"
+                            },
+                            {
+                                "property": "objectIdentification",
+                                "label": "Identification"
+                            },
+                            {
+                                "property": "description",
+                                "label": "Description"
+                            }
+                        ],
+                        "searchFields": [
+                            "objectIdentification",
+                            "description",
+                            "objectType"
+                        ]
+                    }
+                },
                 "properties": {
                     "case": {
                         "type": "string",
@@ -5419,7 +5652,7 @@
             "case-location": {
                 "slug": "case-location",
                 "icon": "MapMarker",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Place",
                 "title": "Case Location",
                 "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address): 0..N locations per case via back-reference on `case`.",
@@ -5428,7 +5661,24 @@
                     "case",
                     "source"
                 ],
+                "configuration": {
+                    "x-notes": "A CASE BORROWS ITS GEOMETRY FROM THE OBJECT IT IS ABOUT. Where a location is taken from a linked object, the object already holds the address point or the parcel outline, and copying that geometry onto the case makes two shapes that disagree the moment the parcel is redrawn. `linkedObject` holds the path instead, and OpenRegister's /geo-features endpoint collects the object's own features alongside the case location's, each one marked `_source: inherited`, `_through: linkedObject` and `_fromObject`, so a map says where a pin came from. A location that carries its own geometry for the same purpose outranks the inherited one, which comes back marked `_superseded` rather than dropped.",
+                    "x-openregister-geo-inheritance": {
+                        "from": [
+                            {
+                                "through": "linkedObject",
+                                "label": "Linked object"
+                            }
+                        ]
+                    }
+                },
                 "properties": {
+                    "linkedObject": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The object this location is taken from, as the URI the caseObject link holds. Where it is set the location inherits the object's own address point or parcel outline through x-openregister-geo-inheritance, with the provenance shown on the map rather than copied into this record.",
+                        "title": "Linked Object"
+                    },
                     "case": {
                         "type": "string",
                         "format": "uuid",
