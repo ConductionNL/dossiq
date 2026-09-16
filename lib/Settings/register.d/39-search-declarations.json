@@ -1,0 +1,388 @@
+{
+  "_note": "case-search-declares-its-fields (rows 9.2, 9.1 and 9.12). The consumer half of openregister search-quality-operators-and-facets (#3768, #3806). Every case property a person searches or filters on says HOW: `matchType` is one of exact, prefix, range, fuzzy or fulltext, and `inputControl` is one of text, select, multiselect, range, date-range or boolean, both read by OCA\\OpenRegister\\Service\\Search\\PropertySearchProfile and answered to a list surface as searchable_fields[<prop>] under ?_facetable=true. ONE DECLARATION SERVES THE LIST, THE FACET, THE API AND THE PORTAL: put it in a page config instead and four surfaces get four answers, three of which drift. A BOOLEAN DECLARES ITS CONTROL AND NEVER A MATCH TYPE, and neither do the object properties and the JSON blobs held in a string (properties, statusHistory, casePlanState, geometry, relatedCases, skippedPhases, missingFields, activity and their kin). This is not a preference: PropertySearchProfile::participatesInFreeText() asks a DIFFERENT question of a declared property than of a silent one, and a declared match type other than `range` enlists the column in the free-text scan. Declaring `exact` on isDraft would make a search for the word \"true\" return every draft, and `range` on a boolean is a lie. Design D-3 asks openregister for a sixth value that means filterable but never scanned. THREE DECLARATIONS DELIBERATELY NARROW AN EXISTING SEARCH (design D-4): identifier and initiatorSourceId stop answering to half a case number or half a BSN, and the uuid references stop being substring-scanned. `tags` moves the other way: an array never joined the scan, and `fuzzy` puts it in so that \"spoedd\" finds \"spoed\". A FRAGMENT RATHER THAN THE MONOLITH (ADR-037) so the diff reads as what changed, and no info.version bump: SettingsService::readEffectiveConfiguration() records that openregister now hashes the merged configuration and skips on hash equality, so new content here forces the re-import on its own.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "title": {
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "description": {
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "identifier": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "tags": {
+            "matchType": "fuzzy",
+            "inputControl": "multiselect"
+          },
+          "caseType": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "status": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "isFinalStatus": {
+            "inputControl": "boolean"
+          },
+          "hasStartableFlows": {
+            "inputControl": "boolean"
+          },
+          "statusHiddenInLists": {
+            "inputControl": "boolean"
+          },
+          "waitingOn": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "currentStatusEnteredAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "currentStatusDwellDays": {
+            "matchType": "range",
+            "inputControl": "range"
+          },
+          "statusDwellBreached": {
+            "inputControl": "boolean"
+          },
+          "endingAct": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "heldUntil": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "holdReason": {
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "isDraft": {
+            "inputControl": "boolean"
+          },
+          "draftCreatedAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "isIncomplete": {
+            "inputControl": "boolean"
+          },
+          "result": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "startDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "endDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "plannedEndDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "deadline": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "confidentiality": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "assignee": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "assignedGroup": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "handoverPending": {
+            "inputControl": "boolean"
+          },
+          "handoverTo": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "externalApplication": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "externalIdentifier": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "externalUrl": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "intakeChannel": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "impact": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "urgency": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "priority": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "priorityDerived": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "priorityOrder": {
+            "matchType": "range",
+            "inputControl": "range"
+          },
+          "priorityFloor": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "priorityRaisedBy": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "priorityOverride": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "priorityOverrideBy": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "priorityOverrideAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "priorityOverrideReason": {
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "parentCase": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "extensionCount": {
+            "matchType": "range",
+            "inputControl": "range"
+          },
+          "aanvullingRound": {
+            "matchType": "range",
+            "inputControl": "range"
+          },
+          "sourceOrganisation": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "legalBasis": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "statutoryTerm": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "archiveNomination": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "archiveActionDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "lawfulPurposeEndDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "archiveStatus": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "paymentIndication": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "lastPaymentDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "communicationChannel": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "workflowTemplate": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "workflowVersion": {
+            "matchType": "range",
+            "inputControl": "range"
+          },
+          "permitApplicationRef": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "procedureType": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "deadlineDate": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "competentAuthority": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "collaborationRequests": {
+            "inputControl": "multiselect"
+          },
+          "qualityScore": {
+            "matchType": "range",
+            "inputControl": "range"
+          },
+          "qualityStatus": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "initiatorType": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "initiatorSourceId": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "initiatorDisplayName": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "requester": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "handoffSource": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "portalSubject": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "decisions": {
+            "inputControl": "multiselect"
+          },
+          "besluitDocument": {
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "publishedAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "followUpCases": {
+            "inputControl": "multiselect"
+          },
+          "subjectCases": {
+            "inputControl": "multiselect"
+          },
+          "contributingCases": {
+            "inputControl": "multiselect"
+          },
+          "isMajor": {
+            "inputControl": "boolean"
+          },
+          "majorDeclaredBy": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "majorDeclaredAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "majorResponders": {
+            "inputControl": "multiselect"
+          },
+          "associatedCases": {
+            "inputControl": "multiselect"
+          },
+          "classification": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "sensitivity": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "actionFacet": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "insightLevel": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "intakeSubmission": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "needsAttention": {
+            "inputControl": "boolean"
+          },
+          "riskLevel": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "hasAttentionMarkers": {
+            "inputControl": "boolean"
+          },
+          "isTemplate": {
+            "inputControl": "boolean"
+          },
+          "templateName": {
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "startedFromTemplate": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "waitingOnApplicant": {
+            "inputControl": "boolean"
+          },
+          "waitingOnApplicantSince": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "dsoStatus": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "besluitdatum": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "dsoNotes": {
+            "matchType": "fulltext",
+            "inputControl": "text"
+          }
+        }
+      }
+    }
+  }
+}
