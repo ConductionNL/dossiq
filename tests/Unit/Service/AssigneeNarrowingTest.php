@@ -41,6 +41,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the narrowing the picker reads and the write enforces.
  *
  * @covers \OCA\Dossiq\Service\Intake\AssigneeNarrowing
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class AssigneeNarrowingTest extends TestCase {
 

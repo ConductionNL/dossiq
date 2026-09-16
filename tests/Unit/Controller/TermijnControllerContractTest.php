@@ -65,6 +65,7 @@ use Psr\Log\LoggerInterface;
  * Wire-contract tests for TermijnController's four lifecycle actions.
  *
  * @covers \OCA\Dossiq\Controller\TermijnController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class TermijnControllerContractTest extends TestCase {
 	use MakesCaseDateNormaliser;

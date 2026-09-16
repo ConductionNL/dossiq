@@ -51,6 +51,7 @@ use RuntimeException;
  * The duty read and the manual confirmation, behind their guards.
  *
  * @covers \OCA\Dossiq\Controller\AcknowledgementController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class AcknowledgementControllerContractTest extends TestCase {
 

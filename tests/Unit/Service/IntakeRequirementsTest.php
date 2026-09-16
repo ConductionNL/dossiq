@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the two declared lists and the refusal they produce.
  *
  * @covers \OCA\Dossiq\Service\Intake\IntakeRequirements
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class IntakeRequirementsTest extends TestCase {
 

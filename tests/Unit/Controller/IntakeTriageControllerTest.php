@@ -70,6 +70,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Intake\CaseClassification
  * @uses \OCA\Dossiq\Service\Intake\ClassificationSchemes
  * @uses \OCA\Dossiq\Service\Intake\IntakeRequirements
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 final class IntakeTriageControllerTest extends TestCase {
 

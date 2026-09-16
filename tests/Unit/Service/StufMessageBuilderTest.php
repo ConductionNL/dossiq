@@ -39,6 +39,7 @@ use Psr\Log\NullLogger;
  * Unit tests for StufMessageBuilder.
  *
  * @covers \OCA\Dossiq\Service\StufMessageBuilder
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class StufMessageBuilderTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -51,6 +51,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\DwangsomCalculationService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class TermijnTimerFiredListenerTest extends TestCase {
 	use MakesCaseDateNormaliser;

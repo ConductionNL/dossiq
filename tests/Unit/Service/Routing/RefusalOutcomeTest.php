@@ -102,6 +102,7 @@ class RefusalCaseStore {
  *
  * @uses \OCA\Dossiq\Service\CaseFieldWriter
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class RefusalOutcomeTest extends TestCase {
 

@@ -56,6 +56,8 @@ use PHPUnit\Framework\TestCase;
  * Covers the role guard, the log read, the release and the junk correction.
  *
  * @covers \OCA\Dossiq\Controller\MailIntakeController
+ * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
+ * @uses \OCA\Dossiq\Service\Email\InboundMessage
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
