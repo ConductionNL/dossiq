@@ -50,7 +50,12 @@ const derived = { object: null }
 vi.mock('../../src/services/deelzaakApi.js', () => ({
 	createSubCase: async ({ object }) => {
 		derived.object = object
-		return { ok: true, object: { id: 'sub-1' }, inherited: {}, inheritanceApplied: true }
+		return {
+			ok: true,
+			object: { id: 'sub-1' },
+			inherited: {},
+			inheritanceApplied: true,
+		}
 	},
 }))
 

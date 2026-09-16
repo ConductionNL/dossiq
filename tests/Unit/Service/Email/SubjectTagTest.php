@@ -57,6 +57,9 @@ use Psr\Log\NullLogger;
  * Unit tests for the subject-tag reading.
  *
  * @covers \OCA\Dossiq\Service\Email\InboundMailIntake
+ * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
+ * @uses \OCA\Dossiq\Service\Email\Filters\FilterPipeline
+ * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
  */
 class SubjectTagTest extends TestCase {
 

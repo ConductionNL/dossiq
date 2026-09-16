@@ -27,7 +27,10 @@ import {
 
 describe('a task shows its own number', () => {
 	it('shows the number when the engine carries one', () => {
-		const reference = taskReferenceOf({ uuid: 'abc-123', number: 'TAAK-2026-0041' })
+		const reference = taskReferenceOf({
+			uuid: 'abc-123',
+			number: 'TAAK-2026-0041',
+		})
 
 		expect(reference).toEqual({ value: 'TAAK-2026-0041', isNumber: true })
 	})
@@ -66,8 +69,15 @@ describe('a task shows its own lock', () => {
 
 describe('a task that is waiting to be taken', () => {
 	it('is unclaimed when it has candidates and no assignee', () => {
-		expect(isUnclaimed({ assignee: '', candidateGroups: ['Juridische Zaken'] })).toBe(true)
-		expect(isUnclaimed({ assignee: 'hbakker', candidateGroups: ['Juridische Zaken'] })).toBe(false)
+		expect(
+			isUnclaimed({ assignee: '', candidateGroups: ['Juridische Zaken'] }),
+		).toBe(true)
+		expect(
+			isUnclaimed({
+				assignee: 'hbakker',
+				candidateGroups: ['Juridische Zaken'],
+			}),
+		).toBe(false)
 	})
 
 	it('is not unclaimed when nobody was asked', () => {
@@ -75,12 +85,17 @@ describe('a task that is waiting to be taken', () => {
 		// pick it up: nobody was offered it. Offering a claim there would
 		// invent a pool.
 		expect(isUnclaimed({ assignee: '' })).toBe(false)
-		expect(isUnclaimed({ assignee: '', candidateGroups: [], candidateUsers: [] })).toBe(false)
+		expect(
+			isUnclaimed({ assignee: '', candidateGroups: [], candidateUsers: [] }),
+		).toBe(false)
 	})
 
 	it('names groups and people together', () => {
 		expect(
-			candidatesOf({ candidateGroups: ['Juridische Zaken'], candidateUsers: ['hbakker', ''] }),
+			candidatesOf({
+				candidateGroups: ['Juridische Zaken'],
+				candidateUsers: ['hbakker', ''],
+			}),
 		).toEqual(['Juridische Zaken', 'hbakker'])
 	})
 })
@@ -106,13 +121,22 @@ describe('the form a task carries', () => {
 	})
 
 	it('names the first required field left empty', () => {
-		expect(missingRequiredField({ form: FORM }, { aanwezigen: 'drie' })).toBe('verslag')
-		expect(missingRequiredField({ form: FORM }, { verslag: '  ' })).toBe('verslag')
-		expect(missingRequiredField({ form: FORM }, { verslag: 'Gehoord op 3 maart' })).toBe('')
+		expect(missingRequiredField({ form: FORM }, { aanwezigen: 'drie' })).toBe(
+			'verslag',
+		)
+		expect(missingRequiredField({ form: FORM }, { verslag: '  ' })).toBe(
+			'verslag',
+		)
+		expect(
+			missingRequiredField({ form: FORM }, { verslag: 'Gehoord op 3 maart' }),
+		).toBe('')
 	})
 
 	it('treats zero and false as answers', () => {
-		const form = { kind: 'fields', fields: [{ field: 'bedrag', required: true }] }
+		const form = {
+			kind: 'fields',
+			fields: [{ field: 'bedrag', required: true }],
+		}
 
 		// `!answer` would refuse a required amount answered with zero, and the
 		// handler would be told to fill in a field they had filled in.

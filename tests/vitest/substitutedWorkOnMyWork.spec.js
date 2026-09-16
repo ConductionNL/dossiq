@@ -104,13 +104,21 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 				),
 				...this.rows.map((row) =>
 					h('div', { class: 'cn-row' }, [
-						h('span', { class: 'cn-row__title' }, String(row.title ?? '')),
+						h(
+							'span',
+							{ class: 'cn-row__title' },
+							String(row.title ?? ''),
+						),
 						h(
 							'span',
 							{ class: 'cn-row__marker' },
 							String(row.substitutedMarker ?? ''),
 						),
-						h('span', { class: 'cn-row__days' }, String(row.daysLeft ?? '')),
+						h(
+							'span',
+							{ class: 'cn-row__days' },
+							String(row.daysLeft ?? ''),
+						),
 					]),
 				),
 				this.$slots.footer?.(),
@@ -134,9 +142,8 @@ vi.mock('@nextcloud/vue', () => ({
 }))
 
 const { default: MyWorkCards } = await import('../../src/views/MyWorkCards.vue')
-const { default: MyWorkWidget } = await import(
-	'../../src/views/widgets/MyWorkWidget.vue'
-)
+const { default: MyWorkWidget } =
+	await import('../../src/views/widgets/MyWorkWidget.vue')
 
 /**
  * One substituted case, as `/api/substitutions/work` answers it.
@@ -257,7 +264,12 @@ describe('the My work index', () => {
 describe('the My work tile', () => {
 	it('merges a substituted task in beside your own, marked', async () => {
 		ownTasks = [
-			{ id: 't-own', title: 'Your own task', daysUntilDue: 3, isTerminal: false },
+			{
+				id: 't-own',
+				title: 'Your own task',
+				daysUntilDue: 3,
+				isTerminal: false,
+			},
 		]
 		substituted = {
 			cases: [],
@@ -366,9 +378,9 @@ describe('the helper module', () => {
 			resolve(ROOT, 'src/utils/substitutionHelpers.js'),
 			'utf8',
 		)
-		const exports = [
-			...source.matchAll(/^export function (\w+)/gm),
-		].map((m) => m[1])
+		const exports = [...source.matchAll(/^export function (\w+)/gm)].map(
+			(m) => m[1],
+		)
 		expect(exports.length).toBeGreaterThan(0)
 
 		const callers = [

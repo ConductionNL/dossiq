@@ -33,6 +33,7 @@ use Psr\Log\NullLogger;
  * REQ-TERM-062: a planned end and a planned start sit beside the statutory term.
  *
  * @covers \OCA\Dossiq\Service\CaseTermsService
+ * @uses \OCA\Dossiq\Service\TermKind
  */
 class PlannedTermTest extends TestCase {
 	use BindsTermFixtures;

@@ -27,13 +27,22 @@
 			v-for="source in unavailable"
 			:key="source.source"
 			type="warning">
-			{{ t('dossiq', '{source} could not be read, so this list is incomplete.', { source: source.label }) }}
+			{{
+				t(
+					'dossiq',
+					'{source} could not be read, so this list is incomplete.',
+					{ source: source.label },
+				)
+			}}
 		</NcNoteCard>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
 		<template v-else>
-			<p v-if="!items.length" class="end-of-day__empty" data-testid="end-of-day-empty">
+			<p
+				v-if="!items.length"
+				class="end-of-day__empty"
+				data-testid="end-of-day-empty">
 				{{ t('dossiq', 'You have not opened anything today.') }}
 			</p>
 
@@ -74,7 +83,12 @@
 					v-else-if="humaniqPresent"
 					class="end-of-day__no-leaf"
 					:data-testid="`end-of-day-hours-unavailable-${item.id}`">
-					{{ t('dossiq', 'The hours leaf is not available, so time cannot be recorded here.') }}
+					{{
+						t(
+							'dossiq',
+							'The hours leaf is not available, so time cannot be recorded here.',
+						)
+					}}
 				</p>
 			</section>
 		</template>
@@ -136,7 +150,7 @@ export default {
 		 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 		 */
 		hoursLeafAvailable() {
-			return (this.humaniqPresent && this.hoursLeaf !== undefined)
+			return this.humaniqPresent && this.hoursLeaf !== undefined
 		},
 	},
 
@@ -165,9 +179,11 @@ export default {
 				// showed anything.
 				const states = {}
 				const read = await Promise.all(
-					items.map((item) => fetchReadState(item.subjectId, 'dossiq', item.subjectType)
-						.then((state) => [item.id, state])
-						.catch(() => [item.id, null])),
+					items.map((item) =>
+						fetchReadState(item.subjectId, 'dossiq', item.subjectType)
+							.then((state) => [item.id, state])
+							.catch(() => [item.id, null]),
+					),
 				)
 				for (const [id, state] of read) {
 					states[id] = state

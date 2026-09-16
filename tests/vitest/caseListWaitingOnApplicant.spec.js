@@ -33,13 +33,21 @@ const manifest = JSON.parse(
 )
 const fragment = JSON.parse(
 	fs.readFileSync(
-		path.join(ROOT, 'lib', 'Settings', 'register.d', '63-aanvullingsverzoek.json'),
+		path.join(
+			ROOT,
+			'lib',
+			'Settings',
+			'register.d',
+			'63-aanvullingsverzoek.json',
+		),
 		'utf8',
 	),
 )
 
 const cases = manifest.pages.find((p) => p.id === 'Cases')
-const chip = cases.config.quickFilters.find((q) => q.label === 'Waiting on the applicant')
+const chip = cases.config.quickFilters.find(
+	(q) => q.label === 'Waiting on the applicant',
+)
 
 describe('the work list answers what we are waiting on', () => {
 	it('offers a chip for it', () => {
@@ -48,7 +56,10 @@ describe('the work list answers what we are waiting on', () => {
 
 	it('filters on the derived flag and not on a timer', () => {
 		expect(chip.filter.waitingOnApplicant).toBe(true)
-		expect(chip.filter.status, 'a paused TERM is not the same fact').toBeUndefined()
+		expect(
+			chip.filter.status,
+			'a paused TERM is not the same fact',
+		).toBeUndefined()
 		expect(chip.filter.pauseDeadline).toBeUndefined()
 	})
 
@@ -68,7 +79,9 @@ describe('the work list answers what we are waiting on', () => {
 
 	it('narrows on the same hygiene as the chips beside it', () => {
 		const unread = cases.config.quickFilters.find((q) => q.label === 'Unread')
-		expect(chip.filter.statusHiddenInLists).toBe(unread.filter.statusHiddenInLists)
+		expect(chip.filter.statusHiddenInLists).toBe(
+			unread.filter.statusHiddenInLists,
+		)
 	})
 })
 
@@ -99,7 +112,9 @@ describe('the request itself is the record, and it keeps what it asked for', () 
 
 	it('names the missing things as a LIST, not one sentence', () => {
 		expect(request.properties.missingItems.type).toBe('array')
-		expect(request.properties.missingItems.items.properties.received).toBeTruthy()
+		expect(
+			request.properties.missingItems.items.properties.received,
+		).toBeTruthy()
 	})
 
 	it('declares expiry as a state rather than leaving deletion possible', () => {

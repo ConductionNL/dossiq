@@ -882,9 +882,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 			group.getByTestId('substituted-marker'),
 			'hiding substituted work must remove it from the list',
 		).toHaveCount(0)
-		await expect(
-			group.getByText(IN_SCOPE_CASE, { exact: false }),
-		).toHaveCount(0)
+		await expect(group.getByText(IN_SCOPE_CASE, { exact: false })).toHaveCount(0)
 		// The toggle survives being used, or hiding is a one-way door.
 		await expect(page.getByTestId('substituted-toggle')).toBeVisible()
 	})

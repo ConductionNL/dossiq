@@ -76,7 +76,9 @@ export default {
 		 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
 		 */
 		hasNumber() {
-			return this.value !== null && this.value !== undefined && this.value !== ''
+			return (
+				this.value !== null && this.value !== undefined && this.value !== ''
+			)
 		},
 
 		/**
@@ -91,13 +93,9 @@ export default {
 			if (!Number.isFinite(days)) {
 				return ''
 			}
-			return n(
-				'dossiq',
-				'{count} working day',
-				'{count} working days',
-				days,
-				{ count: days },
-			)
+			return n('dossiq', '{count} working day', '{count} working days', days, {
+				count: days,
+			})
 		},
 
 		/**

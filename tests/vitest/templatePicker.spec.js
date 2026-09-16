@@ -23,7 +23,11 @@ describe('templateOptions', () => {
 					kind: 'task',
 					name: 'Vraag advies aan juridische zaken',
 					body: '',
-					presets: { title: 'Vraag advies', group: 'jz', leadTimeDays: 10 },
+					presets: {
+						title: 'Vraag advies',
+						group: 'jz',
+						leadTimeDays: 10,
+					},
 				},
 			],
 			total: 1,
@@ -38,7 +42,9 @@ describe('templateOptions', () => {
 	it('offers nothing when the library could not be read', () => {
 		expect(templateOptions(undefined)).toEqual([])
 		expect(templateOptions(null)).toEqual([])
-		expect(templateOptions({ error: 'The register is not available' })).toEqual([])
+		expect(templateOptions({ error: 'The register is not available' })).toEqual(
+			[],
+		)
 	})
 
 	it('offers nothing when the kind genuinely has no templates', () => {
@@ -46,14 +52,18 @@ describe('templateOptions', () => {
 	})
 
 	it('drops a row with no id rather than rendering an option that cannot be chosen', () => {
-		const options = templateOptions({ items: [{ name: 'Nameless' }, { id: 'tpl-1', name: 'Real' }] })
+		const options = templateOptions({
+			items: [{ name: 'Nameless' }, { id: 'tpl-1', name: 'Real' }],
+		})
 
 		expect(options).toHaveLength(1)
 		expect(options[0].id).toBe('tpl-1')
 	})
 
 	it('always carries a presets object, so a caller can spread it unchecked', () => {
-		const options = templateOptions({ items: [{ id: 'tpl-1', name: 'No presets' }] })
+		const options = templateOptions({
+			items: [{ id: 'tpl-1', name: 'No presets' }],
+		})
 
 		expect(options[0].presets).toEqual({})
 		expect(options[0].body).toBe('')

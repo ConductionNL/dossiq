@@ -186,6 +186,10 @@ class SchemaSlugMap {
 		'emailTemplate' => 'email_template_schema',
 		// Consultation management (consultation-management spec).
 		'consultation' => 'consultation_schema',
+		// One declared mechanism for everything a case waits on somebody else
+		// to do (what-a-transition-declares). The advice request is the first
+		// obligation of this kind rather than a second mechanism beside it.
+		'obligation' => 'obligation_schema',
 		'adviceResponse' => 'advice_response_schema',
 		'advisoryBody' => 'advisory_body_schema',
 		// Milestone tracking (milestone-tracking spec).

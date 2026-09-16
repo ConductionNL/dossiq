@@ -18,7 +18,9 @@ const base = (path) => generateUrl('/apps/dossiq' + path)
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
 export async function listCaseTemplates(caseType = '') {
-	const { data } = await axios.get(base('/api/case-templates'), { params: { caseType } })
+	const { data } = await axios.get(base('/api/case-templates'), {
+		params: { caseType },
+	})
 	return data
 }
 
@@ -31,7 +33,10 @@ export async function listCaseTemplates(caseType = '') {
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
 export async function startFromTemplate(templateId, overrides = {}) {
-	const { data } = await axios.post(base('/api/case-templates/' + templateId + '/start'), { overrides })
+	const { data } = await axios.post(
+		base('/api/case-templates/' + templateId + '/start'),
+		{ overrides },
+	)
 	return data
 }
 
@@ -44,7 +49,9 @@ export async function startFromTemplate(templateId, overrides = {}) {
  * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
  */
 export async function listContentTemplates(kind, params = {}) {
-	const { data } = await axios.get(base('/api/content-templates/' + kind), { params })
+	const { data } = await axios.get(base('/api/content-templates/' + kind), {
+		params,
+	})
 	return data
 }
 

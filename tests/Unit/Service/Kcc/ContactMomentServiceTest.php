@@ -33,6 +33,7 @@ use Psr\Log\LoggerInterface;
  * Unit tests for ContactMomentService payload building.
  *
  * @covers \OCA\Dossiq\Service\Kcc\ContactMomentService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ContactMomentServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
@@ -43,11 +44,13 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * The answer names the actions that did not run.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  *
  * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
  */
 final class StatusTransitionServiceFailedActionsTest extends TestCase {
 	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
 
 
 	/**
@@ -134,6 +137,12 @@ final class StatusTransitionServiceFailedActionsTest extends TestCase {
 			resultWriter: $resultWriter,
 			statusChecklist: $this->createMock(originalClassName: StatusChecklist::class),
 			declarations: $this->undeclaredStatuses(),
+			declaredMoves: $this->undeclaredTransitions(),
+			offered: $this->offeredTransitions(
+				guards: $guardRegistry,
+				reader: $specReader,
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()

@@ -59,7 +59,11 @@ async function mountStrip(state) {
 		// `$attrs` carries the parent's own `onClick` in Vue 3, so the stub
 		// binds it and does NOT re-emit: emitting as well fires the handler
 		// twice and turns one gesture into two writes.
-		global: { stubs: { NcButton: { template: '<button v-bind="$attrs"><slot /></button>' } } },
+		global: {
+			stubs: {
+				NcButton: { template: '<button v-bind="$attrs"><slot /></button>' },
+			},
+		},
 	})
 
 	await wrapper.vm.$nextTick()
@@ -72,10 +76,14 @@ async function mountStrip(state) {
 
 describe('the strip is declared on the case page', () => {
 	it('is a widget on the layout, above the tab strip', () => {
-		const strip = caseDetail.config.layout.find((l) => l.widgetId === 'case-unread')
+		const strip = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-unread',
+		)
 		expect(strip, 'the unread strip is missing from the layout').toBeTruthy()
 
-		const panels = caseDetail.config.layout.find((l) => l.widgetId === 'case-panels')
+		const panels = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-panels',
+		)
 		expect(strip.gridY).toBeLessThan(panels.gridY)
 		expect(strip.gridWidth).toBe(12)
 	})
@@ -115,11 +123,20 @@ describe('opening a case reads its state, then records the visit', () => {
 		const order = []
 		axios.get.mockImplementation(() => {
 			order.push('get')
-			return Promise.resolve({ data: { unread: true, unreadCounts: { files: 2 }, subSeen: {}, lastSeenAt: null } })
+			return Promise.resolve({
+				data: {
+					unread: true,
+					unreadCounts: { files: 2 },
+					subSeen: {},
+					lastSeenAt: null,
+				},
+			})
 		})
 		axios.put.mockImplementation(() => {
 			order.push('put')
-			return Promise.resolve({ data: { unread: false, notificationsCleared: 1 } })
+			return Promise.resolve({
+				data: { unread: false, notificationsCleared: 1 },
+			})
 		})
 
 		mount(CaseUnreadPanel, {
@@ -134,7 +151,12 @@ describe('opening a case reads its state, then records the visit', () => {
 	})
 
 	it('marks the CASE read and not its panels', async () => {
-		await mountStrip({ unread: true, unreadCounts: { files: 2 }, subSeen: {}, lastSeenAt: null })
+		await mountStrip({
+			unread: true,
+			unreadCounts: { files: 2 },
+			subSeen: {},
+			lastSeenAt: null,
+		})
 
 		expect(axios.put).toHaveBeenCalledTimes(1)
 		expect(axios.put.mock.calls[0][0]).toBe(
@@ -205,7 +227,9 @@ describe('reading a panel clears its own count and nothing else', () => {
 		})
 
 		axios.put.mockClear()
-		axios.put.mockResolvedValue({ data: { unread: false, notificationsCleared: 1 } })
+		axios.put.mockResolvedValue({
+			data: { unread: false, notificationsCleared: 1 },
+		})
 
 		await wrapper.find('[data-testid="case-unread-files"]').trigger('click')
 		await Promise.resolve()
@@ -213,7 +237,9 @@ describe('reading a panel clears its own count and nothing else', () => {
 
 		expect(axios.put).toHaveBeenCalledTimes(1)
 		expect(axios.put.mock.calls[0][1]).toEqual({ subResource: 'files' })
-		expect(wrapper.find('[data-testid="case-unread-files"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-unread-files"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('puts the case back to unread on request', async () => {
@@ -226,7 +252,9 @@ describe('reading a panel clears its own count and nothing else', () => {
 
 		axios.delete.mockResolvedValue({ data: { unread: true } })
 
-		await wrapper.find('[data-testid="case-unread-mark-unread"]').trigger('click')
+		await wrapper
+			.find('[data-testid="case-unread-mark-unread"]')
+			.trigger('click')
 		await Promise.resolve()
 		await wrapper.vm.$nextTick()
 

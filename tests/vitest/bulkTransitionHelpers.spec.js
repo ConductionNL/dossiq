@@ -134,7 +134,12 @@ describe('transitionParameters', () => {
 
 describe('lifecycleParameters', () => {
 	it('sends days with a suspend and nothing else', () => {
-		expect(lifecycleParameters('suspend', { reason: 'Awaiting documents', days: '14' })).toEqual({
+		expect(
+			lifecycleParameters('suspend', {
+				reason: 'Awaiting documents',
+				days: '14',
+			}),
+		).toEqual({
 			gesture: 'suspend',
 			reason: 'Awaiting documents',
 			days: 14,
@@ -142,7 +147,12 @@ describe('lifecycleParameters', () => {
 	})
 
 	it('sends the new deadline with an extend and no days', () => {
-		expect(lifecycleParameters('extend', { reason: 'Complex case', newEndDate: '2026-12-01' })).toEqual({
+		expect(
+			lifecycleParameters('extend', {
+				reason: 'Complex case',
+				newEndDate: '2026-12-01',
+			}),
+		).toEqual({
 			gesture: 'extend',
 			reason: 'Complex case',
 			newEndDate: '2026-12-01',
@@ -150,7 +160,9 @@ describe('lifecycleParameters', () => {
 	})
 
 	it('sends neither with a resume', () => {
-		expect(lifecycleParameters('resume', { reason: 'Documents arrived' })).toEqual({
+		expect(
+			lifecycleParameters('resume', { reason: 'Documents arrived' }),
+		).toEqual({
 			gesture: 'resume',
 			reason: 'Documents arrived',
 		})

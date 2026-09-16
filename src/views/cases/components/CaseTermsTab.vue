@@ -36,12 +36,22 @@
 		</div>
 
 		<template v-else>
-			<p v-if="unreadable" class="case-terms-tab__unreadable" data-testid="case-terms-unreadable">
-				{{ t('dossiq', 'The terms on this case could not be read. This panel is incomplete, not empty.') }}
+			<p
+				v-if="unreadable"
+				class="case-terms-tab__unreadable"
+				data-testid="case-terms-unreadable">
+				{{
+					t(
+						'dossiq',
+						'The terms on this case could not be read. This panel is incomplete, not empty.',
+					)
+				}}
 			</p>
 
 			<template v-else>
-				<div class="case-terms-tab__progress" data-testid="case-terms-progress">
+				<div
+					class="case-terms-tab__progress"
+					data-testid="case-terms-progress">
 					<label class="case-terms-tab__progress-label" :for="progressId">
 						{{ t('dossiq', 'Progress') }}
 					</label>
@@ -50,8 +60,14 @@
 						class="case-terms-tab__progress-bar"
 						:value="progress.progress || 0"
 						max="100" />
-					<span class="case-terms-tab__progress-figure" data-testid="case-terms-progress-figure">
-						{{ t('dossiq', '{percent}%', { percent: progress.progress || 0 }) }}
+					<span
+						class="case-terms-tab__progress-figure"
+						data-testid="case-terms-progress-figure">
+						{{
+							t('dossiq', '{percent}%', {
+								percent: progress.progress || 0,
+							})
+						}}
 					</span>
 					<span class="case-terms-tab__hint">
 						{{
@@ -63,12 +79,23 @@
 					</span>
 				</div>
 
-				<p v-if="attention" class="case-terms-tab__attention" data-testid="case-terms-attention">
+				<p
+					v-if="attention"
+					class="case-terms-tab__attention"
+					data-testid="case-terms-attention">
 					{{ t('dossiq', 'At least one clock on this case has run out.') }}
 				</p>
 
-				<p v-if="rows.length === 0" class="case-terms-tab__empty" data-testid="case-terms-empty">
-					{{ t('dossiq', 'This case type declares no term, so no clock is running.') }}
+				<p
+					v-if="rows.length === 0"
+					class="case-terms-tab__empty"
+					data-testid="case-terms-empty">
+					{{
+						t(
+							'dossiq',
+							'This case type declares no term, so no clock is running.',
+						)
+					}}
 				</p>
 
 				<table v-else class="case-terms-tab__table">
@@ -88,13 +115,21 @@
 							:data-testid="`case-terms-row-${row.kind}`"
 							:data-tone="row.tone">
 							<td>
-								<span class="case-terms-tab__kind">{{ row.label }}</span>
-								<span class="case-terms-tab__hint">{{ row.hint }}</span>
+								<span class="case-terms-tab__kind">{{
+									row.label
+								}}</span>
+								<span class="case-terms-tab__hint">{{
+									row.hint
+								}}</span>
 							</td>
 							<td>{{ row.endDate || t('dossiq', 'Not set') }}</td>
 							<td>
-								<span class="case-terms-tab__sentence">{{ row.sentence }}</span>
-								<span v-if="!row.citizenVisible" class="case-terms-tab__hint">
+								<span class="case-terms-tab__sentence">{{
+									row.sentence
+								}}</span>
+								<span
+									v-if="!row.citizenVisible"
+									class="case-terms-tab__hint">
 									{{ t('dossiq', 'Not shown to the applicant') }}
 								</span>
 								<span

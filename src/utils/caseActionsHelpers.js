@@ -217,9 +217,7 @@ export function plannedRows(rows, translate) {
 			const title = String(row.title ?? '').trim()
 			const date = String(row.date ?? '').trim()
 			const recurrence = String(row.recurrence ?? 'none')
-			const occurrences = Array.isArray(row.occurrences)
-				? row.occurrences
-				: []
+			const occurrences = Array.isArray(row.occurrences) ? row.occurrences : []
 			return {
 				key: String(row.id),
 				date,
@@ -248,9 +246,7 @@ function plannedLabel(title, date, recurrence, occurrences, translate) {
 		parts.push(repeat)
 	}
 	if (date !== '') {
-		parts.push(
-			translate('next on {date}').replace('{date}', date),
-		)
+		parts.push(translate('next on {date}').replace('{date}', date))
 	}
 	if (occurrences.length > 0) {
 		parts.push(

@@ -45,6 +45,7 @@ use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
@@ -76,9 +77,11 @@ interface RouteSeamObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
 	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
 
 
 	/**
@@ -189,6 +192,12 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $logger)),
 			$this->statusChecklist,
 			$this->undeclaredStatuses(),
+			$this->undeclaredTransitions(),
+			$this->offeredTransitions(
+				guards: $this->guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()

@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * Signature-enforcement tests for DwangsomPaymentCallbackController.
  *
  * @covers \OCA\Dossiq\Controller\DwangsomPaymentCallbackController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class DwangsomPaymentCallbackControllerTest extends TestCase {
 	use MakesCaseDateNormaliser;

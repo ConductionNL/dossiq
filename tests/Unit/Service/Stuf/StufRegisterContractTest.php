@@ -48,6 +48,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Stuf\ContactBetrokkeneMapper
  * @covers \OCA\Dossiq\Service\Stuf\StufMessageHandler
  * @covers \OCA\Dossiq\Service\Stuf\StufEnvelopeInspector
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class StufRegisterContractTest extends TestCase {
 	use MakesCaseDateNormaliser;

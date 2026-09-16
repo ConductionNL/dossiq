@@ -27,6 +27,33 @@
 					@input="emitUpdate" />
 			</div>
 
+			<!-- Explanation, read at the moment of choosing -->
+			<div class="transition-config-panel__field">
+				<label for="transition-config-panel-explanation">{{
+					t('dossiq', 'Explanation')
+				}}</label>
+				<textarea
+					id="transition-config-panel-explanation"
+					v-model="localTransition.explanation"
+					class="transition-config-panel__input"
+					rows="2"
+					:placeholder="
+						t(
+							'dossiq',
+							'What a handler should know before taking this step',
+						)
+					"
+					@input="emitUpdate" />
+				<p class="transition-config-panel__hint">
+					{{
+						t(
+							'dossiq',
+							'Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.',
+						)
+					}}
+				</p>
+			</div>
+
 			<!-- Allowed Roles -->
 			<div class="transition-config-panel__field">
 				<label>{{ t('dossiq', 'Allowed roles (empty = all roles)') }}</label>
@@ -477,6 +504,12 @@ export default {
 	font-weight: 600;
 	margin-bottom: 4px;
 	color: var(--color-text-maxcontrast);
+}
+
+.transition-config-panel__hint {
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+	margin: 4px 0 0;
 }
 
 .transition-config-panel__input {

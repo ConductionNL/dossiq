@@ -92,6 +92,7 @@ interface AdviceObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Advice\AdviceNotifier
  * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class AdviceServiceAuthorizationTest extends TestCase {
 	use MakesCaseDateNormaliser;

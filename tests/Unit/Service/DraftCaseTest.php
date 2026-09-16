@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
  * Begin a draft, and promote it.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\DraftCaseActs
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class DraftCaseTest extends TestCase {
 

@@ -37,6 +37,9 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * A case parked until a date, and the term that keeps running.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseHoldActs
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class CaseHoldTest extends TestCase {
 

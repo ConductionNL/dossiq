@@ -76,7 +76,7 @@ export function visibleGroups(groups, hiddenGroups) {
  * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
  */
 export function humaniqIsPresent() {
-	const roots = (globalThis.OC?.appswebroots ?? {})
+	const roots = globalThis.OC?.appswebroots ?? {}
 
 	return Object.hasOwn(roots, 'humaniq')
 }
