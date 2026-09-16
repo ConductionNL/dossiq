@@ -145,15 +145,27 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// are the top row and the panels take the rows under it, with no gutter
 		// row between.
 		//
-		// TWO ROWS NOW SIT BETWEEN THEM, and neither is a gutter. The unread
+		// THREE ROWS NOW SIT BETWEEN THEM, and none is a gutter. The unread
 		// strip says what changed on this case since the handler last looked
 		// and which panel holds it. The declaration strip says what the status
 		// the case is in is still waiting for, which is the only place that
 		// can be said at all: a derived status is not a move a handler picks,
 		// so an unmet derivation leaves nothing in the panels to read. Both
 		// are read BEFORE the panels for the same reason the tiles are. The
+		// attention strip joined them on 2026-09-15
+		// (markers-and-assessments-on-the-case, #2837): the flag a person
+		// raised with a written reason, the risk this organisation assessed,
+		// and the markers pointing at a named panel of this page. It is read
+		// before the panels because it says WHICH panel to open. The
 		// assertion therefore allows exactly the rows that carry a widget and
 		// still refuses an empty one, which is what it was guarding.
+		//
+		// FOUR ROWS NOW. `case-attention` (markers-and-assessments-on-the-case)
+		// landed without being named here and left this assertion RED on
+		// `development`; `case-favourite` (case-number-and-favourites) is added
+		// with it. The star reads FIRST because it is part of what identifies
+		// this case to the reader, where the three strips under it are about
+		// the case rather than about you.
 		const layout = caseDetail().config.layout
 		const tiles = layout.filter((c) => c.gridY === 0)
 		const panels = cells('case-panels')[0]
@@ -167,7 +179,12 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		expect(
 			between.map((c) => c.widgetId),
 			'every row between the tiles and the panels must carry a widget',
-		).toEqual(['case-unread', 'case-status-declaration'])
+		).toEqual([
+			'case-favourite',
+			'case-unread',
+			'case-status-declaration',
+			'case-attention',
+		])
 		expect(panels.gridY).toBe(
 			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
 		)

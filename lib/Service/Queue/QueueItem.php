@@ -50,10 +50,15 @@ final class QueueItem implements JsonSerializable {
 	 * @param string|null $dueAt       The date the subject is due, `Y-m-d`, or null.
 	 * @param string|null $coveredFor  The absent colleague this work belongs to, or null when it is the reader's own.
 	 * @param array       $route       The vue-router location that opens the subject.
+	 * @param array       $waiting     Who this subject is waiting on, since when, and how many
+	 *                                 reminders have gone out. Empty when nobody is waiting.
+	 *                                 Last in the list on purpose: every existing caller keeps
+	 *                                 working unchanged, and only a source that knows the answer
+	 *                                 passes one.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function __construct(
 		public readonly string $source,
@@ -64,6 +69,7 @@ final class QueueItem implements JsonSerializable {
 		public readonly ?string $dueAt = null,
 		public readonly ?string $coveredFor = null,
 		public readonly array $route = [],
+		public readonly array $waiting = [],
 	) {
 	}//end __construct()
 
@@ -113,6 +119,7 @@ final class QueueItem implements JsonSerializable {
 			'coveredFor' => $this->coveredFor,
 			'covered' => $this->isCovered(),
 			'route' => $this->route,
+			'waiting' => $this->waiting,
 		];
 	}//end jsonSerialize()
 }//end class

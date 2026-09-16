@@ -30,6 +30,9 @@ import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
 // markers the system raised against a named panel.
 // @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
+// The star on the case page (case-number-and-favourites, row 2.19).
+// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -456,7 +459,14 @@ const registry = {
 	// would eventually disagree with the stored one, and a records manager reading
 	// a disposal date has no way to tell which of the two they are looking at.
 	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
-	CaseArchivalPanel: {
+	// Keyed by TYPE, not by component name. A tab child resolves through
+	// `resolveRegistryRenderer`, which reads `cnRegistry[widget.type]` and
+	// nothing else: a page `slots` map is read by CnDashboardPage's grid and
+	// never reaches a widget inside a tab panel. The Archiving tab shipped as
+	// `type: "custom"` with a `widget-case-archival` slot, and drew an empty
+	// panel with no warning: the same failure `case-timeline-pane` below
+	// records having shipped twice.
+	'case-archival-pane': {
 		// @custom-widget-ratchet exclude `@self._retention` is metadata attached on the render path, not a stored property, so a data widget builds its fields from the schema's properties and renders every one of them blank; the nomination also carries a rule and a reason that are prose beside a value, and the recompute gesture is a POST carrying a required reason. Deleted the day the manifest vocabulary has a retention widget type
 		kind: 'widget',
 		component: CaseArchivalPanel,
@@ -801,7 +811,20 @@ const registry = {
 		kind: 'widget',
 		component: CaseStatusDeclarationPanel,
 		...STRIP_WIDGET_META,
-		_note: 'CaseDetail: what is still missing before a status the case type derives becomes true, who the case is waiting on, and how long it has been in this status. The first is the one that earns the strip: a derived status is not a move a handler can pick, so an unmet derivation leaves nothing on the page to press and nothing to read. All three come from /available-transitions in one round trip. Silent on a case that is ours to move, inside its maximum, with no derivation pending, and silent rather than erroring on an instance whose transition engine cannot answer.',
+		_note: 'CaseDetail: what this status asks of the fields on the case, what is still missing before a status the case type derives becomes true, who the case is waiting on, and how long it has been in this status. The field rules are the one of the four that costs no round trip: OpenRegister decides them per reader and per state on the render path and publishes them as `@self.fieldRules`, so the strip reads the answer off the case object the page already holds and says them even on an instance whose transition engine refuses. The other three come from /available-transitions in one round trip, and the derivation is the one that earns the strip: a derived status is not a move a handler can pick, so an unmet derivation leaves nothing on the page to press and nothing to read. Silent on a case that asks nothing of its fields, is ours to move, is inside its maximum and has no derivation pending, and silent rather than erroring on an instance whose transition engine cannot answer.',
+	},
+
+	// --- The star on the case page (case-number-and-favourites). ---
+	//
+	// A LAYOUT grid item and a widget TYPE, for the reason case-unread is one:
+	// CnDetailPage resolves a grid item's renderer from `cnRegistry[widget.type]`
+	// when the app supplies no `widget-<id>` slot, and dossiq supplies none.
+	// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+	'case-favourite': {
+		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to star and DELETE to unstar, and no declarative widget or action writes two methods: `CnActionButtons`' `toggle` type flips a boolean and PUTs it with one `method`, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.favourite` is attached per reader on the render path, so a data widget over a property would render nothing at all. Deleted the day the library takes a two-verb toggle or a favourite affordance of its own, which is where this belongs for every index and detail page in the fleet
+		kind: 'widget',
+		component: CaseFavouriteStrip,
+		_note: 'CaseDetail: the per-reader star, directly under the identity tiles because it is part of what identifies this case TO YOU. Starring writes nothing to the case: OpenRegister keeps the star in its own table, so no version is cut, no audit entry is written and no colleague can tell. The strip renders from `@self.favourite`, which every object read already carries, so it makes no call until somebody presses it.',
 	},
 
 	'case-unread': {
