@@ -44,8 +44,11 @@ import {
 	seedCase,
 } from './helpers/fixtures.ts'
 
-/** dossiq's own share surface. */
+/** dossiq's own share surface, where a link is minted. */
 const SHARES = '/index.php/apps/dossiq/api/shares'
+
+/** Everything done to a link that already exists. */
+const LINKS = '/index.php/apps/dossiq/api/access-links'
 
 /** OpenRegister's holder-facing link surface, as #3817 published it. */
 const PUBLIC_LINKS = '/index.php/apps/openregister/api/public/links'
@@ -152,7 +155,7 @@ test.describe('A case share is an access link', () => {
 		const body = await minted.json()
 
 		const preview = await api.get(
-			`${SHARES}/${body.share.accessLinkId}/preview?caseId=${encodeURIComponent(caseId)}`,
+			`${LINKS}/${body.share.accessLinkId}/preview?caseId=${encodeURIComponent(caseId)}`,
 			{ headers: { requesttoken: token } },
 		)
 
@@ -181,14 +184,14 @@ test.describe('A case share is an access link', () => {
 		})
 		const linkId = (await minted.json()).share.accessLinkId
 
-		const paused = await api.put(`${SHARES}/${linkId}`, {
+		const paused = await api.put(`${LINKS}/${linkId}`, {
 			headers: { requesttoken: token },
 			data: { caseId, disabled: true },
 		})
 		expect(paused.status(), await paused.text()).toBe(200)
 
 		const listed = await api.get(
-			`${SHARES}/case/${encodeURIComponent(caseId)}`,
+			`${LINKS}/case/${encodeURIComponent(caseId)}`,
 			{ headers: { requesttoken: token } },
 		)
 		const rows = (await listed.json()).results

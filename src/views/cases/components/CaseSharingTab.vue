@@ -189,7 +189,7 @@ export default {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						`/apps/dossiq/api/shares/case/${encodeURIComponent(this.objectId)}`,
+						`/apps/dossiq/api/access-links/case/${encodeURIComponent(this.objectId)}`,
 					),
 				)
 				this.links = response.data?.results || []
@@ -239,7 +239,7 @@ export default {
 			try {
 				await axios.delete(
 					generateUrl(
-						`/apps/dossiq/api/shares/${encodeURIComponent(link.accessLinkId)}`,
+						`/apps/dossiq/api/access-links/${encodeURIComponent(link.accessLinkId)}`,
 					),
 					{ params: { caseId: this.objectId } },
 				)
@@ -263,7 +263,7 @@ export default {
 			try {
 				await axios.put(
 					generateUrl(
-						`/apps/dossiq/api/shares/${encodeURIComponent(link.accessLinkId)}`,
+						`/apps/dossiq/api/access-links/${encodeURIComponent(link.accessLinkId)}`,
 					),
 					{ caseId: this.objectId, disabled: link.state !== 'paused' },
 				)
@@ -286,7 +286,7 @@ export default {
 			try {
 				const response = await axios.get(
 					generateUrl(
-						`/apps/dossiq/api/shares/${encodeURIComponent(link.accessLinkId)}/preview`,
+						`/apps/dossiq/api/access-links/${encodeURIComponent(link.accessLinkId)}/preview`,
 					),
 					{ params: { caseId: this.objectId } },
 				)

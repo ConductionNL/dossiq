@@ -118,11 +118,11 @@ class ConsultationRoutesTest extends TestCase {
 	public function testTheAccessLinkConsultationRoutesAreRegistered(): void {
 		$names = $this->routeNames();
 
-		foreach (['consultation#externalLink', 'consultation#collectAdvice'] as $route) {
+		foreach (['consultationLink#externalLink', 'consultationLink#collectAdvice'] as $route) {
 			self::assertContains($route, $names);
 		}
 
-		$controller = (string)file_get_contents($this->root() . '/lib/Controller/ConsultationController.php');
+		$controller = (string)file_get_contents($this->root() . '/lib/Controller/ConsultationLinkController.php');
 		self::assertStringContainsString('public function externalLink(', $controller);
 		self::assertStringContainsString('public function collectAdvice(', $controller);
 	}//end testTheAccessLinkConsultationRoutesAreRegistered()
@@ -136,12 +136,12 @@ class ConsultationRoutesTest extends TestCase {
 	public function testTheAccessLinkSharingRoutesAreRegistered(): void {
 		$names = $this->routeNames();
 
-		foreach (['caseSharing#listLinks', 'caseSharing#pauseLink', 'caseSharing#previewLink'] as $route) {
+		foreach (['caseAccessLink#index', 'caseAccessLink#pause', 'caseAccessLink#preview', 'caseAccessLink#revoke'] as $route) {
 			self::assertContains($route, $names);
 		}
 
-		$controller = (string)file_get_contents($this->root() . '/lib/Controller/CaseSharingController.php');
-		foreach (['listLinks', 'pauseLink', 'previewLink'] as $method) {
+		$controller = (string)file_get_contents($this->root() . '/lib/Controller/CaseAccessLinkController.php');
+		foreach (['index', 'pause', 'preview', 'revoke'] as $method) {
 			self::assertStringContainsString('public function ' . $method . '(', $controller);
 		}
 	}//end testTheAccessLinkSharingRoutesAreRegistered()

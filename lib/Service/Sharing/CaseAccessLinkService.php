@@ -79,37 +79,15 @@ class CaseAccessLinkService {
 	public const DEFAULT_TTL = '+30 days';
 
 	/**
-	 * The `@self` keys a holder may be shown.
-	 *
-	 * Mirrors `OCA\OpenRegister\Service\Sharing\AccessLinkReader`'s own
-	 * allow-list. Dossiq applies it a second time on everything it renders
-	 * from a link body, so an internal that OpenRegister starts publishing
-	 * tomorrow does not reach a holder through dossiq today.
-	 *
-	 * @var array<int, string>
-	 */
-	public const PUBLISHABLE_SELF_KEYS = [
-		'id',
-		'uuid',
-		'name',
-		'description',
-		'summary',
-		'register',
-		'schema',
-		'published',
-		'depublished',
-		'created',
-		'updated',
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param OpenRegisterSharingGateway $gateway Resolves the OpenRegister services.
+	 * @param AccessLinkProjection $projection Reduces a link body to what a holder may see.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly OpenRegisterSharingGateway $gateway,
+		private readonly AccessLinkProjection $projection,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -335,78 +313,8 @@ class CaseAccessLinkService {
 			return null;
 		}
 
-		return $this->stripInternals(body: $body);
+		return $this->projection->strip(body: $body);
 	}//end holderPreview()
-
-	/**
-	 * Reduce a link body to what a holder may be shown.
-	 *
-	 * Every `@self` is cut down to the keys OpenRegister publishes, and every
-	 * other top-level key starting with `@` is dropped. This runs on dossiq's
-	 * side of a boundary OpenRegister already guards, on purpose: the two
-	 * allow-lists have to drift apart before an internal reaches a holder.
-	 *
-	 * @param array<string, mixed> $body The body OpenRegister returned.
-	 *
-	 * @return array<string, mixed> The body, stripped.
-	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
-	 */
-	public function stripInternals(array $body): array {
-		if (isset($body['subject']) === true && is_array($body['subject']) === true) {
-			$body['subject'] = $this->strippedRow(row: $body['subject']);
-		}
-
-		if (isset($body['results']) === true && is_array($body['results']) === true) {
-			$rows = [];
-			foreach ($body['results'] as $row) {
-				if (is_array($row) === false) {
-					continue;
-				}
-
-				$rows[] = $this->strippedRow(row: $row);
-			}
-
-			$body['results'] = $rows;
-		}
-
-		return $body;
-	}//end stripInternals()
-
-	/**
-	 * One row of a link body, reduced.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return array<string, mixed> The row, stripped.
-	 *
-	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
-	 */
-	private function strippedRow(array $row): array {
-		$stripped = [];
-		foreach ($row as $key => $value) {
-			if (str_starts_with((string)$key, '@') === true && (string)$key !== '@self') {
-				continue;
-			}
-
-			$stripped[$key] = $value;
-		}
-
-		if (isset($stripped['@self']) === true) {
-			$self = [];
-			if (is_array($stripped['@self']) === true) {
-				foreach (self::PUBLISHABLE_SELF_KEYS as $allowed) {
-					if (array_key_exists($allowed, $stripped['@self']) === true) {
-						$self[$allowed] = $stripped['@self'][$allowed];
-					}
-				}
-			}
-
-			$stripped['@self'] = $self;
-		}
-
-		return $stripped;
-	}//end strippedRow()
 
 	/**
 	 * Mint one link, whatever its subject.

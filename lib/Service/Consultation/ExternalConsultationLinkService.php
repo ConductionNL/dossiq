@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Consultation;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\ConsultationService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use Psr\Log\LoggerInterface;
@@ -71,12 +72,14 @@ class ExternalConsultationLinkService {
 	 *
 	 * @param ConsultationService $consultations The consultation service.
 	 * @param CaseSharingService $shares The case sharing service.
+	 * @param CaseLinkShares $linkShares The share records the links are stored on.
 	 * @param OpenRegisterSharingGateway $gateway Resolves the OpenRegister services.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		private readonly ConsultationService $consultations,
 		private readonly CaseSharingService $shares,
+		private readonly CaseLinkShares $linkShares,
 		private readonly OpenRegisterSharingGateway $gateway,
 		private readonly LoggerInterface $logger,
 	) {
@@ -195,7 +198,7 @@ class ExternalConsultationLinkService {
 			]
 		);
 
-		$this->shares->markCollected(
+		$this->linkShares->markCollected(
 			shareId: (string)($share['id'] ?? $share['uuid'] ?? ''),
 			noteId: (int)$newest['id']
 		);
@@ -223,7 +226,7 @@ class ExternalConsultationLinkService {
 			return null;
 		}
 
-		foreach ($this->shares->listLinkShares(caseId: $caseId) as $share) {
+		foreach ($this->linkShares->listForCase(caseId: $caseId) as $share) {
 			if ((string)($share['consultationId'] ?? '') === $consultationId) {
 				return $share;
 			}
@@ -242,12 +245,17 @@ class ExternalConsultationLinkService {
 	 *
 	 * @return array<string, mixed>|null The comment, or null when there is nothing new.
 	 *
+	 * @throws RuntimeException When the comments cannot be read at all.
+	 *
 	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
 	 */
 	private function newestComment(string $caseId, string $actorId, int $after): ?array {
+		// A read that could not be made must not answer "nothing new". The
+		// handler would read that as "the body has not replied", press on, and
+		// close a consultation whose advice was sitting there unread.
 		$notes = $this->gateway->noteService();
 		if ($notes === null) {
-			return null;
+			throw new RuntimeException('This instance cannot read the comments on a case, so advice cannot be collected');
 		}
 
 		try {
@@ -257,35 +265,50 @@ class ExternalConsultationLinkService {
 				'ExternalConsultationLinkService: could not read the case comments',
 				['caseId' => $caseId, 'exception' => $failure->getMessage()]
 			);
-			return null;
+			throw new RuntimeException('The comments on this case could not be read, so advice cannot be collected');
 		}
 
 		$newest = null;
 		foreach ((array)$rows as $row) {
-			if (is_array($row) === false) {
+			if ($this->isUncollectedLinkComment(row: $row, actorId: $actorId, after: $after) === false) {
 				continue;
 			}
 
-			if ((string)($row['actorType'] ?? '') !== self::LINK_ACTOR_TYPE) {
-				continue;
-			}
-
-			if ((string)($row['actorId'] ?? '') !== $actorId) {
-				continue;
-			}
-
-			$id = (int)($row['id'] ?? 0);
-			if ($id <= $after) {
-				continue;
-			}
-
-			if ($newest === null || $id > (int)$newest['id']) {
+			if ($newest === null || (int)$row['id'] > (int)$newest['id']) {
 				$newest = $row;
 			}
-		}//end foreach
+		}
 
 		return $newest;
 	}//end newestComment()
+
+	/**
+	 * Whether one comment is this link's, and newer than the one already
+	 * collected.
+	 *
+	 * @param mixed $row The comment as OpenRegister returned it.
+	 * @param string $actorId The link principal, `link:<uuid>`.
+	 * @param int $after The id already collected.
+	 *
+	 * @return bool True when it counts as advice nobody has recorded yet.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	private function isUncollectedLinkComment(mixed $row, string $actorId, int $after): bool {
+		if (is_array($row) === false) {
+			return false;
+		}
+
+		if ((string)($row['actorType'] ?? '') !== self::LINK_ACTOR_TYPE) {
+			return false;
+		}
+
+		if ((string)($row['actorId'] ?? '') !== $actorId) {
+			return false;
+		}
+
+		return ((int)($row['id'] ?? 0) > $after);
+	}//end isUncollectedLinkComment()
 
 	/**
 	 * The date the link should stop opening.

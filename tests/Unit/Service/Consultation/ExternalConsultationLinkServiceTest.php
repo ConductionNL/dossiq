@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Consultation;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
 use OCA\Dossiq\Service\ConsultationService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -69,6 +70,7 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 	 * @param array<int, array<string, mixed>> $notes The comments on the case.
 	 * @param ConsultationService $consultations The consultation service.
 	 * @param CaseSharingService $shares The case sharing service.
+	 * @param CaseLinkShares|null $linkShares The share record store.
 	 *
 	 * @return ExternalConsultationLinkService
 	 */
@@ -76,6 +78,7 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		array $notes,
 		ConsultationService $consultations,
 		CaseSharingService $shares,
+		?CaseLinkShares $linkShares = null,
 	): ExternalConsultationLinkService {
 		$appManager = $this->createMock(IAppManager::class);
 		$appManager->method('isInstalled')->willReturn(true);
@@ -88,6 +91,7 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		return new ExternalConsultationLinkService(
 			consultations: $consultations,
 			shares: $shares,
+			linkShares: ($linkShares ?? $this->createMock(CaseLinkShares::class)),
 			gateway: new OpenRegisterSharingGateway($appManager, $container, $logger),
 			logger: $logger,
 		);
@@ -197,8 +201,9 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 			->willReturn(['id' => 'cn-1', 'advice' => 'positive']);
 
 		$shares = $this->createMock(CaseSharingService::class);
-		$shares->method('listLinkShares')->willReturn([$this->share()]);
-		$shares->expects($this->once())->method('markCollected')->with('share-1', 31)->willReturn(true);
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->method('listForCase')->willReturn([$this->share()]);
+		$linkShares->expects($this->once())->method('markCollected')->with('share-1', 31)->willReturn(true);
 
 		$service = $this->makeService(
 			[
@@ -210,7 +215,8 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 				],
 			],
 			$consultations,
-			$shares
+			$shares,
+			$linkShares
 		);
 
 		$collected = $service->collect(consultationId: 'cn-1', advice: 'positive');
@@ -234,8 +240,9 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		$consultations->expects($this->never())->method('submitResponse');
 
 		$shares = $this->createMock(CaseSharingService::class);
-		$shares->method('listLinkShares')->willReturn([$this->share()]);
-		$shares->expects($this->never())->method('markCollected');
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->method('listForCase')->willReturn([$this->share()]);
+		$linkShares->expects($this->never())->method('markCollected');
 
 		$service = $this->makeService(
 			[
@@ -253,7 +260,8 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 				],
 			],
 			$consultations,
-			$shares
+			$shares,
+			$linkShares
 		);
 
 		self::assertSame(['collected' => false], $service->collect(consultationId: 'cn-1', advice: 'positive'));
@@ -273,7 +281,8 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		$consultations->expects($this->never())->method('submitResponse');
 
 		$shares = $this->createMock(CaseSharingService::class);
-		$shares->method('listLinkShares')->willReturn([$this->share(lastCollected: 31)]);
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->method('listForCase')->willReturn([$this->share(lastCollected: 31)]);
 
 		$service = $this->makeService(
 			[
@@ -285,7 +294,8 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 				],
 			],
 			$consultations,
-			$shares
+			$shares,
+			$linkShares
 		);
 
 		self::assertSame(['collected' => false], $service->collect(consultationId: 'cn-1', advice: 'positive'));
@@ -304,8 +314,9 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		$consultations->method('submitResponse')->willReturn(['id' => 'cn-1']);
 
 		$shares = $this->createMock(CaseSharingService::class);
-		$shares->method('listLinkShares')->willReturn([$this->share()]);
-		$shares->method('markCollected')->willReturn(true);
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->method('listForCase')->willReturn([$this->share()]);
+		$linkShares->method('markCollected')->willReturn(true);
 
 		$service = $this->makeService(
 			[
@@ -323,7 +334,8 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 				],
 			],
 			$consultations,
-			$shares
+			$shares,
+			$linkShares
 		);
 
 		self::assertSame(45, $service->collect(consultationId: 'cn-1', advice: 'positive')['noteId']);
@@ -342,9 +354,10 @@ class ExternalConsultationLinkServiceTest extends TestCase {
 		);
 
 		$shares = $this->createMock(CaseSharingService::class);
-		$shares->method('listLinkShares')->willReturn([]);
+		$linkShares = $this->createMock(CaseLinkShares::class);
+		$linkShares->method('listForCase')->willReturn([]);
 
-		$service = $this->makeService([], $consultations, $shares);
+		$service = $this->makeService([], $consultations, $shares, $linkShares);
 
 		$this->expectException(RuntimeException::class);
 		$service->collect(consultationId: 'cn-1', advice: 'positive');

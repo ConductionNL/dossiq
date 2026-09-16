@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ConsultationController;
+use OCA\Dossiq\Controller\ConsultationLinkController;
 use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
 use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
 use OCA\Dossiq\Service\ConsultationService;
@@ -42,9 +43,12 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Wire-contract tests for ConsultationController::overdue().
+ * Wire-contract tests for ConsultationController::overdue() and for the two
+ * endpoints that publish a consultation to an advisory body outside the
+ * organisation.
  *
  * @covers \OCA\Dossiq\Controller\ConsultationController
+ * @covers \OCA\Dossiq\Controller\ConsultationLinkController
  *
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationAccessGuard
  */
@@ -98,20 +102,45 @@ class ConsultationControllerContractTest extends TestCase {
 	 *
 	 * @return ConsultationController
 	 */
-	private function controller(?ExternalConsultationLinkService $externalLinks = null): ConsultationController {
+	private function controller(): ConsultationController {
 		return new ConsultationController(
 			appName: 'dossiq',
 			request: $this->request,
 			consultationService: $this->consultationService,
-			accessGuard: new ConsultationAccessGuard(
-				request: $this->request,
-				consultationService: $this->consultationService,
-				userSession: $this->userSession,
-				groupManager: $this->groupManager,
-			),
-			externalLinks: ($externalLinks ?? $this->createMock(ExternalConsultationLinkService::class)),
+			accessGuard: $this->guard(),
 		);
 	}//end controller()
+
+	/**
+	 * The link controller, behind the same REAL guard.
+	 *
+	 * @param ExternalConsultationLinkService|null $externalLinks The link service, mocked by default.
+	 *
+	 * @return ConsultationLinkController
+	 */
+	private function linkController(?ExternalConsultationLinkService $externalLinks = null): ConsultationLinkController {
+		return new ConsultationLinkController(
+			appName: 'dossiq',
+			request: $this->request,
+			accessGuard: $this->guard(),
+			externalLinks: ($externalLinks ?? $this->createMock(ExternalConsultationLinkService::class)),
+		);
+	}//end linkController()
+
+	/**
+	 * A REAL ConsultationAccessGuard over the mocked session and groups, so a
+	 * refusal asserted below is the guard's own and not a test stub's.
+	 *
+	 * @return ConsultationAccessGuard
+	 */
+	private function guard(): ConsultationAccessGuard {
+		return new ConsultationAccessGuard(
+			request: $this->request,
+			consultationService: $this->consultationService,
+			userSession: $this->userSession,
+			groupManager: $this->groupManager,
+		);
+	}//end guard()
 
 	/**
 	 * Put a signed-in user on the session.
@@ -198,7 +227,7 @@ class ConsultationControllerContractTest extends TestCase {
 		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
 		$externalLinks->expects($this->never())->method('invite');
 
-		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->externalLink(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 	}//end testExternalLinkRefusesAnUnauthenticatedCallerBeforePublishingAnything()
@@ -219,7 +248,7 @@ class ConsultationControllerContractTest extends TestCase {
 		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
 		$externalLinks->expects($this->never())->method('invite');
 
-		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->externalLink(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testExternalLinkRefusesACallerWithNoClaimOnTheConsultation()
@@ -242,7 +271,7 @@ class ConsultationControllerContractTest extends TestCase {
 			->method('invite')
 			->willReturn(['url' => 'https://example.test/l/abc']);
 
-		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->externalLink(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
 		$this->assertSame('https://example.test/l/abc', $response->getData()['url']);
@@ -265,7 +294,7 @@ class ConsultationControllerContractTest extends TestCase {
 		$externalLinks->method('invite')
 			->willThrowException(new \RuntimeException('Name the advisory body before you invite it'));
 
-		$response = $this->controller($externalLinks)->externalLink(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->externalLink(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame('Name the advisory body before you invite it', $response->getData()['error']);
@@ -282,7 +311,7 @@ class ConsultationControllerContractTest extends TestCase {
 		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
 		$externalLinks->expects($this->never())->method('collect');
 
-		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->collectAdvice(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 	}//end testCollectAdviceRefusesAnUnauthenticatedCallerBeforeReadingAnything()
@@ -304,7 +333,7 @@ class ConsultationControllerContractTest extends TestCase {
 		$externalLinks = $this->createMock(ExternalConsultationLinkService::class);
 		$externalLinks->method('collect')->willReturn(['collected' => false]);
 
-		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->collectAdvice(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertFalse($response->getData()['collected']);
@@ -327,7 +356,7 @@ class ConsultationControllerContractTest extends TestCase {
 			['collected' => true, 'advisoryBody' => 'Brandweer', 'noteId' => 31]
 		);
 
-		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->collectAdvice(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('Brandweer', $response->getData()['advisoryBody']);
@@ -350,7 +379,7 @@ class ConsultationControllerContractTest extends TestCase {
 		$externalLinks->method('collect')
 			->willThrowException(new \RuntimeException('Invalid advice type: maybe'));
 
-		$response = $this->controller($externalLinks)->collectAdvice(id: 'cn-1');
+		$response = $this->linkController($externalLinks)->collectAdvice(id: 'cn-1');
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame('Invalid advice type: maybe', $response->getData()['error']);

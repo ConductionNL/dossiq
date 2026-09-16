@@ -31,8 +31,10 @@ namespace OCA\Dossiq\Tests\Unit\Service\Sharing;
 
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Sharing\AccessLinkProjection;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
@@ -220,7 +222,9 @@ final class CalFakeObjectService {
  * @covers \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
  *
  * @uses \OCA\Dossiq\Service\CaseSharingService
+ * @uses \OCA\Dossiq\Service\Sharing\AccessLinkProjection
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
+ * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  */
@@ -234,6 +238,8 @@ class CaseAccessLinkServiceTest extends TestCase {
 	private CaseSharingService $service;
 
 	private CaseAccessLinkService $accessLinks;
+
+	private CaseLinkShares $linkShares;
 
 	/**
 	 * Assemble the sharing service over the fakes.
@@ -265,13 +271,15 @@ class CaseAccessLinkServiceTest extends TestCase {
 		$settings->method('getConfigValue')->willReturn('1');
 
 		$gateway = new OpenRegisterSharingGateway($appManager, $container, $logger);
-		$this->accessLinks = new CaseAccessLinkService($gateway, $logger);
+		$this->accessLinks = new CaseAccessLinkService($gateway, new AccessLinkProjection(), $logger);
+		$this->linkShares = new CaseLinkShares($settings, $gateway, $this->accessLinks, $logger);
 
 		$this->service = new CaseSharingService(
 			settingsService: $settings,
 			gateway: $gateway,
 			accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
 			accessLinks: $this->accessLinks,
+			linkShares: $this->linkShares,
 			federatedShares: new FederatedCaseShareService(
 				$settings,
 				$gateway,
@@ -444,8 +452,8 @@ class CaseAccessLinkServiceTest extends TestCase {
 
 		$linkId = (int)$created['share']['accessLinkId'];
 
-		self::assertTrue($this->service->linkBelongsToCase($linkId, 'case-2'));
-		self::assertFalse($this->service->linkBelongsToCase($linkId, 'case-1'));
+		self::assertTrue($this->linkShares->belongsToCase($linkId, 'case-2'));
+		self::assertFalse($this->linkShares->belongsToCase($linkId, 'case-1'));
 	}//end testALinkOnAnotherCaseDoesNotBelongToThisOne()
 
 	/**
@@ -495,7 +503,7 @@ class CaseAccessLinkServiceTest extends TestCase {
 			],
 		];
 
-		$preview = $this->service->holderPreview((int)$created['share']['accessLinkId'], 'case-1');
+		$preview = $this->linkShares->holderPreview((int)$created['share']['accessLinkId'], 'case-1');
 
 		self::assertNotNull($preview);
 		self::assertSame(
@@ -522,7 +530,7 @@ class CaseAccessLinkServiceTest extends TestCase {
 
 		$this->reader->body = ['subject' => ['title' => 'Vergunning']];
 
-		self::assertNull($this->service->holderPreview((int)$created['share']['accessLinkId'], 'case-1'));
+		self::assertNull($this->linkShares->holderPreview((int)$created['share']['accessLinkId'], 'case-1'));
 	}//end testPreviewOfALinkOnAnotherCaseAnswersNothing()
 
 	/**

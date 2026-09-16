@@ -569,17 +569,20 @@ $extra = [
         // audited, RBAC-respecting surface (only public-group-readable
         // fields), not a hand-maintained dossiq auth surface.
         //
-        // A public case link is now an OpenRegister access link (#3817):
-        // createShare mints it, listLinks reports the state of every link on
-        // the case, pauseLink switches one off and back on, previewLink shows
-        // the handler what its holder reads, and revokeShare revokes it.
-        // OpenRegister revokes a link only for the colleague who minted it,
-        // so a refusal here is reported rather than swallowed.
+        // A public case link is now an OpenRegister access link (#3817).
+        // caseSharing#createShare mints it, beside the partner and federated
+        // ways of sharing a case, because that is the choice between them.
+        // Everything done to a link that already exists lives on
+        // caseAccessLink: reading the links on a case with the state of each,
+        // switching one off and back on, showing the handler what its holder
+        // reads, and revoking it. OpenRegister revokes a link only for the
+        // colleague who minted it, so a refusal is reported, never swallowed.
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
-    ['name' => 'caseSharing#listLinks',        'url' => '/api/shares/case/{caseId}',     'verb' => 'GET'],
-    ['name' => 'caseSharing#previewLink',      'url' => '/api/shares/{shareId}/preview', 'verb' => 'GET'],
-    ['name' => 'caseSharing#pauseLink',        'url' => '/api/shares/{shareId}',         'verb' => 'PUT'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
+    ['name' => 'caseAccessLink#index',         'url' => '/api/access-links/case/{caseId}',   'verb' => 'GET'],
+    ['name' => 'caseAccessLink#preview',       'url' => '/api/access-links/{linkId}/preview', 'verb' => 'GET'],
+    ['name' => 'caseAccessLink#pause',         'url' => '/api/access-links/{linkId}',    'verb' => 'PUT'],
+    ['name' => 'caseAccessLink#revoke',        'url' => '/api/access-links/{linkId}',    'verb' => 'DELETE'],
     ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
     ['name' => 'caseSharing#handleTransfer',   'url' => '/api/transfers/{transferId}',   'verb' => 'PUT'],
 
@@ -652,8 +655,8 @@ $extra = [
     ['name' => 'consultation#requestExtension',    'url' => '/api/consultations/{id}/extension',               'verb' => 'POST'],
     ['name' => 'consultation#approveExtension',    'url' => '/api/consultations/{id}/extension/approve',       'verb' => 'POST'],
     ['name' => 'consultation#overdue',             'url' => '/api/consultations/overdue',                      'verb' => 'GET'],
-    ['name' => 'consultation#externalLink',        'url' => '/api/consultations/{id}/external-link',           'verb' => 'POST'],
-    ['name' => 'consultation#collectAdvice',       'url' => '/api/consultations/{id}/advice',                  'verb' => 'POST'],
+    ['name' => 'consultationLink#externalLink',     'url' => '/api/consultations/{id}/external-link',           'verb' => 'POST'],
+    ['name' => 'consultationLink#collectAdvice',   'url' => '/api/consultations/{id}/advice',                  'verb' => 'POST'],
     ['name' => 'advisoryBody#listAdvisoryBodies',   'url' => '/api/advisory-bodies',                            'verb' => 'GET'],
     ['name' => 'advisoryBody#searchAdvisoryBodies', 'url' => '/api/advisory-bodies/search',                     'verb' => 'GET'],
         // The token-addressed external consultation surface is GONE. Nothing

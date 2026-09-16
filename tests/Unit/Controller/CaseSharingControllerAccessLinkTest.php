@@ -32,9 +32,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
+use OCA\Dossiq\Controller\CaseAccessLinkController;
 use OCA\Dossiq\Controller\CaseSharingController;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\CaseTransferService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -43,9 +45,11 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Wire-contract tests for the three access-link endpoints.
+ * Wire-contract tests for the access-link endpoints.
  *
- * @covers \OCA\Dossiq\Controller\CaseSharingController
+ * @covers \OCA\Dossiq\Controller\CaseAccessLinkController
+ *
+ * @uses \OCA\Dossiq\Controller\CaseSharingController
  */
 class CaseSharingControllerAccessLinkTest extends TestCase {
 
@@ -71,11 +75,26 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
-	 * The controller under test.
+	 * The link-share store mock.
+	 *
+	 * @var CaseLinkShares|MockObject
+	 */
+	private CaseLinkShares $linkShares;
+
+	/**
+	 * The link controller under test.
+	 *
+	 * @var CaseAccessLinkController
+	 */
+	private CaseAccessLinkController $controller;
+
+	/**
+	 * The mint surface, which stays on the sharing controller beside the other
+	 * two ways a case is shared.
 	 *
 	 * @var CaseSharingController
 	 */
-	private CaseSharingController $controller;
+	private CaseSharingController $shareController;
 
 	/**
 	 * Build the controller with all collaborators mocked.
@@ -88,8 +107,16 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->caseSharingService = $this->createMock(CaseSharingService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+		$this->linkShares = $this->createMock(CaseLinkShares::class);
 
-		$this->controller = new CaseSharingController(
+		$this->controller = new CaseAccessLinkController(
+			request: $this->request,
+			caseSharingService: $this->caseSharingService,
+			linkShares: $this->linkShares,
+			userSession: $this->userSession,
+		);
+
+		$this->shareController = new CaseSharingController(
 			request: $this->request,
 			caseSharingService: $this->caseSharingService,
 			caseTransferService: $this->createMock(CaseTransferService::class),
@@ -138,7 +165,7 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(false);
 		$this->caseSharingService->expects($this->never())->method('createTokenShare');
 
-		$response = $this->controller->createShare();
+		$response = $this->shareController->createShare();
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testCreateShareRefusesAnUnrelatedCase()
@@ -151,9 +178,9 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 	 */
 	public function testListLinksRefusesAnUnauthenticatedCallerWith401(): void {
 		$this->userSession->method('getUser')->willReturn(null);
-		$this->caseSharingService->expects($this->never())->method('listLinkShares');
+		$this->linkShares->expects($this->never())->method('listForCase');
 
-		$response = $this->controller->listLinks(caseId: 'case-1');
+		$response = $this->controller->index(caseId: 'case-1');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 	}//end testListLinksRefusesAnUnauthenticatedCallerWith401()
@@ -169,9 +196,9 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 			->method('canUserAccessCase')
 			->with('case-1', 'mallory')
 			->willReturn(false);
-		$this->caseSharingService->expects($this->never())->method('listLinkShares');
+		$this->linkShares->expects($this->never())->method('listForCase');
 
-		$response = $this->controller->listLinks(caseId: 'case-1');
+		$response = $this->controller->index(caseId: 'case-1');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testListLinksRefusesACaseTheCallerCannotOpen()
@@ -184,12 +211,12 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 	public function testListLinksAnswersTheCasesLinks(): void {
 		$this->signIn();
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->expects($this->once())
-			->method('listLinkShares')
+		$this->linkShares->expects($this->once())
+			->method('listForCase')
 			->with('case-1')
 			->willReturn([['accessLinkId' => 7, 'state' => 'live']]);
 
-		$response = $this->controller->listLinks(caseId: 'case-1');
+		$response = $this->controller->index(caseId: 'case-1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame([['accessLinkId' => 7, 'state' => 'live']], $response->getData()['results']);
@@ -204,9 +231,9 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 	public function testPauseLinkWithoutACaseIdIs400(): void {
 		$this->signIn();
 		$this->withParams([]);
-		$this->caseSharingService->expects($this->never())->method('pauseTokenShare');
+		$this->linkShares->expects($this->never())->method('pauseLink');
 
-		$response = $this->controller->pauseLink(shareId: '7');
+		$response = $this->controller->pause(linkId: '7');
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 	}//end testPauseLinkWithoutACaseIdIs400()
@@ -221,13 +248,13 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 		$this->signIn();
 		$this->withParams(['caseId' => 'case-A', 'disabled' => true]);
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->expects($this->once())
-			->method('linkBelongsToCase')
+		$this->linkShares->expects($this->once())
+			->method('belongsToCase')
 			->with(42, 'case-A')
 			->willReturn(false);
-		$this->caseSharingService->expects($this->never())->method('pauseTokenShare');
+		$this->linkShares->expects($this->never())->method('pauseLink');
 
-		$response = $this->controller->pauseLink(shareId: '42');
+		$response = $this->controller->pause(linkId: '42');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testPauseLinkRefusesALinkOnAnotherCase()
@@ -242,10 +269,10 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 		$this->signIn();
 		$this->withParams(['caseId' => 'case-A', 'disabled' => true]);
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->method('linkBelongsToCase')->willReturn(true);
-		$this->caseSharingService->method('pauseTokenShare')->willReturn(null);
+		$this->linkShares->method('belongsToCase')->willReturn(true);
+		$this->linkShares->method('pauseLink')->willReturn(null);
 
-		$response = $this->controller->pauseLink(shareId: '7');
+		$response = $this->controller->pause(linkId: '7');
 
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
 		$this->assertFalse($response->getData()['success']);
@@ -261,13 +288,13 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 		$this->signIn();
 		$this->withParams(['caseId' => 'case-A']);
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->expects($this->once())
-			->method('linkBelongsToCase')
+		$this->linkShares->expects($this->once())
+			->method('belongsToCase')
 			->with(42, 'case-A')
 			->willReturn(false);
-		$this->caseSharingService->expects($this->never())->method('holderPreview');
+		$this->linkShares->expects($this->never())->method('holderPreview');
 
-		$response = $this->controller->previewLink(shareId: '42');
+		$response = $this->controller->preview(linkId: '42');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testPreviewRefusesALinkOnAnotherCase()
@@ -281,13 +308,13 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 		$this->signIn();
 		$this->withParams(['caseId' => 'case-A']);
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->method('linkBelongsToCase')->willReturn(true);
-		$this->caseSharingService->expects($this->once())
+		$this->linkShares->method('belongsToCase')->willReturn(true);
+		$this->linkShares->expects($this->once())
 			->method('holderPreview')
 			->with(7, 'case-A')
 			->willReturn(['subject' => ['title' => 'Vergunning']]);
 
-		$response = $this->controller->previewLink(shareId: '7');
+		$response = $this->controller->preview(linkId: '7');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame('Vergunning', $response->getData()['preview']['subject']['title']);
@@ -303,11 +330,93 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 		$this->signIn();
 		$this->withParams(['caseId' => 'case-A']);
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->method('linkBelongsToCase')->willReturn(true);
-		$this->caseSharingService->method('holderPreview')->willReturn(null);
+		$this->linkShares->method('belongsToCase')->willReturn(true);
+		$this->linkShares->method('holderPreview')->willReturn(null);
 
-		$response = $this->controller->previewLink(shareId: '7');
+		$response = $this->controller->preview(linkId: '7');
 
 		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 	}//end testPreviewOfADeadLinkIs404()
+
+	/**
+	 * Revoking a link refuses an anonymous caller with 401, and revokes
+	 * nothing.
+	 *
+	 * @return void
+	 */
+	public function testRevokeRefusesAnUnauthenticatedCallerWith401(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->linkShares->expects($this->never())->method('revokeLink');
+
+		$response = $this->controller->revoke(linkId: '7');
+
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testRevokeRefusesAnUnauthenticatedCallerWith401()
+
+	/**
+	 * Case access alone is NOT enough: the link must also belong to the case
+	 * the caller named. Without this second condition a handler of case A can
+	 * revoke case B's link by quoting its id (ADR-005 rule 3, IDOR).
+	 *
+	 * @return void
+	 */
+	public function testRevokeRefusesALinkBelongingToAnotherCase(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-A']);
+		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
+		$this->linkShares->expects($this->once())
+			->method('belongsToCase')
+			->with(42, 'case-A')
+			->willReturn(false);
+		$this->linkShares->expects($this->never())->method('revokeLink');
+
+		$response = $this->controller->revoke(linkId: '42');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testRevokeRefusesALinkBelongingToAnotherCase()
+
+	/**
+	 * A revoke OpenRegister refuses is a 502, never a success. It refuses one
+	 * for anybody but the colleague who minted the link, and a link reported
+	 * revoked that still opens the case is the worst of the three outcomes.
+	 *
+	 * @return void
+	 */
+	public function testRevokeReportsARefusalAs502(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-A']);
+		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
+		$this->linkShares->method('belongsToCase')->willReturn(true);
+		$this->linkShares->method('revokeLink')->willReturn(false);
+
+		$response = $this->controller->revoke(linkId: '7');
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+		$this->assertSame(
+			'Could not revoke the link. Only the colleague who created it can.',
+			$response->getData()['error']
+		);
+	}//end testRevokeReportsARefusalAs502()
+
+	/**
+	 * A fully authorised revoke answers 200, and asks OpenRegister to revoke
+	 * that link for the caller who asked.
+	 *
+	 * @return void
+	 */
+	public function testRevokeReturns200WhenBothGuardsPass(): void {
+		$this->signIn(uid: 'anja');
+		$this->withParams(['caseId' => 'case-A']);
+		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
+		$this->linkShares->method('belongsToCase')->willReturn(true);
+		$this->linkShares->expects($this->once())
+			->method('revokeLink')
+			->with(7, 'anja')
+			->willReturn(true);
+
+		$response = $this->controller->revoke(linkId: '7');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['success' => true], $response->getData());
+	}//end testRevokeReturns200WhenBothGuardsPass()
 }//end class

@@ -30,7 +30,6 @@ use OCA\Dossiq\Controller\AdvisoryBodyController;
 use OCA\Dossiq\Controller\ConsultationController;
 use OCA\Dossiq\Service\AdvisoryBodyService;
 use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
-use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -127,7 +126,6 @@ class ConsultationControllerTest extends TestCase {
 			request: $this->request,
 			consultationService: $this->consultationService,
 			accessGuard: $accessGuard,
-			externalLinks: $this->createMock(ExternalConsultationLinkService::class),
 		);
 
 		$this->advisoryBodyController = new AdvisoryBodyController(

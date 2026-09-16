@@ -30,6 +30,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
+use OCA\Dossiq\Service\Sharing\AccessLinkProjection;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
@@ -144,7 +146,9 @@ final class CsfFakeFederatedShare {
  * @covers \OCA\Dossiq\Service\CaseSharingService
  *
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
+ * @uses \OCA\Dossiq\Service\Sharing\AccessLinkProjection
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
+ * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  */
@@ -185,11 +189,14 @@ class CaseSharingServiceFederationTest extends TestCase {
 	): CaseSharingService {
 		$gateway = new OpenRegisterSharingGateway($appManager, $container, $logger);
 
+		$accessLinks = new CaseAccessLinkService($gateway, new AccessLinkProjection(), $logger);
+
 		return new CaseSharingService(
 			settingsService: $settings,
 			gateway: $gateway,
 			accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
-			accessLinks: new CaseAccessLinkService($gateway, $logger),
+			accessLinks: $accessLinks,
+			linkShares: new CaseLinkShares($settings, $gateway, $accessLinks, $logger),
 			federatedShares: new FederatedCaseShareService($settings, $gateway, $logger, $audit),
 			logger: $logger,
 		);
