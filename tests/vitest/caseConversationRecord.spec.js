@@ -28,11 +28,23 @@ const manifest = readJson('src', 'manifest.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const registrySource = read('src', 'registry.js')
 const iconsSource = read('src', 'icons.js')
-const panelSource = read('src', 'views', 'cases', 'components', 'CaseConversationsPanel.vue')
+const panelSource = read(
+	'src',
+	'views',
+	'cases',
+	'components',
+	'CaseConversationsPanel.vue',
+)
 
-const caseDetail = manifest.pages.find((p) => (p.config?.widgets || []).some((w) => w.id === 'case-communication-panel'))
-const communicationPanel = caseDetail.config.widgets.find((w) => w.id === 'case-communication-panel')
-const section = communicationPanel.content.sections.find((s) => s.widget?.id === 'case-conversations')
+const caseDetail = manifest.pages.find((p) =>
+	(p.config?.widgets || []).some((w) => w.id === 'case-communication-panel'),
+)
+const communicationPanel = caseDetail.config.widgets.find(
+	(w) => w.id === 'case-communication-panel',
+)
+const section = communicationPanel.content.sections.find(
+	(s) => s.widget?.id === 'case-conversations',
+)
 
 describe('the live conversation section on the case', () => {
 	it('sits in the Communication tab, beside the contact moments', () => {
@@ -61,8 +73,17 @@ describe('the record the case keeps of a conversation', () => {
 	})
 
 	it('declares the major fields the declaration writes', () => {
-		for (const field of ['isMajor', 'majorChannel', 'majorDeclaredBy', 'majorDeclaredAt', 'majorResponders']) {
-			expect(caseSchema.properties[field], `case.${field} is not declared`).toBeDefined()
+		for (const field of [
+			'isMajor',
+			'majorChannel',
+			'majorDeclaredBy',
+			'majorDeclaredAt',
+			'majorResponders',
+		]) {
+			expect(
+				caseSchema.properties[field],
+				`case.${field} is not declared`,
+			).toBeDefined()
 		}
 	})
 
@@ -75,7 +96,9 @@ describe('the record the case keeps of a conversation', () => {
 	it('notifies the responders declaratively rather than dispatching, per ADR-031', () => {
 		const rule = caseSchema['x-openregister-notifications'].caseDeclaredMajor
 		expect(rule).toBeDefined()
-		expect(rule.recipients).toEqual([{ kind: 'field', field: 'majorResponders' }])
+		expect(rule.recipients).toEqual([
+			{ kind: 'field', field: 'majorResponders' },
+		])
 		expect(rule.subject.nl).toBeTruthy()
 		expect(rule.subject.en).toBeTruthy()
 	})
@@ -87,9 +110,13 @@ describe('the record the case keeps of a conversation', () => {
 		// the responders would be notified again every time anyone saved the
 		// case. The engine's field-change `condition` is the shape that fires
 		// once, when isMajor goes from absent-or-false to true.
-		const trigger = caseSchema['x-openregister-notifications'].caseDeclaredMajor.trigger
+		const trigger =
+			caseSchema['x-openregister-notifications'].caseDeclaredMajor.trigger
 		expect(trigger.type).toBe('updated')
-		expect(trigger.filter, 'an updated trigger ignores filter; this rule would fire on every save').toBeUndefined()
+		expect(
+			trigger.filter,
+			'an updated trigger ignores filter; this rule would fire on every save',
+		).toBeUndefined()
 		expect(trigger.condition).toEqual({
 			field: 'isMajor',
 			operator: 'equals',

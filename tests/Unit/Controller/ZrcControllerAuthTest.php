@@ -45,6 +45,7 @@ use PHPUnit\Framework\TestCase;
  * validation now enforces authentication.
  *
  * @covers \OCA\Dossiq\Controller\ZrcController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ZrcControllerAuthTest extends TestCase {
 	use MakesCaseDateNormaliser;

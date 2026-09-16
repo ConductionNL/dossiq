@@ -37,6 +37,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Status\StatusDwellService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  */

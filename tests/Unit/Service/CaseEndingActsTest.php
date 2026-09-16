@@ -39,6 +39,9 @@ use Psr\Log\LoggerInterface;
  * Finish, abort and archive.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseEndingActs
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseIncompleteness
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class CaseEndingActsTest extends TestCase {
 

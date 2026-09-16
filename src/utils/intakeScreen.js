@@ -20,12 +20,14 @@
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 export function intakeScreenFor(caseType, pages = [], fallback = 'case-intake') {
-	const declared = caseType && caseType.handling ? caseType.handling.intakeScreen : ''
+	const declared =
+		caseType && caseType.handling ? caseType.handling.intakeScreen : ''
 	if (!declared) {
 		return fallback
 	}
 
-	const known = Array.isArray(pages) && pages.some((page) => page && page.id === declared)
+	const known =
+		Array.isArray(pages) && pages.some((page) => page && page.id === declared)
 
 	return known ? declared : fallback
 }

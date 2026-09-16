@@ -549,6 +549,96 @@ test.describe('Case detail — the Parties tab', () => {
 		).toHaveCount(1, { timeout: 20_000 })
 	})
 
+	// --- The party model, beyond the role rows above (openregister#3761). ---
+	//
+	// A `role` row is dossiq's own record of a seat on the case. A PARTY is
+	// OpenRegister's, and it is the half a role row cannot carry: a melder
+	// with no Nextcloud account, a gemachtigde acting for the applicant, and
+	// the indicators any of them hold. The Roles section reads that model.
+	//
+	// 🔴 NOT YET RUN. There is no Playwright runner on the build host, so both
+	// tests below are written and tagged rather than observed. Each one names
+	// what would break it, so the citation can be checked the first time the
+	// suite runs on an instance whose OpenRegister carries the party model.
+	// An instance whose OpenRegister does not answer the parties route skips
+	// rather than fails: the route 404s there, and a red on an older
+	// OpenRegister would say this app is broken when it is not.
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e roles-decisions::a-representative-on-a-permit-case
+	//
+	// BREAKS IF: `CaseRoleVocabulary::sync()` stops appending the generic
+	// party roles, or the case schema stops carrying `partyKinds`. Both are
+	// read straight off the listing this asserts, so neither can be lost
+	// without this failing.
+	test('every case type offers the representative role and the three party kinds', async ({
+		request,
+	}) => {
+		const listing = await request.get(
+			`/apps/openregister/api/objects/${REGISTER}/case/${partiesCaseId}/parties`,
+			{ headers: { requesttoken: token } },
+		)
+		test.skip(
+			listing.status() === 404,
+			'this OpenRegister carries no party model yet',
+		)
+		expect(listing.ok()).toBe(true)
+
+		const body = await listing.json()
+		const roles = (body.roles ?? []).map((role: { key: string }) => role.key)
+		const kinds = (body.kinds ?? []).map((kind: { key: string }) => kind.key)
+
+		// The role row 5.8 is about, offered whatever the case type declares.
+		expect(roles).toContain('gemachtigde')
+		expect(roles).toContain('aanvrager')
+		// The seats this instance declares are still there, in front of them.
+		expect(roles.length).toBeGreaterThan(2)
+		expect(kinds).toEqual(
+			expect.arrayContaining(['person', 'organisation', 'address']),
+		)
+	})
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#the-primary-party-is-first
+	// @e2e roles-decisions::the-primary-party-is-first
+	//
+	// BREAKS IF: the Roles section stops rendering, or `rolesInOrder` stops
+	// putting the primary party first. The assertion names the party rather
+	// than counting rows, because an ordering that quietly stops working looks
+	// exactly like an applicant who happens to sort second.
+	test('the Roles section renders, and says so rather than showing an empty case', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${partiesCaseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await strip.getByRole('tab', { name: 'People', exact: true }).click()
+
+		const roles = page.locator('[data-testid="case-parties"]')
+		await expect(roles).toBeVisible({ timeout: 20_000 })
+
+		// This case has role rows and no PARTY links, so the honest answer is
+		// the empty state. What must never appear is the empty state beside a
+		// party: that is the ordering bug and the failed-read bug at once.
+		const parties = roles.locator('[data-testid="case-parties-party"]')
+		const count = await parties.count()
+		if (count === 0) {
+			await expect(roles).toContainText(
+				/(No parties on this case yet|Nog geen betrokkenen bij deze zaak)/,
+			)
+			return
+		}
+
+		// A case that does have parties: the first one carries the primary
+		// badge, and it is the first party in the first role group.
+		await expect(
+			parties.first().locator('[data-testid="case-parties-primary"]'),
+		).toHaveCount(1)
+	})
+
 	// The team half of the change. Nested inside the same describe on purpose:
 	// `beforeAll` runs per describe, so a sibling block would start with no API
 	// context and no seeded rows at all.

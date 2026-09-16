@@ -62,6 +62,7 @@ interface WOODeadlineObjectServiceStub {
  * Unit tests for WOODeadlineService.
  *
  * @covers \OCA\Dossiq\Service\WOODeadlineService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class WOODeadlineServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

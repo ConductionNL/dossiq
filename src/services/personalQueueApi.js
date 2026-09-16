@@ -29,11 +29,11 @@ export async function fetchQueue() {
 	const { data } = await axios.get(generateUrl(BASE))
 
 	return {
-		items: (data?.items ?? []),
-		groups: (data?.groups ?? []),
-		groupBy: (data?.groupBy ?? 'source'),
-		hiddenGroups: (data?.hiddenGroups ?? []),
-		unavailable: (data?.unavailable ?? []),
+		items: data?.items ?? [],
+		groups: data?.groups ?? [],
+		groupBy: data?.groupBy ?? 'source',
+		hiddenGroups: data?.hiddenGroups ?? [],
+		unavailable: data?.unavailable ?? [],
 		total: Number(data?.total ?? 0),
 	}
 }
@@ -48,7 +48,7 @@ export async function fetchQueue() {
 export async function fetchEndOfDay() {
 	const { data } = await axios.get(generateUrl(`${BASE}/end-of-day`))
 
-	return { items: (data?.items ?? []), unavailable: (data?.unavailable ?? []) }
+	return { items: data?.items ?? [], unavailable: data?.unavailable ?? [] }
 }
 
 /**
@@ -69,7 +69,7 @@ export async function hideGroupForToday(group) {
 		{},
 	)
 
-	return (data?.hiddenGroups ?? [])
+	return data?.hiddenGroups ?? []
 }
 
 /**
@@ -86,7 +86,7 @@ export async function showGroupAgain(group) {
 		{},
 	)
 
-	return (data?.hiddenGroups ?? [])
+	return data?.hiddenGroups ?? []
 }
 
 /**
@@ -100,7 +100,7 @@ export async function showGroupAgain(group) {
 export async function saveGrouping(groupBy) {
 	const { data } = await axios.post(generateUrl(`${BASE}/grouping`), { groupBy })
 
-	return (data?.groupBy ?? 'source')
+	return data?.groupBy ?? 'source'
 }
 
 /**
@@ -168,7 +168,7 @@ export async function savePersonalStage(caseId, stage) {
 export async function fetchDigestSettings() {
 	const { data } = await axios.get(generateUrl(`${BASE}/digest`))
 
-	return { enabled: (data?.enabled !== false), hour: Number(data?.hour ?? 8) }
+	return { enabled: data?.enabled !== false, hour: Number(data?.hour ?? 8) }
 }
 
 /**
@@ -181,7 +181,10 @@ export async function fetchDigestSettings() {
  * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
  */
 export async function saveDigestSettings(enabled, hour) {
-	const { data } = await axios.post(generateUrl(`${BASE}/digest`), { enabled, hour })
+	const { data } = await axios.post(generateUrl(`${BASE}/digest`), {
+		enabled,
+		hour,
+	})
 
-	return { enabled: (data?.enabled !== false), hour: Number(data?.hour ?? 8) }
+	return { enabled: data?.enabled !== false, hour: Number(data?.hour ?? 8) }
 }

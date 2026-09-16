@@ -50,12 +50,17 @@ const openregister = (suffix = '') => generateUrl(`/apps/openregister${suffix}`)
  * @return {Promise<object>} The previewed job.
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
-export async function previewBulkJob({ action, parameters, selection, justification }) {
+export async function previewBulkJob({
+	action,
+	parameters,
+	selection,
+	justification,
+}) {
 	const { data } = await axios.post(dossiq('/api/cases/bulk-jobs'), {
 		action,
-		parameters: (parameters || {}),
+		parameters: parameters || {},
 		selection,
-		justification: (justification || ''),
+		justification: justification || '',
 	})
 	return data
 }
@@ -92,7 +97,10 @@ export async function fetchBulkJob(jobId) {
  * @return {Promise<{results: Array, total: number}>} The rows and how many there are.
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
-export async function fetchBulkJobMembers(jobId, { outcome, limit = 50, offset = 0 } = {}) {
+export async function fetchBulkJobMembers(
+	jobId,
+	{ outcome, limit = 50, offset = 0 } = {},
+) {
 	const params = { limit, offset }
 	if (outcome) {
 		params.outcome = outcome
@@ -102,7 +110,10 @@ export async function fetchBulkJobMembers(jobId, { outcome, limit = 50, offset =
 		openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}/members`),
 		{ params },
 	)
-	return { results: ((data && data.results) || []), total: Number((data && data.total) || 0) }
+	return {
+		results: (data && data.results) || [],
+		total: Number((data && data.total) || 0),
+	}
 }
 
 /**
@@ -117,7 +128,7 @@ export async function fetchBulkJobMembers(jobId, { outcome, limit = 50, offset =
 export async function commitBulkJob(jobId, justification) {
 	const { data } = await axios.post(
 		openregister(`/api/bulk-jobs/${encodeURIComponent(jobId)}/commit`),
-		(justification ? { justification } : {}),
+		justification ? { justification } : {},
 	)
 	return data
 }
@@ -193,12 +204,12 @@ export function isFinished(job) {
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 export function readRefusal(error) {
-	const body = ((error && error.response && error.response.data) || {})
+	const body = (error && error.response && error.response.data) || {}
 
 	return {
 		reason: String(body.reason || ''),
 		message: String(body.error || ''),
-		details: (body.details || {}),
+		details: body.details || {},
 	}
 }
 

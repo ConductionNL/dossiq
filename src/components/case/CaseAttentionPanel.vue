@@ -32,23 +32,43 @@
 -->
 <template>
 	<div v-if="show" class="case-attention" data-testid="case-attention">
-		<div v-if="raised" class="case-attention__flag" data-testid="case-attention-raised">
+		<div
+			v-if="raised"
+			class="case-attention__flag"
+			data-testid="case-attention-raised">
 			<span class="case-attention__lead">{{ raisedLead }}</span>
 			<span class="case-attention__reason">{{ flagReason }}</span>
 		</div>
 
-		<ul v-if="markers.length > 0" class="case-attention__markers" data-testid="case-attention-markers">
-			<li v-for="marker in markers" :key="marker.marker" :data-testid="`case-marker-${marker.marker}`" :data-tab="marker.tab">
+		<ul
+			v-if="markers.length > 0"
+			class="case-attention__markers"
+			data-testid="case-attention-markers">
+			<li
+				v-for="marker in markers"
+				:key="marker.marker"
+				:data-testid="`case-marker-${marker.marker}`"
+				:data-tab="marker.tab">
 				<span class="case-attention__panel">{{ marker.panelLabel }}</span>
 				<span class="case-attention__reason">{{ marker.reason }}</span>
 			</li>
 		</ul>
 
-		<div v-if="assessment.present" class="case-attention__risk" data-testid="case-attention-risk">
+		<div
+			v-if="assessment.present"
+			class="case-attention__risk"
+			data-testid="case-attention-risk">
 			<span class="case-attention__lead">{{ riskLead }}</span>
-			<span :data-risk-level="assessment.level" class="case-attention__level">{{ levelLabel }}</span>
+			<span
+				:data-risk-level="assessment.level"
+				class="case-attention__level"
+				>{{ levelLabel }}</span
+			>
 			<span class="case-attention__reason">{{ assessment.ground }}</span>
-			<span v-if="assessment.dueForReview" data-testid="case-attention-risk-stale" class="case-attention__stale">
+			<span
+				v-if="assessment.dueForReview"
+				data-testid="case-attention-risk-stale"
+				class="case-attention__stale">
 				{{ staleLabel }}
 			</span>
 		</div>
@@ -64,14 +84,22 @@
 			<NcButton
 				variant="tertiary"
 				:disabled="busy || reason.trim() === ''"
-				:data-testid="raised ? 'case-attention-clear' : 'case-attention-raise'"
+				:data-testid="
+					raised ? 'case-attention-clear' : 'case-attention-raise'
+				"
 				@click="submit">
 				{{ actLabel }}
 			</NcButton>
 		</div>
 
-		<ol v-if="history.length > 0" class="case-attention__history" data-testid="case-attention-history">
-			<li v-for="(row, index) in history" :key="`${row.moment}-${index}`" :data-act="row.act">
+		<ol
+			v-if="history.length > 0"
+			class="case-attention__history"
+			data-testid="case-attention-history">
+			<li
+				v-for="(row, index) in history"
+				:key="`${row.moment}-${index}`"
+				:data-act="row.act">
 				<span class="case-attention__panel">{{ actOf(row) }}</span>
 				<span class="case-attention__reason">{{ row.reason }}</span>
 			</li>
@@ -84,7 +112,11 @@ import { showError } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import { clearAttention, fetchAttention, raiseAttention } from '../../services/caseAttentionApi.js'
+import {
+	clearAttention,
+	fetchAttention,
+	raiseAttention,
+} from '../../services/caseAttentionApi.js'
 
 /**
  * What each panel of the case page is called, for a marker that points at one.
@@ -167,18 +199,21 @@ export default {
 		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		markers() {
-			const raised = (this.objectData?.attentionMarkers ?? [])
+			const raised = this.objectData?.attentionMarkers ?? []
 			if (Array.isArray(raised) === false) {
 				return []
 			}
 
 			return raised
-				.filter((marker) => (marker && String(marker.marker ?? '') !== ''))
+				.filter((marker) => marker && String(marker.marker ?? '') !== '')
 				.map((marker) => ({
 					marker: String(marker.marker),
 					tab: String(marker.tab ?? ''),
 					reason: String(marker.reason ?? ''),
-					panelLabel: t('dossiq', PANEL_LABELS[marker.tab] || String(marker.tab ?? '')),
+					panelLabel: t(
+						'dossiq',
+						PANEL_LABELS[marker.tab] || String(marker.tab ?? ''),
+					),
 				}))
 		},
 
@@ -195,11 +230,11 @@ export default {
 		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		assessment() {
-			const stored = (this.objectData?.riskAssessment ?? null)
+			const stored = this.objectData?.riskAssessment ?? null
 			const level = String(stored?.level ?? '')
 
 			return {
-				present: (level !== ''),
+				present: level !== '',
 				level,
 				ground: String(stored?.ground ?? ''),
 				assessor: String(stored?.assessor ?? ''),
@@ -264,7 +299,10 @@ export default {
 		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		levelLabel() {
-			return t('dossiq', LEVEL_LABELS[this.assessment.level] || this.assessment.level)
+			return t(
+				'dossiq',
+				LEVEL_LABELS[this.assessment.level] || this.assessment.level,
+			)
 		},
 
 		/**
@@ -355,9 +393,9 @@ export default {
 		 * @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
 		 */
 		apply(state) {
-			this.raised = (state?.raised === true)
-			this.flag = (state?.flag ?? {})
-			this.history = (Array.isArray(state?.history) ? state.history : [])
+			this.raised = state?.raised === true
+			this.flag = state?.flag ?? {}
+			this.history = Array.isArray(state?.history) ? state.history : []
 		},
 
 		/**
@@ -393,7 +431,11 @@ export default {
 				window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
 			} catch (error) {
 				const refusal = String(error?.response?.data?.error ?? '')
-				showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+				showError(
+					refusal !== ''
+						? refusal
+						: t('dossiq', 'This did not work. Try again.'),
+				)
 			} finally {
 				this.busy = false
 			}
@@ -437,7 +479,10 @@ export default {
 				return false
 			}
 
-			return (moment.toISOString().slice(0, 10) < new Date().toISOString().slice(0, 10))
+			return (
+				moment.toISOString().slice(0, 10)
+				< new Date().toISOString().slice(0, 10)
+			)
 		},
 	},
 }

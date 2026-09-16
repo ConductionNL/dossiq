@@ -37,7 +37,7 @@ const cancelBulkJob = vi.fn()
 vi.mock('@nextcloud/l10n', () => ({
 	translate: (app, text, vars) =>
 		String(text).replace(/\{(\w+)\}/g, (match, key) =>
-			(vars && key in vars ? String(vars[key]) : match),
+			vars && key in vars ? String(vars[key]) : match,
 		),
 	translatePlural: (app, one, many, count) => (count === 1 ? one : many),
 }))
@@ -50,7 +50,8 @@ vi.mock('../../src/services/bulkJobApi.js', () => ({
 	commitBulkJob: (...args) => commitBulkJob(...args),
 	fetchBulkJob: vi.fn(),
 	fetchBulkJobMembers: (...args) => fetchBulkJobMembers(...args),
-	isFinished: (job) => ['completed', 'failed', 'cancelled'].includes(String(job?.state)),
+	isFinished: (job) =>
+		['completed', 'failed', 'cancelled'].includes(String(job?.state)),
 	retryBulkJob: vi.fn(),
 }))
 
@@ -79,12 +80,20 @@ vi.mock('@nextcloud/vue/components/NcButton', () => ({
 		// as "the button is missing" rather than "the stub ate the id".
 		emits: ['click'],
 		render() {
-			return h('button', { onClick: () => this.$emit('click') }, this.$slots.default?.())
+			return h(
+				'button',
+				{ onClick: () => this.$emit('click') },
+				this.$slots.default?.(),
+			)
 		},
 	},
 }))
-vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({ default: box('NcLoadingIcon') }))
-vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({ default: box('NcNoteCard') }))
+vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
+	default: box('NcLoadingIcon'),
+}))
+vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
+	default: box('NcNoteCard'),
+}))
 vi.mock('@nextcloud/vue/components/NcProgressBar', () => ({
 	default: {
 		name: 'NcProgressBar',
@@ -111,9 +120,8 @@ const FINISHED = {
  * @return {Promise<object>} The wrapper.
  */
 async function mountPanel(job) {
-	const { default: BulkJobProgress } = await import(
-		'../../src/components/bulk/BulkJobProgress.vue'
-	)
+	const { default: BulkJobProgress } =
+		await import('../../src/components/bulk/BulkJobProgress.vue')
 
 	const wrapper = mount(BulkJobProgress, { props: { job, busy: false } })
 	await flushPromises()
@@ -128,12 +136,18 @@ beforeEach(() => {
 
 describe('BulkJobProgress', () => {
 	it('says nothing has been written yet while the job is only rehearsed', async () => {
-		const wrapper = await mountPanel({ ...FINISHED, state: 'previewed', processed: 0 })
+		const wrapper = await mountPanel({
+			...FINISHED,
+			state: 'previewed',
+			processed: 0,
+		})
 
-		expect(wrapper.get('[data-testid="bulk-job-state"]').text())
-			.toBe('Nothing has been written yet. This is what would happen to 400 cases.')
-		expect(wrapper.get('[data-testid="bulk-job-commit"]').text())
-			.toBe('Apply to 400 cases')
+		expect(wrapper.get('[data-testid="bulk-job-state"]').text()).toBe(
+			'Nothing has been written yet. This is what would happen to 400 cases.',
+		)
+		expect(wrapper.get('[data-testid="bulk-job-commit"]').text()).toBe(
+			'Apply to 400 cases',
+		)
 	})
 
 	it('names the twelve that did not move, each with its reason', async () => {
@@ -170,15 +184,20 @@ describe('BulkJobProgress', () => {
 		await wrapper.get('[data-testid="bulk-job-count-skipped"]').trigger('click')
 		await flushPromises()
 
-		expect(wrapper.get('[data-testid="bulk-job-rows"]').text()).toContain('No reason recorded.')
+		expect(wrapper.get('[data-testid="bulk-job-rows"]').text()).toContain(
+			'No reason recorded.',
+		)
 	})
 
 	it('keeps skipped and refused apart, in words and in what it fetches', async () => {
 		const wrapper = await mountPanel(FINISHED)
 
-		expect(wrapper.get('[data-testid="bulk-job-count-skipped"]').text()).toBe('12 skipped')
-		expect(wrapper.get('[data-testid="bulk-job-count-refused"]').text())
-			.toBe('3 you may not write')
+		expect(wrapper.get('[data-testid="bulk-job-count-skipped"]').text()).toBe(
+			'12 skipped',
+		)
+		expect(wrapper.get('[data-testid="bulk-job-count-refused"]').text()).toBe(
+			'3 you may not write',
+		)
 
 		await wrapper.get('[data-testid="bulk-job-count-refused"]').trigger('click')
 		await flushPromises()
@@ -198,19 +217,29 @@ describe('BulkJobProgress', () => {
 			counts: { applied: 400, skipped: 0, refused: 0, failed: 0 },
 		})
 
-		expect(wrapper.find('[data-testid="bulk-job-count-skipped"]').exists()).toBe(true)
-		expect(wrapper.get('[data-testid="bulk-job-count-skipped"]').text()).toBe('0 skipped')
+		expect(wrapper.find('[data-testid="bulk-job-count-skipped"]').exists()).toBe(
+			true,
+		)
+		expect(wrapper.get('[data-testid="bulk-job-count-skipped"]').text()).toBe(
+			'0 skipped',
+		)
 	})
 
 	it('offers the report and the stop button only where each makes sense', async () => {
-		const running = await mountPanel({ ...FINISHED, state: 'running', processed: 120 })
+		const running = await mountPanel({
+			...FINISHED,
+			state: 'running',
+			processed: 120,
+		})
 
-		expect(running.get('[data-testid="bulk-job-state"]').text())
-			.toBe('Running. 120 of 400 cases done.')
+		expect(running.get('[data-testid="bulk-job-state"]').text()).toBe(
+			'Running. 120 of 400 cases done.',
+		)
 		expect(running.find('[data-testid="bulk-job-cancel"]').exists()).toBe(true)
 		expect(running.find('[data-testid="bulk-job-commit"]').exists()).toBe(false)
-		expect(running.get('[data-testid="bulk-job-download"]').attributes('href'))
-			.toBe('/download/7')
+		expect(
+			running.get('[data-testid="bulk-job-download"]').attributes('href'),
+		).toBe('/download/7')
 
 		const finished = await mountPanel(FINISHED)
 		expect(finished.find('[data-testid="bulk-job-cancel"]').exists()).toBe(false)
@@ -229,9 +258,17 @@ describe('BulkJobProgress', () => {
 	})
 
 	it('the commit is the only button that writes, and it hands the job up', async () => {
-		commitBulkJob.mockResolvedValue({ ...FINISHED, state: 'running', processed: 0 })
+		commitBulkJob.mockResolvedValue({
+			...FINISHED,
+			state: 'running',
+			processed: 0,
+		})
 
-		const wrapper = await mountPanel({ ...FINISHED, state: 'previewed', processed: 0 })
+		const wrapper = await mountPanel({
+			...FINISHED,
+			state: 'previewed',
+			processed: 0,
+		})
 		await wrapper.get('[data-testid="bulk-job-commit"]').trigger('click')
 		await flushPromises()
 
@@ -239,24 +276,39 @@ describe('BulkJobProgress', () => {
 		expect(wrapper.emitted('update:job')[0][0].state).toBe('running')
 	})
 
-	it('says so when the act could not be started, in the server\'s own words', async () => {
+	it("says so when the act could not be started, in the server's own words", async () => {
 		commitBulkJob.mockRejectedValue({
-			response: { data: { error: 'This act takes at most 500 cases at a time' } },
+			response: {
+				data: { error: 'This act takes at most 500 cases at a time' },
+			},
 		})
 
-		const wrapper = await mountPanel({ ...FINISHED, state: 'previewed', processed: 0 })
+		const wrapper = await mountPanel({
+			...FINISHED,
+			state: 'previewed',
+			processed: 0,
+		})
 		await wrapper.get('[data-testid="bulk-job-commit"]').trigger('click')
 		await flushPromises()
 
-		expect(wrapper.text()).toContain('This act takes at most 500 cases at a time')
+		expect(wrapper.text()).toContain(
+			'This act takes at most 500 cases at a time',
+		)
 	})
 
 	it('a stopped job tells a handler how far it got before it stopped', async () => {
-		const wrapper = await mountPanel({ ...FINISHED, state: 'cancelled', processed: 120 })
+		const wrapper = await mountPanel({
+			...FINISHED,
+			state: 'cancelled',
+			processed: 120,
+		})
 
-		expect(wrapper.get('[data-testid="bulk-job-state"]').text())
-			.toBe('Stopped. 120 of 400 cases were done first.')
-		expect(wrapper.get('[data-testid="bulk-job-bar"]').attributes('data-value')).toBe('30')
+		expect(wrapper.get('[data-testid="bulk-job-state"]').text()).toBe(
+			'Stopped. 120 of 400 cases were done first.',
+		)
+		expect(
+			wrapper.get('[data-testid="bulk-job-bar"]').attributes('data-value'),
+		).toBe('30')
 	})
 
 	it('emits finished once the job has stopped, so the list re-reads', async () => {

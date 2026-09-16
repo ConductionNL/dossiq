@@ -14,7 +14,10 @@
 				}}
 			</NcNoteCard>
 
-			<NcNoteCard v-if="forbidden" type="error" data-testid="intake-log-forbidden">
+			<NcNoteCard
+				v-if="forbidden"
+				type="error"
+				data-testid="intake-log-forbidden">
 				{{
 					t(
 						'dossiq',
@@ -40,7 +43,10 @@
 						data-testid="intake-log-outcome" />
 				</div>
 
-				<p v-if="filterOrder.length > 0" class="intake-log__order" data-testid="intake-log-order">
+				<p
+					v-if="filterOrder.length > 0"
+					class="intake-log__order"
+					data-testid="intake-log-order">
 					{{
 						t('dossiq', 'Filters run in this order: {order}', {
 							order: filterOrder.join(', '),
@@ -60,7 +66,10 @@
 						)
 					" />
 
-				<table v-else class="intake-log__table" data-testid="intake-log-table">
+				<table
+					v-else
+					class="intake-log__table"
+					data-testid="intake-log-table">
 					<thead>
 						<tr>
 							<th scope="col">{{ t('dossiq', 'Sender') }}</th>
@@ -82,7 +91,12 @@
 							:data-testid="`intake-log-row-${entryId(entry)}`">
 							<td>{{ entry.sender }}</td>
 							<td>{{ entry.subject }}</td>
-							<td>{{ entry.decidingFilter || t('dossiq', 'none, accepted by default') }}</td>
+							<td>
+								{{
+									entry.decidingFilter
+									|| t('dossiq', 'none, accepted by default')
+								}}
+							</td>
 							<td :class="resultClass(entry.spfResult)">
 								{{ resultLabel(entry.spfResult) }}
 							</td>
@@ -96,7 +110,11 @@
 								{{ resultLabel(entry.threadingResult) }}
 							</td>
 							<td>{{ outcomeLabel(entry.outcome) }}</td>
-							<td>{{ entry.junkRule ? junkReason(entry) : entry.reason }}</td>
+							<td>
+								{{
+									entry.junkRule ? junkReason(entry) : entry.reason
+								}}
+							</td>
 							<td>
 								<NcButton
 									v-if="entry.outcome === 'quarantined'"
@@ -241,7 +259,9 @@ export default {
 					params.set('outcome', this.outcome)
 				}
 				const response = await fetch(
-					generateUrl('/apps/dossiq/api/mail-intake/log?' + params.toString()),
+					generateUrl(
+						'/apps/dossiq/api/mail-intake/log?' + params.toString(),
+					),
 					{ headers: { 'OCS-APIRequest': 'true' } },
 				)
 				if (response.status === 403) {

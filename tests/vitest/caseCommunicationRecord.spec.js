@@ -33,7 +33,13 @@ const manifest = JSON.parse(
 )
 const fragment = JSON.parse(
 	fs.readFileSync(
-		path.join(ROOT, 'lib', 'Settings', 'register.d', '36-ontvangstbevestiging.json'),
+		path.join(
+			ROOT,
+			'lib',
+			'Settings',
+			'register.d',
+			'36-ontvangstbevestiging.json',
+		),
 		'utf8',
 	),
 )
@@ -86,7 +92,12 @@ describe('the outbound communication record on the case', () => {
 		// cannot answer "did we confirm receipt, when, to whom and by which
 		// channel", which is the question the requirement exists for.
 		expect(Object.keys(record)).toEqual(
-			expect.arrayContaining(['moment', 'channel', 'recipient', 'templateVersion']),
+			expect.arrayContaining([
+				'moment',
+				'channel',
+				'recipient',
+				'templateVersion',
+			]),
 		)
 
 		expect(props.acknowledgementDuty.type).toBe('object')
@@ -94,12 +105,19 @@ describe('the outbound communication record on the case', () => {
 		expect(duty.status.enum).toEqual(['not-required', 'pending', 'met', 'unmet'])
 		// REQ-TERM-024: a duty met another way names who said so and when.
 		expect(Object.keys(duty)).toEqual(
-			expect.arrayContaining(['metBy', 'metAt', 'metHow', 'attempts', 'lastError']),
+			expect.arrayContaining([
+				'metBy',
+				'metAt',
+				'metHow',
+				'attempts',
+				'lastError',
+			]),
 		)
 	})
 
 	it('declares the acknowledgement on the case type, defaulting to on', () => {
-		const declaration = fragment.components.schemas.caseType.properties.acknowledgement
+		const declaration =
+			fragment.components.schemas.caseType.properties.acknowledgement
 
 		expect(declaration.properties.enabled.default).toBe(true)
 		expect(declaration.properties.intakeChannels.default).toEqual([
@@ -113,16 +131,24 @@ describe('the outbound communication record on the case', () => {
 		// a status change. One value for both would make informing and chasing
 		// the same message.
 		const moments =
-			fragment.components.schemas.caseType.properties.notificationMoments.items.properties
+			fragment.components.schemas.caseType.properties.notificationMoments.items
+				.properties
 		expect(moments.moment.enum).toEqual(
-			expect.arrayContaining(['case-received', 'case-incomplete', 'status-changed']),
+			expect.arrayContaining([
+				'case-received',
+				'case-incomplete',
+				'status-changed',
+			]),
 		)
 		expect(moments.statutory).toBeTruthy()
 	})
 
 	it('renders the record on the Communication tab', () => {
 		const widget = allWidgets.find((w) => w.id === 'case-acknowledgement')
-		expect(widget, 'the case page declares no receipt-confirmation widget').toBeTruthy()
+		expect(
+			widget,
+			'the case page declares no receipt-confirmation widget',
+		).toBeTruthy()
 		expect(widget.type).toBe('data')
 		expect(widget.content.include).toEqual([
 			'acknowledgementDuty',
@@ -134,7 +160,9 @@ describe('the outbound communication record on the case', () => {
 		expect(widget.content.overrides.acknowledgementDuty.editable).toBe(false)
 		expect(widget.content.overrides.outboundCommunications.editable).toBe(false)
 
-		const communication = allWidgets.find((w) => w.id === 'case-communication-panel')
+		const communication = allWidgets.find(
+			(w) => w.id === 'case-communication-panel',
+		)
 		const labels = communication.content.sections.map((s) => s.label)
 		expect(labels).toContain('Receipt confirmation')
 	})
@@ -143,7 +171,10 @@ describe('the outbound communication record on the case', () => {
 		const action = (caseDetail.config.headerActions || []).find(
 			(a) => a.id === 'case-acknowledgement-met',
 		)
-		expect(action, 'the case page offers no way to record the duty met').toBeTruthy()
+		expect(
+			action,
+			'the case page offers no way to record the duty met',
+		).toBeTruthy()
 
 		// A `handler` action resolves its name against the manifest's JSON
 		// actions map, so a function can never answer it: the button would warn

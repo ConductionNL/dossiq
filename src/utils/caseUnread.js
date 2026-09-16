@@ -60,7 +60,9 @@ export async function markCaseUnread({ item }) {
 		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
-		showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+		showError(
+			refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'),
+		)
 	}
 }
 
@@ -90,6 +92,8 @@ export async function markCaseRead({ item }) {
 		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
-		showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+		showError(
+			refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'),
+		)
 	}
 }

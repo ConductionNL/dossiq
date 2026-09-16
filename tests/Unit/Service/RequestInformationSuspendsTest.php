@@ -38,6 +38,8 @@ use RuntimeException;
  * REQ-TERM-067: asking the applicant and suspending the term are one act.
  *
  * @covers \OCA\Dossiq\Service\InformationRequestService
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\TermKind
  */
 class RequestInformationSuspendsTest extends TestCase {
 	use BindsTermFixtures;

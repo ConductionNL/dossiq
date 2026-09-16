@@ -3,6 +3,19 @@
 		<Settings />
 
 		<CnSettingsSection
+			id="section-first-run"
+			:name="t('dossiq', 'First run')"
+			:description="
+				t(
+					'dossiq',
+					'What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.',
+				)
+			"
+			:loading="!storesReady">
+			<FirstRunTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'Case Type Management')"
 			:description="t('dossiq', 'Manage case types and their configurations')"
 			:loading="!storesReady">
@@ -239,6 +252,7 @@ import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
+import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
@@ -250,6 +264,7 @@ import { initializeStores } from '../../store/store.js'
 export default {
 	name: 'AdminRoot',
 	components: {
+		FirstRunTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnSettingsSection,
