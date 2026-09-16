@@ -46,6 +46,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Pause;
 
+use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\WorkingDayCalculator;
@@ -105,7 +106,10 @@ class ChaseSchedule {
 			return $this->calendar->addWorkingDays(start: $from, days: $interval);
 		}
 
-		return $from->modify('+' . $interval . ' days');
+		// `add(new DateInterval())` rather than `modify('+N days')`: modify()
+		// answers false on a string it cannot read, and a schedule that can
+		// answer false has a third outcome nobody handles.
+		return $from->add(new DateInterval('P' . $interval . 'D'));
 	}//end nextChaseOn()
 
 	/**
@@ -163,7 +167,7 @@ class ChaseSchedule {
 		}
 
 		$interval = (int)$reason['chaseIntervalDays'];
-		$after = $last->modify('+' . $interval . ' days');
+		$after = $last->add(new DateInterval('P' . $interval . 'D'));
 		if ($reason['countsWorkingDays'] === true) {
 			$after = $this->calendar->addWorkingDays(start: $last, days: $interval);
 		}

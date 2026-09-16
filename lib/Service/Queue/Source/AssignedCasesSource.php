@@ -161,8 +161,8 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function waitingFactsOf(array $row, ?DateTimeImmutable $now = null): array {
-		$on = trim((string)($row['pauseWaitingOn'] ?? ''));
-		if ($on === '' || $on === StatusDeclaration::WAITING_ON_US) {
+		$party = trim((string)($row['pauseWaitingOn'] ?? ''));
+		if ($party === '' || $party === StatusDeclaration::WAITING_ON_US) {
 			return [];
 		}
 
@@ -176,7 +176,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 		}
 
 		return [
-			'on' => $on,
+			'on' => $party,
 			'since' => $since,
 			'days' => $this->daysSince(since: $since, now: ($now ?? new DateTimeImmutable())),
 			'chases' => max(0, (int)($row['chasesSent'] ?? 0)),
