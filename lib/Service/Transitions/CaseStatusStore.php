@@ -132,6 +132,7 @@ class CaseStatusStore {
 	 * @param string|null $comment Free-form comment.
 	 * @param array<int, array<string, mixed>> $evaluatedGuards Guard snapshots.
 	 * @param bool $noWorkflowTemplate Flag for free-form transitions.
+	 * @param string $actor Who made the move, or the empty string when the caller names nobody.
 	 *
 	 * @return array<string, mixed> The written statusRecord.
 	 *
@@ -147,6 +148,7 @@ class CaseStatusStore {
 		?string $comment,
 		array $evaluatedGuards,
 		bool $noWorkflowTemplate,
+		string $actor = '',
 	): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -167,6 +169,17 @@ class CaseStatusStore {
 			'dispatchedActions' => [],
 			'noWorkflowTemplate' => $noWorkflowTemplate,
 		];
+
+		// WHO made this move. The four-eyes rule reads this chain to find who
+		// performed a named earlier act, and before this property the only
+		// answer was the row's OpenRegister owner, which is a fact about who
+		// wrote the record rather than about who took the step. They agree
+		// today and they are not the same claim. Written only when the caller
+		// names somebody: an empty string is not an actor, and a record
+		// stamped with one would read as a move nobody made.
+		if (trim($actor) !== '') {
+			$payload['actor'] = $actor;
+		}
 		if ($fromStatus !== '') {
 			$payload['fromStatus'] = $fromStatus;
 		}
@@ -301,6 +314,25 @@ class CaseStatusStore {
 
 		return $colour;
 	}//end lookupStatusColour()
+
+	/**
+	 * The explanation an administrator wrote on a status.
+	 *
+	 * `statusType.description` has existed for as long as the schema has, and
+	 * nothing rendered it: an administrator who wrote one was writing into a
+	 * field nobody read. It travels with the name and the colour because all
+	 * three come off the same row, and a second round trip to fetch a sentence
+	 * the page is already asking about is a request nobody needs.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The description, or the empty string.
+	 *
+	 * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+	 */
+	public function lookupStatusDescription(string $statusTypeId): string {
+		return trim((string)($this->statusTypeLookup->rowFor(statusTypeId: $statusTypeId)['description'] ?? ''));
+	}//end lookupStatusDescription()
 
 	/**
 	 * Validate that a statusType belongs to the case's caseType.

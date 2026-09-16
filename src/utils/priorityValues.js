@@ -86,15 +86,15 @@ export function priorityOrder(priority) {
  */
 export function priorityLabel(priority) {
 	switch (String(priority ?? '')) {
-	case 'low':
-		return t('dossiq', 'Low')
-	case 'normal':
-		return t('dossiq', 'Normal')
-	case 'high':
-		return t('dossiq', 'High')
-	case 'urgent':
-		return t('dossiq', 'Urgent')
-	default:
-		return String(priority ?? '')
+		case 'low':
+			return t('dossiq', 'Low')
+		case 'normal':
+			return t('dossiq', 'Normal')
+		case 'high':
+			return t('dossiq', 'High')
+		case 'urgent':
+			return t('dossiq', 'Urgent')
+		default:
+			return String(priority ?? '')
 	}
 }

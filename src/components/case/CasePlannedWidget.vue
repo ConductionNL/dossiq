@@ -44,7 +44,10 @@
 			:store="store"
 			:extraSections="extraSections" />
 
-		<ul v-if="series.length > 0" class="case-planned__series" data-testid="case-planned-series">
+		<ul
+			v-if="series.length > 0"
+			class="case-planned__series"
+			data-testid="case-planned-series">
 			<li
 				v-for="row in series"
 				:key="row.key"
@@ -52,12 +55,16 @@
 				:data-testid="`case-planned-series-${row.key}`">
 				<div class="case-planned__row-body">
 					<span class="case-planned__label">{{ row.label }}</span>
-					<ul v-if="row.occurrences.length > 0" class="case-planned__occurrences">
+					<ul
+						v-if="row.occurrences.length > 0"
+						class="case-planned__occurrences">
 						<li
 							v-for="occurrence in row.occurrences"
 							:key="occurrence.id"
 							:data-testid="`case-planned-occurrence-${occurrence.id}`">
-							<a :href="caseLink(occurrence.id)">{{ occurrence.title || occurrence.id }}</a>
+							<a :href="caseLink(occurrence.id)">{{
+								occurrence.title || occurrence.id
+							}}</a>
 						</li>
 					</ul>
 				</div>
@@ -102,10 +109,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CasePlanFollowUpDialog from '../../dialogs/CasePlanFollowUpDialog.vue'
-import {
-	caseActionRefusal,
-	plannedRows,
-} from '../../utils/caseActionsHelpers.js'
+import { caseActionRefusal, plannedRows } from '../../utils/caseActionsHelpers.js'
 import { relationSections } from '../../utils/caseRelationHelpers.js'
 
 export default {

@@ -110,7 +110,10 @@
 					(v) => $emit('update', 'notificationDomain', v ? v.id : '')
 				" />
 			<span class="field-hint">{{
-				t('dossiq', 'People pin a notification preference to a domain. Only domains a shipped rule declares are offered, so a preference always has a rule to match.')
+				t(
+					'dossiq',
+					'People pin a notification preference to a domain. Only domains a shipped rule declares are offered, so a preference always has a rule to match.',
+				)
 			}}</span>
 		</div>
 
@@ -362,8 +365,10 @@ export default {
 		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
 		 */
 		selectedNotificationDomain() {
-			const chosen = (this.form.notificationDomain || 'zaken')
-			return this.notificationDomainOptions.find((o) => o.id === chosen) || null
+			const chosen = this.form.notificationDomain || 'zaken'
+			return (
+				this.notificationDomainOptions.find((o) => o.id === chosen) || null
+			)
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */

@@ -18,7 +18,10 @@
 	<div class="archival-settings" data-testid="archival-settings">
 		<NcLoadingIcon v-if="loading" :size="24" />
 
-		<NcNoteCard v-else-if="error" type="error" data-testid="archival-settings-error">
+		<NcNoteCard
+			v-else-if="error"
+			type="error"
+			data-testid="archival-settings-error">
 			{{ error }}
 		</NcNoteCard>
 
@@ -26,7 +29,12 @@
 			<NcTextField
 				:modelValue="frequency"
 				:label="t('dossiq', 'Review reminder frequency')"
-				:helperText="t('dossiq', 'An ISO 8601 duration, for example P7D for every seven days.')"
+				:helperText="
+					t(
+						'dossiq',
+						'An ISO 8601 duration, for example P7D for every seven days.',
+					)
+				"
 				:error="invalid"
 				data-testid="archival-settings-frequency"
 				@update:modelValue="(v) => (frequency = v)" />
@@ -135,7 +143,9 @@ export default {
 
 			try {
 				const settings = await saveReviewReminderFrequency(this.frequency)
-				this.frequency = String(settings.reviewReminderFrequency ?? this.frequency)
+				this.frequency = String(
+					settings.reviewReminderFrequency ?? this.frequency,
+				)
 				this.saved = true
 			} catch (e) {
 				this.error = String(e?.message ?? e)

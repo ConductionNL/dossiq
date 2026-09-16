@@ -91,7 +91,9 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		// a rise in the level has somewhere visible to land.
 		riskType = await mkType('risk', {
 			impactFromRisk: true,
-			priorityMatrix: [{ impact: 'high', urgency: 'medium', priority: 'urgent' }],
+			priorityMatrix: [
+				{ impact: 'high', urgency: 'medium', priority: 'urgent' },
+			],
 		})
 
 		const mkStatus = async (caseTypeId: string) =>
@@ -211,13 +213,10 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		act: 'raise' | 'clear',
 		reason: string,
 	) =>
-		api.post(
-			`/index.php/apps/${REGISTER}/api/case/${caseId}/attention/${act}`,
-			{
-				headers: { requesttoken: token, 'Content-Type': 'application/json' },
-				data: { reason },
-			},
-		)
+		api.post(`/index.php/apps/${REGISTER}/api/case/${caseId}/attention/${act}`, {
+			headers: { requesttoken: token, 'Content-Type': 'application/json' },
+			data: { reason },
+		})
 
 	// @e2e openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md#clearing-without-a-reason-is-refused
 	test('clearing without a reason is refused, and the flag stays raised', async ({
@@ -227,15 +226,30 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
-		const raised = await flagAct(api, token, cases.flagRefuse, 'raise', 'A neighbour called twice')
+		const raised = await flagAct(
+			api,
+			token,
+			cases.flagRefuse,
+			'raise',
+			'A neighbour called twice',
+		)
 		expect(raised.ok()).toBeTruthy()
 		expect((await raised.json()).raised).toBe(true)
 
 		// The empty string, and a string of spaces, and a full stop. A required
 		// field satisfied by a full stop is a required field in name only.
 		for (const nothing of ['', '   ', '.']) {
-			const refused = await flagAct(api, token, cases.flagRefuse, 'clear', nothing)
-			expect(refused.status(), `clearing with "${nothing}" must be refused`).toBe(400)
+			const refused = await flagAct(
+				api,
+				token,
+				cases.flagRefuse,
+				'clear',
+				nothing,
+			)
+			expect(
+				refused.status(),
+				`clearing with "${nothing}" must be refused`,
+			).toBe(400)
 			expect((await refused.json()).code).toBe('reason_required')
 		}
 
@@ -253,11 +267,25 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
-		await flagAct(api, token, cases.flagKeep, 'raise', `${RUN_PREFIX} the applicant is in hospital`)
-		await flagAct(api, token, cases.flagKeep, 'clear', `${RUN_PREFIX} they are home and the file is complete`)
+		await flagAct(
+			api,
+			token,
+			cases.flagKeep,
+			'raise',
+			`${RUN_PREFIX} the applicant is in hospital`,
+		)
+		await flagAct(
+			api,
+			token,
+			cases.flagKeep,
+			'clear',
+			`${RUN_PREFIX} they are home and the file is complete`,
+		)
 
 		const state = await (
-			await api.get(`/index.php/apps/${REGISTER}/api/case/${cases.flagKeep}/attention`)
+			await api.get(
+				`/index.php/apps/${REGISTER}/api/case/${cases.flagKeep}/attention`,
+			)
 		).json()
 
 		expect(state.raisings).toBe(1)
@@ -287,26 +315,40 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		const token = await getRequestToken(api)
 
 		for (const key of ['flagList1', 'flagList2', 'flagList3']) {
-			await flagAct(api, token, cases[key], 'raise', `${RUN_PREFIX} needs a second pair of eyes`)
+			await flagAct(
+				api,
+				token,
+				cases[key],
+				'raise',
+				`${RUN_PREFIX} needs a second pair of eyes`,
+			)
 		}
 
 		// The facet is what the chip narrows on, so it is asserted where the
 		// chip reads it rather than only on the page.
 		const flagged = await api.get(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/case`
-			+ `?needsAttention=true&_search=${encodeURIComponent(RUN_PREFIX)}&_limit=50`,
+				+ `?needsAttention=true&_search=${encodeURIComponent(RUN_PREFIX)}&_limit=50`,
 		)
 		const rows = (await flagged.json()).results ?? []
 		const ids = rows.map((row: any) => objectId(row))
 
 		expect(ids).toEqual(
-			expect.arrayContaining([cases.flagList1, cases.flagList2, cases.flagList3]),
+			expect.arrayContaining([
+				cases.flagList1,
+				cases.flagList2,
+				cases.flagList3,
+			]),
 		)
-		expect(ids, 'a case nobody flagged is not in the filter').not.toContain(cases.flagPlain1)
+		expect(ids, 'a case nobody flagged is not in the filter').not.toContain(
+			cases.flagPlain1,
+		)
 		expect(ids).not.toContain(cases.flagPlain2)
 
 		await openCase(page, 'flagList1')
-		await expect(page.locator('[data-testid="case-attention-raised"]')).toBeVisible({
+		await expect(
+			page.locator('[data-testid="case-attention-raised"]'),
+		).toBeVisible({
 			timeout: 30_000,
 		})
 
@@ -416,11 +458,15 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		const markers = (row.attentionMarkers ?? []) as Array<Record<string, string>>
 
 		expect(markers.map((m) => m.marker)).toContain('advice-request-overdue')
-		expect(markers.find((m) => m.marker === 'advice-request-overdue')?.tab).toBe('case-work-panel')
+		expect(markers.find((m) => m.marker === 'advice-request-overdue')?.tab).toBe(
+			'case-work-panel',
+		)
 		expect(row.hasAttentionMarkers).toBe(true)
 
 		await openCase(page, 'marked')
-		const marker = page.locator('[data-testid="case-marker-advice-request-overdue"]')
+		const marker = page.locator(
+			'[data-testid="case-marker-advice-request-overdue"]',
+		)
 		await expect(marker).toBeVisible({ timeout: 30_000 })
 		await expect(marker).toHaveAttribute('data-tab', 'case-work-panel')
 
@@ -436,17 +482,26 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		const api = await playwright.request.newContext({ baseURL })
 
 		await openCase(page, 'marked')
-		await expect(page.locator('[data-testid="case-marker-advice-request-overdue"]')).toBeVisible({
+		await expect(
+			page.locator('[data-testid="case-marker-advice-request-overdue"]'),
+		).toBeVisible({
 			timeout: 30_000,
 		})
 
 		// Open the panel the marker points at, and leave again.
-		await page.getByRole('tab', { name: /work|werk|taken/i }).first().click()
+		await page
+			.getByRole('tab', { name: /work|werk|taken/i })
+			.first()
+			.click()
 		await page.waitForTimeout(1_000)
 		await page.reload(PAGE_LOAD)
 
-		const marker = page.locator('[data-testid="case-marker-advice-request-overdue"]')
-		await expect(marker, 'a visit is not the work').toBeVisible({ timeout: 30_000 })
+		const marker = page.locator(
+			'[data-testid="case-marker-advice-request-overdue"]',
+		)
+		await expect(marker, 'a visit is not the work').toBeVisible({
+			timeout: 30_000,
+		})
 
 		// And the stored fact agrees: nothing was written by looking.
 		const row = await showObject(api, 'case', cases.marked)
@@ -466,13 +521,17 @@ test.describe('A case says what needs looking at, and who said so', () => {
 		// The work: the advice arrived. No gesture anywhere touches the
 		// marker, and the case itself is saved only to trigger the derivation
 		// that reads the request again.
-		await updateObject(api, token, 'adviceRequest', markedAdvice, { status: 'received' })
+		await updateObject(api, token, 'adviceRequest', markedAdvice, {
+			status: 'received',
+		})
 		await updateObject(api, token, 'case', cases.marked, {
 			description: `${RUN_PREFIX} advice received`,
 		})
 
 		const after = await showObject(api, 'case', cases.marked)
-		const markers = (after.attentionMarkers ?? []) as Array<Record<string, string>>
+		const markers = (after.attentionMarkers ?? []) as Array<
+			Record<string, string>
+		>
 
 		expect(markers.map((m) => m.marker)).not.toContain('advice-request-overdue')
 		expect(after.hasAttentionMarkers).toBe(false)
@@ -486,7 +545,9 @@ test.describe('A case says what needs looking at, and who said so', () => {
 	}) => {
 		await openCase(page, 'stale')
 
-		await expect(page.locator('[data-testid="case-attention-risk-stale"]')).toBeVisible({
+		await expect(
+			page.locator('[data-testid="case-attention-risk-stale"]'),
+		).toBeVisible({
 			timeout: 30_000,
 		})
 	})

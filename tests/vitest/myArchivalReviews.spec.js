@@ -28,7 +28,16 @@ import { defineComponent, h } from 'vue'
 function stub(name, tag = 'div') {
 	return defineComponent({
 		name,
-		props: ['disabled', 'modelValue', 'label', 'options', 'inputLabel', 'type', 'name', 'description'],
+		props: [
+			'disabled',
+			'modelValue',
+			'label',
+			'options',
+			'inputLabel',
+			'type',
+			'name',
+			'description',
+		],
 		emits: ['click', 'update:modelValue'],
 		render() {
 			return h(
@@ -40,10 +49,16 @@ function stub(name, tag = 'div') {
 	})
 }
 
-vi.mock('@nextcloud/vue/components/NcButton', () => ({ default: stub('NcButton', 'button') }))
-vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({ default: stub('NcLoadingIcon') }))
+vi.mock('@nextcloud/vue/components/NcButton', () => ({
+	default: stub('NcButton', 'button'),
+}))
+vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
+	default: stub('NcLoadingIcon'),
+}))
 vi.mock('@nextcloud/vue/components/NcSelect', () => ({ default: stub('NcSelect') }))
-vi.mock('@nextcloud/vue/components/NcTextField', () => ({ default: stub('NcTextField', 'input') }))
+vi.mock('@nextcloud/vue/components/NcTextField', () => ({
+	default: stub('NcTextField', 'input'),
+}))
 vi.mock('@nextcloud/vue/components/NcDateTimePickerNative', () => ({
 	default: stub('NcDateTimePickerNative', 'input'),
 }))
@@ -56,8 +71,12 @@ vi.mock('@nextcloud/vue/components/NcEmptyContent', () => ({
 		},
 	}),
 }))
-vi.mock('vue-material-design-icons/AlertCircleOutline.vue', () => ({ default: stub('AlertCircleOutline') }))
-vi.mock('vue-material-design-icons/ArchiveOutline.vue', () => ({ default: stub('ArchiveOutline') }))
+vi.mock('vue-material-design-icons/AlertCircleOutline.vue', () => ({
+	default: stub('AlertCircleOutline'),
+}))
+vi.mock('vue-material-design-icons/ArchiveOutline.vue', () => ({
+	default: stub('ArchiveOutline'),
+}))
 
 /** What the worklist read answers. Replaced per test. */
 let pendingAnswer = vi.fn()
@@ -73,9 +92,8 @@ vi.mock('../../src/services/archivalApi.js', () => ({
 	},
 }))
 
-const { default: MyArchivalReviews } = await import(
-	'../../src/components/case/MyArchivalReviews.vue'
-)
+const { default: MyArchivalReviews } =
+	await import('../../src/components/case/MyArchivalReviews.vue')
 
 /**
  * Mount the section and let its read settle.
@@ -107,7 +125,9 @@ describe('MyArchivalReviews', () => {
 		const wrapper = await mountSection()
 
 		expect(pendingAnswer).toHaveBeenCalledWith()
-		expect(wrapper.find('[data-testid="archival-review-record-9"]').exists()).toBe(true)
+		expect(
+			wrapper.find('[data-testid="archival-review-record-9"]').exists(),
+		).toBe(true)
 	})
 
 	it('says there is nothing to sign off on an empty list', async () => {
@@ -115,18 +135,30 @@ describe('MyArchivalReviews', () => {
 
 		const wrapper = await mountSection()
 
-		expect(wrapper.find('[data-testid="archival-reviews-empty"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="archival-reviews-error"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="archival-reviews-empty"]').exists()).toBe(
+			true,
+		)
+		expect(wrapper.find('[data-testid="archival-reviews-error"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('draws a failed read as an error with a retry, not as an empty list', async () => {
-		pendingAnswer = vi.fn().mockRejectedValue(new Error('openregister is unreachable'))
+		pendingAnswer = vi
+			.fn()
+			.mockRejectedValue(new Error('openregister is unreachable'))
 
 		const wrapper = await mountSection()
 
-		expect(wrapper.find('[data-testid="archival-reviews-error"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="archival-reviews-retry"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="archival-reviews-empty"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="archival-reviews-error"]').exists()).toBe(
+			true,
+		)
+		expect(wrapper.find('[data-testid="archival-reviews-retry"]').exists()).toBe(
+			true,
+		)
+		expect(wrapper.find('[data-testid="archival-reviews-empty"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('refuses an answer with no reason, and posts nothing', async () => {
@@ -165,14 +197,18 @@ describe('MyArchivalReviews', () => {
 		await wrapper.vm.answer(ENTRY)
 		await wrapper.vm.$nextTick()
 
-		expect(decisions).toEqual([{
-			listId: 'list-3',
-			entryId: 'record-9',
-			answer: 'destroy',
-			reason: 'de bewaartermijn is verstreken',
-			newArchiefactiedatum: null,
-		}])
-		expect(wrapper.find('[data-testid="archival-review-record-9"]').exists()).toBe(false)
+		expect(decisions).toEqual([
+			{
+				listId: 'list-3',
+				entryId: 'record-9',
+				answer: 'destroy',
+				reason: 'de bewaartermijn is verstreken',
+				newArchiefactiedatum: null,
+			},
+		])
+		expect(
+			wrapper.find('[data-testid="archival-review-record-9"]').exists(),
+		).toBe(false)
 	})
 
 	it('sends the new date only on a retention', async () => {

@@ -36,6 +36,14 @@
 				label="label"
 				trackBy="id" />
 
+			<TemplatePicker
+				v-if="closing"
+				kind="result"
+				:caseType="caseType"
+				:caseId="caseId"
+				:label="t('dossiq', 'Result template')"
+				@apply="applyTemplate" />
+
 			<NcTextArea
 				v-model="comment"
 				data-testid="case-transition-comment"
@@ -75,6 +83,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import TemplatePicker from '../components/TemplatePicker.vue'
 import {
 	buildTransitionPayload,
 	canConfirmTransition,
@@ -87,7 +96,7 @@ const PAGE_REFRESH = 'cn:page:refresh'
 export default {
 	name: 'CaseTransitionConfirmDialog',
 
-	components: { NcButton, NcDialog, NcSelect, NcTextArea },
+	components: { NcButton, NcDialog, NcSelect, NcTextArea, TemplatePicker },
 
 	props: {
 		/** The case being moved. */
@@ -112,6 +121,20 @@ export default {
 		resultTypes: {
 			type: Array,
 			default: () => [],
+		},
+
+		/**
+		 * The case type, which scopes the result templates on offer.
+		 *
+		 * Optional, and '' is a real answer rather than a missing one: a caller
+		 * that does not know the case type still gets the templates scoped to
+		 * no case type, which are the ones meant for every case type. Scoping
+		 * to nothing would have been the wrong default, because it would hide
+		 * exactly the general templates.
+		 */
+		caseType: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -147,6 +170,26 @@ export default {
 
 	methods: {
 		t,
+
+		/**
+		 * Fill the outcome text from a result template.
+		 *
+		 * 🔑 IT DOES NOT OVERWRITE WHAT THE HANDLER ALREADY TYPED. Picking a
+		 * template after writing two paragraphs and losing them is worse than
+		 * having no templates: the handler cannot get the text back, and the
+		 * gesture that destroyed it looked like a convenience.
+		 *
+		 * @param {object} chosen The template, with its body and presets.
+		 * @spec openspec/changes/starter-content-and-templates/specs/template-library/spec.md
+		 */
+		applyTemplate(chosen) {
+			const text = chosen?.body || chosen?.presets?.body || ''
+			if (!text || this.comment.trim() !== '') {
+				return
+			}
+
+			this.comment = text
+		},
 
 		/**
 		 * Post the transition, and keep the dialog open on a refusal so the

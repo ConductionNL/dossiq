@@ -61,8 +61,10 @@ const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'u
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 
 /** The translate stub the util is handed, so no global is needed. */
-function translate (app, text, vars = {}) {
-  return text.replace(/\{(\w+)\}/g, (match, key) => (key in vars ? String(vars[key]) : match))
+function translate(app, text, vars = {}) {
+	return text.replace(/\{(\w+)\}/g, (match, key) =>
+		key in vars ? String(vars[key]) : match,
+	)
 }
 
 /** Every sidebar tab declared on any page of the manifest. */
@@ -156,22 +158,51 @@ describe('The phase clock is visible before the case clock', () => {
 	it('renders a clock whose kind it does not recognise, at the end', () => {
 		const rows = termRows(
 			[
-				{ kind: 'phase', endDate: '2026-09-09', daysLeft: -6, overdue: true },
-				{ kind: 'something-new', endDate: '2026-12-01', daysLeft: 70, overdue: false },
-				{ kind: 'statutory', endDate: '2026-10-25', daysLeft: 40, overdue: false },
+				{
+					kind: 'phase',
+					endDate: '2026-09-09',
+					daysLeft: -6,
+					overdue: true,
+				},
+				{
+					kind: 'something-new',
+					endDate: '2026-12-01',
+					daysLeft: 70,
+					overdue: false,
+				},
+				{
+					kind: 'statutory',
+					endDate: '2026-10-25',
+					daysLeft: 40,
+					overdue: false,
+				},
 			],
 			translate,
 		)
 
-		expect(rows.map((row) => row.kind)).toEqual(['statutory', 'phase', 'something-new'])
+		expect(rows.map((row) => row.kind)).toEqual([
+			'statutory',
+			'phase',
+			'something-new',
+		])
 		expect(rows[2].label).toBe('something-new')
 	})
 
 	it('keeps an overdue clock in its place rather than floating it to the top', () => {
 		const rows = termRows(
 			[
-				{ kind: 'statutory', endDate: '2026-10-25', daysLeft: 40, overdue: false },
-				{ kind: 'phase', endDate: '2026-09-09', daysLeft: -6, overdue: true },
+				{
+					kind: 'statutory',
+					endDate: '2026-10-25',
+					daysLeft: 40,
+					overdue: false,
+				},
+				{
+					kind: 'phase',
+					endDate: '2026-09-09',
+					daysLeft: -6,
+					overdue: true,
+				},
 			],
 			translate,
 		)
@@ -180,9 +211,15 @@ describe('The phase clock is visible before the case clock', () => {
 	})
 
 	it('reads a clock with no end date as unknown, not as on time', () => {
-		expect(termTone({ kind: 'planned', endDate: '', daysLeft: 0 })).toBe('unknown')
-		expect(termTone({ kind: 'planned', endDate: '2026-12-01', daysLeft: 70 })).toBe('ontime')
-		expect(termTone({ kind: 'planned', endDate: '2026-09-18', daysLeft: 3 })).toBe('soon')
+		expect(termTone({ kind: 'planned', endDate: '', daysLeft: 0 })).toBe(
+			'unknown',
+		)
+		expect(
+			termTone({ kind: 'planned', endDate: '2026-12-01', daysLeft: 70 }),
+		).toBe('ontime')
+		expect(
+			termTone({ kind: 'planned', endDate: '2026-09-18', daysLeft: 3 }),
+		).toBe('soon')
 	})
 })
 
@@ -192,12 +229,16 @@ describe('The Terms tab is reachable', () => {
 		expect(tab, 'CaseDetail declares a Terms sidebar tab').toBeTruthy()
 		expect(tab.component).toBe('CaseTermsTab')
 		expect(registrySource).toContain('CaseTermsTab: {')
-		expect(registrySource).toContain("import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'")
+		expect(registrySource).toContain(
+			"import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'",
+		)
 	})
 
 	it('names an icon the app actually imports', () => {
 		const tab = sidebarTabs().find((entry) => entry.id === 'terms')
-		expect(iconsSource).toContain(`import ${tab.icon} from 'vue-material-design-icons/${tab.icon}.vue'`)
+		expect(iconsSource).toContain(
+			`import ${tab.icon} from 'vue-material-design-icons/${tab.icon}.vue'`,
+		)
 	})
 
 	it('is registered as a page and not as a custom widget', () => {

@@ -29,7 +29,10 @@
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 
-import { transitionBlockReason, transitionIsBlocked } from './caseLifecycleHelpers.js'
+import {
+	transitionBlockReason,
+	transitionIsBlocked,
+} from './caseLifecycleHelpers.js'
 
 /**
  * The four statutory gestures, in the order the menu shows them.
@@ -97,7 +100,9 @@ export const ENDING_ACTS = [
  * @param {boolean|number|string|null|undefined} value The stored value.
  * @return {boolean} True only for the values that mean true.
  */
-const yes = (value) => value === true || value === 1 || value === '1' || value === 'true'
+function yes(value) {
+	return value === true || value === 1 || value === '1' || value === 'true'
+}
 
 /**
  * The transitions half of the menu.
@@ -143,7 +148,7 @@ function gestureEntries(state) {
 		id: gesture.act,
 		label: gesture.label,
 		disabled: unread ? false : state[gesture.flag] !== true,
-		reason: unread ? '' : (state[gesture.flag] === true ? '' : gesture.reason),
+		reason: unread ? '' : state[gesture.flag] === true ? '' : gesture.reason,
 	}))
 }
 
@@ -203,7 +208,8 @@ function stateEntries(acts) {
 			kind: 'state',
 			id: 'hold',
 			label: 'Hold',
-			explainer: 'You park the case until a date. The statutory term keeps running.',
+			explainer:
+				'You park the case until a date. The statutory term keeps running.',
 			disabled: false,
 			reason: '',
 		})

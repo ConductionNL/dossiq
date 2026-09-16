@@ -30,26 +30,40 @@ vi.mock('@nextcloud/l10n', () => ({
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
-const field = readFileSync(resolve(root, 'src/components/case/PersonalStageField.vue'), 'utf8')
+const field = readFileSync(
+	resolve(root, 'src/components/case/PersonalStageField.vue'),
+	'utf8',
+)
 const api = readFileSync(resolve(root, 'src/services/personalQueueApi.js'), 'utf8')
 const routes = readFileSync(resolve(root, 'appinfo/routes.php'), 'utf8')
-const controller = readFileSync(resolve(root, 'lib/Controller/PersonalQueueController.php'), 'utf8')
-const en = JSON.parse(readFileSync(resolve(root, 'l10n/en.json'), 'utf8')).translations
-const nl = JSON.parse(readFileSync(resolve(root, 'l10n/nl.json'), 'utf8')).translations
+const controller = readFileSync(
+	resolve(root, 'lib/Controller/PersonalQueueController.php'),
+	'utf8',
+)
+const en = JSON.parse(
+	readFileSync(resolve(root, 'l10n/en.json'), 'utf8'),
+).translations
+const nl = JSON.parse(
+	readFileSync(resolve(root, 'l10n/nl.json'), 'utf8'),
+).translations
 
 describe('the field says the stage is yours alone', () => {
 	it('tells the reader nobody else sees it', () => {
-		expect(field).toContain('Only you can see this. It does not change the case status.')
+		expect(field).toContain(
+			'Only you can see this. It does not change the case status.',
+		)
 	})
 
 	it('ships that sentence in Dutch too', () => {
 		const key = 'Only you can see this. It does not change the case status.'
 
 		expect(en[key]).toBe(key)
-		expect(nl[key]).toBe('Alleen jij ziet dit. Het verandert de status van de zaak niet.')
+		expect(nl[key]).toBe(
+			'Alleen jij ziet dit. Het verandert de status van de zaak niet.',
+		)
 	})
 
-	it('labels the field as the reader\'s own', () => {
+	it("labels the field as the reader's own", () => {
 		expect(field).toContain("t('dossiq', 'Your own stage')")
 	})
 
@@ -61,10 +75,12 @@ describe('the field says the stage is yours alone', () => {
 	})
 })
 
-describe('nothing can ask for somebody else\'s stage', () => {
+describe("nothing can ask for somebody else's stage", () => {
 	it('the client takes a case, never a person', () => {
 		expect(api).toContain('export async function fetchPersonalStage(caseId)')
-		expect(api).toContain('export async function savePersonalStage(caseId, stage)')
+		expect(api).toContain(
+			'export async function savePersonalStage(caseId, stage)',
+		)
 		expect(api).not.toMatch(/fetchPersonalStage\([^)]*user/i)
 	})
 
@@ -75,17 +91,23 @@ describe('nothing can ask for somebody else\'s stage', () => {
 
 	it('the controller answers for the caller it resolves itself', () => {
 		expect(controller).toContain('private function caller(): string')
-		expect(controller).toContain("userSession->getUser()?->getUID()")
+		expect(controller).toContain('userSession->getUser()?->getUID()')
 		expect(controller).not.toMatch(/getParam\(\s*'user/i)
 	})
 
 	it('every queue endpoint refuses an unauthenticated caller', () => {
-		const methods = [...controller.matchAll(/public function (\w+)\([^)]*\): JSONResponse \{\n([^}]*)/g)]
+		const methods = [
+			...controller.matchAll(
+				/public function (\w+)\([^)]*\): JSONResponse \{\n([^}]*)/g,
+			),
+		]
 
 		expect(methods.length).toBeGreaterThan(5)
 		for (const [, name, body] of methods) {
-			expect(body, `${name} does not refuse an unauthenticated caller`)
-				.toContain('return $this->unauthenticated()')
+			expect(
+				body,
+				`${name} does not refuse an unauthenticated caller`,
+			).toContain('return $this->unauthenticated()')
 		}
 	})
 })

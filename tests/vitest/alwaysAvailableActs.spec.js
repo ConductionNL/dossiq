@@ -33,7 +33,12 @@ const TRANSITIONS = [
 const ALWAYS = [
 	{ id: 'withdraw', label: 'Trek de zaak in', available: true },
 	{ id: 'add-document', label: 'Voeg een document toe', available: true },
-	{ id: 'escalate', label: 'Escaleer', available: false, reason: 'Onvoldoende rechten' },
+	{
+		id: 'escalate',
+		label: 'Escaleer',
+		available: false,
+		reason: 'Onvoldoende rechten',
+	},
 ]
 
 describe('always-available acts in the one menu', () => {
@@ -65,7 +70,11 @@ describe('always-available acts in the one menu', () => {
 	})
 
 	it('shows an act the guard refuses, disabled, with the guard sentence', () => {
-		const menu = buildActsMenu({ transitions: [], state: null, acts: { alwaysAvailable: ALWAYS } })
+		const menu = buildActsMenu({
+			transitions: [],
+			state: null,
+			acts: { alwaysAvailable: ALWAYS },
+		})
 		const escalate = menu.find((entry) => entry.id === 'escalate')
 
 		// Shown, not hidden: an act that vanishes tells the reader the system
@@ -76,7 +85,11 @@ describe('always-available acts in the one menu', () => {
 	})
 
 	it('adds no entry when the case type declares none', () => {
-		const menu = buildActsMenu({ transitions: TRANSITIONS, state: null, acts: {} })
+		const menu = buildActsMenu({
+			transitions: TRANSITIONS,
+			state: null,
+			acts: {},
+		})
 
 		expect(menu.filter((entry) => entry.kind === 'always')).toEqual([])
 	})

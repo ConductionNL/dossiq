@@ -33,10 +33,15 @@
 		<NcEmptyContent
 			v-else-if="entries.length === 0"
 			:name="t('dossiq', 'No notifications to set')"
-			:description="t('dossiq', 'This instance routes no dossiq notifications yet.')" />
+			:description="
+				t('dossiq', 'This instance routes no dossiq notifications yet.')
+			" />
 
 		<ul v-else class="notification-routing__list">
-			<li v-for="entry in entries" :key="entryKey(entry)" class="notification-routing__item">
+			<li
+				v-for="entry in entries"
+				:key="entryKey(entry)"
+				class="notification-routing__item">
 				<NcCheckboxRadioSwitch
 					:modelValue="entry.enabled"
 					type="switch"
@@ -45,7 +50,9 @@
 					{{ labelFor(entry) }}
 				</NcCheckboxRadioSwitch>
 
-				<p class="notification-routing__decided" :data-testid="`notification-routing-layer-${entryKey(entry)}`">
+				<p
+					class="notification-routing__decided"
+					:data-testid="`notification-routing-layer-${entryKey(entry)}`">
 					{{ decidedBy(entry) }}
 				</p>
 
@@ -62,7 +69,12 @@
 		<div v-if="isAdmin" class="notification-routing__group">
 			<h3>{{ t('dossiq', 'Set a default for a team') }}</h3>
 			<p class="notification-routing__explainer">
-				{{ t('dossiq', 'A team default decides for everyone in the group who has not chosen for themselves.') }}
+				{{
+					t(
+						'dossiq',
+						'A team default decides for everyone in the group who has not chosen for themselves.',
+					)
+				}}
 			</p>
 
 			<NcTextField
@@ -95,7 +107,10 @@
 				</NcButton>
 			</div>
 
-			<p v-if="groupMessage" class="notification-routing__message" data-testid="notification-routing-group-message">
+			<p
+				v-if="groupMessage"
+				class="notification-routing__message"
+				data-testid="notification-routing-group-message">
 				{{ groupMessage }}
 			</p>
 		</div>
@@ -172,7 +187,10 @@ export default {
 		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
 		 */
 		selectedDomain() {
-			return this.domainOptions.find((o) => o.id === this.domain) || this.domainOptions[0]
+			return (
+				this.domainOptions.find((o) => o.id === this.domain)
+				|| this.domainOptions[0]
+			)
 		},
 
 		/**
@@ -182,7 +200,7 @@ export default {
 		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
 		 */
 		canWriteGroupDefault() {
-			return (this.group.trim() !== '' && this.selectedGroupEntry !== null)
+			return this.group.trim() !== '' && this.selectedGroupEntry !== null
 		},
 	},
 
@@ -208,7 +226,7 @@ export default {
 		async load() {
 			this.loading = true
 			try {
-				const scope = (this.domain ? `domain:${this.domain}` : null)
+				const scope = this.domain ? `domain:${this.domain}` : null
 				const entries = await fetchPreferences(scope)
 				this.entries = entries.map((entry) => ({
 					...entry,
@@ -240,12 +258,23 @@ export default {
 		labelFor(entry) {
 			const known = {
 				caseAssigned: t('dossiq', 'A case is assigned to me'),
-				caseHandoffIntake: t('dossiq', 'A case reaches us through a handoff'),
-				substitutionRegisteredForSubstitute: t('dossiq', 'I am registered to stand in for someone'),
+				caseHandoffIntake: t(
+					'dossiq',
+					'A case reaches us through a handoff',
+				),
+
+				substitutionRegisteredForSubstitute: t(
+					'dossiq',
+					'I am registered to stand in for someone',
+				),
+
 				workDigestReady: t('dossiq', 'My daily work digest'),
 			}
 
-			return (known[entry.notification] || `${entry.schemaTitle || entry.schema}: ${entry.notification}`)
+			return (
+				known[entry.notification]
+				|| `${entry.schemaTitle || entry.schema}: ${entry.notification}`
+			)
 		},
 
 		/**
@@ -256,20 +285,26 @@ export default {
 		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
 		 */
 		decidedBy(entry) {
-			const scoped = (entry.scope && entry.scope !== 'global')
+			const scoped = entry.scope && entry.scope !== 'global'
 			if (entry.source === 'user-override') {
-				return (scoped
+				return scoped
 					? t('dossiq', 'You set this, for this part of your work only.')
-					: t('dossiq', 'You set this.'))
+					: t('dossiq', 'You set this.')
 			}
 
 			if (entry.source === 'group-default') {
-				return (scoped
-					? t('dossiq', 'Your team set this, for this part of your work only. You can decide for yourself.')
-					: t('dossiq', 'Your team set this. You can decide for yourself.'))
+				return scoped
+					? t(
+							'dossiq',
+							'Your team set this, for this part of your work only. You can decide for yourself.',
+						)
+					: t('dossiq', 'Your team set this. You can decide for yourself.')
 			}
 
-			return t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.')
+			return t(
+				'dossiq',
+				'Nobody has changed this, so it is on the setting it ships with.',
+			)
 		},
 
 		/**
@@ -280,7 +315,7 @@ export default {
 		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
 		 */
 		async chooseDomain(option) {
-			this.domain = (option ? option.id : '')
+			this.domain = option ? option.id : ''
 			await this.load()
 		},
 
@@ -297,7 +332,7 @@ export default {
 				schema: entry.schema,
 				notification: entry.notification,
 				enabled,
-				scope: (this.domain ? `domain:${this.domain}` : null),
+				scope: this.domain ? `domain:${this.domain}` : null,
 			})
 			await this.load()
 		},
@@ -313,7 +348,7 @@ export default {
 			await clearPreference({
 				schema: entry.schema,
 				notification: entry.notification,
-				scope: (this.domain ? `domain:${this.domain}` : null),
+				scope: this.domain ? `domain:${this.domain}` : null,
 			})
 			await this.load()
 		},
@@ -336,13 +371,17 @@ export default {
 					schema: this.selectedGroupEntry.schema,
 					notification: this.selectedGroupEntry.notification,
 					enabled,
-					scope: (this.domain ? `domain:${this.domain}` : null),
+					scope: this.domain ? `domain:${this.domain}` : null,
 				})
 				this.groupMessage = t('dossiq', 'The team default is set.')
 			} catch (error) {
-				this.groupMessage = (error?.response?.status === 403
-					? t('dossiq', 'You do not administer that group, so its default is not yours to set.')
-					: t('dossiq', 'The team default was not set.'))
+				this.groupMessage =
+					error?.response?.status === 403
+						? t(
+								'dossiq',
+								'You do not administer that group, so its default is not yours to set.',
+							)
+						: t('dossiq', 'The team default was not set.')
 			}
 
 			await this.load()

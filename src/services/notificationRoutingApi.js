@@ -49,9 +49,12 @@ export const DOMAINS = ['zaken', 'waarneming', 'werkvoorraad']
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
  */
 export async function fetchPreferences(scope = null) {
-	const params = (scope ? { scope } : {})
-	const { data } = await axios.get(generateUrl(`${BASE}/notification-preferences`), { params })
-	const results = (Array.isArray(data?.results) ? data.results : [])
+	const params = scope ? { scope } : {}
+	const { data } = await axios.get(
+		generateUrl(`${BASE}/notification-preferences`),
+		{ params },
+	)
+	const results = Array.isArray(data?.results) ? data.results : []
 
 	return results.filter((entry) => DOSSIQ_SCHEMAS.includes(entry?.schema))
 }
@@ -68,13 +71,21 @@ export async function fetchPreferences(scope = null) {
  *
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
  */
-export async function savePreference({ schema, notification, enabled, scope = null }) {
+export async function savePreference({
+	schema,
+	notification,
+	enabled,
+	scope = null,
+}) {
 	const body = { schema, notification, enabled }
 	if (scope) {
 		body.scope = scope
 	}
 
-	const { data } = await axios.put(generateUrl(`${BASE}/notification-preferences`), body)
+	const { data } = await axios.put(
+		generateUrl(`${BASE}/notification-preferences`),
+		body,
+	)
 
 	return data
 }
@@ -96,7 +107,10 @@ export async function clearPreference({ schema, notification, scope = null }) {
 		body.scope = scope
 	}
 
-	const { data } = await axios.put(generateUrl(`${BASE}/notification-preferences`), body)
+	const { data } = await axios.put(
+		generateUrl(`${BASE}/notification-preferences`),
+		body,
+	)
 
 	return data
 }
@@ -117,13 +131,22 @@ export async function clearPreference({ schema, notification, scope = null }) {
  *
  * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
  */
-export async function saveGroupDefault({ group, schema, notification, enabled, scope = null }) {
+export async function saveGroupDefault({
+	group,
+	schema,
+	notification,
+	enabled,
+	scope = null,
+}) {
 	const body = { group, schema, notification, enabled }
 	if (scope) {
 		body.scope = scope
 	}
 
-	const { data } = await axios.put(generateUrl(`${BASE}/notification-group-preferences`), body)
+	const { data } = await axios.put(
+		generateUrl(`${BASE}/notification-group-preferences`),
+		body,
+	)
 
 	return data
 }

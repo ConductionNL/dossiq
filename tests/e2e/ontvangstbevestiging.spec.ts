@@ -155,18 +155,27 @@ test.describe('Ontvangstbevestiging (Awb 4:3a)', () => {
 					const stored = await showObject(api, 'case', id)
 					return stored?.acknowledgementDuty?.status ?? 'pending'
 				},
-				{ timeout: 60_000, message: 'the case never recorded its acknowledgement' },
+				{
+					timeout: 60_000,
+					message: 'the case never recorded its acknowledgement',
+				},
 			)
 			.not.toBe('pending')
 
 		const stored = await showObject(api, 'case', id)
 		const record = (stored.outboundCommunications ?? [])[0]
-		expect(record, 'the case carries an outbound communication record').toBeTruthy()
+		expect(
+			record,
+			'the case carries an outbound communication record',
+		).toBeTruthy()
 		expect(record.moment).toBe('case-received')
 		expect(record.channel, 'the record names the channel').toBeTruthy()
 		expect(record.recipient, 'the record names the recipient').toBeTruthy()
 		expect(record.sentAt, 'the record names the moment').toBeTruthy()
-		expect(record.templateVersion, 'the record names the template version').toBeTruthy()
+		expect(
+			record.templateVersion,
+			'the record names the template version',
+		).toBeTruthy()
 
 		await api.dispose()
 	})
@@ -209,7 +218,10 @@ test.describe('Ontvangstbevestiging (Awb 4:3a)', () => {
 			headers: { requesttoken: token, 'Content-Type': 'application/json' },
 			data: { how: 'Confirmed by post' },
 		})
-		expect(met.ok(), `record met -> ${met.status()} ${await met.text()}`).toBeTruthy()
+		expect(
+			met.ok(),
+			`record met -> ${met.status()} ${await met.text()}`,
+		).toBeTruthy()
 
 		const duty = (await met.json()).duty
 		expect(duty.status).toBe('met')
@@ -283,6 +295,9 @@ test.describe('Ontvangstbevestiging (Awb 4:3a)', () => {
 			page.getByText(/Receipt confirmation|Ontvangstbevestiging/i).first(),
 		).toBeVisible(PAGE_LOAD)
 
-		expect(errors, `dossiq errors on the case page: ${errors.join(' | ')}`).toEqual([])
+		expect(
+			errors,
+			`dossiq errors on the case page: ${errors.join(' | ')}`,
+		).toEqual([])
 	})
 })

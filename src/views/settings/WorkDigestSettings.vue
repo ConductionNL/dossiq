@@ -51,7 +51,10 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcCheckboxRadioSwitch, NcTextField } from '@nextcloud/vue'
-import { fetchDigestSettings, saveDigestSettings } from '../../services/personalQueueApi.js'
+import {
+	fetchDigestSettings,
+	saveDigestSettings,
+} from '../../services/personalQueueApi.js'
 
 export default {
 	name: 'WorkDigestSettings',
@@ -87,14 +90,23 @@ export default {
 			}
 
 			if (this.source === 'group-default') {
-				return t('dossiq', 'Your team set this. You can decide for yourself.')
+				return t(
+					'dossiq',
+					'Your team set this. You can decide for yourself.',
+				)
 			}
 
 			if (this.source === 'schema-default') {
-				return t('dossiq', 'Nobody has changed this, so it is on the setting it ships with.')
+				return t(
+					'dossiq',
+					'Nobody has changed this, so it is on the setting it ships with.',
+				)
 			}
 
-			return t('dossiq', 'This instance keeps the setting here rather than with your other notifications.')
+			return t(
+				'dossiq',
+				'This instance keeps the setting here rather than with your other notifications.',
+			)
 		},
 	},
 
@@ -121,8 +133,8 @@ export default {
 		apply(settings) {
 			this.enabled = settings.enabled
 			this.hour = settings.hour
-			this.source = (settings.source || 'dossiq')
-			this.scope = (settings.scope || 'global')
+			this.source = settings.source || 'dossiq'
+			this.scope = settings.scope || 'global'
 		},
 
 		/**

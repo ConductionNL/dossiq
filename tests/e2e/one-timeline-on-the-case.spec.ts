@@ -95,7 +95,11 @@ async function readTimeline(
  *
  * @return The raw response, so a test may assert on a refusal.
  */
-async function writeEntry(api: APIRequestContext, id: string, body: Record<string, unknown>) {
+async function writeEntry(
+	api: APIRequestContext,
+	id: string,
+	body: Record<string, unknown>,
+) {
 	return api.post(`${OR}/objects/${REGISTER}/${SCHEMA}/${id}/timeline`, {
 		headers: { requesttoken: token, 'Content-Type': 'application/json' },
 		data: body,
@@ -124,11 +128,15 @@ test.afterAll(async ({ request }) => {
 })
 
 test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
-	test('every kind dossiq names is declared on the instance', async ({ request }) => {
+	test('every kind dossiq names is declared on the instance', async ({
+		request,
+	}) => {
 		const response = await request.get(`${OR}/timeline/kinds`)
 		expect(response.ok()).toBeTruthy()
 
-		const declared = ((await response.json()).results || []).map((kind: any) => kind.slug)
+		const declared = ((await response.json()).results || []).map(
+			(kind: any) => kind.slug,
+		)
 
 		for (const slug of [
 			'contactmoment',
@@ -143,7 +151,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 		}
 	})
 
-	test('an inbound mail entry opens a follow-up and a contact moment does not', async ({ request }) => {
+	test('an inbound mail entry opens a follow-up and a contact moment does not', async ({
+		request,
+	}) => {
 		const inbound = await writeEntry(request, caseId, {
 			kind: 'mail-inkomend',
 			message: `${RUN_PREFIX} bericht ontvangen`,
@@ -161,7 +171,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 		expect((await call.json()).followUp).toBeNull()
 	})
 
-	test('a kind nobody declared is refused rather than filed as a plain note', async ({ request }) => {
+	test('a kind nobody declared is refused rather than filed as a plain note', async ({
+		request,
+	}) => {
 		const response = await writeEntry(request, caseId, {
 			kind: 'nobody-declared-this',
 			message: `${RUN_PREFIX} should not land`,
@@ -170,7 +182,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 		expect(response.status()).toBe(400)
 	})
 
-	test('the contact moment kind accepts the channel dossiq actually stores', async ({ request }) => {
+	test('the contact moment kind accepts the channel dossiq actually stores', async ({
+		request,
+	}) => {
 		// The drift this guards: the kind declaring telefoon/balie/email/post
 		// while ContactMomentService validates and stores phone/email/
 		// webformulier/chat/social_media/balie. The refusal is caught and
@@ -188,7 +202,9 @@ test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 })
 
 test.describe('REQ-TL-12 every communication writer records on the timeline', () => {
-	test('an entry keeps the fields its kind declares across the round trip', async ({ request }) => {
+	test('an entry keeps the fields its kind declares across the round trip', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			kind: 'mail-uitgaand',
 			message: `${RUN_PREFIX} beschikking verzonden`,
@@ -207,7 +223,9 @@ test.describe('REQ-TL-12 every communication writer records on the timeline', ()
 		expect(entry.fields.documentId).toBe('doc-1')
 	})
 
-	test('a field the kind does not declare is dropped, not stored', async ({ request }) => {
+	test('a field the kind does not declare is dropped, not stored', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			kind: 'portaalbericht',
 			message: `${RUN_PREFIX} portaalbericht`,
@@ -218,15 +236,22 @@ test.describe('REQ-TL-12 every communication writer records on the timeline', ()
 
 		const entry = await written.json()
 		expect(entry.fields.messageId).toBe('m-1')
-		expect(entry.fields.bsn, 'the portaalbericht kind declares no bsn').toBeUndefined()
+		expect(
+			entry.fields.bsn,
+			'the portaalbericht kind declares no bsn',
+		).toBeUndefined()
 	})
 })
 
 test.describe('REQ-TL-13 one entry reaches every case it is about', () => {
-	test('a note written on two cases names its siblings on each', async ({ request }) => {
+	test('a note written on two cases names its siblings on each', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			message: `${RUN_PREFIX} over beide zaken`,
-			relatedObjects: [{ register: REGISTER, schema: SCHEMA, id: siblingCaseId }],
+			relatedObjects: [
+				{ register: REGISTER, schema: SCHEMA, id: siblingCaseId },
+			],
 		})
 		expect(written.status()).toBe(201)
 
@@ -243,13 +268,19 @@ test.describe('REQ-TL-13 one entry reaches every case it is about', () => {
 		expect(found, 'the second case carries the entry').toBeTruthy()
 	})
 
-	test('a related case that cannot be reached leaves nothing written anywhere', async ({ request }) => {
+	test('a related case that cannot be reached leaves nothing written anywhere', async ({
+		request,
+	}) => {
 		const before = (await readTimeline(request, caseId)).total
 
 		const response = await writeEntry(request, caseId, {
 			message: `${RUN_PREFIX} should not land anywhere`,
 			relatedObjects: [
-				{ register: REGISTER, schema: SCHEMA, id: '00000000-0000-0000-0000-000000000000' },
+				{
+					register: REGISTER,
+					schema: SCHEMA,
+					id: '00000000-0000-0000-0000-000000000000',
+				},
 			],
 		})
 		expect(response.status()).toBe(404)
@@ -257,7 +288,9 @@ test.describe('REQ-TL-13 one entry reaches every case it is about', () => {
 		const after = await readTimeline(request, caseId)
 		expect(after.total).toBe(before)
 		expect(
-			after.results.some((entry: any) => entry.message.includes('should not land anywhere')),
+			after.results.some((entry: any) =>
+				entry.message.includes('should not land anywhere'),
+			),
 		).toBeFalsy()
 	})
 })
@@ -267,12 +300,16 @@ test.describe('REQ-TL-14 the standard notes are administered text', () => {
 		const response = await request.get(`${OR}/timeline/text-blocks`)
 		expect(response.ok()).toBeTruthy()
 
-		const slugs = ((await response.json()).results || []).map((block: any) => block.slug)
+		const slugs = ((await response.json()).results || []).map(
+			(block: any) => block.slug,
+		)
 		expect(slugs).toContain('dossiq-terugbelverzoek')
 		expect(slugs).toContain('dossiq-stukken-opgevraagd')
 	})
 
-	test('a standard note is written with the case substituted into it', async ({ request }) => {
+	test('a standard note is written with the case substituted into it', async ({
+		request,
+	}) => {
 		const written = await writeEntry(request, caseId, {
 			textBlock: 'dossiq-terugbelverzoek',
 		})
@@ -280,9 +317,10 @@ test.describe('REQ-TL-14 the standard notes are administered text', () => {
 
 		const entry = await written.json()
 		expect(entry.message).toContain('terug te bellen')
-		expect(entry.message, 'the case number is substituted, not left in braces').not.toContain(
-			'{{identifier}}',
-		)
+		expect(
+			entry.message,
+			'the case number is substituted, not left in braces',
+		).not.toContain('{{identifier}}')
 	})
 })
 
@@ -317,7 +355,9 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
 		await expect(entries.first()).toContainText('pin me')
 	})
 
-	test('a read that fails says so rather than showing an empty case', async ({ page }) => {
+	test('a read that fails says so rather than showing an empty case', async ({
+		page,
+	}) => {
 		await page.route(`**${OR}/objects/**/timeline*`, (route) =>
 			route.fulfill({ status: 500, body: '{"message":"no"}' }),
 		)
@@ -328,7 +368,10 @@ test.describe('REQ-TL-10 the case carries one timeline', () => {
 		await expect(page.getByTestId('case-timeline-empty')).toHaveCount(0)
 	})
 
-	test('the kind filter narrows the list to one kind', async ({ page, request }) => {
+	test('the kind filter narrows the list to one kind', async ({
+		page,
+		request,
+	}) => {
 		await writeEntry(request, caseId, {
 			kind: 'ontvangstbevestiging',
 			message: `${RUN_PREFIX} ontvangst bevestigd`,

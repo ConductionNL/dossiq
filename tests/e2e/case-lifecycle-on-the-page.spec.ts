@@ -75,11 +75,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
-import {
-	clickHeaderAction,
-	PAGE_LOAD,
-	trackDossiqErrors,
-} from './helpers/nav.ts'
+import { clickHeaderAction, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 /** A day in milliseconds, for the extension arithmetic. */
 const DAY = 24 * 60 * 60 * 1000

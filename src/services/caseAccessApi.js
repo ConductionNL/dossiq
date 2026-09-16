@@ -101,11 +101,11 @@ async function readResult(path, params = {}) {
 		// JavaScript, so `body.rules` on it is undefined rather than an error.
 		// That would render as "no rules" instead of as a failed read.
 		if (typeof response?.data !== 'object' || response.data === null) {
-			return { status: (response?.status || 0), data: null }
+			return { status: response?.status || 0, data: null }
 		}
-		return { status: (response.status || 200), data: response.data }
+		return { status: response.status || 200, data: response.data }
 	} catch (error) {
-		return { status: (error?.response?.status || 0), data: null }
+		return { status: error?.response?.status || 0, data: null }
 	}
 }
 
@@ -280,9 +280,12 @@ export function constraintsOf(rule, principal) {
 				candidate === principal
 				|| (candidate !== null
 					&& typeof candidate === 'object'
-					&& [candidate.principal, candidate.group, candidate.role, candidate.user].includes(
-						principal,
-					)),
+					&& [
+						candidate.principal,
+						candidate.group,
+						candidate.role,
+						candidate.user,
+					].includes(principal)),
 		)
 	}
 
@@ -291,8 +294,8 @@ export function constraintsOf(rule, principal) {
 	}
 
 	return {
-		until: (typeof entry.until === 'string' ? entry.until : ''),
-		scopedTo: (entry.scopedTo || null),
+		until: typeof entry.until === 'string' ? entry.until : '',
+		scopedTo: entry.scopedTo || null,
 	}
 }
 
@@ -307,23 +310,23 @@ export function constraintsOf(rule, principal) {
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
 function ruleRow(rule, refusing, enforcing) {
-	const principal = (rule?.principal || '')
+	const principal = rule?.principal || ''
 	const { until, scopedTo } = constraintsOf(rule?.rule ?? null, principal)
 
-	let source = (rule?.level || 'object')
+	let source = rule?.level || 'object'
 	if (refusing === true) {
-		source = (enforcing === true ? 'deny' : 'staged-deny')
+		source = enforcing === true ? 'deny' : 'staged-deny'
 	}
 
 	return {
 		holder: principal,
-		right: (rule?.action || ''),
+		right: rule?.action || '',
 		source,
-		detail: (rule?.role || ''),
-		level: (rule?.level || ''),
-		role: (rule?.role || ''),
-		declared: (rule?.declared !== false),
-		conditional: (rule?.conditional === true),
+		detail: rule?.role || '',
+		level: rule?.level || '',
+		role: rule?.role || '',
+		declared: rule?.declared !== false,
+		conditional: rule?.conditional === true,
 		until,
 		scopedTo,
 	}
@@ -347,7 +350,7 @@ export function objectPermissionRows(set) {
 		return []
 	}
 
-	const enforcing = (set.denyEnforcement === 'enforcing')
+	const enforcing = set.denyEnforcement === 'enforcing'
 
 	const rows = []
 	for (const holder of set.holders || []) {
@@ -380,13 +383,13 @@ export function objectPermissionRows(set) {
 export function asOfRows(history) {
 	const unanswered = {
 		answered: false,
-		at: (history?.at || ''),
+		at: history?.at || '',
 		rows: [],
 		setBy: '',
 		changedAfterwardsBy: null,
 	}
 
-	const asOf = (history?.asOf || null)
+	const asOf = history?.asOf || null
 	if (asOf === null || typeof asOf !== 'object') {
 		return unanswered
 	}
@@ -400,10 +403,10 @@ export function asOfRows(history) {
 
 	return {
 		answered: true,
-		at: (asOf.at || history?.at || ''),
+		at: asOf.at || history?.at || '',
 		rows,
-		setBy: (asOf.setBy || ''),
-		changedAfterwardsBy: (asOf.changedAfterwardsBy || null),
+		setBy: asOf.setBy || '',
+		changedAfterwardsBy: asOf.changedAfterwardsBy || null,
 	}
 }
 
@@ -437,7 +440,13 @@ export function asOfRows(history) {
  * @return {Array<object>} Rows of `{holder, right, source, detail}`.
  * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
  */
-export function grantRows({ objectPermissions = null, objectGrants, roleGrants, callerScope, denyRules }) {
+export function grantRows({
+	objectPermissions = null,
+	objectGrants,
+	roleGrants,
+	callerScope,
+	denyRules,
+}) {
 	const rows = []
 
 	if (objectPermissions !== null) {
@@ -460,7 +469,8 @@ export function grantRows({ objectPermissions = null, objectGrants, roleGrants, 
 		}
 	}
 
-	for (const role of (objectPermissions === null ? roleGrants?.roles : null) || []) {
+	for (const role of (objectPermissions === null ? roleGrants?.roles : null)
+		|| []) {
 		for (const right of role?.actions || []) {
 			rows.push({
 				holder: role.role || '',
@@ -471,7 +481,8 @@ export function grantRows({ objectPermissions = null, objectGrants, roleGrants, 
 		}
 	}
 
-	for (const rule of (objectPermissions === null ? denyRules?.rules : null) || []) {
+	for (const rule of (objectPermissions === null ? denyRules?.rules : null)
+		|| []) {
 		rows.push({
 			holder: rule.principal || '',
 			right: rule.action || '',

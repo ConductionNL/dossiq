@@ -43,10 +43,18 @@ function stub(name, tag = 'div') {
 	})
 }
 
-vi.mock('@nextcloud/vue/components/NcButton', () => ({ default: stub('NcButton', 'button') }))
-vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({ default: stub('NcLoadingIcon') }))
-vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({ default: stub('NcNoteCard') }))
-vi.mock('@nextcloud/vue/components/NcTextField', () => ({ default: stub('NcTextField', 'input') }))
+vi.mock('@nextcloud/vue/components/NcButton', () => ({
+	default: stub('NcButton', 'button'),
+}))
+vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
+	default: stub('NcLoadingIcon'),
+}))
+vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
+	default: stub('NcNoteCard'),
+}))
+vi.mock('@nextcloud/vue/components/NcTextField', () => ({
+	default: stub('NcTextField', 'input'),
+}))
 vi.mock('@nextcloud/vue/components/NcEmptyContent', () => ({
 	default: defineComponent({
 		name: 'NcEmptyContent',
@@ -56,8 +64,12 @@ vi.mock('@nextcloud/vue/components/NcEmptyContent', () => ({
 		},
 	}),
 }))
-vi.mock('vue-material-design-icons/AlertCircleOutline.vue', () => ({ default: stub('AlertCircleOutline') }))
-vi.mock('vue-material-design-icons/ArchiveOutline.vue', () => ({ default: stub('ArchiveOutline') }))
+vi.mock('vue-material-design-icons/AlertCircleOutline.vue', () => ({
+	default: stub('AlertCircleOutline'),
+}))
+vi.mock('vue-material-design-icons/ArchiveOutline.vue', () => ({
+	default: stub('ArchiveOutline'),
+}))
 
 /** Who is reading. Replaced per test. */
 let currentUser = { uid: 'els', isAdmin: false, groups: ['archivaris'] }
@@ -76,9 +88,8 @@ vi.mock('../../src/services/archivalApi.js', () => ({
 	},
 }))
 
-const { default: CaseArchivalPanel } = await import(
-	'../../src/components/case/CaseArchivalPanel.vue'
-)
+const { default: CaseArchivalPanel } =
+	await import('../../src/components/case/CaseArchivalPanel.vue')
 
 /**
  * Mount the panel and let its read settle.
@@ -88,7 +99,11 @@ const { default: CaseArchivalPanel } = await import(
 async function mountPanel() {
 	const wrapper = mount(CaseArchivalPanel, {
 		props: { objectId: 'case-1' },
-		global: { mocks: { t: (_app, s, vars) => (vars ? `${s} ${JSON.stringify(vars)}` : s) } },
+		global: {
+			mocks: {
+				t: (_app, s, vars) => (vars ? `${s} ${JSON.stringify(vars)}` : s),
+			},
+		},
 	})
 	await flushPromises()
 	return wrapper
@@ -104,7 +119,11 @@ describe('CaseArchivalPanel', () => {
 				disposalDate: '2031-04-01',
 				retentionPeriod: 'P5Y',
 				selectionListRow: '4.3.1',
-				nomination: { status: 'nominated', rule: 'selection_list', at: '2026-04-01T10:00:00+02:00' },
+				nomination: {
+					status: 'nominated',
+					rule: 'selection_list',
+					at: '2026-04-01T10:00:00+02:00',
+				},
 			},
 			archived: null,
 			archiveStatus: '',
@@ -114,10 +133,18 @@ describe('CaseArchivalPanel', () => {
 	it('shows the appraisal, the disposal date and the row that decided', async () => {
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-appraisal"]').text()).toBe('vernietigen')
-		expect(wrapper.find('[data-testid="case-archival-disposal-date"]').text()).toBe('2031-04-01')
-		expect(wrapper.find('[data-testid="case-archival-selection-list-row"]').text()).toBe('4.3.1')
-		expect(wrapper.find('[data-testid="case-archival-rule"]').text()).toBe('selection_list')
+		expect(wrapper.find('[data-testid="case-archival-appraisal"]').text()).toBe(
+			'vernietigen',
+		)
+		expect(
+			wrapper.find('[data-testid="case-archival-disposal-date"]').text(),
+		).toBe('2031-04-01')
+		expect(
+			wrapper.find('[data-testid="case-archival-selection-list-row"]').text(),
+		).toBe('4.3.1')
+		expect(wrapper.find('[data-testid="case-archival-rule"]').text()).toBe(
+			'selection_list',
+		)
 	})
 
 	it('names the missing source when openregister could not nominate the case', async () => {
@@ -125,7 +152,8 @@ describe('CaseArchivalPanel', () => {
 			retention: {
 				nomination: {
 					status: 'unnominatable',
-					unnominatableReason: 'no selectielijst row matches category 4.3.1',
+					unnominatableReason:
+						'no selectielijst row matches category 4.3.1',
 				},
 			},
 			archived: null,
@@ -134,35 +162,55 @@ describe('CaseArchivalPanel', () => {
 
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-unnominatable"]').text())
-			.toContain('no selectielijst row matches category 4.3.1')
-		expect(wrapper.find('[data-testid="case-archival-none"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-archival-unnominatable"]').text(),
+		).toContain('no selectielijst row matches category 4.3.1')
+		expect(wrapper.find('[data-testid="case-archival-none"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('draws a case nobody has closed yet apart from one nobody could nominate', async () => {
-		readAnswer = vi.fn().mockResolvedValue({ retention: {}, archived: null, archiveStatus: '' })
+		readAnswer = vi
+			.fn()
+			.mockResolvedValue({ retention: {}, archived: null, archiveStatus: '' })
 
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-none"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-archival-unnominatable"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-archival-none"]').exists()).toBe(
+			true,
+		)
+		expect(
+			wrapper.find('[data-testid="case-archival-unnominatable"]').exists(),
+		).toBe(false)
 	})
 
 	it('shows an error with a retry when openregister cannot be read', async () => {
-		readAnswer = vi.fn().mockRejectedValue(new Error('openregister is unreachable'))
+		readAnswer = vi
+			.fn()
+			.mockRejectedValue(new Error('openregister is unreachable'))
 
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-error"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-archival-retry"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-archival-facts"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-archival-error"]').exists()).toBe(
+			true,
+		)
+		expect(wrapper.find('[data-testid="case-archival-retry"]').exists()).toBe(
+			true,
+		)
+		expect(wrapper.find('[data-testid="case-archival-facts"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('refuses to recompute until a reason is typed, and sends nothing', async () => {
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-recompute"]').attributes('disabled'))
-			.toBeDefined()
+		expect(
+			wrapper
+				.find('[data-testid="case-archival-recompute"]')
+				.attributes('disabled'),
+		).toBeDefined()
 
 		await wrapper.vm.recompute()
 
@@ -175,8 +223,11 @@ describe('CaseArchivalPanel', () => {
 		wrapper.vm.reason = 'the selectielijst was corrected'
 		await wrapper.vm.$nextTick()
 
-		expect(wrapper.find('[data-testid="case-archival-recompute"]').attributes('disabled'))
-			.toBeUndefined()
+		expect(
+			wrapper
+				.find('[data-testid="case-archival-recompute"]')
+				.attributes('disabled'),
+		).toBeUndefined()
 
 		await wrapper.vm.recompute()
 
@@ -188,8 +239,12 @@ describe('CaseArchivalPanel', () => {
 
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-recompute-denied"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-archival-recompute"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-archival-recompute-denied"]').exists(),
+		).toBe(true)
+		expect(
+			wrapper.find('[data-testid="case-archival-recompute"]').exists(),
+		).toBe(false)
 	})
 
 	it('shows the transfer once a reviewer has handed the case over', async () => {
@@ -211,31 +266,47 @@ describe('CaseArchivalPanel', () => {
 
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-transfer-list"]').text()).toContain('transfer-7')
+		expect(
+			wrapper.find('[data-testid="case-archival-transfer-list"]').text(),
+		).toContain('transfer-7')
 	})
 
 	it('says so when the platform marker and the case disagree about being archived', async () => {
 		readAnswer = vi.fn().mockResolvedValue({
-			retention: { nomination: { status: 'nominated', rule: 'schema_default' } },
+			retention: {
+				nomination: { status: 'nominated', rule: 'schema_default' },
+			},
 			archived: null,
 			archiveStatus: 'archived',
 		})
 
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-disagreement"]').exists()).toBe(true)
+		expect(
+			wrapper.find('[data-testid="case-archival-disagreement"]').exists(),
+		).toBe(true)
 	})
 
 	it('reads the archive marker openregister holds, not the case field', async () => {
 		readAnswer = vi.fn().mockResolvedValue({
-			retention: { nomination: { status: 'nominated', rule: 'schema_default' } },
-			archived: { by: 'els', at: '2026-09-02T09:00:00+02:00', reason: 'afgehandeld' },
+			retention: {
+				nomination: { status: 'nominated', rule: 'schema_default' },
+			},
+			archived: {
+				by: 'els',
+				at: '2026-09-02T09:00:00+02:00',
+				reason: 'afgehandeld',
+			},
 			archiveStatus: 'archived',
 		})
 
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="case-archival-archived"]').text()).toContain('els')
-		expect(wrapper.find('[data-testid="case-archival-disagreement"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-archival-archived"]').text(),
+		).toContain('els')
+		expect(
+			wrapper.find('[data-testid="case-archival-disagreement"]').exists(),
+		).toBe(false)
 	})
 })

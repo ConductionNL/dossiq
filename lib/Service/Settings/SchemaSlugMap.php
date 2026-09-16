@@ -186,6 +186,10 @@ class SchemaSlugMap {
 		'emailTemplate' => 'email_template_schema',
 		// Consultation management (consultation-management spec).
 		'consultation' => 'consultation_schema',
+		// One declared mechanism for everything a case waits on somebody else
+		// to do (what-a-transition-declares). The advice request is the first
+		// obligation of this kind rather than a second mechanism beside it.
+		'obligation' => 'obligation_schema',
 		'adviceResponse' => 'advice_response_schema',
 		'advisoryBody' => 'advisory_body_schema',
 		// Milestone tracking (milestone-tracking spec).
@@ -201,6 +205,18 @@ class SchemaSlugMap {
 		// The connections Dossiq has to systems outside it
 		// (pluggable-integration-registry).
 		'dossiqIntegration' => 'dossiq_integration_schema',
+		// What a new instance starts with (starter-content-and-templates).
+		// `shippedOrigin` is the provenance ledger: one row per seeded object,
+		// carrying the set, its version and a fingerprint of what shipped, so
+		// `shipped and untouched` is a comparison rather than a guess.
+		'shippedOrigin' => 'shipped_origin_schema',
+		'starterSetAdoption' => 'starter_set_adoption_schema',
+		'reusableStep' => 'reusable_step_schema',
+		'contentTemplate' => 'content_template_schema',
+		// The domain a copy carries. The group already existed for the grant
+		// (mandaat-matrix) and was never mapped, so no service could resolve
+		// it; the domain copy is the first caller that needs to.
+		'caseTypeGroup' => 'case_type_group_schema',
 	];
 
 	/**

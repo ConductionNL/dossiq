@@ -53,7 +53,7 @@ export const ANSWERS = ['destroy', 'retain', 'transfer']
 export async function pendingReviews() {
 	const { data } = await axios.get(generateUrl(`${API}/archival/reviews/pending`))
 
-	const results = (data?.results ?? data?.entries ?? [])
+	const results = data?.results ?? data?.entries ?? []
 
 	return Array.isArray(results) ? results : []
 }
@@ -76,14 +76,22 @@ export async function pendingReviews() {
  *
  * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
  */
-export async function decide({ listId, entryId, answer, reason, newArchiefactiedatum = null }) {
+export async function decide({
+	listId,
+	entryId,
+	answer,
+	reason,
+	newArchiefactiedatum = null,
+}) {
 	const body = { answer, reason }
 	if (newArchiefactiedatum) {
 		body.newArchiefactiedatum = newArchiefactiedatum
 	}
 
 	const { data } = await axios.post(
-		generateUrl(`${API}/archival/destruction-lists/${listId}/entries/${entryId}/decision`),
+		generateUrl(
+			`${API}/archival/destruction-lists/${listId}/entries/${entryId}/decision`,
+		),
 		body,
 	)
 
@@ -120,7 +128,7 @@ export async function recomputeNomination(objectId, reason) {
 export async function archivalSettings() {
 	const { data } = await axios.get(generateUrl(`${API}/settings/archival`))
 
-	return (data ?? {})
+	return data ?? {}
 }
 
 /**
@@ -136,12 +144,11 @@ export async function archivalSettings() {
  * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
  */
 export async function saveReviewReminderFrequency(frequency) {
-	const { data } = await axios.post(
-		generateUrl(`${API}/settings/archival`),
-		{ reviewReminderFrequency: frequency },
-	)
+	const { data } = await axios.post(generateUrl(`${API}/settings/archival`), {
+		reviewReminderFrequency: frequency,
+	})
 
-	return (data ?? {})
+	return data ?? {}
 }
 
 /**
@@ -156,7 +163,9 @@ export async function saveReviewReminderFrequency(frequency) {
  * @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
  */
 export function isIsoDuration(value) {
-	return /^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+S)?)?$/.test(String(value ?? ''))
+	return /^P(?!$)(\d+Y)?(\d+M)?(\d+W)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+S)?)?$/.test(
+		String(value ?? ''),
+	)
 }
 
 /**
@@ -181,11 +190,11 @@ export async function caseRetention(caseId) {
 		generateUrl(`${API}/objects/dossiq/case/${caseId}`),
 	)
 
-	const self = (data?.['@self'] ?? {})
+	const self = data?.['@self'] ?? {}
 
 	return {
-		retention: (self._retention ?? null),
-		archived: (self.archived ?? null),
+		retention: self._retention ?? null,
+		archived: self.archived ?? null,
 		archiveStatus: String(data?.archiveStatus ?? ''),
 	}
 }

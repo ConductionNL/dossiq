@@ -119,6 +119,7 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // wraps the EmailThread component (display only), reuses NC Mail as
 // the email engine, and triggers prefillDraft via the case-email API.
 // @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
@@ -239,7 +240,7 @@ const registry = {
 	EndOfDayView: {
 		kind: 'page',
 		component: EndOfDayView,
-		_note: 'The end-of-day screen. Lists the queue candidates OpenRegister says this reader opened today, reading its per-reader read state rather than keeping a second record of who saw what. The time box is humaniq\'s hours leaf, placed per item and absent entirely when humaniq is not installed: a dossiq time field would become a second hours store the day humaniq arrives.',
+		_note: "The end-of-day screen. Lists the queue candidates OpenRegister says this reader opened today, reading its per-reader read state rather than keeping a second record of who saw what. The time box is humaniq's hours leaf, placed per item and absent entirely when humaniq is not installed: a dossiq time field would become a second hours store the day humaniq arrives.",
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
@@ -502,7 +503,6 @@ const registry = {
 		_note: 'CaseDetail Tasks tab: the first open task of the case with the lifecycle buttons OpenRegister answers for it, a toast on completion and the next open task in its place. No built-in fits: CnObjectListWidget accepts register/schema/filter/sort/limit/columns/rowRoute/prompt/emptyText/viewAllRoute/viewAllQuery and nothing else, has no rowActions and no per-row slot, and a config key it does not declare is dropped in silence. Interim by construction, and the e2e asserts on the tab and the button labels rather than on this component so it survives the swap back.',
 	},
 
-
 	// --- Case panel tabs that were sidebar tabs first. ---
 	//
 	// A tab child renders by TYPE: CnDetailWidgetHost picks a renderer from
@@ -522,6 +522,14 @@ const registry = {
 		kind: 'widget',
 		component: CaseEmailTab,
 		_note: 'The Email tab of the case panels: correspondence linked to the case, consuming the mail leaf. Was a sidebar tab; moved into the strip so the two logs a handler reads, email and contact moments, sit beside each other rather than one in each chrome.',
+	},
+
+	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	'case-conversations-pane': {
+		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
+		kind: 'widget',
+		component: CaseConversationsPanel,
+		_note: 'The Live conversation section of the Communication tab: start a conversation in Talk from any case, see what the case recorded of the ones already held, and declare the case major. The hoorzitting reaches the same mechanism through HearingService; this is the surface for every other case. Absent Talk, it says so rather than offering a button that cannot work.',
 	},
 
 	// @spec openspec/specs/case-dashboard-view/spec.md
@@ -739,7 +747,7 @@ const registry = {
 		// @custom-widget-ratchet exclude the surface is OpenRegister's TIMELINE, not a collection of OpenRegister objects: the entries come from /api/objects/{register}/{schema}/{id}/timeline, which takes no register-and-schema pair of its own, and a built-in object-list takes exactly that. There is no `integration` id for the timeline either, so `type: "integration"` cannot reach it. The pin and the follow-up are PATCHes on a sub-resource, which no declarative widget writes. This entry is deleted the day the library ships a timeline widget type
 		kind: 'widget',
 		component: CaseTimelineTab,
-		_note: 'CaseDetail Timeline tab: one chronological read of every note, logged call, message and acknowledgement on this case, from OpenRegister\'s timeline. Notes, Communication and Email stay beside it because each is the place to DO that one thing; this is the place to see the order. The audit sidebar keeps the change history.',
+		_note: "CaseDetail Timeline tab: one chronological read of every note, logged call, message and acknowledgement on this case, from OpenRegister's timeline. Notes, Communication and Email stay beside it because each is the place to DO that one thing; this is the place to see the order. The audit sidebar keeps the change history.",
 	},
 
 	'case-attention': {
@@ -786,7 +794,7 @@ const registry = {
 	CaseTermsTab: {
 		kind: 'page',
 		component: CaseTermsTab,
-		_note: 'The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server\'s: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.',
+		_note: "The statutory term, the planned end, the internal target and the phase term, each apart and each saying what it is, with the progress and the days left beside them. Every number is the server's: the browser computes no percentage, so the case page and the list column read one computation and cannot disagree. The internal target is drawn here and refused to every citizen surface by the server, which answers /terms/citizen with the statutory term alone.",
 	},
 	CaseSharingTab: {
 		kind: 'page',

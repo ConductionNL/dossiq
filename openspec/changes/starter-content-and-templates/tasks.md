@@ -9,63 +9,72 @@ C-configuration-85 declared into buildiq and portaliq. Decisions D6
 (every must enters) and D17 (six members recorded, not built). Waits on
 nothing.
 
-- [ ] 1.1 `caseType`: one declared block of handling switches, the default
+- [x] 1.1 `caseType`: one declared block of handling switches, the default
   group, the default handler, the automatic messages and the intake
   screen (D-2).
   - `tests/unit/Service/CaseTypeHandlingSwitchesTest.php`
   - `@spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md`
-- [ ] 1.2 Move every scattered reader onto that block: the routing
+- [x] 1.2 Move every scattered reader onto that block: the routing
   strategies, `CaseTypeReader`, `TermijnNotificationService` and the
   manifest intake screen (D-2).
-- [ ] 1.3 `case-type-publish-validation`: refuse a declared switch no
+- [x] 1.3 `case-type-publish-validation`: refuse a declared switch no
   reader reads (D-2).
   - `tests/unit/Service/CaseTypePublishValidationTest.php`
-- [ ] 2.1 `SeedDataService` and `TenantSeedService`: stamp every seeded
+- [x] 2.1 `SeedDataService` and `TenantSeedService`: stamp every seeded
   object with the set name and version (D-1).
   - `tests/unit/Service/SeedDataOriginTest.php`
-- [ ] 2.2 The shipped configuration screen: shipped and untouched, shipped
+- [x] 2.2 The shipped configuration screen: shipped and untouched, shipped
   and changed here, or ours, per object (D-1).
   - `tests/vitest/shippedConfiguration.spec.js`
-- [ ] 2.3 Adoption of a newer shipped version, per object, never
+- [x] 2.3 Adoption of a newer shipped version, per object, never
   overwriting a local change (D-1).
-- [ ] 3.1 `roleType`: the named municipal role set, shipped dormant, with
+- [x] 3.1 `roleType`: the named municipal role set, shipped dormant, with
   adoption recorded and reversible while unused (D-8).
   - `tests/unit/Service/MunicipalRoleSetTest.php`
-- [ ] 4.1 `caseType`: derive and name the draft, in use and retired state
+- [x] 4.1 `caseType`: derive and name the draft, in use and retired state
   from `isDraft`, `validFrom` and `validUntil` (D-3).
   - `tests/unit/Service/CaseTypeLifecycleStateTest.php`
-- [ ] 4.2 A retired case type takes no new case, keeps its cases readable
+- [x] 4.2 A retired case type takes no new case, keeps its cases readable
   and lets a running case finish; retire and restore are recorded (D-3).
-- [ ] 5.1 `CaseTypeCopyService`: copy from a case type marked as a
+- [x] 5.1 `CaseTypeCopyService`: copy from a case type marked as a
   template, and report anything the copy could not carry (D-4, D-5).
   - `tests/unit/Service/CaseTypeCopyServiceTest.php`
-- [ ] 5.2 Domain copy: case types, role types, templates and code lists,
+- [x] 5.2 Domain copy: case types, role types, templates and code lists,
   as a declared list (D-4).
   - `tests/unit/Service/DomainCopyServiceTest.php`
-- [ ] 6.1 The case template: a case row marked as a template, excluded
+- [x] 6.1 The case template: a case row marked as a template, excluded
   from every working list, count and term calculation (D-5).
   - `tests/unit/Service/CaseTemplateTest.php`
-- [ ] 6.2 Start a case from a template, recording which one (D-5).
+- [x] 6.2 Start a case from a template, recording which one (D-5).
   - `tests/vitest/caseFromTemplate.spec.js`
-- [ ] 7.1 `TemplateLibraryService`: a `kind` covering document, mail,
+- [x] 7.1 `TemplateLibraryService`: a `kind` covering document, mail,
   task, note, approval and result, scoped to case types (D-6).
   - `tests/unit/Service/TemplateLibraryKindTest.php`
 - [ ] 7.2 Offer the template where each kind is created, in the task
   dialog, the note editor, the approval and the close form (D-6).
-- [ ] 7.3 The reusable process step: referenced, not copied, with both
+  - PARTIAL, and left unticked on purpose. `src/components/TemplatePicker.vue`
+    is the offer and it is mounted on the close form
+    (`src/dialogs/CaseTransitionConfirmDialog.vue`), covered by
+    `tests/vitest/resultTemplateOnClose.spec.js`. The other three surfaces are
+    not dossiq's to change: a task is an engine row written through
+    `lib/Service/Task/EngineTaskGateway.php`, notes are OpenRegister-native and
+    rendered by `CnNotesTab.vue`, and approval runs through the transition
+    engine's own dialog. Each is one prop away once those surfaces accept a
+    slot. Named in the component's header rather than left to be discovered.
+- [x] 7.3 The reusable process step: referenced, not copied, with both
   directions readable and deletion refused while in use (D-6).
   - `tests/unit/Service/ReusableProcessStepTest.php`
-- [ ] 8.1 The connection test on every connection screen, starting with
+- [x] 8.1 The connection test on every connection screen, starting with
   `src/views/settings/StufEndpoints.vue`: a real call, a timeout, the
   measured moment, and not tested as the default (D-7).
   - `tests/unit/Controller/ConnectionTestControllerTest.php`
   - `tests/vitest/connectionTest.spec.js`
-- [ ] 9.1 Declare the three other-app halves and hand them over with their
+- [x] 9.1 Declare the three other-app halves and hand them over with their
   candidate ids: the reusable form block (C-configuration-59, buildiq),
   the portal home tiles (C-configuration-77, portaliq) and the free text
   block (C-configuration-85, buildiq).
-- [ ] 9.2 Dutch and English strings.
-- [ ] 9.3 `tests/e2e/starter-content-and-templates.spec.ts`: the handling
+- [x] 9.2 Dutch and English strings.
+- [x] 9.3 `tests/e2e/starter-content-and-templates.spec.ts`: the handling
   switch changed once, a shipped object read as changed here, the role
   set adopted, a case type retired with its cases still open, a domain
   copied, a case started from a template, a task template offered, a

@@ -125,9 +125,10 @@ describe('the case page offers Claim and Release', () => {
 	it('names icons that are registered', () => {
 		for (const id of ['case-claim', 'case-release']) {
 			const icon = action(headerActions, id).icon
-			expect(iconsSource, `${icon} is not registered in src/icons.js`).toContain(
-				`\n\t${icon},\n`,
-			)
+			expect(
+				iconsSource,
+				`${icon} is not registered in src/icons.js`,
+			).toContain(`\n\t${icon},\n`)
 		}
 	})
 })
@@ -170,8 +171,12 @@ describe('the row handler posts the claim and says what came back', () => {
 		await claimCase({ actionId: 'claim', item: { id: 'case-7' } })
 
 		expect(axios.post).toHaveBeenCalledTimes(1)
-		expect(axios.post.mock.calls[0][0]).toBe('/index.php/apps/dossiq/api/case/case-7/claim')
-		expect(mockShowSuccess).toHaveBeenCalledWith('You are now handling this case.')
+		expect(axios.post.mock.calls[0][0]).toBe(
+			'/index.php/apps/dossiq/api/case/case-7/claim',
+		)
+		expect(mockShowSuccess).toHaveBeenCalledWith(
+			'You are now handling this case.',
+		)
 	})
 
 	it('reads the id off the metadata when the row carries no plain one', async () => {
@@ -179,7 +184,9 @@ describe('the row handler posts the claim and says what came back', () => {
 
 		await claimCase({ actionId: 'claim', item: { '@self': { id: 'case-9' } } })
 
-		expect(axios.post.mock.calls[0][0]).toBe('/index.php/apps/dossiq/api/case/case-9/claim')
+		expect(axios.post.mock.calls[0][0]).toBe(
+			'/index.php/apps/dossiq/api/case/case-9/claim',
+		)
 	})
 
 	it('shows the refusal the server wrote, unchanged', async () => {
