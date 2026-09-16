@@ -39,14 +39,21 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 const { default: CaseSearchRefusal } =
 	await import('../../src/components/search/CaseSearchRefusal.vue')
 
-/** The shape `parseResponseError()` records for a refused term. */
-const refusalError = (message) => ({
-	status: 400,
-	message,
-	details: message,
-	isValidation: true,
-	fields: null,
-})
+/**
+ * The shape `parseResponseError()` records for a refused term.
+ *
+ * @param {string} message The refusal message openregister sent.
+ * @return {object} The ApiError the object store would hold.
+ */
+function refusalError(message) {
+	return {
+		status: 400,
+		message,
+		details: message,
+		isValidation: true,
+		fields: null,
+	}
+}
 
 /**
  * Mount the hint over a given store state and address bar.

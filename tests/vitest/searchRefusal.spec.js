@@ -19,14 +19,21 @@ import {
 	searchRefusalHeadline,
 } from '../../src/utils/searchRefusal.js'
 
-/** The shape `parseResponseError()` builds for a 400. */
-const refusalError = (message) => ({
-	status: 400,
-	message,
-	details: message,
-	isValidation: true,
-	fields: null,
-})
+/**
+ * The shape `parseResponseError()` builds for a 400.
+ *
+ * @param {string} message The refusal message openregister sent.
+ * @return {object} The ApiError the object store would hold.
+ */
+function refusalError(message) {
+	return {
+		status: 400,
+		message,
+		details: message,
+		isValidation: true,
+		fields: null,
+	}
+}
 
 describe('readSearchRefusal', () => {
 	it('recovers the position from the message the platform sends', () => {
