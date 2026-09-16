@@ -5219,6 +5219,14 @@
         "You set this, for this part of your work only.": "You set this, for this part of your work only.",
         "You set this.": "You set this.",
         "Your team set this, for this part of your work only. You can decide for yourself.": "Your team set this, for this part of your work only. You can decide for yourself.",
-        "Your team set this. You can decide for yourself.": "Your team set this. You can decide for yourself."
+        "Your team set this. You can decide for yourself.": "Your team set this. You can decide for yourself.",
+        "{groups} cannot change this field.": "{groups} cannot change this field.",
+        "{groups} cannot change this field. {heldBy} can.": "{groups} cannot change this field. {heldBy} can.",
+        "{groups} do not see this field.": "{groups} do not see this field.",
+        "{groups} do not see this field. {heldBy} do.": "{groups} do not see this field. {heldBy} do.",
+        "A field missing from this case is missing because of a rule below, not because it is empty.": "A field missing from this case is missing because of a rule below, not because it is empty.",
+        "applies to you": "applies to you",
+        "Which fields each role reads": "Which fields each role reads",
+        "Who it affects": "Who it affects"
     }
 }

@@ -5208,7 +5208,15 @@ OC.L10N.register(
         "You set this, for this part of your work only.": "Jij hebt dit gezet, alleen voor dit deel van je werk.",
         "You set this.": "Jij hebt dit gezet.",
         "Your team set this, for this part of your work only. You can decide for yourself.": "Je team heeft dit gezet, alleen voor dit deel van je werk. Je kunt zelf kiezen.",
-        "Your team set this. You can decide for yourself.": "Je team heeft dit gezet. Je kunt zelf kiezen."
+        "Your team set this. You can decide for yourself.": "Je team heeft dit gezet. Je kunt zelf kiezen.",
+        "{groups} cannot change this field.": "{groups} kunnen dit veld niet wijzigen.",
+        "{groups} cannot change this field. {heldBy} can.": "{groups} kunnen dit veld niet wijzigen. {heldBy} wel.",
+        "{groups} do not see this field.": "{groups} zien dit veld niet.",
+        "{groups} do not see this field. {heldBy} do.": "{groups} zien dit veld niet. {heldBy} wel.",
+        "A field missing from this case is missing because of a rule below, not because it is empty.": "Ontbreekt er een veld bij deze zaak, dan komt dat door een regel hieronder en niet doordat het leeg is.",
+        "applies to you": "geldt voor jou",
+        "Which fields each role reads": "Welke velden elke rol leest",
+        "Who it affects": "Voor wie het geldt"
     },
     "nplurals=2; plural=(n != 1);"
 )
