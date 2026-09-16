@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -58,6 +59,7 @@ class CaseTypePublishService {
 	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
 	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
+	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param LoggerInterface         $logger           The logger.
 	 */
 	public function __construct(
@@ -66,6 +68,7 @@ class CaseTypePublishService {
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeAcknowledgement $acknowledgement,
 		private readonly UnreadTriggerService $unreadTriggers,
+		private readonly CaseTypeHandling $handling,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -142,8 +145,31 @@ class CaseTypePublishService {
 			$findings[] = $cycle;
 		}
 
-		return $findings;
+		return array_merge($findings, $this->handlingFindings(caseType: $caseType));
 	}//end validate()
+
+	/**
+	 * The findings the handling block produces, if it produces any.
+	 *
+	 * A switch declared on a case type and read by nothing is a promise the
+	 * product does not keep, and it is invisible until somebody relies on it.
+	 * Extracted from `validate()` rather than inlined, so that method's
+	 * complexity stays inside the threshold the analyser enforces.
+	 *
+	 * @param array<string, mixed> $caseType The effective case type row.
+	 *
+	 * @return array<int, string> The findings, empty when every switch is read.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	private function handlingFindings(array $caseType): array {
+		$findings = [];
+		foreach ($this->handling->unreadSwitches(caseType: $caseType) as $switch) {
+			$findings[] = ('Nothing reads the handling switch "' . $switch . '". Remove it, or name a switch that is read.');
+		}
+
+		return $findings;
+	}//end handlingFindings()
 
 	/**
 	 * The finding a looping parent chain produces, if it loops.

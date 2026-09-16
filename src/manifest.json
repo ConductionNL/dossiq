@@ -1094,11 +1094,13 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "A case template is a case row marked `isTemplate`, so it is in this store like any other case and every list has to take it out (starter-content-and-templates, D-5). The filter sits on the PAGE and not on each chip, so a lens added later cannot forget it: a template turning up in an open-cases count reads as work nobody is doing, which is the same complaint hidden statuses were introduced to fix.",
 				"filter": {
 					"assignee": "IS NULL",
 					"isFinalStatus": false,
 					"statusHiddenInLists": false,
-					"isDraft": false
+					"isDraft": false,
+					"isTemplate": false
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
@@ -1241,6 +1243,10 @@
 				],
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "Same exclusion as the Queue's, and here it is a page-level filter rather than a chip for the same reason: eight lenses would be eight places to forget it. A case template is never work (starter-content-and-templates, D-5).",
+				"filter": {
+					"isTemplate": false
+				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"viewModes": ["table", "cards", "map"],
@@ -1320,6 +1326,16 @@
 						}
 					},
 					{
+						"label": "Waiting on the applicant",
+						"_note": "aanvullingsverzoek-as-a-record, row 1.17. `waitingOnApplicant` is a derived boolean the ask writes and the answer clears, so the chip is a query rather than a reading of timers. It is a READ CONVENIENCE and not a second truth: the COUNT comes from the aanvullingsverzoek rows themselves, which is why the case page shows the days from the request and not from this field. Deliberately not `isIncomplete`, which is a different fact: that one is about required fields a handler knowingly left empty at intake, this one is about something the APPLICANT still owes.",
+						"filter": {
+							"waitingOnApplicant": true,
+							"statusHiddenInLists": false,
+							"isDraft": false,
+							"isFinalStatus": false
+						}
+					},
+					{
 						"label": "Needs attention",
 						"_note": "markers-and-assessments-on-the-case, row 2.36. `needsAttention` is a stored, facetable boolean derived from the flag history on every save, so the chip is a real narrowing of the query rather than a search through tags. Deliberately not `_unread`: that one is per reader and clears because somebody looked, this one is the flag a named person raised and only another named person with a written reason can clear.",
 						"filter": {
@@ -1357,7 +1373,8 @@
 							"assignee": "IS NULL",
 							"isFinalStatus": false,
 							"statusHiddenInLists": false,
-							"isDraft": false
+							"isDraft": false,
+							"isTemplate": false
 						}
 					},
 					{
@@ -2037,6 +2054,16 @@
 												}
 											}
 										}
+									}
+								},
+								{
+									"label": "Live conversation",
+									"widget": {
+										"id": "case-conversations",
+										"type": "case-conversations-pane",
+										"title": "Live conversation",
+										"icon": "PhoneInTalk",
+										"_note": "A conversation held live from this case, in Nextcloud Talk, and what the case recorded of the ones already held: the moment, who joined and how long it lasted. It sits in Communication rather than in a tab of its own because a handler reading what was said on this case is already here, and a call and a contact moment are the same question asked of two moments. Rendered by TYPE (case-conversations-pane in registry.js): a section child resolves from the widget registry, and a component registered only by name draws an empty panel and logs nothing. The icon is PhoneInTalk, which src/icons.js carries; an icon a manifest names but no registry holds renders the default glyph and breaks nothing visibly, which is how that goes unnoticed."
 									}
 								}
 							]

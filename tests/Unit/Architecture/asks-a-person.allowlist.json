@@ -36,6 +36,10 @@
 		{
 			"mechanism": "flow:DossiqTxBesluitvormingPublishNode",
 			"reason": "Publishes a decision that has already been taken. The approval that preceded it is what asked a person, and DossiqRequestDecisionNode carries that mechanism."
+		},
+		{
+			"mechanism": "notification:caseDeclaredMajor",
+			"reason": "The recipients are the responders a case type names for a calamiteit, and they are staff with queues, so this entry says where it stops rather than that nobody is addressed. It reaches them twice already: the notification bell, and the Talk channel the declaration opens them into. What it does not do is put a row on the queue, because no source answers \"a case you were pulled into\": AssignedCasesSource lists cases assigned to you, and a responder is not the assignee, so naming it there would be a claim the query does not make. A source for pulled-in work is the way to close this, and it belongs with the queue rather than with the declaration."
 		}
 	]
 }

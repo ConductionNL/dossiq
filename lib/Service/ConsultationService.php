@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph;
 use OCA\Dossiq\Service\Consultation\ConsultationRepository;
+use OCA\Dossiq\Service\Obligations\ObligationService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -89,6 +90,7 @@ class ConsultationService {
 	 * @param ConsultationRepository $repository OpenRegister reads/writes for consultations
 	 * @param ConsultationDependencyGraph $dependencyGraph `dependsOn` cycle detection
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param ObligationService $obligations The one mechanism a case waits on.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -97,6 +99,7 @@ class ConsultationService {
 		private readonly ConsultationRepository $repository,
 		private readonly ConsultationDependencyGraph $dependencyGraph,
 		private readonly CaseDateNormaliser $dates,
+		private readonly ObligationService $obligations,
 	) {
 	}//end __construct()
 
@@ -160,6 +163,16 @@ class ConsultationService {
 			consultationId: (string)$consultationId,
 			data: $data,
 		);
+
+		// 🔑 THE ADVICE REQUEST IS THE FIRST OBLIGATION, NOT A SPECIAL CASE.
+		// Everything this service knew about blocking a case lived in
+		// `getBlockingConsultations()`: the right behaviour written inside the
+		// one thing that happened to need it. Placing an obligation here is
+		// what makes the second kind, a fee, an inspection, an external
+		// approval, a line of configuration rather than a class. Only a
+		// MANDATORY consultation places one, because only a mandatory one ever
+		// blocked.
+		$this->placeAdviceObligation(consultationId: (string)$consultationId, data: $data);
 
 		$this->logger->info(
 			'Consultation created: ' . $consultationId
@@ -244,6 +257,12 @@ class ConsultationService {
 		}
 
 		$this->patchObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: (string)$consultationId, changes: $updateData);
+
+		// Meeting the obligation is what RELEASES the case, and it happens on
+		// the same act that answers the advice request rather than on a sweep
+		// that would notice later. A status this service treats as still
+		// blocking leaves the obligation exactly as it is.
+		$this->settleAdviceObligation(consultationId: (string)$consultationId, newStatus: $newStatus);
 
 		$this->logger->info(
 			'Consultation ' . $consultationId . ' status updated to ' . $newStatus,
@@ -350,22 +369,116 @@ class ConsultationService {
 		$blocking = [];
 
 		foreach ($all as $consultation) {
-			$isMandatory = ($consultation['mandatory'] ?? false) === true;
-			$status = $consultation['status'] ?? '';
-
-			if ($isMandatory === false) {
-				continue;
+			if ($this->consultationBlocks(consultation: $consultation) === true) {
+				$blocking[] = $consultation;
 			}
-
-			if ($status === 'advice_uitgebracht' || $status === 'closed') {
-				continue;
-			}
-
-			$blocking[] = $consultation;
 		}
 
 		return $blocking;
 	}//end getBlockingConsultations()
+
+	/**
+	 * Whether one consultation is holding its case.
+	 *
+	 * Unchanged from the day this service owned the whole rule: a MANDATORY
+	 * request that has neither been answered nor closed. It is a method rather
+	 * than a loop body because the obligation mirror has to ask exactly the
+	 * same question, and two spellings of "is this still blocking" is how the
+	 * two answers start disagreeing about the same advice request.
+	 *
+	 * @param array<string, mixed> $consultation The consultation row.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 */
+	public function consultationBlocks(array $consultation): bool {
+		if (($consultation['mandatory'] ?? false) !== true) {
+			return false;
+		}
+
+		$status = (string)($consultation['status'] ?? '');
+
+		return in_array($status, ['advice_uitgebracht', 'closed', 'withdrawn'], true) === false;
+	}//end consultationBlocks()
+
+	/**
+	 * Settle the obligation behind an advice request that has been answered.
+	 *
+	 * `withdrawn` is a withdrawal and everything else terminal is a
+	 * settlement, and the two are never recorded as each other: an advice
+	 * request nobody answered is not advice that was given. Six months later
+	 * that difference is the whole record.
+	 *
+	 * @param string $consultationId The consultation.
+	 * @param string $newStatus      The status it just moved to.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 */
+	private function settleAdviceObligation(string $consultationId, string $newStatus): void {
+		if ($this->consultationBlocks(consultation: ['mandatory' => true, 'status' => $newStatus]) === true) {
+			return;
+		}
+
+		$obligationId = $this->obligations->idForSource(source: $consultationId);
+		if ($obligationId === '') {
+			return;
+		}
+
+		if ($newStatus === 'withdrawn') {
+			$this->obligations->withdraw(
+				obligationId: $obligationId,
+				reason: 'The advice request was withdrawn.',
+			);
+
+			return;
+		}
+
+		$this->obligations->meet(
+			obligationId: $obligationId,
+			note: 'The advice request reached ' . $newStatus . '.',
+		);
+	}//end settleAdviceObligation()
+
+	/**
+	 * Place the obligation that mirrors a mandatory advice request.
+	 *
+	 * The consultation stays the surface a handler works with, and the
+	 * obligation is what the transition engine reads. One of them has to be
+	 * the record of "is this case still waiting", and it is the obligation,
+	 * because a fee and an inspection will never be consultations.
+	 *
+	 * A failure to place it does NOT fail the consultation. The advice request
+	 * exists and the department has been asked; a case that could not be
+	 * created because its bookkeeping row refused would be the worse outcome,
+	 * and `ObligationService` logs what went wrong.
+	 *
+	 * @param string               $consultationId The consultation just created.
+	 * @param array<string, mixed> $data           The consultation payload.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/what-a-transition-declares/specs/consultation-management/spec.md
+	 */
+	private function placeAdviceObligation(string $consultationId, array $data): void {
+		if (($data['mandatory'] ?? false) !== true) {
+			return;
+		}
+
+		$this->obligations->place(
+			obligation: [
+				'case' => (string)($data['parentCase'] ?? ''),
+				'kind' => ObligationService::KIND_ADVICE,
+				'title' => (string)($data['subject'] ?? 'Advice request'),
+				'placedOn' => (string)($data['assignee'] ?? ''),
+				'placedOnGroup' => (string)($data['adviceAuthority'] ?? ''),
+				'dueAt' => substr((string)($data['latestResponseDate'] ?? ''), 0, 10),
+				'source' => $consultationId,
+			],
+		);
+	}//end placeAdviceObligation()
 
 	/**
 	 * Validate that adding the given dependsOn list would not create a dependency cycle.

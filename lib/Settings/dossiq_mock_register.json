@@ -17118,6 +17118,65 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-1-1",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a01"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "advice",
+        "title": "Voorbeeld adviesaanvraag bij de commissie",
+        "placedOn": "Voorbeeld Behandelaar 1",
+        "placedOnGroup": "Voorbeeld Adviescommissie",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "open",
+        "dueAt": "2026-03-15",
+        "source": "7469134a-eb38-496e-85b6-821bbd4238b9"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-2-2",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a02"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "inspection",
+        "title": "Voorbeeld inspectie ter plaatse",
+        "placedOnGroup": "Voorbeeld Toezicht",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "met",
+        "dueAt": "2026-03-10",
+        "metAt": "2026-03-08T11:00:00+00:00",
+        "settlementNote": "Voorbeeld inspectierapport vastgelegd"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-3-3",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a03"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "fee",
+        "title": "Voorbeeld openstaande leges",
+        "placedOnGroup": "Voorbeeld Financien",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "withdrawn",
+        "withdrawnAt": "2026-03-09T11:00:00+00:00",
+        "withdrawalReason": "Voorbeeld: de leges zijn kwijtgescholden"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "consultation",
           "slug": "consultation-consultation-1-1",
           "id": "7469134a-eb38-496e-85b6-821bbd4238b9"
@@ -24536,6 +24595,237 @@
         "noteId": "Voorbeeld Noteid 3",
         "mentionedAt": "2026-03-03T09:00:00+01:00",
         "acknowledgedAt": "2026-03-03T17:30:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-1-1",
+          "id": "b41e7d92-0c85-4a63-9f17-2d3e8a5c6014"
+        },
+        "set": "bezwaar-beroep",
+        "setVersion": "1.0.0",
+        "targetSchema": "caseType",
+        "targetObject": "Voorbeeld Targetobject 1",
+        "fingerprint": "0f2c1a7e5b83d46092af1c3e7d508b6419a2c7f03e5d18b64a90c2f7e315d8b04",
+        "seededAt": "2026-03-01T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-2-2",
+          "id": "c52f8e03-1d96-4b74-8a28-3e4f9b6d7125"
+        },
+        "set": "vth",
+        "setVersion": "1.0.0",
+        "targetSchema": "statusType",
+        "targetObject": "Voorbeeld Targetobject 2",
+        "fingerprint": "1a3d2b8f6c94e5710bc02d4f8e619c7520b3d8016f4e29c75ba1d308f426e9c15",
+        "seededAt": "2026-03-02T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-3-3",
+          "id": "d63a9f14-2e07-4c85-9b39-4f501c7e8236"
+        },
+        "set": "gemeentelijke-rollen",
+        "setVersion": "1.0.0",
+        "targetSchema": "roleType",
+        "targetObject": "Voorbeeld Targetobject 3",
+        "fingerprint": "2b4e3c9076a5f6821cd13e509f72ad8631c4e9127054f3ad86cb2e419053f7d26",
+        "seededAt": "2026-03-03T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-1-1",
+          "id": "e74b0a25-3f18-4d96-8c40-5a612d8f9347"
+        },
+        "set": "gemeentelijke-rollen",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 1",
+        "adoptedAt": "2026-03-01T10:15:00+01:00",
+        "reversedBy": "",
+        "reversedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-2-2",
+          "id": "f85c1b36-4a29-4e07-9d51-6b723e901458"
+        },
+        "set": "vth",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 2",
+        "adoptedAt": "2026-03-02T10:15:00+01:00",
+        "reversedBy": "",
+        "reversedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-3-3",
+          "id": "0916d247-5b30-4f18-8e62-7c834a012569"
+        },
+        "set": "bezwaar-beroep",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 3",
+        "adoptedAt": "2026-03-03T10:15:00+01:00",
+        "reversedBy": "Voorbeeld Reversedby 3",
+        "reversedAt": "2026-03-04T11:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-1-1",
+          "id": "1a27e358-6c41-4029-9f73-8d945b12367a"
+        },
+        "name": "Voorbeeld Name 1",
+        "description": "Voorbeeld Description 1",
+        "leadTimeDays": 5,
+        "assigneeRole": "Voorbeeld Assigneerole 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-2-2",
+          "id": "2b38f469-7d52-4130-8a84-9e056c23478b"
+        },
+        "name": "Voorbeeld Name 2",
+        "description": "Voorbeeld Description 2",
+        "leadTimeDays": 10,
+        "assigneeRole": "Voorbeeld Assigneerole 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-3-3",
+          "id": "3c49057a-8e63-4241-9b95-0f167d34589c"
+        },
+        "name": "Voorbeeld Name 3",
+        "description": "Voorbeeld Description 3",
+        "leadTimeDays": 15,
+        "assigneeRole": "Voorbeeld Assigneerole 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-1-1",
+          "id": "4d5a168b-9f74-4352-8ca6-10278e45690d"
+        },
+        "name": "Voorbeeld Name 1",
+        "kind": "document",
+        "body": "Voorbeeld Body 1",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-2-2",
+          "id": "5e6b279c-0a85-4463-9db7-21389f56701e"
+        },
+        "name": "Voorbeeld Name 2",
+        "kind": "task",
+        "body": "Voorbeeld Body 2",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-3-3",
+          "id": "6f7c38ad-1b96-4574-8ec8-324a0067812f"
+        },
+        "name": "Voorbeeld Name 3",
+        "kind": "result",
+        "body": "Voorbeeld Body 3",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-1-1",
+          "id": "5c4af069-024a-4642-98f5-7fb4db6977f1"
+        },
+        "case": "Voorbeeld Zaak 1",
+        "summary": "Bankafschrift laatste drie maanden",
+        "party": "Voorbeeld Aanvrager 1",
+        "recipient": "aanvrager1@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bankafschrift laatste drie maanden",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar1",
+        "requestedAt": "2026-09-01T09:00:00+00:00",
+        "hersteltermijn": "2026-10-01",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-2-1",
+          "id": "57aea7b6-5afd-4ff2-95a0-86d26c78501c"
+        },
+        "case": "Voorbeeld Zaak 2",
+        "summary": "Huurcontract",
+        "party": "Voorbeeld Aanvrager 2",
+        "recipient": "aanvrager2@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Huurcontract",
+            "received": true
+          }
+        ],
+        "requestedBy": "behandelaar2",
+        "requestedAt": "2026-09-02T09:00:00+00:00",
+        "hersteltermijn": "2026-10-08",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-3-1",
+          "id": "8546eb50-7fc2-4db5-9ae4-863946dfeda6"
+        },
+        "case": "Voorbeeld Zaak 3",
+        "summary": "Bewijs van inschrijving",
+        "party": "Voorbeeld Aanvrager 3",
+        "recipient": "aanvrager3@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bewijs van inschrijving",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar3",
+        "requestedAt": "2026-09-03T09:00:00+00:00",
+        "hersteltermijn": "2026-07-01",
+        "state": "expired",
+        "pauseDays": 14
       }
     ]
   }

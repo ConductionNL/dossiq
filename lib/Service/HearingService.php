@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -43,11 +44,13 @@ class HearingService {
 	 * @param SettingsService $settingsService Settings service
 	 * @param LoggerInterface $logger Logger
 	 * @param HearingCalendarService $calendarService Writes the hearing onto participants' calendars
+	 * @param TalkConversationBroker $talkBroker Opens the Talk room a video hearing runs in
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly HearingCalendarService $calendarService,
+		private readonly TalkConversationBroker $talkBroker,
 	) {
 	}//end __construct()
 
@@ -222,15 +225,19 @@ class HearingService {
 	/**
 	 * Create a Nextcloud Talk room for a video hearing.
 	 *
+	 * The hoorzitting is now one configured use of the case-level conversation
+	 * mechanism rather than the only place in dossiq that can open a room:
+	 * the broker lookup moved to {@see TalkConversationBroker}, which every
+	 * conversation on any case goes through. Behaviour here is unchanged, an
+	 * instance without Talk still degrades to an empty string.
+	 *
 	 * @param string $complaintId Complaint UUID (used as room name)
 	 *
 	 * @return string Talk room URL or empty string if Talk not available
 	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
+	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 	 */
 	private function createTalkRoom(string $complaintId): string {
-		// Talk integration via OCP\Talk\IBroker — interface may not be available
-		// on all NC installations; gracefully degrade to empty string.
 		$roomName = 'Hoorgesprek klacht ' . $complaintId;
 
 		$this->logger->debug(
@@ -238,32 +245,12 @@ class HearingService {
 			['complaintId' => $complaintId, 'roomName' => $roomName, 'app' => Application::APP_ID],
 		);
 
-		try {
-			$container = \OC::$server;
-			if ($container->has(\OCP\Talk\IBroker::class) === false) {
-				return '';
-			}
-
-			$broker = $container->get(\OCP\Talk\IBroker::class);
-			if (($broker instanceof \OCP\Talk\IBroker) === false) {
-				return '';
-			}
-
-			$config = $broker->newConversationOptions();
-			$room = $broker->createConversation(
-				name: $roomName,
-				moderators: [],
-				options: $config,
-			);
-
-			return $room->getAbsoluteUrl();
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Failed to create Talk room for complaint ' . $complaintId . ': ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
+		$room = $this->talkBroker->createRoom(name: $roomName);
+		if ($room === null) {
 			return '';
-		}//end try
+		}
+
+		return $room['url'];
 	}//end createTalkRoom()
 
 }//end class
