@@ -59,7 +59,12 @@ function scan(tours, known) {
 			const kind = step.target?.kind ?? ''
 			const ref = step.target?.ref ?? ''
 			if (kind !== 'page' && kind !== 'nav-item') {
-				out.push({ step: step.id, surface: ref, kind, state: 'unverifiable' })
+				out.push({
+					step: step.id,
+					surface: ref,
+					kind,
+					state: 'unverifiable',
+				})
 				continue
 			}
 			if (!known.includes(ref)) {
@@ -79,7 +84,9 @@ describe('the shipped tour', () => {
 	})
 
 	it('names no page or nav entry this app does not have', () => {
-		const missing = scan(tours, surfaces()).filter((step) => step.state === 'missing')
+		const missing = scan(tours, surfaces()).filter(
+			(step) => step.state === 'missing',
+		)
 		expect(
 			missing,
 			`these steps name a surface that is gone: ${missing.map((s) => `${s.step} -> ${s.surface}`).join(', ')}`,
@@ -89,7 +96,10 @@ describe('the shipped tour', () => {
 	it('gives every step its own version, so a later surface reaches a finisher', () => {
 		for (const tour of tours) {
 			for (const step of tour.steps) {
-				expect(step.sinceVersion, `step ${step.id} carries no sinceVersion`).toBeTruthy()
+				expect(
+					step.sinceVersion,
+					`step ${step.id} carries no sinceVersion`,
+				).toBeTruthy()
 			}
 		}
 	})
@@ -102,7 +112,9 @@ describe('the scan can actually see a broken step', () => {
 		const broken = JSON.parse(JSON.stringify(tours))
 		broken[0].steps[1].target = { kind: 'nav-item', ref: 'APageNobodyShips' }
 
-		const missing = scan(broken, surfaces()).filter((step) => step.state === 'missing')
+		const missing = scan(broken, surfaces()).filter(
+			(step) => step.state === 'missing',
+		)
 
 		expect(missing).toHaveLength(1)
 		expect(missing[0].surface).toBe('APageNobodyShips')
@@ -110,9 +122,14 @@ describe('the scan can actually see a broken step', () => {
 	})
 
 	it('classifies an element target as unverifiable rather than broken', () => {
-		const unverifiable = scan(tours, surfaces()).filter((step) => step.state === 'unverifiable')
+		const unverifiable = scan(tours, surfaces()).filter(
+			(step) => step.state === 'unverifiable',
+		)
 
-		expect(unverifiable.length, 'no element target was classified, so the scan did not run').toBeGreaterThan(0)
+		expect(
+			unverifiable.length,
+			'no element target was classified, so the scan did not run',
+		).toBeGreaterThan(0)
 		for (const step of unverifiable) {
 			expect(step.kind).toBe('element')
 		}
