@@ -34,6 +34,7 @@ vi.mock('@nextcloud/vue', () => {
 		NcCheckboxRadioSwitch: passthrough('NcCheckboxRadioSwitch', 'label'),
 		NcEmptyContent: passthrough('NcEmptyContent'),
 		NcLoadingIcon: passthrough('NcLoadingIcon'),
+		NcNoteCard: passthrough('NcNoteCard'),
 		NcTextField: passthrough('NcTextField', 'input'),
 	}
 })
@@ -89,14 +90,16 @@ const COMPANY_ROW = {
  * @param {object|string|null} [options.value] The `value` prop.
  * @param {Function} [options.fetchCollection] Collection stub.
  * @param {Function} [options.fetchObject] Single-object stub.
+ * @param {object} [options.errors] The store's per-type error map.
  * @return {object} The mounted wrapper.
  */
 function mountPicker({
 	value = null,
 	fetchCollection = vi.fn().mockResolvedValue([]),
 	fetchObject = vi.fn().mockResolvedValue(null),
+	errors = {},
 } = {}) {
-	storeStub = { fetchCollection, fetchObject }
+	storeStub = { fetchCollection, fetchObject, errors }
 	return mount(InitiatorPicker, {
 		props: { value },
 		global: {
@@ -280,5 +283,102 @@ describe('InitiatorPicker — no second party for an address somebody holds', ()
 		})
 
 		expect(wrapper.emitted('select')[0][0].requester).toBe('uuid-person-1')
+	})
+})
+
+describe('InitiatorPicker — a refused term is not an empty register', () => {
+	/**
+	 * 🔴 `fetchCollection()` RESOLVES WITH `[]` ON A 400. OpenRegister refuses
+	 * a term it cannot parse rather than running it as a literal, precisely so
+	 * the answer is not an honest-looking zero. The store then swallows that
+	 * into an empty array and an entry on `errors`, so a picker reading only
+	 * the returned rows says "No results" for a bracket the reader forgot to
+	 * close, and the reader searches for a different person.
+	 *
+	 * @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+	 */
+	const refusal = {
+		status: 400,
+		message: 'Unbalanced bracket at position 1.',
+		details: 'Unbalanced bracket at position 1.',
+		isValidation: true,
+		fields: null,
+	}
+
+	it('shows the refusal instead of the empty state', async () => {
+		const wrapper = mountPicker({ errors: { brpPerson: refusal } })
+
+		wrapper.vm.query = '(Janssen'
+		await wrapper.vm.runSearch()
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('[data-testid="initiator-picker-refusal"]').exists()).toBe(true)
+		expect(wrapper.text()).toContain('We could not read this search from character 1.')
+		expect(wrapper.text()).toContain('Unbalanced bracket at position 1.')
+		expect(wrapper.find('.NcEmptyContent-stub').exists()).toBe(false)
+	})
+
+	it('holds back the rows the refused fetch returned', async () => {
+		const fetchCollection = vi.fn().mockResolvedValue([PERSON_ROW])
+		const wrapper = mountPicker({ fetchCollection, errors: { brpPerson: refusal } })
+
+		wrapper.vm.query = '(Janssen'
+		await wrapper.vm.runSearch()
+
+		expect(wrapper.vm.results).toEqual([])
+	})
+
+	it('clears the refusal once the next term reads', async () => {
+		const wrapper = mountPicker({ errors: { brpPerson: refusal } })
+
+		wrapper.vm.query = '(Janssen'
+		await wrapper.vm.runSearch()
+		expect(wrapper.vm.refusal).not.toBeNull()
+
+		wrapper.vm.objectStore.errors = {}
+		wrapper.vm.query = 'Janssen'
+		await wrapper.vm.runSearch()
+
+		expect(wrapper.vm.refusal).toBeNull()
+	})
+
+	it('clears the refusal when the box is emptied, which searches nothing', async () => {
+		// The early return for an empty box skips the fetch entirely, so this
+		// is the one path where only the reset at the top of runSearch can
+		// clear a refusal. Without it the hint outlives the term it is about.
+		const wrapper = mountPicker({ errors: { brpPerson: refusal } })
+
+		wrapper.vm.query = '(Janssen'
+		await wrapper.vm.runSearch()
+		expect(wrapper.vm.refusal).not.toBeNull()
+
+		wrapper.vm.query = ''
+		await wrapper.vm.runSearch()
+
+		expect(wrapper.vm.refusal).toBeNull()
+	})
+
+	it('leaves a search that was not refused alone', async () => {
+		const fetchCollection = vi.fn().mockResolvedValue([PERSON_ROW])
+		const wrapper = mountPicker({ fetchCollection })
+
+		wrapper.vm.query = 'Janssen'
+		await wrapper.vm.runSearch()
+
+		expect(wrapper.vm.refusal).toBeNull()
+		expect(wrapper.vm.results).toHaveLength(1)
+	})
+
+	it('still passes the typed term through unchanged', async () => {
+		const fetchCollection = vi.fn().mockResolvedValue([])
+		const wrapper = mountPicker({ fetchCollection })
+
+		wrapper.vm.query = '  Jans* AND NOT "de Vries"  '
+		await wrapper.vm.runSearch()
+
+		expect(fetchCollection).toHaveBeenCalledWith('brpPerson', {
+			_search: 'Jans* AND NOT "de Vries"',
+			_limit: 20,
+		})
 	})
 })
