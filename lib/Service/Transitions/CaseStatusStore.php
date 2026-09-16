@@ -204,6 +204,7 @@ class CaseStatusStore {
 			label: $label,
 			comment: $comment,
 			record: $record,
+			actor: $actor,
 		);
 
 		return $record;
@@ -236,6 +237,7 @@ class CaseStatusStore {
 	 * @param string               $label      The transition's own label.
 	 * @param string|null          $comment    What the mover said about it.
 	 * @param array<string, mixed> $record     The statusRecord just written.
+	 * @param string               $actor      Who the caller says made the move, '' when it did not say.
 	 *
 	 * @return void
 	 *
@@ -248,6 +250,7 @@ class CaseStatusStore {
 		string $label,
 		?string $comment,
 		array $record,
+		string $actor = '',
 	): void {
 		if ($this->timeline === null || $caseId === '' || $toStatus === '') {
 			return;
@@ -269,7 +272,7 @@ class CaseStatusStore {
 			fields: [
 				'from' => $fromStatus,
 				'to' => $toStatus,
-				'actor' => $this->actor(),
+				'actor' => $this->actor(named: $actor),
 				'explanation' => (string)($comment ?? ''),
 				'label' => $label,
 				'statusRecordId' => (string)($record['id'] ?? ($record['@self']['id'] ?? '')),
@@ -310,12 +313,23 @@ class CaseStatusStore {
 	/**
 	 * Who made the move, as a user id, or '' for a move nobody signed.
 	 *
+	 * THE CALLER'S ANSWER WINS. `writeStatusRecord()` now takes the actor,
+	 * because the four-eyes rule needs to know who took a step rather than who
+	 * wrote the row, and the two are not the same claim. The session is the
+	 * fallback for the callers that do not name one yet.
+	 *
 	 * A background job and a timer both move cases, and '' is the true answer
 	 * for those rather than a name invented to fill the field.
 	 *
+	 * @param string $named Who the caller says made the move, '' when it did not say.
+	 *
 	 * @return string The uid, or ''.
 	 */
-	private function actor(): string {
+	private function actor(string $named = ''): string {
+		if (trim($named) !== '') {
+			return trim($named);
+		}
+
 		return (string)($this->userSession?->getUser()?->getUID() ?? '');
 	}//end actor()
 

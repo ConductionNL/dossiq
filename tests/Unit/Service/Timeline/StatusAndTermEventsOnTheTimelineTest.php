@@ -186,6 +186,35 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	}//end testAStatusMoveReachesTheTimeline()
 
 	/**
+	 * The actor the caller names wins over the signed-in session.
+	 *
+	 * `writeStatusRecord()` takes an actor because the four-eyes rule needs to
+	 * know who TOOK a step, which is not the same claim as who wrote the row.
+	 * A bulk action running as one user on behalf of another would otherwise
+	 * put the wrong name on every line it writes.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	public function testTheActorTheCallerNamesWinsOverTheSession(): void {
+		$store = $this->statusStore(actor: 'session-user');
+
+		$store->writeStatusRecord(
+			caseId: 'case-1',
+			toStatus: 'st-behandeling',
+			fromStatus: 'st-intake',
+			label: 'Start behandeling',
+			comment: null,
+			evaluatedGuards: [],
+			noWorkflowTemplate: false,
+			actor: 'named-mover',
+		);
+
+		self::assertSame('named-mover', $this->seen['fields']['actor']);
+	}//end testTheActorTheCallerNamesWinsOverTheSession()
+
+	/**
 	 * The sentence a handler reads names the two statuses, not their uuids.
 	 *
 	 * A timeline line reading "Status gewijzigd van st-intake naar
