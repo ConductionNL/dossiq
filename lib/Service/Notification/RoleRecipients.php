@@ -20,7 +20,7 @@ use Throwable;
 /**
  * Who holds a role on a case, answered by the platform's own resolver.
  *
- * dossiq used to walk `case.<role>` and `case.<role>Members` itself. That is
+ * This app used to walk `case.<role>` and `case.<role>Members` itself. That is
  * `{kind: field}` in OpenRegister's recipients dialect, and OpenRegister now
  * also resolves `{kind: role}` against the schema's `authorization.roles`. One
  * resolver deciding who is told is the point (ADR-012): two of them is how a
@@ -32,10 +32,15 @@ use Throwable;
  * schema's assignment, so a `notifyRole` action naming `behandelaar` reaches
  * the behandelaars even on a case that carries no behandelaar field.
  *
- * IT ANSWERS NULL RATHER THAN EMPTY when the platform cannot answer, because
- * "nobody holds this role" and "I could not ask" must not be the same value:
- * the caller falls back to its own lookup on the second, and reports no
- * recipients on the first.
+ * IT ANSWERS NULL RATHER THAN EMPTY when this instance has no such platform,
+ * because "nobody holds this role" and "there is nothing to ask" must not be
+ * the same value: the caller falls back to its own lookup on the second, and
+ * reports no recipients on the first.
+ *
+ * A resolver that THROWS is neither. It propagates, because falling back on a
+ * fault would reach fewer people than a working resolver with nothing saying
+ * so, and a notification that quietly reached half the team is the failure this
+ * whole change exists to remove.
  *
  * @spec openspec/specs/automatic-actions/spec.md
  */
@@ -96,18 +101,19 @@ class RoleRecipients {
 			['kind' => 'role', 'role' => $roleSlug],
 		];
 
-		try {
-			$uids = $resolver->resolve(
-				recipientsSpec: $spec,
-				data: $case,
-				object: null,
-				context: [],
-				roleGroups: $this->roleGroups()
-			);
-		} catch (Throwable $e) {
-			$this->logger->info('Dossiq notifications: the role was not resolved by the platform: ' . $e->getMessage());
-			return null;
-		}
+		// A resolver that THROWS is not a reason to fall back. Catching it here
+		// and answering null would send the caller to its own weaker lookup, so
+		// a broken resolver would quietly reach fewer people than a working one
+		// and nothing would say so (ADR-005, fail closed and say so). The only
+		// null this method returns is the one decided above, before any call:
+		// the platform is not on this instance, which is a fact, not a fault.
+		$uids = $resolver->resolve(
+			recipientsSpec: $spec,
+			data: $case,
+			object: null,
+			context: [],
+			roleGroups: $this->roleGroups()
+		);
 
 		if (is_array($uids) === false) {
 			return null;

@@ -103,7 +103,7 @@ class DeclareNotificationTemplatesTest extends TestCase {
 	 * @return DeclareNotificationTemplates The step.
 	 */
 	private function step(?object $registry): DeclareNotificationTemplates {
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		if ($registry === null) {
 			$container->method('get')->willThrowException(
 				new class('absent') extends \RuntimeException implements \Psr\Container\NotFoundExceptionInterface {
@@ -124,8 +124,8 @@ class DeclareNotificationTemplatesTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-dossiq-fills-the-platforms-dutch-template-gaps-req-urs-07
 	 */
 	public function testAGapIsFilledWithDutch(): void {
-		$registry = $this->registry(['object_created']);
-		$this->step(registry: $registry)->run($this->createMock(IOutput::class));
+		$registry = $this->registry(gaps: ['object_created']);
+		$this->step(registry: $registry)->run($this->createMock(originalClassName: IOutput::class));
 
 		$this->assertSame(
 			expected: ['nl' => PlatformEventTemplates::DUTCH['object_created']],
@@ -144,8 +144,8 @@ class DeclareNotificationTemplatesTest extends TestCase {
 	public function testATemplateThatAlreadyHasTextIsNeverTouched(): void {
 		// `object_updated` is NOT in the gap list, so it already carries text:
 		// either what OpenRegister ships, or an administrator's own edit.
-		$registry = $this->registry(['object_created']);
-		$this->step(registry: $registry)->run($this->createMock(IOutput::class));
+		$registry = $this->registry(gaps: ['object_created']);
+		$this->step(registry: $registry)->run($this->createMock(originalClassName: IOutput::class));
 
 		$this->assertArrayNotHasKey(
 			key: 'object_updated',
@@ -162,14 +162,14 @@ class DeclareNotificationTemplatesTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-dossiq-fills-the-platforms-dutch-template-gaps-req-urs-07
 	 */
 	public function testTheSecondRunWritesNothing(): void {
-		$registry = $this->registry(['object_created', 'object_transitioned']);
+		$registry = $this->registry(gaps: ['object_created', 'object_transitioned']);
 		$step = $this->step(registry: $registry);
 
-		$step->run($this->createMock(IOutput::class));
+		$step->run($this->createMock(originalClassName: IOutput::class));
 		$afterFirst = $registry->written;
 
 		$registry->written = [];
-		$step->run($this->createMock(IOutput::class));
+		$step->run($this->createMock(originalClassName: IOutput::class));
 
 		$this->assertCount(expectedCount: 2, haystack: $afterFirst);
 		$this->assertSame(
@@ -187,8 +187,8 @@ class DeclareNotificationTemplatesTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-dossiq-fills-the-platforms-dutch-template-gaps-req-urs-07
 	 */
 	public function testAGapDossiqCannotAnswerIsLeftAlone(): void {
-		$registry = $this->registry(['credential_relink_needed']);
-		$this->step(registry: $registry)->run($this->createMock(IOutput::class));
+		$registry = $this->registry(gaps: ['credential_relink_needed']);
+		$this->step(registry: $registry)->run($this->createMock(originalClassName: IOutput::class));
 
 		$this->assertSame(
 			expected: [],
@@ -210,12 +210,12 @@ class DeclareNotificationTemplatesTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-dossiq-fills-the-platforms-dutch-template-gaps-req-urs-07
 	 */
 	public function testAnAbsentRegistryDoesNotThrow(): void {
-		$output = $this->createMock(IOutput::class);
+		$output = $this->createMock(originalClassName: IOutput::class);
 		$output->expects($this->once())->method('info');
 
 		$this->step(registry: null)->run($output);
 
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testAnAbsentRegistryDoesNotThrow()
 
 	/**

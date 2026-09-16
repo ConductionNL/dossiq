@@ -51,7 +51,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @return NotificationRouting The seam.
 	 */
 	private function routing(?object $service, ?LoggerInterface $logger = null): NotificationRouting {
-		$settings = $this->createMock(SettingsService::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn($service);
 
 		return new NotificationRouting(
@@ -207,7 +207,7 @@ class NotificationRoutingTest extends TestCase {
 	 */
 	public function testTheDecidingLayerComesBackWithTheValue(): void {
 		$routing = $this->routing(
-			service: $this->platform([$this->digestEntry(enabled: false, source: 'group-default')])
+			service: $this->platform(entries: [$this->digestEntry(enabled: false, source: 'group-default')])
 		);
 
 		$this->assertFalse(
@@ -231,7 +231,7 @@ class NotificationRoutingTest extends TestCase {
 	public function testAPersonsOwnValueIsNamedAsTheirs(): void {
 		$routing = $this->routing(
 			service: $this->platform(
-				[$this->digestEntry(enabled: true, source: 'user-override', scope: 'domain:werkvoorraad')]
+				entries: [$this->digestEntry(enabled: true, source: 'user-override', scope: 'domain:werkvoorraad')]
 			)
 		);
 
@@ -250,7 +250,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
 	 */
 	public function testAScopeAskedForReachesThePlatform(): void {
-		$platform = $this->platform([$this->digestEntry(enabled: true, source: 'schema-default')]);
+		$platform = $this->platform(entries: [$this->digestEntry(enabled: true, source: 'schema-default')]);
 		$this->routing(service: $platform)->effectiveFor(userId: 'alice', scope: 'domain:zaken');
 
 		$this->assertSame(
@@ -273,7 +273,7 @@ class NotificationRoutingTest extends TestCase {
 		$otherSchema['schema'] = 'case';
 
 		$this->assertNull(
-			actual: $this->routing(service: $this->platform([$otherSchema]))->digestEnabledFor(userId: 'alice'),
+			actual: $this->routing(service: $this->platform(entries: [$otherSchema]))->digestEnabledFor(userId: 'alice'),
 			message: 'Reading somebody else\'s switch as the digest is how a screen lies about a value.'
 		);
 
@@ -285,7 +285,7 @@ class NotificationRoutingTest extends TestCase {
 
 		$this->assertTrue(
 			condition: $this->routing(
-				service: $this->platform([$sibling, $this->digestEntry(enabled: true, source: 'user-override')])
+				service: $this->platform(entries: [$sibling, $this->digestEntry(enabled: true, source: 'user-override')])
 			)->digestEnabledFor(userId: 'alice'),
 			message: 'A sibling rule on the same schema must not be read as the digest switch.'
 		);
@@ -299,7 +299,7 @@ class NotificationRoutingTest extends TestCase {
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
 	public function testTheSwitchIsWrittenAsTheirOwnOverride(): void {
-		$platform = $this->platform([]);
+		$platform = $this->platform(entries: []);
 
 		$this->assertTrue(
 			condition: $this->routing(service: $platform)->setDigestEnabled(userId: 'alice', enabled: false)

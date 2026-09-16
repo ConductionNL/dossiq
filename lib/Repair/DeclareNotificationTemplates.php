@@ -179,7 +179,7 @@ class DeclareNotificationTemplates implements IRepairStep {
 		foreach ($gaps as $event) {
 			$dutch = PlatformEventTemplates::dutchFor(event: $event);
 			if ($dutch === null) {
-				// dossiq has nothing to say about this event. Leaving it in the
+				// Nothing dossiq can say about this event. Leaving it in the
 				// gap list is the point: it stays finishable by somebody else.
 				continue;
 			}

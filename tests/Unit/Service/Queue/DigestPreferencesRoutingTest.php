@@ -52,13 +52,16 @@ class DigestPreferencesRoutingTest extends TestCase {
 	 * @return array{0: DigestPreferences, 1: NotificationRouting} The settings and the routing double.
 	 */
 	private function build(?bool $routed, bool $local = true, int $hour = 8): array {
-		$routing = $this->createMock(NotificationRouting::class);
+		$routing = $this->createMock(originalClassName: NotificationRouting::class);
 		$routing->method('digestEnabledFor')->willReturn($routed);
-		$routing->method('digestDecidedBy')->willReturn(
-			($routed === null ? null : ['source' => 'group-default', 'scope' => 'global'])
-		);
+		$decided = ['source' => 'group-default', 'scope' => 'global'];
+		if ($routed === null) {
+			$decided = null;
+		}
 
-		$userConfig = $this->createMock(IUserConfig::class);
+		$routing->method('digestDecidedBy')->willReturn($decided);
+
+		$userConfig = $this->createMock(originalClassName: IUserConfig::class);
 		$userConfig->method('getValueBool')->willReturn($local);
 		$userConfig->method('getValueInt')->willReturn($hour);
 		$userConfig->method('getValueString')->willReturn('');
