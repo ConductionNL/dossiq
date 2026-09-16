@@ -463,7 +463,7 @@ const registry = {
 	caseCreateWithDuplicateCheck: {
 		kind: 'create-override',
 		handler: createCaseWithDuplicateCheck,
-		_note: 'Named by `createOverride` on every `new-case` open-form action. It owns the persist, so it can ask OpenRegister whether a case like this one already exists BEFORE the case is written, and show the matches with a link to each. It is not the enforcement: DuplicatePolicy refuses a blocked create on the pre-persist event, so the mail intake, an import and any integration are refused the same way. A createOverride runs on the press rather than on the keystroke, which is the one part of REQ-FCF-10 this seam cannot give: disabling the library dialog\'s own Create button needs a `beforeConfirm` hook in @conduction/nextcloud-vue.',
+		_note: "Named by `createOverride` on every `new-case` open-form action. It owns the persist, so it can ask OpenRegister whether a case like this one already exists BEFORE the case is written, and show the matches with a link to each. It is not the enforcement: DuplicatePolicy refuses a blocked create on the pre-persist event, so the mail intake, an import and any integration are refused the same way. A createOverride runs on the press rather than on the keystroke, which is the one part of REQ-FCF-10 this seam cannot give: disabling the library dialog's own Create button needs a `beforeConfirm` hook in @conduction/nextcloud-vue.",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---

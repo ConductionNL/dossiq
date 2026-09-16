@@ -169,7 +169,11 @@ describe('matchPercentage', () => {
 describe('matchRow', () => {
 	it('names a case the handler may read', () => {
 		const row = matchRow(oneMatch[0], [
-			{ id: 'existing-case-uuid', title: 'Kapvergunning Eikenlaan', identifier: 'ZAAK-1' },
+			{
+				id: 'existing-case-uuid',
+				title: 'Kapvergunning Eikenlaan',
+				identifier: 'ZAAK-1',
+			},
 		])
 
 		expect(row.readable).toBe(true)

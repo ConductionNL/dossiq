@@ -235,9 +235,7 @@ test.describe('The duplicate warning at intake', () => {
 	})
 
 	// @e2e openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md#block-stops-a-handler-not-a-coordinator
-	test('offers a coordinator a way past, once they say why', async ({
-		page,
-	}) => {
+	test('offers a coordinator a way past, once they say why', async ({ page }) => {
 		expect(
 			await ocs('post', '/ocs/v2.php/cloud/groups', {
 				groupid: COORDINATORS,
