@@ -443,6 +443,17 @@
 			"visibleIf": {
 				"appInstalled": "hermiq"
 			}
+		},
+		{
+			"id": "DataModelLink",
+			"label": "Data model",
+			"icon": "DatabaseCogOutline",
+			"href": "/apps/openregister/#/registers/dossiq",
+			"order": 30,
+			"permission": "admin",
+			"visibleIf": {
+				"appInstalled": "openregister"
+			}
 		}
 	],
 	"pages": [
@@ -1667,6 +1678,35 @@
 			"tabInAddress": true,
 			"referencePreview": true,
 			"actionsComponent": "RequesterProjection",
+			"widgets": [
+				{
+					"id": "object-types-link",
+					"widgetKey": "nav-card-grid",
+					"requiredApp": "openregister",
+					"slot": "footer",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 12,
+					"gridHeight": 1,
+					"props": {
+						"title": "Data model",
+						"widgetId": "object-types-link",
+						"entries": [
+							{
+								"id": "manage-object-types",
+								"label": "Manage object types",
+								"description": "An object type is an OpenRegister schema. Add one, or change its fields, on the register page.",
+								"icon": "DatabaseCogOutline",
+								"href": "/apps/openregister/#/registers/dossiq",
+								"visibleIf": {
+									"appInstalled": "openregister",
+									"user.isAdmin": true
+								}
+							}
+						]
+					}
+				}
+			],
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
@@ -3284,6 +3324,35 @@
 			"route": "/case-objects",
 			"type": "index",
 			"title": "Objects",
+			"widgets": [
+				{
+					"id": "object-types-link",
+					"widgetKey": "nav-card-grid",
+					"requiredApp": "openregister",
+					"slot": "footer",
+					"gridX": 0,
+					"gridY": 0,
+					"gridWidth": 12,
+					"gridHeight": 1,
+					"props": {
+						"title": "Data model",
+						"widgetId": "object-types-link",
+						"entries": [
+							{
+								"id": "manage-object-types",
+								"label": "Manage object types",
+								"description": "An object type is an OpenRegister schema. Add one, or change its fields, on the register page.",
+								"icon": "DatabaseCogOutline",
+								"href": "/apps/openregister/#/registers/dossiq",
+								"visibleIf": {
+									"appInstalled": "openregister",
+									"user.isAdmin": true
+								}
+							}
+						]
+					}
+				}
+			],
 			"config": {
 				"register": "dossiq",
 				"schema": "caseObject",
