@@ -107,8 +107,8 @@ function readSide(file) {
  * would report every plural entry as changed on both sides and manufacture a
  * conflict on every single merge — the exact failure this driver exists to end.
  *
- * @param {*} a - one value, or undefined for "absent"
- * @param {*} b - the other value, or undefined for "absent"
+ * @param {string|string[]|undefined} a - one value, undefined for "absent"
+ * @param {string|string[]|undefined} b - the other value, undefined for "absent"
  * @return {boolean} whether the two are the same translation
  */
 function sameValue(a, b) {
@@ -128,10 +128,11 @@ function sameValue(a, b) {
  * same three comparisons: a side that still equals the ancestor did not touch
  * the value, so the other side's decision wins.
  *
- * @param {*} base - the ancestor's value
- * @param {*} ours - our value
- * @param {*} theirs - their value
- * @return {{ value: *, conflict: boolean }} the resolved value, and whether
+ * @param {string|string[]|undefined} base - the ancestor's value
+ * @param {string|string[]|undefined} ours - our value
+ * @param {string|string[]|undefined} theirs - their value
+ * @return {{ value: (string|string[]|undefined), conflict: boolean }} the
+ *   resolved value, and whether
  *   both sides changed it to something different
  */
 function mergeValue(base, ours, theirs) {
@@ -277,7 +278,7 @@ function mergeTranslations(base, ours, theirs) {
  * rebuilt one, and the next writer would show it as a spurious diff.
  *
  * @param {string} key - the translation key
- * @param {*} value - the translation, a string or an array of plural forms
+ * @param {string|string[]} value - the translation, or its plural forms
  * @param {boolean} compact - true for the `.js` shape (no inner newlines)
  * @param {string} comma - ',' unless this is the last entry
  * @return {string} the rendered line
