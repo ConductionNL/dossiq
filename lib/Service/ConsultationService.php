@@ -669,19 +669,4 @@ class ConsultationService {
 		return $decisionRef;
 	}//end raiseAndPersistAdviceDecision()
 
-	/**
-	 * Find a consultation by its secure token (for external body public access).
-	 *
-	 * Returns null when the token is invalid, the consultation is not found,
-	 * or the consultation is in a terminal status (afgesloten / ingetrokken).
-	 *
-	 * @param string $token The 64-character hex secure token
-	 *
-	 * @return array<string, mixed>|null Consultation data or null
-	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
-	 */
-	public function findBySecureToken(string $token): ?array {
-		return $this->repository->findBySecureToken(token: $token);
-	}//end findBySecureToken()
 }//end class
