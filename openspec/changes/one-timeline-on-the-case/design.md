@@ -54,8 +54,20 @@ a kind where every single entry genuinely needs an answer may carry one.
   public, and the recipient's identifier has no business on a surface
   the recipient is not the only reader of.
 - `ontvangstbevestiging`: channel, recipient, template, sentAt.
-- `statuswijziging` and `termijngebeurtenis`: declared, unwritten here.
-  See the proposal's out-of-scope note.
+- `statuswijziging`: the two statuses, the actor, the explanation, the
+  transition's own label and the status record id. `actor`, `explanation`
+  and `label` were added when the writer landed: OpenRegister DROPS a
+  field the kind does not declare rather than refusing it, so a writer
+  that runs ahead of its declaration stores an entry with the values
+  silently missing.
+- `termijngebeurtenis`: the event, when it happened, when the term
+  started, when it now falls due, the legal basis and the term instance
+  id. Same reason for the three that were added.
+
+Both kinds were declared before either writer existed, so the entries
+would validate the day the writers landed. They now do. A change to a
+declaration only reaches an instance when the repair step runs again,
+which is why one moves the version in `appinfo/info.xml` with it.
 
 ## D5 Which entries are public
 

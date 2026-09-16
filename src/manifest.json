@@ -2422,10 +2422,10 @@
 					},
 					{
 						"id": "case-archival-panel",
-						"type": "custom",
+						"type": "case-archival-pane",
 						"title": "Archiving",
 						"icon": "ArchiveOutline",
-						"_note": "What happens to this case when its business use ends, as openregister decided it (page slot widget-case-archival -> CaseArchivalPanel). Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
+						"_note": "What happens to this case when its business use ends, as openregister decided it (registry type case-archival-pane -> CaseArchivalPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, so the type custom this shipped as drew an empty Archiving tab and logged nothing. Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
 					},
 					{
 						"id": "case-attention",
@@ -2792,8 +2792,7 @@
 				]
 			},
 			"slots": {
-				"widget-cmmn-case-plan": "CasePlanPanel",
-				"widget-case-archival": "CaseArchivalPanel"
+				"widget-cmmn-case-plan": "CasePlanPanel"
 			}
 		},
 		{

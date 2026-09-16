@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -51,9 +52,10 @@ class CaseStatusStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
-	 * @param StatusTypeLookup $statusTypeLookup Reads a statusType, by id or by name.
-	 * @param LoggerInterface  $logger           The logger.
+	 * @param SettingsService   $settingsService  Bridge to OpenRegister + config.
+	 * @param StatusTypeLookup  $statusTypeLookup Reads a statusType, by id or by name.
+	 * @param LoggerInterface   $logger           The logger.
+	 * @param StatusMoveEntry|null $moveEntry    The timeline entry a recorded move writes.
 	 *
 	 * @return void
 	 */
@@ -61,6 +63,7 @@ class CaseStatusStore {
 		private readonly SettingsService $settingsService,
 		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
+		private readonly ?StatusMoveEntry $moveEntry = null,
 	) {
 	}//end __construct()
 
@@ -188,8 +191,37 @@ class CaseStatusStore {
 			$payload['description'] = $comment;
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+
+		$this->moveEntry?->record(
+			caseId: $caseId,
+			toStatus: $toStatus,
+			fromStatus: $fromStatus,
+			label: $label,
+			comment: $comment,
+			record: $record,
+			actor: $actor,
+		);
+
+		return $record;
 	}//end writeStatusRecord()
+
+	/**
+	 * Where the move's timeline entry is built.
+	 *
+	 * Nothing here. {@see StatusMoveEntry} builds it, and this class calls it
+	 * once, from {@see self::writeStatusRecord()}. That method is the one place
+	 * all four movers reach: the guarded transition, the admin free-form move,
+	 * the ending acts and a reopen. A writer placed in the engine instead would
+	 * have covered the first two and left a closed case with no line saying it
+	 * closed.
+	 *
+	 * A derived move writes no statusRecord and never reaches here.
+	 * `DerivedStatusTimelineListener` records that one, after the save lands.
+	 *
+	 * @see StatusMoveEntry
+	 * @see \OCA\Dossiq\Listener\DerivedStatusTimelineListener
+	 */
 
 	/**
 	 * Persist an updated statusRecord.
