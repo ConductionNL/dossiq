@@ -58,7 +58,7 @@ class NextcloudFloorMatrixTest extends TestCase {
 		// false for a perfectly valid file. `simplexml_load_string()` never
 		// reaches the loader.
 		$source = file_get_contents(__DIR__ . '/../../../appinfo/info.xml');
-		$this->assertNotFalse($source, 'appinfo/info.xml must be readable');
+		$this->assertNotFalse(condition: $source, message: 'appinfo/info.xml must be readable');
 
 		$xml = simplexml_load_string((string)$source);
 		$this->assertNotFalse($xml, 'appinfo/info.xml must parse as XML');
