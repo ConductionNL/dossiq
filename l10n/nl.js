@@ -5219,7 +5219,12 @@ OC.L10N.register(
         "Remove from favourites": "Uit favorieten halen",
         "Removed from your favourites.": "Uit je favorieten gehaald.",
         "Star a case to find it here": "Markeer een zaak met een ster om hem hier terug te vinden",
-        "Your favourites": "Jouw favorieten"
+        "Your favourites": "Jouw favorieten",
+        "Due between": "Uiterlijk tussen",
+        "How urgent the task is.": "Hoe urgent de taak is.",
+        "Show only the tasks on one case.": "Toon alleen de taken op één zaak.",
+        "Tasks with a deadline inside this window.": "Taken met een termijn binnen dit venster.",
+        "Where the task is in its lifecycle.": "Waar de taak staat in haar levensloop."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -65,9 +65,9 @@ const CHIPS = {
 /** The sidebar filter labels, in both languages. */
 const FIELDS = {
 	case: /^(Case|Zaak)$/,
-	state: /^(State|Status)$/,
+	state: /^(State|Staat)$/,
 	priority: /^(Priority|Prioriteit)$/,
-	dueBetween: /^(Due between|Te doen tussen)$/,
+	dueBetween: /^(Due between|Uiterlijk tussen)$/,
 }
 
 const cases: Record<string, string> = {}
@@ -226,7 +226,7 @@ test.describe('the Tasks index offers its search fields', () => {
 		// would answer about everybody while looking like it answered about
 		// one person. See tasks.md 1.1.
 		await expect(
-			sidebar.getByText(/^(Assignee|Behandelaar)$/),
+			sidebar.getByText(/^(Assignee|Toegewezen aan)$/),
 			'the sidebar must not offer a filter the engine cannot answer',
 		).toHaveCount(0)
 	})
@@ -275,7 +275,7 @@ test.describe('Due window inside a lens', () => {
 		await expect(row(page, 'alpha-far')).toBeVisible({ timeout: 20_000 })
 
 		const dueFrom = sidebar.getByRole('textbox', { name: /^(From|Van)$/ })
-		const dueTo = sidebar.getByRole('textbox', { name: /^(To|Tot)$/ })
+		const dueTo = sidebar.getByRole('textbox', { name: /^(To|Aan)$/ })
 		await dueFrom.fill(WINDOW_FROM.slice(0, 10))
 		await dueFrom.press('Enter')
 		await dueTo.fill(WINDOW_TO.slice(0, 10))

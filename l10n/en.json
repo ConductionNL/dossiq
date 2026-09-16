@@ -5230,6 +5230,11 @@
         "Remove from favourites": "Remove from favourites",
         "Removed from your favourites.": "Removed from your favourites.",
         "Star a case to find it here": "Star a case to find it here",
-        "Your favourites": "Your favourites"
+        "Your favourites": "Your favourites",
+        "Due between": "Due between",
+        "How urgent the task is.": "How urgent the task is.",
+        "Show only the tasks on one case.": "Show only the tasks on one case.",
+        "Tasks with a deadline inside this window.": "Tasks with a deadline inside this window.",
+        "Where the task is in its lifecycle.": "Where the task is in its lifecycle."
     }
 }
