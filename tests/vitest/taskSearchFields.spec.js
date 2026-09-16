@@ -24,6 +24,7 @@ import { filtersFromSchema } from '@conduction/nextcloud-vue/src/utils/schema.js
 import { searchFieldParams } from '@conduction/nextcloud-vue/src/utils/searchFieldParams.js'
 import fs from 'fs'
 import path from 'path'
+import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -33,6 +34,25 @@ const manifest = JSON.parse(
 
 const tasksPage = manifest.pages.find((entry) => entry.id === 'Tasks')
 const declaredProperties = tasksPage.config.sidebar.fields
+
+// 🔴 THE SOURCE ADAPTER OPENS A PINIA STORE THE MOMENT IT IS BUILT. Reading
+// `searchFields` is reading data, but `indexSources.tasks()` calls
+// `useTaskInboxStore()` on the way there, and without an active Pinia that
+// throws rather than answering. Read through the adapter anyway, and not off
+// a copy of the declaration: a copy would agree with itself forever while the
+// page read something else.
+beforeEach(() => {
+	setActivePinia(createPinia())
+})
+
+/**
+ * The inbox arguments the tasks source knows how to send.
+ *
+ * @return {object} The `searchFields` declaration.
+ */
+function inboxArguments() {
+	return indexSources.tasks().searchFields
+}
 
 /**
  * The property keys the sidebar offers as filters.
@@ -89,7 +109,7 @@ describe('the Tasks index declares its search fields', () => {
 
 describe('every declared field maps to an inbox argument', () => {
 	it('has a mapping for each one, and none spare', () => {
-		const mapped = indexSources.tasks().searchFields
+		const mapped = inboxArguments()
 
 		for (const key of declaredFilterKeys()) {
 			expect(mapped[key], `no inbox argument for the declared filter "${key}"`).toBeTruthy()
@@ -97,28 +117,28 @@ describe('every declared field maps to an inbox argument', () => {
 	})
 
 	it('narrows to one case with the argument the inbox reads', () => {
-		const mapped = indexSources.tasks().searchFields
+		const mapped = inboxArguments()
 
 		expect(searchFieldParams(mapped, { objectUuid: ['case-7'] }))
 			.toEqual({ objectUuid: 'case-7' })
 	})
 
 	it('sends the window as the two arguments it is on the wire', () => {
-		const mapped = indexSources.tasks().searchFields
+		const mapped = inboxArguments()
 
 		expect(searchFieldParams(mapped, { dueAt: { from: '2026-09-21', to: '2026-09-25' } }))
 			.toEqual({ dueAfter: '2026-09-21', dueBefore: '2026-09-25' })
 	})
 
 	it('carries several states and exactly one priority', () => {
-		const mapped = indexSources.tasks().searchFields
+		const mapped = inboxArguments()
 
 		expect(searchFieldParams(mapped, { state: ['available', 'active'], priority: ['high'] }))
 			.toEqual({ state: 'available,active', priority: 'high' })
 	})
 
 	it('only ever names states and priorities the declaration offers', () => {
-		const mapped = indexSources.tasks().searchFields
+		const mapped = inboxArguments()
 		const states = declaredProperties.state.enum
 		const priorities = declaredProperties.priority.enum
 
@@ -145,12 +165,12 @@ describe('the field the inbox cannot answer is not on the sidebar', () => {
 	 */
 	it('declares no assignee filter, because nothing would narrow', () => {
 		expect(declaredProperties.assignee).toBeUndefined()
-		expect(indexSources.tasks().searchFields.assignee).toBeUndefined()
+		expect(inboxArguments().assignee).toBeUndefined()
 	})
 
 	it('says so out loud if one is ever added without an argument', () => {
 		const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-		const mapped = indexSources.tasks().searchFields
+		const mapped = inboxArguments()
 
 		const params = searchFieldParams(mapped, { assignee: ['alice'] }, 'tasks')
 
