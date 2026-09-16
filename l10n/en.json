@@ -4658,6 +4658,12 @@
         "We could not start the conversation": "We could not start the conversation",
         "We could not find these responders: {names}": "We could not find these responders: {names}",
         "Unknown error": "Unknown error",
-        "{minutes} min": "{minutes} min"
+        "{minutes} min": "{minutes} min",
+        "Aanvullingsverzoek": "Aanvullingsverzoek",
+        "What is missing": "What is missing",
+        "Answer by": "Answer by",
+        "Asked by": "Asked by",
+        "Asked at": "Asked at",
+        "Answered": "Answered"
     }
 }

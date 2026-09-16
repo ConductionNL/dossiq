@@ -24695,6 +24695,78 @@
         "body": "Voorbeeld Body 3",
         "caseTypes": [],
         "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-1-1",
+          "id": "5c4af069-024a-4642-98f5-7fb4db6977f1"
+        },
+        "case": "Voorbeeld Zaak 1",
+        "summary": "Bankafschrift laatste drie maanden",
+        "party": "Voorbeeld Aanvrager 1",
+        "recipient": "aanvrager1@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bankafschrift laatste drie maanden",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar1",
+        "requestedAt": "2026-09-01T09:00:00+00:00",
+        "hersteltermijn": "2026-10-01",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-2-1",
+          "id": "57aea7b6-5afd-4ff2-95a0-86d26c78501c"
+        },
+        "case": "Voorbeeld Zaak 2",
+        "summary": "Huurcontract",
+        "party": "Voorbeeld Aanvrager 2",
+        "recipient": "aanvrager2@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Huurcontract",
+            "received": true
+          }
+        ],
+        "requestedBy": "behandelaar2",
+        "requestedAt": "2026-09-02T09:00:00+00:00",
+        "hersteltermijn": "2026-10-08",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-3-1",
+          "id": "8546eb50-7fc2-4db5-9ae4-863946dfeda6"
+        },
+        "case": "Voorbeeld Zaak 3",
+        "summary": "Bewijs van inschrijving",
+        "party": "Voorbeeld Aanvrager 3",
+        "recipient": "aanvrager3@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bewijs van inschrijving",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar3",
+        "requestedAt": "2026-09-03T09:00:00+00:00",
+        "hersteltermijn": "2026-07-01",
+        "state": "expired",
+        "pauseDays": 14
       }
     ]
   }

@@ -4635,8 +4635,7 @@ OC.L10N.register(
         "The newer version was taken": "The newer version was taken",
         "Up to date": "Up to date",
         "What shipped with dossiq": "What shipped with dossiq",
-        "Yours": "Yours"
-,
+        "Yours": "Yours",
         "Live conversation": "Live conversation",
         "Start a conversation": "Start a conversation",
         "Declare major": "Declare major",
@@ -4648,7 +4647,13 @@ OC.L10N.register(
         "We could not start the conversation": "We could not start the conversation",
         "We could not find these responders: {names}": "We could not find these responders: {names}",
         "Unknown error": "Unknown error",
-        "{minutes} min": "{minutes} min"
+        "{minutes} min": "{minutes} min",
+        "Aanvullingsverzoek": "Aanvullingsverzoek",
+        "What is missing": "What is missing",
+        "Answer by": "Answer by",
+        "Asked by": "Asked by",
+        "Asked at": "Asked at",
+        "Answered": "Answered"
     },
     "nplurals=2; plural=(n != 1);"
 )

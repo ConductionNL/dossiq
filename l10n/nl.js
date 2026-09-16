@@ -4635,8 +4635,7 @@ OC.L10N.register(
         "The newer version was taken": "De nieuwere versie is overgenomen",
         "Up to date": "Actueel",
         "What shipped with dossiq": "Wat dossiq meelevert",
-        "Yours": "Van uzelf"
-,
+        "Yours": "Van uzelf",
         "Live conversation": "Live gesprek",
         "Start a conversation": "Start een gesprek",
         "Declare major": "Schaal op naar calamiteit",
@@ -4648,7 +4647,13 @@ OC.L10N.register(
         "We could not start the conversation": "We konden het gesprek niet starten",
         "We could not find these responders: {names}": "We konden deze opgeroepenen niet vinden: {names}",
         "Unknown error": "Onbekende fout",
-        "{minutes} min": "{minutes} min"
+        "{minutes} min": "{minutes} min",
+        "Aanvullingsverzoek": "Aanvullingsverzoek",
+        "What is missing": "Wat ontbreekt",
+        "Answer by": "Reageren voor",
+        "Asked by": "Gevraagd door",
+        "Asked at": "Gevraagd op",
+        "Answered": "Beantwoord"
     },
     "nplurals=2; plural=(n != 1);"
 )

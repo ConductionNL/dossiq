@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Listener;
 
+use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\SettingsService;
@@ -73,6 +74,10 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * @param DwangsomCalculationService $penaltyService Dwangsom accrual derivation.
 	 * @param SettingsService $settingsService Settings + ObjectService access.
 	 * @param LoggerInterface $logger Logger.
+	 * @param AanvullingsverzoekResolutionService|null $aanvullingen The request
+	 *        the hersteltermijn belonged to, so the day it runs out is recorded
+	 *        on the request and not only on the timer. Optional, so an instance
+	 *        without the schema fires exactly as it did before.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -80,6 +85,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		private readonly DwangsomCalculationService $penaltyService,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
 	) {
 	}//end __construct()
 
@@ -206,6 +212,30 @@ class TermijnTimerFiredListener implements IEventListener {
 			rationale: 'Pauzetermijn verlopen zonder aanvulling',
 			daysImpact: 0,
 		);
+
+		// The timer says the hersteltermijn ran out. The REQUEST is what the
+		// file has to show when an application is refused for incompleteness
+		// under Awb 4:5, so the day it ran out is recorded there too, as a
+		// state. Nothing is deleted and nothing is rewritten: the items and the
+		// dates stay exactly as they were sent, which is the whole point of
+		// keeping an unanswered request.
+		//
+		// A failure here must not poison the engine sweep, and must not undo
+		// the event above: the term is correct either way, and the request can
+		// still be expired by hand.
+		$caseId = trim((string)($instance['case'] ?? ''));
+		if ($this->aanvullingen === null || $caseId === '') {
+			return;
+		}
+
+		try {
+			$this->aanvullingen->expireIfRunOut(caseId: $caseId);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq: the aanvullingsverzoek behind an expired pause could not be marked expired',
+				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
+			);
+		}
 	}//end handlePauseExpiry()
 
 	/**
