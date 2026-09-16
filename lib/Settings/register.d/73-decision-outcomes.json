@@ -34,6 +34,59 @@
 								}
 							}
 						}
+					},
+					"admissibilityJudgement": {
+						"type": "object",
+						"title": "Admissibility at intake",
+						"description": "Whether intake of this case type ends with an ontvankelijkheid judgement. An inadmissible verdict closes the case through the ordinary close act with the result named here, records who judged it, and tells the applicant through the declared moment. Off by default: a melding openbare ruimte has nothing to be inadmissible about, and a product that asks every case type for a verdict is one nobody configures.",
+						"properties": {
+							"enabled": {
+								"type": "boolean",
+								"default": false,
+								"title": "Intake ends with a judgement",
+								"description": "On, intake of this case type asks whether the aanvraag is ontvankelijk before the case moves on."
+							},
+							"inadmissibleResultType": {
+								"type": "string",
+								"title": "Result for an inadmissible aanvraag",
+								"description": "The result type uuid the close carries, normally Niet-ontvankelijk. The retention and the archival consequence come from it, so this is also what decides how long the file is kept."
+							},
+							"moment": {
+								"type": "string",
+								"default": "case-inadmissible",
+								"title": "The moment the applicant is told",
+								"description": "The entry of notificationMoments that tells the applicant. Leaving the moment out of that list is what switches the message off, which publication warns about."
+							}
+						}
+					},
+					"remedy": {
+						"type": "object",
+						"title": "Remedy against the decisions of this case type",
+						"description": "What somebody may lodge against a decision of this case type, within how long, and with whom. The decision document prints the clause from this declaration and never from a document template, so two case types sharing one template print different terms and a change in the law is one configuration change. Sending the decision binds a term instance of kind remedy from the same declaration, which is what makes 'is this still open to bezwaar' answerable without arithmetic.",
+						"properties": {
+							"enabled": {
+								"type": "boolean",
+								"default": true,
+								"title": "Decisions carry a remedy",
+								"description": "Off only where no remedy is open against these decisions. Publication says nothing about a case type that declares this off, and warns about one that simply left the declaration empty."
+							},
+							"kind": {
+								"type": "string",
+								"title": "Kind",
+								"description": "bezwaar, beroep, zienswijze, or the name this bestuursorgaan uses. A kind nobody here anticipated is printed as it was written rather than refused."
+							},
+							"termDays": {
+								"type": "integer",
+								"minimum": 1,
+								"title": "Term in days",
+								"description": "How long the remedy stays open, in days. The Awb bezwaartermijn is six weeks, which is 42 days. The day it lands on is decided by the working calendar this organisation administers."
+							},
+							"body": {
+								"type": "string",
+								"title": "Lodged with",
+								"description": "Who it is lodged with, as the clause names them, for example het college van burgemeester en wethouders."
+							}
+						}
 					}
 				}
 			},
@@ -62,6 +115,35 @@
 									"title": "Raised at",
 									"description": "When the approval was asked for."
 								}
+							}
+						}
+					},
+					"admissibility": {
+						"type": "object",
+						"title": "Admissibility verdict",
+						"description": "The ontvankelijkheid judgement at intake: what was decided, by whom and when, with the reason. It is on the case and not only in a status record because the applicant may object to the verdict, and the file then has to show who reached it.",
+						"properties": {
+							"verdict": {
+								"type": "string",
+								"enum": ["admissible", "inadmissible"],
+								"title": "Verdict",
+								"description": "Ontvankelijk or niet-ontvankelijk."
+							},
+							"judgedBy": {
+								"type": "string",
+								"title": "Judged by",
+								"description": "The uid of the intake worker who reached the verdict."
+							},
+							"judgedOn": {
+								"type": "string",
+								"format": "date-time",
+								"title": "Judged on",
+								"description": "When the verdict was reached."
+							},
+							"reason": {
+								"type": "string",
+								"title": "Reason",
+								"description": "Why. It travels into the close and into the message the applicant receives, so an empty reason is refused rather than stored."
 							}
 						}
 					}

@@ -39,7 +39,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -60,6 +62,8 @@ class CaseTypePublishService {
 	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
 	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
+	 * @param AdmissibilityJudgement  $admissibility    Whether intake ends with a verdict, and what it closes on.
+	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseStateFieldRuleProjector $fieldRules   What each status asks of the fields on the case.
 	 * @param LoggerInterface         $logger           The logger.
@@ -70,6 +74,8 @@ class CaseTypePublishService {
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeAcknowledgement $acknowledgement,
 		private readonly UnreadTriggerService $unreadTriggers,
+		private readonly AdmissibilityJudgement $admissibility,
+		private readonly RemedyClauseDeclaration $remedy,
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseStateFieldRuleProjector $fieldRules,
 		private readonly LoggerInterface $logger,
@@ -101,7 +107,15 @@ class CaseTypePublishService {
 
 		return array_merge(
 			$this->acknowledgement->publicationWarnings(caseType: $caseType),
-			$this->unreadTriggers->publicationWarnings(caseType: $caseType)
+			$this->unreadTriggers->publicationWarnings(caseType: $caseType),
+			// Decision outcomes on the case: a case type that judges
+			// admissibility with no result to close on, or closes an
+			// inadmissible aanvraag without telling the applicant.
+			$this->admissibility->publicationWarnings(caseType: $caseType),
+			// A case type whose decisions declare no remedy. Its besluit would
+			// print no bezwaarclausule, which is a decision going out without
+			// saying how to object to it.
+			$this->remedy->publicationWarnings(caseType: $caseType)
 		);
 	}//end warnings()
 

@@ -51,6 +51,12 @@ class TermijnNotificationService {
 		'hersteltermijn-request',
 		'hersteltermijn-reminder',
 		'doorzending',
+		// The aanvraag was judged niet-ontvankelijk at intake and the case
+		// closed on that result. The
+		// applicant is told through the case type's declared moment, so this
+		// is a template beside the others rather than a message a service
+		// writes for itself.
+		'niet-ontvankelijk',
 	];
 
 	/**
@@ -238,6 +244,11 @@ class TermijnNotificationService {
 				break;
 			case 'doorzending':
 				$rendered = $this->doorzending(case: $case, locale: $locale, context: $context);
+				$subject = $rendered['subject'];
+				$body = $rendered['body'];
+				break;
+			case 'niet-ontvankelijk':
+				$rendered = $this->inadmissible(case: $case, locale: $locale, context: $context);
 				$subject = $rendered['subject'];
 				$body = $rendered['body'];
 				break;
@@ -482,6 +493,56 @@ class TermijnNotificationService {
 				. "\nMet vriendelijke groet",
 		];
 	}//end doorzending()
+
+	/**
+	 * The letter saying the aanvraag was not taken into consideration.
+	 *
+	 * 🔴 IT SAYS WHY AND IT SAYS WHAT NOW. A niet-ontvankelijkverklaring is a
+	 * besluit, so the applicant may object to it. A letter that only announces
+	 * the verdict leaves them with no idea that they can, which is how a
+	 * bezwaartermijn runs out on somebody who would have used it.
+	 *
+	 * NOT RUN THROUGH `IL10N`, for the reason the acknowledgement records:
+	 * `IL10N` serves the interface language of the signed-in reader, and the
+	 * reader here is a citizen with no Nextcloud session.
+	 *
+	 * @param string               $case    The case kenmerk.
+	 * @param string               $locale  The declared language.
+	 * @param array<string, mixed> $context The reason and the remedy, when there is one.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 */
+	private function inadmissible(string $case, string $locale, array $context): array {
+		$reason = trim((string)($context['reason'] ?? ''));
+		if ($reason === '') {
+			$reason = 'Uw aanvraag voldoet niet aan de eisen om in behandeling te worden genomen.';
+			if ($locale === 'en') {
+				$reason = 'Your application does not meet the conditions for us to consider it.';
+			}
+		}
+
+		if ($locale === 'en') {
+			return [
+				'subject' => 'We are not considering your application ' . $case,
+				'body' => "Dear applicant,\n\n"
+					. 'We are not taking your application ' . $case . " into consideration.\n"
+					. $reason . "\n"
+					. "You can object to this decision. The letter says where and within how long.\n"
+					. "\nKind regards",
+			];
+		}
+
+		return [
+			'subject' => 'Uw aanvraag ' . $case . ' is niet-ontvankelijk',
+			'body' => "Beste aanvrager,\n\n"
+				. 'Wij nemen uw aanvraag ' . $case . " niet in behandeling.\n"
+				. $reason . "\n"
+				. "U kunt bezwaar maken tegen dit besluit. In de brief staat waar en binnen welke termijn.\n"
+				. "\nMet vriendelijke groet",
+		];
+	}//end inadmissible()
 
 	/**
 	 * The acknowledgement in English.
