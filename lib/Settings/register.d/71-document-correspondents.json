@@ -23,6 +23,35 @@
           }
         }
       },
+      "caseDocument": {
+        "_note": "The mail intake files a message here, and it now names the party it came from beside the raw From address. ONLY these two properties are declared: the archival payload also writes archivalId, source, mailMessageId, subject, from, to, sentAt, sizeBytes, pdfStatus and pdfAttempts, none of which this schema declares, so OpenRegister drops them in silence. That is inherited and reported, not fixed here.",
+        "properties": {
+          "sender": {
+            "type": "string",
+            "title": "Sender",
+            "facetable": true,
+            "maxLength": 255,
+            "description": "Who this message came from, as a party of the case in the role afzender. Empty when no party of the case holds the From address: the intake does not create a party for every stranger who mails the case."
+          },
+          "direction": {
+            "type": "string",
+            "title": "Direction",
+            "facetable": true,
+            "default": "incoming",
+            "description": "Whether the message came in, went out or stayed internal. The same three values as the ones on a document.",
+            "enum": [
+              "incoming",
+              "outgoing",
+              "internal"
+            ],
+            "x-enum-labels": {
+              "incoming": "Incoming",
+              "outgoing": "Outgoing",
+              "internal": "Internal"
+            }
+          }
+        }
+      },
       "dispatch": {
         "version": "1.1.0",
         "description": "One correspondent of one document: the party a document was sent to, or the party it came from, with the date and the role. ZGW calls this a Verzending. Written by the send that files an outgoing document and by the mail intake that files an incoming one, and kept in step with `informatieobject.sender` and `informatieobject.recipients`, which are what the Files tab and the People tab read.",

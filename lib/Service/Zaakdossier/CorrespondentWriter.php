@@ -99,6 +99,45 @@ class CorrespondentWriter {
 	}//end partyHolding()
 
 	/**
+	 * The parties a letter leaving this case is addressed to.
+	 *
+	 * The roles are asked IN ORDER and the first that answers wins, because
+	 * they are not equal claims. A party explicitly named `geadresseerde` was
+	 * put there for this; the requester is who a letter goes to when nobody
+	 * said otherwise. Merging the two would post the beschikking to the
+	 * applicant AND to whoever the handler had already addressed it to.
+	 *
+	 * @param string $caseId The case.
+	 * @param array<int, string> $roles The link roles to try, most specific first.
+	 *
+	 * @return array<int, string> The identifiers, [] when no role answered.
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 */
+	public function addressedParties(string $caseId, array $roles): array {
+		$parties = $this->partiesOf(caseId: $caseId);
+		foreach ($roles as $role) {
+			$found = [];
+			foreach ($parties as $party) {
+				if (is_array($party) === false || (string)($party['role'] ?? '') !== $role) {
+					continue;
+				}
+
+				$identifier = $this->rules->identifierOf(party: $party);
+				if ($identifier !== '' && in_array($identifier, $found, true) === false) {
+					$found[] = $identifier;
+				}
+			}
+
+			if ($found !== []) {
+				return $found;
+			}
+		}
+
+		return [];
+	}//end addressedParties()
+
+	/**
 	 * Record one dispatch per correspondent of a document.
 	 *
 	 * Idempotent per party and role: a document saved twice with the same
