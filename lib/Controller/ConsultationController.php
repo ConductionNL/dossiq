@@ -6,8 +6,10 @@
  * REST API for inter-departmental consultation management. Provides CRUD,
  * lifecycle transitions and deadline extension for adviesaanvragen.
  *
- * The advisory body directory lives on {@see AdvisoryBodyController} and the
- * token-based external surface on {@see ConsultationPublicController}.
+ * The advisory body directory lives on {@see AdvisoryBodyController}. An
+ * advisory body outside the organisation answers over an OpenRegister access
+ * link, minted here by {@see externalLink()} and collected by
+ * {@see collectAdvice()}.
  * Authentication, resolution and the authorization rules are delegated to
  * {@see ConsultationAccessGuard} (ADR-022) — this controller only maps a
  * guard outcome or a service result onto a response.
@@ -32,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
+use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -54,12 +57,14 @@ class ConsultationController extends Controller {
 	 * @param IRequest $request The request
 	 * @param ConsultationService $consultationService The consultation service
 	 * @param ConsultationAccessGuard $accessGuard The authorization/body-decoding guard
+	 * @param ExternalConsultationLinkService $externalLinks The external advisory body's access link
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly ConsultationService $consultationService,
 		private readonly ConsultationAccessGuard $accessGuard,
+		private readonly ExternalConsultationLinkService $externalLinks,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -298,4 +303,64 @@ class ConsultationController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end approveExtension()
+
+	/**
+	 * Invite the advisory body over a case access link.
+	 *
+	 * @param string $id The consultation UUID
+	 *
+	 * @return JSONResponse The share and the address to send
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	public function externalLink(string $id): JSONResponse {
+		$access = $this->accessGuard->authorize(consultationId: $id);
+		if ($access->error !== null) {
+			return $access->error;
+		}
+
+		try {
+			$data = $this->accessGuard->requestBody();
+			$password = $data['password'] ?? null;
+			$share = $this->externalLinks->invite(
+				consultationId: $id,
+				userId: $this->accessGuard->currentUid(),
+				password: ($password === null ? null : (string)$password),
+			);
+			return new JSONResponse($share, Http::STATUS_CREATED);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end externalLink()
+
+	/**
+	 * Collect the advisory body's comment onto the consultation.
+	 *
+	 * @param string $id The consultation UUID
+	 *
+	 * @return JSONResponse What was recorded
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	public function collectAdvice(string $id): JSONResponse {
+		$access = $this->accessGuard->authorize(consultationId: $id);
+		if ($access->error !== null) {
+			return $access->error;
+		}
+
+		try {
+			$data = $this->accessGuard->requestBody();
+			$result = $this->externalLinks->collect(
+				consultationId: $id,
+				advice: (string)($data['advice'] ?? ''),
+			);
+			return new JSONResponse($result);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end collectAdvice()
 }//end class

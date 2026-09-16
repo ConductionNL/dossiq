@@ -79,7 +79,12 @@ Asking an advisory body outside the organisation for advice SHALL mint a case
 link declaring reading and commenting, expiring on the consultation deadline.
 The advisory body SHALL be named on the share as its label. The advice SHALL
 arrive as a comment written by the link, and dossiq SHALL record it on the
-consultation as the response, naming the body it came from.
+consultation as the response, verbatim, naming the body it came from.
+
+The body writes prose. Which of the four codified outcomes that prose carries
+is a judgement, so the handler names it when they collect the advice, and the
+prose stays beside it. A comment already collected SHALL NOT be collected
+again.
 
 The token page, its controller and its two routes SHALL be deleted. Nothing
 ever minted the token they read, so the surface could never be entered.
@@ -97,10 +102,10 @@ ever minted the token they read, so the surface could never be entered.
 @e2e exclude unit over the service; ExternalConsultationLinkServiceTest::testCommentBecomesTheResponse
 
 - **GIVEN** an invited advisory body that has written one comment through its link
-- **WHEN** the handler collects the advice
-- **THEN** the comment SHALL be recorded as the consultation response
+- **WHEN** the handler collects the advice and names the outcome it carries
+- **THEN** the comment SHALL be recorded verbatim as the consultation response
 - **AND** the response SHALL name the advisory body
-- **AND** a second collection SHALL not record the same comment twice
+- **AND** a second collection SHALL report that there is nothing new
 
 #### Scenario: A comment by anybody else is not advice
 @e2e exclude unit over the service; ExternalConsultationLinkServiceTest::testOtherActorsAreNotAdvice

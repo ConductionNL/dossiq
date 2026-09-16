@@ -652,10 +652,15 @@ $extra = [
     ['name' => 'consultation#requestExtension',    'url' => '/api/consultations/{id}/extension',               'verb' => 'POST'],
     ['name' => 'consultation#approveExtension',    'url' => '/api/consultations/{id}/extension/approve',       'verb' => 'POST'],
     ['name' => 'consultation#overdue',             'url' => '/api/consultations/overdue',                      'verb' => 'GET'],
+    ['name' => 'consultation#externalLink',        'url' => '/api/consultations/{id}/external-link',           'verb' => 'POST'],
+    ['name' => 'consultation#collectAdvice',       'url' => '/api/consultations/{id}/advice',                  'verb' => 'POST'],
     ['name' => 'advisoryBody#listAdvisoryBodies',   'url' => '/api/advisory-bodies',                            'verb' => 'GET'],
     ['name' => 'advisoryBody#searchAdvisoryBodies', 'url' => '/api/advisory-bodies/search',                     'verb' => 'GET'],
-    ['name' => 'consultationPublic#publicResponseGet',  'url' => '/api/public/consultations/{token}',           'verb' => 'GET'],
-    ['name' => 'consultationPublic#publicResponsePost', 'url' => '/api/public/consultations/{token}',           'verb' => 'POST'],
+        // The token-addressed external consultation surface is GONE. Nothing
+        // ever minted the `secureToken` these two read, so neither could be
+        // entered; AdvisoryBodyService records why its minter was deleted.
+        // An advisory body now answers through an OpenRegister access link
+        // declaring `comment` (#3817), minted by consultation#externalLink.
 
         // ── Email (outbound case communication) ─────────────────────────
     ['name' => 'email#send',             'url' => '/api/email/{caseId}/send',            'verb' => 'POST'],

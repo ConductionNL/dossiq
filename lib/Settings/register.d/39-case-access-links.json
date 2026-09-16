@@ -62,6 +62,12 @@
             "title": "Consultation",
             "description": "The consultation this share was minted for, when it was minted for one.",
             "visible": true
+          },
+          "lastCollectedNote": {
+            "type": "integer",
+            "title": "Last collected note",
+            "description": "The id of the newest comment already collected onto the consultation. It is what stops a second collection recording the same advice twice.",
+            "visible": true
           }
         }
       }

@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\ConsultationController;
 use OCA\Dossiq\Service\Consultation\ConsultationAccessGuard;
+use OCA\Dossiq\Service\Consultation\ExternalConsultationLinkService;
 use OCA\Dossiq\Service\ConsultationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -108,6 +109,7 @@ class ConsultationControllerContractTest extends TestCase {
 				userSession: $this->userSession,
 				groupManager: $this->groupManager,
 			),
+			externalLinks: $this->createMock(ExternalConsultationLinkService::class),
 		);
 	}//end controller()
 

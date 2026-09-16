@@ -323,6 +323,52 @@ class CaseSharingService {
 	}//end holderPreview()
 
 	/**
+	 * Record on a share which comment was the last one collected from it.
+	 *
+	 * Without this a second collection records the same advice again, and the
+	 * consultation ends up carrying one answer twice.
+	 *
+	 * @param string $shareId The share UUID.
+	 * @param int $noteId The id of the newest comment already collected.
+	 *
+	 * @return bool True when the share was updated.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	public function markCollected(string $shareId, int $noteId): bool {
+		$objectService = $this->gateway->objectService();
+		if ($objectService === null) {
+			return false;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$shareSchema = $this->settingsService->getConfigValue('case_share_schema');
+		if (empty($register) === true || empty($shareSchema) === true) {
+			return false;
+		}
+
+		try {
+			$share = $this->gateway->toArray(
+				$objectService->find($shareId, register: (int)$register, schema: (int)$shareSchema)
+			);
+			if ($share === []) {
+				return false;
+			}
+
+			$share['lastCollectedNote'] = $noteId;
+			$objectService->saveObject(object: $share, register: (int)$register, schema: (int)$shareSchema);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'CaseSharingService: could not record the collected comment on the share',
+				['shareId' => $shareId, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+
+		return true;
+	}//end markCollected()
+
+	/**
 	 * Write the share record that points at a minted link.
 	 *
 	 * @param string $caseId The case UUID.
