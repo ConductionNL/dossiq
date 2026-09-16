@@ -1453,22 +1453,6 @@
 						}
 					},
 					{
-						"label": "Favourites",
-						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
-						"filter": {
-							"_favourite": true,
-							"statusHiddenInLists": false,
-							"isDraft": false
-						}
-					},
-					{
-						"label": "Recently opened",
-						"_note": "case-number-and-favourites, row 2.19. `_recent` is the second OpenRegister lens, over the per-user view history the platform writes when you open an object's detail, ordered by last view descending and kept to the last hundred. Deliberately no `_order` of its own: the lens already carries its order, and a sort key declared here would override the one thing the lens is for. No `isDraft` or `statusHiddenInLists` either: this list answers 'what was I just looking at', and a case you opened five minutes ago dropping out of it because an administrator hid its status is a list that lies about your own morning.",
-						"filter": {
-							"_recent": true
-						}
-					},
-					{
 						"label": "Waiting on the applicant",
 						"_note": "aanvullingsverzoek-as-a-record, row 1.17. `waitingOnApplicant` is a derived boolean the ask writes and the answer clears, so the chip is a query rather than a reading of timers. It is a READ CONVENIENCE and not a second truth: the COUNT comes from the aanvullingsverzoek rows themselves, which is why the case page shows the days from the request and not from this field. Deliberately not `isIncomplete`, which is a different fact: that one is about required fields a handler knowingly left empty at intake, this one is about something the APPLICANT still owes.",
 						"filter": {
@@ -1486,6 +1470,22 @@
 							"statusHiddenInLists": false,
 							"isDraft": false,
 							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Favourites",
+						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
+						"filter": {
+							"_favourite": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Recently opened",
+						"_note": "case-number-and-favourites, row 2.19. `_recent` is the second OpenRegister lens, over the per-user view history the platform writes when you open an object's detail, ordered by last view descending and kept to the last hundred. Deliberately no `_order` of its own: the lens already carries its order, and a sort key declared here would override the one thing the lens is for. No `isDraft` or `statusHiddenInLists` either: this list answers 'what was I just looking at', and a case you opened five minutes ago dropping out of it because an administrator hid its status is a list that lies about your own morning.",
+						"filter": {
+							"_recent": true
 						}
 					},
 					{
@@ -1569,6 +1569,8 @@
 						"_note": "what-a-status-declares, task 3.2. A lens of its own, deliberately NOT folded into Overdue: a case can breach its status maximum while its statutory term is comfortable, and merging the two would bury exactly the case this lens exists to surface. It narrows on `statusDwellBreached`, which the engine writes on the case, so the page, the total and the facets are resolved by one query rather than by a post-filter over a page of twenty-five. A case in a status that declares no maximum can never carry the flag, so on a fleet that has annotated nothing this lens is simply empty."
 					}
 				],
+				"_quickFilterMaxVisibleNote": "Fifteen pills wrap the actions bar onto a second line and squeeze the 'Showing X of Y' count onto two, so only the first four render and the rest sit behind one more CHIP at the end of the row — a '⋯' pill, not a toolbar button, because what it opens is a filter like the ones beside it. The four are the everyday ones and the cap is the reason the ORDER of quickFilters is now load-bearing: moving a lens up or down moves it in or out of the strip. A lens picked from the panel is applied exactly as a pill is, and the chip then wears its label and its fill, so a narrowed list never presents itself as All.",
+				"quickFilterMaxVisible": 4,
 				"columns": [
 					{
 						"key": "@self.unread",

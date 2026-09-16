@@ -111,25 +111,31 @@ const DRAFTS_LENS = 'My drafts'
  * insertions reads as arithmetic rather than as an order anybody chose. Its
  * key and its filter are asserted in `handingACaseOver.spec.js`.
  */
+/** How many of the chips below render in the strip; the rest sit behind the '⋯' chip. */
+const VISIBLE_LENS_COUNT = 4
+
 const CASE_LENSES = [
+	// The first VISIBLE_LENS_COUNT are the pills; everything after them sits
+	// behind the '⋯' chip, so the order of this array is what the reader sees.
 	'All',
 	'Unread',
-	// Two lenses over per-user platform state rather than a field of the case
-	// (case-number-and-favourites row 2.19, openregister#3766). They sit with
-	// Unread because all three answer about YOU, not about the case: the star
-	// you set and the cases you last opened.
-	'Favourites',
-	'Recently opened',
-	// Three lenses over a stored, facetable boolean on the case, each from a
-	// change that named the row it answers. `Waiting on the applicant`
-	// (aanvullingsverzoek-as-a-record row 1.17, #2858) is what the APPLICANT
-	// still owes; `Needs attention` and `Assessed high risk`
-	// (markers-and-assessments-on-the-case rows 2.36 and 2.40, #2837) are the
-	// flag a named person raised and the risk this organisation assessed.
-	// They sit before Mine because all three are about the CASE, and Mine
-	// onwards are about who is holding it.
+	// Two lenses over a stored, facetable boolean on the case. `Waiting on the
+	// applicant` (aanvullingsverzoek-as-a-record row 1.17, #2858) is what the
+	// APPLICANT still owes; `Needs attention`
+	// (markers-and-assessments-on-the-case row 2.36, #2837) is the flag a named
+	// person raised. They are the everyday two, which is why they are pills.
 	'Waiting on the applicant',
 	'Needs attention',
+	// Two lenses over per-user platform state rather than a field of the case
+	// (case-number-and-favourites row 2.19, openregister#3766). They answer
+	// about YOU, not about the case: the star you set and the cases you last
+	// opened.
+	'Favourites',
+	'Recently opened',
+	// The risk this organisation assessed
+	// (markers-and-assessments-on-the-case row 2.40, #2837). It sits before
+	// Mine because it is about the CASE, and Mine onwards are about who is
+	// holding it.
 	'Assessed high risk',
 	'Mine',
 	'Unclaimed',
@@ -171,6 +177,20 @@ const CASES_ONLY = [
 describe('Cases index lenses', () => {
 	it('declares the fifteen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
+	})
+
+	it('shows four chips and hands the rest to the overflow chip', () => {
+		const cases = page('Cases').config
+		expect(cases.quickFilterMaxVisible).toBe(VISIBLE_LENS_COUNT)
+		// Fifteen pills wrap the actions bar and squeeze the count beside them.
+		// The cap makes the ORDER above load-bearing, so the four are named
+		// here: moving a lens up or down moves it in or out of the strip.
+		expect(cases.quickFilters.slice(0, VISIBLE_LENS_COUNT).map((entry) => entry.label)).toEqual([
+			'All',
+			'Unread',
+			'Waiting on the applicant',
+			'Needs attention',
+		])
 	})
 
 	it('marks All as the default chip and nothing else', () => {
