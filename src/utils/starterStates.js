@@ -58,7 +58,9 @@ export function shippedLabel(row) {
  * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
  */
 export function hasUpdate(row) {
-	return Boolean(row && row.updateAvailable && row.state !== SHIPPED_STATES.removed)
+	return Boolean(
+		row && row.updateAvailable && row.state !== SHIPPED_STATES.removed,
+	)
 }
 
 /**

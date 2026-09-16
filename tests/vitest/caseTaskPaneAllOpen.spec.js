@@ -69,9 +69,8 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 	useEngineTaskStore: () => storeStub,
 }))
 
-const { default: CaseTaskPane } = await import(
-	'../../src/components/tasks/CaseTaskPane.vue'
-)
+const { default: CaseTaskPane } =
+	await import('../../src/components/tasks/CaseTaskPane.vue')
 
 const CONTENT = { limit: 25, rowRoute: 'TaskDetail' }
 
@@ -138,7 +137,10 @@ beforeEach(() => {
 
 describe('CaseTaskPane, every open task', () => {
 	it('completes the second open task without leaving the case', async () => {
-		const wrapper = await mountPane([[FIRST, SECOND, THIRD], [FIRST, THIRD]])
+		const wrapper = await mountPane([
+			[FIRST, SECOND, THIRD],
+			[FIRST, THIRD],
+		])
 
 		// The second task carries a form, and its required field is answered
 		// here rather than left empty: an empty one is refused before the
@@ -162,7 +164,9 @@ describe('CaseTaskPane, every open task', () => {
 	it('shows the second task its own form and sends what was typed', async () => {
 		const wrapper = await mountPane([[FIRST, SECOND]])
 
-		const field = wrapper.find('[data-testid="case-task-pane-form-task-2-verslag"]')
+		const field = wrapper.find(
+			'[data-testid="case-task-pane-form-task-2-verslag"]',
+		)
 		expect(field.exists()).toBe(true)
 
 		await field.setValue('Gehoord op 3 maart')
@@ -211,12 +215,14 @@ describe('CaseTaskPane, every open task', () => {
 		claimSupported = false
 		const wrapper = await mountPane([[THIRD]])
 
-		expect(wrapper.find('[data-testid="case-task-pane-verb-claim"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-task-pane-verb-claim"]').exists(),
+		).toBe(false)
 		// ...and says so, rather than leaving a task that reaches nobody
 		// looking like a task somebody will pick up.
-		expect(wrapper.find('[data-testid="case-task-pane-candidates"]').text()).toContain(
-			'Juridische Zaken',
-		)
+		expect(
+			wrapper.find('[data-testid="case-task-pane-candidates"]').text(),
+		).toContain('Juridische Zaken')
 	})
 
 	it('offers the claim affordance when the engine answers one', async () => {
@@ -238,9 +244,11 @@ describe('CaseTaskPane, every open task', () => {
 
 		// A uuid is not a number, and presenting it as one is how a handler
 		// quotes an identifier the engine has never heard of.
-		expect(wrapper.find('[data-testid="case-task-pane-reference"]').text()).toContain(
-			'task-1',
+		expect(
+			wrapper.find('[data-testid="case-task-pane-reference"]').text(),
+		).toContain('task-1')
+		expect(wrapper.find('[data-testid="case-task-pane-lock"]').text()).not.toBe(
+			'',
 		)
-		expect(wrapper.find('[data-testid="case-task-pane-lock"]').text()).not.toBe('')
 	})
 })

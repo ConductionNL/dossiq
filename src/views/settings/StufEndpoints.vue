@@ -56,11 +56,19 @@
 						</NcButton>
 						<span
 							class="stuf-endpoints__result"
-							:class="'stuf-endpoints__result--' + resultFor(row).type">
+							:class="
+								'stuf-endpoints__result--' + resultFor(row).type
+							">
 							{{ resultFor(row).label }}
 						</span>
-						<span v-if="resultFor(row).measuredAt" class="stuf-endpoints__measured">
-							{{ t('dossiq', 'Measured {moment}', { moment: resultFor(row).measuredAt }) }}
+						<span
+							v-if="resultFor(row).measuredAt"
+							class="stuf-endpoints__measured">
+							{{
+								t('dossiq', 'Measured {moment}', {
+									moment: resultFor(row).measuredAt,
+								})
+							}}
 						</span>
 					</td>
 				</tr>
@@ -138,7 +146,10 @@ export default {
 		async test(row) {
 			this.testing = row.id
 			try {
-				this.results = { ...this.results, [row.id]: await testStufEndpoint(row.id) }
+				this.results = {
+					...this.results,
+					[row.id]: await testStufEndpoint(row.id),
+				}
 			} catch (e) {
 				// A call that never completed is a failed test, not an absent
 				// one: the button was pressed and the endpoint did not answer.
@@ -146,7 +157,10 @@ export default {
 					...this.results,
 					[row.id]: {
 						state: 'failed',
-						reason: e.response?.data?.error || t('dossiq', 'The endpoint did not answer'),
+						reason:
+							e.response?.data?.error
+							|| t('dossiq', 'The endpoint did not answer'),
+
 						measuredAt: new Date().toISOString(),
 					},
 				}

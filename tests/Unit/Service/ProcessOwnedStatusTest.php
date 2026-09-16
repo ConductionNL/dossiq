@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  * The hand-set refusal, and the one case type that still accepts one.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class ProcessOwnedStatusTest extends TestCase {
 

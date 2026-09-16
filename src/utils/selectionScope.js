@@ -32,7 +32,18 @@ export const SCOPE_RESULT = 'result'
  *
  * @type {Array<string>}
  */
-const NOT_A_FILTER = ['_page', '_limit', '_offset', '_order', '_sort', '_search', 'page', 'limit', 'offset', 'view']
+const NOT_A_FILTER = [
+	'_page',
+	'_limit',
+	'_offset',
+	'_order',
+	'_sort',
+	'_search',
+	'page',
+	'limit',
+	'offset',
+	'view',
+]
 
 /**
  * The filters a case list is currently narrowed by.
@@ -45,8 +56,13 @@ const NOT_A_FILTER = ['_page', '_limit', '_offset', '_order', '_sort', '_search'
 export function readListFilters(routeQuery) {
 	const filters = {}
 
-	Object.entries((routeQuery || {})).forEach(([key, value]) => {
-		if (NOT_A_FILTER.includes(key) || value === undefined || value === null || value === '') {
+	Object.entries(routeQuery || {}).forEach(([key, value]) => {
+		if (
+			NOT_A_FILTER.includes(key)
+			|| value === undefined
+			|| value === null
+			|| value === ''
+		) {
 			return
 		}
 		filters[key] = value
@@ -69,7 +85,7 @@ export function readListFilters(routeQuery) {
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 export function readLocationFilters(search) {
-	const raw = ((search === undefined) ? (globalThis.location?.search || '') : search)
+	const raw = search === undefined ? globalThis.location?.search || '' : search
 	const query = {}
 
 	new URLSearchParams(raw).forEach((value, key) => {
@@ -92,7 +108,7 @@ export function readLocationFilters(search) {
  */
 export function buildSelection({ scope, selectedIds, filters }) {
 	if (scope === SCOPE_RESULT) {
-		return { query: (filters || {}) }
+		return { query: filters || {} }
 	}
 
 	return { ids: (selectedIds || []).map(String) }
@@ -115,7 +131,11 @@ export function buildSelection({ scope, selectedIds, filters }) {
 export function canOfferWholeResult({ pageCount, total }) {
 	const matching = Number(total)
 
-	return (Number.isFinite(matching) === true && matching > 0 && matching > Number(pageCount || 0))
+	return (
+		Number.isFinite(matching) === true
+		&& matching > 0
+		&& matching > Number(pageCount || 0)
+	)
 }
 
 /**
@@ -134,7 +154,7 @@ export function canOfferWholeResult({ pageCount, total }) {
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 export function describeScope({ scope, pageCount, total }, translate) {
-	const t = (translate || ((app, text) => text))
+	const t = translate || ((app, text) => text)
 
 	if (scope === SCOPE_RESULT) {
 		return t('dossiq', 'All {total} cases matching this search are selected.', {
@@ -158,7 +178,7 @@ export function describeScope({ scope, pageCount, total }, translate) {
  * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 export function widenLabel({ total }, translate) {
-	const t = (translate || ((app, text) => text))
+	const t = translate || ((app, text) => text)
 
 	return t('dossiq', 'Select all {total} cases matching this search', {
 		total: Number(total || 0),

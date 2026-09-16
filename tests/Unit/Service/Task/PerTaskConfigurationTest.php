@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Task\TaskDeclaration
  * @covers \OCA\Dossiq\Service\Task\TaskDeclarationValidator
  * @covers \OCA\Dossiq\Service\Task\TaskDeclarationReader
+ * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
  */
 class PerTaskConfigurationTest extends TestCase {
 

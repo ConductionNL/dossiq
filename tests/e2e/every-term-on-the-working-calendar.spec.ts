@@ -104,7 +104,7 @@ test.describe('Every statutory term lands on a working day', () => {
 	async function post(
 		path: string,
 		body: Record<string, unknown>,
-	): Promise<{ status: number, body: any }> {
+	): Promise<{ status: number; body: any }> {
 		const res = await api.post(`${APP_API}${path}`, {
 			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
 			data: body,

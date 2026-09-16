@@ -15,6 +15,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\People\FileRequestService;
+use OCA\Dossiq\Service\People\PartyIndicatorReader;
 use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -35,6 +36,7 @@ class FileRequestController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param PersonLinkReader $people The people on the case.
 	 * @param FileRequestService $fileRequests Sends the request.
+	 * @param PartyIndicatorReader $indicators What the parties' indicators refuse.
 	 * @param CaseAccessGuard $access Whether this handler may see this case at all.
 	 * @param IUserSession $userSession The signed-in handler.
 	 */
@@ -43,6 +45,7 @@ class FileRequestController extends Controller {
 		IRequest $request,
 		private readonly PersonLinkReader $people,
 		private readonly FileRequestService $fileRequests,
+		private readonly PartyIndicatorReader $indicators,
 		private readonly CaseAccessGuard $access,
 		private readonly IUserSession $userSession,
 	) {
@@ -60,6 +63,7 @@ class FileRequestController extends Controller {
 	 * @NoCSRFRequired
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function parties(string $caseId): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -76,13 +80,25 @@ class FileRequestController extends Controller {
 		$parties = [];
 		foreach ($this->people->peopleOn(caseId: $caseId) as $person) {
 			$email = $this->people->emailOf(link: $person);
+			// A party carrying a refuse-send indicator is listed and cannot
+			// be asked, the same way a party with no address is: a recipient
+			// list that is quietly shorter than the party list is a bug
+			// nobody can see.
+			$refusal = $this->indicators->sendRefusalFor(
+				partyUuid: $this->indicators->partyUuidOf(link: $person)
+			);
+
 			$parties[] = [
 				'id' => (string)($person['contactUid'] ?? ''),
 				'name' => $this->people->nameOf(link: $person),
 				'email' => $email,
 				'role' => (string)($person['role'] ?? ''),
 				'kind' => (string)($person['kind'] ?? 'contact'),
-				'canBeAsked' => ($email !== ''),
+				'canBeAsked' => ($email !== '' && $refusal === null),
+				// The indicator's own label, not a sentence: the dialog writes
+				// the sentence, so it is translated in the reader's language
+				// rather than in whichever one the request carried.
+				'sendRefusal' => $refusal,
 			];
 		}
 

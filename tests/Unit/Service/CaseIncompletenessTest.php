@@ -33,6 +33,8 @@ use PHPUnit\Framework\TestCase;
  * Recording incompleteness, and refusing what needs the data.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\CaseIncompleteness
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class CaseIncompletenessTest extends TestCase {
 

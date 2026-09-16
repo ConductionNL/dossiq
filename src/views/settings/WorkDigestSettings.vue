@@ -45,7 +45,10 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcCheckboxRadioSwitch, NcTextField } from '@nextcloud/vue'
-import { fetchDigestSettings, saveDigestSettings } from '../../services/personalQueueApi.js'
+import {
+	fetchDigestSettings,
+	saveDigestSettings,
+} from '../../services/personalQueueApi.js'
 
 export default {
 	name: 'WorkDigestSettings',

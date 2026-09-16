@@ -28,13 +28,13 @@ const REGISTER_PATH = path.resolve(
 	'../../lib/Settings/dossiq_register.json',
 )
 
-function schemas () {
-  return JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas
+function schemas() {
+	return JSON.parse(fs.readFileSync(REGISTER_PATH, 'utf8')).components.schemas
 }
 
 /** @return {object|undefined} The Handed on chip. */
-function handedOn () {
-  return panels
+function handedOn() {
+	return panels
 		.pageConfig('Cases')
 		.quickFilters.find((entry) => entry.label === 'Handed on')
 }
@@ -101,6 +101,8 @@ describe('the transfer record', () => {
 		const properties = Object.keys(schemas().casetransfer.properties)
 
 		expect(properties).toContain('custodyAuditTrail')
-		expect(properties.filter((key) => key.toLowerCase().includes('audittrail'))).toHaveLength(1)
+		expect(
+			properties.filter((key) => key.toLowerCase().includes('audittrail')),
+		).toHaveLength(1)
 	})
 })

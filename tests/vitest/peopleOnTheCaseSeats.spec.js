@@ -121,8 +121,8 @@ describe('the coordinator seat in the register', () => {
 	})
 
 	it('lets a case type ask for the second seat before signing', () => {
-		const declaration
-			= schema('caseType').properties.coordinatorRequiredBeforeSigning
+		const declaration =
+			schema('caseType').properties.coordinatorRequiredBeforeSigning
 
 		expect(declaration).toBeDefined()
 		expect(declaration.type).toBe('boolean')

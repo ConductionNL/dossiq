@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\DeelzaakService
  *
  * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
+ * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
  */
 class DeelzaakServiceTest extends TestCase {
 

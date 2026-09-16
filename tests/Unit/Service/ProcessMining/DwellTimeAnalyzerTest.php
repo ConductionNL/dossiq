@@ -39,6 +39,9 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Status\StatusDwellService
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class DwellTimeAnalyzerTest extends TestCase {
 	use MakesCaseDateNormaliser;

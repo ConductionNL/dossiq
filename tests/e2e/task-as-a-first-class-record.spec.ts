@@ -173,12 +173,13 @@ test.describe('The task as a first-class record', () => {
 		expect(advice).toHaveLength(0)
 	})
 
-	test('what may I do right now, in two halves', async ({ playwright, baseURL }) => {
+	test('what may I do right now, in two halves', async ({
+		playwright,
+		baseURL,
+	}) => {
 		const api = await playwright.request.newContext({ baseURL })
 
-		const res = await api.get(
-			`/index.php/apps/dossiq/api/case/${caseId}/acts`,
-		)
+		const res = await api.get(`/index.php/apps/dossiq/api/case/${caseId}/acts`)
 		expect(res.ok(), `acts -> ${res.status()} ${await res.text()}`).toBeTruthy()
 		const body = await res.json()
 
@@ -213,9 +214,9 @@ test.describe('The task as a first-class record', () => {
 		)
 		expect(audit.ok()).toBeTruthy()
 		const entries = await audit.json()
-		const actions = (Array.isArray(entries) ? entries : entries.results ?? []).map(
-			(entry: any) => String(entry.action ?? ''),
-		)
+		const actions = (
+			Array.isArray(entries) ? entries : (entries.results ?? [])
+		).map((entry: any) => String(entry.action ?? ''))
 		expect(actions).toContain('claim')
 	})
 
@@ -300,7 +301,9 @@ test.describe('The task as a first-class record', () => {
 		// a file published twice looks exactly like one published once until
 		// somebody counts.
 		const caseRow = await showObject(api, 'case', caseId)
-		const waiting = Array.isArray(caseRow.taskAttachments) ? caseRow.taskAttachments : []
+		const waiting = Array.isArray(caseRow.taskAttachments)
+			? caseRow.taskAttachments
+			: []
 		expect(waiting.map((entry: any) => String(entry.file))).not.toContain(
 			'e2e-file-published',
 		)
@@ -336,13 +339,17 @@ test.describe('The task as a first-class record', () => {
 		await expect(row).toBeVisible({ timeout: 30_000 })
 
 		const url = page.url()
-		await row.locator(`[data-testid="case-task-pane-row-complete-${second}"]`).click()
+		await row
+			.locator(`[data-testid="case-task-pane-row-complete-${second}"]`)
+			.click()
 
 		// The whole claim of this surface: the task finished and the handler
 		// is still on the case.
 		await expect(row).toBeHidden({ timeout: 30_000 })
 		expect(page.url()).toBe(url)
-		expect(errors, 'no dossiq console errors while completing in place').toEqual([])
+		expect(errors, 'no dossiq console errors while completing in place').toEqual(
+			[],
+		)
 	})
 
 	test('a task shows a reference, and says when it has no number', async ({
@@ -367,7 +374,9 @@ test.describe('The task as a first-class record', () => {
 		// and says so, and invents nothing: a made-up number gets quoted in an
 		// email and addresses nothing.
 		await expect(reference).not.toHaveText('')
-		await expect(page.locator('[data-testid="case-task-pane-lock"]')).not.toHaveText('')
+		await expect(
+			page.locator('[data-testid="case-task-pane-lock"]'),
+		).not.toHaveText('')
 	})
 
 	test('a file uploaded in a task form waits with the task', async ({
@@ -390,13 +399,20 @@ test.describe('The task as a first-class record', () => {
 				data: { file: 'e2e-file-1', title: 'Verslag hoorzitting.pdf' },
 			},
 		)
-		expect(held.ok(), `attach -> ${held.status()} ${await held.text()}`).toBeTruthy()
+		expect(
+			held.ok(),
+			`attach -> ${held.status()} ${await held.text()}`,
+		).toBeTruthy()
 
 		// Held, and NOT yet a document on the case: the case's documents are
 		// its caseDocument objects, and one is written when the task completes.
 		const caseRow = await showObject(api, 'case', caseId)
-		const waiting = Array.isArray(caseRow.taskAttachments) ? caseRow.taskAttachments : []
-		expect(waiting.map((entry: any) => String(entry.file))).toContain('e2e-file-1')
+		const waiting = Array.isArray(caseRow.taskAttachments)
+			? caseRow.taskAttachments
+			: []
+		expect(waiting.map((entry: any) => String(entry.file))).toContain(
+			'e2e-file-1',
+		)
 
 		// Removable while the task is open.
 		const removed = await api.delete(

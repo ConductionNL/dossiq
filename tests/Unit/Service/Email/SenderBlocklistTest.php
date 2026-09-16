@@ -46,6 +46,7 @@ use ReflectionMethod;
  * Covers the block half, the allow half, and the line between them.
  *
  * @covers \OCA\Dossiq\Service\Email\SenderBlocklist
+ * @uses \OCA\Dossiq\Service\Email\InboundMessage
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */

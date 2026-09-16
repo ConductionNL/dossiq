@@ -168,7 +168,9 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		expect(panels.gridX).toBe(0)
 
 		const tileRows = Math.max(...tiles.map((c) => c.gridHeight))
-		const between = layout.filter((c) => c.gridY >= tileRows && c.gridY < panels.gridY)
+		const between = layout.filter(
+			(c) => c.gridY >= tileRows && c.gridY < panels.gridY,
+		)
 		expect(
 			between.map((c) => c.widgetId),
 			'every row between the tiles and the panels must carry a widget',
@@ -226,8 +228,16 @@ describe('CaseDetail: one menu holds every lifecycle act', () => {
 		expect(action('case-lifecycle-menu').type).toBe('open-modal')
 		expect(action('case-lifecycle-menu').target).toBe('CaseLifecycleMenuDialog')
 
-		for (const gone of ['case-suspend', 'case-resume', 'case-extend', 'case-reopen']) {
-			expect(action(gone), `${gone} is folded into the one menu`).toBeUndefined()
+		for (const gone of [
+			'case-suspend',
+			'case-resume',
+			'case-extend',
+			'case-reopen',
+		]) {
+			expect(
+				action(gone),
+				`${gone} is folded into the one menu`,
+			).toBeUndefined()
 		}
 	})
 

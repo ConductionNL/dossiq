@@ -47,6 +47,7 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
  * @uses \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ProcessMiningServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

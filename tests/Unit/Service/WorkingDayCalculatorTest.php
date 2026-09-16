@@ -52,6 +52,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for WorkingDayCalculator.
  *
  * @covers \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class WorkingDayCalculatorTest extends TestCase {
 	use MakesCaseDateNormaliser;

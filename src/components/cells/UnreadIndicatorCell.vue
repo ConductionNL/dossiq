@@ -78,7 +78,7 @@ export default {
 		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 		 */
 		label() {
-			return (this.unread ? t('dossiq', 'Unread') : '')
+			return this.unread ? t('dossiq', 'Unread') : ''
 		},
 	},
 }

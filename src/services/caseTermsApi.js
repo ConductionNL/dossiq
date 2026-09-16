@@ -105,7 +105,9 @@ export async function requestInformation(caseId, request) {
 export async function receiveInformation(caseId, items) {
 	try {
 		const response = await axios.post(
-			generateUrl(`/apps/dossiq/api/cases/${caseId}/information-request/received`),
+			generateUrl(
+				`/apps/dossiq/api/cases/${caseId}/information-request/received`,
+			),
 			{ items },
 		)
 		return { ok: true, body: response?.data ?? {} }

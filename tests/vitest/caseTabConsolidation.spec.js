@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds NINE tabs, and keeps holding nine.
+ * The case page holds ELEVEN tabs, and keeps holding eleven.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -72,6 +72,8 @@ const tabs = () => widget('case-panels').content.tabs
  *   6 -> 7  2026-09-12  the Notes tab joined the strip beside Files
  *   7 -> 9  2026-09-13  Communication left People, and Email and Decisions
  *                       left the SIDEBAR
+ *   9 -> 10 2026-09-15  the Archiving tab arrived with #2850
+ *   10 -> 11 2026-09-16 the Timeline tab arrived with #2846
  *
  * The second move is not the growth this ceiling guards against. Nothing was
  * added to the page: the sidebar lost exactly the three tabs the strip gained
@@ -79,20 +81,30 @@ const tabs = () => widget('case-panels').content.tabs
  * held. What the ceiling is for is UNWATCHED growth, the strip going from ten
  * to fourteen with nothing counting it, and an exact assertion somebody has to
  * edit on purpose is the thing that stops that.
+ *
+ * The third and fourth moves ARE growth, and they are recorded as such rather
+ * than waved through. Archiving is a surface the case did not have: what
+ * happens to it when its business use ends, as openregister decided. Timeline
+ * is the second: every note, call and message on the case in one order. Both
+ * came in with this file left at nine, so the strip and the ceiling disagreed
+ * and the suite was red on development until these lines were edited. That is
+ * the mechanism working, two PRs late.
  */
-const TAB_CEILING = 9
+const TAB_CEILING = 11
 
-/** The nine labels, in the order a handler reads them. */
+/** The eleven labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-data-panel', 'Data'],
 	['case-files', 'Files'],
 	['case-notes-panel', 'Notes'],
+	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
 	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
 	['case-work-panel', 'Work'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
+	['case-archival-panel', 'Archiving'],
 ]
 
 /**
@@ -150,7 +162,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the nine tabs, in order', () => {
+	it('names the eleven tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -229,9 +241,9 @@ describe('the surfaces that read in exactly one chrome', () => {
 	)
 
 	it('leaves the sidebar the tabs that have no strip counterpart', () => {
-		// History, Access, Sharing and Tags duplicate nothing, so they stay.
-		// Asserted exactly: a later change that empties the sidebar, or refills
-		// it, has to say so here rather than drift.
+		// History, Terms, Access, Sharing and Tags duplicate nothing, so they
+		// stay. Asserted exactly: a later change that empties the sidebar, or
+		// refills it, has to say so here rather than drift.
 		//
 		// `access` arrived with case-grants-name-their-source: who holds which
 		// right on this case and where each grant came from, read from
@@ -239,8 +251,15 @@ describe('the surfaces that read in exactly one chrome', () => {
 		// for. It has no strip counterpart and duplicates nothing: the strip
 		// carries what has HAPPENED to the case, and this carries who may act
 		// on it.
+		//
+		// `terms` arrived with phase-terms-and-the-internal-target: the four
+		// clocks on this case read apart, the statutory term beside the planned
+		// end, the internal target and the phase term. It has no strip
+		// counterpart either. The strip says what happened; this says what is
+		// still owed and by when.
 		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
 			'audit',
+			'terms',
 			'access',
 			'sharing',
 			'tags',
@@ -261,10 +280,15 @@ describe('the container type this change depends on', () => {
 	})
 
 	it('is the type every group widget declares', () => {
-		// Four tabs are a single surface rather than a group of sections: Files
-		// (the case folder through the `files` leaf) and the three panes that
-		// came out of the sidebar. Every other tab is a group and declares
-		// `case-sections`.
+		// Six tabs are a single surface rather than a group of sections: Files
+		// (the case folder through the `files` leaf), the three panes that came
+		// out of the sidebar, Timeline, and Archiving. Every other tab is a
+		// group and declares `case-sections`.
+		//
+		// Archiving is `custom` on purpose and the manifest says why: every
+		// value on it is read off `@self._retention`, which openregister wrote
+		// at closure. A data widget would build its fields from the schema's own
+		// properties instead, which is a second derivation of the same answer.
 		//
 		// The three panes are keyed by TYPE in registry.js, not by component
 		// name. That distinction is the whole bug behind an empty Notes tab:
@@ -275,6 +299,10 @@ describe('the container type this change depends on', () => {
 			'case-notes-panel': 'case-notes-pane',
 			'case-email-panel': 'case-email-pane',
 			'case-decisions-panel': 'case-decisions-pane',
+			// Timeline arrived with #2846: every note, call and message on the
+			// case in one order. A single surface, keyed by TYPE like the three
+			// above it.
+			'case-timeline-panel': 'case-timeline-pane',
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 
@@ -282,6 +310,18 @@ describe('the container type this change depends on', () => {
 			if (widgetId === 'case-files') {
 				expect(widget(widgetId).type).toBe('integration')
 				expect(widget(widgetId).integrationId).toBe('files')
+				continue
+			}
+			if (widgetId === 'case-archival-panel') {
+				expect(widget(widgetId).type).toBe('custom')
+				// And the component it resolves to through the page slot is
+				// actually registered. Without this the assertion above passes
+				// on a manifest whose Archiving tab renders nothing.
+				expect(
+					registry,
+					'CaseArchivalPanel is named by the manifest but registered nowhere, '
+						+ 'so the Archiving tab renders nothing',
+				).toContain('CaseArchivalPanel: {')
 				continue
 			}
 			if (PANES[widgetId]) {

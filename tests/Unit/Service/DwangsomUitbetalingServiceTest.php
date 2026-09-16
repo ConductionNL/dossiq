@@ -31,6 +31,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\DwangsomUitbetalingService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class DwangsomUitbetalingServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

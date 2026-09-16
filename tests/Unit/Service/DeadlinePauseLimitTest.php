@@ -28,6 +28,7 @@ use PHPUnit\Framework\TestCase;
  * REQ-TERM-066: the declared suspension length is enforced.
  *
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class DeadlinePauseLimitTest extends TestCase {
 	use BindsTermFixtures;

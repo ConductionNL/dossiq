@@ -49,6 +49,9 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\Email\BounceAction
  * @covers \OCA\Dossiq\Service\Email\MoveAction
+ * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
+ * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
+ * @uses \OCA\Dossiq\Service\Email\InboundMessage
  */
 class BounceActionTest extends TestCase {
 
