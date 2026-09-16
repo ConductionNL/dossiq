@@ -97,7 +97,7 @@ import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcModal, NcNoteCard, NcTextField } from '@nextcloud/vue'
 import {
 	affordancesFor,
-	matchedOnSentence,
+	matchedFields,
 	matchPercentage,
 	matchRow,
 	mayFile,
@@ -183,10 +183,21 @@ export default {
 
 		/** @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md */
 		rows() {
-			return this.matches.map((match) => ({
-				...matchRow(match, this.cases, (key) => t('dossiq', key)),
-				match,
-			}))
+			return this.matches.map((match) => {
+				const row = matchRow(match, this.cases)
+
+				return {
+					...row,
+					// The label is decided here and not in the helper, because a
+					// string handed to `t()` through a variable is invisible to
+					// the extractor: it never reaches `l10n/en.json` and never
+					// gets translated, with nothing failing anywhere.
+					title: row.readable
+						? row.title
+						: t('dossiq', 'A case you may not open'),
+					match,
+				}
+			})
 		},
 
 		/** @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md */
@@ -225,7 +236,19 @@ export default {
 		 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 		 */
 		matchedOn(row) {
-			return matchedOnSentence(row.match, (key) => t('dossiq', key))
+			const labels = {
+				requester: t('dossiq', 'Requester'),
+				title: t('dossiq', 'Subject'),
+				permitApplicationRef: t('dossiq', 'Permit reference'),
+				caseType: t('dossiq', 'Case type'),
+			}
+			const fields = matchedFields(row.match)
+
+			if (fields.length === 0) {
+				return t('dossiq', 'Matched on the score, not on a single field')
+			}
+
+			return fields.map((field) => labels[field] || field).join(', ')
 		},
 
 		/**

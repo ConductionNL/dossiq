@@ -5299,6 +5299,16 @@
         "Tables in scope": "Tables in scope",
         "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.": "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.",
         "We could not read this search from character {position}.": "We could not read this search from character {position}.",
-        "We could not read this search.": "We could not read this search."
+        "We could not read this search.": "We could not read this search.",
+        "%n open case looks like this one.": "%n open case looks like this one.",
+        "%n open cases look like this one.": "%n open cases look like this one.",
+        "A case you may not open": "A case you may not open",
+        "File it anyway": "File it anyway",
+        "Matched on the score, not on a single field": "Matched on the score, not on a single field",
+        "Permit reference": "Permit reference",
+        "The case was not filed.": "The case was not filed.",
+        "This case may already exist": "This case may already exist",
+        "This case type does not let the same case be filed twice. Open the case it matches, or ask a coordinator.": "This case type does not let the same case be filed twice. Open the case it matches, or ask a coordinator.",
+        "Why file this case anyway": "Why file this case anyway"
     }
 }

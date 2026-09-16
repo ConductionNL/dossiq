@@ -96,34 +96,26 @@ export function mayFile(state) {
 }
 
 /**
- * The fields that made this match, as words.
+ * The fields that made this match.
  *
- * Reads the platform's `matchedOn`, so the sentence names the same fields the
- * scorer used. An empty list says so rather than claiming a reason: "it scored
- * high on nothing" is the answer a handler needs in order to report the rule
- * as wrong.
+ * Reads the platform's `matchedOn`, so a caller names the same fields the
+ * scorer used. An EMPTY list is a real answer and not a missing one: it says
+ * the pair cleared the cut-off without any single field matching outright,
+ * which is what a handler needs in order to report the rule as wrong.
+ *
+ * 🔴 THE LABELS ARE NOT HERE, AND THAT IS NOT TIDINESS. A string handed to
+ * `t()` through a variable is invisible to the extractor, so it never reaches
+ * `l10n/en.json` and never gets translated, with nothing failing anywhere. The
+ * labels live as literals in the component that renders them, where
+ * `check-l10n.js` can see them.
  *
  * @param {object} match One scored match.
- * @param {(key: string) => string} [translate] The app's translate function.
- * @return {string} One short sentence.
+ * @return {Array<string>} The field names, possibly empty.
  *
  * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
  */
-export function matchedOnSentence(match, translate) {
-	const t = typeof translate === 'function' ? translate : (key) => key
-	const fields = Array.isArray(match?.matchedOn) ? match.matchedOn : []
-	const labels = {
-		requester: t('Requester'),
-		title: t('Subject'),
-		caseType: t('Case type'),
-	}
-	const named = fields.map((field) => labels[field] || field)
-
-	if (named.length === 0) {
-		return t('Matched on the score, not on a single field')
-	}
-
-	return named.join(', ')
+export function matchedFields(match) {
+	return Array.isArray(match?.matchedOn) ? match.matchedOn : []
 }
 
 /**
@@ -144,21 +136,20 @@ export function matchPercentage(match) {
 }
 
 /**
- * What to call a matched case, out of what could be read of it.
+ * What is known about a matched case, out of what could be read of it.
  *
- * A case the handler may not read comes back as null, and the panel says a case
- * matched without naming it. That is deliberate: the collision is reported, the
- * record is not disclosed.
+ * A case the handler may not read comes back with an empty title and
+ * `readable: false`. That is deliberate: the collision is reported, the record
+ * is not disclosed. Naming it is the caller's job, for the same reason the
+ * match labels are not here.
  *
  * @param {object} match One scored match.
  * @param {Array<object>} cases The cases that could be read.
- * @param {(key: string) => string} [translate] The app's translate function.
  * @return {{uuid: string, title: string, identifier: string, readable: boolean}} The row to draw.
  *
  * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
  */
-export function matchRow(match, cases, translate) {
-	const t = typeof translate === 'function' ? translate : (key) => key
+export function matchRow(match, cases) {
 	const uuid = String(match?.uuid || '')
 	const found = (Array.isArray(cases) ? cases : []).find(
 		(row) => String(row?.id || row?.uuid || row?.['@self']?.id || '') === uuid,
@@ -166,7 +157,7 @@ export function matchRow(match, cases, translate) {
 
 	return {
 		uuid,
-		title: found?.title || t('A case you may not open'),
+		title: found?.title || '',
 		identifier: found?.identifier || '',
 		readable: Boolean(found),
 	}

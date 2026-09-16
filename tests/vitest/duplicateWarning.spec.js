@@ -14,7 +14,8 @@
 import { describe, expect, it } from 'vitest'
 import {
 	affordancesFor,
-	matchedOnSentence,
+	candidateFrom,
+	matchedFields,
 	matchPercentage,
 	matchRow,
 	mayFile,
@@ -122,15 +123,35 @@ describe('mayFile', () => {
 	})
 })
 
-describe('matchedOnSentence', () => {
-	it('names the fields the scorer used', () => {
-		expect(matchedOnSentence(oneMatch[0])).toBe('Requester, Subject')
+describe('matchedFields', () => {
+	it('names the fields the scorer used, and nothing else', () => {
+		expect(matchedFields(oneMatch[0])).toEqual(['requester', 'title'])
 	})
 
-	it('says so when nothing single-handedly matched', () => {
-		expect(matchedOnSentence({ matchedOn: [] })).toBe(
-			'Matched on the score, not on a single field',
-		)
+	it('answers an empty list rather than inventing a reason', () => {
+		expect(matchedFields({ matchedOn: [] })).toEqual([])
+		expect(matchedFields(null)).toEqual([])
+	})
+})
+
+describe('candidateFrom', () => {
+	it('drops the blanks, because two empty strings score as a perfect match', () => {
+		expect(
+			candidateFrom({
+				title: 'Kap eik',
+				requester: '',
+				permitApplicationRef: null,
+				relatedCases: [],
+				caseType: 'kapvergunning',
+			}),
+		).toEqual({ title: 'Kap eik', caseType: 'kapvergunning' })
+	})
+
+	it('keeps a falsy value that is a real answer', () => {
+		expect(candidateFrom({ extensionCount: 0, isDraft: false })).toEqual({
+			extensionCount: 0,
+			isDraft: false,
+		})
 	})
 })
 
@@ -160,7 +181,7 @@ describe('matchRow', () => {
 		const row = matchRow(oneMatch[0], [])
 
 		expect(row.readable).toBe(false)
-		expect(row.title).toBe('A case you may not open')
+		expect(row.title).toBe('')
 		expect(row.uuid).toBe('existing-case-uuid')
 	})
 })

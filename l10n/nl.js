@@ -5248,7 +5248,17 @@ OC.L10N.register(
         "Tables in scope": "Tabellen in bereik",
         "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.": "De indexen waar het zoeken op zaken uit leest. Ze leven in OpenRegister, dat de querylaag bezit; dossiq houdt geen kopie van hun staat bij. Een verouderde index is een zaak die niemand vindt.",
         "We could not read this search from character {position}.": "We konden deze zoekopdracht niet lezen vanaf teken {position}.",
-        "We could not read this search.": "We konden deze zoekopdracht niet lezen."
+        "We could not read this search.": "We konden deze zoekopdracht niet lezen.",
+        "%n open case looks like this one.": "%n openstaande zaak lijkt op deze.",
+        "%n open cases look like this one.": "%n openstaande zaken lijken op deze.",
+        "A case you may not open": "Een zaak die u niet mag openen",
+        "File it anyway": "Toch aanmaken",
+        "Matched on the score, not on a single field": "Gevonden op de score, niet op één veld",
+        "Permit reference": "Vergunningkenmerk",
+        "The case was not filed.": "De zaak is niet aangemaakt.",
+        "This case may already exist": "Deze zaak bestaat mogelijk al",
+        "This case type does not let the same case be filed twice. Open the case it matches, or ask a coordinator.": "Dit zaaktype staat niet toe dat dezelfde zaak twee keer wordt aangemaakt. Open de zaak waarop deze lijkt, of vraag een coördinator.",
+        "Why file this case anyway": "Waarom deze zaak toch aanmaken"
     },
     "nplurals=2; plural=(n != 1);"
 )

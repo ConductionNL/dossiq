@@ -70,9 +70,9 @@ class ZaakportaalFragmentTest extends TestCase {
 	 */
 	public function testPortalSchemasPresent(): void {
 		$schemas = $this->merged['components']['schemas'];
-		$this->assertArrayHasKey('portaalBericht', $schemas);
-		$this->assertArrayHasKey('portaalVerzoek', $schemas);
-		$this->assertArrayHasKey('portaalNotificatieVoorkeur', $schemas);
+		$this->assertArrayHasKey(key: 'portaalBericht', array: $schemas);
+		$this->assertArrayHasKey(key: 'portaalVerzoek', array: $schemas);
+		$this->assertArrayHasKey(key: 'portaalNotificatieVoorkeur', array: $schemas);
 	}//end testPortalSchemasPresent()
 
 	/**
@@ -83,9 +83,9 @@ class ZaakportaalFragmentTest extends TestCase {
 	 */
 	public function testExistingReadSchemasUntouched(): void {
 		$schemas = $this->merged['components']['schemas'];
-		$this->assertArrayHasKey('case', $schemas);
-		$this->assertArrayHasKey('document', $schemas);
-		$this->assertArrayNotHasKey('portaalContact', $schemas, 'Portal must reuse identity, not invent a contact schema');
+		$this->assertArrayHasKey(key: 'case', array: $schemas);
+		$this->assertArrayHasKey(key: 'document', array: $schemas);
+		$this->assertArrayNotHasKey(key: 'portaalContact', array: $schemas, message: 'Portal must reuse identity, not invent a contact schema');
 	}//end testExistingReadSchemasUntouched()
 
 	/**
@@ -96,11 +96,11 @@ class ZaakportaalFragmentTest extends TestCase {
 	 */
 	public function testPortalSchemasJoinDossiqRegister(): void {
 		$schemas = $this->merged['components']['registers']['dossiq']['schemas'];
-		$this->assertContains('portaalBericht', $schemas);
-		$this->assertContains('portaalVerzoek', $schemas);
-		$this->assertContains('portaalNotificatieVoorkeur', $schemas);
+		$this->assertContains(needle: 'portaalBericht', haystack: $schemas);
+		$this->assertContains(needle: 'portaalVerzoek', haystack: $schemas);
+		$this->assertContains(needle: 'portaalNotificatieVoorkeur', haystack: $schemas);
 		// KCC fragment membership still present (additive union, not overwrite).
-		$this->assertContains('callbackRequest', $schemas);
+		$this->assertContains(needle: 'callbackRequest', haystack: $schemas);
 	}//end testPortalSchemasJoinDossiqRegister()
 
 	/**
@@ -115,8 +115,8 @@ class ZaakportaalFragmentTest extends TestCase {
 			array_filter($objects, 'is_array')
 		);
 
-		$this->assertContains('portaal-pref-demo-burger', $slugs);
-		$this->assertContains('portaal-bericht-demo-1', $slugs);
+		$this->assertContains(needle: 'portaal-pref-demo-burger', haystack: $slugs);
+		$this->assertContains(needle: 'portaal-bericht-demo-1', haystack: $slugs);
 	}//end testPortalSeedObjectsUnioned()
 
 	/**
@@ -126,8 +126,8 @@ class ZaakportaalFragmentTest extends TestCase {
 	 */
 	public function testPreferenceSchemaHasBerichtenbox(): void {
 		$properties = $this->merged['components']['schemas']['portaalNotificatieVoorkeur']['properties'];
-		$this->assertArrayHasKey('messageBoxActive', $properties);
-		$this->assertArrayHasKey('subjectRef', $properties);
+		$this->assertArrayHasKey(key: 'messageBoxActive', array: $properties);
+		$this->assertArrayHasKey(key: 'subjectRef', array: $properties);
 	}//end testPreferenceSchemaHasBerichtenbox()
 
 	/**
@@ -149,20 +149,20 @@ class ZaakportaalFragmentTest extends TestCase {
 	public function testPortalRequestsDeclareTheSameKindOfDedupRules(): void {
 		$dedup = $this->merged['components']['schemas']['portaalVerzoek']['configuration']['x-openregister-dedup'] ?? null;
 
-		$this->assertIsArray($dedup, 'portaalVerzoek must declare dedup rules for the portal intake');
-		$this->assertSame(['submitterRef', 'kind'], $dedup['blockingKeys']);
-		$this->assertSame('warn', $dedup['onCreate'], 'a citizen is warned, never refused, by the schema');
+		$this->assertIsArray(actual: $dedup, message: 'portaalVerzoek must declare dedup rules for the portal intake');
+		$this->assertSame(expected: ['submitterRef', 'kind'], actual: $dedup['blockingKeys']);
+		$this->assertSame(expected: 'warn', actual: $dedup['onCreate'], message: 'a citizen is warned, never refused, by the schema');
 
 		$properties = $this->merged['components']['schemas']['portaalVerzoek']['properties'];
 		foreach ($dedup['matchRules'] as $rule) {
 			$this->assertArrayHasKey(
-				$rule['field'],
-				$properties,
-				'a rule naming a property the schema does not declare compares nothing and reports nothing'
+				key: $rule['field'],
+				array: $properties,
+				message: 'a rule naming a property the schema does not declare compares nothing and reports nothing'
 			);
 		}
 
 		$total = array_sum(array_column($dedup['matchRules'], 'weight'));
-		$this->assertSame(1.0, round($total, 4));
+		$this->assertSame(expected: 1.0, actual: round($total, 4));
 	}//end testPortalRequestsDeclareTheSameKindOfDedupRules()
 }//end class

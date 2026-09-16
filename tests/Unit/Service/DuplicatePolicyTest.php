@@ -165,8 +165,8 @@ class DuplicatePolicyTest extends TestCase {
 	 */
 	public function testACaseTypeThatSaysNothingWarns(): void {
 		$this->assertSame(
-			DuplicatePolicy::POLICY_WARN,
-			$this->policy()->policyFor(caseType: ['title' => 'Melding'])
+			expected: DuplicatePolicy::POLICY_WARN,
+			actual: $this->policy()->policyFor(caseType: ['title' => 'Melding'])
 		);
 	}//end testACaseTypeThatSaysNothingWarns()
 
@@ -177,8 +177,8 @@ class DuplicatePolicyTest extends TestCase {
 	 */
 	public function testAnUnrecognisedPolicyReadsAsWarn(): void {
 		$this->assertSame(
-			DuplicatePolicy::POLICY_WARN,
-			$this->policy()->policyFor(caseType: ['duplicatePolicy' => 'blocking'])
+			expected: DuplicatePolicy::POLICY_WARN,
+			actual: $this->policy()->policyFor(caseType: ['duplicatePolicy' => 'blocking'])
 		);
 	}//end testAnUnrecognisedPolicyReadsAsWarn()
 
@@ -196,7 +196,7 @@ class DuplicatePolicyTest extends TestCase {
 			user: $this->user()
 		);
 
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testWarnFilesTheCaseAnyway()
 
 	/**
@@ -214,7 +214,7 @@ class DuplicatePolicyTest extends TestCase {
 			user: $this->user()
 		);
 
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testBlockWithNoMatchFilesTheCase()
 
 	/**
@@ -231,10 +231,10 @@ class DuplicatePolicyTest extends TestCase {
 				caseType: ['duplicatePolicy' => DuplicatePolicy::POLICY_BLOCK],
 				user: $this->user()
 			);
-			$this->fail('A handler filing a duplicate under block should be refused.');
+			$this->fail(message: 'A handler filing a duplicate under block should be refused.');
 		} catch (RefusedException $e) {
-			$this->assertSame(DuplicatePolicy::RULE_BLOCKED, $e->getRule());
-			$this->assertSame(RefusedException::STATUS_REFUSED, $e->getStatus());
+			$this->assertSame(expected: DuplicatePolicy::RULE_BLOCKED, actual: $e->getRule());
+			$this->assertSame(expected: RefusedException::STATUS_REFUSED, actual: $e->getStatus());
 		}
 	}//end testBlockRefusesAHandler()
 
@@ -252,7 +252,7 @@ class DuplicatePolicyTest extends TestCase {
 			user: $this->user()
 		);
 
-		$this->addToAssertionCount(1);
+		$this->addToAssertionCount(count: 1);
 	}//end testBlockLetsACoordinatorFileWithAReason()
 
 	/**
@@ -269,9 +269,9 @@ class DuplicatePolicyTest extends TestCase {
 				caseType: ['duplicatePolicy' => DuplicatePolicy::POLICY_BLOCK],
 				user: $this->user()
 			);
-			$this->fail('A coordinator filing without a reason should be asked for one.');
+			$this->fail(message: 'A coordinator filing without a reason should be asked for one.');
 		} catch (RefusedException $e) {
-			$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $e->getStatus());
+			$this->assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $e->getStatus());
 		}
 	}//end testACoordinatorWithoutAReasonIsAskedForOne()
 
@@ -284,7 +284,7 @@ class DuplicatePolicyTest extends TestCase {
 	public function testNoDeclaredGroupMeansNobodyOverrides(): void {
 		$policy = $this->policy(matches: self::ONE_MATCH, groups: [], inGroup: true);
 
-		$this->assertFalse($policy->mayOverride(user: $this->user()));
+		$this->assertFalse(condition: $policy->mayOverride(user: $this->user()));
 	}//end testNoDeclaredGroupMeansNobodyOverrides()
 
 	/**
@@ -302,7 +302,7 @@ class DuplicatePolicyTest extends TestCase {
 			user: $this->user()
 		);
 
-		$this->assertSame([], $policy->matchesFor(case: self::CASE_PAYLOAD));
+		$this->assertSame(expected: [], actual: $policy->matchesFor(case: self::CASE_PAYLOAD));
 	}//end testWithoutOpenRegisterTheCaseIsStillFiled()
 
 	/**
@@ -312,8 +312,8 @@ class DuplicatePolicyTest extends TestCase {
 	 */
 	public function testTheUuidsOfTheMatchesAreCollected(): void {
 		$this->assertSame(
-			['existing-case-uuid'],
-			$this->policy()->uuidsOf(matches: self::ONE_MATCH)
+			expected: ['existing-case-uuid'],
+			actual: $this->policy()->uuidsOf(matches: self::ONE_MATCH)
 		);
 	}//end testTheUuidsOfTheMatchesAreCollected()
 }//end class
