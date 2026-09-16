@@ -96,11 +96,9 @@ class CaseFieldRoleProjector {
 	public const AUTHORIZATION_KEY = 'authorization';
 
 	/**
-	 * OpenRegister's SchemaMapper, resolved once per publish.
-	 *
-	 * @var object|null
+	 * OpenRegister's schema mapper, by the name the container knows it under.
 	 */
-	private ?object $schemaMapper = null;
+	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
 	/**
 	 * Constructor.
@@ -399,8 +397,51 @@ class CaseFieldRoleProjector {
 	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
 	 */
 	private function write(string $caseTypeId, array $own): bool {
-		$schema = $this->liveCaseSchema();
-		if ($schema === null || $this->schemaMapper === null) {
+		// 🔴 ASKED, NOT CAUGHT. An absent OpenRegister is the ordinary state of
+		// an instance that does not run one, and answering it with a swallowed
+		// exception makes "this app is not installed" indistinguishable from
+		// "the write failed" in the logs. `has()` asks the question directly.
+		if ($this->container->has(self::SCHEMA_MAPPER) === false) {
+			$this->logger->info(
+				'Dossiq: no OpenRegister SchemaMapper, so the per-role field rules were not published'
+			);
+			return false;
+		}
+
+		try {
+			return $this->writeToSchema(caseTypeId: $caseTypeId, own: $own);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: could not publish the per-role field rules onto the case schema',
+				['caseType' => $caseTypeId, 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end write()
+
+	/**
+	 * Compute and store the ledger and the properties, letting failure throw.
+	 *
+	 * Split from {@see write()} so the whole gesture, the container lookup
+	 * included, sits inside ONE try. A resolve outside it answered null from a
+	 * catch of its own, which reads in the logs as an app that is not installed
+	 * whatever actually went wrong.
+	 *
+	 * @param string               $caseTypeId The case type being published, or '' for a reapply.
+	 * @param array<string, mixed> $own        What that case type now projects.
+	 *
+	 * @return bool True when the schema was written.
+	 *
+	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 */
+	private function writeToSchema(string $caseTypeId, array $own): bool {
+		$schemaMapper = $this->container->get(self::SCHEMA_MAPPER);
+		if (is_object($schemaMapper) === false) {
+			return false;
+		}
+
+		$schema = $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
+		if ($schema === null) {
 			return false;
 		}
 
@@ -426,47 +467,12 @@ class CaseFieldRoleProjector {
 			$configuration[self::LEDGER_KEY] = $updatedLedger;
 		}
 
-		try {
-			$schema->setConfiguration($configuration);
-			$schema->setProperties($updatedProperties);
-			$this->schemaMapper->update($schema);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: could not publish the per-role field rules onto the case schema',
-				['caseType' => $caseTypeId, 'exception' => $e->getMessage()]
-			);
-			return false;
-		}
+		$schema->setConfiguration($configuration);
+		$schema->setProperties($updatedProperties);
+		$schemaMapper->update($schema);
 
 		return true;
-	}//end write()
-
-	/**
-	 * The live `case` schema, or null when this instance has no OpenRegister.
-	 *
-	 * @return object|null The schema entity.
-	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 */
-	private function liveCaseSchema(): ?object {
-		try {
-			$schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
-		} catch (Throwable $e) {
-			$this->logger->info(
-				'Dossiq: no OpenRegister SchemaMapper, so the per-role field rules were not published',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
-
-		if (is_object($schemaMapper) === false) {
-			return null;
-		}
-
-		$this->schemaMapper = $schemaMapper;
-
-		return $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
-	}//end liveCaseSchema()
+	}//end writeToSchema()
 
 	/**
 	 * One schema column as an array, whatever it answered.

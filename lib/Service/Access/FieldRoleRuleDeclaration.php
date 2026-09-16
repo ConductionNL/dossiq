@@ -201,6 +201,73 @@ class FieldRoleRuleDeclaration {
 	}//end propertyAuthorization()
 
 	/**
+	 * Add these role rules to one status's published block.
+	 *
+	 * Lives here rather than in the projector that writes the block, because
+	 * this class owns the SHAPE and the projector owns the WRITE. It also keeps
+	 * the projector under the complexity the gate allows it: that class already
+	 * folds two other sources in, and a third one written out longhand there
+	 * pushed it over.
+	 *
+	 * A field the STATUS already names under the same kind is left alone. The
+	 * status rule may carry a condition and a message, a role rule carries
+	 * neither, and publishing both would let the unconditional entry decide a
+	 * case the author wrote a condition for.
+	 *
+	 * The role entry is APPENDED rather than merged into the status entry, so
+	 * the two keep their own `groups`. Merging them would produce one entry
+	 * restricting the union of both lists, which is a rule neither half
+	 * declared.
+	 *
+	 * @param array<string, array<int, array<string, mixed>>> $fields The status's own block.
+	 * @param array<string, array<int, array<string, mixed>>> $roles  The case type's role block.
+	 *
+	 * @return array<string, array<int, array<string, mixed>>> The block.
+	 *
+	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 */
+	public function foldInto(array $fields, array $roles): array {
+		foreach ($roles as $kind => $entries) {
+			$declared = $this->fieldsNamedUnder(entries: ($fields[$kind] ?? []));
+
+			foreach ($entries as $entry) {
+				$named = $this->fieldsNamedUnder(entries: [$entry]);
+				if (array_intersect($named, $declared) !== []) {
+					continue;
+				}
+
+				$fields[$kind][] = $entry;
+			}
+		}
+
+		return $fields;
+	}//end foldInto()
+
+	/**
+	 * The field names a list of published entries covers.
+	 *
+	 * @param array<int, array<string, mixed>> $entries The entries.
+	 *
+	 * @return array<int, string> The field names.
+	 *
+	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 */
+	private function fieldsNamedUnder(array $entries): array {
+		$named = [];
+		foreach ($entries as $entry) {
+			if (is_array($entry) === false) {
+				continue;
+			}
+
+			foreach (($entry['fields'] ?? []) as $name) {
+				$named[] = (string)$name;
+			}
+		}
+
+		return $named;
+	}//end fieldsNamedUnder()
+
+	/**
 	 * Two grant lists as one, with the repeats gone.
 	 *
 	 * Public because a projector merging one case type's blocks onto another's
