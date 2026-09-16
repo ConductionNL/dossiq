@@ -906,6 +906,19 @@ $extra = [
     ['name' => 'caseTerms#aanvullingsverzoeken', 'url' => '/api/cases/{caseId}/aanvullingsverzoeken', 'verb' => 'GET'],
         // How old the work still standing is, read live over open cases only.
     ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
+
+        // AVG data subject requests, driven from the case
+        // (data-subject-requests-drive-the-platform, REQ-AVG-DSR-01..03).
+        // Consumes openregister `data-subject-rights-across-the-instance`:
+        // the preview, the approved run and the subject's own export all
+        // execute there. NOTHING HERE ERASES ANYTHING, which is why there is
+        // no dossiq endpoint that takes an erase mode or a subject id: both
+        // come off the case, so a caller cannot point this app's acts at a
+        // person whose case they cannot reach.
+    ['name' => 'dataSubjectRequest#preview',       'url' => '/api/cases/{caseId}/avg/erasure-preview', 'verb' => 'POST'],
+    ['name' => 'dataSubjectRequest#run',           'url' => '/api/cases/{caseId}/avg/erasure-run',     'verb' => 'POST'],
+    ['name' => 'dataSubjectRequest#requestExport', 'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'POST'],
+    ['name' => 'dataSubjectRequest#exportState',   'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
         // TermijnDefinitiesTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.
