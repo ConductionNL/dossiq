@@ -36,6 +36,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\SetupController;
 use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\SeedDataService;
+use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use OCP\IRequest;
@@ -148,6 +149,7 @@ class SetupControllerStatusTest extends TestCase {
 			demoDataService: $demo,
 			settingsService: $settings,
 			seedDataService: $seeder,
+			readiness: new FirstRunReadiness(settingsService: $settings, appConfig: $appConfig),
 		);
 
 		return ['controller' => $controller, 'written' => &$written, 'settings' => $settings];
