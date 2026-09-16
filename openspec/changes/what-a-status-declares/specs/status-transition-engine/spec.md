@@ -89,3 +89,100 @@ statutory term or its state.
 - **GIVEN** a status with a maximum of five days entered on a Friday
 - **WHEN** the weekend and a general holiday fall inside the window
 - **THEN** the breach SHALL be due five working days later, not five calendar days
+
+### Requirement: A status declares which fields it requires, hides and locks (REQ-SDC-04)
+
+A `statusType` SHALL be able to declare, per case field, that the field is
+required, hidden or read only while the case sits in that status. Each
+declaration MAY name the groups it applies to, and a declaration that names
+none SHALL apply to everyone. Each declaration MAY carry a condition in the
+same vocabulary `derivedWhen` uses, and SHALL apply only where that condition
+holds. Each declaration MAY carry the sentence a refusal shows.
+
+Publishing the case type SHALL write those declarations onto the case
+schema's `x-openregister-lifecycle.states.<statusType>.fields`, so
+OpenRegister decides and refuses. dossiq SHALL NOT evaluate the rules a
+second time, and SHALL NOT filter a field of its own.
+
+A property that declares `requiredAtStatus` SHALL be published as a
+`required` declaration of that status, so the one control that already exists
+starts being enforced rather than gaining a rival.
+
+#### Scenario: A status makes a field required
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a status Besluitvorming that declares the motivation required
+- **WHEN** the case type is published
+- **THEN** the case schema SHALL carry that status as a state requiring the motivation
+
+#### Scenario: Saving without the field is refused by the platform
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a case in Besluitvorming with no motivation
+- **WHEN** a handler saves it
+- **THEN** the save SHALL be refused with `state-field-required`
+- **AND** the case page SHALL show the sentence the status declared
+
+#### Scenario: A rule that names groups leaves the others alone
+@e2e exclude unit over the projection; CaseStateFieldRuleProjectorTest
+
+- **GIVEN** a status that locks the confidentiality for `dossiq-handlers`
+- **WHEN** the declarations are published
+- **THEN** the published `readOnly` entry SHALL name that group
+- **AND** a declaration naming no group SHALL be published without one
+
+#### Scenario: A conditional rule is published as a condition, not as a second status
+@e2e exclude unit over the translation; StatusFieldRuleDeclarationTest
+
+- **GIVEN** a rule requiring the motivation only when the decision is a refusal
+- **WHEN** the declarations are published
+- **THEN** the published entry SHALL carry a `when` reading that field
+- **AND** no second status SHALL be created for the branch
+
+#### Scenario: A field required from a status keeps being required
+@e2e exclude unit over the projection; CaseStateFieldRuleProjectorTest
+
+- **GIVEN** a property declaring `requiredAtStatus` of Besluitvorming
+- **WHEN** the case type is published
+- **THEN** that property SHALL be published as required in that status
+
+#### Scenario: The case page reads the decision rather than making one
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a case whose read carries `@self.fieldRules`
+- **WHEN** the case page renders
+- **THEN** it SHALL name what this status requires, hides and locks from that answer alone
+
+### Requirement: The rules of a case type are listed and tried in the editor (REQ-SDC-05)
+
+The case-type editor SHALL list the rules OpenRegister holds for the case
+schema, read from the rules inventory in evaluation order, labelled with the
+kind vocabulary the engine publishes rather than a list dossiq keeps. It
+SHALL let an administrator try a rule against one case and show the verdict,
+the operand and the value that decided. It SHALL key on a rule's id and never
+on its position.
+
+The DMN decision tables SHALL keep working unchanged, as the neighbour of the
+`flow` kind rather than as something this replaces.
+
+#### Scenario: The rules of the case schema are listed
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a case type whose statuses declare field rules
+- **WHEN** an administrator opens the Rules tab
+- **THEN** the rules SHALL be listed in the order the engine evaluates them
+
+#### Scenario: A kind dossiq has never seen still renders
+@e2e exclude unit over the vocabulary read; caseTypeRules.spec.js
+
+- **GIVEN** a vocabulary carrying a kind this release predates
+- **WHEN** the tab renders a rule of that kind
+- **THEN** it SHALL render the kind the vocabulary published
+
+#### Scenario: Trying a rule says what decided
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a rule and a case
+- **WHEN** the administrator tries the rule against the case
+- **THEN** the verdict SHALL be shown with the operand and the value it read
+- **AND** nothing SHALL be written to the case

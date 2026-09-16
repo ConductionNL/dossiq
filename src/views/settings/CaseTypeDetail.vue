@@ -155,6 +155,7 @@
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
 					:caseTypeId="caseTypeId" />
+				<RulesTab v-else-if="activeTab === 'rules'" :isCreate="isCreate" />
 				<EmailTemplateAdmin
 					v-else-if="activeTab === 'emailTemplates'"
 					:caseTypeId="caseTypeId" />
@@ -181,6 +182,7 @@ import GeneralTab from './tabs/GeneralTab.vue'
 import PropertiesTab from './tabs/PropertiesTab.vue'
 import ResultsTab from './tabs/ResultsTab.vue'
 import RolesTab from './tabs/RolesTab.vue'
+import RulesTab from './tabs/RulesTab.vue'
 import StatusesTab from './tabs/StatusesTab.vue'
 import SubCaseTypesTab from './tabs/SubCaseTypesTab.vue'
 import WorkflowTab from './tabs/WorkflowTab.vue'
@@ -228,6 +230,7 @@ export default {
 		WorkflowTab,
 		ResultsTab,
 		RolesTab,
+		RulesTab,
 		PropertiesTab,
 		DocumentTypesTab,
 		DecisionTypesTab,
@@ -327,6 +330,7 @@ export default {
 				{ id: 'decisions', label: t('dossiq', 'Decisions') },
 				{ id: 'subCaseTypes', label: t('dossiq', 'Sub-cases') },
 				{ id: 'workflow', label: t('dossiq', 'Workflow') },
+				{ id: 'rules', label: t('dossiq', 'Rules') },
 				{ id: 'emailTemplates', label: t('dossiq', 'Email') },
 			]
 		},

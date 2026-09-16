@@ -111,6 +111,47 @@ export function daysLeftSentence(term, t) {
 }
 
 /**
+ * What a suspended clock is waiting for, and what has been tried.
+ *
+ * Only a paused clock carries this. A running one returns an empty string, so
+ * the panel stays a table of dates rather than a table of dates with an empty
+ * column beside it.
+ *
+ * @param {object}   term      One shaped term from the server.
+ * @param {(app: string, text: string, vars?: object) => string} t The `t` binding.
+ *
+ * @return {string} The sentence, empty when the clock is not suspended.
+ * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+ */
+export function pauseSentence(term, t) {
+	if (!term || term.status !== 'paused') {
+		return ''
+	}
+
+	const reason = term.pauseReason || ''
+	const chases = Number.isFinite(term.chasesSent) ? term.chasesSent : 0
+
+	if (reason === '') {
+		return chases === 0
+			? t('dossiq', 'Suspended')
+			: t('dossiq', 'Suspended, {chases} reminders sent', { chases })
+	}
+
+	if (chases === 0) {
+		return t('dossiq', 'Suspended: {reason}. No reminder sent yet.', { reason })
+	}
+
+	if (chases === 1) {
+		return t('dossiq', 'Suspended: {reason}. One reminder sent.', { reason })
+	}
+
+	return t('dossiq', 'Suspended: {reason}. {chases} reminders sent.', {
+		reason,
+		chases,
+	})
+}
+
+/**
  * The clocks in reading order, each with a label, a hint and a tone.
  *
  * A clock whose kind the server sends and this module does not know still gets
@@ -136,6 +177,7 @@ export function termRows(terms, t) {
 			hint: kindHint(term.kind, t),
 			tone: termTone(term),
 			sentence: daysLeftSentence(term, t),
+			pause: pauseSentence(term, t),
 		}))
 		.sort((left, right) => rank(left.kind) - rank(right.kind))
 }

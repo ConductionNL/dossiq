@@ -35,27 +35,54 @@
 
 		<template v-else>
 			<ul class="first-run-tab__list" data-testid="first-run-readiness">
-				<li v-for="item in readiness" :key="item.id" class="first-run-tab__item">
-					<span class="first-run-tab__state" :class="item.done ? 'is-done' : 'is-open'">
-						{{ item.done ? t('dossiq', 'Done') : t('dossiq', 'Still open') }}
+				<li
+					v-for="item in readiness"
+					:key="item.id"
+					class="first-run-tab__item">
+					<span
+						class="first-run-tab__state"
+						:class="item.done ? 'is-done' : 'is-open'">
+						{{
+							item.done
+								? t('dossiq', 'Done')
+								: t('dossiq', 'Still open')
+						}}
 					</span>
 					<span class="first-run-tab__body">
-						<a v-if="item.screen" :href="item.screen" class="first-run-tab__title">{{ item.title }}</a>
-						<span v-else class="first-run-tab__title">{{ item.title }}</span>
+						<a
+							v-if="item.screen"
+							:href="item.screen"
+							class="first-run-tab__title"
+							>{{ item.title }}</a
+						>
+						<span v-else class="first-run-tab__title">{{
+							item.title
+						}}</span>
 						<span class="first-run-tab__hint">{{ item.body }}</span>
 						<span v-if="item.failure" class="first-run-tab__failure">
-							{{ t('dossiq', 'This could not be read: {reason}', { reason: item.failure }) }}
+							{{
+								t('dossiq', 'This could not be read: {reason}', {
+									reason: item.failure,
+								})
+							}}
 						</span>
 					</span>
 				</li>
 			</ul>
 
-			<NcNoteCard v-if="brokenSteps.length" type="warning" data-testid="first-run-broken-steps">
+			<NcNoteCard
+				v-if="brokenSteps.length"
+				type="warning"
+				data-testid="first-run-broken-steps">
 				{{
 					t(
 						'dossiq',
 						'These tour steps point at a screen that is gone, so they teach nobody: {steps}',
-						{ steps: brokenSteps.map((step) => `${step.step} (${step.surface})`).join(', ') },
+						{
+							steps: brokenSteps
+								.map((step) => `${step.step} (${step.surface})`)
+								.join(', '),
+						},
 					)
 				}}
 			</NcNoteCard>
@@ -99,10 +126,13 @@ export default {
 			this.loading = true
 			this.error = ''
 			try {
-				const { data } = await axios.get(generateUrl('/apps/dossiq/api/setup/status'))
+				const { data } = await axios.get(
+					generateUrl('/apps/dossiq/api/setup/status'),
+				)
 				this.readiness = Array.isArray(data?.readiness) ? data.readiness : []
-				this.brokenSteps = (Array.isArray(data?.tourSteps) ? data.tourSteps : [])
-					.filter((step) => step.state === 'missing')
+				this.brokenSteps = (
+					Array.isArray(data?.tourSteps) ? data.tourSteps : []
+				).filter((step) => step.state === 'missing')
 			} catch {
 				this.error = t('dossiq', 'The first run status could not be read.')
 			} finally {

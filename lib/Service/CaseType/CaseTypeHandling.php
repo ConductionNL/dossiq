@@ -90,6 +90,7 @@ final class CaseTypeHandling {
 		'ingebrekestelling-receipt',
 		'dwangsom-payment',
 		'hersteltermijn-request',
+		'hersteltermijn-reminder',
 		'doorzending',
 	];
 

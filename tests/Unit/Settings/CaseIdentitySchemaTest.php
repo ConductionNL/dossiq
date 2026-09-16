@@ -45,6 +45,13 @@ class CaseIdentitySchemaTest extends TestCase {
 	private array $caseSchema = [];
 
 	/**
+	 * The `complaint` schema as shipped.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $complaintSchema = [];
+
+	/**
 	 * Load the shipped register once per test.
 	 *
 	 * @return void
@@ -59,15 +66,22 @@ class CaseIdentitySchemaTest extends TestCase {
 		$register = json_decode($raw, true);
 		$this->assertIsArray($register, 'the shipped register must be valid JSON');
 
-		$this->caseSchema = $register['components']['schemas']['case'];
+		$this->caseSchema      = $register['components']['schemas']['case'];
+		$this->complaintSchema = $register['components']['schemas']['complaint'];
 	}//end setUp()
 
 	/**
-	 * The case number is declared, generated and never typed.
+	 * The case number is declared, issued by the platform and never typed.
+	 *
+	 * `x-openregister-generated` replaced the `x-openregister-calculations`
+	 * expression this file used to assert (openregister#3785). The difference is
+	 * not cosmetic: the annotation takes the number under a lock inside the
+	 * create transaction, where the calculation's `sequence` operator did not, so
+	 * two cases filed in the same second can no longer be handed one number.
 	 *
 	 * @return void
 	 */
-	public function testIdentifierIsAGeneratedYearlySequence(): void {
+	public function testIdentifierIsIssuedFromANamedYearlySequence(): void {
 		$identifier = $this->caseSchema['properties']['identifier'];
 
 		$this->assertTrue(
@@ -80,66 +94,96 @@ class CaseIdentitySchemaTest extends TestCase {
 			'adding a format to an existing property is breaking in OpenRegister'
 		);
 
-		$calculation = $this->caseSchema['configuration']['x-openregister-calculations']['identifier'];
-
-		$this->assertTrue($calculation['materialise'], 'the number is stored, not recomputed per read');
 		$this->assertSame(
 			[
-				'coalesce' => [
-					['prop' => 'identifier'],
-					[
-						'concat' => [
-							['year' => ['prop' => 'startDate']],
-							'-',
-							['sequence' => ['scope' => 'yearly', 'pad' => 4]],
-						],
-					],
-				],
+				'sequence' => 'case',
+				'format'   => '{year}-{seq:4}',
+				'resetOn'  => 'year',
 			],
-			$calculation['expression'],
-			'a supplied number wins; otherwise the start year, a hyphen and a four-digit yearly sequence'
+			$identifier['x-openregister-generated'],
+			'the case number is the filing year, a hyphen and a four-digit counter that restarts each year'
 		);
-	}//end testIdentifierIsAGeneratedYearlySequence()
+	}//end testIdentifierIsIssuedFromANamedYearlySequence()
 
 	/**
-	 * A number supplied on create survives, and does not consume a sequence.
+	 * Exactly one mechanism writes the number.
 	 *
-	 * Measured against a live instance before this guard existed: posting a
-	 * case with `identifier: "BZW-2025-17"` and `startDate: "2025-11-01"`
-	 * stored `2025-0360`. The calculation is `materialise: true`, so it runs on
-	 * the create path and wrote over the value the caller gave.
+	 * The calculation entry and the annotation are both writers on the create
+	 * path, each correct on its own and neither able to see what the other did.
+	 * Whichever ran first would win, and the counter would then be advanced by
+	 * the loser: a number spent on nothing, every case, for ever.
 	 *
-	 * OpenRegister already protects the UPDATE path: `CalculationOnSaveListener`
-	 * skips any expression using `sequence` when no SequenceContext is active,
-	 * which is every update (openregister#3075). Create was the unguarded half.
-	 *
-	 * `coalesce` is the right guard because `CalculationEvaluator::coalesce()`
-	 * evaluates operands one at a time and returns at the first non-null, so
-	 * the `sequence` node is never reached when a number was supplied and no
-	 * running number is spent on it.
+	 * This is the assertion that makes the removal permanent. Re-adding the
+	 * calculation entry to a 10,500-line file is a one-line edit nobody would
+	 * notice in review.
 	 *
 	 * @return void
 	 */
-	public function testASuppliedNumberIsKeptAheadOfTheSequence(): void {
-		$expression = $this->caseSchema['configuration']
-			['x-openregister-calculations']['identifier']['expression'];
+	public function testNoCalculationWritesTheIdentifier(): void {
+		$calculations = $this->caseSchema['configuration']['x-openregister-calculations'];
 
-		$this->assertArrayHasKey(
-			'coalesce',
-			$expression,
-			'without coalesce the create path overwrites an imported number'
+		$this->assertArrayNotHasKey(
+			'identifier',
+			$calculations,
+			'two writers on one field is how a counter is spent on a number nobody sees'
 		);
+		$this->assertNotSame(
+			[],
+			$calculations,
+			'a control: the calculations block still holds the other entries, so the absence above means something'
+		);
+	}//end testNoCalculationWritesTheIdentifier()
+
+	/**
+	 * The pad the format declares is the pad the seeded cases carry.
+	 *
+	 * A widened pad would leave one install holding both shapes, and OpenRegister
+	 * cannot renumber an identifier it already issued (REQ-GID-006, unshipped).
+	 * So the two have to be checked against each other rather than each against a
+	 * number typed into a test.
+	 *
+	 * @return void
+	 */
+	public function testTheSeededNumbersMatchTheDeclaredFormat(): void {
+		$format = $this->caseSchema['properties']['identifier']['x-openregister-generated']['format'];
+
 		$this->assertSame(
-			['prop' => 'identifier'],
-			$expression['coalesce'][0],
-			'the supplied number must be the FIRST operand, or the sequence wins and is spent'
+			1,
+			preg_match('/^\\{year\\}-\\{seq:(\\d+)\\}$/', $format, $found),
+			'the format is the year, a hyphen and a padded counter'
 		);
-		$this->assertArrayHasKey(
-			'concat',
-			$expression['coalesce'][1],
-			'the generated number stays the fallback'
-		);
-	}//end testASuppliedNumberIsKeptAheadOfTheSequence()
+		$pad = (int)$found[1];
+
+		$path = __DIR__ . '/../../../lib/Settings/register.d/46-demo-cases-english.json';
+		$raw  = file_get_contents($path);
+		$this->assertIsString($raw, 'the shipped demo cases must be readable');
+
+		$fragment = json_decode($raw, true);
+		$this->assertIsArray($fragment, 'the shipped demo fragment must be valid JSON');
+
+		// Only the CASE objects. A `caseType` carries an `identifier` too, and it
+		// is a slug: a text scan of the file reads `building-permit` as a case
+		// number and the assertion then says nothing about either.
+		$seeded = [];
+		foreach (($fragment['components']['objects'] ?? []) as $object) {
+			if (($object['@self']['schema'] ?? '') !== 'case') {
+				continue;
+			}
+
+			if (isset($object['identifier']) === true) {
+				$seeded[] = (string)$object['identifier'];
+			}
+		}
+
+		$this->assertNotEmpty($seeded, 'a control: the demo file must actually carry case numbers');
+		foreach ($seeded as $value) {
+			$this->assertSame(
+				1,
+				preg_match('/^\\d{4}-\\d{' . $pad . ',}$/', $value),
+				$value . ' does not read as the format the schema declares'
+			);
+		}
+	}//end testTheSeededNumbersMatchTheDeclaredFormat()
 
 	/**
 	 * Tags are free words, and the index can filter on them.
@@ -229,6 +273,57 @@ class CaseIdentitySchemaTest extends TestCase {
 	 *
 	 * @return void
 	 */
+	/**
+	 * The klachtnummer comes from its own counter, not from a count of rows.
+	 *
+	 * `ComplaintService::generateComplaintNumber` searched this year's
+	 * complaints and returned COUNT + 1. Delete one complaint and the next one
+	 * filed is handed a number a live complaint already holds. Nothing in the
+	 * service could see that, because the collision is in the register.
+	 *
+	 * The counter is the complaint's own rather than the case counter, so a
+	 * citizen holding two letters cannot read off how many cases were filed
+	 * between them.
+	 *
+	 * @return void
+	 */
+	public function testTheComplaintNumberIsIssuedFromItsOwnCounter(): void {
+		$number = $this->complaintSchema['properties']['complaintNumber'];
+
+		$this->assertTrue($number['readOnly'], 'a generated number must be read-only on every form');
+		$this->assertSame(
+			[
+				'sequence' => 'complaint',
+				'format'   => 'KL-{year}-{seq:4}',
+				'resetOn'  => 'year',
+			],
+			$number['x-openregister-generated']
+		);
+
+		$caseSequence = $this->caseSchema['properties']['identifier']['x-openregister-generated']['sequence'];
+		$this->assertNotSame(
+			$caseSequence,
+			$number['x-openregister-generated']['sequence'],
+			'two schemas naming one sequence draw from one counter, which is not what a klachtnummer wants'
+		);
+	}//end testTheComplaintNumberIsIssuedFromItsOwnCounter()
+
+	/**
+	 * The complaint schema version moved with the annotation.
+	 *
+	 * OpenRegister fast-skips a schema whose version has not changed, so the
+	 * annotation would land on a fresh install and on nothing else.
+	 *
+	 * @return void
+	 */
+	public function testTheComplaintSchemaVersionMoved(): void {
+		$this->assertGreaterThan(
+			0,
+			version_compare($this->complaintSchema['version'], '1.0.0'),
+			'an annotation on an unbumped version never reaches an existing install'
+		);
+	}//end testTheComplaintSchemaVersionMoved()
+
 	public function testTheSchemaVersionMovedWithTheSchema(): void {
 		$this->assertGreaterThan(
 			0,
