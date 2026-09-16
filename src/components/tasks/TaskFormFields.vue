@@ -39,7 +39,8 @@
 			:key="field.field"
 			class="task-form-fields__field">
 			<label :for="`${testId}-${field.field}`">
-				{{ field.field }}<span v-if="field.required" aria-hidden="true">*</span>
+				{{ field.field
+				}}<span v-if="field.required" aria-hidden="true">*</span>
 			</label>
 			<input
 				v-if="field.renderable !== false"
@@ -48,7 +49,7 @@
 				:required="field.required === true"
 				:data-testid="`${testId}-${field.field}`"
 				type="text"
-				@input="write(field.field, $event.target.value)">
+				@input="write(field.field, $event.target.value)" />
 			<span v-else class="task-form-fields__unrenderable">
 				{{ field.reason || t('dossiq', 'This field cannot be shown here.') }}
 			</span>
@@ -112,7 +113,10 @@ export default {
 		 */
 		broken() {
 			const state = String(this.form?.state ?? '')
-			return state === 'unresolvable' || (state === 'broken' && this.fields.length === 0)
+			return (
+				state === 'unresolvable'
+				|| (state === 'broken' && this.fields.length === 0)
+			)
 		},
 
 		/** @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md */

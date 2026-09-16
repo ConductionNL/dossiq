@@ -322,7 +322,10 @@ test.describe('a refused case goes somewhere, per Awb 2:3', () => {
 
 		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await page.getByRole('searchbox').first().fill(`${RUN_PREFIX} still findable`)
+		await page
+			.getByRole('searchbox')
+			.first()
+			.fill(`${RUN_PREFIX} still findable`)
 
 		await expect(
 			page.getByText(`${RUN_PREFIX} still findable`).first(),

@@ -56,6 +56,7 @@ use TypeError;
  *
  * @covers \OCA\Dossiq\Lifecycle\CaseActionProvider
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses \OCA\Dossiq\Service\Cases\ExternalHome
  */
 class CaseActionProviderExecuteTest extends TestCase {
 

@@ -30,12 +30,8 @@ vi.mock('@nextcloud/l10n', () => ({
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
-const {
-	OFFER_HIDE_GROUP,
-	canDismiss,
-	offerInsteadOfDismissing,
-	visibleGroups,
-} = await import('../../src/utils/personalQueueHelpers.js')
+const { OFFER_HIDE_GROUP, canDismiss, offerInsteadOfDismissing, visibleGroups } =
+	await import('../../src/utils/personalQueueHelpers.js')
 
 const catalogue = readFileSync(
 	resolve(root, 'lib/Service/Queue/QueueSourceCatalogue.php'),
@@ -63,7 +59,9 @@ function page(id) {
  * @return {Array<string>} The class short names.
  */
 function declaredSources() {
-	return [...catalogue.matchAll(/^\t\t([A-Za-z]+Source)::class,$/gm)].map((m) => m[1])
+	return [...catalogue.matchAll(/^\t\t([A-Za-z]+Source)::class,$/gm)].map(
+		(m) => m[1],
+	)
 }
 
 describe('every mechanism reaches the queue by declaring itself', () => {
@@ -96,7 +94,9 @@ describe('every mechanism reaches the queue by declaring itself', () => {
 		]
 
 		for (const name of names) {
-			expect(queueView, `${name} is named in the queue view`).not.toContain(name)
+			expect(queueView, `${name} is named in the queue view`).not.toContain(
+				name,
+			)
 		}
 	})
 
@@ -131,7 +131,9 @@ describe('the page is a page, and not a second case index', () => {
 	})
 
 	it('both new entries live under the existing My work group', () => {
-		const layout = JSON.parse(readFileSync(resolve(root, 'src/menu-layout.json'), 'utf8'))
+		const layout = JSON.parse(
+			readFileSync(resolve(root, 'src/menu-layout.json'), 'utf8'),
+		)
 
 		expect(layout.relocations.PersonalQueueMenu).toBe('WorkGroup')
 		expect(layout.relocations.EndOfDayMenu).toBe('WorkGroup')
@@ -163,8 +165,13 @@ describe('a person orders and hides, and cannot dismiss', () => {
 	})
 
 	it('offers no call that would remove an item', async () => {
-		const api = readFileSync(resolve(root, 'src/services/personalQueueApi.js'), 'utf8')
+		const api = readFileSync(
+			resolve(root, 'src/services/personalQueueApi.js'),
+			'utf8',
+		)
 
-		expect(api).not.toMatch(/export async function (dismiss|removeItem|deleteItem)/)
+		expect(api).not.toMatch(
+			/export async function (dismiss|removeItem|deleteItem)/,
+		)
 	})
 })

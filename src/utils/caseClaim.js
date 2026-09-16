@@ -61,6 +61,8 @@ export async function claimCase({ item }) {
 		window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
 	} catch (err) {
 		const refusal = String(err?.response?.data?.error ?? '')
-		showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+		showError(
+			refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'),
+		)
 	}
 }

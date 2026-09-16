@@ -27,7 +27,9 @@ describe('the shipped configuration screen', () => {
 
 	it('names an edited shipped object as changed here, not as ours', () => {
 		expect(shippedLabel({ state: 'changed' })).toBe('Shipped, changed here')
-		expect(shippedLabel({ state: 'changed' })).not.toBe(shippedLabel({ state: 'local' }))
+		expect(shippedLabel({ state: 'changed' })).not.toBe(
+			shippedLabel({ state: 'local' }),
+		)
 	})
 
 	it('names a locally authored object as ours', () => {
@@ -66,7 +68,9 @@ describe('starterApi.listShipped', () => {
 
 		const result = await listShipped('caseType')
 
-		expect(axios.get).toHaveBeenCalledWith('/index.php/apps/dossiq/api/starter/shipped/caseType')
+		expect(axios.get).toHaveBeenCalledWith(
+			'/index.php/apps/dossiq/api/starter/shipped/caseType',
+		)
 		expect(result).toEqual({ items: [], total: 0 })
 	})
 

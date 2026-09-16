@@ -27,7 +27,11 @@
 	@spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 -->
 <template>
-	<NcDialog :name="title" data-testid="bulk-dialog" size="large" @closing="onClose">
+	<NcDialog
+		:name="title"
+		data-testid="bulk-dialog"
+		size="large"
+		@closing="onClose">
 		<div class="bulk-transition-dialog">
 			<NcLoadingIcon v-if="loadingTransitions" :size="32" />
 
@@ -75,10 +79,13 @@
 							data-testid="bulk-new-deadline"
 							type="date"
 							:value="newEndDate"
-							@input="newEndDate = $event.target.value">
+							@input="newEndDate = $event.target.value" />
 					</div>
 
-					<NcNoteCard v-if="refusal" type="error" data-testid="bulk-refusal">
+					<NcNoteCard
+						v-if="refusal"
+						type="error"
+						data-testid="bulk-refusal">
 						{{ refusal }}
 					</NcNoteCard>
 
@@ -223,7 +230,7 @@ export default {
 		transitionOptions() {
 			return this.transitions.map((tr) => ({
 				id: tr.id,
-				label: (tr.label || tr.id),
+				label: tr.label || tr.id,
 			}))
 		},
 
@@ -283,7 +290,7 @@ export default {
 				return false
 			}
 
-			return (this.mode !== 'extend' || this.newEndDate !== '')
+			return this.mode !== 'extend' || this.newEndDate !== ''
 		},
 	},
 
@@ -335,9 +342,9 @@ export default {
 							+ '/available-transitions',
 					),
 				)
-				this.transitions = (data?.transitions || [])
+				this.transitions = data?.transitions || []
 			} catch (err) {
-				this.transitionsError = (err?.response?.data?.error || err.message)
+				this.transitionsError = err?.response?.data?.error || err.message
 			} finally {
 				this.loadingTransitions = false
 			}
@@ -359,7 +366,9 @@ export default {
 
 			try {
 				this.job = await previewBulkJob({
-					action: (isLifecycleGesture(this.mode) ? ACTION_LIFECYCLE : ACTION_TRANSITION),
+					action: isLifecycleGesture(this.mode)
+						? ACTION_LIFECYCLE
+						: ACTION_TRANSITION,
 					parameters: this.parameters(),
 					selection: buildSelection({
 						scope: this.scope,
@@ -391,7 +400,10 @@ export default {
 				})
 			}
 
-			return transitionParameters(this.selectedTransition.id, this.reason.trim())
+			return transitionParameters(
+				this.selectedTransition.id,
+				this.reason.trim(),
+			)
 		},
 
 		/**
@@ -416,19 +428,27 @@ export default {
 					'These cases run on versions {versions} of {caseType}. A field means something different on each, so pick one version and try again.',
 					{
 						versions: (details.versions || []).join(' and '),
-						caseType: (details.caseType || ''),
+						caseType: details.caseType || '',
 					},
 				)
 			}
 
 			if (reason === 'ceiling') {
-				return t('dossiq', 'This act takes at most {ceiling} cases at a time, and you selected {count}.', {
-					ceiling: (details.ceiling || 0),
-					count: (details.count || 0),
-				})
+				return t(
+					'dossiq',
+					'This act takes at most {ceiling} cases at a time, and you selected {count}.',
+					{
+						ceiling: details.ceiling || 0,
+						count: details.count || 0,
+					},
+				)
 			}
 
-			return (message || err?.message || t('dossiq', 'The act could not be started.'))
+			return (
+				message
+				|| err?.message
+				|| t('dossiq', 'The act could not be started.')
+			)
 		},
 
 		/**

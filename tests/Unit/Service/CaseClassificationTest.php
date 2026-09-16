@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Intake\CaseClassification
  * @covers \OCA\Dossiq\Service\Intake\ClassificationSchemes
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseClassificationTest extends TestCase {
 

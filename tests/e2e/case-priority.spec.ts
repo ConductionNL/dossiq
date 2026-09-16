@@ -78,7 +78,8 @@ test.describe('A case carries a priority it did not have to be told', () => {
 				await createObject(api, token, 'caseType', {
 					title: `${RUN_PREFIX} ${label}`,
 					identifier: `${RUN_PREFIX.toLowerCase()}-${label}`,
-					description: 'Throwaway caseType for the case-priority e2e layer.',
+					description:
+						'Throwaway caseType for the case-priority e2e layer.',
 					processingDeadline: 'P30D',
 					isDraft: false,
 					...extra,
@@ -86,9 +87,7 @@ test.describe('A case carries a priority it did not have to be told', () => {
 			)
 
 		bezwaarType = await mkType('bezwaar', {
-			priorityMatrix: [
-				{ impact: 'high', urgency: 'low', priority: 'urgent' },
-			],
+			priorityMatrix: [{ impact: 'high', urgency: 'low', priority: 'urgent' }],
 		})
 		meldingType = await mkType('melding', {
 			priorityMatrix: [{ impact: 'high', urgency: 'low', priority: 'low' }],
@@ -272,9 +271,10 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		const after = await showObject(api, 'case', cases.override)
 
 		expect(after.priority, 'the override still stands').toBe('urgent')
-		expect(after.priorityDerived, 'and the matrix kept answering underneath').toBe(
-			'normal',
-		)
+		expect(
+			after.priorityDerived,
+			'and the matrix kept answering underneath',
+		).toBe('normal')
 
 		await api.dispose()
 	})
@@ -440,7 +440,10 @@ test.describe('A case carries a priority it did not have to be told', () => {
 		// Sort ascending on the Priority column. The header carries the
 		// column's label; the VALUES are read off `data-priority`, which is the
 		// stored word rather than its translation.
-		await page.getByRole('columnheader', { name: /Priorit/i }).first().click()
+		await page
+			.getByRole('columnheader', { name: /Priorit/i })
+			.first()
+			.click()
 		await expect(badges.first()).toBeVisible({ timeout: 30_000 })
 
 		const order = ['low', 'normal', 'high', 'urgent']
@@ -451,7 +454,10 @@ test.describe('A case carries a priority it did not have to be told', () => {
 			.filter((value) => order.includes(value))
 			.map((value) => order.indexOf(value))
 
-		expect(ranks.length, 'the list must render priorities to sort').toBeGreaterThan(1)
+		expect(
+			ranks.length,
+			'the list must render priorities to sort',
+		).toBeGreaterThan(1)
 		// Non-decreasing, which is the declared order and NOT the alphabetical
 		// one: alphabetically `high` sorts before `low` and `urgent` sorts last
 		// of all, so an alphabetical sort of a list holding all four would fail

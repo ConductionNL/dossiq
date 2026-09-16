@@ -70,7 +70,9 @@
 						}}
 					</NcButton>
 				</div>
-				<div v-if="visibleSubstitutedCases.length" class="mywork-substituted__grid">
+				<div
+					v-if="visibleSubstitutedCases.length"
+					class="mywork-substituted__grid">
 					<MyWorkCaseCard
 						v-for="row in visibleSubstitutedCases"
 						:key="row.id"

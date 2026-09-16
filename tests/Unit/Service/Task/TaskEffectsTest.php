@@ -40,6 +40,7 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Task\TaskEffects
  * @covers \OCA\Dossiq\Service\Task\CaseTaskActions
+ * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
 class TaskEffectsTest extends TestCase {
 

@@ -79,11 +79,18 @@ describe('a result template on the close form', () => {
 
 	it('does not overwrite what the handler already typed', async () => {
 		const wrapper = closeForm()
-		await wrapper.setData({ comment: 'Twee alinea\'s die de behandelaar zelf schreef.' })
+		await wrapper.setData({
+			comment: "Twee alinea's die de behandelaar zelf schreef.",
+		})
 
-		wrapper.vm.applyTemplate({ id: 'tpl-1', body: 'Uw bezwaar is niet-ontvankelijk verklaard.' })
+		wrapper.vm.applyTemplate({
+			id: 'tpl-1',
+			body: 'Uw bezwaar is niet-ontvankelijk verklaard.',
+		})
 
-		expect(wrapper.vm.comment).toBe('Twee alinea\'s die de behandelaar zelf schreef.')
+		expect(wrapper.vm.comment).toBe(
+			"Twee alinea's die de behandelaar zelf schreef.",
+		)
 	})
 
 	it('does nothing when the template has no text at all', () => {
@@ -98,7 +105,9 @@ describe('a result template on the close form', () => {
 
 	it('offers the picker only where a case is being closed', () => {
 		const closingForm = closeForm()
-		expect(closingForm.findComponent({ name: 'TemplatePicker' }).exists()).toBe(true)
+		expect(closingForm.findComponent({ name: 'TemplatePicker' }).exists()).toBe(
+			true,
+		)
 
 		const ordinary = shallowMount(CaseTransitionConfirmDialog, {
 			props: {
@@ -108,6 +117,8 @@ describe('a result template on the close form', () => {
 			},
 			global: { stubs: DIALOG_RENDERS_ITS_SLOT },
 		})
-		expect(ordinary.findComponent({ name: 'TemplatePicker' }).exists()).toBe(false)
+		expect(ordinary.findComponent({ name: 'TemplatePicker' }).exists()).toBe(
+			false,
+		)
 	})
 })

@@ -374,7 +374,6 @@ export default {
 
 			caseTypes: [],
 			caseTypesLoading: false,
-
 		}
 	},
 
@@ -487,7 +486,6 @@ export default {
 				this.matching.email_case_matching_enabled = value ? 'yes' : 'no'
 			},
 		},
-
 	},
 
 	/**

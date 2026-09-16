@@ -63,11 +63,15 @@ describe('relationDisplayLabel', () => {
 	it('falls back to the type word for a row written before the schema declared one', async () => {
 		const { relationDisplayLabel } = await importApi()
 		expect(
-			relationDisplayLabel({ aardRelatie: 'bijdrage', displayLabel: null, legacy: true }),
+			relationDisplayLabel({
+				aardRelatie: 'bijdrage',
+				displayLabel: null,
+				legacy: true,
+			}),
 		).toBe('Contribution')
-		expect(relationDisplayLabel({ aardRelatie: 'subject', displayLabel: '  ' })).toBe(
-			'Subject',
-		)
+		expect(
+			relationDisplayLabel({ aardRelatie: 'subject', displayLabel: '  ' }),
+		).toBe('Subject')
 	})
 })
 
@@ -91,7 +95,12 @@ describe('relationSections', () => {
 	it('carries the clarification on the row and drops a row naming no case', async () => {
 		const { relationSections } = await importApi()
 		const sections = relationSections([
-			{ caseId: 'b', title: 'Besluit', displayLabel: 'gaat over', notes: 'Bezwaar' },
+			{
+				caseId: 'b',
+				title: 'Besluit',
+				displayLabel: 'gaat over',
+				notes: 'Bezwaar',
+			},
 			{ caseId: '', title: 'Nothing', displayLabel: 'gaat over' },
 		])
 

@@ -79,14 +79,17 @@ describe('the withheld shapes', () => {
 	})
 
 	it('still says what is in the way when the move has no label', () => {
-		expect(withheldSentence({ label: '', reasons: ['the advice request'] })).toContain(
-			'the advice request',
-		)
+		expect(
+			withheldSentence({ label: '', reasons: ['the advice request'] }),
+		).toContain('the advice request')
 	})
 
 	it('reads the FIRST reason, because a handler acts on one thing at a time', () => {
 		expect(
-			withheldSentence({ label: 'Close', reasons: ['the advice request', 'the fee'] }),
+			withheldSentence({
+				label: 'Close',
+				reasons: ['the advice request', 'the fee'],
+			}),
 		).toContain('the advice request')
 	})
 })
@@ -101,8 +104,18 @@ describe('the withheld moves on the case page', () => {
 			current: QUIET,
 			derivation: null,
 			withheld: [
-				{ id: 't1', label: 'Close the case', toStatus: 'done', reasons: ['the advice request'] },
-				{ id: 't2', label: 'Withdraw', toStatus: 'withdrawn', reasons: ['the outstanding fee'] },
+				{
+					id: 't1',
+					label: 'Close the case',
+					toStatus: 'done',
+					reasons: ['the advice request'],
+				},
+				{
+					id: 't2',
+					label: 'Withdraw',
+					toStatus: 'withdrawn',
+					reasons: ['the outstanding fee'],
+				},
 			],
 		})
 
@@ -119,13 +132,20 @@ describe('the withheld moves on the case page', () => {
 			withheld: [],
 		})
 
-		expect(wrapper.find('[data-testid="case-status-withheld"]').exists()).toBe(false)
-		expect(wrapper.find('[data-testid="case-status-declaration"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-status-withheld"]').exists()).toBe(
+			false,
+		)
+		expect(
+			wrapper.find('[data-testid="case-status-declaration"]').exists(),
+		).toBe(false)
 	})
 
 	it('renders the explanation an administrator wrote on the status', async () => {
 		const wrapper = await mountWith({
-			current: { ...QUIET, statusDescription: 'The file is with the advisory body.' },
+			current: {
+				...QUIET,
+				statusDescription: 'The file is with the advisory body.',
+			},
 			derivation: null,
 			withheld: [],
 		})
@@ -142,6 +162,8 @@ describe('the withheld moves on the case page', () => {
 			withheld: [],
 		})
 
-		expect(wrapper.find('[data-testid="case-status-explanation"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="case-status-explanation"]').exists(),
+		).toBe(false)
 	})
 })

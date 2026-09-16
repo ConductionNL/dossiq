@@ -38,6 +38,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\TransitionPreconditions
+ * @uses \OCA\Dossiq\Service\Status\DerivedStatusEvaluator
+ * @uses \OCA\Dossiq\Service\Status\StatusDeclaration
  *
  * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
  */

@@ -18,7 +18,9 @@ const base = (path) => generateUrl('/apps/dossiq' + path)
  * @spec openspec/changes/starter-content-and-templates/specs/admin-settings/spec.md
  */
 export async function testStufEndpoint(endpointId) {
-	const { data } = await axios.post(base('/api/connections/stuf/' + endpointId + '/test'))
+	const { data } = await axios.post(
+		base('/api/connections/stuf/' + endpointId + '/test'),
+	)
 	return data
 }
 

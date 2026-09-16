@@ -43,8 +43,10 @@ const { default: CaseTermsTab } =
 const { fetchCaseTerms } = await import('../../src/services/caseTermsApi.js')
 
 /** The translate stub, English source plus {placeholder} substitution. */
-function translate (app, text, vars = {}) {
-  return text.replace(/\{(\w+)\}/g, (match, key) => (key in vars ? String(vars[key]) : match))
+function translate(app, text, vars = {}) {
+	return text.replace(/\{(\w+)\}/g, (match, key) =>
+		key in vars ? String(vars[key]) : match,
+	)
 }
 
 /** A case two phases into four with half its term consumed. */
@@ -87,7 +89,9 @@ describe('A handler triages by progress', () => {
 		await flushPromises()
 
 		expect(wrapper.find('.case-terms-tab__progress-figure').text()).toBe('50%')
-		expect(wrapper.find('.case-terms-tab__progress-bar').attributes('value')).toBe('50')
+		expect(
+			wrapper.find('.case-terms-tab__progress-bar').attributes('value'),
+		).toBe('50')
 		expect(wrapper.text()).toContain('2 of 4 phases done')
 		expect(wrapper.text()).toContain('28 days left')
 	})
@@ -127,11 +131,15 @@ describe('A handler triages by progress', () => {
 		await fetchCaseTerms('c1')
 
 		expect(axios.get).toHaveBeenCalledTimes(1)
-		expect(axios.get.mock.calls[0][0]).toContain('/apps/dossiq/api/cases/c1/terms')
+		expect(axios.get.mock.calls[0][0]).toContain(
+			'/apps/dossiq/api/cases/c1/terms',
+		)
 	})
 
 	it('says a case type declaring no term has no clock, and does not call it unreadable', async () => {
-		axios.get.mockResolvedValue({ data: { case: 'c1', terms: [], progress: {} } })
+		axios.get.mockResolvedValue({
+			data: { case: 'c1', terms: [], progress: {} },
+		})
 
 		const wrapper = mount(CaseTermsTab, { props: { objectId: 'c1' } })
 		await flushPromises()
@@ -141,19 +149,42 @@ describe('A handler triages by progress', () => {
 	})
 
 	it('reads a due-today clock as due today rather than as zero days left', () => {
-		expect(daysLeftSentence({ endDate: '2026-09-15', daysLeft: 0 }, translate)).toBe('Due today')
-		expect(daysLeftSentence({ endDate: '2026-09-15', daysLeft: -3, overdue: true }, translate))
-			.toBe('3 days over')
-		expect(daysLeftSentence({ endDate: '', daysLeft: 0 }, translate)).toBe('No end date')
+		expect(
+			daysLeftSentence({ endDate: '2026-09-15', daysLeft: 0 }, translate),
+		).toBe('Due today')
+		expect(
+			daysLeftSentence(
+				{ endDate: '2026-09-15', daysLeft: -3, overdue: true },
+				translate,
+			),
+		).toBe('3 days over')
+		expect(daysLeftSentence({ endDate: '', daysLeft: 0 }, translate)).toBe(
+			'No end date',
+		)
 	})
 
 	it('flags attention on any overrun, and on none when there is none', () => {
-		expect(needsAttention({ statutoryOverdue: false, plannedOverdue: false, phaseOverdue: false }))
-			.toBe(false)
-		expect(needsAttention({ statutoryOverdue: false, plannedOverdue: true, phaseOverdue: false }))
-			.toBe(true)
-		expect(needsAttention({ statutoryOverdue: false, plannedOverdue: false, phaseOverdue: true }))
-			.toBe(true)
+		expect(
+			needsAttention({
+				statutoryOverdue: false,
+				plannedOverdue: false,
+				phaseOverdue: false,
+			}),
+		).toBe(false)
+		expect(
+			needsAttention({
+				statutoryOverdue: false,
+				plannedOverdue: true,
+				phaseOverdue: false,
+			}),
+		).toBe(true)
+		expect(
+			needsAttention({
+				statutoryOverdue: false,
+				plannedOverdue: false,
+				phaseOverdue: true,
+			}),
+		).toBe(true)
 		expect(needsAttention(undefined)).toBe(false)
 	})
 })

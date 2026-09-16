@@ -169,7 +169,10 @@ test.describe('A case opens beside the list it came from', () => {
 		await row.click()
 		await expect(page).toHaveURL(/\/cases\/split\//, PAGE_LOAD)
 
-		await page.getByRole('button', { name: /close|sluiten/i }).first().click()
+		await page
+			.getByRole('button', { name: /close|sluiten/i })
+			.first()
+			.click()
 		await expect(page).toHaveURL(/\/cases(\?|$)/, PAGE_LOAD)
 		expect(await scrollOffset(page)).toBe(before)
 	})
@@ -185,11 +188,17 @@ test.describe('A case opens beside the list it came from', () => {
 
 		// Opening a row on a split-view page keeps the list's own address and
 		// its query, so the filter the handler applied travels with the pane.
-		await page.getByRole('row', { name: new RegExp(RUN_PREFIX) }).first().click()
+		await page
+			.getByRole('row', { name: new RegExp(RUN_PREFIX) })
+			.first()
+			.click()
 		await expect(page).toHaveURL(/\/cases\/split\//, PAGE_LOAD)
 		await expect(page).toHaveURL(new RegExp(`caseType=${caseTypeId}`), PAGE_LOAD)
 
-		await page.getByRole('button', { name: /next|volgende/i }).first().click()
+		await page
+			.getByRole('button', { name: /next|volgende/i })
+			.first()
+			.click()
 		// Still inside the filter: the next record is of the seeded case type.
 		await expect(page.getByText(caseTypeTitle).first()).toBeVisible(PAGE_LOAD)
 	})
@@ -216,9 +225,7 @@ test.describe('A case opens beside the list it came from', () => {
 		await dismissSupportDialog(page)
 		const here = page.url()
 
-		const reference = page
-			.getByTestId('cn-reference-preview-trigger')
-			.first()
+		const reference = page.getByTestId('cn-reference-preview-trigger').first()
 		await reference.hover()
 		await expect(
 			page.getByTestId('cn-reference-preview-card').first(),
@@ -237,7 +244,7 @@ test.describe('A case opens beside the list it came from', () => {
 		await expect(page).toHaveURL(/_tab=/, PAGE_LOAD)
 	})
 
-	test('a held order is one person\'s alone @spec REQ-CPL-05', async ({
+	test("a held order is one person's alone @spec REQ-CPL-05", async ({
 		page,
 		browser,
 	}) => {

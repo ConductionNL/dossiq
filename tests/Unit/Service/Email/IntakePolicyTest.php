@@ -41,6 +41,7 @@ use Psr\Log\NullLogger;
  * Unit tests for the per-case-type intake policy.
  *
  * @covers \OCA\Dossiq\Service\Email\IntakePolicy
+ * @uses \OCA\Dossiq\Service\Email\AuthenticationResult
  */
 class IntakePolicyTest extends TestCase {
 

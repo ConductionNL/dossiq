@@ -131,7 +131,11 @@ export default {
 				return
 			}
 
-			this.$emit('apply', { id: option.id, presets: option.presets, body: option.body })
+			this.$emit('apply', {
+				id: option.id,
+				presets: option.presets,
+				body: option.body,
+			})
 		},
 	},
 }

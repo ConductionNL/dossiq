@@ -51,6 +51,8 @@ use Psr\Log\LoggerInterface;
  * Nine acts, their statuses and their refusal bodies.
  *
  * @covers \OCA\Dossiq\Controller\CaseActsController
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseActs
  */
 class CaseActsControllerContractTest extends TestCase {
 

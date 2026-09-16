@@ -41,6 +41,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * What a declared silence period decides, one day at a time.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\SilenceCloseService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class AutoCloseOnSilenceJobTest extends TestCase {
 

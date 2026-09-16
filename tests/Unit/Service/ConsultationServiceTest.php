@@ -104,6 +104,8 @@ interface ConsultationObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationDependencyGraph
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationRepository
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Obligations\ObligationService
  */
 class ConsultationServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

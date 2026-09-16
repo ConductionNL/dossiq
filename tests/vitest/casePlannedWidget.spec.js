@@ -87,11 +87,13 @@ describe('CasePlannedWidget', () => {
 		// relations.
 		const urls = axios.get.mock.calls.map((call) => String(call[0]))
 		expect(urls).toHaveLength(2)
-		expect(urls.some((url) => url.includes('/apps/dossiq/api/case/case-1/planned'))).toBe(
-			true,
-		)
 		expect(
-			urls.some((url) => url.includes('/apps/dossiq/api/cases/case-1/relations')),
+			urls.some((url) => url.includes('/apps/dossiq/api/case/case-1/planned')),
+		).toBe(true)
+		expect(
+			urls.some((url) =>
+				url.includes('/apps/dossiq/api/cases/case-1/relations'),
+			),
 		).toBe(true)
 
 		const group = wrapper.find('.cn-related-objects-widget__group')

@@ -53,6 +53,7 @@ use Psr\Log\LoggerInterface;
  * Hand, accept, refuse and the outstanding list, each behind its own guard.
  *
  * @covers \OCA\Dossiq\Controller\CaseHandoverController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */

@@ -31,16 +31,15 @@ vi.mock('@nextcloud/l10n', () => ({
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 
-const {
-	HOURS_LEAF_ID,
-	humaniqIsPresent,
-	todayOf,
-	touchedToday,
-} = await import('../../src/utils/personalQueueHelpers.js')
+const { HOURS_LEAF_ID, humaniqIsPresent, todayOf, touchedToday } =
+	await import('../../src/utils/personalQueueHelpers.js')
 
 const { notesUrlFor } = await import('../../src/utils/endOfDayHelpers.js')
 
-const screen = readFileSync(resolve(root, 'src/views/queue/EndOfDayView.vue'), 'utf8')
+const screen = readFileSync(
+	resolve(root, 'src/views/queue/EndOfDayView.vue'),
+	'utf8',
+)
 
 afterEach(() => {
 	delete globalThis.OC
@@ -110,25 +109,31 @@ describe('time goes to humaniq, or nowhere', () => {
 
 	it('shows the time box only when the leaf is really there', () => {
 		expect(screen).toContain('hoursLeafAvailable')
-		expect(screen).toContain('this.humaniqPresent && this.hoursLeaf !== undefined')
+		expect(screen).toContain(
+			'this.humaniqPresent && this.hoursLeaf !== undefined',
+		)
 	})
 
 	it('says so when humaniq is present and the leaf is not', () => {
 		// A present app whose leaf never registered is the dark-surface case:
 		// without this line the reader sees an empty space and no reason.
-		expect(screen).toContain('The hours leaf is not available, so time cannot be recorded here.')
+		expect(screen).toContain(
+			'The hours leaf is not available, so time cannot be recorded here.',
+		)
 	})
 })
 
 describe('an update is recorded on the thing it is about', () => {
 	it('writes a case update onto the case', () => {
-		expect(notesUrlFor({ subjectType: 'case', subjectId: 'case-1' }))
-			.toContain('/apps/openregister/api/objects/dossiq/case/case-1/notes')
+		expect(notesUrlFor({ subjectType: 'case', subjectId: 'case-1' })).toContain(
+			'/apps/openregister/api/objects/dossiq/case/case-1/notes',
+		)
 	})
 
 	it('writes a task update onto the task, which is not an object', () => {
-		expect(notesUrlFor({ subjectType: 'task', subjectId: 'task-1' }))
-			.toContain('/apps/openregister/api/flow-tasks/task-1/notes')
+		expect(notesUrlFor({ subjectType: 'task', subjectId: 'task-1' })).toContain(
+			'/apps/openregister/api/flow-tasks/task-1/notes',
+		)
 	})
 
 	it('writes nothing for a subject with no notes', () => {
