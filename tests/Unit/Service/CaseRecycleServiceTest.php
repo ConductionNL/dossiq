@@ -40,6 +40,7 @@ use RuntimeException;
  * The deleted lens, the window fallback and the recorded restore.
  *
  * @covers \OCA\Dossiq\Service\Recycle\CaseRecycleService
+ * @uses \OCA\Dossiq\Service\Recycle\DeletionWindowReader
  */
 class CaseRecycleServiceTest extends TestCase {
 

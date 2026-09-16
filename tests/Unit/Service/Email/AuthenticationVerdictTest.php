@@ -42,6 +42,9 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the sender-authentication verdict.
  *
  * @covers \OCA\Dossiq\Service\Email\AuthenticationVerdict
+ * @uses \OCA\Dossiq\Service\Email\AuthenticationResult
+ * @uses \OCA\Dossiq\Service\Email\InboundMessage
+ * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
  */
 class AuthenticationVerdictTest extends TestCase {
 

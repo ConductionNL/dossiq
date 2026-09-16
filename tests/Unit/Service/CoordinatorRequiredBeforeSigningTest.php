@@ -40,6 +40,8 @@ use Psr\Log\LoggerInterface;
  * Whether the seat is asked for, and what a signing meets when it is empty.
  *
  * @covers \OCA\Dossiq\Service\People\CoordinatorRequirement
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\People\CaseSeats
  *
  * @spec openspec/changes/handing-a-case-over/specs/people-on-the-case/spec.md
  */

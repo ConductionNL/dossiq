@@ -68,6 +68,7 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
  *
  * @uses \OCA\Dossiq\Service\Substitution\SubstitutedWorkResolver
  * @uses \OCA\Dossiq\Service\Substitution\SubstitutionValidator
+ * @uses \OCA\Dossiq\Service\Substitution\HumaniqLeaveReader
  */
 class SubstitutionServiceTest extends TestCase {
 

@@ -57,6 +57,8 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Flow\DossiqAskPersonNode
  * @uses \OCA\Dossiq\Service\Transitions\CreateTaskHandler
+ * @uses \OCA\Dossiq\Flow\AskPersonTaskStore
+ * @uses \OCA\Dossiq\Service\Transitions\ActionResult
  */
 class TaskDefaultsToCaseHandlerTest extends TestCase {
 

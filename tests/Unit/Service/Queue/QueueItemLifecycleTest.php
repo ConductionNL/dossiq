@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Queue\QueueItemLifecycle
+ * @uses \OCA\Dossiq\Service\Queue\QueueItem
  */
 class QueueItemLifecycleTest extends TestCase {
 	/**
