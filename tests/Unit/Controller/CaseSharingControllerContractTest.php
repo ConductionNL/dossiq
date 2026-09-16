@@ -255,8 +255,12 @@ class CaseSharingControllerContractTest extends TestCase {
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
 		$this->caseSharingService->expects($this->once())
 			->method('createTokenShare')
-			->with('case-1', 'Volg uw zaak', 'alice', '2026-12-31')
-			->willReturn(['id' => 'share-1', 'url' => 'https://example.test/s/abc']);
+			->with('case-1', 'Volg uw zaak', 'alice', '2026-12-31', ['read', 'comment'], null, [], [])
+			->willReturn([
+				'share' => ['id' => 'share-1'],
+				'link' => ['id' => 7],
+				'url' => 'https://example.test/s/abc',
+			]);
 
 		$response = $this->controller->createShare();
 
@@ -317,12 +321,12 @@ class CaseSharingControllerContractTest extends TestCase {
 
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
 		$this->caseSharingService->expects($this->once())
-			->method('tokenBelongsToCase')
-			->with('token-of-case-B', 'case-A')
+			->method('linkBelongsToCase')
+			->with(42, 'case-A')
 			->willReturn(false);
 		$this->caseSharingService->expects($this->never())->method('revokeTokenShare');
 
-		$response = $this->controller->revokeShare(shareId: 'token-of-case-B');
+		$response = $this->controller->revokeShare(shareId: '42');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 		$this->assertSame(
@@ -341,13 +345,16 @@ class CaseSharingControllerContractTest extends TestCase {
 		$this->signIn();
 		$this->withParams(['caseId' => 'case-A']);
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->method('tokenBelongsToCase')->willReturn(true);
+		$this->caseSharingService->method('linkBelongsToCase')->willReturn(true);
 		$this->caseSharingService->method('revokeTokenShare')->willReturn(false);
 
-		$response = $this->controller->revokeShare(shareId: 'share-1');
+		$response = $this->controller->revokeShare(shareId: '7');
 
 		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
-		$this->assertSame('Could not revoke share link', $response->getData()['error']);
+		$this->assertSame(
+			'Could not revoke the link. Only the colleague who created it can.',
+			$response->getData()['error']
+		);
 	}//end testRevokeTokenShareReportsALeafFailureAs502()
 
 	/**
@@ -359,13 +366,13 @@ class CaseSharingControllerContractTest extends TestCase {
 		$this->signIn();
 		$this->withParams(['caseId' => 'case-A']);
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->method('tokenBelongsToCase')->willReturn(true);
+		$this->caseSharingService->method('linkBelongsToCase')->willReturn(true);
 		$this->caseSharingService->expects($this->once())
 			->method('revokeTokenShare')
-			->with('share-1')
+			->with(7, 'alice')
 			->willReturn(true);
 
-		$response = $this->controller->revokeShare(shareId: 'share-1');
+		$response = $this->controller->revokeShare(shareId: '7');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(['success' => true], $response->getData());
