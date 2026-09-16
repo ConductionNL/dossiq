@@ -5230,6 +5230,15 @@
         "Remove from favourites": "Uit favorieten halen",
         "Removed from your favourites.": "Uit je favorieten gehaald.",
         "Star a case to find it here": "Markeer een zaak met een ster om hem hier terug te vinden",
-        "Your favourites": "Jouw favorieten"
+        "Your favourites": "Jouw favorieten",
+        "%n document sent": "%n document verstuurd",
+        "%n documents sent": "%n documenten verstuurd",
+        "%n document received": "%n document ontvangen",
+        "%n documents received": "%n documenten ontvangen",
+        "{sent} sent, {received} received": "{sent} verstuurd, {received} ontvangen",
+        "Add a party on the People tab to say who this document is from or to.": "Voeg een partij toe op het tabblad Mensen om te zeggen van of aan wie dit document is.",
+        "Pick the party this document came from": "Kies de partij van wie dit document komt",
+        "Pick the parties this document went to": "Kies de partijen aan wie dit document is verstuurd",
+        "Recipients": "Geadresseerden"
     }
 }

@@ -92,11 +92,17 @@ describe("a party's documents on the People tab", () => {
 	it('counts what a party sent and what it received, separately', async () => {
 		const wrapper = await mountWidget()
 
-		expect(wrapper.vm.correspondenceOf({ partyUuid: 'party-jan' })).toContain(
-			'2',
+		// Jan sent two and received one, so the line names both counts. The
+		// numbers are what is asserted: a line saying only "sent" on a party
+		// who also received would be the bug this separates.
+		expect(wrapper.vm.correspondenceOf({ partyUuid: 'party-jan' })).toBe(
+			'2 sent, 1 received',
 		)
+		// One direction only, so the line is the plural form and nothing else.
+		// The count is unsubstituted here because no l10n bundle is loaded in
+		// jsdom; the WORD is what this asserts, and it is the received one.
 		expect(wrapper.vm.correspondenceOf({ partyUuid: 'party-council' })).toMatch(
-			/Received/,
+			/received$/,
 		)
 	})
 

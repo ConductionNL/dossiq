@@ -5230,6 +5230,15 @@
         "Remove from favourites": "Remove from favourites",
         "Removed from your favourites.": "Removed from your favourites.",
         "Star a case to find it here": "Star a case to find it here",
-        "Your favourites": "Your favourites"
+        "Your favourites": "Your favourites",
+        "{sent} sent, {received} received": "{sent} sent, {received} received",
+        "%n document received": "%n document received",
+        "%n document sent": "%n document sent",
+        "%n documents received": "%n documents received",
+        "%n documents sent": "%n documents sent",
+        "Add a party on the People tab to say who this document is from or to.": "Add a party on the People tab to say who this document is from or to.",
+        "Pick the parties this document went to": "Pick the parties this document went to",
+        "Pick the party this document came from": "Pick the party this document came from",
+        "Recipients": "Recipients"
     }
 }

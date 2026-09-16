@@ -129,7 +129,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { translate as t } from '@nextcloud/l10n'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
@@ -252,6 +252,7 @@ export default {
 
 	methods: {
 		t,
+		n,
 
 		/**
 		 * Read the listing, then each party's own record for its indicators.
@@ -357,14 +358,22 @@ export default {
 				return ''
 			}
 			if (received.length === 0) {
-				return t('dossiq', 'Sent {count} documents', { count: sent.length })
+				return n(
+					'dossiq',
+					'%n document sent',
+					'%n documents sent',
+					sent.length,
+				)
 			}
 			if (sent.length === 0) {
-				return t('dossiq', 'Received {count} documents', {
-					count: received.length,
-				})
+				return n(
+					'dossiq',
+					'%n document received',
+					'%n documents received',
+					received.length,
+				)
 			}
-			return t('dossiq', 'Sent {sent} documents, received {received}', {
+			return t('dossiq', '{sent} sent, {received} received', {
 				sent: sent.length,
 				received: received.length,
 			})
