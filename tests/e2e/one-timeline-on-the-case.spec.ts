@@ -455,7 +455,10 @@ test.describe('REQ-TL-15 every status move records itself on the timeline', () =
 		expect(fields.from).toBe(machine.statusReceived)
 		expect(fields.to).toBe(machine.statusInProgress)
 		expect(fields.explanation).toContain('stukken compleet')
-		expect(String(fields.actor ?? '')).not.toBe('')
+		// The IDENTITY, not merely something non-empty. A writer that stamped
+		// every line with the row's owner, or with the string 'system', would
+		// pass a not-empty assertion and name the wrong person on every move.
+		expect(fields.actor).toBe(process.env.ADMIN_USER ?? 'admin')
 		expect(String(fields.statusRecordId ?? '')).not.toBe('')
 	})
 
