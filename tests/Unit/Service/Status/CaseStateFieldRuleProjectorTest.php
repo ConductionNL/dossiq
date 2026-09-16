@@ -51,11 +51,17 @@ class CaseStateFieldRuleProjectorTest extends TestCase {
 	 *
 	 * @param array<int, array<string, mixed>> $statusTypes The statusType rows.
 	 * @param array<int, array<string, mixed>> $properties  The propertyDefinition rows.
+	 * @param array<string, mixed>             $caseType    The case type row, for its role rules.
 	 *
 	 * @return CaseStateFieldRuleProjector The projector.
 	 */
-	private function projector(array $statusTypes, array $properties = []): CaseStateFieldRuleProjector {
+	private function projector(
+		array $statusTypes,
+		array $properties = [],
+		array $caseType = []
+	): CaseStateFieldRuleProjector {
 		$store = $this->createMock(CaseTypeStore::class);
+		$store->method('readCaseType')->willReturn($caseType);
 		$store->method('rowsOfType')->willReturnCallback(
 			static fn (string $schemaKey, string $caseTypeId): array => (
 				$schemaKey === 'status_type_schema' ? $statusTypes : $properties
@@ -102,6 +108,120 @@ class CaseStateFieldRuleProjectorTest extends TestCase {
 			$states['0c4b-uuid']['fields']
 		);
 	}//end testAStateIsKeyedByTheStatusTypeUuid()
+
+	/**
+	 * A role rule lands in every state the case type declares.
+	 *
+	 * The rule is about who is asking, not about where the case is, so a state
+	 * that carries it in one status and not the next would let a handler read
+	 * the field by moving the case along.
+	 *
+	 * @return void
+	 */
+	public function testARoleRuleLandsInEveryState(): void {
+		$states = $this->projector(
+			[
+				['id' => 'intake-uuid', 'name' => 'Intake'],
+				['id' => 'closed-uuid', 'name' => 'Afgehandeld'],
+			],
+			[],
+			[
+				'fieldRoleRules' => [
+					[
+						'field' => 'qualityScore',
+						'rule' => 'hidden',
+						'groups' => ['behandelaars'],
+						'heldBy' => ['dossiq-quality'],
+					],
+				],
+			]
+		)->statesOf(caseTypeId: 'ct');
+
+		$this->assertSame(['intake-uuid', 'closed-uuid'], array_keys($states));
+		foreach ($states as $state) {
+			$this->assertSame(
+				['hidden' => [['fields' => ['qualityScore'], 'groups' => ['behandelaars']]]],
+				$state['fields']
+			);
+		}
+	}//end testARoleRuleLandsInEveryState()
+
+	/**
+	 * A status rule on the same field and kind keeps the role rule out.
+	 *
+	 * The status rule may carry a condition and a message; the role rule
+	 * carries neither. Publishing both would let the unconditional entry decide
+	 * a case the author wrote a condition for.
+	 *
+	 * @return void
+	 */
+	public function testAStatusRuleOnTheSameFieldKeepsTheRoleRuleOut(): void {
+		$states = $this->projector(
+			[
+				[
+					'id' => 'intake-uuid',
+					'fieldRules' => [
+						[
+							'rule' => 'hidden',
+							'field' => 'qualityScore',
+							'groups' => ['kcc'],
+						],
+					],
+				],
+			],
+			[],
+			[
+				'fieldRoleRules' => [
+					[
+						'field' => 'qualityScore',
+						'rule' => 'hidden',
+						'groups' => ['behandelaars'],
+						'heldBy' => ['dossiq-quality'],
+					],
+				],
+			]
+		)->statesOf(caseTypeId: 'ct');
+
+		$this->assertSame(
+			['hidden' => [['fields' => ['qualityScore'], 'groups' => ['kcc']]]],
+			$states['intake-uuid']['fields']
+		);
+	}//end testAStatusRuleOnTheSameFieldKeepsTheRoleRuleOut()
+
+	/**
+	 * A role rule on another field is published beside the status rule.
+	 *
+	 * @return void
+	 */
+	public function testARoleRuleOnAnotherFieldIsPublishedBesideTheStatusRule(): void {
+		$states = $this->projector(
+			[
+				[
+					'id' => 'intake-uuid',
+					'fieldRules' => [['rule' => 'required', 'field' => 'motivering']],
+				],
+			],
+			[],
+			[
+				'fieldRoleRules' => [
+					[
+						'field' => 'confidentiality',
+						'rule' => 'readOnly',
+						'groups' => ['behandelaars'],
+						'heldBy' => ['dossiq-coordinators'],
+					],
+				],
+			]
+		)->statesOf(caseTypeId: 'ct');
+
+		$this->assertSame(
+			[
+				'required' => [['fields' => ['motivering']]],
+				'readOnly' => [['fields' => ['confidentiality'], 'groups' => ['behandelaars']]],
+			],
+			$states['intake-uuid']['fields']
+		);
+	}//end testARoleRuleOnAnotherFieldIsPublishedBesideTheStatusRule()
 
 	/**
 	 * A status that asks nothing of any field gets no entry.
