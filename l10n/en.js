@@ -5058,6 +5058,14 @@ OC.L10N.register(
         "Whether an aanvullingsverzoek on this case is still open. A read convenience so the work list can filter and facet without reading every request of every case; the COUNT comes from the requests themselves, so the two cannot drift for long and the requests are the truth (design D-5). Written by the act that asks and by the answer that closes, never derived on an unrelated save: the requests are separate objects and a save that did not read them knows nothing about them. NOT the same fact as `isIncomplete`, which is about required fields a handler knowingly left empty at intake.": "Whether an aanvullingsverzoek on this case is still open. A read convenience so the work list can filter and facet without reading every request of every case; the COUNT comes from the requests themselves, so the two cannot drift for long and the requests are the truth (design D-5). Written by the act that asks and by the answer that closes, never derived on an unrelated save: the requests are separate objects and a save that did not read them knows nothing about them. NOT the same fact as `isIncomplete`, which is about required fields a handler knowingly left empty at intake.",
         "When the open request was sent, so the work list can show how long this case has been waiting without opening the request. Cleared when the last open request closes.": "When the open request was sent, so the work list can show how long this case has been waiting without opening the request. Cleared when the last open request closes.",
         "Waiting since": "Waiting since"
+,
+        "First run": "First run",
+        "Still open": "Still open",
+        "The first run status could not be read.": "The first run status could not be read.",
+        "These tour steps point at a screen that is gone, so they teach nobody: {steps}": "These tour steps point at a screen that is gone, so they teach nobody: {steps}",
+        "This could not be read: {reason}": "This could not be read: {reason}",
+        "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.": "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.",
+        "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.": "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app."
     },
     "nplurals=2; plural=(n != 1);"
 )
