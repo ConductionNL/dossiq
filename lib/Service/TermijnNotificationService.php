@@ -49,6 +49,7 @@ class TermijnNotificationService {
 		'ingebrekestelling-receipt',
 		'dwangsom-payment',
 		'hersteltermijn-request',
+		'hersteltermijn-reminder',
 		'doorzending',
 	];
 
@@ -230,6 +231,11 @@ class TermijnNotificationService {
 				$subject = $rendered['subject'];
 				$body = $rendered['body'];
 				break;
+			case 'hersteltermijn-reminder':
+				$rendered = $this->informationReminder(case: $case, locale: $locale, context: $context);
+				$subject = $rendered['subject'];
+				$body = $rendered['body'];
+				break;
 			case 'doorzending':
 				$rendered = $this->doorzending(case: $case, locale: $locale, context: $context);
 				$subject = $rendered['subject'];
@@ -298,6 +304,60 @@ class TermijnNotificationService {
 				. 'De termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).',
 		];
 	}//end informationRequest()
+
+	/**
+	 * The reminder that the request is still open, Awb 4:5.
+	 *
+	 * IT IS A REMINDER, NOT A SECOND REQUEST. The applicant already got the
+	 * list and the date; repeating the whole letter reads as a new demand and
+	 * makes people send everything twice. So it names the case, the day, and
+	 * the words the case type declared for this reason, and nothing else.
+	 *
+	 * 🔴 NOT RUN THROUGH `IL10N`, for the reason the request above is not: the
+	 * reader is a citizen with no Nextcloud session, and the language is the
+	 * one the case type declares.
+	 *
+	 * @param string               $case    The case kenmerk.
+	 * @param string               $locale  The declared language.
+	 * @param array<string, mixed> $context The render context.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	private function informationReminder(string $case, string $locale, array $context): array {
+		$due = (string)($context['pauseDeadline'] ?? '-');
+		$declared = trim((string)($context['chaseText'] ?? ''));
+		$english = ($locale === 'en');
+
+		if ($english === true) {
+			$body = "Dear applicant,\n\n"
+				. 'We are still waiting for what we asked you for on case ' . $case . ".\n";
+			if ($declared !== '') {
+				$body .= $declared . "\n";
+			}
+
+			return [
+				'subject' => 'A reminder about case ' . $case,
+				'body' => $body
+					. "\nWe need this by " . $due . ".\n"
+					. 'The term for your case stays paused until your answer arrives (Awb 4:5).',
+			];
+		}
+
+		$body = "Beste aanvrager,\n\n"
+			. 'Wij wachten nog op wat wij u gevraagd hebben voor zaak ' . $case . ".\n";
+		if ($declared !== '') {
+			$body .= $declared . "\n";
+		}
+
+		return [
+			'subject' => 'Herinnering over zaak ' . $case,
+			'body' => $body
+				. "\nWij ontvangen dit graag voor " . $due . ".\n"
+				. 'De termijn van uw zaak staat stil tot uw antwoord binnen is (Awb 4:5).',
+		];
+	}//end informationReminder()
 
 	/**
 	 * The acknowledgement of receipt, Awb 4:3a.
