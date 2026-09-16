@@ -82,6 +82,13 @@ class WalkthroughCompletionTest extends TestCase {
 	 * endpoint. A key that moved to app config would make the first person to
 	 * finish the tour the last person to be offered it.
 	 *
+	 * This test checks the manifest names the key. That the shared runner
+	 * resolves it to a per-user preference is asserted in
+	 * tests/vitest/walkthroughCompletionIsPerPerson.spec.js, because the
+	 * library lives in node_modules and CI installs no node packages in the
+	 * PHPUnit cells: read from here, the file came back empty and the check
+	 * could only fail.
+	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
@@ -90,15 +97,6 @@ class WalkthroughCompletionTest extends TestCase {
 		$walkthrough = ($this->manifest()['walkthrough'] ?? []);
 
 		$this->assertSame('walkthrough_completed_version', $walkthrough['completionConfigKey'] ?? '');
-
-		$composable = (string)file_get_contents(
-			__DIR__ . '/../../../node_modules/@conduction/nextcloud-vue/src/composables/useWalkthrough.js'
-		);
-		$this->assertStringContainsString(
-			"'/apps/' + appId + '/api/preferences/' + configKey",
-			$composable,
-			'the completion key no longer resolves to a per-user preference'
-		);
 	}//end testCompletionIsPerPerson()
 
 	/**

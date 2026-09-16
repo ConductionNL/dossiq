@@ -59,7 +59,11 @@ describe('readSearchRefusal', () => {
 			term: 'dak AND',
 		})
 
-		expect([refusal.before, refusal.at, refusal.after]).toEqual(['dak ', 'A', 'ND'])
+		expect([refusal.before, refusal.at, refusal.after]).toEqual([
+			'dak ',
+			'A',
+			'ND',
+		])
 	})
 
 	it('keeps the reason when the position cannot be read', () => {
@@ -75,7 +79,10 @@ describe('readSearchRefusal', () => {
 
 	it('is not a refusal when nothing was typed', () => {
 		expect(
-			readSearchRefusal({ error: refusalError('Unbalanced bracket at position 1.'), term: '  ' }),
+			readSearchRefusal({
+				error: refusalError('Unbalanced bracket at position 1.'),
+				term: '  ',
+			}),
 		).toBeNull()
 	})
 
@@ -87,7 +94,11 @@ describe('readSearchRefusal', () => {
 	it('leaves a failure that is not a 400 alone', () => {
 		expect(
 			readSearchRefusal({
-				error: { status: 500, message: 'An unexpected server error occurred. Please try again.' },
+				error: {
+					status: 500,
+					message:
+						'An unexpected server error occurred. Please try again.',
+				},
 				term: 'dakkapel',
 			}),
 		).toBeNull()
@@ -112,8 +123,11 @@ describe('searchRefusalHeadline', () => {
 			term: '(dakkapel AND NOT geweigerd',
 		})
 
-		expect(searchRefusalHeadline(refusal, (app, text, vars) => text.replace('{position}', vars.position)))
-			.toBe('We could not read this search from character 12.')
+		expect(
+			searchRefusalHeadline(refusal, (app, text, vars) =>
+				text.replace('{position}', vars.position),
+			),
+		).toBe('We could not read this search from character 12.')
 	})
 
 	it('says less when it knows less', () => {
@@ -122,8 +136,9 @@ describe('searchRefusalHeadline', () => {
 			term: 'dakkapel AND',
 		})
 
-		expect(searchRefusalHeadline(refusal, (app, text) => text))
-			.toBe('We could not read this search.')
+		expect(searchRefusalHeadline(refusal, (app, text) => text)).toBe(
+			'We could not read this search.',
+		)
 	})
 
 	it('says nothing when there is no refusal', () => {

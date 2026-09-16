@@ -75,7 +75,12 @@ const PUBLISHED_SELF_KEYS = [
  * @return the anchor.
  */
 function anchorOf(url: string): string {
-	return url.split('/').filter((part) => part !== '').pop() ?? ''
+	return (
+		url
+			.split('/')
+			.filter((part) => part !== '')
+			.pop() ?? ''
+	)
 }
 
 test.describe('A case share is an access link', () => {
@@ -124,7 +129,10 @@ test.describe('A case share is an access link', () => {
 		expect(minted.status(), await minted.text()).toBe(200)
 		const body = await minted.json()
 		expect(body.success).toBe(true)
-		expect(body.url, 'a share with no address is a share nobody can use').toBeTruthy()
+		expect(
+			body.url,
+			'a share with no address is a share nobody can use',
+		).toBeTruthy()
 		expect(body.share.capabilities).toBe('read,comment')
 		expect(body.share.token, 'dossiq mints no token of its own').toBeUndefined()
 
@@ -132,7 +140,10 @@ test.describe('A case share is an access link', () => {
 		expect(held.status(), await held.text()).toBe(200)
 
 		const served = await held.json()
-		expect(served.subject, 'a link that serves no subject serves nothing').toBeTruthy()
+		expect(
+			served.subject,
+			'a link that serves no subject serves nothing',
+		).toBeTruthy()
 		expect(served.link.capabilities).toContain('comment')
 	})
 
@@ -163,7 +174,10 @@ test.describe('A case share is an access link', () => {
 		const self = (await preview.json()).preview.subject['@self'] ?? {}
 
 		for (const key of Object.keys(self)) {
-			expect(PUBLISHED_SELF_KEYS, `@self carried ${key} to a holder`).toContain(key)
+			expect(
+				PUBLISHED_SELF_KEYS,
+				`@self carried ${key} to a holder`,
+			).toContain(key)
 		}
 	})
 
@@ -190,12 +204,13 @@ test.describe('A case share is an access link', () => {
 		})
 		expect(paused.status(), await paused.text()).toBe(200)
 
-		const listed = await api.get(
-			`${LINKS}/case/${encodeURIComponent(caseId)}`,
-			{ headers: { requesttoken: token } },
-		)
+		const listed = await api.get(`${LINKS}/case/${encodeURIComponent(caseId)}`, {
+			headers: { requesttoken: token },
+		})
 		const rows = (await listed.json()).results
-		const row = rows.find((entry: { accessLinkId: number }) => entry.accessLinkId === linkId)
+		const row = rows.find(
+			(entry: { accessLinkId: number }) => entry.accessLinkId === linkId,
+		)
 
 		expect(row, 'a paused link must still be listed').toBeTruthy()
 		expect(row.state).toBe('paused')
