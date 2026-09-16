@@ -41,8 +41,9 @@ class InitializeSettings implements IRepairStep {
 	/**
 	 * Constructor for InitializeSettings.
 	 *
-	 * @param SettingsService $settingsService The settings service
-	 * @param LoggerInterface $logger The logger interface
+	 * @param SettingsService         $settingsService The settings service
+	 * @param CaseFieldRoleProjector  $fieldRoles     Puts the per-role field rules back after an import
+	 * @param LoggerInterface         $logger The logger interface
 	 *
 	 * @return void
 	 */
