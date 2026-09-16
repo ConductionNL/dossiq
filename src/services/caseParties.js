@@ -161,9 +161,7 @@ export async function resolvePartyByAddress(address) {
 		// The endpoint answers the party itself; an instance that answers a
 		// wrapper is read through `party` rather than guessed at.
 		const party = data.party || data
-		return party && (party.id || party['@self']?.id || party.uuid)
-			? party
-			: null
+		return party && (party.id || party['@self']?.id || party.uuid) ? party : null
 	} catch {
 		return null
 	}
@@ -186,9 +184,8 @@ export function rolesInOrder(listing) {
 	if (!listing || typeof listing !== 'object') {
 		return []
 	}
-	const byRole = listing.byRole && typeof listing.byRole === 'object'
-		? listing.byRole
-		: {}
+	const byRole =
+		listing.byRole && typeof listing.byRole === 'object' ? listing.byRole : {}
 	const primary = listing.primary || null
 
 	const groups = Object.keys(byRole).map((key) => ({

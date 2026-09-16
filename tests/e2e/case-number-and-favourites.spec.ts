@@ -83,7 +83,10 @@ async function seedNumberedCase(title: string): Promise<any> {
 			intakeChannel: 'manual',
 		},
 	})
-	expect(res.ok(), `seeding ${title} answered ${res.status()} ${await res.text()}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`seeding ${title} answered ${res.status()} ${await res.text()}`,
+	).toBeTruthy()
 
 	return res.json()
 }
@@ -124,7 +127,7 @@ async function lens(lensKey: string): Promise<any[]> {
 	expect(res.ok(), `the ${lensKey} lens answered ${res.status()}`).toBeTruthy()
 	const body = await res.json()
 
-	return (body.results ?? body.data ?? [])
+	return body.results ?? body.data ?? []
 }
 
 test.describe('The case number and the star', () => {
@@ -181,7 +184,10 @@ test.describe('The case number and the star', () => {
 				intakeChannel: 'manual',
 			},
 		})
-		expect(res.ok(), `the supplied-number create answered ${res.status()}`).toBeTruthy()
+		expect(
+			res.ok(),
+			`the supplied-number create answered ${res.status()}`,
+		).toBeTruthy()
 		const withSupplied = await res.json()
 
 		expect(withSupplied.identifier).toBe(supplied)
@@ -198,7 +204,9 @@ test.describe('The case number and the star', () => {
 		// A control: the case seeded before any of this still reads in the
 		// shape, so the assertions above cannot pass on a register that stopped
 		// numbering altogether.
-		expect((await showObject(api, 'case', importedId)).identifier).toMatch(NUMBER_SHAPE)
+		expect((await showObject(api, 'case', importedId)).identifier).toMatch(
+			NUMBER_SHAPE,
+		)
 	})
 
 	/**
@@ -231,7 +239,9 @@ test.describe('The case number and the star', () => {
 	/**
 	 * @e2e REQ-FAV-01 you star a case from its page
 	 */
-	test('the star on the case page sets and clears, and survives a reload', async ({ page }) => {
+	test('the star on the case page sets and clears, and survives a reload', async ({
+		page,
+	}) => {
 		const errors = trackDossiqErrors(page)
 
 		await page.goto(`${APP_URL}cases/${cases.starred}`, PAGE_LOAD)
@@ -246,8 +256,10 @@ test.describe('The case number and the star', () => {
 
 		await page.reload(PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await expect(page.getByTestId('case-favourite-toggle'))
-			.toHaveAttribute('aria-pressed', 'true')
+		await expect(page.getByTestId('case-favourite-toggle')).toHaveAttribute(
+			'aria-pressed',
+			'true',
+		)
 
 		expect(errors).toEqual([])
 	})
@@ -281,14 +293,18 @@ test.describe('The case number and the star', () => {
 		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const row = page.getByRole('row', { name: new RegExp(`favourite rowStar`) }).first()
+		const row = page
+			.getByRole('row', { name: new RegExp(`favourite rowStar`) })
+			.first()
 		await expect(row).toBeVisible()
 
 		await row.getByRole('button', { name: /actions/i }).click()
 		await page.getByRole('menuitem', { name: /favourites/i }).click()
 
 		await expect
-			.poll(async () => (await lens('_favourite')).map((c: any) => objectId(c)))
+			.poll(async () =>
+				(await lens('_favourite')).map((c: any) => objectId(c)),
+			)
 			.toContain(cases.rowStar)
 
 		expect(errors).toEqual([])
@@ -310,7 +326,9 @@ test.describe('The case number and the star', () => {
 	/**
 	 * @e2e REQ-FAV-02 the recently opened chip leads with the last case read
 	 */
-	test('the Recently opened lens leads with the case opened last', async ({ page }) => {
+	test('the Recently opened lens leads with the case opened last', async ({
+		page,
+	}) => {
 		await page.goto(`${APP_URL}cases/${cases.unstarred}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -329,7 +347,9 @@ test.describe('The case number and the star', () => {
 	/**
 	 * @e2e REQ-FAV-02 the dashboard tiles show the same two lists
 	 */
-	test('the dashboard names the starred case and the case just opened', async ({ page }) => {
+	test('the dashboard names the starred case and the case just opened', async ({
+		page,
+	}) => {
 		const errors = trackDossiqErrors(page)
 
 		await star(cases.starred)
