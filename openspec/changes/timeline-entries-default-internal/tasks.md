@@ -9,5 +9,5 @@ Tier: V1. Kind: config plus one reader. Row 6.15. Waits on openregister
   delivery) set public; status writer per `publicLabel`.
 - [x] 1.3 `CaseTimeline::publicEntries()` (D-2); provider and
   `PublicStatusPage` read it; unit test.
-- [ ] 2.1 `tests/e2e/timeline-visibility.spec.ts`; `openspec validate
+- [x] 2.1 `tests/e2e/timeline-visibility.spec.ts`; `openspec validate
   timeline-entries-default-internal --strict`.
