@@ -647,11 +647,11 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.4.0",
+                "version": "1.5.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
-                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). A status that declares none of the three behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, and it has no maximum. See openspec/changes/what-a-status-declares.",
+                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). A status that declares none of the three behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, and it has no maximum. See openspec/changes/what-a-status-declares. V1.5 additive: a status may declare the words the applicant reads for it (publicLabel, publicDescription). Declare neither and the applicant reads the name, as before. See openspec/changes/citizen-status-labels.",
                 "type": "object",
                 "required": [
                     "name",
@@ -671,6 +671,21 @@
                         "description": "Description of this status phase",
                         "x-translatable": true,
                         "title": "Description"
+                    },
+                    "publicLabel": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "What the applicant reads for this status. Leave it empty and they read the name.",
+                        "x-notes": "The name is written for the handler, and \"Toets register B\" says nothing to the person waiting. The empty fallback to `name` is the whole migration: a case type nobody has annotated keeps reading exactly as it did. ZGW calls this the statustekst, and the ZTC statustype mapping writes it there.",
+                        "x-translatable": true,
+                        "title": "Public label"
+                    },
+                    "publicDescription": {
+                        "type": "string",
+                        "description": "What the applicant is told this status means. Empty shows no description.",
+                        "x-notes": "It never falls back to `description`: that one is written for a colleague and can name an internal check, an internal register or a colleague by role. Showing nothing is the safe default; showing the handler's words to the applicant is a disclosure nobody chose.",
+                        "x-translatable": true,
+                        "title": "Public description"
                     },
                     "caseType": {
                         "type": "string",
@@ -1346,7 +1361,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.22.0",
+                "version": "1.23.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1595,6 +1610,29 @@
                                     },
                                     true
                                 ]
+                            }
+                        },
+                        "statusPublicLabel": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "What the applicant reads for the status this case sits in: the linked statusType's publicLabel, or its name when no public label is set. It lives on the case because that is the only row the applicant is handed. The public status page resolves a token to the case and nothing else, and the portal projects the case to a field whitelist, so neither can follow the status reference to the statusType. Materialised for the reason isFinalStatus is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener. After editing a statusType's public label, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "coalesce": [
+                                    {
+                                        "prop": "@ref.statusType.publicLabel"
+                                    },
+                                    {
+                                        "prop": "@ref.statusType.name"
+                                    }
+                                ]
+                            }
+                        },
+                        "statusPublicDescription": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "What the applicant is told the current status means, from the linked statusType's publicDescription. Empty when the status declares none, and it never falls back to the internal description: that one is written for a colleague. Materialised and rematerialised like statusPublicLabel.",
+                            "expression": {
+                                "prop": "@ref.statusType.publicDescription"
                             }
                         },
                         "waitingOn": {
@@ -2282,6 +2320,20 @@
                         "title": "Status hidden in lists",
                         "facetable": true,
                         "visible": false
+                    },
+                    "statusPublicLabel": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "What the applicant reads for the status this case sits in.",
+                        "x-notes": "Computed declaratively from the linked statusType (x-openregister-calculations.statusPublicLabel): its publicLabel, or its name when it declares none. It lives on the CASE because that is the only row the applicant is ever handed. The public status page resolves a token to one case with `_extend: []`, and the portal projects the case to a field whitelist, so neither can follow `status` to the statusType. Materialised for the reason isFinalStatus is; after editing a statusType's public label, run occ openregister:rematerialise-calculations.",
+                        "title": "Status, as the applicant reads it"
+                    },
+                    "statusPublicDescription": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "What the applicant is told the current status means.",
+                        "x-notes": "Computed declaratively from the linked statusType's publicDescription (x-openregister-calculations.statusPublicDescription), empty when it declares none. Rematerialised like statusPublicLabel.",
+                        "title": "Status description, as the applicant reads it"
                     },
                     "waitingOn": {
                         "type": "string",

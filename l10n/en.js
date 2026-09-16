@@ -4434,7 +4434,6 @@ OC.L10N.register(
         "Days in status": "Days in status",
         "Waiting on {reason}": "Waiting on {reason}",
         "{move} is waiting on {reason}": "{move} is waiting on {reason}",
-        "Explanation": "Explanation",
         "What a handler should know before taking this step": "What a handler should know before taking this step",
         "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.": "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.",
         "What this status asks for": "What this status asks for",
@@ -5057,15 +5056,22 @@ OC.L10N.register(
         "One line naming what this request is about, so a list of requests reads without opening each one.": "One line naming what this request is about, so a list of requests reads without opening each one.",
         "Whether an aanvullingsverzoek on this case is still open. A read convenience so the work list can filter and facet without reading every request of every case; the COUNT comes from the requests themselves, so the two cannot drift for long and the requests are the truth (design D-5). Written by the act that asks and by the answer that closes, never derived on an unrelated save: the requests are separate objects and a save that did not read them knows nothing about them. NOT the same fact as `isIncomplete`, which is about required fields a handler knowingly left empty at intake.": "Whether an aanvullingsverzoek on this case is still open. A read convenience so the work list can filter and facet without reading every request of every case; the COUNT comes from the requests themselves, so the two cannot drift for long and the requests are the truth (design D-5). Written by the act that asks and by the answer that closes, never derived on an unrelated save: the requests are separate objects and a save that did not read them knows nothing about them. NOT the same fact as `isIncomplete`, which is about required fields a handler knowingly left empty at intake.",
         "When the open request was sent, so the work list can show how long this case has been waiting without opening the request. Cleared when the last open request closes.": "When the open request was sent, so the work list can show how long this case has been waiting without opening the request. Cleared when the last open request closes.",
-        "Waiting since": "Waiting since"
-,
+        "Waiting since": "Waiting since",
         "First run": "First run",
         "Still open": "Still open",
         "The first run status could not be read.": "The first run status could not be read.",
         "These tour steps point at a screen that is gone, so they teach nobody: {steps}": "These tour steps point at a screen that is gone, so they teach nobody: {steps}",
         "This could not be read: {reason}": "This could not be read: {reason}",
         "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.": "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.",
-        "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.": "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app."
+        "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.": "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.",
+        "Public label": "Public label",
+        "Public description": "Public description",
+        "Status, as the applicant reads it": "Status, as the applicant reads it",
+        "Status description, as the applicant reads it": "Status description, as the applicant reads it",
+        "What the applicant reads for this status. Leave it empty and they read the name.": "What the applicant reads for this status. Leave it empty and they read the name.",
+        "What the applicant is told this status means. Empty shows no description.": "What the applicant is told this status means. Empty shows no description.",
+        "What the applicant reads for the status this case sits in.": "What the applicant reads for the status this case sits in.",
+        "What the applicant is told the current status means.": "What the applicant is told the current status means."
     },
     "nplurals=2; plural=(n != 1);"
 )

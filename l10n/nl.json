@@ -5074,6 +5074,14 @@
         "These tour steps point at a screen that is gone, so they teach nobody: {steps}": "Deze rondleidingsstappen wijzen naar een scherm dat er niet meer is, dus ze leren niemand iets: {steps}",
         "This could not be read: {reason}": "Dit konden we niet lezen: {reason}",
         "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.": "Wat deze omgeving nog nodig heeft voordat er een zaak in kan. Niets hiervan blokkeert de app: je kunt een punt open laten en doorgaan.",
-        "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.": "Wat deze omgeving nog nodig heeft voordat er een zaak in kan. We melden het, we eisen het niet: alleen de registercontrole blokkeert de app."
+        "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.": "Wat deze omgeving nog nodig heeft voordat er een zaak in kan. We melden het, we eisen het niet: alleen de registercontrole blokkeert de app.",
+        "Public label": "Publiek label",
+        "Public description": "Publieke omschrijving",
+        "Status, as the applicant reads it": "Status, zoals de aanvrager die leest",
+        "Status description, as the applicant reads it": "Statusomschrijving, zoals de aanvrager die leest",
+        "What the applicant reads for this status. Leave it empty and they read the name.": "Wat de aanvrager leest bij deze status. Laat het leeg en hij leest de naam.",
+        "What the applicant is told this status means. Empty shows no description.": "Wat de aanvrager te horen krijgt over deze status. Leeg toont geen omschrijving.",
+        "What the applicant reads for the status this case sits in.": "Wat de aanvrager leest bij de status waarin deze zaak staat.",
+        "What the applicant is told the current status means.": "Wat de aanvrager te horen krijgt over de huidige status."
     }
 }
