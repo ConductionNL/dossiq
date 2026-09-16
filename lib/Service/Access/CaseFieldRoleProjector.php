@@ -105,6 +105,7 @@ class CaseFieldRoleProjector {
 	 *
 	 * @param CaseTypeStore          $store       Reads the case type row.
 	 * @param FieldRoleRuleDeclaration $declaration Turns one case type's rules into OpenRegister's shape.
+	 * @param FieldRoleLedger        $ledger      Keeps the record and merges it onto the properties.
 	 * @param SchemaSlugResolver     $slugs       Resolves the case schema inside our own register.
 	 * @param RegisterFragmentMerger $fragments   Folds the register fragments onto the base JSON.
 	 * @param ContainerInterface     $container   The DI container, for OpenRegister's SchemaMapper.
@@ -113,6 +114,7 @@ class CaseFieldRoleProjector {
 	public function __construct(
 		private readonly CaseTypeStore $store,
 		private readonly FieldRoleRuleDeclaration $declaration,
+		private readonly FieldRoleLedger $ledger,
 		private readonly SchemaSlugResolver $slugs,
 		private readonly RegisterFragmentMerger $fragments,
 		private readonly ContainerInterface $container,
@@ -166,115 +168,6 @@ class CaseFieldRoleProjector {
 	}//end reapply()
 
 	/**
-	 * The ledger with one case type's entry brought up to date.
-	 *
-	 * Public because it is the half of this class that cannot be seen from the
-	 * outside, and the failure it prevents — another case type's rules
-	 * disappearing — is invisible from the editor. An empty projection REMOVES
-	 * the key rather than writing an empty block, so a case type that declares
-	 * nothing leaves nothing behind for the next reader to carry forward as if
-	 * it meant something.
-	 *
-	 * @param array<string, mixed> $ledger     The ledger as it stands.
-	 * @param string               $caseTypeId The case type being published.
-	 * @param array<string, mixed> $own        What that case type now projects.
-	 *
-	 * @return array<string, mixed> The ledger.
-	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 */
-	public function ledgerWith(array $ledger, string $caseTypeId, array $own): array {
-		if ($caseTypeId === '') {
-			return $ledger;
-		}
-
-		unset($ledger[$caseTypeId]);
-		if ($own !== []) {
-			$ledger[$caseTypeId] = $own;
-		}
-
-		return $ledger;
-	}//end ledgerWith()
-
-	/**
-	 * The schema properties carrying the register's grants plus the ledger's.
-	 *
-	 * Only a property NAMED by one of the two is touched. A property whose
-	 * authorization came from somewhere else entirely keeps it, because this
-	 * class knows what it declared and must not infer ownership of what it did
-	 * not.
-	 *
-	 * A property that ends up with no grants at all loses the `authorization`
-	 * key rather than keeping an empty one. `read: []` is a non-empty
-	 * authorization block holding nobody, so leaving it behind would strip the
-	 * field for every non-administrator on the instance while the case type
-	 * declares nothing at all.
-	 *
-	 * @param array<string, mixed> $properties The schema's properties.
-	 * @param array<string, mixed> $base       The authorization the register JSON declares.
-	 * @param array<string, mixed> $ledger     What every case type projects now.
-	 * @param array<string, mixed> $previous   What every case type projected before.
-	 *
-	 * @return array<string, mixed> The properties.
-	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 */
-	public function propertiesWith(
-		array $properties,
-		array $base,
-		array $ledger,
-		array $previous = []
-	): array {
-		// 🔴 THE FIELDS THE LEDGER HAS JUST STOPPED OWNING HAVE TO BE VISITED
-		// TOO, OR A RULE CAN BE ADDED AND NEVER TAKEN OFF. A withdrawal removes
-		// the field from the new ledger, so a loop over the new ledger alone
-		// never reaches the property and the grant written for a rule nobody
-		// declares any more stays on the schema for ever. Seeding those fields
-		// with an empty block is what makes the withdrawal a write.
-		$wanted = $this->withdrawn(ledger: $ledger, previous: $previous);
-		foreach ($base as $field => $block) {
-			$wanted[$field] = $block;
-		}
-
-		foreach ($ledger as $own) {
-			if (is_array($own) === false) {
-				continue;
-			}
-
-			foreach ($own as $field => $block) {
-				if (is_array($block) === false) {
-					continue;
-				}
-
-				$wanted[$field] = $this->mergeBlocks(
-					current: ($wanted[$field] ?? []),
-					added: $block
-				);
-			}
-		}
-
-		foreach ($wanted as $field => $block) {
-			if (is_array(($properties[$field] ?? null)) === false) {
-				// A rule naming a property the case schema does not declare is
-				// left unpublished rather than invented: OpenRegister refuses a
-				// whole schema save over an authorization block on a property
-				// it cannot find, and one stale rule must not make every other
-				// rule on the schema unpublishable.
-				continue;
-			}
-
-			if ($block === []) {
-				unset($properties[$field][self::AUTHORIZATION_KEY]);
-				continue;
-			}
-
-			$properties[$field][self::AUTHORIZATION_KEY] = $block;
-		}
-
-		return $properties;
-	}//end propertiesWith()
-
-	/**
 	 * The authorization the register JSON declares on the case schema.
 	 *
 	 * Read from the fragment-merged JSON rather than subtracted from the live
@@ -319,72 +212,6 @@ class CaseFieldRoleProjector {
 
 		return $base;
 	}//end registerBase()
-
-	/**
-	 * The fields the ledger owned a moment ago and does not own now.
-	 *
-	 * Each answers an EMPTY block, which the caller reads as "clear it". A
-	 * field the register JSON still declares is written back over that empty
-	 * block a line later, so a withdrawal never takes the register's own grant
-	 * with it.
-	 *
-	 * @param array<string, mixed> $ledger   What every case type projects now.
-	 * @param array<string, mixed> $previous What every case type projected before.
-	 *
-	 * @return array<string, array<string, mixed>> The fields to clear.
-	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 */
-	private function withdrawn(array $ledger, array $previous): array {
-		$owned = [];
-		foreach ($ledger as $own) {
-			if (is_array($own) === true) {
-				$owned = array_merge($owned, array_keys($own));
-			}
-		}
-
-		$clear = [];
-		foreach ($previous as $own) {
-			if (is_array($own) === false) {
-				continue;
-			}
-
-			foreach (array_keys($own) as $field) {
-				if (in_array($field, $owned, true) === false) {
-					$clear[$field] = [];
-				}
-			}
-		}
-
-		return $clear;
-	}//end withdrawn()
-
-	/**
-	 * Two authorization blocks as one, verb by verb.
-	 *
-	 * @param array<string, mixed> $current The block already gathered.
-	 * @param array<string, mixed> $added   The block to add.
-	 *
-	 * @return array<string, mixed> The merged block.
-	 *
-	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
-	 */
-	private function mergeBlocks(array $current, array $added): array {
-		foreach ($added as $verb => $grants) {
-			if (is_array($grants) === false) {
-				continue;
-			}
-
-			$held = ($current[$verb] ?? []);
-			if (is_array($held) === false) {
-				$held = [];
-			}
-
-			$current[$verb] = $this->declaration->union(current: $held, added: $grants);
-		}
-
-		return $current;
-	}//end mergeBlocks()
 
 	/**
 	 * Write the ledger and the properties back, answering whether it landed.
@@ -449,9 +276,13 @@ class CaseFieldRoleProjector {
 		$properties = $this->arrayOf(value: $schema->getProperties());
 
 		$ledger = $this->arrayOf(value: ($configuration[self::LEDGER_KEY] ?? []));
-		$updatedLedger = $this->ledgerWith(ledger: $ledger, caseTypeId: $caseTypeId, own: $own);
+		$updatedLedger = $this->ledger->ledgerWith(
+			ledger: $ledger,
+			caseTypeId: $caseTypeId,
+			own: $own
+		);
 
-		$updatedProperties = $this->propertiesWith(
+		$updatedProperties = $this->ledger->propertiesWith(
 			properties: $properties,
 			base: $this->registerBase(),
 			ledger: $updatedLedger,

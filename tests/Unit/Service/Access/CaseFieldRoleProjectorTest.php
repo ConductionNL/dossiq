@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Access;
 
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\Access\FieldRoleLedger;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
@@ -41,6 +42,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Access\CaseFieldRoleProjector
+ * @covers \OCA\Dossiq\Service\Access\FieldRoleLedger
  *
  * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
  */
@@ -59,12 +61,22 @@ class CaseFieldRoleProjectorTest extends TestCase {
 		return new CaseFieldRoleProjector(
 			store: $this->createMock(CaseTypeStore::class),
 			declaration: new FieldRoleRuleDeclaration(),
+			ledger: new FieldRoleLedger(declaration: new FieldRoleRuleDeclaration()),
 			slugs: $this->createMock(SchemaSlugResolver::class),
 			fragments: new RegisterFragmentMerger(),
 			container: $this->createMock(ContainerInterface::class),
 			logger: new NullLogger(),
 		);
 	}//end projector()
+
+	/**
+	 * The pure half, on its own.
+	 *
+	 * @return FieldRoleLedger The ledger.
+	 */
+	private function ledger(): FieldRoleLedger {
+		return new FieldRoleLedger(declaration: new FieldRoleRuleDeclaration());
+	}//end ledger()
 
 	/**
 	 * Publishing one case type leaves another case type's grants alone.
@@ -77,15 +89,13 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnotherCaseTypesGrantsSurviveAPublish(): void {
-		$projector = $this->projector();
-
-		$ledger = $projector->ledgerWith(
+		$ledger = $this->ledger()->ledgerWith(
 			ledger: ['other-ct' => ['qualityScore' => ['read' => [['group' => 'dossiq-quality']]]]],
 			caseTypeId: 'mine',
 			own: ['confidentiality' => ['update' => [['group' => 'dossiq-coordinators']]]]
 		);
 
-		$properties = $projector->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['qualityScore' => ['type' => 'number'], 'confidentiality' => ['type' => 'string']],
 			base: [],
 			ledger: $ledger
@@ -107,7 +117,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testTwoCaseTypesOnOneFieldMergeTheirGrants(): void {
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['qualityScore' => ['type' => 'number']],
 			base: [],
 			ledger: [
@@ -128,7 +138,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testAWithdrawnRuleLosesItsLedgerEntry(): void {
-		$ledger = $this->projector()->ledgerWith(
+		$ledger = $this->ledger()->ledgerWith(
 			ledger: [
 				'mine' => ['qualityScore' => ['read' => [['group' => 'dossiq-quality']]]],
 				'other' => ['statutoryTerm' => ['update' => [['group' => 'dossiq-coordinators']]]],
@@ -156,7 +166,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 		// never take it off: a withdrawal removes the field from the ledger, so
 		// a loop over the ledger alone never reaches the property again. The
 		// PREVIOUS ledger is what says the field was ours to clear.
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['qualityScore' => ['type' => 'number', 'authorization' => ['read' => [['group' => 'x']]]]],
 			base: [],
 			ledger: [],
@@ -172,7 +182,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testAWithdrawalLeavesTheRegistersGrantStanding(): void {
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['riskAssessment' => ['type' => 'object']],
 			base: ['riskAssessment' => ['read' => [['group' => 'dossiq-risk-assessment']]]],
 			ledger: [],
@@ -191,7 +201,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFieldAnotherCaseTypeStillOwnsIsNotCleared(): void {
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['qualityScore' => ['type' => 'number']],
 			base: [],
 			ledger: ['other' => ['qualityScore' => ['read' => [['group' => 'dossiq-quality']]]]],
@@ -220,7 +230,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	public function testTheRegistersOwnGrantSurvivesAWithdrawal(): void {
 		$base = ['riskAssessment' => ['read' => [['group' => 'dossiq-risk-assessment']]]];
 
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['riskAssessment' => ['type' => 'object']],
 			base: $base,
 			ledger: []
@@ -238,7 +248,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseTypeAddsToTheRegistersGrant(): void {
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['riskAssessment' => ['type' => 'object']],
 			base: ['riskAssessment' => ['read' => [['group' => 'dossiq-risk-assessment']]]],
 			ledger: ['mine' => ['riskAssessment' => ['read' => [['group' => 'dossiq-quality']]]]]
@@ -260,7 +270,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testARuleOnAnUndeclaredPropertyIsLeftUnpublished(): void {
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: ['qualityScore' => ['type' => 'number']],
 			base: [],
 			ledger: ['mine' => ['fieldThatWentAway' => ['read' => [['group' => 'dossiq-quality']]]]]
@@ -275,7 +285,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnrelatedPropertyIsNotTouched(): void {
-		$properties = $this->projector()->propertiesWith(
+		$properties = $this->ledger()->propertiesWith(
 			properties: [
 				'title' => ['type' => 'string'],
 				'apiToken' => ['type' => 'string', 'authorization' => ['read' => [['group' => 'somebody']]]],
@@ -321,7 +331,7 @@ class CaseFieldRoleProjectorTest extends TestCase {
 
 		$this->assertSame(
 			$ledger,
-			$this->projector()->ledgerWith(ledger: $ledger, caseTypeId: '', own: [])
+			$this->ledger()->ledgerWith(ledger: $ledger, caseTypeId: '', own: [])
 		);
 	}//end testAReapplyDoesNotChangeTheLedger()
 }//end class
