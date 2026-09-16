@@ -254,6 +254,15 @@ class SchemaSlugMap {
 		// and "referenced by", with nothing anywhere reporting it. That is the
 		// same silent fallback openregister#3764 exists to end.
 		'x-openregister-relation-types',
+		// Whether this schema's objects can be archived at all. OpenRegister's
+		// ArchiveHandler refuses archive, restore, freeze and unfreeze on a
+		// schema that does not declare it, and an absent block is the same
+		// answer as `enabled: false`. On an instance that imported the case
+		// schema before the block existed, leaving the key out of this list
+		// would therefore leave Archive refusing every case with "this schema
+		// does not declare x-openregister-archive", which reads as a broken
+		// feature rather than as a configuration that never arrived.
+		'x-openregister-archive',
 	];
 
 	/**
