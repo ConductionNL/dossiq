@@ -23,6 +23,13 @@
 //   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
+// The case's archival future as openregister decided it, on the Archiving tab.
+// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
+// The flag a person raised, the risk the organisation assessed, and the
+// markers the system raised against a named panel.
+// @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
+import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -46,6 +53,9 @@ import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationP
 // derived status fires, who the case waits on, and how long it has been here.
 // @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
+// A reviewer's own pending archival decisions, on My Work.
+// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
@@ -383,6 +393,31 @@ const registry = {
 		_note: 'CaseDetail: the stages, tasks and milestones OpenRegister holds for this case, with enable, complete and stop per item. Fails CLOSED on an unreachable case layer: an error with a retry, never an empty plan, because an outage and a finished case look identical from the browser and only one of them is safe to act on.',
 	},
 
+	// --- The case's archival future, as openregister decided it. ---
+	// The archiving process lives in openregister (decision D7): this panel reads
+	// `@self._retention` and derives nothing. A second derivation in the browser
+	// would eventually disagree with the stored one, and a records manager reading
+	// a disposal date has no way to tell which of the two they are looking at.
+	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	CaseArchivalPanel: {
+		// @custom-widget-ratchet exclude `@self._retention` is metadata attached on the render path, not a stored property, so a data widget builds its fields from the schema's properties and renders every one of them blank; the nomination also carries a rule and a reason that are prose beside a value, and the recompute gesture is a POST carrying a required reason. Deleted the day the manifest vocabulary has a retention widget type
+		kind: 'widget',
+		component: CaseArchivalPanel,
+		_note: "CaseDetail Archiving tab: the appraisal, the disposal date, the retention period, the selectielijst row, the nomination with the rule that produced it, and the outcome once a reviewer has decided one. Fails CLOSED on an unreachable openregister: an error with a retry, never an empty archival block, because an outage and a case with no archival future look identical from the browser. An unnominatable case is drawn apart from a case nobody has closed yet, because only one of the two is somebody's problem today.",
+	},
+
+	// --- A reviewer's own pending archival decisions (My Work). ---
+	// `/archival/reviews/pending` reads the session user id, so nothing is narrowed
+	// in the browser. A filter over a wider list would be a weaker thing wearing
+	// the same label.
+	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
+	MyArchivalReviews: {
+		// @custom-widget-ratchet exclude a destruction list entry is not a dossiq object: it lives on openregister's destruction list and no declarative widget reads that surface, and each of the three answers carries a reason, with retain also carrying a new date, collected before the post. Deleted the day the manifest vocabulary has a worklist widget over a leaf endpoint
+		kind: 'widget',
+		component: MyArchivalReviews,
+		_note: 'My Work: the destruction list entries the signed-in person has to sign off, with destroy, retain and transfer, each carrying a reason. An answered entry leaves the list without a reload. An empty list reads as nothing to sign off; a failed read reads as an error with a retry, because the two look identical from an empty array.',
+	},
+
 	// --- Plan a follow-up case (case-actions-menu, row A26). ---
 	// @spec openspec/specs/workflow-definition-engine/spec.md
 	CasePlanFollowUpDialog: {
@@ -697,6 +732,13 @@ const registry = {
 		kind: 'widget',
 		component: CaseUnreadPanel,
 		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
+	},
+
+	'case-attention': {
+		// @custom-widget-ratchet exclude the three facts on this strip cannot be read by a declarative widget: the flag is written through an endpoint that refuses a reasonless act and appends rather than overwriting, the marker set is an array of derived rows each pointing at a panel of THIS page, and the risk assessment is a property OpenRegister filters out entirely for a reader without the extra group, so a field widget would render an empty box that looks like an absent assessment
+		kind: 'widget',
+		component: CaseAttentionPanel,
+		_note: 'CaseDetail: the flag a person raised with a written reason, the risk this organisation assessed and the markers the system raised against a named panel. Three different facts kept apart on purpose. Sits under the unread strip and says the opposite kind of thing: a marker survives opening the panel it points at and goes when the work behind it is done, where the unread badge goes because somebody looked.',
 	},
 
 	'case-notes-pane': {

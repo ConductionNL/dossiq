@@ -127,3 +127,16 @@ related-cases link and the limitation SHALL be recorded on the form.
 - **WHEN** the form is submitted
 - **THEN** the other cases SHALL be created
 - **AND** the failed destination SHALL be reported with its reason
+
+### Requirement: The fan-out ties its cases with a relation that is symmetric by declaration (REQ-TRIAGE-07)
+
+Cases opened by one submission SHALL be tied with a relation type the case
+schema declares symmetric, so both ends read the same name because that is what
+the relation is. The answer SHALL NOT report a missing inverse.
+
+#### Scenario: both siblings read the link the same way
+
+- **GIVEN** a submission that opens two cases
+- **WHEN** either case's relations are read
+- **THEN** the other SHALL appear under the same name from both sides
+- @e2e exclude {the fan-out has no form to submit until buildiq ships one; asserted in tests/Unit/Service/IntakeFanOutTest.php::testTheSiblingsAreTiedWithTheSymmetricRelation}

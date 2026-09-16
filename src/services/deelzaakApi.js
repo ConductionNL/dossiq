@@ -92,6 +92,42 @@ export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
 }
 
 /**
+ * Create a sub-case as a derivation of its parent.
+ *
+ * NOT an ordinary case save with `parentCase` filled in, which is what this
+ * replaces. A derive is what makes the child take the confidentiality and the
+ * handler its parent carries, because `case.parentCase` declares that
+ * inheritance and OpenRegister applies it. A plain save creates the hierarchy
+ * and inherits nothing, with nothing on screen saying so.
+ *
+ * `inheritanceApplied: false` means the case was created and carries its
+ * parent, but nothing was inherited and no provenance was recorded.
+ *
+ * @param {object} params Creation params.
+ * @param {string} params.parentCaseUuid Parent UUID.
+ * @param {string} params.childCaseTypeId Child caseType id or slug.
+ * @param {object} params.object The sub-case as the form filled it in.
+ * @return {Promise<{ok: boolean, reason?: string, object?: object, inherited?: object, inheritanceApplied?: boolean}>}
+ *
+ * @spec openspec/specs/deelzaak-support/spec.md
+ */
+export async function createSubCase({ parentCaseUuid, childCaseTypeId, object }) {
+	try {
+		const { data } = await axios.post(base(''), {
+			parentCaseUuid,
+			childCaseTypeId,
+			object,
+		})
+		return data
+	} catch (err) {
+		if (err?.response?.data) {
+			return err.response.data
+		}
+		return { ok: false, reason: 'unknown_error' }
+	}
+}
+
+/**
  * Unlink every sub-case of the given parent.
  *
  * ⚠️ Returns the whole result, not a bare count. The endpoint used to answer

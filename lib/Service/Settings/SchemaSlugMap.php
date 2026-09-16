@@ -232,6 +232,16 @@ class SchemaSlugMap {
 		// this list would therefore not disable the badge, it would make it
 		// cry wolf, with nothing anywhere saying so.
 		'x-openregister-read-state',
+		// What a typed case link is called from each side. OpenRegister's
+		// RelationTypeResolver reads this vocabulary off
+		// `Schema::getConfiguration()` and resolves a property's
+		// `x-openregister-relation: {type: "vervolg"}` against it. A key the
+		// vocabulary does not hold is DROPPED rather than carried, so on an
+		// instance that imported the case schema before this block existed
+		// every typed relation would quietly read as the property's own title
+		// and "referenced by", with nothing anywhere reporting it. That is the
+		// same silent fallback openregister#3764 exists to end.
+		'x-openregister-relation-types',
 	];
 
 	/**
