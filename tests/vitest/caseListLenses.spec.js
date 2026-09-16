@@ -142,6 +142,10 @@ const CASE_LENSES = [
 	'Unclaimed',
 	'Handed on',
 	'Closed',
+	// case-search-declares-its-fields REQ-CSD-04: closed, with nobody having
+	// recorded what the outcome was. Deliberately not folded into Closed,
+	// which is finished work.
+	'Closed with no result',
 	DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
@@ -161,7 +165,10 @@ const CASE_LENSES = [
  * case nobody has accepted yet, and a task belongs to a case that already
  * exists. Stuck reads `statusDwellBreached`, written when a case sits in a
  * STATUS longer than that status allows, and a task has neither a status type
- * nor a maximum dwell.
+ * nor a maximum dwell. Closed with no result narrows on `result_isnull`, and a
+ * result is the OUTCOME of a case: a task carries none, so the Tasks lens
+ * vocabulary (`scope`, `isTerminal`, `overdue`, `dueAfter`) has nothing to say
+ * it with.
  */
 const CASES_ONLY = [
 	'Unread',
@@ -171,12 +178,13 @@ const CASES_ONLY = [
 	'Needs attention',
 	'Assessed high risk',
 	'Handed on',
+	'Closed with no result',
 	DRAFTS_LENS,
 	'Stuck',
 ]
 
 describe('Cases index lenses', () => {
-	it('declares the fifteen chips in order', () => {
+	it('declares the sixteen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 

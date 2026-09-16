@@ -50,7 +50,7 @@ export async function toggleCaseFavourite({ item }) {
 		return
 	}
 
-	const wanted = (isFavourite(item) === false)
+	const wanted = isFavourite(item) === false
 
 	try {
 		await setFavourite(caseId, wanted)
@@ -62,6 +62,8 @@ export async function toggleCaseFavourite({ item }) {
 		window.dispatchEvent(new CustomEvent(CASES_CHANGED))
 	} catch (err) {
 		const refusal = String(err?.response?.data?.message ?? '')
-		showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+		showError(
+			refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'),
+		)
 	}
 }

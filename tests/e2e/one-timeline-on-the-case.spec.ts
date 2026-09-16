@@ -546,10 +546,16 @@ test.describe('REQ-TL-16 every term event records itself on the timeline', () =>
 		const termId = objectId(term)
 		seededTerms.push(termId)
 
-		const paused = await request.post(`${APP}/termijn/instances/${termId}/pauze`, {
-			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
-			data: { duurDagen: 14, rationale: `${RUN_PREFIX} aanvulling gevraagd` },
-		})
+		const paused = await request.post(
+			`${APP}/termijn/instances/${termId}/pauze`,
+			{
+				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+				data: {
+					duurDagen: 14,
+					rationale: `${RUN_PREFIX} aanvulling gevraagd`,
+				},
+			},
+		)
 		expect(
 			paused.ok(),
 			`the pause must be accepted: ${await paused.text()}`,

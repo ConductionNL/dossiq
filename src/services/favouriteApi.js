@@ -54,7 +54,7 @@ export const CASE_SCHEMA = 'case'
 function favouriteUrl(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 	return generateUrl(
 		`/apps/openregister/api/objects/${encodeURIComponent(register)}`
-		+ `/${encodeURIComponent(schema)}/${encodeURIComponent(id)}/favourite`,
+			+ `/${encodeURIComponent(schema)}/${encodeURIComponent(id)}/favourite`,
 	)
 }
 
@@ -71,7 +71,7 @@ function favouriteUrl(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 export async function star(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 	const { data } = await axios.put(favouriteUrl(id, register, schema))
 
-	return { favourite: (data?.favourite !== false) }
+	return { favourite: data?.favourite !== false }
 }
 
 /**
@@ -90,7 +90,7 @@ export async function star(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 export async function unstar(id, register = CASE_REGISTER, schema = CASE_SCHEMA) {
 	const { data } = await axios.delete(favouriteUrl(id, register, schema))
 
-	return { favourite: (data?.favourite === true) }
+	return { favourite: data?.favourite === true }
 }
 
 /**
@@ -104,7 +104,12 @@ export async function unstar(id, register = CASE_REGISTER, schema = CASE_SCHEMA)
  *
  * @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
  */
-export async function setFavourite(id, wanted, register = CASE_REGISTER, schema = CASE_SCHEMA) {
+export async function setFavourite(
+	id,
+	wanted,
+	register = CASE_REGISTER,
+	schema = CASE_SCHEMA,
+) {
 	if (wanted === true) {
 		return star(id, register, schema)
 	}
@@ -125,7 +130,7 @@ export async function setFavourite(id, wanted, register = CASE_REGISTER, schema 
  * @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
  */
 export function isFavourite(row) {
-	return (row?.['@self']?.favourite === true)
+	return row?.['@self']?.favourite === true
 }
 
 /**

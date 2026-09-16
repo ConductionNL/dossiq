@@ -122,7 +122,10 @@ describe('the star reads off the object it was given', () => {
 	})
 
 	it('renders the filled star and the taking-off label when starred', async () => {
-		const wrapper = await mountStrip({ id: 'case-7', '@self': { favourite: true } })
+		const wrapper = await mountStrip({
+			id: 'case-7',
+			'@self': { favourite: true },
+		})
 
 		expect(wrapper.find('.star-filled').exists()).toBe(true)
 		expect(wrapper.text()).toContain('Remove from favourites')
@@ -131,7 +134,10 @@ describe('the star reads off the object it was given', () => {
 	})
 
 	it('renders the outline and the adding label when not starred', async () => {
-		const wrapper = await mountStrip({ id: 'case-7', '@self': { favourite: false } })
+		const wrapper = await mountStrip({
+			id: 'case-7',
+			'@self': { favourite: false },
+		})
 
 		expect(wrapper.find('.star-outline').exists()).toBe(true)
 		expect(wrapper.text()).toContain('Add to favourites')
@@ -152,7 +158,10 @@ describe('the star reads off the object it was given', () => {
 
 describe('the two verbs', () => {
 	it('stars with a PUT on the favourite path', async () => {
-		const wrapper = await mountStrip({ id: 'case-7', '@self': { favourite: false } })
+		const wrapper = await mountStrip({
+			id: 'case-7',
+			'@self': { favourite: false },
+		})
 		await wrapper.find('button').trigger('click')
 		await wrapper.vm.$nextTick()
 
@@ -164,7 +173,10 @@ describe('the two verbs', () => {
 	})
 
 	it('unstars with a DELETE on the same path', async () => {
-		const wrapper = await mountStrip({ id: 'case-7', '@self': { favourite: true } })
+		const wrapper = await mountStrip({
+			id: 'case-7',
+			'@self': { favourite: true },
+		})
 		await wrapper.find('button').trigger('click')
 		await wrapper.vm.$nextTick()
 
@@ -176,9 +188,14 @@ describe('the two verbs', () => {
 	})
 
 	it('puts the star back when the write is refused, and says what the server said', async () => {
-		axios.put.mockRejectedValue({ response: { data: { message: 'Not yours to star.' } } })
+		axios.put.mockRejectedValue({
+			response: { data: { message: 'Not yours to star.' } },
+		})
 
-		const wrapper = await mountStrip({ id: 'case-7', '@self': { favourite: false } })
+		const wrapper = await mountStrip({
+			id: 'case-7',
+			'@self': { favourite: false },
+		})
 		await wrapper.find('button').trigger('click')
 		await wrapper.vm.$nextTick()
 		await wrapper.vm.$nextTick()
@@ -191,7 +208,9 @@ describe('the two verbs', () => {
 
 describe('the row action', () => {
 	it('stars a row that is not starred', async () => {
-		await toggleCaseFavourite({ item: { id: 'case-9', '@self': { favourite: false } } })
+		await toggleCaseFavourite({
+			item: { id: 'case-9', '@self': { favourite: false } },
+		})
 
 		expect(axios.put).toHaveBeenCalledTimes(1)
 		expect(axios.delete).not.toHaveBeenCalled()
@@ -199,7 +218,9 @@ describe('the row action', () => {
 	})
 
 	it('unstars a row that is starred', async () => {
-		await toggleCaseFavourite({ item: { id: 'case-9', '@self': { favourite: true } } })
+		await toggleCaseFavourite({
+			item: { id: 'case-9', '@self': { favourite: true } },
+		})
 
 		expect(axios.delete).toHaveBeenCalledTimes(1)
 		expect(axios.put).not.toHaveBeenCalled()
@@ -226,9 +247,15 @@ describe('the row action', () => {
 
 describe('the star is declared on the case page', () => {
 	it('is a widget on the layout, above the unread strip and the panels', () => {
-		const star = caseDetail.config.layout.find((l) => l.widgetId === 'case-favourite')
-		const unread = caseDetail.config.layout.find((l) => l.widgetId === 'case-unread')
-		const panels = caseDetail.config.layout.find((l) => l.widgetId === 'case-panels')
+		const star = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-favourite',
+		)
+		const unread = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-unread',
+		)
+		const panels = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-panels',
+		)
 
 		expect(star, 'the favourite strip is missing from the layout').toBeTruthy()
 		expect(star.gridY).toBeLessThan(unread.gridY)
@@ -239,7 +266,9 @@ describe('the star is declared on the case page', () => {
 		// A layout grid item falls through to CnDetailWidgetHost, which resolves
 		// a renderer from `cnRegistry[widget.type]` and renders NOTHING,
 		// silently, when no key answers.
-		const widget = caseDetail.config.widgets.find((w) => w.id === 'case-favourite')
+		const widget = caseDetail.config.widgets.find(
+			(w) => w.id === 'case-favourite',
+		)
 
 		expect(widget).toBeTruthy()
 		expect(widget.type).toBe('case-favourite')
@@ -277,15 +306,21 @@ describe('the two lenses', () => {
 		// the way `_unread` is. A chip spelling them any other way would filter
 		// on a property the `case` schema does not carry, which the objects
 		// endpoint answers as the empty set rather than as an error.
-		expect(chips.find((c) => c.label === 'Favourites').filter._favourite).toBe(true)
-		expect(chips.find((c) => c.label === 'Recently opened').filter._recent).toBe(true)
+		expect(chips.find((c) => c.label === 'Favourites').filter._favourite).toBe(
+			true,
+		)
+		expect(chips.find((c) => c.label === 'Recently opened').filter._recent).toBe(
+			true,
+		)
 	})
 
 	it('declares no order on the Recently opened chip', () => {
 		// `_recent` carries its own order, last view descending. An `_order`
 		// declared beside it would override the one thing the lens is for and
 		// the chip would answer a different question from its own name.
-		const recent = page('Cases').config.quickFilters.find((c) => c.label === 'Recently opened')
+		const recent = page('Cases').config.quickFilters.find(
+			(c) => c.label === 'Recently opened',
+		)
 
 		expect(recent.filter._order).toBeUndefined()
 		expect(recent.order).toBeUndefined()
@@ -294,7 +329,9 @@ describe('the two lenses', () => {
 	it('offers the row action on every case list that carries the read actions', () => {
 		for (const id of ['Cases', 'Queue']) {
 			const actions = page(id).config.actions.map((a) => a.id)
-			expect(actions, `${id} is missing the favourite row action`).toContain('favourite')
+			expect(actions, `${id} is missing the favourite row action`).toContain(
+				'favourite',
+			)
 
 			const action = page(id).config.actions.find((a) => a.id === 'favourite')
 			// `api-call` is not in the row dispatcher's vocabulary, so a
@@ -335,7 +372,10 @@ describe('the two lenses', () => {
 		for (const id of ['CaseDetail', 'Dashboard']) {
 			const grid = new Map()
 			for (const cell of page(id).config.layout) {
-				expect(cell.gridX + cell.gridWidth, cell.widgetId).toBeLessThanOrEqual(12)
+				expect(
+					cell.gridX + cell.gridWidth,
+					cell.widgetId,
+				).toBeLessThanOrEqual(12)
 				for (let y = cell.gridY; y < cell.gridY + cell.gridHeight; y++) {
 					for (let x = cell.gridX; x < cell.gridX + cell.gridWidth; x++) {
 						const key = `${x},${y}`

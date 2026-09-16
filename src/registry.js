@@ -76,6 +76,9 @@ import CaseListExportAction from './components/export/CaseListExportAction.vue'
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
 import RequesterProjection from './components/initiator/RequesterProjection.vue'
+// A search openregister refused, said where the term was typed.
+// @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+import CaseSearchRefusal from './components/search/CaseSearchRefusal.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -303,6 +306,14 @@ const HEADLESS_WIDGET_META = {
  * @type {Record<string, { kind: string, component: object }>}
  */
 const registry = {
+	// --- A refused search, said rather than rendered as an empty list. ---
+	// @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
+	CaseSearchRefusal: {
+		kind: 'page',
+		component: CaseSearchRefusal,
+		_note: "Cases-page below-header slot. OpenRegister refuses a malformed _search term with 400 {error, position, term} rather than running it as a literal, precisely because a literal returns zero rows and reads as an honest empty result. useObjectStore.fetchCollection() then records the refusal on errors['dossiq-case'] and returns [] anyway, so CnIndexPage draws its empty state over it and the reader retypes a word that was never the problem. Mounted through pages[].slots because the search box is CnIndexPage's; deleted the day the library renders the store's own error above the list.",
+	},
+
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
 	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 	CaseListExportAction: {
@@ -885,7 +896,7 @@ const registry = {
 		kind: 'widget',
 		component: CasePartiesWidget,
 		...PANEL_WIDGET_META,
-		_note: "CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.",
+		_note: 'CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.',
 	},
 
 	'case-timeline-pane': {
