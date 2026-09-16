@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds TEN tabs, and keeps holding ten.
+ * The case page holds ELEVEN tabs, and keeps holding eleven.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -73,6 +73,7 @@ const tabs = () => widget('case-panels').content.tabs
  *   7 -> 9  2026-09-13  Communication left People, and Email and Decisions
  *                       left the SIDEBAR
  *   9 -> 10 2026-09-15  the Archiving tab arrived with #2850
+ *   10 -> 11 2026-09-16 the Timeline tab arrived with #2846
  *
  * The second move is not the growth this ceiling guards against. Nothing was
  * added to the page: the sidebar lost exactly the three tabs the strip gained
@@ -81,20 +82,22 @@ const tabs = () => widget('case-panels').content.tabs
  * to fourteen with nothing counting it, and an exact assertion somebody has to
  * edit on purpose is the thing that stops that.
  *
- * The third move IS growth, and it is recorded as such rather than waved
- * through. Archiving is a surface the case did not have: what happens to it
- * when its business use ends, as openregister decided. It came in on #2850
- * with this file left at nine, so the strip and the ceiling disagreed and the
- * suite was red on development until this line was edited. That is the
- * mechanism working, one PR late.
+ * The third and fourth moves ARE growth, and they are recorded as such rather
+ * than waved through. Archiving is a surface the case did not have: what
+ * happens to it when its business use ends, as openregister decided. Timeline
+ * is the second: every note, call and message on the case in one order. Both
+ * came in with this file left at nine, so the strip and the ceiling disagreed
+ * and the suite was red on development until these lines were edited. That is
+ * the mechanism working, two PRs late.
  */
-const TAB_CEILING = 10
+const TAB_CEILING = 11
 
-/** The ten labels, in the order a handler reads them. */
+/** The eleven labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-data-panel', 'Data'],
 	['case-files', 'Files'],
 	['case-notes-panel', 'Notes'],
+	['case-timeline-panel', 'Timeline'],
 	['case-people-panel', 'People'],
 	['case-communication-panel', 'Communication'],
 	['case-email-panel', 'Email'],
@@ -159,7 +162,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the ten tabs, in order', () => {
+	it('names the eleven tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -277,10 +280,10 @@ describe('the container type this change depends on', () => {
 	})
 
 	it('is the type every group widget declares', () => {
-		// Five tabs are a single surface rather than a group of sections: Files
+		// Six tabs are a single surface rather than a group of sections: Files
 		// (the case folder through the `files` leaf), the three panes that came
-		// out of the sidebar, and Archiving. Every other tab is a group and
-		// declares `case-sections`.
+		// out of the sidebar, Timeline, and Archiving. Every other tab is a
+		// group and declares `case-sections`.
 		//
 		// Archiving is `custom` on purpose and the manifest says why: every
 		// value on it is read off `@self._retention`, which openregister wrote
@@ -296,6 +299,10 @@ describe('the container type this change depends on', () => {
 			'case-notes-panel': 'case-notes-pane',
 			'case-email-panel': 'case-email-pane',
 			'case-decisions-panel': 'case-decisions-pane',
+			// Timeline arrived with #2846: every note, call and message on the
+			// case in one order. A single surface, keyed by TYPE like the three
+			// above it.
+			'case-timeline-panel': 'case-timeline-pane',
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 

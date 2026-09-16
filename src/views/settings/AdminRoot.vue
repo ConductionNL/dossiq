@@ -173,6 +173,19 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-shipped-configuration"
+			:name="t('dossiq', 'What shipped with dossiq')"
+			:description="
+				t(
+					'dossiq',
+					'Every case type, status, result and role dossiq seeded, and whether you changed it since. A newer shipped version is offered per object and never overwrites a change you made.',
+				)
+			"
+			:loading="!storesReady">
+			<ShippedConfiguration v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-stuf"
 			:name="t('dossiq', 'StUF-ZKN Endpoints')"
 			:description="
@@ -217,6 +230,7 @@ import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
 import Settings from './Settings.vue'
+import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
@@ -254,6 +268,7 @@ export default {
 		EmailSettings,
 		KccIntegrationSettings,
 		DecisionTablesTab,
+		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
 	},
