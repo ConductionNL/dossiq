@@ -44,7 +44,9 @@ export async function searchIndexStatus() {
 	)
 
 	if (data === null || typeof data !== 'object' || data.error !== undefined) {
-		throw new Error(String(data?.error ?? 'The search index status could not be read.'))
+		throw new Error(
+			String(data?.error ?? 'The search index status could not be read.'),
+		)
 	}
 
 	return {

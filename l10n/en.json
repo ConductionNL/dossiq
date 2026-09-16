@@ -5309,6 +5309,14 @@
         "The case was not filed.": "The case was not filed.",
         "This case may already exist": "This case may already exist",
         "This case type does not let the same case be filed twice. Open the case it matches, or ask a coordinator.": "This case type does not let the same case be filed twice. Open the case it matches, or ask a coordinator.",
-        "Why file this case anyway": "Why file this case anyway"
+        "Why file this case anyway": "Why file this case anyway",
+        "{groups} cannot change this field.": "{groups} cannot change this field.",
+        "{groups} cannot change this field. {heldBy} can.": "{groups} cannot change this field. {heldBy} can.",
+        "{groups} do not see this field.": "{groups} do not see this field.",
+        "{groups} do not see this field. {heldBy} do.": "{groups} do not see this field. {heldBy} do.",
+        "A field missing from this case is missing because of a rule below, not because it is empty.": "A field missing from this case is missing because of a rule below, not because it is empty.",
+        "applies to you": "applies to you",
+        "Which fields each role reads": "Which fields each role reads",
+        "Who it affects": "Who it affects"
     }
 }

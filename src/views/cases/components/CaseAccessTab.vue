@@ -206,6 +206,51 @@
 					</template>
 				</template>
 			</section>
+
+			<section
+				v-if="fieldRows.length"
+				class="case-access-tab__fields">
+				<h4>{{ t('dossiq', 'Which fields each role reads') }}</h4>
+				<p class="case-access-tab__hint">
+					{{
+						t(
+							'dossiq',
+							'A field missing from this case is missing because of a rule below, not because it is empty.',
+						)
+					}}
+				</p>
+				<table class="case-access-tab__table">
+					<thead>
+						<tr>
+							<th scope="col">{{ t('dossiq', 'Field') }}</th>
+							<th scope="col">{{ t('dossiq', 'Rule') }}</th>
+							<th scope="col">{{ t('dossiq', 'Who it affects') }}</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr
+							v-for="(row, index) in fieldRows"
+							:key="`field-${row.field}-${row.rule}-${index}`"
+							class="case-access-tab__row">
+							<td>{{ row.field }}</td>
+							<td>
+								{{ ruleLabels[row.rule] }}
+								<span
+									v-if="row.appliesToMe"
+									class="case-access-tab__source"
+									>{{ t('dossiq', 'applies to you') }}</span
+								>
+							</td>
+							<td>
+								{{ sentenceFor(row) }}
+								<span v-if="row.reason" class="case-access-tab__hint">{{
+									row.reason
+								}}</span>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</section>
 		</template>
 	</div>
 </template>
@@ -217,12 +262,18 @@ import {
 	fetchAccessHistory,
 	fetchCallerScope,
 	fetchDenyRules,
+	fetchFieldRoleRules,
 	fetchObjectGrants,
 	fetchObjectPermissions,
 	fetchPermissionCatalogue,
 	fetchRoleGrants,
 	grantRows,
 } from '../../../services/caseAccessApi.js'
+import {
+	fieldRoleRows,
+	roleRuleLabels,
+	roleRuleSentence,
+} from '../../../utils/fieldRoleRules.js'
 
 /** OpenRegister's answer to a reader who may open the case and not review it. */
 const REVIEW_REFUSED = 403
@@ -250,6 +301,7 @@ export default {
 			unreadable: [],
 			reviewRefused: false,
 			historyReadable: false,
+			fieldRows: [],
 			moment: '',
 			momentLoading: false,
 			asOf: null,
@@ -257,6 +309,16 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The reader's word for each field rule.
+		 *
+		 * @return {object} The labels, by rule id.
+		 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+		 */
+		ruleLabels() {
+			return roleRuleLabels()
+		},
+
 		/**
 		 * Today, so nobody asks the trail about a date that has not happened.
 		 *
@@ -329,6 +391,18 @@ export default {
 
 	methods: {
 		/**
+		 * One row as the sentence beside the field.
+		 *
+		 * @param {object} row One row from `fieldRoleRows`.
+		 *
+		 * @return {string} The sentence.
+		 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+		 */
+		sentenceFor(row) {
+			return roleRuleSentence(row)
+		},
+
+		/**
 		 * Ask OpenRegister, once, and render what came back.
 		 *
 		 * @return {Promise<void>}
@@ -346,14 +420,27 @@ export default {
 			this.reviewRefused = permissions.status === REVIEW_REFUSED
 			this.historyReadable = permissions.set !== null
 
-			const [catalogue, objectGrants, roleGrants, callerScope, denyRules] =
-				await Promise.all([
-					fetchPermissionCatalogue(),
-					this.fallbackGrants(permissions),
-					permissions.set === null ? fetchRoleGrants() : null,
-					fetchCallerScope(),
-					permissions.set === null ? fetchDenyRules() : null,
-				])
+			const [
+				catalogue,
+				objectGrants,
+				roleGrants,
+				callerScope,
+				denyRules,
+				fieldRules,
+			] = await Promise.all([
+				fetchPermissionCatalogue(),
+				this.fallbackGrants(permissions),
+				permissions.set === null ? fetchRoleGrants() : null,
+				fetchCallerScope(),
+				permissions.set === null ? fetchDenyRules() : null,
+				fetchFieldRoleRules(this.objectId),
+			])
+
+			// The field rules ride along rather than gating anything. A reader
+			// who may not review the access set may still be looking at a gap
+			// where a field should be, and the rule behind that gap is the one
+			// thing this panel can tell them.
+			this.fieldRows = fieldRoleRows(fieldRules.declared, fieldRules.decided)
 
 			// Each failed read is NAMED. An auditor reading a short list has to
 			// know which source is missing from it.

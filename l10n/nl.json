@@ -5309,6 +5309,14 @@
         "The case was not filed.": "De zaak is niet aangemaakt.",
         "This case may already exist": "Deze zaak bestaat mogelijk al",
         "This case type does not let the same case be filed twice. Open the case it matches, or ask a coordinator.": "Dit zaaktype staat niet toe dat dezelfde zaak twee keer wordt aangemaakt. Open de zaak waarop deze lijkt, of vraag een coördinator.",
-        "Why file this case anyway": "Waarom deze zaak toch aanmaken"
+        "Why file this case anyway": "Waarom deze zaak toch aanmaken",
+        "{groups} cannot change this field.": "{groups} kunnen dit veld niet wijzigen.",
+        "{groups} cannot change this field. {heldBy} can.": "{groups} kunnen dit veld niet wijzigen. {heldBy} wel.",
+        "{groups} do not see this field.": "{groups} zien dit veld niet.",
+        "{groups} do not see this field. {heldBy} do.": "{groups} zien dit veld niet. {heldBy} wel.",
+        "A field missing from this case is missing because of a rule below, not because it is empty.": "Ontbreekt er een veld bij deze zaak, dan komt dat door een regel hieronder en niet doordat het leeg is.",
+        "applies to you": "geldt voor jou",
+        "Which fields each role reads": "Welke velden elke rol leest",
+        "Who it affects": "Voor wie het geldt"
     }
 }

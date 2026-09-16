@@ -41,7 +41,9 @@ describe('the Cases page and a refused search', () => {
 
 	it('names a component the registry actually resolves', () => {
 		expect(registry).toContain('CaseSearchRefusal: {')
-		expect(registry).toContain("from './components/search/CaseSearchRefusal.vue'")
+		expect(registry).toContain(
+			"from './components/search/CaseSearchRefusal.vue'",
+		)
 	})
 })
 
@@ -67,7 +69,9 @@ describe('the Cases page and the closed cases with nothing recorded', () => {
 	})
 
 	it('keeps exactly one default lens', () => {
-		const defaults = casesPage.config.quickFilters.filter((filter) => filter.default === true)
+		const defaults = casesPage.config.quickFilters.filter(
+			(filter) => filter.default === true,
+		)
 
 		expect(defaults).toHaveLength(1)
 		expect(defaults[0].label).toBe('All')

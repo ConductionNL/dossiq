@@ -24,7 +24,11 @@ vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
 		name: 'NcNoteCard',
 		props: ['type'],
 		render() {
-			return h('div', { class: 'note-card-stub', 'data-type': this.type }, this.$slots.default?.())
+			return h(
+				'div',
+				{ class: 'note-card-stub', 'data-type': this.type },
+				this.$slots.default?.(),
+			)
 		},
 	}),
 }))
@@ -82,11 +86,15 @@ describe('CaseSearchRefusal', () => {
 			search: '(dakkapel AND NOT geweigerd',
 		})
 
-		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(true)
-		expect(wrapper.find('[data-testid="case-search-refusal-headline"]').text())
-			.toBe('We could not read this search from character 1.')
-		expect(wrapper.find('[data-testid="case-search-refusal-reason"]').text())
-			.toBe('Unbalanced bracket at position 1.')
+		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(
+			true,
+		)
+		expect(
+			wrapper.find('[data-testid="case-search-refusal-headline"]').text(),
+		).toBe('We could not read this search from character 1.')
+		expect(
+			wrapper.find('[data-testid="case-search-refusal-reason"]').text(),
+		).toBe('Unbalanced bracket at position 1.')
 	})
 
 	it('marks the character the platform pointed at', () => {
@@ -95,7 +103,9 @@ describe('CaseSearchRefusal', () => {
 			search: 'dak AND',
 		})
 
-		expect(wrapper.find('[data-testid="case-search-refusal-term"] mark').text()).toBe('A')
+		expect(
+			wrapper.find('[data-testid="case-search-refusal-term"] mark').text(),
+		).toBe('A')
 	})
 
 	it('reads the key CnIndexPage files the Cases failure under', () => {
@@ -105,22 +115,31 @@ describe('CaseSearchRefusal', () => {
 			key: 'dossiq-caseType',
 		})
 
-		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('stays out of the way when the search was fine', () => {
 		const wrapper = mountHint({ error: null, search: 'dakkapel' })
 
-		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('stays out of the way when the failure was not a refused term', () => {
 		const wrapper = mountHint({
-			error: { status: 500, message: 'An unexpected server error occurred. Please try again.' },
+			error: {
+				status: 500,
+				message: 'An unexpected server error occurred. Please try again.',
+			},
 			search: 'dakkapel',
 		})
 
-		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="case-search-refusal"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('tells the reader what to do next', () => {
