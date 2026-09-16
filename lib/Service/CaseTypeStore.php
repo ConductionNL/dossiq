@@ -102,6 +102,55 @@ class CaseTypeStore {
 	}//end rowsOfType()
 
 	/**
+	 * Every case type sharing one identifier: the version chain.
+	 *
+	 * ZGW's `identificatie` is what makes two rows versions of one zaaktype, so
+	 * the chain is a FILTER and not a walk over `previousVersion`. The walk
+	 * would answer the same list on sound data and a shorter one on a chain
+	 * with a hole in it, and the shorter answer is the dangerous one: a version
+	 * missing from the chain reads as a version that does not exist.
+	 * `previousVersion` stays what it is, the audit link REQ-ZV-02 reads.
+	 *
+	 * The filter key is BARE. OpenRegister's objects search reads `identifier`
+	 * as a filter and would read `filter[identifier]` as the empty set, which
+	 * presents as a case type with no versions at all rather than as an error.
+	 *
+	 * @param string $identifier The shared identifier.
+	 *
+	 * @return array<int, array<string, mixed>> The versions, unordered.
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	public function versionsWithIdentifier(string $identifier): array {
+		$identifier = trim($identifier);
+		if ($identifier === '') {
+			return [];
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
+
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		try {
+			$found = $objectService->searchObjects(
+				[
+					'@self' => ['register' => $register, 'schema' => $schema],
+					'identifier' => $identifier,
+					'_limit' => 200,
+				]
+			);
+		} catch (Throwable $e) {
+			return [];
+		}
+
+		return $this->asRows(value: $found);
+	}//end versionsWithIdentifier()
+
+	/**
 	 * Rows of one schema that belong to no case type at all.
 	 *
 	 * @param string $schemaKey The settings key naming the schema.

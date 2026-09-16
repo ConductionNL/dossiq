@@ -61,6 +61,22 @@ class CaseTypeCopyService {
 	];
 
 	/**
+	 * The workflow templates, copied for a VERSION and not for a duplicate.
+	 *
+	 * 🔴 IT IS NOT IN THE LIST ABOVE ON PURPOSE. A duplicate is a second case
+	 * type and starts with no process, which is what its own payload says by
+	 * clearing `workflowDefinition`. A version is the same case type later on,
+	 * and a version that lost the route its cases run is not the same case type
+	 * at all. Copying it for both would change the duplicate gesture as a side
+	 * effect of fixing the version one.
+	 *
+	 * @var string
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	private const WORKFLOW_TEMPLATE_CONFIG_KEY = 'workflow_template_schema';
+
+	/**
 	 * What the copy in progress could not carry.
 	 *
 	 * Held on the instance for the same reason `SeedDataService` holds its
@@ -192,9 +208,12 @@ class CaseTypeCopyService {
 	 * to new cases") was not true. Copying instead leaves the running cases on
 	 * the objects they started under, and pins them there with no extra field
 	 * on the case: the reference they already hold IS the pin. Nothing migrates
-	 * a running case forward, deliberately. Its current status is a row the new
-	 * version does not contain, and its deadline was computed from the old
-	 * version's `processingDeadline`.
+	 * a running case forward BY ITSELF, deliberately. Its current status is a
+	 * row the new version does not contain, and its deadline was computed from
+	 * the old version's `processingDeadline`. Moving one is a deliberate act
+	 * somebody performs and gives a reason for, and it is
+	 * {@see \OCA\Dossiq\Service\CaseType\CaseVersionMove}, never a consequence
+	 * of publishing.
 	 *
 	 * The new version starts as a draft. It becomes the version new cases get
 	 * when it is published, which is when {@see CaseTypePublishService} writes
@@ -279,12 +298,24 @@ class CaseTypeCopyService {
 			newCaseTypeId: $newCaseTypeId
 		);
 
-		$created = $this->repointInitialStatus(
+		$templateMap = [];
+		if ($asVersion === true) {
+			$templateMap = $this->copyChildren(
+				objectService: $objectService,
+				register: $register,
+				configKey: self::WORKFLOW_TEMPLATE_CONFIG_KEY,
+				sourceCaseTypeId: $caseTypeId,
+				newCaseTypeId: $newCaseTypeId
+			);
+		}
+
+		$created = $this->repointOwnedReferences(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseTypeSchema,
 			caseType: $created,
-			statusMap: $statusMap
+			statusMap: $statusMap,
+			templateMap: $templateMap
 		);
 
 		$this->logger->info(
@@ -432,7 +463,12 @@ class CaseTypeCopyService {
 
 
 	/**
-	 * Point the new case type's initial status at its OWN copy of that status.
+	 * Point the new case type's own references at its OWN copies.
+	 *
+	 * Two references, one save. `initialStatus` names a statusType and
+	 * `workflowDefinition` names a workflowTemplate, and both are copied
+	 * children of the case type, so both hold the SOURCE's id the moment the
+	 * new row is written.
 	 *
 	 * Without this the copy files new cases into the SOURCE's status row: the
 	 * children are copied but `initialStatus` still holds the old id, and the
@@ -441,29 +477,51 @@ class CaseTypeCopyService {
 	 * running case, but it made every duplicate and every new version ask the
 	 * author to re-pick a status they had already picked.
 	 *
+	 * 🔴 AN UNMAPPABLE WORKFLOW PIN IS CLEARED, NOT LEFT POINTING BACKWARDS.
+	 * `caseType.workflowDefinition` is filtered on `caseType: @objectId`, so a
+	 * pin at another version's template is a route the type's own Workflow tab
+	 * cannot show: the field reads filled in and the picker reads empty, and
+	 * nothing says which is right. That only arises when the template copy did
+	 * not run or did not carry — a duplicate, or a version whose template
+	 * schema is unconfigured — and in both of those the honest answer is no
+	 * default route.
+	 *
 	 * @param object                $objectService The OpenRegister ObjectService.
 	 * @param string                $register      The register slug.
 	 * @param string                $schema        The case type schema id.
 	 * @param array<string, mixed>  $caseType      The freshly created case type.
 	 * @param array<string, string> $statusMap     Old status id to new status id.
+	 * @param array<string, string> $templateMap   Old template id to new template id.
 	 *
 	 * @return array<string, mixed> The case type, repointed when it needed it.
 	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
 	 */
-	private function repointInitialStatus(
+	private function repointOwnedReferences(
 		object $objectService,
 		string $register,
 		string $schema,
 		array $caseType,
 		array $statusMap,
+		array $templateMap,
 	): array {
+		$changed = false;
+
 		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
-		if ($initial === '' || isset($statusMap[$initial]) === false) {
-			return $caseType;
+		if ($initial !== '' && isset($statusMap[$initial]) === true) {
+			$caseType['initialStatus'] = $statusMap[$initial];
+			$changed = true;
 		}
 
-		$caseType['initialStatus'] = $statusMap[$initial];
+		$pin = $this->store->referenceId(value: ($caseType['workflowDefinition'] ?? ''));
+		if ($pin !== '') {
+			$caseType['workflowDefinition'] = ($templateMap[$pin] ?? null);
+			$changed = true;
+		}
+
+		if ($changed === false) {
+			return $caseType;
+		}
 
 		try {
 			$saved = $objectService->saveObject(
@@ -473,14 +531,14 @@ class CaseTypeCopyService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'CaseTypeCopyService: could not repoint the initial status',
+				'CaseTypeCopyService: could not repoint the copy on its own children',
 				['caseType' => ($caseType['id'] ?? ''), 'exception' => $e->getMessage()]
 			);
 			return $caseType;
 		}
 
 		return $this->store->asRow(value: $saved);
-	}//end repointInitialStatus()
+	}//end repointOwnedReferences()
 
 
 	/**

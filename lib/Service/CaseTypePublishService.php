@@ -40,6 +40,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -60,6 +61,7 @@ class CaseTypePublishService {
 	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
+	 * @param ITimeFactory            $time             The day a version takes effect, and the day the last one closes.
 	 * @param LoggerInterface         $logger           The logger.
 	 */
 	public function __construct(
@@ -69,6 +71,7 @@ class CaseTypePublishService {
 		private readonly CaseTypeAcknowledgement $acknowledgement,
 		private readonly UnreadTriggerService $unreadTriggers,
 		private readonly CaseTypeHandling $handling,
+		private readonly ITimeFactory $time,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -230,10 +233,24 @@ class CaseTypePublishService {
 			];
 		}
 
+		$today = $this->time->getDateTime()->format('Y-m-d');
+
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 		$caseType['isDraft'] = false;
 		if ((int)($caseType['version'] ?? 0) < 1) {
 			$caseType['version'] = 1;
+		}
+
+		// The day this version takes effect, and the day it is dated. Written
+		// only when empty: an author who typed a future `validFrom` because the
+		// new fee schedule starts next month meant it, and overwriting it with
+		// today would quietly bring the change forward.
+		if (trim((string)($caseType['validFrom'] ?? '')) === '') {
+			$caseType['validFrom'] = $today;
+		}
+
+		if (trim((string)($caseType['versionDate'] ?? '')) === '') {
+			$caseType['versionDate'] = $today;
 		}
 
 		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
@@ -245,7 +262,11 @@ class CaseTypePublishService {
 			];
 		}
 
-		$this->retire(caseType: $caseType, caseTypeId: $caseTypeId);
+		$this->retire(
+			caseType: $caseType,
+			caseTypeId: $caseTypeId,
+			takesEffect: (string)($caseType['validFrom'] ?? $today)
+		);
 
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 
@@ -279,18 +300,37 @@ class CaseTypePublishService {
 	 * still running on it and still resolve their statuses, results and
 	 * deadlines through it. It is closed to NEW cases, not retired.
 	 *
+	 * 🔴 THE FORWARD LINK AND THE CLOSING DATE ARE ONE WRITE, BECAUSE THEY ARE
+	 * ONE FACT. `supersededBy` is what the pickers and the index read, and
+	 * `validUntil` is what a person reads, and for as long as only the first
+	 * was written the two disagreed: the Case types index showed a version with
+	 * an open-ended validity beside its own successor, and an auditor reading
+	 * the catalogue saw two versions of one zaaktype both valid indefinitely.
+	 * The closing day is the day the successor TAKES EFFECT, not today: an
+	 * author may publish a version whose `validFrom` is next month, and closing
+	 * the running version today would leave the type with no version in force
+	 * for a month. That leaves the two overlapping on the switch-over day
+	 * itself, which is deliberate and is the smaller wrong: `supersededBy`, not
+	 * the date, is what stops new cases landing on the old version, so the
+	 * overlap misleads nobody while a gap would leave real days uncovered.
+	 *
+	 * An existing `validUntil` is never moved. A version already closed on a
+	 * date somebody chose is a decision, and publishing a successor is not the
+	 * moment to overrule it.
+	 *
 	 * A failure here is logged and not fatal. The new version is already
 	 * published, and refusing after that write would leave the two halves
 	 * disagreeing with nothing to say which one ran.
 	 *
-	 * @param array<string, mixed> $caseType   The version just published.
-	 * @param string               $caseTypeId Its id.
+	 * @param array<string, mixed> $caseType    The version just published.
+	 * @param string               $caseTypeId  Its id.
+	 * @param string               $takesEffect The day the new version is valid from.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
 	 */
-	private function retire(array $caseType, string $caseTypeId): void {
+	private function retire(array $caseType, string $caseTypeId, string $takesEffect): void {
 		$previousId = $this->store->referenceId(value: ($caseType['previousVersion'] ?? ''));
 		if ($previousId === '' || $previousId === $caseTypeId) {
 			return;
@@ -306,6 +346,10 @@ class CaseTypePublishService {
 		}
 
 		$previous['supersededBy'] = $caseTypeId;
+
+		if (trim((string)($previous['validUntil'] ?? '')) === '' && $takesEffect !== '') {
+			$previous['validUntil'] = $takesEffect;
+		}
 
 		if ($this->save(schemaKey: 'case_type_schema', object: $previous) === false) {
 			$this->logger->warning(

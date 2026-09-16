@@ -137,6 +137,13 @@ $extra = [
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
+        // The version chain (case-type-version-chain). The chain is keyed on a
+        // case type; the other two are keyed on a CASE, because moving one
+        // running case along the chain is a handler's act on their own work and
+        // not an administrator's act on the catalogue.
+    ['name' => 'caseVersion#chain',         'url' => '/api/case-types/{id}/chain',        'verb' => 'GET'],
+    ['name' => 'caseVersion#options',       'url' => '/api/case/{caseId}/version-move',   'verb' => 'GET'],
+    ['name' => 'caseVersion#moveToVersion', 'url' => '/api/case/{caseId}/version-move',   'verb' => 'POST'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
