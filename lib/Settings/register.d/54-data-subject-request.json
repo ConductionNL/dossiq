@@ -1,0 +1,130 @@
+{
+  "_note": "data-subject-requests-drive-the-platform (page-topology-cleanup / avg-processing-surface, REQ-AVG-DSR-01..03). Consumes openregister `data-subject-rights-across-the-instance` (#3759 erasure preview and run, #3800 the subject's own export). WHAT THIS FRAGMENT IS NOT: a second erasure engine. Every field here RECORDS what the platform answered; not one of them is computed by dossiq. The preview id, the digest, the counts, the protected list and the run outcome all come back from OpenRegister verbatim, and dossiq's only arithmetic is deciding whether the export is still inside its seven day life. FLAT RATHER THAN ONE BLOCK, on purpose: `dataSubjectRequestType` is named by a transition's `requiresSettled.fieldEquals` and the work list facets on it, and the derived-status evaluator reads a field by name off the case. A nested block would be one dotted path away from a condition that silently never matches, which is the failure mode this whole change exists to avoid. THE PROTECTED LIST IS STORED, NOT FETCHED ON RENDER: a handler has to be able to answer the data subject from the case months later, and the platform's preview is a live computation over an index that will have moved by then. A fragment of its own rather than an edit to dossiq_register.json, per ADR-037.",
+  "_meta": {
+    "spdx-license": "EUPL-1.2",
+    "spdx-copyright": "2026 Conduction B.V."
+  },
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "case"
+        ]
+      }
+    },
+    "schemas": {
+      "case": {
+        "properties": {
+          "dataSubjectRequestType": {
+            "type": "string",
+            "title": "Data subject request",
+            "description": "Which right under the AVG this case answers: inzage (art. 15), correctie (art. 16) or verwijdering (art. 17). Empty on every case that is not a data subject request. The closing transitions name this field, which is what stops a verwijdering being closed down the inzage path and skipping the erasure guard.",
+            "enum": [
+              "inzage",
+              "correctie",
+              "verwijdering"
+            ],
+            "facetable": true
+          },
+          "dataSubject": {
+            "type": "string",
+            "title": "Data subject",
+            "description": "The identifier the platform searches on: an email address, a BSN, or whatever else the PII index holds for this person. This is the value handed to OpenRegister, so it is the one the counts were computed for."
+          },
+          "dataSubjectType": {
+            "type": "string",
+            "title": "Identifier kind",
+            "description": "Which kind of identifier `dataSubject` is, passed to the platform as its `type` filter. Left empty the platform searches every kind, which is wider than most requests mean."
+          },
+          "erasurePreviewId": {
+            "type": "string",
+            "readOnly": true,
+            "title": "Erasure preview",
+            "description": "The preview OpenRegister recorded for this case. The approval and the run both name it, so a case that carries none has nothing to approve and nothing to run."
+          },
+          "erasureDigest": {
+            "type": "string",
+            "readOnly": true,
+            "title": "Preview digest",
+            "description": "The digest the platform computed over the preview. OpenRegister recomputes it at run time and refuses a run whose world has moved, with `erasure-preview-stale`. Stored here so a handler reading the case can see which reading was approved."
+          },
+          "erasureCounts": {
+            "type": "object",
+            "readOnly": true,
+            "title": "What the erasure would touch",
+            "description": "The platform's `report.counts`, verbatim: erasable, pseudonymised and protected, each over objects, files, timelineEntries and partyRecords. Kept as the platform returned it rather than flattened, so a count dossiq does not yet render is not lost.",
+            "facetable": false
+          },
+          "erasureProtected": {
+            "type": "array",
+            "readOnly": true,
+            "title": "Protected from erasure",
+            "description": "The platform's `report.protected`, each item named with the ground that protects it, the legal basis and the action a handler can take. This is what a handler reads to the data subject when the answer is not yes, and it is why a refusal on this case is a sentence rather than a number.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "What is protected"
+                },
+                "ground": {
+                  "type": "string",
+                  "title": "Ground"
+                },
+                "basis": {
+                  "type": "string",
+                  "title": "Legal basis"
+                },
+                "action": {
+                  "type": "string",
+                  "title": "What can be done"
+                }
+              }
+            }
+          },
+          "erasureApprovedBy": {
+            "type": "string",
+            "readOnly": true,
+            "title": "Approved by",
+            "description": "Who took the approving transition. Written by the engine's status record chain and copied here so the run can refuse without walking that chain. Never the person who prepared the preview: the transition declares `notPerformedBy` against the preparing act."
+          },
+          "erasureApprovedAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "title": "Approved at",
+            "description": "When the approval was given. A run against a preview approved before the last preview was taken is not an approval of that preview."
+          },
+          "erasureOutcome": {
+            "type": "object",
+            "readOnly": true,
+            "title": "What the erasure did",
+            "description": "The platform's run report, verbatim: destroyed, pseudonymised, withheld, refused, failed and complete. `complete: false` keeps the case open, and the withheld list is what the refusal to close names. Absent until a run has happened, which is itself a reason the case cannot close.",
+            "facetable": false
+          },
+          "subjectExportId": {
+            "type": "string",
+            "readOnly": true,
+            "title": "Subject export",
+            "description": "The export OpenRegister is producing or has produced for this subject. An inzage case carries one; a verwijdering case usually does not."
+          },
+          "subjectExportExpiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "title": "Export expires",
+            "description": "The end of the export's seven day life, as the platform reported it. Past it the download is not offered and the export is asked for again, because the platform refuses the link rather than serving a stale file."
+          },
+          "subjectExportReady": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true,
+            "title": "Export ready",
+            "description": "Whether the platform reported the file downloadable at the last reading. A convenience for the work list; the case page asks the platform again before it offers the link, because readiness is the platform's fact and this is a copy of it.",
+            "facetable": true
+          }
+        }
+      }
+    }
+  }
+}

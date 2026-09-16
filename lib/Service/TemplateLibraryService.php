@@ -156,6 +156,8 @@ class TemplateLibraryService {
 	 * - documentType objects linked to the caseType
 	 * - decisionType objects linked to the caseType
 	 * - roleType objects linked to the caseType
+	 * - a workflowTemplate, when the template declares one, with its transitions
+	 *   resolved from status names to the ids just created
 	 *
 	 * @param string $templateId The template identifier
 	 *
@@ -219,6 +221,7 @@ class TemplateLibraryService {
 			'documents' => $created['documents'],
 			'decisions' => $created['decisions'],
 			'roles' => $created['roles'],
+			'workflow' => $created['workflow'],
 		];
 
 		$this->logger->info(
@@ -238,7 +241,7 @@ class TemplateLibraryService {
 	 * @param array<string, mixed> $template The loaded template definition
 	 * @param string $caseTypeId UUID of the caseType just created
 	 *
-	 * @return array<string, array<int, string>> The created object ids, keyed by collection.
+	 * @return array<string, mixed> The created object ids, keyed by collection, plus the workflow uuid.
 	 */
 	private function createTemplateEntities(object $objectService, string $register, array $template, string $caseTypeId): array {
 		$created = [
@@ -247,9 +250,14 @@ class TemplateLibraryService {
 			'documents' => [],
 			'decisions' => [],
 			'roles' => [],
+			'workflow' => '',
 		];
 
-		// Create status types.
+		// Create status types. The name of each is kept against the uuid it
+		// was given, because a transition is written by an author in status
+		// NAMES and read by the engine as status IDS, and nothing in between
+		// was translating.
+		$statusIds = [];
 		$statusTypeSchema = $this->settingsService->getConfigValue('status_type_schema');
 		foreach (($template['statusTypes'] ?? []) as $statusData) {
 			$statusData['caseType'] = $caseTypeId;
@@ -259,6 +267,7 @@ class TemplateLibraryService {
 				schema: $statusTypeSchema,
 			);
 			$created['statuses'][] = $status->getUuid();
+			$statusIds[trim((string)($statusData['name'] ?? ''))] = $status->getUuid();
 		}
 
 		// Create property definitions.
@@ -309,6 +318,94 @@ class TemplateLibraryService {
 			$created['roles'][] = $role->getUuid();
 		}
 
+		$created['workflow'] = $this->createWorkflowTemplate(
+			objectService: $objectService,
+			register: $register,
+			template: $template,
+			caseTypeId: $caseTypeId,
+			statusIds: $statusIds,
+		);
+
 		return $created;
 	}//end createTemplateEntities()
+
+	/**
+	 * Create the workflow a template declares, with its transitions resolved.
+	 *
+	 * 🔑 A DECLARATION NOTHING READS IS WORSE THAN NO DECLARATION. Every
+	 * template in this library shipped its statuses and no transitions at all,
+	 * so a case type activated here had an ordered list of statuses and no
+	 * moves between them, and the three things a transition may declare since
+	 * `what-a-transition-declares` (what must be settled, what it explains,
+	 * who may not take it) had no way to reach an activated case type. A four
+	 * eyes rule written in a template and never saved is not a weaker rule, it
+	 * is no rule, and nothing on screen says so.
+	 *
+	 * The translation is the point: an author writes `fromStatusName`, the
+	 * engine reads `fromStatus` as a uuid, and the map comes from the statuses
+	 * this same activation just created. A transition naming a status the
+	 * template does not declare is DROPPED rather than saved half-resolved,
+	 * because a transition with an empty `fromStatus` is offered from every
+	 * status in the case type.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param string               $register      The Dossiq register slug.
+	 * @param array<string, mixed> $template      The loaded template definition.
+	 * @param string               $caseTypeId    UUID of the caseType just created.
+	 * @param array<string, string> $statusIds    Status name to uuid, from this activation.
+	 *
+	 * @return string The workflow uuid, or the empty string when the template declares none.
+	 *
+	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 */
+	private function createWorkflowTemplate(
+		object $objectService,
+		string $register,
+		array $template,
+		string $caseTypeId,
+		array $statusIds,
+	): string {
+		$workflow = ($template['workflowTemplate'] ?? null);
+		if (is_array($workflow) === false) {
+			return '';
+		}
+
+		$transitions = [];
+		foreach ((array)($workflow['transitions'] ?? []) as $transition) {
+			if (is_array($transition) === false) {
+				continue;
+			}
+
+			$from = ($statusIds[trim((string)($transition['fromStatusName'] ?? ''))] ?? '');
+			$to = ($statusIds[trim((string)($transition['toStatusName'] ?? ''))] ?? '');
+			if ($from === '' || $to === '') {
+				$this->logger->warning(
+					'Template transition names a status the template does not declare, dropped: '
+					. (string)($transition['label'] ?? ''),
+					['app' => Application::APP_ID]
+				);
+				continue;
+			}
+
+			unset($transition['fromStatusName'], $transition['toStatusName']);
+			$transition['fromStatus'] = $from;
+			$transition['toStatus'] = $to;
+			$transitions[] = $transition;
+		}//end foreach
+
+		if ($transitions === []) {
+			return '';
+		}
+
+		$workflow['caseType'] = $caseTypeId;
+		$workflow['transitions'] = $transitions;
+
+		$saved = $objectService->saveObject(
+			object: $workflow,
+			register: $register,
+			schema: $this->settingsService->getConfigValue('workflow_template_schema'),
+		);
+
+		return $saved->getUuid();
+	}//end createWorkflowTemplate()
 }//end class
