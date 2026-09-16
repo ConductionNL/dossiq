@@ -145,7 +145,10 @@ export function pauseSentence(term, t) {
 		return t('dossiq', 'Suspended: {reason}. One reminder sent.', { reason })
 	}
 
-	return t('dossiq', 'Suspended: {reason}. {chases} reminders sent.', { reason, chases })
+	return t('dossiq', 'Suspended: {reason}. {chases} reminders sent.', {
+		reason,
+		chases,
+	})
 }
 
 /**

@@ -63,14 +63,19 @@ describe('the readiness declaration', () => {
 
 describe('nothing in the readiness list gates the app', () => {
 	it('leaves register-check as the only required step', () => {
-		const required = manifest.setup.steps.filter((step) => step.required === true)
+		const required = manifest.setup.steps.filter(
+			(step) => step.required === true,
+		)
 		expect(required.map((step) => step.id)).toEqual(['register-check'])
 	})
 
 	it('promotes no readiness item into the wizard steps', () => {
 		const stepIds = manifest.setup.steps.map((step) => step.id)
 		for (const item of readiness.items) {
-			expect(stepIds, `${item.id} is both a readiness item and a wizard step`).not.toContain(item.id)
+			expect(
+				stepIds,
+				`${item.id} is both a readiness item and a wizard step`,
+			).not.toContain(item.id)
 		}
 	})
 
@@ -81,11 +86,15 @@ describe('nothing in the readiness list gates the app', () => {
 		// of the fact fails on the code that is right, which is what it did
 		// from the merge that added it.
 		expect(controller).toContain("'readiness' => $this->readiness->report()")
-		expect(controller).toContain("'tourSteps' => $this->readiness->brokenTourSteps()")
+		expect(controller).toContain(
+			"'tourSteps' => $this->readiness->brokenTourSteps()",
+		)
 		// And that block reaches the status payload at the top level. Building
 		// it and never merging it is the silent half of this failure: the
 		// method reads correct and the endpoint reports nothing.
-		expect(controller).toContain('$response = array_merge($response, $this->firstRun())')
+		expect(controller).toContain(
+			'$response = array_merge($response, $this->firstRun())',
+		)
 		// Not folded into `steps`: an unreported step is UNKNOWN to CnAppRoot
 		// and a reported one it cannot prompt for is worse.
 		expect(controller).not.toContain("'steps' => $this->readiness")
@@ -96,11 +105,13 @@ describe('the screen an administrator reads it on', () => {
 	it('is a section of admin settings, mounted first', () => {
 		expect(adminRoot).toContain('id="section-first-run"')
 		expect(adminRoot).toContain('<FirstRunTab')
-		expect(adminRoot.indexOf('section-first-run')).toBeLessThan(adminRoot.indexOf('Case Type Management'))
+		expect(adminRoot.indexOf('section-first-run')).toBeLessThan(
+			adminRoot.indexOf('Case Type Management'),
+		)
 	})
 
 	it('reads the status live rather than a stored flag', () => {
-		expect(tab).toContain("/apps/dossiq/api/setup/status")
+		expect(tab).toContain('/apps/dossiq/api/setup/status')
 		expect(tab).toContain('async reload()')
 		expect(tab).not.toContain('localStorage')
 	})

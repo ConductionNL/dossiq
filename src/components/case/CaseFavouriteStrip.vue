@@ -60,7 +60,11 @@ import { translate as t } from '@nextcloud/l10n'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import Star from 'vue-material-design-icons/Star.vue'
 import StarOutline from 'vue-material-design-icons/StarOutline.vue'
-import { isFavourite, objectIdOf, setFavourite } from '../../services/favouriteApi.js'
+import {
+	isFavourite,
+	objectIdOf,
+	setFavourite,
+} from '../../services/favouriteApi.js'
 
 export default {
 	name: 'CaseFavouriteStrip',
@@ -108,7 +112,12 @@ export default {
 		 * @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 		 */
 		caseId() {
-			return String(this.objectId || objectIdOf(this.objectData) || this.$route?.params?.id || '')
+			return String(
+				this.objectId
+					|| objectIdOf(this.objectData)
+					|| this.$route?.params?.id
+					|| '',
+			)
 		},
 
 		/**
@@ -161,7 +170,7 @@ export default {
 			}
 
 			const previous = this.starred
-			const wanted = (previous === false)
+			const wanted = previous === false
 
 			this.local = wanted
 			this.busy = true
@@ -172,7 +181,11 @@ export default {
 			} catch (error) {
 				this.local = previous
 				const refusal = String(error?.response?.data?.message ?? '')
-				showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+				showError(
+					refusal !== ''
+						? refusal
+						: t('dossiq', 'This did not work. Try again.'),
+				)
 			} finally {
 				this.busy = false
 			}
