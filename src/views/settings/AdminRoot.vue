@@ -134,6 +134,19 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-search-index"
+			:name="t('dossiq', 'Search index')"
+			:description="
+				t(
+					'dossiq',
+					'The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.',
+				)
+			"
+			:loading="!storesReady">
+			<SearchIndexTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-mailbox"
 			:name="t('dossiq', 'Case Email: Shared Mailbox')"
 			:description="
@@ -255,6 +268,7 @@ import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
@@ -273,6 +287,7 @@ export default {
 		ZgwMappingSettings,
 		AiSettingsTab,
 		ArchivalSettingsTab,
+		SearchIndexTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,

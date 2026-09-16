@@ -568,8 +568,21 @@ $extra = [
         // `GET /apps/openregister/api/public/case-tokens/{token}` — an
         // audited, RBAC-respecting surface (only public-group-readable
         // fields), not a hand-maintained dossiq auth surface.
+        //
+        // A public case link is now an OpenRegister access link (#3817).
+        // caseSharing#createShare mints it, beside the partner and federated
+        // ways of sharing a case, because that is the choice between them.
+        // Everything done to a link that already exists lives on
+        // caseAccessLink: reading the links on a case with the state of each,
+        // switching one off and back on, showing the handler what its holder
+        // reads, and revoking it. OpenRegister revokes a link only for the
+        // colleague who minted it, so a refusal is reported, never swallowed.
     ['name' => 'caseSharing#createShare',      'url' => '/api/shares',                   'verb' => 'POST'],
     ['name' => 'caseSharing#revokeShare',      'url' => '/api/shares/{shareId}',         'verb' => 'DELETE'],
+    ['name' => 'caseAccessLink#index',         'url' => '/api/access-links/case/{caseId}',   'verb' => 'GET'],
+    ['name' => 'caseAccessLink#preview',       'url' => '/api/access-links/{linkId}/preview', 'verb' => 'GET'],
+    ['name' => 'caseAccessLink#pause',         'url' => '/api/access-links/{linkId}',    'verb' => 'PUT'],
+    ['name' => 'caseAccessLink#revoke',        'url' => '/api/access-links/{linkId}',    'verb' => 'DELETE'],
     ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
     ['name' => 'caseSharing#handleTransfer',   'url' => '/api/transfers/{transferId}',   'verb' => 'PUT'],
 
@@ -642,10 +655,15 @@ $extra = [
     ['name' => 'consultation#requestExtension',    'url' => '/api/consultations/{id}/extension',               'verb' => 'POST'],
     ['name' => 'consultation#approveExtension',    'url' => '/api/consultations/{id}/extension/approve',       'verb' => 'POST'],
     ['name' => 'consultation#overdue',             'url' => '/api/consultations/overdue',                      'verb' => 'GET'],
+    ['name' => 'consultationLink#externalLink',     'url' => '/api/consultations/{id}/external-link',           'verb' => 'POST'],
+    ['name' => 'consultationLink#collectAdvice',   'url' => '/api/consultations/{id}/advice',                  'verb' => 'POST'],
     ['name' => 'advisoryBody#listAdvisoryBodies',   'url' => '/api/advisory-bodies',                            'verb' => 'GET'],
     ['name' => 'advisoryBody#searchAdvisoryBodies', 'url' => '/api/advisory-bodies/search',                     'verb' => 'GET'],
-    ['name' => 'consultationPublic#publicResponseGet',  'url' => '/api/public/consultations/{token}',           'verb' => 'GET'],
-    ['name' => 'consultationPublic#publicResponsePost', 'url' => '/api/public/consultations/{token}',           'verb' => 'POST'],
+        // The token-addressed external consultation surface is GONE. Nothing
+        // ever minted the `secureToken` these two read, so neither could be
+        // entered; AdvisoryBodyService records why its minter was deleted.
+        // An advisory body now answers through an OpenRegister access link
+        // declaring `comment` (#3817), minted by consultation#externalLink.
 
         // ── Email (outbound case communication) ─────────────────────────
     ['name' => 'email#send',             'url' => '/api/email/{caseId}/send',            'verb' => 'POST'],
@@ -888,6 +906,19 @@ $extra = [
     ['name' => 'caseTerms#aanvullingsverzoeken', 'url' => '/api/cases/{caseId}/aanvullingsverzoeken', 'verb' => 'GET'],
         // How old the work still standing is, read live over open cases only.
     ['name' => 'caseTerms#workloadAge', 'url' => '/api/termijn/reports/open-workload-age', 'verb' => 'GET'],
+
+        // AVG data subject requests, driven from the case
+        // (data-subject-requests-drive-the-platform, REQ-AVG-DSR-01..03).
+        // Consumes openregister `data-subject-rights-across-the-instance`:
+        // the preview, the approved run and the subject's own export all
+        // execute there. NOTHING HERE ERASES ANYTHING, which is why there is
+        // no dossiq endpoint that takes an erase mode or a subject id: both
+        // come off the case, so a caller cannot point this app's acts at a
+        // person whose case they cannot reach.
+    ['name' => 'dataSubjectRequest#preview',       'url' => '/api/cases/{caseId}/avg/erasure-preview', 'verb' => 'POST'],
+    ['name' => 'dataSubjectRequest#run',           'url' => '/api/cases/{caseId}/avg/erasure-run',     'verb' => 'POST'],
+    ['name' => 'dataSubjectRequest#requestExport', 'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'POST'],
+    ['name' => 'dataSubjectRequest#exportState',   'url' => '/api/cases/{caseId}/avg/subject-export',  'verb' => 'GET'],
         // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
         // TermijnDefinitiesTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.

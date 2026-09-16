@@ -77,3 +77,9 @@ named change is archived.
   No dossiq dependency. Rows 6.2 and 6.15 read the same entries:
   `timeline-entries-default-internal` owns the visibility half, and the
   Communication tab stays the place a contact moment is logged
+- [ ] 26 `case-search-declares-its-fields` (rows 9.2, 9.1, 9.12), the
+  consumer of openregister `search-quality-operators-and-facets` (#3768
+  and #3806, both merged 2026-09-15). No dossiq dependency. The
+  missing-value chip in the facet sidebar waits on
+  ConductionNL/nextcloud-vue#1176 and is not built here; the change ships
+  a not-set lens instead, which needs no facet payload
