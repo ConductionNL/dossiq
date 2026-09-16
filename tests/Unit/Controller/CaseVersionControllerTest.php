@@ -205,7 +205,7 @@ class CaseVersionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	public function testACallerWithoutCaseAccessCannotMoveTheCase(): void {
 		$this->guard = $this->createMock(originalClassName: CaseAccessGuard::class);
@@ -227,7 +227,7 @@ class CaseVersionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	public function testACallerWithoutCaseAccessCannotReadTheOptions(): void {
 		$this->guard = $this->createMock(originalClassName: CaseAccessGuard::class);
@@ -242,7 +242,7 @@ class CaseVersionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	public function testAnAnonymousCallerIsRefused(): void {
 		$this->userSession = $this->createMock(originalClassName: IUserSession::class);
@@ -264,7 +264,7 @@ class CaseVersionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	public function testThePreviewIsOnlyAskedForWhenATargetIsNamed(): void {
 		$this->move->method('options')->willReturn(['current' => [], 'targets' => []]);
@@ -278,7 +278,7 @@ class CaseVersionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	public function testANamedTargetBringsItsPreview(): void {
 		$this->move->method('options')->willReturn(['current' => [], 'targets' => []]);
@@ -301,7 +301,7 @@ class CaseVersionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	public function testARefusalKeepsItsSentenceAndItsStatus(): void {
 		$this->move->method('move')->willThrowException(
@@ -324,7 +324,7 @@ class CaseVersionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	public function testTheActReachesTheServiceUnchanged(): void {
 		$this->move->expects(self::once())
