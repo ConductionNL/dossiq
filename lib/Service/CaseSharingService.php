@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
-use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
+use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use Psr\Log\LoggerInterface;
@@ -310,16 +310,39 @@ class CaseSharingService {
 	}//end pauseTokenShare()
 
 	/**
-	 * What the holder of a share's link reads.
+	 * What the holder of a case link reads.
 	 *
-	 * @param string $anchor The link anchor.
+	 * The anchor is read off the stored address rather than kept in a column
+	 * of its own. The anchor IS the credential, and one copy of it in the
+	 * register is one too many already.
+	 *
+	 * @param int $linkId The OpenRegister access link id.
+	 * @param string $caseId The case the link is on.
 	 *
 	 * @return array<string, mixed>|null The body a holder is served, or null.
 	 *
 	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
 	 */
-	public function holderPreview(string $anchor): ?array {
-		return $this->accessLinks->holderPreview(anchor: $anchor);
+	public function holderPreview(int $linkId, string $caseId): ?array {
+		foreach ($this->listLinkShares(caseId: $caseId) as $share) {
+			if ((int)($share['accessLinkId'] ?? 0) !== $linkId) {
+				continue;
+			}
+
+			$url = trim((string)($share['accessLinkUrl'] ?? ''));
+			if ($url === '') {
+				return null;
+			}
+
+			$anchor = (string)substr(strrchr('/' . $url, '/'), 1);
+			if ($anchor === '') {
+				return null;
+			}
+
+			return $this->accessLinks->holderPreview(anchor: $anchor);
+		}
+
+		return null;
 	}//end holderPreview()
 
 	/**

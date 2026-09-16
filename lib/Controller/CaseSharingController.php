@@ -235,8 +235,10 @@ class CaseSharingController extends Controller {
 			return $guard;
 		}
 
-		$anchor = (string)$this->request->getParam('anchor', '');
-		$preview = $this->caseSharingService->holderPreview(anchor: $anchor);
+		$preview = $this->caseSharingService->holderPreview(
+			linkId: (int)$shareId,
+			caseId: (string)$this->request->getParam('caseId', '')
+		);
 		if ($preview === null) {
 			return new JSONResponse(
 				['success' => false, 'error' => 'This link opens nothing any more'],
