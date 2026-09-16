@@ -114,6 +114,12 @@ const DRAFTS_LENS = 'My drafts'
 const CASE_LENSES = [
 	'All',
 	'Unread',
+	// Two lenses over per-user platform state rather than a field of the case
+	// (case-number-and-favourites row 2.19, openregister#3766). They sit with
+	// Unread because all three answer about YOU, not about the case: the star
+	// you set and the cases you last opened.
+	'Favourites',
+	'Recently opened',
 	// Three lenses over a stored, facetable boolean on the case, each from a
 	// change that named the row it answers. `Waiting on the applicant`
 	// (aanvullingsverzoek-as-a-record row 1.17, #2858) is what the APPLICANT
@@ -152,6 +158,8 @@ const CASE_LENSES = [
  */
 const CASES_ONLY = [
 	'Unread',
+	'Favourites',
+	'Recently opened',
 	'Waiting on the applicant',
 	'Needs attention',
 	'Assessed high risk',
@@ -161,7 +169,7 @@ const CASES_ONLY = [
 ]
 
 describe('Cases index lenses', () => {
-	it('declares the thirteen chips in order', () => {
+	it('declares the fifteen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 

@@ -5219,6 +5219,17 @@
         "You set this, for this part of your work only.": "You set this, for this part of your work only.",
         "You set this.": "You set this.",
         "Your team set this, for this part of your work only. You can decide for yourself.": "Your team set this, for this part of your work only. You can decide for yourself.",
-        "Your team set this. You can decide for yourself.": "Your team set this. You can decide for yourself."
+        "Your team set this. You can decide for yourself.": "Your team set this. You can decide for yourself.",
+        "Add to favourites": "Add to favourites",
+        "Add to or remove from favourites": "Add to or remove from favourites",
+        "Added to your favourites.": "Added to your favourites.",
+        "Cases you open show up here": "Cases you open show up here",
+        "Favourite": "Favourite",
+        "Favourites": "Favourites",
+        "Recently opened": "Recently opened",
+        "Remove from favourites": "Remove from favourites",
+        "Removed from your favourites.": "Removed from your favourites.",
+        "Star a case to find it here": "Star a case to find it here",
+        "Your favourites": "Your favourites"
     }
 }
