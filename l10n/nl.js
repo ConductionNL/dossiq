@@ -5071,7 +5071,11 @@ OC.L10N.register(
         "What the applicant reads for this status. Leave it empty and they read the name.": "Wat de aanvrager leest bij deze status. Laat het leeg en hij leest de naam.",
         "What the applicant is told this status means. Empty shows no description.": "Wat de aanvrager te horen krijgt over deze status. Leeg toont geen omschrijving.",
         "What the applicant reads for the status this case sits in.": "Wat de aanvrager leest bij de status waarin deze zaak staat.",
-        "What the applicant is told the current status means.": "Wat de aanvrager te horen krijgt over de huidige status."
+        "What the applicant is told the current status means.": "Wat de aanvrager te horen krijgt over de huidige status.",
+        "What the applicant sees": "Wat de aanvrager ziet",
+        "The name above is written for you. Leave these empty and the applicant reads that name.": "De naam hierboven is voor jou geschreven. Laat deze velden leeg en de aanvrager leest die naam.",
+        "What the applicant should know right now": "Wat de aanvrager nu moet weten",
+        "Empty shows no description. The description above is never shown to the applicant.": "Leeg toont geen omschrijving. De omschrijving hierboven ziet de aanvrager nooit."
     },
     "nplurals=2; plural=(n != 1);"
 )

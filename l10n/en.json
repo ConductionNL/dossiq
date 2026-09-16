@@ -5082,6 +5082,10 @@
         "What the applicant reads for this status. Leave it empty and they read the name.": "What the applicant reads for this status. Leave it empty and they read the name.",
         "What the applicant is told this status means. Empty shows no description.": "What the applicant is told this status means. Empty shows no description.",
         "What the applicant reads for the status this case sits in.": "What the applicant reads for the status this case sits in.",
-        "What the applicant is told the current status means.": "What the applicant is told the current status means."
+        "What the applicant is told the current status means.": "What the applicant is told the current status means.",
+        "What the applicant sees": "What the applicant sees",
+        "The name above is written for you. Leave these empty and the applicant reads that name.": "The name above is written for you. Leave these empty and the applicant reads that name.",
+        "What the applicant should know right now": "What the applicant should know right now",
+        "Empty shows no description. The description above is never shown to the applicant.": "Empty shows no description. The description above is never shown to the applicant."
     }
 }
