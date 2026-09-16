@@ -94,11 +94,11 @@ registry, one new repair step and one new service.
 
 ## Deliberately out of scope
 
-- The status-change and term-event writers. Their kinds are declared so
-  the entries validate the day those writers land, but
-  `StatusTransitionService` and `TermijnService` are owned by two lanes
-  in flight and editing them here would collide. The audit sidebar
-  already answers the status question.
+- ~~The status-change and term-event writers.~~ Landed after the lanes
+  that owned `StatusTransitionService` and `TermijnService` merged, as
+  REQ-TL-15 and REQ-TL-16. The audit sidebar still holds the change
+  history; the timeline now holds the same moves beside the
+  communications, which is the order a handler reads.
 - A `notitie` kind. OpenRegister projects every note written through
   `/notes` as an entry with no kind, so a declared `notitie` kind would
   split one log into two filter buckets that mean the same thing. The

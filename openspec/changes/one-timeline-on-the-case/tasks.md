@@ -19,8 +19,11 @@
   mutation-checked
 - [x] 10 `tests/e2e/one-timeline-on-the-case.spec.ts`, tagged against the
   scenarios, not run locally
-- [ ] 11 The status-change and term-event writers, once
+- [x] 11 The status-change and term-event writers, now that
   `what-a-status-declares` and `phase-terms-and-the-internal-target`
-  land. Their kinds are already declared
+  have landed. `CaseStatusStore` records the four moves that write a
+  status record, a post-persist listener records the derived move, and
+  `TermijnService` records every term event and the start of a term that
+  writes none. Both kinds gained the fields their writers carry
 - [ ] 12 The applicant-facing visibility toggle, in
   `timeline-entries-default-internal`
