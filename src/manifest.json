@@ -2451,6 +2451,13 @@
 							"component": "CaseSharingTab"
 						},
 						{
+							"id": "avg",
+							"label": "AVG",
+							"icon": "ShieldLockOutline",
+							"_note": "data-subject-requests-drive-the-platform REQ-AVG-DSR-01: what OpenRegister reported about this case's data subject, and the acts dossiq drives on it. On every case rather than only on a data subject request, because a sidebar tab list is one declaration on the case page and gating it on a field would need a per-case condition the host does not evaluate here. The panel itself reads the request kind and shows the erasure half or the export half accordingly, and a case that is not an AVG request shows the export half with nothing asked for yet. A `component:` tab and not a `widgets[]` one, because none of CnObjectSidebar's built-ins can call the AVG endpoints or render a protected item with its ground and its remedy.",
+							"component": "DataSubjectRequestTab"
+						},
+						{
 							"id": "tags",
 							"label": "Tags",
 							"icon": "TagMultiple",

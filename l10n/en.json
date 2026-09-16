@@ -5124,6 +5124,22 @@
         "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.": "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.",
         "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map.": "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map.",
         "Why the indicator was set, for the handler who meets the refusal.": "Why the indicator was set, for the handler who meets the refusal.",
-        "email, postal, phone or geo.": "email, postal, phone or geo."
+        "email, postal, phone or geo.": "email, postal, phone or geo.",
+        "Ask for the export": "Ask for the export",
+        "Ask the platform what erasing this person would touch.": "Ask the platform what erasing this person would touch.",
+        "AVG": "AVG",
+        "Download the export": "Download the export",
+        "Erasable": "Erasable",
+        "Erasure": "Erasure",
+        "No preview yet": "No preview yet",
+        "Protected from erasure": "Protected from erasure",
+        "Run the approved erasure": "Run the approved erasure",
+        "Subject export": "Subject export",
+        "Take the preview": "Take the preview",
+        "The erasure did not finish. {count} records still hold this person.": "The erasure did not finish. {count} records still hold this person.",
+        "The platform is still assembling the file.": "The platform is still assembling the file.",
+        "The platform reports the erasure complete.": "The platform reports the erasure complete.",
+        "This export expired. Ask for it again.": "This export expired. Ask for it again.",
+        "To pseudonymise": "To pseudonymise"
     }
 }
