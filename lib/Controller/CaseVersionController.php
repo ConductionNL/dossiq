@@ -178,7 +178,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @psalm-suppress PossiblyUnusedMethod
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	#[NoAdminRequired]
 	public function options(string $caseId): JSONResponse {
@@ -211,7 +211,7 @@ class CaseVersionController extends Controller {
 	 *
 	 * @psalm-suppress PossiblyUnusedMethod
 	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-07
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	#[NoAdminRequired]
 	public function moveToVersion(string $caseId): JSONResponse {
