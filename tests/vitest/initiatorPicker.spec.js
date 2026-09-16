@@ -48,6 +48,19 @@ vi.mock('@nextcloud/vue', () => {
  */
 let storeStub = {}
 
+/**
+ * What OpenRegister answers when asked who already holds an address.
+ *
+ * Replaced per test. The picker asks BEFORE a second record is created for
+ * a person somebody already wrote down, which is the same call
+ * `docs/Features/parties.md` asks of integriq's BRP and KvK adapters.
+ */
+let resolvedParty = null
+
+vi.mock('../../src/services/caseParties.js', () => ({
+	resolvePartyByAddress: vi.fn(async () => resolvedParty),
+}))
+
 vi.mock('../../src/store/modules/object.js', () => ({
 	useObjectStore: () => storeStub,
 }))
@@ -99,7 +112,7 @@ describe('InitiatorPicker — one write path for the requester', () => {
 
 		wrapper.vm.query = 'Janssen'
 		await wrapper.vm.runSearch()
-		wrapper.vm.select(wrapper.vm.results[0])
+		await wrapper.vm.select(wrapper.vm.results[0])
 
 		expect(fetchCollection).toHaveBeenCalledWith('brpPerson', {
 			_search: 'Janssen',
@@ -120,7 +133,7 @@ describe('InitiatorPicker — one write path for the requester', () => {
 		wrapper.vm.activeTab = 'company'
 		wrapper.vm.query = 'Dagobert'
 		await wrapper.vm.runSearch()
-		wrapper.vm.select(wrapper.vm.results[0])
+		await wrapper.vm.select(wrapper.vm.results[0])
 
 		expect(fetchCollection).toHaveBeenCalledWith('kvkCompany', {
 			_search: 'Dagobert',
@@ -134,10 +147,10 @@ describe('InitiatorPicker — one write path for the requester', () => {
 		})
 	})
 
-	it('leaves requester empty for a contact, which has no register row', () => {
+	it('leaves requester empty for a contact, which has no register row', async () => {
 		const wrapper = mountPicker()
 
-		wrapper.vm.select({
+		await wrapper.vm.select({
 			type: 'contact',
 			sourceId: 'uid-9',
 			displayName: 'Anna de Wit',
@@ -215,5 +228,57 @@ describe('InitiatorPicker — one write path for the requester', () => {
 		await wrapper.vm.resolveValue()
 
 		expect(wrapper.vm.currentChoice).toBe(null)
+	})
+})
+
+describe('InitiatorPicker — no second party for an address somebody holds', () => {
+	it('names the party that already holds the contact address', async () => {
+		resolvedParty = { id: 'uuid-party-1', name: 'Jan de Vries' }
+		const wrapper = mountPicker()
+
+		await wrapper.vm.select({
+			type: 'contact',
+			sourceId: 'contact-uid-1',
+			displayName: 'Jan de Vries',
+			detail: 'jan@example.nl',
+			objectId: null,
+		})
+
+		expect(wrapper.emitted('select')[0][0].requester).toBe('uuid-party-1')
+	})
+
+	it('records the choice unchanged when no party holds the address', async () => {
+		resolvedParty = null
+		const wrapper = mountPicker()
+
+		await wrapper.vm.select({
+			type: 'contact',
+			sourceId: 'contact-uid-1',
+			displayName: 'Jan de Vries',
+			detail: 'jan@example.nl',
+			objectId: null,
+		})
+
+		expect(wrapper.emitted('select')[0][0]).toEqual({
+			requester: '',
+			initiatorType: 'contact',
+			initiatorSourceId: 'contact-uid-1',
+			initiatorDisplayName: 'Jan de Vries',
+		})
+	})
+
+	it('does not ask about a register row it just picked', async () => {
+		resolvedParty = { id: 'uuid-party-1', name: 'Somebody else' }
+		const wrapper = mountPicker()
+
+		await wrapper.vm.select({
+			type: 'person',
+			sourceId: '999990627',
+			displayName: 'Stephan Janssen',
+			detail: 'BSN 999990627',
+			objectId: 'uuid-person-1',
+		})
+
+		expect(wrapper.emitted('select')[0][0].requester).toBe('uuid-person-1')
 	})
 })

@@ -43,12 +43,14 @@ class FileRequestService {
 	/**
 	 * @param PersonLinkReader $people The people on the case.
 	 * @param DocumentProjectionService $folders The case's own folder.
+	 * @param PartyIndicatorReader $indicators What the party's indicators refuse.
 	 * @param IShareManager $shares Creates the share Nextcloud mails.
 	 * @param IUserSession $userSession The handler making the request.
 	 */
 	public function __construct(
 		private readonly PersonLinkReader $people,
 		private readonly DocumentProjectionService $folders,
+		private readonly PartyIndicatorReader $indicators,
 		private readonly IShareManager $shares,
 		private readonly IUserSession $userSession,
 	) {
@@ -64,9 +66,12 @@ class FileRequestService {
 	 *
 	 * @return array<string, mixed> The recipient, the token and when it expires.
 	 *
-	 * @throws RuntimeException 404 when the person is not on the case, 422 when they have no address or the case has no folder.
+	 * @throws RuntimeException 404 when the person is not on the case, 403 when an
+	 *         indicator on them refuses the send, 422 when they have no address or
+	 *         the case has no folder.
 	 *
 	 * @spec openspec/specs/people-on-the-case/spec.md#requirement-req-poc-005-a-file-request-shall-be-addressed-to-a-party-of-the-case
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
 	 */
 	public function request(string $caseId, string $personUid, string $note = '', int $days = 0): array {
 		$person = $this->people->personOn(caseId: $caseId, personUid: $personUid);
@@ -77,6 +82,20 @@ class FileRequestService {
 		$email = $this->people->emailOf(link: $person);
 		if ($email === '') {
 			throw new RuntimeException('This person has no email address, so there is nobody to send the request to', 422);
+		}
+
+		// The refusal is evaluated HERE, where the message goes out, and not
+		// only in the dialog that lists who can be asked. A check that lives
+		// in one caller is a check the next caller does not have.
+		$refusal = $this->indicators->sendRefusalFor(
+			partyUuid: $this->indicators->partyUuidOf(link: $person)
+		);
+		if ($refusal !== null) {
+			throw new RuntimeException(
+				'A file request to ' . $this->people->nameOf(link: $person)
+				. ' is refused by the indicator "' . $refusal . '" on this party',
+				403
+			);
 		}
 
 		$folder = $this->folders->folderOf(objectId: $caseId);

@@ -2024,6 +2024,58 @@
                             ]
                         }
                     ],
+                    "partyKinds": [
+                        {
+                            "key": "person",
+                            "label": "Person",
+                            "description": "A natural person, with or without an account on this instance."
+                        },
+                        {
+                            "key": "organisation",
+                            "label": "Organisation",
+                            "description": "A company, authority or other body acting on the case."
+                        },
+                        {
+                            "key": "address",
+                            "label": "Address",
+                            "description": "A place the case is about, such as the address a permit is asked for.",
+                            "roles": [
+                                "locatie"
+                            ]
+                        }
+                    ],
+                    "linkRoles": [
+                        {
+                            "key": "aanvrager",
+                            "label": "Requester",
+                            "description": "The party the case is filed for."
+                        },
+                        {
+                            "key": "gemachtigde",
+                            "label": "Authorised representative",
+                            "description": "Acts for another party on this case, under Awb 2:1."
+                        },
+                        {
+                            "key": "belanghebbende",
+                            "label": "Interested party",
+                            "description": "Whose interest is directly affected by the decision."
+                        },
+                        {
+                            "key": "afzender",
+                            "label": "Sender",
+                            "description": "Sent a document that is on this case."
+                        },
+                        {
+                            "key": "geadresseerde",
+                            "label": "Addressee",
+                            "description": "A document on this case was addressed to them."
+                        },
+                        {
+                            "key": "locatie",
+                            "label": "Location",
+                            "description": "The place this case is about."
+                        }
+                    ],
                     "x-openregister-relation-types": [
                         {
                             "key": "deelzaak",
@@ -2290,7 +2342,12 @@
                     },
                     "endingAct": {
                         "type": "string",
-                        "enum": ["finish", "abort", "archive", "autoClose"],
+                        "enum": [
+                            "finish",
+                            "abort",
+                            "archive",
+                            "autoClose"
+                        ],
                         "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
                         "title": "Ending act",
                         "facetable": true,
@@ -5729,6 +5786,10 @@
                                 "label": "Linked object"
                             }
                         ]
+                    },
+                    "x-openregister-party": {
+                        "kind": "address",
+                        "nameProperty": "label"
                     }
                 },
                 "properties": {
