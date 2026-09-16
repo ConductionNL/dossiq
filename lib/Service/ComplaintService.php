@@ -136,9 +136,8 @@ class ComplaintService {
 
 		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
-		if (is_array($complaint) === true) {
-			$saved = $complaint;
-		} else {
+		$saved = $complaint;
+		if (is_array($complaint) === false) {
 			$saved = array_merge($data, (array)$complaint->getObject(), ['id' => $complaint->getUuid()]);
 		}
 
