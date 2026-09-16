@@ -26,6 +26,10 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
+// The line saying this case is in the archive, and what that means for the
+// reader (archived-cases-leave-the-lenses).
+// @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+import CaseArchivedStrip from './components/case/CaseArchivedStrip.vue'
 // The flag a person raised, the risk the organisation assessed, and the
 // markers the system raised against a named panel.
 // @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
@@ -771,6 +775,20 @@ const registry = {
 		kind: 'widget',
 		component: CaseFavouriteStrip,
 		_note: 'CaseDetail: the per-reader star, directly under the identity tiles because it is part of what identifies this case TO YOU. Starring writes nothing to the case: OpenRegister keeps the star in its own table, so no version is cut, no audit entry is written and no colleague can tell. The strip renders from `@self.favourite`, which every object read already carries, so it makes no call until somebody presses it.',
+	},
+
+	// --- The line saying this case is in the archive. ---
+	//
+	// A LAYOUT grid item and a widget TYPE, for the reason `case-unread` is
+	// one: CnDetailPage resolves a grid item's renderer from
+	// `cnRegistry[widget.type]` when the app supplies no `widget-<id>` slot,
+	// and dossiq supplies none.
+	// @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	'case-archived': {
+		// @custom-widget-ratchet exclude the archive marker is not a property of the case: `@self.archived` is metadata OpenRegister attaches on the render path, so a `data` widget builds its fields from the schema's properties and renders nothing at all, and there is no `integration` id that reaches it. The strip also has to be SILENT on an open case, which no declarative widget can be: a widget with no per-record visibility draws its empty box on every one of the cases that are not archived. Deleted the day CnDetailPage reads `@self.archived` itself, which is where this belongs for every app in the fleet
+		kind: 'widget',
+		component: CaseArchivedStrip,
+		_note: 'CaseDetail: the sentence that says this case is in the archive, who filed it, on what day and with what reason. It sits directly above the unread strip because it changes how everything under it should be read: the page is a record to consult rather than work to do. Restore is deliberately NOT a button here, it is one entry in the Lifecycle menu beside every other act, because an act offered in two places is gated in two places. Silent on a case that is not archived, which is almost every case.',
 	},
 
 	'case-unread': {

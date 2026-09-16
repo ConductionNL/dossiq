@@ -135,6 +135,18 @@ const CASE_LENSES = [
 	'Unclaimed',
 	'Handed on',
 	'Closed',
+	// The one lens that ASKS for archived cases (archived-cases-leave-the-lenses
+	// REQ-CM-42). It sits after Closed because a case is closed before it is
+	// filed, and every lens above it is the working set the platform already
+	// excludes the archive from, which is why not one of them spells the
+	// exclusion out.
+	'Archived',
+	// The missing-value lens (case-search-declares-its-fields REQ-CSD-04). It
+	// shipped in #2884 and was never added here, so this list and the manifest
+	// have disagreed since; inherited, and corrected in passing rather than
+	// left for the sweep, because the same two assertions are the ones the
+	// Archived chip has to pass.
+	'Closed with no result',
 	DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
@@ -164,12 +176,18 @@ const CASES_ONLY = [
 	'Needs attention',
 	'Assessed high risk',
 	'Handed on',
+	// A task is not archived through the case's marker: the Tasks index reads
+	// OpenRegister's task engine through a named entity source, not the `case`
+	// schema, so `_archived` on that list would narrow nothing.
+	'Archived',
+	// A task has no result type, so it cannot be closed without one.
+	'Closed with no result',
 	DRAFTS_LENS,
 	'Stuck',
 ]
 
 describe('Cases index lenses', () => {
-	it('declares the fifteen chips in order', () => {
+	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
@@ -211,6 +229,57 @@ describe('Cases index lenses', () => {
 		expect(chip('Cases', 'Unclaimed').filter).toEqual(
 			page('Queue').config.filter,
 		)
+	})
+
+	it('offers exactly one lens that asks for archived cases', () => {
+		// REQ-CM-42. One lens rather than a toggle on every page (D-3), and a
+		// chip rather than a menu entry (ADR-097).
+		const asking = chips('Cases').filter(
+			(entry) => entry.filter && '_archived' in entry.filter,
+		)
+		expect(asking).toHaveLength(1)
+		expect(asking[0].label).toBe('Archived')
+		expect(asking[0].filter).toEqual({ _archived: true })
+	})
+
+	it('is not the default lens, so the archive is never the first paint', () => {
+		expect(chip('Cases', 'Archived').default).toBeUndefined()
+	})
+
+	it('adds no navigation entry for the archive', () => {
+		// REQ-CM-42, ADR-097. The Archived lens is reachable from the Cases
+		// page and nowhere else. A menu entry would make the archive look like
+		// a second place cases live, which is exactly what an archive is not.
+		const archiveEntries = (manifest.menu ?? []).filter((entry) =>
+			JSON.stringify(entry).toLowerCase().includes('archived'),
+		)
+		expect(archiveEntries).toEqual([])
+	})
+
+	it('leaves every working lens free of an archive filter', () => {
+		// 🔴 THE EXCLUSION IS THE PLATFORM'S, NOT THIS PAGE'S. OpenRegister's
+		// object list, aggregation endpoint and search providers all exclude
+		// archived objects unless a query asks for them, so a working lens
+		// that spelled `_archived: false` would be a second copy of a rule
+		// that already holds. Two spellings of one rule is how a list and the
+		// tile beside it come to disagree.
+		const spelled = chips('Cases').filter(
+			(entry) =>
+				entry.label !== 'Archived'
+				&& entry.filter
+				&& '_archived' in entry.filter,
+		)
+		expect(spelled).toEqual([])
+	})
+
+	it('keeps the archive out of the Queue by the same default', () => {
+		// The Queue's base filter carries no archive condition either, and it
+		// does not need one twice over: the platform excludes archived objects
+		// from every list, and a case can only be archived after it has ended,
+		// which `isFinalStatus: false` already keeps out.
+		const queue = page('Queue').config.filter
+		expect('_archived' in queue).toBe(false)
+		expect(queue.isFinalStatus).toBe(false)
 	})
 
 	it('spells the Overdue operator as a flat bracket key', () => {
