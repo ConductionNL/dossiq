@@ -115,3 +115,82 @@ change's tasks.
 - **GIVEN** a case type naming a trigger outside the vocabulary
 - **WHEN** it is published
 - **THEN** publication SHALL say so rather than drop the name in silence
+
+### Requirement: A notification preference says which layer decided it (REQ-URS-05)
+
+Every notification preference a person reads SHALL name the layer that
+decided it, and how narrowly that layer was pinned. dossiq SHALL compute
+no preference of its own: where the platform routes, the platform's
+answer is the one every reader gets, the background job included.
+
+A preference MAY be pinned to a notification domain. The domains offered
+SHALL be exactly the ones the shipped rules declare, so a stored
+preference can never be one the dispatcher has no rule to match.
+
+#### Scenario: a person sees why they are not being told
+
+- **GIVEN** a notification a team default switched off
+- **WHEN** the person opens their notification settings
+- **THEN** the value SHALL show as off
+- **AND** the deciding layer SHALL be named beside it as the group default
+
+#### Scenario: a person overrules the team default
+
+- **GIVEN** the same notification
+- **WHEN** the person switches it back on for themselves
+- **THEN** the deciding layer SHALL be named as their own value
+- **AND** the team default SHALL stay visible underneath it
+
+#### Scenario: a domain nothing declares is never offered
+
+- **GIVEN** the case type editor's notification domain field
+- **WHEN** a person opens it
+- **THEN** it SHALL offer only domains a shipped rule declares
+- @e2e exclude {an enum with no free-text path, asserted in tests/Unit/Settings/NotificationRoutingFragmentTest.php}
+
+### Requirement: The daily digest switch is a notification preference (REQ-URS-06)
+
+Switching the daily work digest off SHALL be a notification preference
+rather than a dossiq setting, so that a team lead may set the team's
+default and a person may still decide for themselves.
+
+An instance whose platform does not route notifications SHALL keep the
+behaviour it had, from the value dossiq stores itself.
+
+#### Scenario: a team lead quiets the digest for the team
+
+- **GIVEN** a group whose default for the digest is off
+- **WHEN** a member of that group is due a digest
+- **THEN** no digest SHALL be sent
+- @e2e exclude {a background job's decision, asserted in tests/Unit/Service/Queue/DigestPreferencesRoutingTest.php}
+
+#### Scenario: a person still decides for themselves
+
+- **GIVEN** the same group default
+- **WHEN** a member switches their own digest back on
+- **THEN** they SHALL be sent one
+
+### Requirement: dossiq fills the platform's Dutch template gaps (REQ-URS-07)
+
+dossiq SHALL write Dutch text only for platform events the platform
+reports as having none. A template that already carries text, shipped or
+edited by an administrator, SHALL be left exactly as it is.
+
+The template store serves every app on the instance, so overwriting a
+template another app uses would relabel that app's notices with no sign
+that it happened.
+
+#### Scenario: a gap is filled once
+
+- **GIVEN** a platform event the gap list names
+- **WHEN** the repair step runs twice
+- **THEN** the event SHALL be written once
+- **AND** the second run SHALL report nothing written
+- @e2e exclude {an install-time step, asserted in tests/Unit/Repair/DeclareNotificationTemplatesTest.php}
+
+#### Scenario: an administrator's wording survives an upgrade
+
+- **GIVEN** a template an administrator edited
+- **WHEN** the repair step runs
+- **THEN** the administrator's wording SHALL be left in place
+- @e2e exclude {an install-time step, asserted in tests/Unit/Repair/DeclareNotificationTemplatesTest.php}
