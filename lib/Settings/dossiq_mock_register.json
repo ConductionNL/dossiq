@@ -17118,6 +17118,65 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-1-1",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a01"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "advice",
+        "title": "Voorbeeld adviesaanvraag bij de commissie",
+        "placedOn": "Voorbeeld Behandelaar 1",
+        "placedOnGroup": "Voorbeeld Adviescommissie",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "open",
+        "dueAt": "2026-03-15",
+        "source": "7469134a-eb38-496e-85b6-821bbd4238b9"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-2-2",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a02"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "inspection",
+        "title": "Voorbeeld inspectie ter plaatse",
+        "placedOnGroup": "Voorbeeld Toezicht",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "met",
+        "dueAt": "2026-03-10",
+        "metAt": "2026-03-08T11:00:00+00:00",
+        "settlementNote": "Voorbeeld inspectierapport vastgelegd"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-3-3",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a03"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "fee",
+        "title": "Voorbeeld openstaande leges",
+        "placedOnGroup": "Voorbeeld Financien",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "withdrawn",
+        "withdrawnAt": "2026-03-09T11:00:00+00:00",
+        "withdrawalReason": "Voorbeeld: de leges zijn kwijtgescholden"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "consultation",
           "slug": "consultation-consultation-1-1",
           "id": "7469134a-eb38-496e-85b6-821bbd4238b9"

@@ -4415,6 +4415,11 @@
         "stuck": "stuck",
         "longer than this status allows": "longer than this status allows",
         "Days in status": "Days in status",
+        "Waiting on {reason}": "Waiting on {reason}",
+        "{move} is waiting on {reason}": "{move} is waiting on {reason}",
+        "Explanation": "Explanation",
+        "What a handler should know before taking this step": "What a handler should know before taking this step",
+        "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.": "Shown beside this move while the handler is choosing. That is the only moment guidance helps: a note on the status is read once the case is already there.",
         "What this status asks for": "What this status asks for",
         "Stuck": "Stuck",
         "_{count} working day in this status_::_{count} working days in this status_": [
