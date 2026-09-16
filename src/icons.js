@@ -35,6 +35,7 @@ import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import Archive from 'vue-material-design-icons/Archive.vue'
 import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import ArrowUpBoldCircle from 'vue-material-design-icons/ArrowUpBoldCircle.vue'
+import At from 'vue-material-design-icons/At.vue'
 import BadgeAccountOutline from 'vue-material-design-icons/BadgeAccountOutline.vue'
 import BankTransfer from 'vue-material-design-icons/BankTransfer.vue'
 import BellBadgeOutline from 'vue-material-design-icons/BellBadgeOutline.vue'
@@ -94,6 +95,7 @@ import Domain from 'vue-material-design-icons/Domain.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
 import EmailMarkAsUnread from 'vue-material-design-icons/EmailMarkAsUnread.vue'
+import EmailNewsletter from 'vue-material-design-icons/EmailNewsletter.vue'
 import EmailOpenOutline from 'vue-material-design-icons/EmailOpenOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
@@ -114,6 +116,7 @@ import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentM
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
 import FileDocumentPlusOutline from 'vue-material-design-icons/FileDocumentPlusOutline.vue'
 import FileEyeOutline from 'vue-material-design-icons/FileEyeOutline.vue'
+import FileQuestionOutline from 'vue-material-design-icons/FileQuestionOutline.vue'
 import FileSign from 'vue-material-design-icons/FileSign.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FlagCheckered from 'vue-material-design-icons/FlagCheckered.vue'
@@ -155,6 +158,7 @@ import NoteTextOutline from 'vue-material-design-icons/NoteTextOutline.vue'
 import OfficeBuilding from 'vue-material-design-icons/OfficeBuilding.vue'
 import OfficeBuildingOutline from 'vue-material-design-icons/OfficeBuildingOutline.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
+import PackageVariantClosed from 'vue-material-design-icons/PackageVariantClosed.vue'
 import PaperclipCheck from 'vue-material-design-icons/PaperclipCheck.vue'
 import PauseCircleOutline from 'vue-material-design-icons/PauseCircleOutline.vue'
 import PercentOutline from 'vue-material-design-icons/PercentOutline.vue'
@@ -175,6 +179,7 @@ import RoutesClock from 'vue-material-design-icons/RoutesClock.vue'
 import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 import ScriptText from 'vue-material-design-icons/ScriptText.vue'
 import Send from 'vue-material-design-icons/Send.vue'
+import ShapeOutline from 'vue-material-design-icons/ShapeOutline.vue'
 import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
 import ShieldAccountOutline from 'vue-material-design-icons/ShieldAccountOutline.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
@@ -228,6 +233,7 @@ export default {
 	Archive,
 	ArchiveOutline,
 	ArrowUpBoldCircle,
+	At,
 	BadgeAccountOutline,
 	BankTransfer,
 	BellBadgeOutline,
@@ -286,6 +292,7 @@ export default {
 	Earth,
 	EmailAlert,
 	EmailMarkAsUnread,
+	EmailNewsletter,
 	EmailOpenOutline,
 	EmailOutline,
 	EmailSearchOutline,
@@ -306,6 +313,7 @@ export default {
 	FileDocumentOutline,
 	FileDocumentPlusOutline,
 	FileEyeOutline,
+	FileQuestionOutline,
 	FileSign,
 	FileTreeOutline,
 	DeleteClockOutline,
@@ -348,6 +356,7 @@ export default {
 	OfficeBuilding,
 	OfficeBuildingOutline,
 	OpenInNew,
+	PackageVariantClosed,
 	PaperclipCheck,
 	PauseCircleOutline,
 	PercentOutline,
@@ -368,6 +377,7 @@ export default {
 	ScaleBalance,
 	ScriptText,
 	Send,
+	ShapeOutline,
 	ShareVariant,
 	ShieldAccountOutline,
 	ShieldCheckOutline,
