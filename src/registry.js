@@ -401,7 +401,14 @@ const registry = {
 	// would eventually disagree with the stored one, and a records manager reading
 	// a disposal date has no way to tell which of the two they are looking at.
 	// @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
-	CaseArchivalPanel: {
+	// Keyed by TYPE, not by component name. A tab child resolves through
+	// `resolveRegistryRenderer`, which reads `cnRegistry[widget.type]` and
+	// nothing else: a page `slots` map is read by CnDashboardPage's grid and
+	// never reaches a widget inside a tab panel. The Archiving tab shipped as
+	// `type: "custom"` with a `widget-case-archival` slot, and drew an empty
+	// panel with no warning: the same failure `case-timeline-pane` below
+	// records having shipped twice.
+	'case-archival-pane': {
 		// @custom-widget-ratchet exclude `@self._retention` is metadata attached on the render path, not a stored property, so a data widget builds its fields from the schema's properties and renders every one of them blank; the nomination also carries a rule and a reason that are prose beside a value, and the recompute gesture is a POST carrying a required reason. Deleted the day the manifest vocabulary has a retention widget type
 		kind: 'widget',
 		component: CaseArchivalPanel,
