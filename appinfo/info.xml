@@ -164,6 +164,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
         -->
         <job>OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
+        <!--
+            pause-reason-with-chasing REQ-TERM-011: a pause reason declares its
+            own reminder interval and budget, and the engine rung armed with the
+            pause fires them. This sweep is the SECOND trigger, not a second
+            schedule: OpenRegister's timer engine is optional, and a pause on an
+            instance without it would otherwise chase nobody. The count on the
+            instance is what stops the two triggers from both sending.
+        -->
+        <job>OCA\Dossiq\BackgroundJob\PauseChaseJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
         <!--

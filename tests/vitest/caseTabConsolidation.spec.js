@@ -303,6 +303,14 @@ describe('the container type this change depends on', () => {
 			// case in one order. A single surface, keyed by TYPE like the three
 			// above it.
 			'case-timeline-panel': 'case-timeline-pane',
+			// Archiving arrived with #2850 as `type: "custom"` plus a
+			// `widget-case-archival` slot on the page, and this file carried a
+			// branch that asserted exactly that. The slot name did not match
+			// the widget id,
+			// and a page slot is read by the widget GRID and never reaches a
+			// widget inside a tab panel, so the tab drew nothing while this
+			// test stayed green. It is keyed by TYPE now, like the five above.
+			'case-archival-panel': 'case-archival-pane',
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 
@@ -310,18 +318,6 @@ describe('the container type this change depends on', () => {
 			if (widgetId === 'case-files') {
 				expect(widget(widgetId).type).toBe('integration')
 				expect(widget(widgetId).integrationId).toBe('files')
-				continue
-			}
-			if (widgetId === 'case-archival-panel') {
-				expect(widget(widgetId).type).toBe('custom')
-				// And the component it resolves to through the page slot is
-				// actually registered. Without this the assertion above passes
-				// on a manifest whose Archiving tab renders nothing.
-				expect(
-					registry,
-					'CaseArchivalPanel is named by the manifest but registered nowhere, '
-						+ 'so the Archiving tab renders nothing',
-				).toContain('CaseArchivalPanel: {')
 				continue
 			}
 			if (PANES[widgetId]) {
