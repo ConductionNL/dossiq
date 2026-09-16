@@ -45,8 +45,11 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
 use OCA\Dossiq\Service\CaseType\CaseVersionMove;
+use OCA\Dossiq\Service\CaseTypePublishService;
+use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -69,13 +72,14 @@ class CaseVersionController extends Controller {
 	/**
 	 * Constructor.
 	 *
-	 * @param string               $appName     The app name.
-	 * @param IRequest             $request     The request.
-	 * @param CaseTypeVersionChain $chain       The versions of one case type.
-	 * @param CaseVersionMove      $move        What a move would change, and the move.
-	 * @param CaseAccessGuard      $accessGuard Per-case authorization, failing closed.
-	 * @param IUserSession         $userSession The session.
-	 * @param LoggerInterface      $logger      The logger.
+	 * @param string                 $appName        The app name.
+	 * @param IRequest               $request        The request.
+	 * @param CaseTypeVersionChain   $chain          The versions of one case type.
+	 * @param CaseVersionMove        $move           What a move would change, and the move.
+	 * @param CaseTypePublishService $publishService The one writer of a case type.
+	 * @param CaseAccessGuard        $accessGuard    Per-case authorization, failing closed.
+	 * @param IUserSession           $userSession    The session.
+	 * @param LoggerInterface        $logger         The logger.
 	 *
 	 * @return void
 	 *
@@ -86,6 +90,7 @@ class CaseVersionController extends Controller {
 		IRequest $request,
 		private readonly CaseTypeVersionChain $chain,
 		private readonly CaseVersionMove $move,
+		private readonly CaseTypePublishService $publishService,
 		private readonly CaseAccessGuard $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -123,6 +128,40 @@ class CaseVersionController extends Controller {
 
 		return new JSONResponse(['versions' => $versions]);
 	}//end chain()
+
+	/**
+	 * Close a superseded version for new cases.
+	 *
+	 * Admin-only, like publishing, and for the same reason: this writes the
+	 * catalogue that governs every case of the type, and the authority is the
+	 * ATTRIBUTE rather than a guard in the body, so Nextcloud's middleware
+	 * enforces it before the method runs.
+	 *
+	 * @param string $id The case type version to close.
+	 *
+	 * @return JSONResponse The outcome, or 422 with what stood in the way.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function deprecate(string $id): JSONResponse {
+		try {
+			$result = $this->publishService->deprecate(caseTypeId: $id);
+		} catch (Throwable $e) {
+			return $this->broke(op: 'deprecate', e: $e);
+		}
+
+		if ($result['deprecated'] === false) {
+			return new JSONResponse(
+				['message' => ($result['findings'][0] ?? 'This version was not closed.')] + $result,
+				Http::STATUS_UNPROCESSABLE_ENTITY,
+			);
+		}
+
+		return new JSONResponse($result);
+	}//end deprecate()
 
 	/**
 	 * The versions this case could move to, and what one of them would change.

@@ -142,6 +142,10 @@ $extra = [
         // running case along the chain is a handler's act on their own work and
         // not an administrator's act on the catalogue.
     ['name' => 'caseVersion#chain',         'url' => '/api/case-types/{id}/chain',        'verb' => 'GET'],
+        // Deprecate is a SERVER act, not a field write from the page: an
+        // object-op merges its `values` verbatim, so the design's `@today`
+        // would have been stored as that literal string in a date field.
+    ['name' => 'caseVersion#deprecate',     'url' => '/api/case-types/{id}/deprecate',    'verb' => 'POST'],
     ['name' => 'caseVersion#options',       'url' => '/api/case/{caseId}/version-move',   'verb' => 'GET'],
     ['name' => 'caseVersion#moveToVersion', 'url' => '/api/case/{caseId}/version-move',   'verb' => 'POST'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
