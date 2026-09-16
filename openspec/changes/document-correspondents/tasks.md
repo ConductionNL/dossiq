@@ -21,10 +21,13 @@ Consumes the party model (openregister#3761) and the generic link roles
     the case and a `sendDate`
 - [x] 2.1 `ZaakdossierService::uploadDocument()` and `updateMetadata()`
   take `sender` and `recipients` and pass them through the writer.
-- [x] 2.2 `MergeTemplateHandler` sets the recipients of the letter it
-  files, from the case's addressee or requester.
-- [x] 2.3 `InboundMailIntake` sets the sender of the message it files,
-  from the From address.
+- [x] 2.2 Both actions that file an outgoing document set its recipients,
+  through the shared `AddressesTheCase` trait: `MergeTemplateHandler` and
+  `CreateDocumentHandler`, from the case's addressee, else its requester,
+  else its initiator.
+- [x] 2.3 `EmailArchivalService`, which is what `InboundMailIntake` calls
+  to file a message, sets the sender from the From address. Verified as
+  the only caller, so the inbound path has one writer and not two.
 - [x] 2.4 `ZaakdossierController::updateMetadata()` forwards the two
   request parameters.
 - [x] 3.1 `src/services/documentCorrespondents.js`: the party options, the
