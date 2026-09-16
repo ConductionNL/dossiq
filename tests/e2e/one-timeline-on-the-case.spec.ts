@@ -40,12 +40,16 @@ import type { APIRequestContext, Page } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
+	createObject,
+	deleteObject,
 	ensureCaseType,
+	executeTransition,
 	getRequestToken,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
+	seedStateMachine,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
 
@@ -63,6 +67,12 @@ let siblingCaseId = ''
 
 /** The CSRF token for every write below. */
 let token = ''
+
+/** dossiq's own API, which owns the status engine and the term engine. */
+const APP = '/index.php/apps/dossiq/api'
+
+/** Term instances seeded by this file, cleaned up by id. */
+const seededTerms: string[] = []
 
 /**
  * The timeline of one case.
@@ -120,8 +130,31 @@ test.beforeAll(async ({ request }) => {
 })
 
 test.afterAll(async ({ request }) => {
+	for (const id of seededTerms) {
+		await deleteObject(request, token, 'deadlineInstance', id)
+	}
 	await cleanupRunObjects(request, token)
 })
+
+/**
+ * The entries of one case whose kind is the given one.
+ *
+ * @param api  The request context.
+ * @param id   The case uuid.
+ * @param kind The declared kind to keep.
+ *
+ * @return The matching entries, as the read returned them.
+ */
+async function entriesOfKind(
+	api: APIRequestContext,
+	id: string,
+	kind: string,
+): Promise<any[]> {
+	const body = await readTimeline(api, id)
+	const rows = (body.results ?? []) as any[]
+
+	return rows.filter((row: any) => String(row?.kind ?? '') === kind)
+}
 
 test.describe('REQ-TL-11 dossiq declares the kinds it writes', () => {
 	test('every kind dossiq names is declared on the instance', async ({ request }) => {
@@ -387,3 +420,103 @@ async function openTimelineTab(page: Page, id: string): Promise<void> {
 	await page.getByRole('tab', { name: 'Timeline' }).click()
 	await expect(page.getByTestId('case-timeline')).toBeVisible(PAGE_LOAD)
 }
+
+test.describe('REQ-TL-15 every status move records itself on the timeline', () => {
+	test('a guarded transition writes the two statuses, the mover and the comment', async ({
+		request,
+	}) => {
+		const machine = await seedStateMachine(request, token)
+		const seeded = await seedCase(request, token, {
+			title: `${RUN_PREFIX} status on the timeline`,
+			caseType: machine.caseTypeId,
+			status: machine.statusReceived,
+		})
+		const movedCase = objectId(seeded)
+
+		const moved = await executeTransition(
+			request,
+			token,
+			movedCase,
+			't1',
+			`${RUN_PREFIX} stukken compleet`,
+		)
+		expect(
+			moved.status,
+			`the transition must be accepted: ${JSON.stringify(moved.body)}`,
+		).toBe(200)
+
+		const entries = await entriesOfKind(request, movedCase, 'statuswijziging')
+		expect(entries).toHaveLength(1)
+
+		// The FIELDS are the point. An undeclared field is dropped rather than
+		// refused, so a writer whose declaration did not move with it stores an
+		// entry that looks right and carries nothing.
+		const fields = entries[0].fields ?? {}
+		expect(fields.from).toBe(machine.statusReceived)
+		expect(fields.to).toBe(machine.statusInProgress)
+		expect(fields.explanation).toContain('stukken compleet')
+		expect(String(fields.actor ?? '')).not.toBe('')
+		expect(String(fields.statusRecordId ?? '')).not.toBe('')
+	})
+
+	test('the sentence a handler reads names the statuses, not their uuids', async ({
+		request,
+	}) => {
+		const machine = await seedStateMachine(request, token)
+		const seeded = await seedCase(request, token, {
+			title: `${RUN_PREFIX} status sentence`,
+			caseType: machine.caseTypeId,
+			status: machine.statusReceived,
+		})
+		const movedCase = objectId(seeded)
+
+		const moved = await executeTransition(request, token, movedCase, 't1')
+		expect(moved.status).toBe(200)
+
+		const [entry] = await entriesOfKind(request, movedCase, 'statuswijziging')
+		expect(entry.message).toContain('In behandeling')
+		expect(entry.message).not.toContain(machine.statusInProgress)
+	})
+})
+
+test.describe('REQ-TL-16 every term event records itself on the timeline', () => {
+	test('a suspended term writes the event, the new due date and the instance', async ({
+		request,
+	}) => {
+		const caseTypeId = (await ensureCaseType(request, token)).id
+		const seeded = await seedCase(request, token, {
+			title: `${RUN_PREFIX} term on the timeline`,
+			caseType: caseTypeId,
+		})
+		const termCase = objectId(seeded)
+
+		const term = await createObject(request, token, 'deadlineInstance', {
+			case: termCase,
+			status: 'lopend',
+			startDate: '2026-01-05T09:00:00+00:00',
+			endDateCalculated: '2026-03-02',
+			endDateCurrent: '2026-03-02',
+		})
+		const termId = objectId(term)
+		seededTerms.push(termId)
+
+		const paused = await request.post(`${APP}/termijn/instances/${termId}/pauze`, {
+			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+			data: { duurDagen: 14, rationale: `${RUN_PREFIX} aanvulling gevraagd` },
+		})
+		expect(
+			paused.ok(),
+			`the pause must be accepted: ${await paused.text()}`,
+		).toBeTruthy()
+
+		const entries = await entriesOfKind(request, termCase, 'termijngebeurtenis')
+		expect(entries).toHaveLength(1)
+
+		const fields = entries[0].fields ?? {}
+		expect(fields.event).toBe('pause')
+		expect(fields.termijnId).toBe(termId)
+		expect(String(fields.dueAt ?? '')).not.toBe('')
+		expect(String(fields.occurredAt ?? '')).not.toBe('')
+		expect(entries[0].message).toContain('aanvulling gevraagd')
+	})
+})
