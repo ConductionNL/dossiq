@@ -306,6 +306,7 @@ $extra = [
         // Deelzaak (sub-case) parent-child relations.
     ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
     ['name' => 'deelzaak#validate', 'url' => '/api/deelzaken/validate',              'verb' => 'POST'],
+    ['name' => 'deelzaak#create',   'url' => '/api/deelzaken',                       'verb' => 'POST'],
     ['name' => 'deelzaak#list',     'url' => '/api/deelzaken/{caseId}/children',     'verb' => 'GET'],
     ['name' => 'deelzaak#parent',   'url' => '/api/deelzaken/{caseId}/parent',       'verb' => 'GET'],
     ['name' => 'deelzaak#unlink',   'url' => '/api/deelzaken/{caseId}/unlink',       'verb' => 'POST'],
@@ -433,6 +434,19 @@ $extra = [
         // them.
     ['name' => 'acknowledgement#duty',      'url' => '/api/case/{caseId}/acknowledgement',     'verb' => 'GET'],
     ['name' => 'acknowledgement#recordMet', 'url' => '/api/case/{caseId}/acknowledgement/met', 'verb' => 'POST'],
+
+        // The attention flag a person raises and clears
+        // (markers-and-assessments-on-the-case, row 2.36). Both writes go
+        // through here rather than through an object patch, because the rule
+        // is that neither act happens without a written reason and that
+        // clearing appends rather than deleting. A browser writing the case
+        // directly could skip the first and lose the second. The risk
+        // assessment and the marker set get no route: the first is guarded by
+        // a declaration on the property, the second is derived into the save,
+        // and both arrive with the case the page already read.
+    ['name' => 'caseAttention#state', 'url' => '/api/case/{caseId}/attention',       'verb' => 'GET'],
+    ['name' => 'caseAttention#raise', 'url' => '/api/case/{caseId}/attention/raise', 'verb' => 'POST'],
+    ['name' => 'caseAttention#clear', 'url' => '/api/case/{caseId}/attention/clear', 'verb' => 'POST'],
 
         // The Actions menu's non-lifecycle gestures (case-actions-menu):
         // copy this case, start a flow its type allows, and plan a follow-up

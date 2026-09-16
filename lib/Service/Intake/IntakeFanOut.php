@@ -84,14 +84,19 @@ class IntakeFanOut {
 	/**
 	 * The relation the created cases are tied together with.
 	 *
-	 * `subject` is the peer relation dossiq already has, and it is symmetric:
-	 * both sides read the same word. The named relation type with an inverse is
-	 * openregister's `relation-types-with-inverses` and it is not built, so this
-	 * is what the fan-out ties with until it is.
+	 * Cases opened by one submission belong together without one leading the
+	 * other, so they are tied with `samenhang`, which the case schema declares
+	 * symmetric: both ends read "hangt samen met" because openregister resolves
+	 * the label from the schema and refuses an inverse on a symmetric type.
 	 *
-	 * @see \OCA\Dossiq\Service\CaseRelationService::RELATION_TYPES
+	 * This used to be `subject`, chosen because it was the nearest thing dossiq
+	 * had while openregister's `relation-types-with-inverses` was unbuilt. It
+	 * is built (openregister#3764), so the answer no longer has to warn that
+	 * the link reads the same word for two different things.
+	 *
+	 * @see \OCA\Dossiq\Service\CaseRelationService::RELATION_SAMENHANG
 	 */
-	public const RELATION = CaseRelationService::RELATION_TYPES[1];
+	public const RELATION = CaseRelationService::RELATION_SAMENHANG;
 
 	/**
 	 * The rule a fan-out with no usable destination names.
@@ -162,7 +167,7 @@ class IntakeFanOut {
 	 * @param array<string, mixed> $submission     The submitted values every case starts from.
 	 * @param string               $submissionId   The submission's own identifier.
 	 *
-	 * @return array{created: array<int, array<string, mixed>>, failed: array<int, array<string, string>>, relationHasNoInverse: bool}
+	 * @return array{created: array<int, array<string, mixed>>, failed: array<int, array<string, string>>}
 	 *
 	 * @throws RefusedException When nothing is declared or the register is absent.
 	 *
@@ -208,7 +213,6 @@ class IntakeFanOut {
 		return [
 			'created' => $created,
 			'failed' => $failed,
-			'relationHasNoInverse' => true,
 		];
 	}//end submit()
 

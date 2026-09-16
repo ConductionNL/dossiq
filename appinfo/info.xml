@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.24-unstable.20260915183131</version>
+    <version>0.4.25-unstable.20260916070000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -440,6 +440,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\LinkInFlightRemainingDecisionsRepair</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
             <!--
+                The channels a case arrives through, as objects in OpenRegister's
+                intake-sources register. Runs AFTER the register import: it resolves
+                `intake-sources` by slug and that register is OpenRegister's own, seeded
+                by its SeedIntakeSourceRegister step. Where it is absent the step warns
+                and writes nothing, and the next upgrade seeds the rows.
+
+                Every channel ships DISABLED, and an existing row never has its switch,
+                its connection or its state written again. An upgrade that re-enabled a
+                source would start polling a mailbox nobody asked it to poll.
+            -->
+            <step>OCA\Dossiq\Repair\SeedIntakeSources</step>
+            <!--
                 Must run AFTER the register sync that adds the English columns, so it
                 can tell a rename from a back-fill. Covers every renamed property
                 together: a register-scoped step that moved some owners and not others
@@ -699,6 +711,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\SeedDeadlineMonitoringData</step>
             <step>OCA\Dossiq\Repair\SeedKccWerkplekData</step>
             <step>OCA\Dossiq\Repair\SeedVerwerkingsactiviteiten</step>
+            <!--
+                The channels a case arrives through, as objects in OpenRegister's
+                intake-sources register. Runs AFTER the register import: it resolves
+                `intake-sources` by slug and that register is OpenRegister's own, seeded
+                by its SeedIntakeSourceRegister step. Where it is absent the step warns
+                and writes nothing, and the next upgrade seeds the rows.
+
+                Every channel ships DISABLED, and an existing row never has its switch,
+                its connection or its state written again. An upgrade that re-enabled a
+                source would start polling a mailbox nobody asked it to poll.
+            -->
+            <step>OCA\Dossiq\Repair\SeedIntakeSources</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. The two flows dossiq
                 ships are imported by OpenRegister while the register above is,
