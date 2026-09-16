@@ -31,6 +31,28 @@ The generated `l10n/en.js` and `l10n/nl.js` follow their source, so the driver r
 
 So the name lives in the repository and the command lives in your local config. Without the config, git falls back to its ordinary merge and you get the conflicts you had before. Nothing breaks, it is only slower.
 
+## The one merge that still conflicts
+
+A branch you created before this landed has no `.gitattributes`. Git reads merge attributes from your working tree, so the very merge that brings the file in cannot use the driver yet. That merge conflicts once, on the catalogues. Every merge after it is clean.
+
+Do not resolve it with `git checkout --theirs`. That takes development's whole catalogue and drops your own Dutch translations with it. Run the driver by hand instead, on the three versions git already staged:
+
+```bash
+git merge origin/development     # conflicts on the catalogues
+
+for f in $(git diff --name-only --diff-filter=U -- l10n); do
+  git show ":1:$f" > /tmp/l10n-base || : > /tmp/l10n-base
+  git show ":2:$f" > /tmp/l10n-ours
+  git show ":3:$f" > /tmp/l10n-theirs
+  node tools/merge-l10n.js /tmp/l10n-base /tmp/l10n-ours /tmp/l10n-theirs "$f" \
+    && cp /tmp/l10n-ours "$f" && git add "$f"
+done
+
+npm run test:l10n                # must exit 0
+```
+
+Verified on the real catalogues: both branches' keys survive, the Dutch translations survive, and both files come out sorted.
+
 ## Why not merge=union
 
 `union` keeps both sides of every hunk. On a JSON object that leaves two entries with no comma between them, or two closing braces. The catalogue stops parsing, and every string in the app falls back to its raw key. `union` is safe for changelogs, not for structured data.
