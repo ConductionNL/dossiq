@@ -62,6 +62,7 @@ interface ContactMomentObjectServiceStub {
  * Unit tests for ContactMomentService::createContactMoment().
  *
  * @covers \OCA\Dossiq\Service\ContactMomentService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ContactMomentServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -42,6 +42,7 @@ use RuntimeException;
  * The declaration, and what it does to the lifecycle menu.
  *
  * @covers \OCA\Dossiq\Service\Cases\ExternalHome
+ * @uses \OCA\Dossiq\Lifecycle\CaseActionProvider
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */

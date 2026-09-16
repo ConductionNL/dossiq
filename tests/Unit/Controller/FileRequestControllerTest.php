@@ -10,6 +10,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\FileRequestController;
+use OCA\Dossiq\Service\People\PartyIndicatorReader;
+use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\People\FileRequestService;
 use OCA\Dossiq\Service\People\PersonLinkReader;
@@ -19,6 +21,7 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -57,6 +60,13 @@ class FileRequestControllerTest extends TestCase {
 	private FileRequestController $controller;
 
 	/**
+	 * The signed-in handler's session.
+	 *
+	 * @var IUserSession&MockObject
+	 */
+	private IUserSession $session;
+
+	/**
 	 * Build the controller on doubles, signed in.
 	 *
 	 * @return void
@@ -75,6 +85,7 @@ class FileRequestControllerTest extends TestCase {
 		$user->method('getUID')->willReturn('behandelaar');
 		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
+		$this->session = $session;
 
 		$this->access = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$this->access->method('hasCaseReadAccess')->willReturn(true);
@@ -85,10 +96,58 @@ class FileRequestControllerTest extends TestCase {
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,
+			indicators: $this->indicators(),
 			access: $this->access,
 			userSession: $session,
 		);
 	}//end setUp()
+
+	/**
+	 * A party-indicator reader over a doubled OpenRegister guard.
+	 *
+	 * @param string|null $refusal The label refusing a send, null when nothing refuses one.
+	 *
+	 * @return PartyIndicatorReader The reader.
+	 */
+	private function indicators(?string $refusal = null): PartyIndicatorReader {
+		$guard = new class($refusal) {
+			/**
+			 * @param string|null $refusal The refusing indicator's label.
+			 */
+			public function __construct(private ?string $refusal) {
+			}
+
+			/**
+			 * Every indicator on an object.
+			 *
+			 * @param string $objectUuid The object.
+			 *
+			 * @return array<int, array<string, mixed>> The indicators.
+			 */
+			public function indicatorsForObject(string $objectUuid): array {
+				return [];
+			}
+
+			/**
+			 * What refuses a send to one party.
+			 *
+			 * @param string $partyUuid The party.
+			 *
+			 * @return string|null The label.
+			 */
+			public function sendRefusalFor(string $partyUuid): ?string {
+				return $this->refusal;
+			}
+		};
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getOpenRegisterClass')->willReturn($guard);
+
+		return new PartyIndicatorReader(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+		);
+	}//end indicators()
 
 	/**
 	 * Every party is listed; the one without an address cannot be asked.
@@ -111,6 +170,51 @@ class FileRequestControllerTest extends TestCase {
 		$this->assertFalse(condition: $parties[1]['canBeAsked'], message: 'no address, nobody to send to');
 		$this->assertSame(expected: 'Piet', actual: $parties[1]['name']);
 	}//end testEveryPartyIsListedAndOnlyOneCanBeAsked()
+
+	/**
+	 * A party whose indicator refuses a send is listed, cannot be asked, and
+	 * the indicator is named beside them.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 */
+	public function testAPartyWhoseIndicatorRefusesASendIsListedAndNamed(): void {
+		$this->people->method('peopleOn')->willReturn(
+			[
+				[
+					'contactUid' => 'party-1',
+					'partyUuid' => 'party-1',
+					'displayName' => 'Jan de Vries',
+					'email' => 'jan@example.nl',
+					'role' => 'aanvrager',
+					'kind' => 'party',
+				],
+			]
+		);
+		$controller = new FileRequestController(
+			appName: 'dossiq',
+			request: $this->createMock(originalClassName: IRequest::class),
+			people: $this->people,
+			fileRequests: $this->fileRequests,
+			indicators: $this->indicators(refusal: 'Geheimhouding persoonsgegevens'),
+			access: $this->access,
+			userSession: $this->session,
+		);
+
+		$parties = $controller->parties(caseId: 'case-1')->getData()['parties'];
+
+		$this->assertCount(expectedCount: 1, haystack: $parties);
+		$this->assertFalse(
+			condition: $parties[0]['canBeAsked'],
+			message: 'an address is not enough when an indicator refuses the send'
+		);
+		$this->assertSame(
+			expected: 'Geheimhouding persoonsgegevens',
+			actual: $parties[0]['sendRefusal'],
+			message: 'a recipient list quietly shorter than the party list is a bug nobody can see'
+		);
+	}//end testAPartyWhoseIndicatorRefusesASendIsListedAndNamed()
 
 	/**
 	 * A request names the party and answers what was sent.
@@ -196,6 +300,7 @@ class FileRequestControllerTest extends TestCase {
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,
+			indicators: $this->indicators(),
 			access: $access,
 			userSession: $session,
 		);
@@ -225,6 +330,7 @@ class FileRequestControllerTest extends TestCase {
 			request: $this->createMock(originalClassName: IRequest::class),
 			people: $this->people,
 			fileRequests: $this->fileRequests,
+			indicators: $this->indicators(),
 			access: $this->access,
 			userSession: $session,
 		);

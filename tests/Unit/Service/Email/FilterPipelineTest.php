@@ -54,6 +54,17 @@ use Psr\Log\NullLogger;
  * Unit tests for the intake filter pipeline.
  *
  * @covers \OCA\Dossiq\Service\Email\Filters\FilterPipeline
+ * @uses \OCA\Dossiq\Service\Email\Filters\AutoReplyFilter
+ * @uses \OCA\Dossiq\Service\Email\Filters\BlockedSenderFilter
+ * @uses \OCA\Dossiq\Service\Email\Filters\BounceNotificationFilter
+ * @uses \OCA\Dossiq\Service\Email\Filters\FilterOutcome
+ * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
+ * @uses \OCA\Dossiq\Service\Email\Filters\JunkFilter
+ * @uses \OCA\Dossiq\Service\Email\Filters\OutOfOfficeFilter
+ * @uses \OCA\Dossiq\Service\Email\Filters\OwnNotificationLoopFilter
+ * @uses \OCA\Dossiq\Service\Email\InboundMessage
+ * @uses \OCA\Dossiq\Service\Email\JunkRules
+ * @uses \OCA\Dossiq\Service\Email\SenderBlocklist
  */
 class FilterPipelineTest extends TestCase {
 

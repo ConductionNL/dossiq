@@ -43,6 +43,8 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the threading claim check.
  *
  * @covers \OCA\Dossiq\Service\Email\ThreadingCheck
+ * @uses \OCA\Dossiq\Service\Email\AuthenticationResult
+ * @uses \OCA\Dossiq\Service\Email\InboundMessage
  */
 class ThreadingCheckTest extends TestCase {
 

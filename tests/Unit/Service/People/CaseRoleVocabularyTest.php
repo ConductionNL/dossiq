@@ -10,7 +10,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\People;
 
 use OCA\Dossiq\Service\People\CaseRoleVocabulary;
+use OCA\Dossiq\Service\People\PartyVocabulary;
 use OCA\Dossiq\Service\SettingsService;
+use OCP\IL10N;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -170,9 +172,23 @@ class CaseRoleVocabularyTest extends TestCase {
 
 		$this->vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
+			parties: $this->partyVocabulary(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end setUp()
+
+	/**
+	 * The party vocabulary on an IL10N that answers its own source string, so
+	 * the assertions below name the English labels the app ships.
+	 *
+	 * @return PartyVocabulary The vocabulary.
+	 */
+	private function partyVocabulary(): PartyVocabulary {
+		$l10n = $this->createMock(originalClassName: IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+
+		return new PartyVocabulary(l10n: $l10n);
+	}//end partyVocabulary()
 
 	/**
 	 * Every published role type becomes one entry, keyed by uuid and ordered by label.
@@ -189,14 +205,77 @@ class CaseRoleVocabularyTest extends TestCase {
 
 		$count = $this->vocabulary->sync();
 
-		$this->assertSame(expected: 3, actual: $count);
+		// Three role types, then the six generic party roles every case type
+		// offers. The role types come FIRST: an organisation's own seats are
+		// the first question on a case, and the six the law names follow.
+		$this->assertSame(expected: 9, actual: $count);
 		$stored = $this->schema->configuration['linkRoles'];
-		$this->assertSame(expected: ['rt-1', 'rt-2', 'rt-3'], actual: array_column($stored, 'key'));
+		$this->assertSame(
+			expected: [
+				'rt-1',
+				'rt-2',
+				'rt-3',
+				'aanvrager',
+				'gemachtigde',
+				'belanghebbende',
+				'afzender',
+				'geadresseerde',
+				'locatie',
+			],
+			actual: array_column($stored, 'key')
+		);
 		$this->assertSame(expected: 'Adviseur', actual: $stored[0]['label']);
 		$this->assertSame(expected: 'Doet het werk', actual: $stored[1]['description']);
 		// A role type with no name labels itself by its uuid rather than vanishing.
 		$this->assertSame(expected: 'rt-3', actual: $stored[2]['label']);
+		$this->assertSame(expected: 'Authorised representative', actual: $stored[4]['label']);
 	}//end testTheRoleTypesBecomeTheVocabulary()
+
+	/**
+	 * A role type already claiming a generic key is not listed twice.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-every-case-type-offers-the-generic-party-roles-req-role-012
+	 */
+	public function testAGenericRoleIsNotListedTwice(): void {
+		$this->objects->answers['roleType'] = [
+			['@self' => ['id' => 'gemachtigde'], 'name' => 'Gemachtigde bezwaar'],
+		];
+
+		$this->vocabulary->sync();
+
+		$keys = array_column($this->schema->configuration['linkRoles'], 'key');
+		$this->assertSame(expected: 1, actual: count(array_keys($keys, 'gemachtigde', true)));
+		$this->assertSame(
+			expected: 'Gemachtigde bezwaar',
+			actual: $this->schema->configuration['linkRoles'][0]['label'],
+			message: "the instance's own role type wins the key it claims"
+		);
+	}//end testAGenericRoleIsNotListedTwice()
+
+	/**
+	 * The case schema declares which kinds of party it accepts.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-case-declares-the-kinds-of-party-it-takes-req-role-011
+	 */
+	public function testTheCaseDeclaresTheKindsOfPartyItTakes(): void {
+		$this->objects->answers['roleType'] = [['@self' => ['id' => 'rt-1'], 'name' => 'Adviseur']];
+
+		$this->vocabulary->sync();
+
+		$kinds = $this->schema->configuration['partyKinds'];
+		$this->assertSame(expected: ['person', 'organisation', 'address'], actual: array_column($kinds, 'key'));
+		// Person and organisation name NO roles, on purpose: a kind naming
+		// roles holds only those, and a person link carries a role type uuid
+		// as its role, so binding a list to them would refuse every role type
+		// this instance declares.
+		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[0]);
+		$this->assertArrayNotHasKey(key: 'roles', array: $kinds[1]);
+		$this->assertSame(expected: ['locatie'], actual: $kinds[2]['roles']);
+	}//end testTheCaseDeclaresTheKindsOfPartyItTakes()
 
 	/**
 	 * A vocabulary that has not changed is not written again.
@@ -226,7 +305,7 @@ class CaseRoleVocabularyTest extends TestCase {
 
 		$this->assertTrue(condition: $this->schema->configuration['allowFiles']);
 		$this->assertSame(expected: ['contacts'], actual: $this->schema->configuration['linkedTypes']);
-		$this->assertCount(expectedCount: 1, haystack: $this->schema->configuration['linkRoles']);
+		$this->assertCount(expectedCount: 7, haystack: $this->schema->configuration['linkRoles']);
 	}//end testTheRestOfTheConfigurationSurvives()
 
 	/**
@@ -241,6 +320,7 @@ class CaseRoleVocabularyTest extends TestCase {
 		$settings->method('getOpenRegisterClass')->willReturn(null);
 		$vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
+			parties: $this->partyVocabulary(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
@@ -288,6 +368,7 @@ class CaseRoleVocabularyTest extends TestCase {
 		);
 		$vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
+			parties: $this->partyVocabulary(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
@@ -342,6 +423,7 @@ class CaseRoleVocabularyTest extends TestCase {
 		);
 		$vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
+			parties: $this->partyVocabulary(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
@@ -363,6 +445,7 @@ class CaseRoleVocabularyTest extends TestCase {
 		);
 		$vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
+			parties: $this->partyVocabulary(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
@@ -381,6 +464,7 @@ class CaseRoleVocabularyTest extends TestCase {
 		$settings->method('getConfigValue')->willReturn('');
 		$vocabulary = new CaseRoleVocabulary(
 			settingsService: $settings,
+			parties: $this->partyVocabulary(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 

@@ -36,6 +36,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ThroughputTrendCalculatorTest extends TestCase {
 	use MakesCaseDateNormaliser;

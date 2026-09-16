@@ -31,6 +31,8 @@ use PHPUnit\Framework\TestCase;
  * REQ-TERM-066: the declared extension length is enforced.
  *
  * @covers \OCA\Dossiq\Service\DeadlineExtensionService
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class DeadlineExtensionLimitTest extends TestCase {
 	use BindsTermFixtures;

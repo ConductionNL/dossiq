@@ -106,6 +106,7 @@ import {
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
 import CardAccountMailOutline from 'vue-material-design-icons/CardAccountMailOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
+import { resolvePartyByAddress } from '../../services/caseParties.js'
 import {
 	companyResult,
 	isCurrentRequester,
@@ -344,8 +345,46 @@ export default {
 		 * @return {void}
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
-		select(result) {
-			this.$emit('select', requesterPayload(result))
+		async select(result) {
+			this.$emit('select', requesterPayload(await this.deduplicated(result)))
+		},
+
+		/**
+		 * The party already holding this person's address, when one does.
+		 *
+		 * A Nextcloud contact has no register row, so picking one used to
+		 * leave `requester` empty and the case named the person only by a
+		 * display string. The next case naming the same person did the same,
+		 * and the melder who wrote twice from one address became two records
+		 * that no merge had any reason to find. OpenRegister answers who
+		 * already holds an address, so this asks BEFORE a second record is
+		 * created, which is the same call `docs/Features/parties.md` asks of
+		 * integriq's BRP and KvK adapters.
+		 *
+		 * A register row this picker chose is already the record, so it is
+		 * returned untouched: resolving it would be asking whether the thing
+		 * in front of us exists.
+		 *
+		 * @param {object} result A unified initiator result.
+		 * @return {Promise<object>} The result, pointed at the existing party when there is one.
+		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 */
+		async deduplicated(result) {
+			if (!result || result.objectId) {
+				return result
+			}
+			const address = String(result.detail || '').trim()
+			if (address === '' || !address.includes('@')) {
+				return result
+			}
+			const party = await resolvePartyByAddress(address)
+			if (!party) {
+				return result
+			}
+			return {
+				...result,
+				objectId: party.id || party['@self']?.id || party.uuid || null,
+			}
 		},
 
 		/**

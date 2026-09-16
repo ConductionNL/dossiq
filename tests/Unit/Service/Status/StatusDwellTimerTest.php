@@ -49,6 +49,11 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Dossiq\Service\Status\StatusDwellTimer
  * @covers \OCA\Dossiq\Service\Status\StatusDeclarations
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Status\DerivedStatusEvaluator
+ * @uses \OCA\Dossiq\Service\Status\DerivedStatusService
+ * @uses \OCA\Dossiq\Service\Status\StatusDeclaration
+ * @uses \OCA\Dossiq\Service\Status\StatusDwellService
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  */

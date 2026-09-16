@@ -58,13 +58,11 @@
 						class="file-request-dialog__party-email"
 						>{{ party.email }}</span
 					>
-					<span v-else class="file-request-dialog__party-reason">
-						{{
-							t(
-								'dossiq',
-								'No email address, so this party cannot be asked',
-							)
-						}}
+					<span
+						v-else
+						class="file-request-dialog__party-reason"
+						data-testid="file-request-party-reason">
+						{{ reasonFor(party) }}
 					</span>
 				</li>
 			</ul>
@@ -191,6 +189,32 @@ export default {
 
 	methods: {
 		t,
+
+		/**
+		 * Why a party cannot be asked for a file.
+		 *
+		 * Two reasons, and they are not the same refusal. No address means
+		 * there is nobody to send to. A refuse-send indicator means there IS
+		 * somebody and the law says not to, so the indicator is named: a
+		 * recipient list that is quietly shorter than the party list is a bug
+		 * nobody can see. The sentence is composed here rather than on the
+		 * server so it is translated in the reader's language and not in
+		 * whichever one the request happened to carry.
+		 *
+		 * @param {object} party One entry of the parties listing.
+		 * @return {string} The reason, in words.
+		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+		 */
+		reasonFor(party) {
+			if (party.sendRefusal) {
+				return t(
+					'dossiq',
+					'Refused by the indicator {indicator} on this party',
+					{ indicator: party.sendRefusal },
+				)
+			}
+			return t('dossiq', 'No email address, so this party cannot be asked')
+		},
 
 		/**
 		 * The people on the case, each with whether they can be asked.
