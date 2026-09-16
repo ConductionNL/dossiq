@@ -116,6 +116,63 @@ export function derivationReasons(derivation) {
 }
 
 /**
+ * The moves this case cannot make yet, and what is in the way.
+ *
+ * A withheld transition is NOT an error and not an empty list: it is a move
+ * that exists, with a reason readable in its place. That is the whole of D-1.
+ * A handler who sees nothing learns that the list is unreliable; a handler who
+ * reads "waiting on the advice request" learns what to do next.
+ *
+ * @param {Array<object>} withheld The `/available-transitions` answer's `withheld`.
+ * @return {Array<{id: string, label: string, reasons: Array<string>}>} The entries worth rendering.
+ *
+ * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ */
+export function withheldTransitions(withheld) {
+	if (Array.isArray(withheld) === false) {
+		return []
+	}
+
+	return withheld
+		.map((entry) => ({
+			id: String(entry?.id ?? ''),
+			label: String(entry?.label ?? '').trim(),
+			reasons: Array.isArray(entry?.reasons)
+				? entry.reasons.map((reason) => String(reason ?? '').trim()).filter(Boolean)
+				: [],
+		}))
+		// An entry with no reason is worse than no entry: it says a move is
+		// unavailable and refuses to say why, which is the failure this whole
+		// change exists to remove.
+		.filter((entry) => entry.reasons.length > 0)
+}
+
+/**
+ * What a withheld move is waiting on, as one sentence.
+ *
+ * The FIRST reason, because a handler acts on one thing at a time and the
+ * list is in declaration order, which is the order the case type author meant.
+ *
+ * @param {object} entry One withheld entry.
+ * @return {string} The sentence.
+ *
+ * @spec openspec/changes/what-a-transition-declares/specs/status-transition-engine/spec.md
+ */
+export function withheldSentence(entry) {
+	const label = String(entry?.label ?? '').trim()
+	const reason = String(entry?.reasons?.[0] ?? '').trim()
+	if (reason === '') {
+		return ''
+	}
+
+	if (label === '') {
+		return t('dossiq', 'Waiting on {reason}', { reason })
+	}
+
+	return t('dossiq', '{move} is waiting on {reason}', { move: label, reason })
+}
+
+/**
  * The sentence above the missing things.
  *
  * Names the status, because a handler working a case type with three derived

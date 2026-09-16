@@ -63,6 +63,7 @@ use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -84,6 +85,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  */
 class StatusTransitionServiceEnforcementTest extends TestCase {
 	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
 
 
 	/**
@@ -202,6 +204,12 @@ class StatusTransitionServiceEnforcementTest extends TestCase {
 			resultWriter: $resultWriter,
 			statusChecklist: $checklist,
 			declarations: $this->undeclaredStatuses(),
+			declaredMoves: $this->undeclaredTransitions(),
+			offered: $this->offeredTransitions(
+				guards: $guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
 			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
