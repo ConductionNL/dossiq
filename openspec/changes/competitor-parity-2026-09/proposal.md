@@ -370,7 +370,7 @@ change that already covers the area.
 | 4.20 | openregister | `dossiq/openspec/specs/archief-edepot-handover/spec.md` | run the transfer on closed cases from the handover; the zip stays a convenience |
 | 5.4 | openregister | `openregister/openspec/changes/contacts-leaf-cases-panel/proposal.md` | ContactDetail in contacts-domain places the cases panel |
 | 5.11 | integriq | `integriq/openspec/changes/brp-kvk-store-and-subscriptions/proposal.md` | react to the change announcement on the case's requester |
-| 6.4 | openregister | `openregister/openspec/changes/activity-leaf/proposal.md` | place it as the History tab (case-history-surface) and drop the duplicate version-history tab |
+| 6.4 | openregister | `openregister/openspec/changes/timeline-entries-are-records/proposal.md` (merged, #3762) | `one-timeline-on-the-case` places it as the Timeline tab of the case panels and moves every communication writer onto it; the audit sidebar keeps the change history |
 | 6.5 | integriq | `integriq/openspec/changes/mail-intake-creates-cases/proposal.md` | the assign target and the created case |
 | 6.7 | portaliq | `dossiq/openspec/changes/archive/2026-09-09-move-portals-to-portaliq/pr` | contribute portaalBericht to the citizen audience; re-rate, move-portals-to-portaliq archived 09-09 with one task open |
 | 6.13 | pipelinq | `pipelinq/openspec/specs/kcc-werkplek/spec.md (the panel); integriq/ope` | the case actions inside the panel (kcc-werkplek-zaaksysteem-bridge); no panel page of its own |
