@@ -78,7 +78,35 @@
                   "description": "Who hears about the silence after the last reminder. A role or a user id, recorded on the escalation so the file names who was told."
                 }
               }
-            }
+            },
+            "examples": [
+              [
+                {
+                  "key": "aanvulling-aanvrager",
+                  "name": "Aanvulling gevraagd",
+                  "category": "applicant",
+                  "waitingOn": "applicant",
+                  "legalBasis": "Awb 4:5",
+                  "chaseIntervalDays": 5,
+                  "chaseBudget": 2,
+                  "countsWorkingDays": true,
+                  "chaseText": "Wij hebben uw aanvulling nog niet ontvangen.",
+                  "escalateTo": "handler"
+                },
+                {
+                  "key": "advies-derde",
+                  "name": "Advies gevraagd bij een derde",
+                  "category": "thirdParty",
+                  "waitingOn": "thirdParty",
+                  "legalBasis": "Awb 4:15",
+                  "chaseIntervalDays": 10,
+                  "chaseBudget": 1,
+                  "countsWorkingDays": true,
+                  "chaseText": "Wij wachten nog op uw advies.",
+                  "escalateTo": "coordinator"
+                }
+              ]
+            ]
           }
         }
       },
