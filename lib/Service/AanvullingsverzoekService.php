@@ -339,21 +339,21 @@ class AanvullingsverzoekService {
 
 		try {
 			if (trim($id) !== '') {
-				$stored = $this->patchObjectAsArray(
+				return ($this->patchObjectAsArray(
 					objectService: $objectService,
 					register: $register,
 					schema: self::SCHEMA,
 					id: trim($id),
 					changes: $request
-				);
-			} else {
-				$stored = $this->saveObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: self::SCHEMA,
-					object: $request
-				);
+				) ?? $request);
 			}
+
+			$stored = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: self::SCHEMA,
+				object: $request
+			);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: an aanvullingsverzoek could not be written',
