@@ -312,15 +312,22 @@ describe('InitiatorPicker — a refused term is not an empty register', () => {
 		await wrapper.vm.runSearch()
 		await wrapper.vm.$nextTick()
 
-		expect(wrapper.find('[data-testid="initiator-picker-refusal"]').exists()).toBe(true)
-		expect(wrapper.text()).toContain('We could not read this search from character 1.')
+		expect(
+			wrapper.find('[data-testid="initiator-picker-refusal"]').exists(),
+		).toBe(true)
+		expect(wrapper.text()).toContain(
+			'We could not read this search from character 1.',
+		)
 		expect(wrapper.text()).toContain('Unbalanced bracket at position 1.')
 		expect(wrapper.find('.NcEmptyContent-stub').exists()).toBe(false)
 	})
 
 	it('holds back the rows the refused fetch returned', async () => {
 		const fetchCollection = vi.fn().mockResolvedValue([PERSON_ROW])
-		const wrapper = mountPicker({ fetchCollection, errors: { brpPerson: refusal } })
+		const wrapper = mountPicker({
+			fetchCollection,
+			errors: { brpPerson: refusal },
+		})
 
 		wrapper.vm.query = '(Janssen'
 		await wrapper.vm.runSearch()

@@ -4,7 +4,9 @@
 		type="warning"
 		class="case-search-refusal"
 		data-testid="case-search-refusal">
-		<p class="case-search-refusal__headline" data-testid="case-search-refusal-headline">
+		<p
+			class="case-search-refusal__headline"
+			data-testid="case-search-refusal-headline">
 			{{ headline }}
 		</p>
 		<p class="case-search-refusal__term" data-testid="case-search-refusal-term">
@@ -12,7 +14,9 @@
 			<mark v-if="refusal.at">{{ refusal.at }}</mark>
 			<span>{{ refusal.after }}</span>
 		</p>
-		<p class="case-search-refusal__reason" data-testid="case-search-refusal-reason">
+		<p
+			class="case-search-refusal__reason"
+			data-testid="case-search-refusal-reason">
 			{{ refusal.message }}
 		</p>
 		<p class="case-search-refusal__next">
