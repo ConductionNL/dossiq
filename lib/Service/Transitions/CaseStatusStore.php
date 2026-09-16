@@ -39,6 +39,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Transitions;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -51,9 +54,11 @@ class CaseStatusStore {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService  Bridge to OpenRegister + config.
-	 * @param StatusTypeLookup $statusTypeLookup Reads a statusType, by id or by name.
-	 * @param LoggerInterface  $logger           The logger.
+	 * @param SettingsService   $settingsService  Bridge to OpenRegister + config.
+	 * @param StatusTypeLookup  $statusTypeLookup Reads a statusType, by id or by name.
+	 * @param LoggerInterface   $logger           The logger.
+	 * @param CaseTimeline|null $timeline         The one seam that writes a timeline entry.
+	 * @param IUserSession|null $userSession      Who is making the move.
 	 *
 	 * @return void
 	 */
@@ -61,6 +66,8 @@ class CaseStatusStore {
 		private readonly SettingsService $settingsService,
 		private readonly StatusTypeLookup $statusTypeLookup,
 		private readonly LoggerInterface $logger,
+		private readonly ?CaseTimeline $timeline = null,
+		private readonly ?IUserSession $userSession = null,
 	) {
 	}//end __construct()
 
@@ -175,8 +182,129 @@ class CaseStatusStore {
 			$payload['description'] = $comment;
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+		$record = $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
+
+		$this->recordOnTimeline(
+			caseId: $caseId,
+			toStatus: $toStatus,
+			fromStatus: $fromStatus,
+			label: $label,
+			comment: $comment,
+			record: $record,
+		);
+
+		return $record;
 	}//end writeStatusRecord()
+
+	/**
+	 * Put the move on the case's timeline.
+	 *
+	 * WHY HERE AND NOT IN `StatusTransitionService`. Four callers move a case's
+	 * status and all four write a statusRecord through this method: the guarded
+	 * transition, the admin free-form move, the ending acts (finish, abort,
+	 * archive) and a reopen. A writer placed in the engine would have covered
+	 * the first two and left a closed case with no line saying it closed. This
+	 * is the one place all four already meet.
+	 *
+	 * THE MESSAGE CARRIES NAMES, THE FIELDS CARRY IDS. A status is a uuid on
+	 * the case, and a timeline that read `a1b2c3…` at a handler would be worse
+	 * than no line at all, so the two statuses are resolved to their
+	 * administered names for the sentence while `from` and `to` keep the ids a
+	 * consumer can filter on.
+	 *
+	 * IT NEVER FAILS THE MOVE. `CaseTimeline::record()` already answers rather
+	 * than throws, and the lookup around it is guarded the same way: the case
+	 * has already changed status and refusing the write because the log could
+	 * not be written would trade a missing line for a lost move.
+	 *
+	 * @param string               $caseId     The case that moved.
+	 * @param string               $toStatus   The statusType it moved into.
+	 * @param string               $fromStatus The statusType it left, empty on a first status.
+	 * @param string               $label      The transition's own label.
+	 * @param string|null          $comment    What the mover said about it.
+	 * @param array<string, mixed> $record     The statusRecord just written.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	private function recordOnTimeline(
+		string $caseId,
+		string $toStatus,
+		string $fromStatus,
+		string $label,
+		?string $comment,
+		array $record,
+	): void {
+		if ($this->timeline === null || $caseId === '' || $toStatus === '') {
+			return;
+		}
+
+		$toName = $this->statusName(statusTypeId: $toStatus);
+		$fromName = $this->statusName(statusTypeId: $fromStatus);
+
+		if ($fromName === '') {
+			$message = 'Status gezet op ' . $toName;
+		} else {
+			$message = 'Status gewijzigd van ' . $fromName . ' naar ' . $toName;
+		}
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::STATUS_CHANGE,
+			message: $message,
+			fields: [
+				'from' => $fromStatus,
+				'to' => $toStatus,
+				'actor' => $this->actor(),
+				'explanation' => (string)($comment ?? ''),
+				'label' => $label,
+				'statusRecordId' => (string)($record['id'] ?? ($record['@self']['id'] ?? '')),
+			],
+			visibility: CaseTimeline::INTERNAL,
+		);
+	}//end recordOnTimeline()
+
+	/**
+	 * The administered name of a statusType, or its id when the name is not readable.
+	 *
+	 * The id is the honest fallback: a sentence reading "Status gewijzigd naar
+	 * a1b2c3" is poor, and a sentence reading "Status gewijzigd naar " is a bug
+	 * report nobody can act on.
+	 *
+	 * @param string $statusTypeId The statusType uuid, or ''.
+	 *
+	 * @return string The name, the id, or '' when nothing was asked for.
+	 */
+	private function statusName(string $statusTypeId): string {
+		if ($statusTypeId === '') {
+			return '';
+		}
+
+		try {
+			$name = trim($this->statusTypeLookup->nameFor(statusTypeId: $statusTypeId));
+		} catch (\Throwable $e) {
+			$name = '';
+		}
+
+		if ($name === '') {
+			return $statusTypeId;
+		}
+
+		return $name;
+	}//end statusName()
+
+	/**
+	 * Who made the move, as a user id, or '' for a move nobody signed.
+	 *
+	 * A background job and a timer both move cases, and '' is the true answer
+	 * for those rather than a name invented to fill the field.
+	 *
+	 * @return string The uid, or ''.
+	 */
+	private function actor(): string {
+		return (string)($this->userSession?->getUser()?->getUID() ?? '');
+	}//end actor()
 
 	/**
 	 * Persist an updated statusRecord.
