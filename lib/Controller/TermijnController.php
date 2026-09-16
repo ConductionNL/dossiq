@@ -193,7 +193,17 @@ class TermijnController extends Controller {
 		$documentLink = (string)($body['documentLink'] ?? '');
 
 		try {
-			$row = $this->pause->registerPauze($id, $durationDays, $rationale, $documentLink);
+			// The declared reason reaches this path too. Without it a pause
+			// registered here could never carry one, and a case suspended
+			// through the term endpoint would be the one case in the app that
+			// silently chases nobody.
+			$row = $this->pause->registerPauze(
+				$id,
+				$durationDays,
+				$rationale,
+				$documentLink,
+				(string)($body['pauseReason'] ?? '')
+			);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Pauze failed');

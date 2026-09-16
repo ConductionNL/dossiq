@@ -358,8 +358,8 @@ change that already covers the area.
 |---|---|---|---|
 | 1.1 | portaliq | `dossiq/openspec/changes/leaf-integrations/proposal.md (the Forms half;` | caseType.intakeFormRef and FormsIntakeService (leaf-integrations); the portal journey targets the same intake |
 | 1.5 | integriq | `integriq/openspec/changes/mail-intake-creates-cases/proposal.md` | accept the start-a-case offer (mailObjectTemplate from leaf-integrations) and the link offer |
-| 2.1 | openregister | `openregister/openspec/changes/generated-identifier/proposal.md` | declare case.identifier as generated YYYY-NNNN and drop the free-text field from the forms |
-| 2.19 | openregister | `openregister/openspec/changes/favourites-and-recent/proposal.md` | two lenses on Cases (Favourites, Recent) over the new endpoints |
+| 2.1 | openregister | `openregister/openspec/changes/generated-identifier/proposal.md` (merged #3785) | `case-number-and-favourites`: case.identifier and complaint.complaintNumber declare x-openregister-generated; ComplaintService's own counter retired |
+| 2.19 | openregister | `openregister/openspec/changes/favourites-and-recent/proposal.md` (merged #3766) | `case-number-and-favourites`: a star on the case and on every row, Favourites and Recently opened chips on Cases and the same two as dashboard tiles |
 | 3.1 | openregister | `openregister/openspec/changes/flow-bpmn-interchange/proposal.md` | workflow-definitions-to-flow moves dossiq's templates onto it; retire-cmmn-caseplanstate does the CMMN half |
 | 3.4 | openregister | `openregister/openspec/changes/flow-task-forms/proposal.md` | replace DossiqAskPersonNode's bare task with a user-task node declaring the fields |
 | 3.12 | buildiq | `buildiq/openspec/specs/form-editor-logic/spec.md` | author the registration form per case type there; the internal task form is OpenRegister's flow-task-forms |

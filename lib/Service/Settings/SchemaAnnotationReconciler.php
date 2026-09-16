@@ -40,6 +40,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Settings;
 
+use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
@@ -194,9 +195,27 @@ class SchemaAnnotationReconciler {
 	 * @param string $slug The schema slug (e.g. 'case').
 	 * @param array<string, mixed> $annotations The annotation blocks to merge.
 	 *
+	 * 🔴 ONE KEY IS NOT THE REGISTER JSON'S TO OVERWRITE. The states under
+	 * `x-openregister-lifecycle` on the `case` schema are keyed by statusType
+	 * UUID, so they only exist on a running instance and no register JSON can
+	 * declare them; {@see CaseStateFieldRuleProjector} writes them when a case
+	 * type is published. Copying the declared block wholesale over them would
+	 * unpublish every per-status field rule on the instance, in silence: nothing
+	 * errors, OpenRegister simply stops finding a `states` key and stops
+	 * refusing the saves those rules exist to refuse. The projector says what to
+	 * carry, so the rule lives with the writer rather than in a condition here.
+	 *
 	 * @return int 1 when the configuration was (re)written, 0 otherwise.
 	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `carryForwardStates()` reads one
+	 *   annotation block and returns another, with no state of its own to hold.
+	 *   It is static because it lives with the class that OWNS the key rather
+	 *   than with the one that happens to copy it, and injecting a whole
+	 *   projector here for one pure function would make the reconciler depend
+	 *   on a case-type store it never reads.
+	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 	 */
 	private function mergeOntoLiveSchema(object $schemaMapper, string $slug, array $annotations): int {
 		// 🔴 RESOLVE INSIDE OUR OWN REGISTER. An unscoped slug lookup here merged
@@ -218,6 +237,12 @@ class SchemaAnnotationReconciler {
 		$merged = $current;
 		$changed = false;
 		foreach ($annotations as $annotationKey => $annotationValue) {
+			$annotationValue = CaseStateFieldRuleProjector::carryForwardStates(
+				annotationKey: $annotationKey,
+				declared: $annotationValue,
+				live: ($current[$annotationKey] ?? null)
+			);
+
 			if (($current[$annotationKey] ?? null) !== $annotationValue) {
 				$merged[$annotationKey] = $annotationValue;
 				$changed = true;

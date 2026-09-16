@@ -185,6 +185,8 @@ import Sitemap from 'vue-material-design-icons/Sitemap.vue'
 import SitemapOutline from 'vue-material-design-icons/SitemapOutline.vue'
 import SourceBranch from 'vue-material-design-icons/SourceBranch.vue'
 import StairsUp from 'vue-material-design-icons/StairsUp.vue'
+import Star from 'vue-material-design-icons/Star.vue'
+import StarOutline from 'vue-material-design-icons/StarOutline.vue'
 import StoreOutline from 'vue-material-design-icons/StoreOutline.vue'
 import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
 import Sync from 'vue-material-design-icons/Sync.vue'
@@ -378,6 +380,8 @@ export default {
 	SitemapOutline,
 	SourceBranch,
 	StairsUp,
+	Star,
+	StarOutline,
 	StoreOutline,
 	SwapHorizontal,
 	Sync,

@@ -104,6 +104,7 @@
 								<StatusTypeForm
 									:form="editForm"
 									:error="editError"
+									:fields="fieldOptions"
 									@update="onEditFieldUpdate" />
 								<div class="edit-row edit-row--actions">
 									<NcButton
@@ -136,6 +137,7 @@
 					<StatusTypeForm
 						:form="newForm"
 						:error="addError"
+						:fields="fieldOptions"
 						@update="onNewFieldUpdate" />
 					<NcButton
 						variant="primary"
@@ -193,6 +195,7 @@ export default {
 	data() {
 		return {
 			statusTypes: [],
+			caseFields: [],
 			loading: false,
 			error: '',
 			// Add form
@@ -216,6 +219,28 @@ export default {
 			return useObjectStore()
 		},
 
+		/**
+		 * The fields a rule may name, offered as a picker.
+		 *
+		 * The case type's OWN properties, not the case schema's: those are the
+		 * ones an administrator recognises by name, and a rule on a built-in
+		 * field is typed rather than picked. An instance whose case type has no
+		 * properties yet gets no picker and a text field, which is better than
+		 * an empty dropdown that reads as "nothing can be ruled on".
+		 *
+		 * @return {Array<object>} The options.
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		fieldOptions() {
+			return this.caseFields
+				.map((property) => ({
+					id: String(property?.name ?? ''),
+					label: String(property?.title || property?.name || ''),
+				}))
+				.filter((option) => option.id !== '')
+		},
+
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		sortedStatusTypes() {
 			return [...this.statusTypes].sort(
@@ -228,6 +253,7 @@ export default {
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await this.fetchStatusTypes()
+			await this.fetchCaseFields()
 		}
 	},
 
@@ -272,6 +298,29 @@ export default {
 			}
 
 			return labels[role] || role
+		},
+
+		/**
+		 * The fields this case type declares, for the rule picker.
+		 *
+		 * Binds nothing on a refusal, deliberately. The picker is a convenience
+		 * over a text field that already works, so an instance that cannot read
+		 * its property definitions loses the list and keeps the editor.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+		 */
+		async fetchCaseFields() {
+			try {
+				const result = await this.objectStore.fetchCollection(
+					'propertyDefinition',
+					{ caseType: this.caseTypeId, _limit: 200 },
+				)
+				this.caseFields = result || []
+			} catch {
+				this.caseFields = []
+			}
 		},
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
