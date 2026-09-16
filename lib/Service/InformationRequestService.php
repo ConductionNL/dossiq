@@ -119,14 +119,18 @@ class InformationRequestService {
 	 * @param string $recipient Who to send it to.
 	 * @param int $durationDays How long the applicant is given.
 	 * @param string $rationale Why the case cannot be decided yet.
+	 * @param string $pauseReason The declared reason the suspension is registered
+	 *        under. It is what carries the reminder schedule, so an ask that names
+	 *        one gets chased and an ask that names none behaves as it always did.
 	 *
 	 * @return array{sent: bool, suspended: bool, instance: array<string, mixed>,
 	 *               record: array<string, mixed>|null, error: string}
 	 *
 	 * @throws RefusedException When the case carries no running term to suspend,
-	 *         or the case type refuses a suspension this long.
+	 *         the case type refuses a suspension this long, or it does not declare
+	 *         the reason named.
 	 *
-	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function ask(
 		string $caseId,
@@ -134,6 +138,7 @@ class InformationRequestService {
 		string $recipient,
 		int $durationDays,
 		string $rationale = '',
+		string $pauseReason = '',
 	): array {
 		$instance = $this->runningTermFor(caseId: $caseId);
 		$instanceId = (string)($instance['id'] ?? '');
@@ -184,6 +189,7 @@ class InformationRequestService {
 			termInstanceId: $instanceId,
 			durationDays: max(1, $durationDays),
 			rationale: ($why . ' (Awb 4:5)'),
+			pauseReason: $pauseReason,
 		);
 
 		$record = $this->termService->recordEvent(
