@@ -5113,7 +5113,17 @@ OC.L10N.register(
         "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.": "Wat de situatie van deze partij weigert. warn toont de lezer een melding en blokkeert niets; refuse-publication weigert het publiceren van een bestand op elke zaak waar deze partij op staat; refuse-send weigert een uitgaand bericht aan deze partij. Het effect wordt bepaald waar de handeling plaatsvindt, niet waar het label wordt getoond.",
         "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map.": "Welk adres dit is: correspondentie is het adres dat uitgaande post kiest, zaak is het adres waar de zaak over gaat, locatie is een punt op de kaart.",
         "Why the indicator was set, for the handler who meets the refusal.": "Waarom de indicator is gezet, voor de behandelaar die de weigering tegenkomt.",
-        "email, postal, phone or geo.": "email, postal, phone of geo."
+        "email, postal, phone or geo.": "email, postal, phone of geo.",
+        "the applicant": "de aanvrager",
+        "a third party": "een derde",
+        "us": "ons",
+        "Waiting on {party} for {days} days": "Wacht op {party}, {days} dagen",
+        "Waiting on {party} for {days} days, chased once": "Wacht op {party}, {days} dagen, eenmaal herinnerd",
+        "Waiting on {party} for {days} days, chased {chases} times": "Wacht op {party}, {days} dagen, {chases} keer herinnerd",
+        "Suspended, {chases} reminders sent": "Opgeschort, {chases} herinneringen verstuurd",
+        "Suspended: {reason}. No reminder sent yet.": "Opgeschort: {reason}. Nog geen herinnering verstuurd.",
+        "Suspended: {reason}. One reminder sent.": "Opgeschort: {reason}. Eén herinnering verstuurd.",
+        "Suspended: {reason}. {chases} reminders sent.": "Opgeschort: {reason}. {chases} herinneringen verstuurd."
     },
     "nplurals=2; plural=(n != 1);"
 )
