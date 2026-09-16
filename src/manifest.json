@@ -2674,7 +2674,8 @@
 							"direction",
 							"startTime",
 							"summary",
-							"callerIdentification"
+							"callerIdentification",
+							"visibleToApplicant"
 						],
 						"fieldOverrides": {
 							"summary": {

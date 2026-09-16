@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\ContactMomentTimelineListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
 use OCA\Dossiq\Notification\Notifier;
@@ -64,6 +65,7 @@ class ObjectListenerRegistrar {
 
 		$this->registerCacheInvalidationListeners(context: $context);
 		$this->registerCaseDeleteGuard(context: $context);
+		$this->registerContactMomentTimeline(context: $context);
 		(new IntakeListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);
@@ -93,6 +95,28 @@ class ObjectListenerRegistrar {
 			listener: CaseDeleteGuardListener::class
 		);
 	}//end registerCaseDeleteGuard()
+
+	/**
+	 * Register the writer that puts a logged contact on the case timeline.
+	 *
+	 * Bound to the create event rather than called from `ContactMomentService`,
+	 * because the Communication tab's Log contact action saves straight to
+	 * OpenRegister and runs no dossiq service at all. The listener is the ONE
+	 * writer for both surfaces; see its class docblock for why there is not a
+	 * second one beside it.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	private function registerContactMomentTimeline(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: ContactMomentTimelineListener::class
+		);
+	}//end registerContactMomentTimeline()
 
 	/**
 	 * Register the KPI and role-routing cache-invalidation listeners.

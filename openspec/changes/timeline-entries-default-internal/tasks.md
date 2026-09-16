@@ -3,7 +3,7 @@
 Tier: V1. Kind: config plus one reader. Row 6.15. Waits on openregister
 `timeline-entry-visibility` for the flag on the leaves.
 
-- [ ] 1.1 Note and contact forms: default internal, toggle (D-1).
+- [x] 1.1 Note and contact forms: default internal, toggle (D-1).
   - `@spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md`
 - [ ] 1.2 Outbound writers (Berichtenbox, portal message, beschikking
   delivery) set public; status writer per `publicLabel`.
