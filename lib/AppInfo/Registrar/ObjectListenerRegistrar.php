@@ -30,7 +30,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
-use OCA\Dossiq\Listener\ContactMomentTimelineListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
 use OCA\Dossiq\Notification\Notifier;
@@ -44,6 +43,16 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * Registers the notifier and the cross-subsystem object-lifecycle listeners.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the
+ * threshold, and four of the thirteen are the per-domain registrars this
+ * class delegates to rather than dependencies it entangles itself with. The
+ * one that crossed the line is `ContactListenerRegistrar`, and it was made a
+ * registrar of its own precisely so the binding it carries would not be a
+ * fifth listener import here. Splitting further would mean a registrar
+ * holding one registrar holding one listener, which trades a number for a
+ * layer and makes the list of what dossiq binds harder to read. The reason a
+ * ceiling exists is entanglement; a list of registrars is not that.
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
@@ -65,8 +74,8 @@ class ObjectListenerRegistrar {
 
 		$this->registerCacheInvalidationListeners(context: $context);
 		$this->registerCaseDeleteGuard(context: $context);
-		$this->registerContactMomentTimeline(context: $context);
 		(new IntakeListenerRegistrar())->register(context: $context);
+		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);
 	}//end register()
@@ -95,28 +104,6 @@ class ObjectListenerRegistrar {
 			listener: CaseDeleteGuardListener::class
 		);
 	}//end registerCaseDeleteGuard()
-
-	/**
-	 * Register the writer that puts a logged contact on the case timeline.
-	 *
-	 * Bound to the create event rather than called from `ContactMomentService`,
-	 * because the Communication tab's Log contact action saves straight to
-	 * OpenRegister and runs no dossiq service at all. The listener is the ONE
-	 * writer for both surfaces; see its class docblock for why there is not a
-	 * second one beside it.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
-	 */
-	private function registerContactMomentTimeline(IRegistrationContext $context): void {
-		$context->registerEventListener(
-			event: ObjectCreatedEvent::class,
-			listener: ContactMomentTimelineListener::class
-		);
-	}//end registerContactMomentTimeline()
 
 	/**
 	 * Register the KPI and role-routing cache-invalidation listeners.
