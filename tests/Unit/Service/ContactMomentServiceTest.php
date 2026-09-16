@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -88,6 +89,13 @@ class ContactMomentServiceTest extends TestCase {
 	private array $saved = [];
 
 	/**
+	 * The mocked timeline seam.
+	 *
+	 * @var CaseTimeline|MockObject
+	 */
+	private CaseTimeline $timeline;
+
+	/**
 	 * The service under test.
 	 *
 	 * @var ContactMomentService
@@ -117,11 +125,13 @@ class ContactMomentServiceTest extends TestCase {
 			['contactmoment_schema', '', 'contactmoment'],
 		]);
 
+		$this->timeline = $this->createMock(CaseTimeline::class);
 		$this->service = new ContactMomentService(
 			settingsService: $this->settingsService,
 			userSession: $this->userSession,
 			logger: $this->createMock(LoggerInterface::class),
 			dates: $this->caseDates(),
+			timeline: $this->timeline,
 		);
 	}//end setUp()
 
@@ -137,6 +147,104 @@ class ContactMomentServiceTest extends TestCase {
 		$user->method('getUID')->willReturn($uid);
 		$this->userSession->method('getUser')->willReturn($user);
 	}//end signIn()
+
+	/**
+	 * A logged contact puts a line on the case's timeline, carrying the
+	 * channel, the direction and its own record id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	public function testALoggedContactReachesTheTimeline(): void {
+		$this->signIn('handler');
+
+		$seen = [];
+		$this->timeline->method('record')->willReturnCallback(
+			static function (
+				string $caseId,
+				string $kind,
+				string $message,
+				array $fields = [],
+				string $visibility = 'internal',
+				array $relatedCaseIds = [],
+			) use (&$seen): string {
+				$seen = compact('caseId', 'kind', 'message', 'fields', 'visibility', 'relatedCaseIds');
+
+				return 'entry-1';
+			}
+		);
+
+		$this->service->createContactMoment([
+			'notificationChannel' => 'phone',
+			'direction' => 'inbound',
+			'summary' => 'Asked about the hearing date',
+			'case' => 'case-uuid-1',
+		]);
+
+		$this->assertSame('case-uuid-1', $seen['caseId']);
+		$this->assertSame('contactmoment', $seen['kind']);
+		$this->assertSame('Asked about the hearing date', $seen['message']);
+		$this->assertSame('phone', $seen['fields']['channel']);
+		$this->assertSame('inbound', $seen['fields']['direction']);
+		$this->assertArrayHasKey('contactmomentId', $seen['fields']);
+		$this->assertSame('internal', $seen['visibility']);
+	}//end testALoggedContactReachesTheTimeline()
+
+	/**
+	 * A contact about several cases is written onto each of them, through
+	 * the related-cases list the KCC voorblad already keeps.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	public function testAContactAboutSeveralCasesReachesEachTimeline(): void {
+		$this->signIn('handler');
+
+		$related = null;
+		$this->timeline->method('record')->willReturnCallback(
+			static function (
+				string $caseId,
+				string $kind,
+				string $message,
+				array $fields = [],
+				string $visibility = 'internal',
+				array $relatedCaseIds = [],
+			) use (&$related): string {
+				$related = $relatedCaseIds;
+
+				return 'entry-1';
+			}
+		);
+
+		$this->service->createContactMoment([
+			'notificationChannel' => 'phone',
+			'case' => 'case-uuid-1',
+			'relatedCases' => ['case-uuid-1', 'case-uuid-2'],
+		]);
+
+		$this->assertSame(['case-uuid-1', 'case-uuid-2'], $related);
+	}//end testAContactAboutSeveralCasesReachesEachTimeline()
+
+	/**
+	 * A KCC contact that names no case has no timeline to reach, and the
+	 * seam is not called at all rather than called with an empty case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	public function testAContactWithoutACaseWritesNoEntry(): void {
+		$this->signIn('handler');
+
+		$this->timeline->expects($this->never())->method('record');
+
+		$this->service->createContactMoment([
+			'notificationChannel' => 'phone',
+			'kccEmployeeId' => 'kcc-agent',
+		]);
+	}//end testAContactWithoutACaseWritesNoEntry()
 
 	/**
 	 * A contact logged on a case carries the case and seeds relatedCases.
