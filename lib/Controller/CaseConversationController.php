@@ -34,6 +34,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Controller\Support\TranslatesRefusals;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Conversation\CaseCaptureService;
 use OCA\Dossiq\Service\Conversation\CaseConversationService;
@@ -44,6 +46,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
 
 /**
  * REST controller for live conversations, captures and major declarations.
@@ -51,6 +54,8 @@ use OCP\IUserSession;
  * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
  */
 class CaseConversationController extends Controller {
+
+	use TranslatesRefusals;
 
 	/**
 	 * Map service refusal reasons onto HTTP status codes.
@@ -60,6 +65,7 @@ class CaseConversationController extends Controller {
 	private const REASON_STATUS = [
 		CaseConversationService::REASON_NO_TALK => Http::STATUS_SERVICE_UNAVAILABLE,
 		CaseConversationService::REASON_NO_CASE => Http::STATUS_NOT_FOUND,
+		CaseConversationService::REASON_UNKNOWN_ROOM => Http::STATUS_NOT_FOUND,
 		CaseConversationService::REASON_UNRESOLVED_RESPONDERS => Http::STATUS_CONFLICT,
 		CaseCaptureService::REASON_NOT_A_CAPTURE => Http::STATUS_BAD_REQUEST,
 		CaseCaptureService::REASON_EMPTY => Http::STATUS_BAD_REQUEST,
@@ -74,6 +80,7 @@ class CaseConversationController extends Controller {
 	 * @param CaseCaptureService       $captures        Voice notes and screen captures.
 	 * @param CaseAccessGuard          $caseAccessGuard Per-case authorization, failing closed.
 	 * @param IUserSession             $userSession     Current user session.
+	 * @param LoggerInterface          $logger          Logger, used by the refusal translator.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -82,6 +89,7 @@ class CaseConversationController extends Controller {
 		private readonly CaseCaptureService $captures,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -128,13 +136,17 @@ class CaseConversationController extends Controller {
 			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->answer(
-			result: $this->conversations->startConversation(
-				caseId: $caseId,
-				subject: $subject,
-				startedBy: $user->getUID(),
-			)
-		);
+		try {
+			return $this->answer(
+				result: $this->conversations->startConversation(
+					caseId: $caseId,
+					subject: $subject,
+					startedBy: $user->getUID(),
+				)
+			);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'start a conversation', e: $e);
+		}
 	}//end start()
 
 	/**
@@ -142,8 +154,8 @@ class CaseConversationController extends Controller {
 	 *
 	 * Per-object guard: `CaseAccessGuard::hasCaseMutationAccess()`.
 	 *
-	 * @param string        $caseId          Case UUID.
-	 * @param string        $roomId          The Talk conversation id.
+	 * @param string        $caseId          Case UUID, from the URL.
+	 * @param string        $roomId          The Talk conversation id, from the body.
 	 * @param array<string> $participants    Who joined.
 	 * @param int           $durationSeconds How long it lasted.
 	 *
@@ -152,7 +164,7 @@ class CaseConversationController extends Controller {
 	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 	 */
 	#[NoAdminRequired]
-	public function end(string $caseId, string $roomId, array $participants = [], int $durationSeconds = 0): JSONResponse {
+	public function end(string $caseId, string $roomId = '', array $participants = [], int $durationSeconds = 0): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
@@ -190,9 +202,9 @@ class CaseConversationController extends Controller {
 	#[NoAdminRequired]
 	public function capture(
 		string $caseId,
-		string $fileName,
-		string $mimeType,
-		string $content,
+		string $fileName = '',
+		string $mimeType = '',
+		string $content = '',
 		?string $taskId = null,
 	): JSONResponse {
 		$user = $this->userSession->getUser();
@@ -238,9 +250,13 @@ class CaseConversationController extends Controller {
 			return new JSONResponse(['ok' => false, 'reason' => 'access_denied'], Http::STATUS_FORBIDDEN);
 		}
 
-		return $this->answer(
-			result: $this->major->declareMajor(caseId: $caseId, declaredBy: $user->getUID())
-		);
+		try {
+			return $this->answer(
+				result: $this->major->declareMajor(caseId: $caseId, declaredBy: $user->getUID())
+			);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'declare a case major', e: $e);
+		}
 	}//end declareMajor()
 
 	/**

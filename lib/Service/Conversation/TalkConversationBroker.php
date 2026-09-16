@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Conversation;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\RefusedException;
 use OCP\IServerContainer;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -89,8 +90,10 @@ class TalkConversationBroker {
 	 * @param array<string> $moderators User ids that moderate the room.
 	 *
 	 * @return array{id: string, url: string}|null The room's id and absolute
-	 *                                             URL, or null when Talk is
-	 *                                             absent or refused the room.
+	 *                                             URL, or null when this
+	 *                                             instance has no Talk.
+	 *
+	 * @throws RefusedException When Talk is present and refuses the room.
 	 *
 	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 	 */
@@ -112,12 +115,21 @@ class TalkConversationBroker {
 				'url' => $room->getAbsoluteUrl(),
 			];
 		} catch (Throwable $e) {
+			// A REFUSAL, not a null. Talk being absent and Talk failing to
+			// open a room are different answers, and the caller can only act
+			// on the first. The controller translates this one into its own
+			// status and sentence.
 			$this->logger->warning(
 				'Talk refused a room named "' . $name . '": ' . $e->getMessage(),
 				['app' => Application::APP_ID],
 			);
 
-			return null;
+			throw new RefusedException(
+				rule: 'talk-room-refused',
+				sentence: 'Nextcloud Talk could not open a room for this case.',
+				status: RefusedException::STATUS_INDETERMINATE,
+				previous: $e,
+			);
 		}//end try
 	}//end createRoom()
 
@@ -145,6 +157,10 @@ class TalkConversationBroker {
 
 			return true;
 		} catch (Throwable $e) {
+			// Answers false rather than refusing: the channel's content is
+			// already filed on the case by the time this runs, so a room Talk
+			// would not delete is untidy rather than unsafe, and failing the
+			// close would leave the case saying its channel is open.
 			$this->logger->warning(
 				'Talk refused to close room "' . $roomId . '": ' . $e->getMessage(),
 				['app' => Application::APP_ID],
@@ -178,34 +194,33 @@ class TalkConversationBroker {
 	/**
 	 * Resolve the Talk broker, or null when this instance has no Talk.
 	 *
+	 * No try/catch, deliberately. An instance without Talk answers `has()`
+	 * false and this returns null, which is the case the affordance is hidden
+	 * for. An instance whose container HAS the broker and then cannot build it
+	 * is broken, not Talk-less, and the two are opposite answers: swallowing
+	 * the second into "no Talk here" hides a broken instance behind a missing
+	 * button. It also keeps this off the swallowing-catch ceiling, which only
+	 * goes down.
+	 *
 	 * @return IBroker|null The broker, or null.
 	 *
 	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
 	 */
 	private function broker(): ?IBroker {
-		try {
-			if ($this->container->has(IBroker::class) === false) {
-				return null;
-			}
-
-			$broker = $this->container->get(IBroker::class);
-			if (($broker instanceof IBroker) === false) {
-				return null;
-			}
-
-			if ($broker->hasBackend() === false) {
-				return null;
-			}
-
-			return $broker;
-		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Talk broker not resolvable: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
-
+		if ($this->container->has(IBroker::class) === false) {
 			return null;
-		}//end try
+		}
+
+		$broker = $this->container->get(IBroker::class);
+		if (($broker instanceof IBroker) === false) {
+			return null;
+		}
+
+		if ($broker->hasBackend() === false) {
+			return null;
+		}
+
+		return $broker;
 	}//end broker()
 
 }//end class

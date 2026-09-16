@@ -63,6 +63,14 @@ class CaseConversationService {
 	public const REASON_NO_CASE = 'case_not_found';
 
 	/**
+	 * Refusal reason: no conversation on this case carries the room id given,
+	 * so there is nothing to record an ending against.
+	 *
+	 * @var string
+	 */
+	public const REASON_UNKNOWN_ROOM = 'conversation_not_found';
+
+	/**
 	 * Refusal reason: the case type names responders that do not resolve, so
 	 * the major declaration is refused rather than opening an empty channel
 	 * (ADR-102: absent config fails closed with a status).
@@ -206,7 +214,7 @@ class CaseConversationService {
 		}
 
 		if ($found === null) {
-			return ['ok' => false, 'reason' => self::REASON_NO_CASE];
+			return ['ok' => false, 'reason' => self::REASON_UNKNOWN_ROOM];
 		}
 
 		$this->cases->write(caseId: $caseId, changes: ['conversations' => $conversations]);

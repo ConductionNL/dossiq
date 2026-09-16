@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Conversation\CaseConversationService;
 use OCA\Dossiq\Service\Conversation\CaseRecordStore;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -205,5 +206,55 @@ class CaseConversationServiceTest extends TestCase {
 
 		$this->service->startConversation(caseId: 'case-1', subject: 'Hoorzitting bezwaar', startedBy: 'anna');
 	}//end testTheSubjectNamesTheRoom()
+
+	/**
+	 * Talk present and refusing a room is a refusal, not "no Talk here".
+	 *
+	 * The two answers look the same to a handler and are not the same thing:
+	 * one hides the affordance, the other says the platform failed. The broker
+	 * refuses, and the refusal travels to the controller rather than becoming
+	 * a null nobody can act on.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 */
+	public function testARoomTalkRefusesIsARefusalNotAnAbsence(): void {
+		$this->broker->method('isAvailable')->willReturn(true);
+		$this->broker->method('createRoom')->willThrowException(
+			new RefusedException(
+				rule: 'talk-room-refused',
+				sentence: 'Nextcloud Talk could not open a room for this case.',
+				status: RefusedException::STATUS_INDETERMINATE,
+			)
+		);
+
+		$this->expectException(RefusedException::class);
+
+		$this->service->startConversation(caseId: 'case-1', subject: null, startedBy: 'anna');
+	}//end testARoomTalkRefusesIsARefusalNotAnAbsence()
+
+	/**
+	 * Ending a conversation nothing on the case knows about says so.
+	 *
+	 * It used to answer `case_not_found`, which points a caller at the wrong
+	 * thing entirely: the case was read fine, the room is the part nobody
+	 * recognises.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	 */
+	public function testAnUnknownRoomIsNamedAsTheRoomAndNotAsTheCase(): void {
+		$result = $this->service->recordConversationEnd(
+			caseId: 'case-1',
+			roomId: 'room-nobody-knows',
+			participants: [],
+			durationSeconds: 0,
+		);
+
+		$this->assertFalse($result['ok']);
+		$this->assertSame(CaseConversationService::REASON_UNKNOWN_ROOM, $result['reason']);
+	}//end testAnUnknownRoomIsNamedAsTheRoomAndNotAsTheCase()
 
 }//end class
