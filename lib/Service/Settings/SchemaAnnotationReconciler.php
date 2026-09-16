@@ -207,6 +207,13 @@ class SchemaAnnotationReconciler {
 	 *
 	 * @return int 1 when the configuration was (re)written, 0 otherwise.
 	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `carryForwardStates()` reads one
+	 *   annotation block and returns another, with no state of its own to hold.
+	 *   It is static because it lives with the class that OWNS the key rather
+	 *   than with the one that happens to copy it, and injecting a whole
+	 *   projector here for one pure function would make the reconciler depend
+	 *   on a case-type store it never reads.
+	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 	 */

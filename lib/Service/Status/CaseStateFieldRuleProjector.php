@@ -89,6 +89,19 @@ class CaseStateFieldRuleProjector {
 	}//end __construct()
 
 	/**
+	 * OpenRegister's SchemaMapper, resolved once per publish.
+	 *
+	 * Held rather than passed because the resolve and the write are two halves
+	 * of one gesture and splitting `publish()` into readable pieces must not
+	 * mean asking the container twice: a second lookup could answer
+	 * differently, and the write would then land on a schema the resolve never
+	 * saw.
+	 *
+	 * @var object|null
+	 */
+	private ?object $schemaMapper = null;
+
+	/**
 	 * The states one case type declares, keyed by statusType uuid.
 	 *
 	 * Pure: it reads rows and returns a block, so the whole projection is
@@ -163,9 +176,108 @@ class CaseStateFieldRuleProjector {
 			return false;
 		}
 
-		$ownKeys = $this->stateKeysOf(caseTypeId: $caseTypeId);
-		$states = $this->statesOf(caseTypeId: $caseTypeId);
+		$schema = $this->liveCaseSchema();
+		if ($schema === null) {
+			return false;
+		}
 
+		$configuration = $this->configurationOf(schema: $schema);
+		$lifecycle = $this->lifecycleOf(configuration: $configuration);
+
+		$updated = $this->withStates(
+			lifecycle: $lifecycle,
+			states: $this->mergeStates(
+				live: $this->statesIn(lifecycle: $lifecycle),
+				own: $this->statesOf(caseTypeId: $caseTypeId),
+				ownKeys: $this->stateKeysOf(caseTypeId: $caseTypeId)
+			)
+		);
+
+		// Comparing the whole block rather than the states alone is what makes
+		// this idempotent in both directions: a case type that declared nothing
+		// and still declares nothing must not rewrite the schema, and neither
+		// must one whose last rule was deleted twice.
+		if ($updated === $lifecycle) {
+			return false;
+		}
+
+		$configuration[self::LIFECYCLE_KEY] = $updated;
+
+		return $this->write(schema: $schema, configuration: $configuration, caseTypeId: $caseTypeId);
+	}//end publish()
+
+	/**
+	 * The lifecycle block of one schema configuration, always as an array.
+	 *
+	 * @param array<string, mixed> $configuration The schema configuration.
+	 *
+	 * @return array<string, mixed> The lifecycle block.
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	private function lifecycleOf(array $configuration): array {
+		$lifecycle = ($configuration[self::LIFECYCLE_KEY] ?? []);
+		if (is_array($lifecycle) === false) {
+			return [];
+		}
+
+		return $lifecycle;
+	}//end lifecycleOf()
+
+	/**
+	 * The states a lifecycle block currently carries, always as an array.
+	 *
+	 * @param array<string, mixed> $lifecycle The lifecycle block.
+	 *
+	 * @return array<string, mixed> The states.
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	private function statesIn(array $lifecycle): array {
+		$states = ($lifecycle['states'] ?? []);
+		if (is_array($states) === false) {
+			return [];
+		}
+
+		return $states;
+	}//end statesIn()
+
+	/**
+	 * One lifecycle block carrying the given states, or none.
+	 *
+	 * The key is removed rather than written empty when nothing is left, so a
+	 * case type whose last rule was deleted leaves no `states: []` behind for
+	 * the next reader to carry forward as if it meant something.
+	 *
+	 * @param array<string, mixed> $lifecycle The lifecycle block.
+	 * @param array<string, mixed> $states The states to carry.
+	 *
+	 * @return array<string, mixed> The lifecycle block.
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	private function withStates(array $lifecycle, array $states): array {
+		unset($lifecycle['states']);
+		if ($states !== []) {
+			$lifecycle['states'] = $states;
+		}
+
+		return $lifecycle;
+	}//end withStates()
+
+	/**
+	 * The live `case` schema, or null when this instance has no OpenRegister.
+	 *
+	 * A container that throws and a container that answers with something
+	 * other than a mapper are the same situation: there is nothing to publish
+	 * onto. Both answer null, which is the honest reading and keeps a type
+	 * error out of a publish that is otherwise complete.
+	 *
+	 * @return object|null The schema entity.
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	private function liveCaseSchema(): ?object {
 		try {
 			$schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
 		} catch (Throwable $e) {
@@ -173,54 +285,59 @@ class CaseStateFieldRuleProjector {
 				'Dossiq: no OpenRegister SchemaMapper, so per-status field rules were not published',
 				['exception' => $e->getMessage()]
 			);
-			return false;
+			return null;
 		}
 
-		// A container that answers with something other than a mapper is the
-		// same situation as one that throws: this instance has no OpenRegister
-		// to publish onto. Answering false is the honest reading, and it keeps
-		// the type error out of a publish that is otherwise complete.
 		if (is_object($schemaMapper) === false) {
-			return false;
+			return null;
 		}
 
-		$schema = $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
-		if ($schema === null) {
-			return false;
-		}
+		$this->schemaMapper = $schemaMapper;
 
+		return $this->slugs->resolve(schemaMapper: $schemaMapper, slug: self::CASE_SCHEMA_SLUG);
+	}//end liveCaseSchema()
+
+	/**
+	 * One schema's configuration, always as an array.
+	 *
+	 * @param object $schema The schema entity.
+	 *
+	 * @return array<string, mixed> The configuration.
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	private function configurationOf(object $schema): array {
 		$configuration = ($schema->getConfiguration() ?? []);
 		if (is_array($configuration) === false) {
-			$configuration = [];
+			return [];
 		}
 
-		$lifecycle = ($configuration[self::LIFECYCLE_KEY] ?? []);
-		if (is_array($lifecycle) === false) {
-			$lifecycle = [];
-		}
+		return $configuration;
+	}//end configurationOf()
 
-		$live = ($lifecycle['states'] ?? []);
-		if (is_array($live) === false) {
-			$live = [];
-		}
-
-		$merged = $this->mergeStates(live: $live, own: $states, ownKeys: $ownKeys);
-
-		if ($merged === ($lifecycle['states'] ?? null)) {
+	/**
+	 * Write the configuration back, answering whether it landed.
+	 *
+	 * A failure is logged and answered false rather than raised: publishing a
+	 * case type must not fail because an instance's OpenRegister cannot take
+	 * the block, and the declarations survive on the rows for the next publish.
+	 *
+	 * @param object $schema The schema entity.
+	 * @param array<string, mixed> $configuration The configuration to write.
+	 * @param string $caseTypeId The case type being published, for the log line.
+	 *
+	 * @return bool True when the schema was written.
+	 *
+	 * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+	 */
+	private function write(object $schema, array $configuration, string $caseTypeId): bool {
+		if ($this->schemaMapper === null) {
 			return false;
 		}
-
-		if ($merged === []) {
-			unset($lifecycle['states']);
-		} else {
-			$lifecycle['states'] = $merged;
-		}
-
-		$configuration[self::LIFECYCLE_KEY] = $lifecycle;
 
 		try {
 			$schema->setConfiguration($configuration);
-			$schemaMapper->update($schema);
+			$this->schemaMapper->update($schema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not publish per-status field rules onto the case schema',
@@ -230,7 +347,7 @@ class CaseStateFieldRuleProjector {
 		}
 
 		return true;
-	}//end publish()
+	}//end write()
 
 	/**
 	 * Keep a projected `states` block across a reconcile of the lifecycle.
