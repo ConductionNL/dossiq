@@ -404,6 +404,16 @@
                         "description": "Whether a case of this type needs a coordinator named before its besluit is signed. The Awb answer is signed by the second seat, and a case type that leaves this off never asks for one: most cases have a handler and nobody else.",
                         "title": "Coordinator required before signing"
                     },
+                    "duplicatePolicy": {
+                        "type": "string",
+                        "enum": [
+                            "warn",
+                            "block"
+                        ],
+                        "default": "warn",
+                        "title": "Duplicate policy",
+                        "description": "What happens when a new case of this type looks like one that already exists. On warn, the handler sees the matches and decides. On block, only a coordinator may file it anyway, and they have to say why. The matching itself is not set here: the case schema declares the rules and OpenRegister scores them, so the same pair the nightly sweep finds is the pair the form shows."
+                    },
                     "defaultInformatieobjecttype": {
                         "type": "string",
                         "title": "Default document type",
@@ -1483,38 +1493,40 @@
                         "fair": 0.5
                     }
                 },
-                "x-openregister-dedup": {
-                    "blockingKeys": [
-                        "caseType"
-                    ],
-                    "matchRules": [
-                        {
-                            "field": "identifier",
-                            "method": "exact",
-                            "weight": 0.4
-                        },
-                        {
-                            "field": "permitApplicationRef",
-                            "method": "exact",
-                            "weight": 0.3
-                        },
-                        {
-                            "field": "title",
-                            "method": "normalized",
-                            "weight": 0.2
-                        },
-                        {
-                            "field": "title",
-                            "method": "levenshtein",
-                            "weight": 0.1
-                        }
-                    ],
-                    "threshold": 0.7
-                },
                 "title": "Case",
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-dedup": {
+                        "blockingKeys": [
+                            "caseType"
+                        ],
+                        "matchRules": [
+                            {
+                                "field": "requester",
+                                "method": "exact",
+                                "weight": 0.5
+                            },
+                            {
+                                "field": "title",
+                                "method": "normalized",
+                                "weight": 0.3
+                            },
+                            {
+                                "field": "title",
+                                "method": "levenshtein",
+                                "weight": 0.2
+                            }
+                        ],
+                        "threshold": 0.5,
+                        "onCreate": "warn",
+                        "overrideGroups": [
+                            "dossiq-coordinators"
+                        ],
+                        "dismissGroups": [
+                            "dossiq-coordinators"
+                        ]
+                    },
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": {
