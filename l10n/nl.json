@@ -5230,6 +5230,22 @@
         "Remove from favourites": "Uit favorieten halen",
         "Removed from your favourites.": "Uit je favorieten gehaald.",
         "Star a case to find it here": "Markeer een zaak met een ster om hem hier terug te vinden",
-        "Your favourites": "Jouw favorieten"
+        "Your favourites": "Jouw favorieten",
+        "Cases you follow": "Zaken die je volgt",
+        "Follow": "Volgen",
+        "Follow a case to keep an eye on it here": "Volg een zaak om die hier in de gaten te houden",
+        "Follow it to hear about it without taking it over.": "Volg de zaak om op de hoogte te blijven zonder haar over te nemen.",
+        "Follow this case": "Volg deze zaak",
+        "Followed": "Gevolgd",
+        "Followers": "Volgers",
+        "Following since {date}": "Volgt sinds {date}",
+        "Nobody follows this case yet": "Nog niemand volgt deze zaak",
+        "Only a handler of this case sees who follows it": "Alleen een behandelaar van deze zaak ziet wie haar volgt",
+        "OpenRegister did not answer. Nobody was unsubscribed.": "OpenRegister gaf geen antwoord. Er is niemand afgemeld.",
+        "Stop following": "Niet meer volgen",
+        "The followers of this case could not be read": "De volgers van deze zaak konden niet worden gelezen",
+        "You can still follow it yourself from the button on the case.": "Je kunt de zaak zelf wel volgen met de knop op de zaakpagina.",
+        "{count} follower": "{count} volger",
+        "{count} followers": "{count} volgers"
     }
 }

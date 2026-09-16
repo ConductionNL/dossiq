@@ -121,6 +121,20 @@ export default {
 	watch: {
 		caseId: {
 			immediate: true,
+
+			/**
+			 * Read the followers of whichever case this panel is now about.
+			 *
+			 * `immediate`, and a watcher rather than `mounted()`, because the
+			 * tab host mounts this panel before the route has settled on some
+			 * paths: read once at mount and the id can still be empty, and the
+			 * section would then draw "nobody follows this case" on a case
+			 * whose followers were never asked for.
+			 *
+			 * @return {void}
+			 *
+			 * @spec openspec/changes/case-followers/specs/case-management/spec.md
+			 */
 			handler() {
 				this.load()
 			},

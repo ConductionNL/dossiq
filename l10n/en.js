@@ -5219,7 +5219,23 @@ OC.L10N.register(
         "Remove from favourites": "Remove from favourites",
         "Removed from your favourites.": "Removed from your favourites.",
         "Star a case to find it here": "Star a case to find it here",
-        "Your favourites": "Your favourites"
+        "Your favourites": "Your favourites",
+        "Cases you follow": "Cases you follow",
+        "Follow": "Follow",
+        "Follow a case to keep an eye on it here": "Follow a case to keep an eye on it here",
+        "Follow it to hear about it without taking it over.": "Follow it to hear about it without taking it over.",
+        "Follow this case": "Follow this case",
+        "Followed": "Followed",
+        "Followers": "Followers",
+        "Following since {date}": "Following since {date}",
+        "Nobody follows this case yet": "Nobody follows this case yet",
+        "Only a handler of this case sees who follows it": "Only a handler of this case sees who follows it",
+        "OpenRegister did not answer. Nobody was unsubscribed.": "OpenRegister did not answer. Nobody was unsubscribed.",
+        "Stop following": "Stop following",
+        "The followers of this case could not be read": "The followers of this case could not be read",
+        "You can still follow it yourself from the button on the case.": "You can still follow it yourself from the button on the case.",
+        "{count} follower": "{count} follower",
+        "{count} followers": "{count} followers"
     },
     "nplurals=2; plural=(n != 1);"
 )
