@@ -177,23 +177,7 @@ class SetupController extends Controller {
 			],
 		];
 
-		// The minimum an instance needs before it can take a case. REPORTED,
-		// never gated: `register-check` stays the only required step, because
-		// without a register nothing works at all, and an instance an
-		// administrator deliberately leaves half configured is a legitimate
-		// instance. An instance nobody can see the state of is not.
-		//
-		// NOT a `steps` entry. A step is something CnSetupWizard prompts for
-		// and `testEveryActionableManifestStepIsReported` compares against the
-		// manifest in both directions; a readiness item is a live read of the
-		// tree that no wizard step corresponds to. Putting one in `steps`
-		// would give the wizard five prompts it cannot fulfil.
-		$response['readiness'] = $this->readiness->report();
-
-		// Tour steps whose surface is gone. The runner skips them in silence,
-		// which is how a tour stops teaching half the product without anyone
-		// noticing, so they are reported where the readiness items are.
-		$response['tourSteps'] = $this->readiness->brokenTourSteps();
+		$response = array_merge($response, $this->firstRun());
 
 		// Financial-integration (dwangsom uitbetaling) capability: surface a
 		// missing callback secret before go-live rather than after an
@@ -212,6 +196,41 @@ class SetupController extends Controller {
 
 		return new DataResponse($response);
 	}//end status()
+
+	/**
+	 * The first-run report: the minimum this instance needs, and the tour it lost.
+	 *
+	 * REPORTED, never gated. `register-check` stays the only required step,
+	 * because without a register nothing works at all, and an instance an
+	 * administrator deliberately leaves half configured is a legitimate
+	 * instance. An instance nobody can see the state of is not.
+	 *
+	 * NOT folded into `steps`. A step is something CnSetupWizard prompts for,
+	 * and `testEveryActionableManifestStepIsReported` compares the declared
+	 * steps against the reported ones in both directions; a readiness item is
+	 * a live read of the tree that no wizard step corresponds to. Putting one
+	 * in `steps` would give the wizard five prompts it cannot fulfil.
+	 *
+	 * The tour steps are here for the same reason the readiness items are: a
+	 * step naming a page that is gone is skipped in silence by the runner,
+	 * which is how a tour stops teaching half the product with nothing to show
+	 * for it.
+	 *
+	 * Held apart from `status()` because it is a second report rather than
+	 * more of the first, and inlining it put that method one line over the
+	 * length the house allows.
+	 *
+	 * @return array{readiness: array<int, array<string, mixed>>, tourSteps: array<int, array<string, mixed>>}
+	 *         The readiness items and the broken tour steps.
+	 *
+	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
+	 */
+	private function firstRun(): array {
+		return [
+			'readiness' => $this->readiness->report(),
+			'tourSteps' => $this->readiness->brokenTourSteps(),
+		];
+	}//end firstRun()
 
 	/**
 	 * Persist app-config values from a `config-fields` / `choice` step.

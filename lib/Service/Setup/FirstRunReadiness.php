@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Setup;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -85,7 +86,11 @@ class FirstRunReadiness {
 	 */
 	public function declared(): array {
 		$path = __DIR__ . '/../../Settings/first_run_readiness.json';
-		$raw = @file_get_contents($path);
+		if (is_file($path) === false) {
+			return [];
+		}
+
+		$raw = file_get_contents($path);
 		if ($raw === false) {
 			return [];
 		}
@@ -222,7 +227,12 @@ class FirstRunReadiness {
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
 	private function manifest(): array {
-		$raw = @file_get_contents(__DIR__ . '/../../../src/manifest.json');
+		$path = __DIR__ . '/../../../src/manifest.json';
+		if (is_file($path) === false) {
+			return [];
+		}
+
+		$raw = file_get_contents($path);
 		if ($raw === false) {
 			return [];
 		}
@@ -254,7 +264,7 @@ class FirstRunReadiness {
 				'working-calendar' => $this->hasWorkingCalendar(),
 				// An item declared with no reader cannot be answered, which is
 				// the failure D-3 exists to surface rather than to hide.
-				default => throw new \RuntimeException('no reader is declared for "' . $id . '"'),
+				default => throw new RuntimeException('no reader is declared for "' . $id . '"'),
 			};
 
 			return ['done' => $done, 'failure' => ''];
@@ -271,14 +281,14 @@ class FirstRunReadiness {
 	 *
 	 * @return bool True when one exists.
 	 *
-	 * @throws \RuntimeException When OpenRegister cannot answer.
+	 * @throws RuntimeException When OpenRegister cannot answer.
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
 	private function hasOrganisation(): bool {
 		$mapper = $this->settingsService->getOpenRegisterClass(self::ORGANISATION_MAPPER_CLASS);
 		if ($mapper === null) {
-			throw new \RuntimeException('OpenRegister does not answer for organisations');
+			throw new RuntimeException('OpenRegister does not answer for organisations');
 		}
 
 		return $mapper->findAll(limit: 1) !== [];
@@ -300,7 +310,7 @@ class FirstRunReadiness {
 	 *
 	 * @return bool True when one is published.
 	 *
-	 * @throws \RuntimeException When the case types cannot be read.
+	 * @throws RuntimeException When the case types cannot be read.
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
@@ -315,7 +325,7 @@ class FirstRunReadiness {
 	 *
 	 * @return bool True when one does.
 	 *
-	 * @throws \RuntimeException When the roles cannot be read.
+	 * @throws RuntimeException When the roles cannot be read.
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
@@ -348,20 +358,20 @@ class FirstRunReadiness {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 *
-	 * @throws \RuntimeException When OpenRegister is not configured for it.
+	 * @throws RuntimeException When OpenRegister is not configured for it.
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
 	private function search(string $schemaKey, array $filters): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			throw new \RuntimeException('OpenRegister is not available');
+			throw new RuntimeException('OpenRegister is not available');
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
 		if (empty($register) === true || empty($schema) === true) {
-			throw new \RuntimeException('the "' . $schemaKey . '" schema is not configured');
+			throw new RuntimeException('the "' . $schemaKey . '" schema is not configured');
 		}
 
 		return $this->searchObjectsAsArrays(
