@@ -18,16 +18,17 @@
       a refusal as a refusal.
 - [x] 2.4 `stateOf()` reads revoked, paused, expired or live off the link row.
 - [x] 2.5 `holderPreview()` resolves the anchor, reads it and strips it.
-- [x] 2.6 `stripInternals()` keeps the eleven `@self` keys OpenRegister
-      publishes and drops the rest.
+- [x] 2.6 `AccessLinkProjection::strip()` keeps the eleven `@self` keys
+      OpenRegister publishes and drops the rest.
 
 ## 3. The share
 
 - [x] 3.1 `CaseSharingService::createTokenShare()` mints a link, mints a file
-      link per named document, and writes the `caseShare` record.
+      link per named document, and writes the `caseShare` record through
+      `CaseLinkShares::store()`.
 - [x] 3.2 `revokeShare()` revokes the case link and every file link.
-- [x] 3.3 `linkBelongsToCase()` replaces `tokenBelongsToCase()` and reads the
-      `caseShare` records of that case.
+- [x] 3.3 `CaseLinkShares::belongsToCase()` replaces `tokenBelongsToCase()`
+      and reads the `caseShare` records of that case.
 - [x] 3.4 `caseShare` grows `accessLinkId`, `accessLinkUuid`, `accessLinkUrl`,
       `capabilities`, `status`, `sharedDocuments`, `advisoryBody`,
       `consultationId` and `lastCollectedNote`, and `shareType` gains `link`.
