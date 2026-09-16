@@ -49,6 +49,8 @@ use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -128,8 +130,9 @@ class AcknowledgementService {
 	 * @param PortalContributionProvider  $portal            The one list of case fields a citizen may see.
 	 * @param CaseFieldWriter             $writer            Partial writes to the stored case.
 	 * @param LoggerInterface             $logger            The logger.
+	 * @param CaseTimeline                $timeline          The one seam that writes a timeline entry.
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Ten collaborators, each
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Eleven collaborators, each
 	 * injected rather than reached for, which is what makes the acknowledgement
 	 * testable without a running register. Bundling them into a parameter object
 	 * would hide the dependency list rather than shorten it.
@@ -145,6 +148,7 @@ class AcknowledgementService {
 		private readonly PortalContributionProvider $portal,
 		private readonly CaseFieldWriter $writer,
 		private readonly LoggerInterface $logger,
+		private readonly CaseTimeline $timeline,
 	) {
 	}//end __construct()
 
@@ -234,6 +238,23 @@ class AcknowledgementService {
 				'acknowledgementDuty' => $met,
 				'outboundCommunications' => $this->appendRecord(case: $case, record: $record),
 			],
+		);
+
+		// PUBLIC, because the acknowledgement is the one message on this path
+		// the applicant has already received. Withholding its own line from
+		// the timeline the portal reads would tell a citizen nothing was sent
+		// on the very act the law requires be sent to them.
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::ACKNOWLEDGEMENT,
+			message: 'Ontvangstbevestiging verzonden',
+			fields: [
+				'channel' => (string)$channel,
+				'recipient' => (string)$recipient,
+				'template' => CaseTypeAcknowledgement::TEMPLATE,
+				'sentAt' => $sentAt,
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 
 		$this->logger->info(
