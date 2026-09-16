@@ -63,8 +63,15 @@ async function mountStrip(objectData) {
 		props: { objectId: 'case-7', objectData },
 		global: {
 			stubs: {
+				// The stub declares `pressed` because the real NcButton does, and
+				// renders `aria-pressed` from it the way the real one does. A
+				// stub that only spread `$attrs` would drop a declared prop and
+				// the state assertion would then be about the stub.
 				NcButton: {
-					template: '<button v-bind="$attrs"><slot name="icon" /><slot /></button>',
+					props: { pressed: { type: Boolean, default: null } },
+					template:
+						'<button v-bind="$attrs" :aria-pressed="pressed === null ? null : String(pressed)">'
+						+ '<slot name="icon" /><slot /></button>',
 				},
 				Star: { template: '<i class="star-filled" />' },
 				StarOutline: { template: '<i class="star-outline" />' },
@@ -120,6 +127,8 @@ describe('the star reads off the object it was given', () => {
 
 		expect(wrapper.find('.star-filled').exists()).toBe(true)
 		expect(wrapper.text()).toContain('Remove from favourites')
+		// The state reaches a screen reader, not only the glyph.
+		expect(wrapper.find('button').attributes('aria-pressed')).toBe('true')
 	})
 
 	it('renders the outline and the adding label when not starred', async () => {
@@ -127,6 +136,7 @@ describe('the star reads off the object it was given', () => {
 
 		expect(wrapper.find('.star-outline').exists()).toBe(true)
 		expect(wrapper.text()).toContain('Add to favourites')
+		expect(wrapper.find('button').attributes('aria-pressed')).toBe('false')
 	})
 
 	it('treats an absent flag as not starred', () => {

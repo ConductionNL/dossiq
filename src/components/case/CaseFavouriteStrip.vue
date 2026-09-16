@@ -32,10 +32,17 @@
 -->
 <template>
 	<div class="case-favourite" data-testid="case-favourite">
+		<!--
+			`:pressed` is NcButton's OWN prop and renders `aria-pressed` itself.
+			Passing `aria-pressed` as a plain attribute instead would land in
+			`$attrs` beside the component's own binding of the same name, and
+			which of the two wins is Vue's attribute merge order rather than
+			anything this file states.
+		-->
 		<NcButton
 			variant="tertiary"
 			:disabled="busy || caseId === ''"
-			:aria-pressed="String(starred)"
+			:pressed="starred"
 			data-testid="case-favourite-toggle"
 			@click="toggle">
 			<template #icon>
