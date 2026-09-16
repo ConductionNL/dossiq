@@ -40,6 +40,7 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector
+ * @uses \OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  */
