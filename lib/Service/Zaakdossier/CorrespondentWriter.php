@@ -48,13 +48,97 @@ class CorrespondentWriter {
 	 * @param DocumentCorrespondents $rules Which party a submitted value names.
 	 * @param PersonLinkReader $people The parties of a case, read from OpenRegister.
 	 * @param SettingsService $settingsService OpenRegister access and the dispatch schema.
+	 * @param DocumentRecordStore $store The joins, for the case a document is on.
 	 */
 	public function __construct(
 		private readonly DocumentCorrespondents $rules,
 		private readonly PersonLinkReader $people,
 		private readonly SettingsService $settingsService,
+		private readonly DocumentRecordStore $store,
 	) {
 	}//end __construct()
+
+	/**
+	 * The correspondent fields an edit to one document changes.
+	 *
+	 * 🔴 AN EDIT THAT NAMES NEITHER FIELD CHANGES NEITHER. A change to the
+	 * title must not blank the sender somebody set yesterday, and "write every
+	 * field the caller may edit" is exactly how that happens.
+	 *
+	 * The direction is the one the edit gives, else the one the document
+	 * already has, because switching a document to outgoing is precisely when
+	 * its sender stops being allowed.
+	 *
+	 * The case comes from the document's own JOIN, because a PATCH names one
+	 * document and no case, and the correspondents of a document are the
+	 * parties of the case it is filed on. A document joined to more than one
+	 * case resolves against the first: the parties of the others are not this
+	 * document's correspondents to offer.
+	 *
+	 * @param string $documentId The document uuid.
+	 * @param array<string, mixed> $current The stored document.
+	 * @param array<string, mixed> $metadata The submitted edit.
+	 * @param string $direction The direction the document ends up with.
+	 *
+	 * @return array<string, mixed> The fields to patch, [] when the edit names neither.
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 */
+	public function applyEdit(string $documentId, array $current, array $metadata, string $direction): array {
+		$namesSender = array_key_exists('sender', $metadata);
+		$namesRecipients = array_key_exists('recipients', $metadata);
+		if ($namesSender === false && $namesRecipients === false) {
+			return [];
+		}
+
+		$sender = ($current['sender'] ?? null);
+		if ($namesSender === true) {
+			$sender = $metadata['sender'];
+		}
+
+		$recipients = ($current['recipients'] ?? null);
+		if ($namesRecipients === true) {
+			$recipients = $metadata['recipients'];
+		}
+
+		$caseId = $this->caseOf(documentId: $documentId);
+		$resolved = $this->resolveFor(
+			caseId: $caseId,
+			sender: $sender,
+			recipients: $recipients,
+			direction: $direction,
+		);
+
+		$this->recordDispatches(caseId: $caseId, documentId: $documentId, correspondents: $resolved);
+
+		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
+	}//end applyEdit()
+
+	/**
+	 * The case a document is filed on, read from its joins.
+	 *
+	 * @param string $documentId The document uuid.
+	 *
+	 * @return string The case uuid, or ''.
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
+	 */
+	private function caseOf(string $documentId): string {
+		try {
+			$joins = $this->store->joinsFor(recordId: $documentId);
+		} catch (Throwable) {
+			return '';
+		}
+
+		foreach ($joins as $join) {
+			$caseId = trim((string)($join['case'] ?? ''));
+			if ($caseId !== '') {
+				return $caseId;
+			}
+		}
+
+		return '';
+	}//end caseOf()
 
 	/**
 	 * The correspondents a document may carry, resolved against its case.

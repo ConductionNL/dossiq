@@ -198,6 +198,7 @@ class DocumentCorrespondentsWriteTest extends TestCase {
 				rules: new DocumentCorrespondents(),
 				people: $people,
 				settingsService: $settings,
+				store: new DocumentRecordStore(settingsService: $settings),
 			),
 		);
 	}//end setUp()

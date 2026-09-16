@@ -18,6 +18,7 @@ use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -110,6 +111,7 @@ class CorrespondentWriterTest extends TestCase {
 			rules: new DocumentCorrespondents(),
 			people: $this->people,
 			settingsService: $settings,
+			store: new DocumentRecordStore(settingsService: $settings),
 		);
 	}//end setUp()
 
@@ -295,6 +297,7 @@ class CorrespondentWriterTest extends TestCase {
 			rules: new DocumentCorrespondents(),
 			people: $people,
 			settingsService: $settings,
+			store: new DocumentRecordStore(settingsService: $settings),
 		);
 
 		$writer->describeAll(
@@ -332,6 +335,7 @@ class CorrespondentWriterTest extends TestCase {
 			rules: new DocumentCorrespondents(),
 			people: $people,
 			settingsService: $settings,
+			store: new DocumentRecordStore(settingsService: $settings),
 		);
 
 		$this->assertSame(

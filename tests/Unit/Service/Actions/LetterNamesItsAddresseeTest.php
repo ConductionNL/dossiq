@@ -25,6 +25,7 @@ use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\ZaakdossierService;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -60,6 +61,7 @@ class LetterNamesItsAddresseeTest extends TestCase {
 			rules: new DocumentCorrespondents(),
 			people: $people,
 			settingsService: $settings,
+			store: new DocumentRecordStore(settingsService: $settings),
 		);
 
 		$container = $this->createMock(originalClassName: ContainerInterface::class);

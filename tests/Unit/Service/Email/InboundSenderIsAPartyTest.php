@@ -18,6 +18,7 @@ use OCA\Dossiq\Service\People\PersonLinkReader;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -97,6 +98,7 @@ class InboundSenderIsAPartyTest extends TestCase {
 				rules: new DocumentCorrespondents(),
 				people: $people,
 				settingsService: $settings,
+				store: new DocumentRecordStore(settingsService: $settings),
 			),
 		);
 	}//end setUp()

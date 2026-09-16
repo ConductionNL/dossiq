@@ -168,13 +168,8 @@ class ZaakdossierService {
 
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 
-		$now = date('Y-m-d\TH:i:s');
-		$hash = hash('sha256', $content);
-
 		// Who the document came from and who it went to, resolved against the
-		// parties this case actually has. A name that matches nobody comes
-		// back empty and the document is still filed: losing the upload over
-		// a mistyped correspondent would cost the file, not just the name.
+		// parties this case has. See CorrespondentWriter::resolveFor().
 		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
 		$correspondents = $this->correspondents->resolveFor(
 			caseId: $caseId,
@@ -183,29 +178,15 @@ class ZaakdossierService {
 			direction: $direction,
 		);
 
-		$informatieobject = [
-			'title' => (string)($metadata['title'] ?? $fileName),
-			'fileName' => $fileName,
-			'bestandsomvang' => strlen($content),
-			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
-			'vertrouwelijkheidaanduiding' => $classification,
-			'auteur' => (string)($metadata['auteur'] ?? ''),
-			'status' => 'draft',
-			'informatieobjecttype' => $type,
-			'direction' => $direction,
-			'sender' => $correspondents['sender'],
-			'recipients' => $correspondents['recipients'],
-			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
-			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
-			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
-			'taal' => (string)($metadata['taal'] ?? 'nld'),
-			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
-			'integrity' => [
-				'algorithm' => 'sha256',
-				'value' => $hash,
-				'date' => $now,
-			],
-		];
+		$informatieobject = $this->uploadedRecord(
+			fileName: $fileName,
+			content: $content,
+			metadata: $metadata,
+			type: $type,
+			classification: $classification,
+			direction: $direction,
+			correspondents: $correspondents,
+		);
 
 		// Documents live on the case: the file is stored on the CASE first, so
 		// the node listener may already have projected a record for it by the
@@ -233,14 +214,8 @@ class ZaakdossierService {
 		// Create the case <-> document join, unless the listener already did.
 		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
 
-		// One dispatch row per correspondent, which is the audit of the send
-		// itself. The fields above answer "who was this for"; this answers
-		// "when did it go, and to whom".
-		$this->correspondents->recordDispatches(
-			caseId: $caseId,
-			documentId: $infoId,
-			correspondents: $correspondents,
-		);
+		// One dispatch row per correspondent: the audit of the send itself.
+		$this->correspondents->recordDispatches(caseId: $caseId, documentId: $infoId, correspondents: $correspondents);
 
 		$this->logger->info(
 			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
@@ -261,6 +236,62 @@ class ZaakdossierService {
 			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadDocument()
+
+	/**
+	 * The record an uploaded document gets.
+	 *
+	 * The counterpart of {@see DocumentDefaults::forNewFile()}, which says the
+	 * same thing for a file somebody dropped in the case folder. Split out so
+	 * `uploadDocument()` reads as the steps of an upload rather than as one
+	 * long literal in the middle of them.
+	 *
+	 * @param string $fileName The file name.
+	 * @param string $content The bytes, for the size and the hash.
+	 * @param array<string, mixed> $metadata The submitted metadata.
+	 * @param string $type The document type uuid.
+	 * @param string $classification The confidentiality, already checked.
+	 * @param string $direction The direction, already coerced onto the enum.
+	 * @param array{sender: string, recipients: array<int, string>} $correspondents Who it is from and to.
+	 *
+	 * @return array<string, mixed> The record to store.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 */
+	private function uploadedRecord(
+		string $fileName,
+		string $content,
+		array $metadata,
+		string $type,
+		string $classification,
+		string $direction,
+		array $correspondents,
+	): array {
+		$now = date('Y-m-d\TH:i:s');
+
+		return [
+			'title' => (string)($metadata['title'] ?? $fileName),
+			'fileName' => $fileName,
+			'bestandsomvang' => strlen($content),
+			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
+			'vertrouwelijkheidaanduiding' => $classification,
+			'auteur' => (string)($metadata['auteur'] ?? ''),
+			'status' => 'draft',
+			'informatieobjecttype' => $type,
+			'direction' => $direction,
+			'sender' => $correspondents['sender'],
+			'recipients' => $correspondents['recipients'],
+			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
+			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
+			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
+			'taal' => (string)($metadata['taal'] ?? 'nld'),
+			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
+			'integrity' => [
+				'algorithm' => 'sha256',
+				'value' => hash('sha256', $content),
+				'date' => $now,
+			],
+		];
+	}//end uploadedRecord()
 
 	/**
 	 * Link an existing informatieobject to a case without duplicating the document.
@@ -537,8 +568,8 @@ class ZaakdossierService {
 
 		$updateData = array_merge(
 			$updateData,
-			$this->correspondentChanges(
-				infoObjectId: $infoObjectId,
+			$this->correspondents->applyEdit(
+				documentId: $infoObjectId,
 				current: $current,
 				metadata: $metadata,
 				direction: (string)($updateData['direction'] ?? ($current['direction'] ?? '')),
@@ -563,89 +594,6 @@ class ZaakdossierService {
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()
 
-	/**
-	 * The correspondent fields an edit changes, resolved against the case.
-	 *
-	 * Nothing is touched when the edit names neither field: a change to the
-	 * title must not blank the sender somebody set yesterday. The direction
-	 * is the one the edit gives, else the one the document already has,
-	 * because switching a document to outgoing is exactly when its sender
-	 * stops being allowed.
-	 *
-	 * @param string $infoObjectId The document uuid.
-	 * @param array<string, mixed> $current The stored document.
-	 * @param array<string, mixed> $metadata The submitted edit.
-	 * @param string $direction The direction the document ends up with.
-	 *
-	 * @return array<string, mixed> The fields to patch, [] when none.
-	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
-	 */
-	private function correspondentChanges(string $infoObjectId, array $current, array $metadata, string $direction): array {
-		$namesSender = array_key_exists('sender', $metadata);
-		$namesRecipients = array_key_exists('recipients', $metadata);
-		if ($namesSender === false && $namesRecipients === false) {
-			return [];
-		}
-
-		$caseId = $this->caseOfDocument(infoObjectId: $infoObjectId);
-		// An edit that names one field keeps the OTHER as it stands, which is
-		// what makes "set the sender" leave the addressees alone.
-		$sender = ($current['sender'] ?? null);
-		if ($namesSender === true) {
-			$sender = $metadata['sender'];
-		}
-
-		$recipients = ($current['recipients'] ?? null);
-		if ($namesRecipients === true) {
-			$recipients = $metadata['recipients'];
-		}
-
-		$resolved = $this->correspondents->resolveFor(
-			caseId: $caseId,
-			sender: $sender,
-			recipients: $recipients,
-			direction: $direction,
-		);
-
-		$this->correspondents->recordDispatches(
-			caseId: $caseId,
-			documentId: $infoObjectId,
-			correspondents: $resolved,
-		);
-
-		return ['sender' => $resolved['sender'], 'recipients' => $resolved['recipients']];
-	}//end correspondentChanges()
-
-	/**
-	 * The case a document is on, read from its joins.
-	 *
-	 * A document joined to more than one case resolves against the first,
-	 * which is the case it was filed on. The parties of the others are not
-	 * this document's correspondents to offer.
-	 *
-	 * @param string $infoObjectId The document uuid.
-	 *
-	 * @return string The case uuid, or ''.
-	 *
-	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-011-a-document-names-its-sender-and-its-recipients-and-both-are-parties
-	 */
-	private function caseOfDocument(string $infoObjectId): string {
-		try {
-			$joins = $this->recordStore->joinsFor(recordId: $infoObjectId);
-		} catch (\Throwable) {
-			return '';
-		}
-
-		foreach ($joins as $join) {
-			$caseId = trim((string)($join['case'] ?? ''));
-			if ($caseId !== '') {
-				return $caseId;
-			}
-		}
-
-		return '';
-	}//end caseOfDocument()
 
 	/**
 	 * Fetch a single informatieobject as an array.

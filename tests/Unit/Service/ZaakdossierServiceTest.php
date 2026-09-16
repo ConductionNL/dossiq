@@ -239,6 +239,7 @@ class ZaakdossierServiceTest extends TestCase {
 				rules: new DocumentCorrespondents(),
 				people: $this->createMock(originalClassName: PersonLinkReader::class),
 				settingsService: $this->settings,
+				store: new DocumentRecordStore(settingsService: $this->settings),
 			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
