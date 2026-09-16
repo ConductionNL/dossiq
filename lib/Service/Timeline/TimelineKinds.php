@@ -25,6 +25,15 @@
  * app writes, and the refusal is caught and logged rather than shown, so the
  * timeline would simply stop filling. The declaration follows the data.
  *
+ * A FIELD THE KIND DOES NOT DECLARE IS DROPPED, NOT REFUSED. That is why
+ * `statuswijziging` gained `actor`, `explanation` and `label`, and why
+ * `termijngebeurtenis` gained `occurredAt`, `startedAt` and `basis`: the two
+ * writers that landed after the first seven kinds carry those values, and
+ * without the declaration OpenRegister would have stored the entry, answered
+ * 200 and quietly thrown the values away. A declaration only reaches an
+ * instance when the repair step runs again, so a change to this list moves the
+ * version in `appinfo/info.xml` with it.
+ *
  * WHY ONLY INBOUND MAIL CARRIES A FOLLOW-UP. `carriesFollowUp` opens a
  * follow-up on EVERY entry of that kind, so a kind may declare one only when
  * every entry of it genuinely needs an answer. A message that reached a case
@@ -187,10 +196,13 @@ final class TimelineKinds {
 		[
 			'slug' => self::STATUS_CHANGE,
 			'title' => 'Statuswijziging',
-			'description' => 'A move from one status to another. Declared here; the audit sidebar still holds the change history.',
+			'description' => 'A move from one status to another, who made it and why. The audit sidebar still holds the change history.',
 			'properties' => [
 				'from' => ['type' => 'string'],
 				'to' => ['type' => 'string'],
+				'actor' => ['type' => 'string'],
+				'explanation' => ['type' => 'string'],
+				'label' => ['type' => 'string'],
 				'statusRecordId' => ['type' => 'string'],
 			],
 			'required' => ['to'],
@@ -199,11 +211,14 @@ final class TimelineKinds {
 		[
 			'slug' => self::TERM_EVENT,
 			'title' => 'Termijngebeurtenis',
-			'description' => 'A term starting, pausing, resuming or falling due.',
+			'description' => 'A term starting, pausing, resuming or falling due, with the dates it moved.',
 			'properties' => [
 				'event' => ['type' => 'string'],
 				'term' => ['type' => 'string'],
+				'occurredAt' => ['type' => 'string'],
 				'dueAt' => ['type' => 'string'],
+				'startedAt' => ['type' => 'string'],
+				'basis' => ['type' => 'string'],
 				'termijnId' => ['type' => 'string'],
 			],
 			'required' => ['event'],
