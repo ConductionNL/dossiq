@@ -33,6 +33,7 @@ import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue
 import AlertOctagonOutline from 'vue-material-design-icons/AlertOctagonOutline.vue'
 import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import Archive from 'vue-material-design-icons/Archive.vue'
+import ArchiveOutline from 'vue-material-design-icons/ArchiveOutline.vue'
 import ArrowUpBoldCircle from 'vue-material-design-icons/ArrowUpBoldCircle.vue'
 import BadgeAccountOutline from 'vue-material-design-icons/BadgeAccountOutline.vue'
 import BankTransfer from 'vue-material-design-icons/BankTransfer.vue'
@@ -225,6 +226,7 @@ export default {
 	AlertOctagonOutline,
 	AlertOutline,
 	Archive,
+	ArchiveOutline,
 	ArrowUpBoldCircle,
 	BadgeAccountOutline,
 	BankTransfer,

@@ -4576,7 +4576,13 @@ OC.L10N.register(
         "Write down why, and the flag will change. Both raising and clearing keep the reason.": "Write down why, and the flag will change. Both raising and clearing keep the reason.",
         "This case is already flagged as needing attention.": "This case is already flagged as needing attention.",
         "This case is not flagged as needing attention.": "This case is not flagged as needing attention.",
-        "You cannot change the attention flag on this case.": "You cannot change the attention flag on this case."
+        "You cannot change the attention flag on this case.": "You cannot change the attention flag on this case.",
+        "Object": "Object",
+        "Object status": "Object status",
+        "This value is not shown.": "This value is not shown.",
+        "You may not open the linked object, so its value is not shown.": "You may not open the linked object, so its value is not shown.",
+        "Linked Object": "Linked Object",
+        "The object this location is taken from, as the URI the caseObject link holds. Where it is set the location inherits the object's own address point or parcel outline through x-openregister-geo-inheritance, with the provenance shown on the map rather than copied into this record.": "The object this location is taken from, as the URI the caseObject link holds. Where it is set the location inherits the object's own address point or parcel outline through x-openregister-geo-inheritance, with the provenance shown on the map rather than copied into this record."
     },
     "nplurals=2; plural=(n != 1);"
 )
