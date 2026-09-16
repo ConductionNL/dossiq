@@ -150,14 +150,62 @@ class CaseFieldRoleProjectorTest extends TestCase {
 	 * @return void
 	 */
 	public function testAWithdrawnRuleRemovesTheAuthorizationKey(): void {
+		// 🔴 THE REGISTER DECLARES NOTHING ABOUT THIS FIELD, WHICH IS THE WHOLE
+		// POINT. An earlier version of this test named the field in `base` to
+		// get it visited, and passed over a projector that could add a rule and
+		// never take it off: a withdrawal removes the field from the ledger, so
+		// a loop over the ledger alone never reaches the property again. The
+		// PREVIOUS ledger is what says the field was ours to clear.
 		$properties = $this->projector()->propertiesWith(
 			properties: ['qualityScore' => ['type' => 'number', 'authorization' => ['read' => [['group' => 'x']]]]],
-			base: ['qualityScore' => []],
-			ledger: []
+			base: [],
+			ledger: [],
+			previous: ['mine' => ['qualityScore' => ['read' => [['group' => 'x']]]]]
 		);
 
 		$this->assertSame(['type' => 'number'], $properties['qualityScore']);
 	}//end testAWithdrawnRuleRemovesTheAuthorizationKey()
+
+	/**
+	 * A withdrawal does not take the register's own grant with it.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawalLeavesTheRegistersGrantStanding(): void {
+		$properties = $this->projector()->propertiesWith(
+			properties: ['riskAssessment' => ['type' => 'object']],
+			base: ['riskAssessment' => ['read' => [['group' => 'dossiq-risk-assessment']]]],
+			ledger: [],
+			previous: ['mine' => ['riskAssessment' => ['read' => [['group' => 'dossiq-quality']]]]]
+		);
+
+		$this->assertSame(
+			['read' => [['group' => 'dossiq-risk-assessment']]],
+			$properties['riskAssessment']['authorization']
+		);
+	}//end testAWithdrawalLeavesTheRegistersGrantStanding()
+
+	/**
+	 * A field another case type still owns is not cleared by one withdrawal.
+	 *
+	 * @return void
+	 */
+	public function testAFieldAnotherCaseTypeStillOwnsIsNotCleared(): void {
+		$properties = $this->projector()->propertiesWith(
+			properties: ['qualityScore' => ['type' => 'number']],
+			base: [],
+			ledger: ['other' => ['qualityScore' => ['read' => [['group' => 'dossiq-quality']]]]],
+			previous: [
+				'mine' => ['qualityScore' => ['read' => [['group' => 'dossiq-coordinators']]]],
+				'other' => ['qualityScore' => ['read' => [['group' => 'dossiq-quality']]]],
+			]
+		);
+
+		$this->assertSame(
+			['read' => [['group' => 'dossiq-quality']]],
+			$properties['qualityScore']['authorization']
+		);
+	}//end testAFieldAnotherCaseTypeStillOwnsIsNotCleared()
 
 	/**
 	 * The register's own grants survive a case type withdrawing its rule.

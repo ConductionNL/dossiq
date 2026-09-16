@@ -214,14 +214,30 @@ class CaseFieldRoleProjector {
 	 *
 	 * @param array<string, mixed> $properties The schema's properties.
 	 * @param array<string, mixed> $base       The authorization the register JSON declares.
-	 * @param array<string, mixed> $ledger     What every case type projects.
+	 * @param array<string, mixed> $ledger     What every case type projects now.
+	 * @param array<string, mixed> $previous   What every case type projected before.
 	 *
 	 * @return array<string, mixed> The properties.
 	 *
 	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
 	 */
-	public function propertiesWith(array $properties, array $base, array $ledger): array {
-		$wanted = $base;
+	public function propertiesWith(
+		array $properties,
+		array $base,
+		array $ledger,
+		array $previous = []
+	): array {
+		// 🔴 THE FIELDS THE LEDGER HAS JUST STOPPED OWNING HAVE TO BE VISITED
+		// TOO, OR A RULE CAN BE ADDED AND NEVER TAKEN OFF. A withdrawal removes
+		// the field from the new ledger, so a loop over the new ledger alone
+		// never reaches the property and the grant written for a rule nobody
+		// declares any more stays on the schema for ever. Seeding those fields
+		// with an empty block is what makes the withdrawal a write.
+		$wanted = $this->withdrawn(ledger: $ledger, previous: $previous);
+		foreach ($base as $field => $block) {
+			$wanted[$field] = $block;
+		}
+
 		foreach ($ledger as $own) {
 			if (is_array($own) === false) {
 				continue;
@@ -307,6 +323,45 @@ class CaseFieldRoleProjector {
 	}//end registerBase()
 
 	/**
+	 * The fields the ledger owned a moment ago and does not own now.
+	 *
+	 * Each answers an EMPTY block, which the caller reads as "clear it". A
+	 * field the register JSON still declares is written back over that empty
+	 * block a line later, so a withdrawal never takes the register's own grant
+	 * with it.
+	 *
+	 * @param array<string, mixed> $ledger   What every case type projects now.
+	 * @param array<string, mixed> $previous What every case type projected before.
+	 *
+	 * @return array<string, array<string, mixed>> The fields to clear.
+	 *
+	 * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
+	 */
+	private function withdrawn(array $ledger, array $previous): array {
+		$owned = [];
+		foreach ($ledger as $own) {
+			if (is_array($own) === true) {
+				$owned = array_merge($owned, array_keys($own));
+			}
+		}
+
+		$clear = [];
+		foreach ($previous as $own) {
+			if (is_array($own) === false) {
+				continue;
+			}
+
+			foreach (array_keys($own) as $field) {
+				if (in_array($field, $owned, true) === false) {
+					$clear[$field] = [];
+				}
+			}
+		}
+
+		return $clear;
+	}//end withdrawn()
+
+	/**
 	 * Two authorization blocks as one, verb by verb.
 	 *
 	 * @param array<string, mixed> $current The block already gathered.
@@ -358,7 +413,8 @@ class CaseFieldRoleProjector {
 		$updatedProperties = $this->propertiesWith(
 			properties: $properties,
 			base: $this->registerBase(),
-			ledger: $updatedLedger
+			ledger: $updatedLedger,
+			previous: $ledger
 		);
 
 		if ($updatedLedger === $ledger && $updatedProperties === $properties) {
