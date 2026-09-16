@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Status;
 
+use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
@@ -72,6 +73,7 @@ class CaseStateFieldRuleProjectorTest extends TestCase {
 		return new CaseStateFieldRuleProjector(
 			store: $store,
 			declaration: new StatusFieldRuleDeclaration(),
+			roles: new FieldRoleRuleDeclaration(),
 			slugs: $this->createMock(SchemaSlugResolver::class),
 			container: $this->createMock(ContainerInterface::class),
 			logger: new NullLogger(),
