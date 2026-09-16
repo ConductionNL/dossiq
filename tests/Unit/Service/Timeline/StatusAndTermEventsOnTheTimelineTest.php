@@ -39,6 +39,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\StatusMoveEntry;
+use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -83,9 +85,11 @@ interface StatusStoreObjectServiceStub {
 /**
  * Unit tests for the status-change and term-event timeline writers.
  *
- * @covers \OCA\Dossiq\Service\Transitions\CaseStatusStore
- * @covers \OCA\Dossiq\Service\TermijnService
+ * @covers \OCA\Dossiq\Service\Timeline\StatusMoveEntry
+ * @covers \OCA\Dossiq\Service\Timeline\TermEventEntry
  *
+ * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Timeline\TimelineKinds
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
@@ -456,12 +460,13 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 			$userSession->method('getUser')->willReturn($user);
 		}
 
+		$lookup = new StatusTypeLookup($settings, new CaseTypeResolver(new CaseTypeStore($settings)));
+
 		return new CaseStatusStore(
 			$settings,
-			new StatusTypeLookup($settings, new CaseTypeResolver(new CaseTypeStore($settings))),
+			$lookup,
 			new NullLogger(),
-			$this->timeline,
-			$userSession,
+			new StatusMoveEntry($this->timeline, $lookup, $userSession),
 		);
 	}//end statusStore()
 
@@ -495,6 +500,6 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 			][$key] ?? '')
 		);
 
-		return new TermijnService($settings, new NullLogger(), null, $this->timeline);
+		return new TermijnService($settings, new NullLogger(), null, new TermEventEntry($this->timeline));
 	}//end termService()
 }//end class

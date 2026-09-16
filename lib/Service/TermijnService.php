@@ -38,8 +38,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
+use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -54,22 +53,6 @@ class TermijnService {
 	use SearchesObjects;
 
 	/**
-	 * What a handler reads when a term of each kind starts.
-	 *
-	 * Four kinds, four sentences, because "Termijn gestart" on all four tells a
-	 * handler nothing about which clock moved, and a case carries up to four of
-	 * them at once.
-	 *
-	 * @var array<string, string>
-	 */
-	private const TERM_START_SENTENCES = [
-		TermKind::STATUTORY => 'Wettelijke termijn gestart',
-		TermKind::PLANNED => 'Geplande einddatum vastgelegd',
-		TermKind::INTERNAL => 'Interne streefdatum vastgelegd',
-		TermKind::PHASE => 'Fasetermijn gestart',
-	];
-
-	/**
 	 * Per-request TermijnDefinitie cache keyed by zaaktype.
 	 *
 	 * @var array<string, array<string, mixed>>
@@ -82,13 +65,13 @@ class TermijnService {
 	 * @param SettingsService $settingsService Settings + ObjectService access.
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
-	 * @param CaseTimeline|null $timeline The one seam that writes a timeline entry.
+	 * @param TermEventEntry|null $termEntry The timeline entry a term event writes.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
-		private readonly ?CaseTimeline $timeline = null,
+		private readonly ?TermEventEntry $termEntry = null,
 	) {
 	}//end __construct()
 
@@ -349,74 +332,17 @@ class TermijnService {
 	 */
 	public function saveTermInstance(array $instance): ?array {
 		$saved = $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
-		if ($saved === null) {
-			return null;
-		}
 
-		if (isset($instance['id']) === false) {
-			$this->recordTermStartOnTimeline(instance: $saved);
-		}
+		// A REWRITE IS NOT A START. `bindStatutory()` re-binds a term that is
+		// already running when the case type's fixed end date moves, and a
+		// timeline announcing a start each time would report clocks that never
+		// started. The row as it was handed in tells the two apart, so the
+		// writer is given the fact rather than a verdict and this method keeps
+		// no branch of its own.
+		$this->termEntry?->recordStart(instance: (array)$saved, requested: $instance);
 
 		return $saved;
 	}//end saveTermInstance()
-
-	/**
-	 * Put the start of a non-statutory term on the case's timeline.
-	 *
-	 * WHY THIS IS A SECOND SEAM RATHER THAN A SECOND CALLER OF `recordEvent()`.
-	 * A planned end, an internal target and a phase term are written straight
-	 * to the instance schema and write NO TermijnGebeurtenis at all, by design:
-	 * they are not statutory clocks and nothing about them has a legal basis to
-	 * record. So the event funnel never sees them, and a handler reading the
-	 * timeline would see the statutory clock start and nothing about the phase
-	 * clock that actually governs their week. Giving them an event row instead
-	 * would put four rows in a register that means "Awb event".
-	 *
-	 * ONLY ON A CREATE. `bindStatutory()` re-binds an existing instance through
-	 * `updateTermijnInstance()`, so this method is reached only when a term is
-	 * first written, and an `id` on the way in is the one thing that separates
-	 * the two.
-	 *
-	 * @param array<string, mixed> $instance The stored term instance.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
-	 */
-	private function recordTermStartOnTimeline(array $instance): void {
-		if ($this->timeline === null) {
-			return;
-		}
-
-		$caseId = trim((string)($instance['case'] ?? ''));
-		if ($caseId === '') {
-			return;
-		}
-
-		$kind = (string)($instance['kind'] ?? TermKind::STATUTORY);
-		$due = (string)($instance['endDateCurrent'] ?? ($instance['endDateCalculated'] ?? ''));
-
-		$message = self::TERM_START_SENTENCES[$kind] ?? 'Termijn gestart';
-		if ($due !== '') {
-			$message .= ', uiterlijk ' . $due;
-		}
-
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::TERM_EVENT,
-			message: $message,
-			fields: [
-				'event' => 'start',
-				'term' => $kind,
-				'occurredAt' => (string)($instance['startDate'] ?? ''),
-				'dueAt' => $due,
-				'startedAt' => (string)($instance['startDate'] ?? ''),
-				'basis' => '',
-				'termijnId' => (string)($instance['id'] ?? ''),
-			],
-			visibility: CaseTimeline::INTERNAL,
-		);
-	}//end recordTermStartOnTimeline()
 
 	/**
 	 * Update a TermijnInstance (partial; merged on top of existing).
@@ -614,12 +540,15 @@ class TermijnService {
 		}
 
 		$saved = $this->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
-		if ($saved === null) {
-			return null;
-		}
 
-		$this->recordEventOnTimeline(
-			termInstanceId: $termInstanceId,
+		// The event row names its instance, and the instance names the case.
+		// That read belongs here: this is the only class that knows how to
+		// reach a term instance, and the entry writer asking for it would
+		// depend on the class that depends on it. An instance that cannot be
+		// read arrives as an empty array and the writer declines it, which is
+		// a guard there rather than a branch this class has to carry.
+		$this->termEntry?->recordEvent(
+			instance: (array)$this->getTermijnInstance(termInstanceId: $termInstanceId),
 			type: $type,
 			basis: $basis,
 			rationale: $rationale,
@@ -628,78 +557,6 @@ class TermijnService {
 
 		return $saved;
 	}//end recordEvent()
-
-	/**
-	 * Put a term event on the case's timeline.
-	 *
-	 * WHY EVERY TERM EVENT ARRIVES HERE. Thirteen call sites across the app
-	 * write a TermijnGebeurtenis, and every one of them does it through
-	 * {@see self::recordEvent()}: the start, the pause and the resume, the
-	 * extension, the overrun, the completion, the three aanvullingsverzoek
-	 * events, both objection events and both dwangsom events. One write here
-	 * puts all of them on the timeline without a second file knowing that a
-	 * timeline exists, which is what keeps the aanvullingsverzoek's own seam
-	 * untouched.
-	 *
-	 * THE EVENT ROW HAS NO CASE ON IT. A TermijnGebeurtenis names its
-	 * instance, and the instance names the case, so the instance is read back
-	 * to reach the case, the term's kind and its current end date. An instance
-	 * that cannot be read leaves the event stored and the timeline line
-	 * missing, which is the same soft failure every other writer takes.
-	 *
-	 * THE SENTENCE IS THE RATIONALE, NOT THE TYPE. Every caller already
-	 * supplies a Dutch sentence saying what happened, and `$type` is an
-	 * identifier (`pause-expired`, `information-requested`) that has no
-	 * business being read by a handler.
-	 *
-	 * @param string                 $termInstanceId The instance the event hangs on.
-	 * @param string                 $type           The event type, as stored.
-	 * @param string                 $basis          The legal basis.
-	 * @param string                 $rationale      The sentence a handler reads.
-	 * @param DateTimeImmutable|null $moment         When it happened.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
-	 */
-	private function recordEventOnTimeline(
-		string $termInstanceId,
-		string $type,
-		string $basis,
-		string $rationale,
-		?DateTimeImmutable $moment,
-	): void {
-		if ($this->timeline === null || $termInstanceId === '') {
-			return;
-		}
-
-		$instance = $this->getTermijnInstance(termInstanceId: $termInstanceId);
-		$caseId = trim((string)($instance['case'] ?? ''));
-		if ($caseId === '') {
-			return;
-		}
-
-		$message = trim($rationale);
-		if ($message === '') {
-			$message = 'Termijngebeurtenis vastgelegd';
-		}
-
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::TERM_EVENT,
-			message: $message,
-			fields: [
-				'event' => $type,
-				'term' => (string)($instance['kind'] ?? TermKind::STATUTORY),
-				'occurredAt' => ($moment ?? new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-				'dueAt' => (string)($instance['endDateCurrent'] ?? ($instance['endDateCalculated'] ?? '')),
-				'startedAt' => (string)($instance['startDate'] ?? ''),
-				'basis' => $basis,
-				'termijnId' => $termInstanceId,
-			],
-			visibility: CaseTimeline::INTERNAL,
-		);
-	}//end recordEventOnTimeline()
 
 	/**
 	 * Persist an object to a configured schema.

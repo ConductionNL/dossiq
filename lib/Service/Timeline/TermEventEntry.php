@@ -146,7 +146,7 @@ class TermEventEntry {
 	 */
 	public function recordStart(array $instance, array $requested = []): void {
 		$caseId = trim((string)($instance['case'] ?? ''));
-		if ($caseId === '') {
+		if (isset($requested['id']) === true || $caseId === '') {
 			return;
 		}
 
