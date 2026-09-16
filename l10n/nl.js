@@ -687,6 +687,7 @@ OC.L10N.register(
         "Close step configuration": "Stapconfiguratie sluiten",
         "Close transition configuration": "Overgangconfiguratie sluiten",
         "Closed": "Gesloten",
+        "Closed with no result": "Gesloten zonder resultaat",
         "closed this year": "dit jaar afgesloten",
         "Closing date": "Sluitingsdatum",
         "Closing Date": "Afsluitdatum",
@@ -5219,7 +5220,17 @@ OC.L10N.register(
         "Remove from favourites": "Uit favorieten halen",
         "Removed from your favourites.": "Uit je favorieten gehaald.",
         "Star a case to find it here": "Markeer een zaak met een ster om hem hier terug te vinden",
-        "Your favourites": "Jouw favorieten"
+        "Your favourites": "Jouw favorieten",
+        "Correct that character, or search for plain words. AND, OR and NOT work in capitals, and quotes make a phrase.": "Corrigeer dat teken of zoek op gewone woorden. AND, OR en NOT werken in hoofdletters en aanhalingstekens maken er een woordgroep van.",
+        "Indexes on them": "Indexen daarop",
+        "No, a rebuild locks the table it is on": "Nee, een herbouw vergrendelt de tabel waar hij op staat",
+        "Rebuild without locking": "Herbouwen zonder vergrendelen",
+        "Run {command} status on the server for the same figures, and {command} rebuild --apply after a schema change.": "Draai {command} status op de server voor dezelfde cijfers, en {command} rebuild --apply na een schemawijziging.",
+        "Search index": "Zoekindex",
+        "Tables in scope": "Tabellen in bereik",
+        "The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.": "De indexen waar het zoeken op zaken uit leest. Ze leven in OpenRegister, dat de querylaag bezit; dossiq houdt geen kopie van hun staat bij. Een verouderde index is een zaak die niemand vindt.",
+        "We could not read this search from character {position}.": "We konden deze zoekopdracht niet lezen vanaf teken {position}.",
+        "We could not read this search.": "We konden deze zoekopdracht niet lezen."
     },
     "nplurals=2; plural=(n != 1);"
 )
