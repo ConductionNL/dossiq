@@ -118,9 +118,9 @@ class CaseActionProviderExecuteTest extends TestCase {
 	 */
 	private function ungatedApprovals(): ApprovalGate {
 		return new ApprovalGate(
-			caseTypes: $this->createMock(CaseTypeResolver::class),
-			decisions: $this->createMock(ContractDecisionDelegationService::class),
-			logger: $this->createMock(LoggerInterface::class),
+			caseTypes: $this->createMock(originalClassName: CaseTypeResolver::class),
+			decisions: $this->createMock(originalClassName: ContractDecisionDelegationService::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end ungatedApprovals()
 

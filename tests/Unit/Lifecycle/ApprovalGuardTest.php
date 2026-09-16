@@ -92,10 +92,10 @@ class ApprovalGuardTest extends TestCase {
 			];
 		}
 
-		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willReturn($caseType);
 
-		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$dispatcher = $this->createMock(originalClassName: IEventDispatcher::class);
 		$dispatcher->method('dispatchTyped')->willReturnCallback(
 			static function (Event $event) use ($answer): void {
 				if ($answer !== null && $event instanceof DecisionStateRequestedEvent) {
@@ -141,9 +141,9 @@ class ApprovalGuardTest extends TestCase {
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
 
-		self::assertFalse($verdict['allowed']);
-		self::assertSame(ApprovalGate::RULE_OUTSTANDING, $verdict['rule']);
-		self::assertStringContainsString('Approval by the teamleider', $verdict['sentence']);
+		self::assertFalse(condition: $verdict['allowed']);
+		self::assertSame(expected: ApprovalGate::RULE_OUTSTANDING, actual: $verdict['rule']);
+		self::assertStringContainsString(needle: 'Approval by the teamleider', haystack: $verdict['sentence']);
 	}//end testAnOpenApprovalRefusesTheActAndNamesIt()
 
 	/**
@@ -161,11 +161,11 @@ class ApprovalGuardTest extends TestCase {
 
 		$waiting = $gate->awaiting(case: $this->caseWaiting(), userId: 'behandelaar');
 
-		self::assertCount(1, $waiting);
-		self::assertSame(['Sanne de Wit', 'Joris Bakker'], $waiting[0]['approvers']);
-		self::assertStringContainsString('Sanne de Wit', $waiting[0]['sentence']);
-		self::assertStringContainsString('Joris Bakker', $waiting[0]['sentence']);
-		self::assertSame(self::ACT, $waiting[0]['act']);
+		self::assertCount(expectedCount: 1, haystack: $waiting);
+		self::assertSame(expected: ['Sanne de Wit', 'Joris Bakker'], actual: $waiting[0]['approvers']);
+		self::assertStringContainsString(needle: 'Sanne de Wit', haystack: $waiting[0]['sentence']);
+		self::assertStringContainsString(needle: 'Joris Bakker', haystack: $waiting[0]['sentence']);
+		self::assertSame(expected: self::ACT, actual: $waiting[0]['act']);
 	}//end testTheCaseNamesWhoItIsWaitingOn()
 
 	/**
@@ -178,8 +178,8 @@ class ApprovalGuardTest extends TestCase {
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
 
-		self::assertSame([], $verdict['approvers']);
-		self::assertStringContainsString('did not say who', $verdict['sentence']);
+		self::assertSame(expected: [], actual: $verdict['approvers']);
+		self::assertStringContainsString(needle: 'did not say who', haystack: $verdict['sentence']);
 	}//end testAnApprovalWithNoNamedApproversSaysSo()
 
 	/**
@@ -192,9 +192,9 @@ class ApprovalGuardTest extends TestCase {
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
 
-		self::assertTrue($verdict['allowed']);
-		self::assertTrue($verdict['gated']);
-		self::assertSame([], $gate->awaiting(case: $this->caseWaiting(), userId: 'behandelaar'));
+		self::assertTrue(condition: $verdict['allowed']);
+		self::assertTrue(condition: $verdict['gated']);
+		self::assertSame(expected: [], actual: $gate->awaiting(case: $this->caseWaiting(), userId: 'behandelaar'));
 	}//end testAnApprovedDecisionLetsTheActThrough()
 
 	/**
@@ -207,9 +207,9 @@ class ApprovalGuardTest extends TestCase {
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
 
-		self::assertFalse($verdict['allowed']);
-		self::assertSame(ApprovalGate::RULE_REJECTED, $verdict['rule']);
-		self::assertSame(RefusedException::STATUS_REFUSED, $verdict['status']);
+		self::assertFalse(condition: $verdict['allowed']);
+		self::assertSame(expected: ApprovalGate::RULE_REJECTED, actual: $verdict['rule']);
+		self::assertSame(expected: RefusedException::STATUS_REFUSED, actual: $verdict['status']);
 	}//end testARejectedDecisionRefusesTheAct()
 
 	/**
@@ -227,10 +227,10 @@ class ApprovalGuardTest extends TestCase {
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
 
-		self::assertFalse($verdict['allowed']);
-		self::assertSame(ApprovalGate::RULE_UNREADABLE, $verdict['rule']);
-		self::assertSame(RefusedException::STATUS_INDETERMINATE, $verdict['status']);
-		self::assertStringContainsString('approval service', $verdict['sentence']);
+		self::assertFalse(condition: $verdict['allowed']);
+		self::assertSame(expected: ApprovalGate::RULE_UNREADABLE, actual: $verdict['rule']);
+		self::assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $verdict['status']);
+		self::assertStringContainsString(needle: 'approval service', haystack: $verdict['sentence']);
 	}//end testAnUnreadableOutcomeBlocksRatherThanPasses()
 
 	/**
@@ -251,9 +251,9 @@ class ApprovalGuardTest extends TestCase {
 			userId: 'behandelaar',
 		);
 
-		self::assertFalse($verdict['allowed']);
-		self::assertSame(ApprovalGate::RULE_OUTSTANDING, $verdict['rule']);
-		self::assertStringContainsString('has not been asked for yet', $verdict['sentence']);
+		self::assertFalse(condition: $verdict['allowed']);
+		self::assertSame(expected: ApprovalGate::RULE_OUTSTANDING, actual: $verdict['rule']);
+		self::assertStringContainsString(needle: 'has not been asked for yet', haystack: $verdict['sentence']);
 	}//end testAGatedActWithNoApprovalRaisedIsRefused()
 
 	/**
@@ -271,9 +271,9 @@ class ApprovalGuardTest extends TestCase {
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: 'assign', userId: 'behandelaar');
 
-		self::assertTrue($verdict['allowed']);
-		self::assertFalse($verdict['gated']);
-		self::assertSame(0, $asked, 'An ungated act must not cost a read on decidiq.');
+		self::assertTrue(condition: $verdict['allowed']);
+		self::assertFalse(condition: $verdict['gated']);
+		self::assertSame(expected: 0, actual: $asked, message: 'An ungated act must not cost a read on decidiq.');
 	}//end testAnUngatedActIsLetThroughWithoutAskingDecidiq()
 
 	/**
@@ -286,11 +286,11 @@ class ApprovalGuardTest extends TestCase {
 
 		try {
 			$gate->requireApproved(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
-			self::fail('An act gated by an open approval must be refused on the write path too.');
+			self::fail(message: 'An act gated by an open approval must be refused on the write path too.');
 		} catch (RefusedException $refusal) {
-			self::assertSame(ApprovalGate::RULE_OUTSTANDING, $refusal->getRule());
-			self::assertStringContainsString('Approval by the teamleider', $refusal->getSentence());
-			self::assertSame(RefusedException::STATUS_UNPROCESSABLE, $refusal->getStatus());
+			self::assertSame(expected: ApprovalGate::RULE_OUTSTANDING, actual: $refusal->getRule());
+			self::assertStringContainsString(needle: 'Approval by the teamleider', haystack: $refusal->getSentence());
+			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $refusal->getStatus());
 		}
 	}//end testRequireApprovedThrowsTheVerdictAsARefusal()
 
@@ -300,13 +300,13 @@ class ApprovalGuardTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnreadableCaseTypeRefusesRatherThanAllowing(): void {
-		$resolver = $this->createMock(CaseTypeResolver::class);
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
 		$resolver->method('effectiveCaseType')->willThrowException(new \RuntimeException('register down'));
 
 		$gate = new ApprovalGate(
 			caseTypes: $resolver,
 			decisions: new ContractDecisionDelegationService(
-				eventDispatcher: $this->createMock(IEventDispatcher::class),
+				eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
 				logger: new NullLogger(),
 			),
 			logger: new NullLogger(),
@@ -314,7 +314,7 @@ class ApprovalGuardTest extends TestCase {
 
 		$verdict = $gate->verdictFor(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
 
-		self::assertFalse($verdict['allowed']);
-		self::assertSame(RefusedException::STATUS_INDETERMINATE, $verdict['status']);
+		self::assertFalse(condition: $verdict['allowed']);
+		self::assertSame(expected: RefusedException::STATUS_INDETERMINATE, actual: $verdict['status']);
 	}//end testAnUnreadableCaseTypeRefusesRatherThanAllowing()
 }//end class

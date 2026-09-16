@@ -3,10 +3,10 @@
 /**
  * Which acts of a case type wait for an approval decidiq walks.
  *
- * decidiq owns the walk. It holds the approvers, counts the signatures, applies
- * the threshold and decides when the route is done. dossiq owns one half of
- * that arrangement and only one: which of ITS OWN acts may not happen while the
- * walk is still running.
+ * The walk belongs to decidiq. It holds the approvers, counts the signatures,
+ * applies the threshold and decides when the route is done. dossiq owns one
+ * half of that arrangement and only one: which of ITS OWN acts may not happen
+ * while the walk is still running.
  *
  * 🔴 NOTHING HERE COMPUTES AN APPROVAL OUTCOME (D-1). A second answer to "have
  * enough of them signed" would be a second authority over a question with one

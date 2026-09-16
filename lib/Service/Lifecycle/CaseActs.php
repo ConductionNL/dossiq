@@ -40,6 +40,7 @@ namespace OCA\Dossiq\Service\Lifecycle;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
+use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCP\IUserSession;
 
@@ -72,6 +73,8 @@ class CaseActs {
 	 *                                                  the half builds the facade as it did.
 	 * @param IUserSession|null $userSession Names the caller the always-available acts are
 	 *                                       decided for.
+	 * @param ApprovalGate|null $approvals What the case is waiting for, and on whom. Optional
+	 *                                     for the same reason the two above it are.
 	 */
 	public function __construct(
 		private readonly CaseEndingActs $endings,
@@ -83,8 +86,33 @@ class CaseActs {
 		private readonly CaseStatusStore $store,
 		private readonly ?AlwaysAvailableActs $alwaysAvailable = null,
 		private readonly ?IUserSession $userSession = null,
+		private readonly ?ApprovalGate $approvals = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * What this case is waiting for, and on whom (REQ-DEC-01).
+	 *
+	 * Answers the empty list when the half is not wired, for the same reason
+	 * the always-available acts do: the half is additive and a test that
+	 * constructed this facade before it existed cannot be failed by it.
+	 *
+	 * @param array<string, mixed> $case The loaded case.
+	 *
+	 * @return array<int, array<string, mixed>> The outstanding approvals.
+	 *
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 */
+	private function awaitingApprovalOn(array $case): array {
+		if ($this->approvals === null) {
+			return [];
+		}
+
+		return $this->approvals->awaiting(
+			case: $case,
+			userId: (string)($this->userSession?->getUser()?->getUID() ?? '')
+		);
+	}//end awaitingApprovalOn()
 
 	/**
 	 * The acts this case type allows in every phase, decided for this caller.
@@ -162,6 +190,15 @@ class CaseActs {
 			// three would be wrong. It is its own declared list, marked, and
 			// it never reaches the status machinery.
 			'alwaysAvailable' => $this->alwaysAvailableOn(caseId: $caseId),
+			// What the case is waiting for, and on whom (REQ-DEC-01). Drawn
+			// above the acts rather than only on the act that is blocked: a
+			// handler who opens the case wants to know who to chase before
+			// they go looking for the button that will refuse them.
+			//
+			// 🔑 THE NAMES ARE DECIDIQ'S. dossiq keeps no approver, so an
+			// empty list here means decidiq named nobody, and the sentence
+			// says that rather than rendering as "waiting on nobody".
+			'awaitingApproval' => $this->awaitingApprovalOn(case: $case),
 		];
 	}//end overview()
 

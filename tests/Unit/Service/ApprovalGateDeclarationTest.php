@@ -67,10 +67,10 @@ class ApprovalGateDeclarationTest extends TestCase {
 	public function testDeclaredGatesDropTheNamelessAndTheReleased(): void {
 		$gates = ApprovalGateDeclaration::declaredOn(caseType: $this->caseType());
 
-		self::assertCount(1, $gates);
-		self::assertSame('send-besluit', $gates[0]['act']);
-		self::assertSame('besluit-approval', $gates[0]['decisionType']);
-		self::assertSame('Approval by the teamleider', $gates[0]['label']);
+		self::assertCount(expectedCount: 1, haystack: $gates);
+		self::assertSame(expected: 'send-besluit', actual: $gates[0]['act']);
+		self::assertSame(expected: 'besluit-approval', actual: $gates[0]['decisionType']);
+		self::assertSame(expected: 'Approval by the teamleider', actual: $gates[0]['label']);
 	}//end testDeclaredGatesDropTheNamelessAndTheReleased()
 
 	/**
@@ -88,7 +88,7 @@ class ApprovalGateDeclarationTest extends TestCase {
 			]]
 		);
 
-		self::assertSame('besluit-approval', $gates[0]['label']);
+		self::assertSame(expected: 'besluit-approval', actual: $gates[0]['label']);
 	}//end testAGateWithNoLabelIsNamedByItsDecisionType()
 
 	/**
@@ -100,14 +100,14 @@ class ApprovalGateDeclarationTest extends TestCase {
 		$caseType = $this->caseType();
 
 		self::assertSame(
-			'besluit-approval',
-			ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'send-besluit')['decisionType']
+			expected: 'besluit-approval',
+			actual: ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'send-besluit')['decisionType']
 		);
-		self::assertSame([], ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'assign'));
+		self::assertSame(expected: [], actual: ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'assign'));
 		// The released gate answers nothing, not a gate with `enabled` false:
 		// a caller that had to re-check the flag would be the second place the
 		// release could be forgotten.
-		self::assertSame([], ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'publish'));
+		self::assertSame(expected: [], actual: ApprovalGateDeclaration::gateFor(caseType: $caseType, act: 'publish'));
 	}//end testGateForAnswersOnlyTheActItGates()
 
 	/**
@@ -125,7 +125,7 @@ class ApprovalGateDeclarationTest extends TestCase {
 			caseType: [ApprovalGateDeclaration::DECLARATION => $encoded]
 		);
 
-		self::assertSame('send-besluit', $gates[0]['act']);
+		self::assertSame(expected: 'send-besluit', actual: $gates[0]['act']);
 	}//end testAJsonEncodedDeclarationReadsTheSame()
 
 	/**
@@ -141,13 +141,13 @@ class ApprovalGateDeclarationTest extends TestCase {
 		];
 
 		self::assertSame(
-			'7f3c-approval',
-			ApprovalGateDeclaration::referenceFor(case: $case, act: 'send-besluit')
+			expected: '7f3c-approval',
+			actual: ApprovalGateDeclaration::referenceFor(case: $case, act: 'send-besluit')
 		);
 		// Empty, and the caller reads that as "never raised". It is not the
 		// same answer as "this act is not gated", which comes from the case
 		// type and not from here.
-		self::assertSame('', ApprovalGateDeclaration::referenceFor(case: $case, act: 'publish'));
+		self::assertSame(expected: '', actual: ApprovalGateDeclaration::referenceFor(case: $case, act: 'publish'));
 	}//end testTheReferenceIsReadPerAct()
 
 	/**
@@ -171,8 +171,8 @@ class ApprovalGateDeclarationTest extends TestCase {
 		);
 
 		$byAct = array_column($refs, 'decisionRef', 'act');
-		self::assertSame('new', $byAct['send-besluit']);
-		self::assertSame('keep-me', $byAct['publish']);
-		self::assertCount(2, $refs);
+		self::assertSame(expected: 'new', actual: $byAct['send-besluit']);
+		self::assertSame(expected: 'keep-me', actual: $byAct['publish']);
+		self::assertCount(expectedCount: 2, haystack: $refs);
 	}//end testRecordingAReferenceReplacesOnlyThatAct()
 }//end class

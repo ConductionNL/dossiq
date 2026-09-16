@@ -29,6 +29,33 @@
 				{{ t('dossiq', 'Reading what this case allows.') }}
 			</p>
 
+			<!--
+				What the case is waiting for, and on whom (REQ-DEC-01). Above
+				the list rather than only on the act it blocks: the handler's
+				next move is to chase a person, and that answer should not be
+				behind a disabled button they have to find first.
+			-->
+			<ul
+				v-if="!loading && awaiting.length > 0"
+				class="case-acts__awaiting"
+				data-testid="case-awaiting-approval">
+				<li
+					v-for="entry in awaiting"
+					:key="entry.act"
+					:data-testid="'case-awaiting-' + entry.act">
+					<span class="case-acts__awaiting-label">{{
+						heading(entry)
+					}}</span>
+					<span class="case-acts__reason">{{ entry.sentence }}</span>
+					<span
+						v-if="approvers(entry)"
+						class="case-acts__awaiting-people"
+						:data-testid="'case-awaiting-people-' + entry.act">
+						{{ approvers(entry) }}
+					</span>
+				</li>
+			</ul>
+
 			<ul v-else class="case-acts__list" data-testid="case-acts-list">
 				<li
 					v-for="entry in entries"
@@ -122,6 +149,11 @@ import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
 import {
+	approvalHeading,
+	approversLine,
+	awaitingApprovals,
+} from '../utils/caseAwaitingApproval.js'
+import {
 	buildTransitionPayload,
 	refusalMessage,
 } from '../utils/caseLifecycleHelpers.js'
@@ -149,6 +181,7 @@ export default {
 	data() {
 		return {
 			entries: [],
+			awaiting: [],
 			chosen: null,
 			loading: true,
 			reason: '',
@@ -329,6 +362,9 @@ export default {
 				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/acts`)),
 			])
 
+			const actsBody =
+				acts.status === 'fulfilled' ? (acts.value?.data ?? null) : null
+
 			this.entries = buildActsMenu({
 				transitions:
 					moves.status === 'fulfilled'
@@ -338,10 +374,35 @@ export default {
 					state.status === 'fulfilled'
 						? (state.value?.data ?? null)
 						: null,
-				acts:
-					acts.status === 'fulfilled' ? (acts.value?.data ?? null) : null,
+				acts: actsBody,
 			})
+			this.awaiting = awaitingApprovals(actsBody)
 			this.loading = false
+		},
+
+		/**
+		 * The name of one outstanding approval.
+		 *
+		 * @param {object} entry One row of the awaiting list.
+		 * @return {string} The heading.
+		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 */
+		heading(entry) {
+			return approvalHeading(entry)
+		},
+
+		/**
+		 * The people one outstanding approval waits on.
+		 *
+		 * Empty when decidiq named none, and the sentence beside it already
+		 * says so, so nothing here renders an empty list as nobody.
+		 *
+		 * @param {object} entry One row of the awaiting list.
+		 * @return {string} The names, or ''.
+		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 */
+		approvers(entry) {
+			return approversLine(entry)
 		},
 
 		/**
@@ -449,6 +510,31 @@ export default {
 
 .case-acts__reason,
 .case-acts__explainer {
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
+}
+
+.case-acts__awaiting {
+	border-inline-start: 4px solid var(--color-warning, var(--color-primary));
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	list-style: none;
+	margin: 0;
+	padding: 8px 12px;
+}
+
+.case-acts__awaiting li {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.case-acts__awaiting-label {
+	font-weight: bold;
+}
+
+.case-acts__awaiting-people {
 	color: var(--color-text-maxcontrast);
 	font-size: 0.9em;
 }
