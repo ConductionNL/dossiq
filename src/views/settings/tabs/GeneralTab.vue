@@ -99,6 +99,21 @@
 			<span v-if="errors.origin" class="field-error">{{ errors.origin }}</span>
 		</div>
 
+		<!-- Notification domain -->
+		<div class="form-group">
+			<label>{{ t('dossiq', 'Notification domain') }}</label>
+			<NcSelect
+				:modelValue="selectedNotificationDomain"
+				:options="notificationDomainOptions"
+				:aria-label-combobox="t('dossiq', 'Notification domain')"
+				@update:modelValue="
+					(v) => $emit('update', 'notificationDomain', v ? v.id : '')
+				" />
+			<span class="field-hint">{{
+				t('dossiq', 'People pin a notification preference to a domain. Only domains a shipped rule declares are offered, so a preference always has a rule to match.')
+			}}</span>
+		</div>
+
 		<!-- Processing Deadline -->
 		<div class="form-group">
 			<label class="required">{{ t('dossiq', 'Processing deadline') }}</label>
@@ -271,6 +286,7 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import { NcCheckboxRadioSwitch, NcSelect, NcTextField } from '@nextcloud/vue'
 import DurationPicker from '../components/DurationPicker.vue'
@@ -319,6 +335,35 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		confidentialityOptions() {
 			return getConfidentialityOptions()
+		},
+
+		/**
+		 * The notification domains a case type may choose.
+		 *
+		 * The list is the one the shipped rules declare. A free word here would
+		 * store a preference the dispatcher has no rule to match, which reads as
+		 * a switch that does nothing.
+		 *
+		 * @return {Array<{id: string, label: string}>} The options.
+		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 */
+		notificationDomainOptions() {
+			return [
+				{ id: 'zaken', label: t('dossiq', 'Cases') },
+				{ id: 'waarneming', label: t('dossiq', 'Substitution') },
+				{ id: 'werkvoorraad', label: t('dossiq', 'My work queue') },
+			]
+		},
+
+		/**
+		 * The domain this case type is on.
+		 *
+		 * @return {?{id: string, label: string}} The option, or null.
+		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 */
+		selectedNotificationDomain() {
+			const chosen = (this.form.notificationDomain || 'zaken')
+			return this.notificationDomainOptions.find((o) => o.id === chosen) || null
 		},
 
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */

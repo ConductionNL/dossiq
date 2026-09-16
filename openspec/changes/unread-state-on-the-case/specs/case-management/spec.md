@@ -128,6 +128,7 @@ SHALL be exactly the ones the shipped rules declare, so a stored
 preference can never be one the dispatcher has no rule to match.
 
 #### Scenario: a person sees why they are not being told
+@e2e tests/e2e/notifications-route-by-role-and-domain.spec.ts
 
 - **GIVEN** a notification a team default switched off
 - **WHEN** the person opens their notification settings
@@ -135,6 +136,7 @@ preference can never be one the dispatcher has no rule to match.
 - **AND** the deciding layer SHALL be named beside it as the group default
 
 #### Scenario: a person overrules the team default
+@e2e tests/e2e/notifications-route-by-role-and-domain.spec.ts
 
 - **GIVEN** the same notification
 - **WHEN** the person switches it back on for themselves
@@ -165,6 +167,7 @@ behaviour it had, from the value dossiq stores itself.
 - @e2e exclude {a background job's decision, asserted in tests/Unit/Service/Queue/DigestPreferencesRoutingTest.php}
 
 #### Scenario: a person still decides for themselves
+@e2e tests/e2e/notifications-route-by-role-and-domain.spec.ts
 
 - **GIVEN** the same group default
 - **WHEN** a member switches their own digest back on
