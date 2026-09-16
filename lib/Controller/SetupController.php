@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\DemoDataService;
 use OCA\Dossiq\Service\SeedDataService;
+use OCA\Dossiq\Service\Setup\FirstRunReadiness;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -88,6 +89,7 @@ class SetupController extends Controller {
 	 * @param DemoDataService $demoDataService Demo dataset import (ADR-111 rule 4).
 	 * @param SettingsService $settingsService OpenRegister availability + config import.
 	 * @param SeedDataService $seedDataService Bezwaar/beroep seeder.
+	 * @param FirstRunReadiness $readiness The minimum an instance needs, read live.
 	 */
 	public function __construct(
 		string $appName,
@@ -96,6 +98,7 @@ class SetupController extends Controller {
 		private readonly DemoDataService $demoDataService,
 		private readonly SettingsService $settingsService,
 		private readonly SeedDataService $seedDataService,
+		private readonly FirstRunReadiness $readiness,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -173,6 +176,24 @@ class SetupController extends Controller {
 				'dwangsom-secret' => ['done' => $dwangsomSecretDone],
 			],
 		];
+
+		// The minimum an instance needs before it can take a case. REPORTED,
+		// never gated: `register-check` stays the only required step, because
+		// without a register nothing works at all, and an instance an
+		// administrator deliberately leaves half configured is a legitimate
+		// instance. An instance nobody can see the state of is not.
+		//
+		// NOT a `steps` entry. A step is something CnSetupWizard prompts for
+		// and `testEveryActionableManifestStepIsReported` compares against the
+		// manifest in both directions; a readiness item is a live read of the
+		// tree that no wizard step corresponds to. Putting one in `steps`
+		// would give the wizard five prompts it cannot fulfil.
+		$response['readiness'] = $this->readiness->report();
+
+		// Tour steps whose surface is gone. The runner skips them in silence,
+		// which is how a tour stops teaching half the product without anyone
+		// noticing, so they are reported where the readiness items are.
+		$response['tourSteps'] = $this->readiness->brokenTourSteps();
 
 		// Financial-integration (dwangsom uitbetaling) capability: surface a
 		// missing callback secret before go-live rather than after an
