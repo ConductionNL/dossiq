@@ -1,10 +1,10 @@
 /**
  * Starring a case from a list row.
  *
- * Kept out of `customComponents.js` for the reason `caseUnread.js` gives: that
- * file imports every surviving custom page and tab, so importing it in a unit
- * test pulls the whole component tree in behind one function. The registry
- * entries are still declared there, which is what the manifest resolves
+ * Kept out of `registry.js` for the reason `caseUnread.js` gives: that file
+ * imports every surviving custom page and tab, so importing it in a unit test
+ * pulls the whole component tree in behind one function. The `kind: 'handler'`
+ * entry is still declared there, which is what the manifest resolves
  * against.
  *
  * An index row action can only be `navigate`, `open-page` or a handler NAME

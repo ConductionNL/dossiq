@@ -21,12 +21,14 @@
  *                                            "This page is empty" placeholder
  *   route does not resolve                 → falls back to the Dashboard
  *
- * The middle case is not hypothetical: `/public/consultations/:token` is in
- * exactly that state today (page `ExternalConsultationResponse` is declared in
- * `src/manifest.d/consultation-public.json`, its component is not in
- * `src/customComponents.js`), which is why it has no test here. A heading
- * assertion tells those three apart; `.app-content` being visible does not,
- * because it is visible in all three.
+ * The middle case is not hypothetical: `/public/consultations/:token` shipped
+ * in exactly that state — page `ExternalConsultationResponse` declared in
+ * `src/manifest.d/consultation-public.json` with no registry entry behind it,
+ * so the route resolved and drew the placeholder. It has an entry now, and its
+ * own spec (`workflows/external-consultation-response.spec.ts`) asserts the
+ * component's root element rather than a heading, which is why that route is
+ * not in the list below. A heading assertion tells the three apart;
+ * `.app-content` being visible does not, because it is visible in all three.
  *
  * The three public pages are token-addressed and deliberately use a token that
  * CANNOT resolve, so no fixture has to be seeded and the branch under test is

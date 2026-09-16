@@ -3,12 +3,18 @@
 //
 // V2 component registry for dossiq.
 //
-// Every entry here corresponds to a manifest `type: "custom"` page or a
-// sidebar tab that uses `component:` instead of `widgets[]`. The registry
-// maps the string key used in the manifest to a `{ kind, component }` entry
-// so CnAppRoot can resolve the component at render time.
+// THE ONLY registry this app passes to CnAppRoot. The legacy string-keyed
+// `customComponents` prop is deprecated for a v2 manifest and is gone: every
+// page, dashboard slot and handler it carried is a kinded entry here.
 //
-// Recognised kinds: page, modal, widget, form-field, cell-renderer
+// Every entry corresponds to something a manifest names by string — a
+// `type: "custom"` page, a sidebar tab using `component:` instead of
+// `widgets[]`, a page `slots` entry, or an `actions[]` / `bulkActions[]` /
+// `headerActions[]` handler. The key is that string.
+//
+// Recognised kinds: page, modal, widget, actions, handler, form-field,
+// cell-renderer. A `handler` entry exposes a plain function as `.handler` and
+// is resolved by name, never mounted.
 //
 // Migration notes:
 // - The visual workflow editor (`WorkflowEditor.vue`) is not a registry entry
@@ -17,10 +23,6 @@
 //   page or sidebar-tab component. See openspec/specs/visual-workflow-editor.
 //   A second, @vue-flow-based implementation (Vue-3-only, incompatible with
 //   this app's Vue 2.7 build) was removed by workflow-editor-integration.
-// - `MapComponent` is kept in customComponents.js for backward compat with any
-//   manifest entries that reference it by string outside the registry. No
-//   current manifest pages reference MapComponent by key directly; retained as
-//   a pass-through.
 
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 // The case's archival future as openregister decided it, on the Archiving tab.
@@ -143,14 +145,31 @@ import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
+import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 // Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
 // page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
 // RBAC scoping, and base-layer config; the markers render through the lib's
 // `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in dossiq (ADR-022).
 // @spec openspec/specs/case-map-overview/spec.md
 import CasesOnMapView from './views/CasesOnMapView.vue'
+import DtAtRiskWidget from './views/doorlooptijd/widgets/DtAtRiskWidget.vue'
+import DtBreakdownWidget from './views/doorlooptijd/widgets/DtBreakdownWidget.vue'
+import DtCaseTypeFilter from './views/doorlooptijd/widgets/DtCaseTypeFilter.vue'
+import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
+import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
+import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
+// --- Pages and dashboard slots that were only ever in the legacy
+//     customComponents map, plus the handlers a manifest names by string. ---
+import FeaturesRoadmapView from './views/FeaturesRoadmapView.vue'
 import FlowDetailSidebar from './views/flows/FlowDetailSidebar.vue'
+import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
+import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
+import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
+import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
+import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
+import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
+import ExternalConsultationResponsePage from './views/public/ExternalConsultationResponsePage.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
@@ -158,17 +177,33 @@ import EndOfDayView from './views/queue/EndOfDayView.vue'
 // One personal queue fed by the declared sources (one-personal-queue).
 // @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 import PersonalQueueView from './views/queue/PersonalQueueView.vue'
+import StoreGallery from './views/store/StoreGallery.vue'
 // The task page (`/tasks/:id`) over OpenRegister's task engine. Replaced the
 // `type: "detail"` page when remove-casetask took the caseTask schema away:
 // CnDetailPage has no entity-source mode, so a detail page can only bind a
 // register and a schema. Route and page id unchanged, so deep links resolve.
 // @spec openspec/specs/task-management/spec.md
 import TaskDetailView from './views/tasks/TaskDetailView.vue'
+import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
+import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
+import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
+import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 // The Dashboard's My work tile, over OpenRegister's task engine.
 // @spec openspec/specs/dashboard/spec.md
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
+import {
+	extendTermSelection,
+	reassignSelection,
+	resumeSelection,
+	suspendSelection,
+	transitionSelection,
+} from './utils/caseBulkActions.js'
+import { claimCase } from './utils/caseClaim.js'
+import { toggleCaseFavourite } from './utils/caseFavourite.js'
+import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
+import { openIntegriqConnections } from './utils/integriqConnections.js'
 
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
 // overdue / stalled cases, my tasks, task reminders, deadline alerts) and the
@@ -470,6 +505,7 @@ const registry = {
 		// @custom-widget-ratchet exclude `@self._retention` is metadata attached on the render path, not a stored property, so a data widget builds its fields from the schema's properties and renders every one of them blank; the nomination also carries a rule and a reason that are prose beside a value, and the recompute gesture is a POST carrying a required reason. Deleted the day the manifest vocabulary has a retention widget type
 		kind: 'widget',
 		component: CaseArchivalPanel,
+		...PANEL_WIDGET_META,
 		_note: "CaseDetail Archiving tab: the appraisal, the disposal date, the retention period, the selectielijst row, the nomination with the rule that produced it, and the outcome once a reviewer has decided one. Fails CLOSED on an unreachable openregister: an error with a retry, never an empty archival block, because an outage and a case with no archival future look identical from the browser. An unnominatable case is drawn apart from a case nobody has closed yet, because only one of the two is somebody's problem today.",
 	},
 
@@ -482,6 +518,7 @@ const registry = {
 		// @custom-widget-ratchet exclude a destruction list entry is not a dossiq object: it lives on openregister's destruction list and no declarative widget reads that surface, and each of the three answers carries a reason, with retain also carrying a new date, collected before the post. Deleted the day the manifest vocabulary has a worklist widget over a leaf endpoint
 		kind: 'widget',
 		component: MyArchivalReviews,
+		...DASHBOARD_TILE_META,
 		_note: 'My Work: the destruction list entries the signed-in person has to sign off, with destroy, retain and transfer, each carrying a reason. An answered entry leaves the list without a reload. An empty list reads as nothing to sign off; a failed read reads as an error with a retry, because the two look identical from an empty array.',
 	},
 
@@ -602,6 +639,7 @@ const registry = {
 		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
 		kind: 'widget',
 		component: CaseConversationsPanel,
+		...PANEL_WIDGET_META,
 		_note: 'The Live conversation section of the Communication tab: start a conversation in Talk from any case, see what the case recorded of the ones already held, and declare the case major. The hoorzitting reaches the same mechanism through HearingService; this is the surface for every other case. Absent Talk, it says so rather than offering a button that cannot work.',
 	},
 
@@ -824,6 +862,7 @@ const registry = {
 		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to star and DELETE to unstar, and no declarative widget or action writes two methods: `CnActionButtons`' `toggle` type flips a boolean and PUTs it with one `method`, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.favourite` is attached per reader on the render path, so a data widget over a property would render nothing at all. Deleted the day the library takes a two-verb toggle or a favourite affordance of its own, which is where this belongs for every index and detail page in the fleet
 		kind: 'widget',
 		component: CaseFavouriteStrip,
+		...STRIP_WIDGET_META,
 		_note: 'CaseDetail: the per-reader star, directly under the identity tiles because it is part of what identifies this case TO YOU. Starring writes nothing to the case: OpenRegister keeps the star in its own table, so no version is cut, no audit entry is written and no colleague can tell. The strip renders from `@self.favourite`, which every object read already carries, so it makes no call until somebody presses it.',
 	},
 
@@ -845,6 +884,7 @@ const registry = {
 		// @custom-widget-ratchet exclude a party link is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/parties`, which answers contact-link rows grouped by role together with the schema's own kinds and roles, and the indicators come from `/api/parties/{uuid}`. There is no `integration` id that resolves the party model either; `contacts` renders the person links beside this and cannot see a party with no account. Deleted the day nextcloud-vue ships a parties widget type over that listing
 		kind: 'widget',
 		component: CasePartiesWidget,
+		...PANEL_WIDGET_META,
 		_note: "CaseDetail People tab, the Roles section: the parties of the case grouped by role with the primary party first, which on a case is the initiator. It is the half the contacts integration beside it cannot carry -- a melder with no Nextcloud account, a gemachtigde acting for the applicant, and the indicators a party holds. An indicator renders WITH its verdict (warn, refuse publication, refuse send) because an indicator that only renders is one somebody misses; the two refusals are enforced again where the act happens, in BesluitPublicatiePanel and FileRequestService, and once more inside OpenRegister. A failed read says so in words rather than drawing an empty party list, which would read as a case whose parties had been removed.",
 	},
 
@@ -852,6 +892,7 @@ const registry = {
 		// @custom-widget-ratchet exclude the surface is OpenRegister's TIMELINE, not a collection of OpenRegister objects: the entries come from /api/objects/{register}/{schema}/{id}/timeline, which takes no register-and-schema pair of its own, and a built-in object-list takes exactly that. There is no `integration` id for the timeline either, so `type: "integration"` cannot reach it. The pin and the follow-up are PATCHes on a sub-resource, which no declarative widget writes. This entry is deleted the day the library ships a timeline widget type
 		kind: 'widget',
 		component: CaseTimelineTab,
+		...PANEL_WIDGET_META,
 		_note: "CaseDetail Timeline tab: one chronological read of every note, logged call, message and acknowledgement on this case, from OpenRegister's timeline. Notes, Communication and Email stay beside it because each is the place to DO that one thing; this is the place to see the order. The audit sidebar keeps the change history.",
 	},
 
@@ -859,6 +900,7 @@ const registry = {
 		// @custom-widget-ratchet exclude the three facts on this strip cannot be read by a declarative widget: the flag is written through an endpoint that refuses a reasonless act and appends rather than overwriting, the marker set is an array of derived rows each pointing at a panel of THIS page, and the risk assessment is a property OpenRegister filters out entirely for a reader without the extra group, so a field widget would render an empty box that looks like an absent assessment
 		kind: 'widget',
 		component: CaseAttentionPanel,
+		...STRIP_WIDGET_META,
 		_note: 'CaseDetail: the flag a person raised with a written reason, the risk this organisation assessed and the markers the system raised against a named panel. Three different facts kept apart on purpose. Sits under the unread strip and says the opposite kind of thing: a marker survives opening the panel it points at and goes when the work behind it is done, where the unread badge goes because somebody looked.',
 	},
 
@@ -998,6 +1040,208 @@ const registry = {
 
 	// --- Leverancier-zaakportaal external supplier portal MOVED to Portaliq
 	//     (ADR-046, procest#162) — see import-section comment. ---
+
+	// --- Pages that were only ever in the legacy customComponents map. ---
+	//
+	// Same `kind: 'page'` as every other full-page custom route above:
+	// CnPageRenderer resolves a `type: "custom"` page's `component` (and a
+	// `slots.main`) with requireKind 'page', so any other kind here would be
+	// skipped and the page would render the renderer's empty placeholder.
+	FeaturesRoadmapView: {
+		kind: 'page',
+		component: FeaturesRoadmapView,
+		_note: "Features & roadmap. Wraps the library's CnFeaturesAndRoadmapPage (which has no slots, so `type: \"roadmap\"` could not carry a third surface) and adds the capability comparison.",
+	},
+	DeletedCasesView: {
+		kind: 'page',
+		component: DeletedCasesView,
+		_note: 'The deleted lens. A plain component rather than an index page: the deleted rows are not in the objects endpoint the index renderer fetches from, they are in OpenRegister trash, which answers on its own door.',
+	},
+	MailIntakeLogView: {
+		kind: 'page',
+		component: MailIntakeLogView,
+		_note: 'Named by src/manifest.d/37-mail-intake.json. A custom page because the intake-role check lives in MailIntakeController, and an index page would read the generic object endpoint and show every processed message original to anyone the register lets read.',
+	},
+	StoreGallery: {
+		kind: 'page',
+		component: StoreGallery,
+		_note: 'Remote store cards (ADR-080). A store item is a REMOTE object, so the index renderer — which resolves a local register+schema — cannot address it.',
+	},
+	ExternalConsultationResponsePage: {
+		kind: 'page',
+		component: ExternalConsultationResponsePage,
+		_note: 'Named by src/manifest.d/consultation-public.json. Token-addressed advice-response surface for external advisory bodies (consultation-management TASK-CN-06); its absence rendered the empty-page placeholder on /public/consultations/:token.',
+	},
+	CaseTimelineTab: {
+		kind: 'page',
+		component: CaseTimelineTab,
+		_note: 'The same component `case-timeline-pane` above mounts, under its COMPONENT name, for a manifest that names it as a sidebar tab rather than as a tab-widget type. The pair `case-email-pane` / `CaseEmailTab` carries the same two keys for the same reason.',
+	},
+
+	// --- Named behaviours: a manifest `handler` string, not a component. ---
+	//
+	// `kind: 'handler'` entries expose a plain function as `.handler`, which is
+	// what resolveRegisteredHandler reads for `config.actions[].handler` (rows),
+	// `config.bulkActions[].handler` and `config.headerActions[].handler`. They
+	// are resolved by name and never mounted, so they carry no component and no
+	// grid metadata.
+	//
+	// Every one of them is a function rather than a declarative action because
+	// the declarative path cannot express what it does — the reason is on each
+	// entry.
+	// @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+	claimCase: {
+		kind: 'handler',
+		handler: claimCase,
+		_note: "The Queue's and Cases' claim row action. The row dispatcher knows neither `api-call` nor a token-resolving write, so a declarative claim would either do nothing or store the literal string `@me`.",
+	},
+	// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+	markCaseRead: {
+		kind: 'handler',
+		handler: markCaseRead,
+		_note: "The Queue's and Cases' mark-read row action. The row dispatcher knows only `navigate`, `open-page` and a handler NAME, so a declarative `api-call` would render a menu item that does nothing when clicked.",
+	},
+	markCaseUnread: {
+		kind: 'handler',
+		handler: markCaseUnread,
+		_note: "The Queue's and Cases' mark-unread row action, for the reason markCaseRead is a function.",
+	},
+	// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+	toggleCaseFavourite: {
+		kind: 'handler',
+		handler: toggleCaseFavourite,
+		_note: "The Queue's and Cases' favourite row action. ONE entry rather than a star and an unstar, because `@self.favourite` rides every row so the menu item can say what the click will do. The gesture is PUT to star and DELETE to unstar on one path, and no declarative write takes two methods.",
+	},
+	// @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+	reassignSelection: {
+		kind: 'handler',
+		handler: reassignSelection,
+		_note: "The Cases page's reassign bulk action. A function because the manifest's declarative `handler: \"open-modal\"` path emits an `open-modal` event that nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked.",
+	},
+	// The four lifecycle bulk actions, all four opening the one
+	// BulkTransitionDialog in the matching mode, functions for the reason
+	// reassignSelection is one.
+	// @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
+	transitionSelection: {
+		kind: 'handler',
+		handler: transitionSelection,
+	},
+	suspendSelection: {
+		kind: 'handler',
+		handler: suspendSelection,
+	},
+	resumeSelection: {
+		kind: 'handler',
+		handler: resumeSelection,
+	},
+	extendTermSelection: {
+		kind: 'handler',
+		handler: extendTermSelection,
+	},
+	// @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+	openIntegriqConnections: {
+		kind: 'handler',
+		handler: openIntegriqConnections,
+		_note: "The Integrations page's Add integration header action. A function because a header action's `navigate` keyword only pushes a route name inside this app's router, which cannot leave the app.",
+	},
+
+	// --- Dashboard-page slots: Processing time, Deadline monitoring, Process
+	//     mining. Each page owns its heading and its filters; these fill its
+	//     `slots` map. A filter lands in `header-actions` and is therefore an
+	//     `actions` kind; the rest are widgets, carrying the grid metadata the
+	//     validator asks of every widget even though the page's own slot map
+	//     positions them.
+	// @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	DtCaseTypeFilter: {
+		kind: 'actions',
+		component: DtCaseTypeFilter,
+		_note: 'header-actions slot: SLA-bearing case types only. A component rather than a declarative pageFilter because the options are fetched.',
+	},
+	DtKpiWidget: {
+		kind: 'widget',
+		component: DtKpiWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'KPI row + the three guidance states.',
+	},
+	DtChartsWidget: {
+		kind: 'widget',
+		component: DtChartsWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Donut / histogram / trend / throughput.',
+	},
+	DtWooWidget: {
+		kind: 'widget',
+		component: DtWooWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Woo statutory-deadline panel.',
+	},
+	DtAtRiskWidget: {
+		kind: 'widget',
+		component: DtAtRiskWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Open cases within 25% of deadline.',
+	},
+	DtBreakdownWidget: {
+		kind: 'widget',
+		component: DtBreakdownWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Per-case-type performance table.',
+	},
+	TdCaseTypeFilter: {
+		kind: 'actions',
+		component: TdCaseTypeFilter,
+		_note: 'header-actions slot: case-type filter.',
+	},
+	TdKpiWidget: {
+		kind: 'widget',
+		component: TdKpiWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Headline KPI tiles (CnKpiGrid + CnStatsBlock).',
+	},
+	TdQuarterlyWidget: {
+		kind: 'widget',
+		component: TdQuarterlyWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Quarterly report table + CSV export.',
+	},
+	TdAnnualWidget: {
+		kind: 'widget',
+		component: TdAnnualWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Annual dwangsom audit summary.',
+	},
+	// The process-mining page owns the heading and both filters — a widget that
+	// drew its own heading would be the dashboard-in-dashboard antipattern
+	// (hydra#316).
+	PmCaseTypeFilter: {
+		kind: 'actions',
+		component: PmCaseTypeFilter,
+		_note: 'header-actions slot: case-type filter (pageFilters cannot bind dynamic options).',
+	},
+	PmKpiWidget: {
+		kind: 'widget',
+		component: PmKpiWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Headline KPI tiles (CnKpiGrid + CnStatsBlock).',
+	},
+	PmDwellChartWidget: {
+		kind: 'widget',
+		component: PmDwellChartWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Dwell time by status (CnChartWidget bar).',
+	},
+	PmThroughputChartWidget: {
+		kind: 'widget',
+		component: PmThroughputChartWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Weekly throughput (CnChartWidget line).',
+	},
+	PmBottleneckTableWidget: {
+		kind: 'widget',
+		component: PmBottleneckTableWidget,
+		...DASHBOARD_TILE_META,
+		_note: 'Bottleneck ranking (ad-hoc row shape, no object-list leaf applies).',
+	},
 }
 
 export default registry

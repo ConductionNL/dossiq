@@ -44,7 +44,6 @@ const manifest = JSON.parse(
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const handlersSource = fs.readFileSync(path.join(ROOT, 'src', 'customComponents.js'), 'utf8')
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const caseDetail = page('CaseDetail')
@@ -304,7 +303,7 @@ describe('the two lenses', () => {
 			expect(action.handler).toBe('toggleCaseFavourite')
 		}
 
-		expect(handlersSource).toContain('toggleCaseFavourite,')
+		expect(registrySource).toMatch(/\n\ttoggleCaseFavourite: \{\n\t\tkind: 'handler',\n\t\thandler: toggleCaseFavourite,\n/)
 	})
 
 	it('puts both lenses on the dashboard, each pointing at its own chip', () => {

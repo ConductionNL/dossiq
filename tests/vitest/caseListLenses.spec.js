@@ -44,10 +44,11 @@ const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const customComponentsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'customComponents.js'),
+const bulkActionsSource = fs.readFileSync(
+	path.join(ROOT, 'src', 'utils', 'caseBulkActions.js'),
 	'utf8',
 )
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
 /**
  * One page as the manifest declares it.
@@ -528,15 +529,17 @@ describe('bulk actions on the Cases index', () => {
 		])
 	})
 
-	it('names a handler that customComponents.js defines AND exports', () => {
+	it('names a handler that caseBulkActions.js exports AND the registry registers', () => {
 		// Both halves matter and neither errors on its own: a handler name
 		// with no function is a bulk action that does nothing when clicked,
-		// and a function that is not in the default export is invisible to
-		// the manifest renderer, which resolves the name through that map.
+		// and a function the registry does not carry is invisible to the
+		// manifest renderer, which resolves the name through that map.
 		for (const action of actions()) {
-			expect(customComponentsSource).toContain(`function ${action.handler}(`)
-			expect(customComponentsSource).toMatch(
-				new RegExp(`^\\t${action.handler},$`, 'm'),
+			expect(bulkActionsSource).toMatch(
+				new RegExp(`export (?:async )?function ${action.handler}\\(`),
+			)
+			expect(registrySource).toMatch(
+				new RegExp(`\\n\\t${action.handler}: \\{\\n\\t\\tkind: 'handler',\\n\\t\\thandler: ${action.handler},\\n`),
 			)
 		}
 	})

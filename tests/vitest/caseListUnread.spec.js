@@ -18,7 +18,7 @@
  *  - a `false` filter value is dropped by the LEGACY list path, so the chip
  *    carries `true` and never `{_unread: false}`;
  *  - an index row action knows only `navigate`, `open-page` and a handler
- *    NAME out of customComponents, so both marks are asserted to resolve to
+ *    NAME out of the registry, so both marks are asserted to resolve to
  *    functions that are actually exported;
  *  - an icon that is not registered in `src/icons.js` renders no glyph at all
  *    rather than a fallback, so all three new names are asserted registered;
@@ -53,7 +53,7 @@ const manifest = JSON.parse(
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'customComponents.js'),
+	path.join(ROOT, 'src', 'registry.js'),
 	'utf8',
 )
 const cellWidgetsSource = fs.readFileSync(
@@ -229,14 +229,13 @@ describe('both marks are offered on a row', () => {
 
 	it('resolves both handlers to functions in the custom-component registry', () => {
 		// Asserted against the SOURCE rather than by importing the module:
-		// customComponents.js imports every surviving page and tab, so a unit
-		// test that imported it would mount the component tree to reach two
-		// functions.
+		// registry.js imports every surviving page and tab, so a unit test that
+		// imported it would mount the component tree to reach two functions.
 		expect(registrySource).toContain(
 			"import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'",
 		)
-		expect(registrySource).toMatch(/\n\tmarkCaseRead,\n/)
-		expect(registrySource).toMatch(/\n\tmarkCaseUnread,\n/)
+		expect(registrySource).toMatch(/\n\tmarkCaseRead: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseRead,\n/)
+		expect(registrySource).toMatch(/\n\tmarkCaseUnread: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseUnread,\n/)
 		expect(typeof markCaseRead).toBe('function')
 		expect(typeof markCaseUnread).toBe('function')
 	})

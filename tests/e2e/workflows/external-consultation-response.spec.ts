@@ -45,7 +45,7 @@
  *   route does not resolve                    -> falls back to the Dashboard
  *
  * The middle case is what this page was in until the component was added to
- * `src/customComponents.js`. The root element is OUTSIDE every `v-if` in the
+ * `src/registry.js`. The root element is OUTSIDE every `v-if` in the
  * component's template, so it holds whether or not the token resolves, and it
  * is a thing neither the placeholder nor the Dashboard can produce. The
  * heading assertion below uses the UNRESOLVABLE token deliberately: a token

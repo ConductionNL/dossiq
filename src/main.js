@@ -25,7 +25,6 @@ import { createApp, h, markRaw } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import { registerCaseSections } from './components/case/registerCaseSections.js'
-import customComponents from './customComponents.js'
 import appIcons from './icons.js'
 import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
@@ -210,14 +209,12 @@ router.beforeEach(permissionGuard)
 tryLoadTranslations()
 
 // Pass shallow copies of the registry maps to CnAppRoot. The lib exports
-// `defaultPageTypes` (and consumers' `customComponents`) as frozen module
-// objects in some bundle shapes — Vue 2's `Vue.extend()` mutates component
+// `defaultPageTypes` as a frozen module object in some bundle shapes — Vue 2's `Vue.extend()` mutates component
 // definitions to attach an internal `_Ctor` cache, which throws
 // "Cannot add property _Ctor, object is not extensible" against a frozen
 // source map. Cloning here yields extensible objects without changing
 // the values the lib resolves at render time.
 const pageTypesProp = { ...defaultPageTypes }
-const customComponentsProp = { ...customComponents }
 const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
@@ -250,7 +247,6 @@ const app = createApp({
 			// is what drives the case-type-nav re-render.
 			// Vue 3: props pass FLAT (no `props:` wrapper in the data object).
 			manifest: markRaw(this.resolvedManifest),
-			customComponents: customComponentsProp,
 			registry: registryProp,
 			pageTypes: pageTypesProp,
 			mapFormatters: mapFormattersProp,
