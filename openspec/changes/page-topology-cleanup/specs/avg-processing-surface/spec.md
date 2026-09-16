@@ -58,14 +58,14 @@ deadline rather than a second clock.
 - **AND** every protected item SHALL be named on the case with the ground, the basis and the action a handler can take
 
 #### Scenario: Nothing is erased by dossiq itself
-@e2e exclude The absence of an engine is a property of the tree, not of a screen; PlatformDataSubjectRightsTest asserts every act resolves to an OpenRegister service and dossiq writes no destruction of its own.
+@e2e exclude The absence of an engine is a property of the tree, not of a screen; PlatformDataSubjectRightsTest::testAnOlderOpenRegisterSaysSo and ::testThePlatformsRuleAndStatusAreCarriedAcross assert every act resolves to an OpenRegister service and that its refusal keeps the platform's own rule.
 
 - **WHEN** dossiq's services are inspected
 - **THEN** no erasure, pseudonymisation or export engine SHALL exist in dossiq
 - **AND** every act SHALL be an OpenRegister call whose refusal is passed back with the platform's own rule name
 
 #### Scenario: The month comes from the case type
-@e2e exclude The term binding is read by TermDeclarationReader and asserted in DataSubjectRequestTermTest; no screen shows the derivation.
+@e2e exclude The term binding is read by TermDeclarationReader and asserted in DataSubjectRequestTemplateTest::testTheStatutoryMonthIsTheCaseTypesOwnDeadline; no screen shows the derivation.
 
 - **GIVEN** a new data subject request
 - **WHEN** its term is bound
@@ -89,7 +89,7 @@ what failed.
 - **AND** the refusal SHALL name the earlier act and say who to ask instead
 
 #### Scenario: A run without the approving act is refused
-@e2e exclude The refusal is server-side and reached before any screen offers the act; DataSubjectRequestCaseTest asserts the rule and the sentence.
+@e2e exclude The refusal is server-side and reached before any screen offers the act; DataSubjectRequestCaseTest::testARunWithoutTheApprovingActIsRefused asserts the rule, the sentence and that the platform is never asked.
 
 - **GIVEN** a case whose preview has not been approved on the case
 - **WHEN** the run is started
@@ -121,14 +121,14 @@ file is ready and unexpired.
 - **AND** the reason SHALL name the withheld objects
 
 #### Scenario: A complete erasure lets the case close
-@e2e exclude The settled path is the absence of a reason; ErasureCompletePreconditionTest pins both sides of the same guard.
+@e2e exclude The settled path is the absence of a reason; ErasureCompletePreconditionTest::testACompleteRunLetsTheCaseClose and ::testTheReasonNamesWhatWasWithheld pin both sides of the same guard.
 
 - **GIVEN** a run the platform reported complete
 - **WHEN** the same move is offered
 - **THEN** it SHALL be available
 
 #### Scenario: An expired export is not offered
-@e2e exclude Expiry is a clock, asserted with a fixture in DataSubjectRequestCaseTest; waiting seven days in a browser is not a test.
+@e2e exclude Expiry is the platform's answer, asserted in DataSubjectRequestCaseTest::testAnExpiredExportIsNotOffered and ::testAnUnfinishedExportIsNotCalledExpired; waiting seven days in a browser is not a test.
 
 - **GIVEN** an inzage case whose export has passed its seven day life
 - **WHEN** the case is read
