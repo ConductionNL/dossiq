@@ -72,3 +72,8 @@ named change is archived.
   `frozen-beschikking-and-numbered-successor` and
   `every-term-on-the-engine-calendar`. Re-rate them from those changes
   when each is archived, not from a fresh reading of the tree
+- [ ] 25 `one-timeline-on-the-case` (row 6.4), the consumer of
+  openregister `timeline-entries-are-records` (#3762, merged 2026-09-15).
+  No dossiq dependency. Rows 6.2 and 6.15 read the same entries:
+  `timeline-entries-default-internal` owns the visibility half, and the
+  Communication tab stays the place a contact moment is logged

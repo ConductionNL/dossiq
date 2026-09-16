@@ -41,6 +41,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+
 /**
  * What a case type says about confirming receipt.
  *
@@ -151,6 +153,15 @@ class CaseTypeAcknowledgement {
 	public function owesAcknowledgement(array $case, array $caseType): bool {
 		$declaration = $this->declarationFor(caseType: $caseType);
 		if ($declaration['enabled'] === false) {
+			return false;
+		}
+
+		// The handling block is where an administrator turns the automatic
+		// messages of a case type off, and this mail is one of them. Read here
+		// rather than beside it, so there is one switch and not two that
+		// disagree. A case type that declares no block still sends everything,
+		// which is what it did before the block existed.
+		if ((new CaseTypeHandling())->sends(caseType: $caseType, message: self::TEMPLATE) === false) {
 			return false;
 		}
 

@@ -33,6 +33,8 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
@@ -42,7 +44,21 @@ use RuntimeException;
 /**
  * Service for case-integrated email functionality.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The twelfth and thirteenth
+ * types are CaseTimeline and TimelineKinds, and they replaced nothing: a sent
+ * mail now also records a line on the case timeline, which is a new fact about
+ * this class rather than a new way of doing an old one. Control: per-file phpmd
+ * on this file at 43150ddf is clean, and reports thirteen here, so the two are
+ * exactly what crossed the threshold. The alternatives are worse than the
+ * suppression. Naming the kind as a bare string would drop TimelineKinds and
+ * take the drift guard with it, and an undeclared kind is refused, caught and
+ * logged rather than shown. Moving the call behind a per-writer method on
+ * CaseTimeline would drop TimelineKinds here and make that class know the shape
+ * of every writer in the app, which is the coupling this rule exists to stop,
+ * moved somewhere it is not measured.
+ *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
  */
 class CaseEmailService {
 
@@ -71,6 +87,7 @@ class CaseEmailService {
 	 * @param CaseContactDirectory $contactDirectory Contact addresses registered on a case
 	 * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
 	 * @param RecipientAllowlist $allowlist Outbound recipient policy
+	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -80,6 +97,7 @@ class CaseEmailService {
 		private readonly CaseContactDirectory $contactDirectory,
 		private readonly CaseEmailAttachmentResolver $attachmentResolver,
 		private readonly RecipientAllowlist $allowlist,
+		private readonly CaseTimeline $timeline,
 	) {
 	}//end __construct()
 
@@ -155,6 +173,21 @@ class CaseEmailService {
 			to: $to,
 			subject: $subject,
 			body: $body,
+		);
+
+		// PUBLIC: the recipient already has this message in their own inbox,
+		// so hiding its line from the timeline they are shown would only hide
+		// it from the person who has it.
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::MAIL_OUT,
+			message: $subject,
+			fields: [
+				'recipient' => $to,
+				'subject' => $subject,
+				'documentId' => (string)$messageId,
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 
 		$this->logger->info(
