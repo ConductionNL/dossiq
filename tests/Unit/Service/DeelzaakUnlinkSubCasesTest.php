@@ -60,6 +60,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\DeelzaakService
  * @uses   \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses   \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
+ * @uses   \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
  */
 class DeelzaakUnlinkSubCasesTest extends TestCase {
 

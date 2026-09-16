@@ -114,9 +114,12 @@ describe('the lists are keyed so the server can sort them', () => {
 		},
 	)
 
-	it.each(['Cases', 'Queue'])('%s renders the column through the badge widget', (id) => {
-		expect(priorityColumn(id).widget).toBe('priorityBadge')
-	})
+	it.each(['Cases', 'Queue'])(
+		'%s renders the column through the badge widget',
+		(id) => {
+			expect(priorityColumn(id).widget).toBe('priorityBadge')
+		},
+	)
 
 	it('sorting on the declared order is not the same as sorting on the word', () => {
 		const alphabetical = [...PRIORITY_VALUES].sort()
@@ -149,7 +152,10 @@ describe('neither list offers a priority to be typed', () => {
 				return
 			}
 			if (node === null || typeof node !== 'object') return
-			if (Array.isArray(node.includeFields) && node.includeFields.includes('priority')) {
+			if (
+				Array.isArray(node.includeFields)
+				&& node.includeFields.includes('priority')
+			) {
 				asked.push(node.id ?? node.label ?? 'an unnamed form')
 			}
 			Object.values(node).forEach(walk)
@@ -163,7 +169,9 @@ describe('neither list offers a priority to be typed', () => {
 		const sections = page('CaseDetail').widgets.find(
 			(widget) => widget.id === 'case-data-panel',
 		).content.sections
-		const core = sections.find((section) => section.label === 'Core case data').widget
+		const core = sections.find(
+			(section) => section.label === 'Core case data',
+		).widget
 
 		expect(core.content.include).toContain('impact')
 		expect(core.content.include).toContain('urgency')

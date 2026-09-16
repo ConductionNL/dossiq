@@ -86,7 +86,8 @@ const DORMANT_KEYS = ['brp']
 const UNLINKED_KEYS = ['brp', 'kvk', 'pdok', 'berichtenbox', 'templates']
 
 /** Integriq's objects endpoint for dossiq's connection rows. */
-const CONNECTIONS_API = '/index.php/apps/openregister/api/objects/integriq/app_connection'
+const CONNECTIONS_API =
+	'/index.php/apps/openregister/api/objects/integriq/app_connection'
 
 /**
  * The two seams that ship a mock adapter.
@@ -326,7 +327,9 @@ test.describe('Integrations', () => {
 		// next run a page that claims nothing it has not checked.
 		const before = await api.get(settingsApi)
 		expect(before.ok(), `settings read -> ${before.status()}`).toBeTruthy()
-		const previous = String((await before.json())?.config?.identification_method ?? '')
+		const previous = String(
+			(await before.json())?.config?.identification_method ?? '',
+		)
 
 		try {
 			const res = await api.post(settingsApi, {
@@ -364,7 +367,9 @@ test.describe('Integrations', () => {
 				timeout: 30_000,
 			}),
 			page
-				.getByRole('menuitem', { name: /Add integration|Integratie toevoegen/i })
+				.getByRole('menuitem', {
+					name: /Add integration|Integratie toevoegen/i,
+				})
 				.click(),
 		])
 	})
@@ -611,7 +616,9 @@ test.describe('Integrations', () => {
 			// and unwraps, and the shape of the refusal is part of what is
 			// being asserted: OpenRegister narrows a list in SQL, so a denial
 			// here is HTTP 200 with an empty result set, not a 403.
-			const res = await plainApi.get(`${CONNECTIONS_API}?app=dossiq&_limit=200`)
+			const res = await plainApi.get(
+				`${CONNECTIONS_API}?app=dossiq&_limit=200`,
+			)
 			expect(res.status()).toBe(200)
 			const body = await res.json()
 
@@ -619,7 +626,7 @@ test.describe('Integrations', () => {
 				body.results ?? [],
 				`${PLAIN_USER} holds no group and must see no integration rows; `
 					+ `the admin sees ${adminRows.length}. Rows here mean the `
-					+ '`authorization` block on integriq\'s app_connection schema is '
+					+ "`authorization` block on integriq's app_connection schema is "
 					+ 'absent or was not imported — OpenRegister treats an absent '
 					+ 'block as open, so this is exactly how it read before the fix',
 			).toHaveLength(0)

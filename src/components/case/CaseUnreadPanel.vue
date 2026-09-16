@@ -125,7 +125,7 @@ export default {
 			return Object.entries(this.counts || {})
 				.map(([name, count]) => ({ name, count: Number(count) || 0 }))
 				.filter((entry) => entry.count > 0)
-				.sort((a, b) => (b.count - a.count))
+				.sort((a, b) => b.count - a.count)
 				.map((entry) => ({
 					...entry,
 					label: t('dossiq', '{panel} ({count} new)', {
@@ -146,7 +146,7 @@ export default {
 		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 		 */
 		show() {
-			return (this.loaded && (this.entries.length > 0 || this.wasUnread))
+			return this.loaded && (this.entries.length > 0 || this.wasUnread)
 		},
 
 		/**
@@ -207,7 +207,7 @@ export default {
 
 			try {
 				const state = await fetchReadState(this.caseId)
-				this.counts = (state.unreadCounts || {})
+				this.counts = state.unreadCounts || {}
 				this.lastSeenAt = state.lastSeenAt
 				this.wasUnread = state.unread
 				this.loaded = true
@@ -242,7 +242,11 @@ export default {
 				this.counts = { ...this.counts, [name]: 0 }
 			} catch (error) {
 				const refusal = String(error?.response?.data?.message ?? '')
-				showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+				showError(
+					refusal !== ''
+						? refusal
+						: t('dossiq', 'This did not work. Try again.'),
+				)
 			} finally {
 				this.busy = false
 			}
@@ -263,7 +267,11 @@ export default {
 				window.dispatchEvent(new CustomEvent('dossiq:cases-changed'))
 			} catch (error) {
 				const refusal = String(error?.response?.data?.message ?? '')
-				showError(refusal !== '' ? refusal : t('dossiq', 'This did not work. Try again.'))
+				showError(
+					refusal !== ''
+						? refusal
+						: t('dossiq', 'This did not work. Try again.'),
+				)
 			} finally {
 				this.busy = false
 			}

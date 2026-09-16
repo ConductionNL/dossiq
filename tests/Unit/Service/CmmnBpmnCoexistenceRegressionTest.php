@@ -63,6 +63,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 	use MakesStatusDeclarations;

@@ -34,7 +34,11 @@
 			variant="tertiary"
 			data-testid="bulk-selection-narrow"
 			@click="narrow">
-			{{ t('dossiq', 'Go back to the {count} on this page', { count: selectedIds.length }) }}
+			{{
+				t('dossiq', 'Go back to the {count} on this page', {
+					count: selectedIds.length,
+				})
+			}}
 		</NcButton>
 	</div>
 </template>
@@ -86,7 +90,10 @@ export default {
 		offersWholeResult() {
 			return (
 				this.isWholeResult === false
-				&& canOfferWholeResult({ pageCount: this.selectedIds.length, total: this.total })
+				&& canOfferWholeResult({
+					pageCount: this.selectedIds.length,
+					total: this.total,
+				})
 			)
 		},
 
@@ -97,7 +104,11 @@ export default {
 		 */
 		sentence() {
 			return describeScope(
-				{ scope: this.scope, pageCount: this.selectedIds.length, total: this.total },
+				{
+					scope: this.scope,
+					pageCount: this.selectedIds.length,
+					total: this.total,
+				},
 				t,
 			)
 		},

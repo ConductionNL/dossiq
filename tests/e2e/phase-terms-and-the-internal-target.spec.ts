@@ -60,7 +60,11 @@ const INTERNAL_DAYS = 20
  * @param token CSRF request-token.
  * @param extra Extra case-type properties, for the fixed-date cases.
  */
-async function seedDeclaringType(api: any, token: string, extra: Record<string, unknown> = {}) {
+async function seedDeclaringType(
+	api: any,
+	token: string,
+	extra: Record<string, unknown> = {},
+) {
 	const suffix = Math.floor(Math.random() * 1e6)
 	const caseType = await createObject(api, token, 'caseType', {
 		title: `${RUN_PREFIX} Terms ${suffix}`,
@@ -102,7 +106,10 @@ async function readTerms(api: any, caseId: string) {
 }
 
 test.describe('The four clocks on a case', () => {
-	test('four clocks on one case are four instances, each naming its kind', async ({ request, page }) => {
+	test('four clocks on one case are four instances, each naming its kind', async ({
+		request,
+		page,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId, phaseId } = await seedDeclaringType(request, token)
 
@@ -116,9 +123,13 @@ test.describe('The four clocks on a case', () => {
 		const body = await readTerms(request, caseId)
 		const kinds = body.terms.map((term: any) => term.kind)
 
-		expect(kinds, 'the statutory term is bound from the lead time').toContain('statutory')
+		expect(kinds, 'the statutory term is bound from the lead time').toContain(
+			'statutory',
+		)
 		expect(kinds, 'the planned end is its own instance').toContain('planned')
-		expect(kinds, 'the internal target is its own instance').toContain('internal')
+		expect(kinds, 'the internal target is its own instance').toContain(
+			'internal',
+		)
 
 		// Every instance says what it is. A clock with no kind is the collapsed
 		// field this change replaces.
@@ -130,13 +141,17 @@ test.describe('The four clocks on a case', () => {
 		const errors = trackDossiqErrors(page)
 		await navToRoute(page, `/cases/${caseId}`)
 		await page.getByRole('tab', { name: /terms|termijnen/i }).click()
-		await expect(page.getByTestId('case-terms-row-statutory')).toBeVisible(PAGE_LOAD)
+		await expect(page.getByTestId('case-terms-row-statutory')).toBeVisible(
+			PAGE_LOAD,
+		)
 		await expect(page.getByTestId('case-terms-row-planned')).toBeVisible()
 		await expect(page.getByTestId('case-terms-progress-figure')).toBeVisible()
 		expect(errors, 'the Terms tab logs no dossiq error').toEqual([])
 	})
 
-	test('an ontvankelijkheidstoets has its own two weeks inside eight', async ({ request }) => {
+	test('an ontvankelijkheidstoets has its own two weeks inside eight', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId, phaseId } = await seedDeclaringType(request, token)
 
@@ -163,7 +178,10 @@ test.describe('The four clocks on a case', () => {
 		).toBeLessThan(statutory.daysLeft)
 	})
 
-	test('an overrunning phase reads overdue while the case term reads on time', async ({ request, page }) => {
+	test('an overrunning phase reads overdue while the case term reads on time', async ({
+		request,
+		page,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId, phaseId } = await seedDeclaringType(request, token)
 
@@ -177,10 +195,15 @@ test.describe('The four clocks on a case', () => {
 		// Push the phase clock into the past, leaving the case term where it is.
 		const terms = await readTerms(request, caseId)
 		const phaseTerm = terms.terms.find((term: any) => term.kind === 'phase')
-		test.skip(!phaseTerm, 'no phase clock was bound, so there is nothing to overrun')
+		test.skip(
+			!phaseTerm,
+			'no phase clock was bound, so there is nothing to overrun',
+		)
 
 		const past = new Date(Date.now() - 6 * 86_400_000).toISOString().slice(0, 10)
-		await updateObject(request, token, 'deadlineInstance', phaseTerm.id, { endDateCurrent: past })
+		await updateObject(request, token, 'deadlineInstance', phaseTerm.id, {
+			endDateCurrent: past,
+		})
 
 		const after = await readTerms(request, caseId)
 		const overrun = after.terms.find((term: any) => term.kind === 'phase')
@@ -192,12 +215,21 @@ test.describe('The four clocks on a case', () => {
 		const errors = trackDossiqErrors(page)
 		await navToRoute(page, `/cases/${caseId}`)
 		await page.getByRole('tab', { name: /terms|termijnen/i }).click()
-		await expect(page.getByTestId('case-terms-row-phase')).toHaveAttribute('data-tone', 'overdue', PAGE_LOAD)
-		await expect(page.getByTestId('case-terms-row-statutory')).toHaveAttribute('data-tone', 'ontime')
+		await expect(page.getByTestId('case-terms-row-phase')).toHaveAttribute(
+			'data-tone',
+			'overdue',
+			PAGE_LOAD,
+		)
+		await expect(page.getByTestId('case-terms-row-statutory')).toHaveAttribute(
+			'data-tone',
+			'ontime',
+		)
 		expect(errors, 'the Terms tab logs no dossiq error').toEqual([])
 	})
 
-	test('late against the plan and on time against the law reads as both', async ({ request }) => {
+	test('late against the plan and on time against the law reads as both', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId } = await seedDeclaringType(request, token)
 
@@ -212,7 +244,9 @@ test.describe('The four clocks on a case', () => {
 		test.skip(!planned, 'no planned end was bound, so there is no pair to read')
 
 		const past = new Date(Date.now() - 3 * 86_400_000).toISOString().slice(0, 10)
-		await updateObject(request, token, 'deadlineInstance', planned.id, { endDateCurrent: past })
+		await updateObject(request, token, 'deadlineInstance', planned.id, {
+			endDateCurrent: past,
+		})
 
 		const after = await readTerms(request, caseId)
 
@@ -228,7 +262,9 @@ test.describe('The four clocks on a case', () => {
 		expect(after.progress.statutoryOverdue).toBe(false)
 	})
 
-	test('the internal target runs and stays off the citizen read', async ({ request }) => {
+	test('the internal target runs and stays off the citizen read', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId } = await seedDeclaringType(request, token)
 
@@ -255,33 +291,52 @@ test.describe('The four clocks on a case', () => {
 		expect(body.terms.every((term: any) => term.kind === 'statutory')).toBe(true)
 	})
 
-	test('a subsidy round closes on a date, and a closed round still takes a case', async ({ request }) => {
+	test('a subsidy round closes on a date, and a closed round still takes a case', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
-		const closesOn = new Date(Date.now() + 90 * 86_400_000).toISOString().slice(0, 10)
+		const closesOn = new Date(Date.now() + 90 * 86_400_000)
+			.toISOString()
+			.slice(0, 10)
 		const { caseTypeId } = await seedDeclaringType(request, token, {
 			processingDeadlineDate: closesOn,
 		})
 
 		const january = objectId(
-			await seedCase(request, token, { title: `${RUN_PREFIX} Early`, caseType: caseTypeId }),
+			await seedCase(request, token, {
+				title: `${RUN_PREFIX} Early`,
+				caseType: caseTypeId,
+			}),
 		)
 		const february = objectId(
-			await seedCase(request, token, { title: `${RUN_PREFIX} Later`, caseType: caseTypeId }),
+			await seedCase(request, token, {
+				title: `${RUN_PREFIX} Later`,
+				caseType: caseTypeId,
+			}),
 		)
 
 		const first = await readTerms(request, january)
 		const second = await readTerms(request, february)
 
-		expect(first.terms.find((term: any) => term.kind === 'statutory').endDate).toBe(closesOn)
-		expect(second.terms.find((term: any) => term.kind === 'statutory').endDate).toBe(closesOn)
+		expect(
+			first.terms.find((term: any) => term.kind === 'statutory').endDate,
+		).toBe(closesOn)
+		expect(
+			second.terms.find((term: any) => term.kind === 'statutory').endDate,
+		).toBe(closesOn)
 
 		// A round that has already closed still creates the case, visibly expired.
-		const passed = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10)
+		const passed = new Date(Date.now() - 30 * 86_400_000)
+			.toISOString()
+			.slice(0, 10)
 		const { caseTypeId: closedType } = await seedDeclaringType(request, token, {
 			processingDeadlineDate: passed,
 		})
 		const late = objectId(
-			await seedCase(request, token, { title: `${RUN_PREFIX} Late application`, caseType: closedType }),
+			await seedCase(request, token, {
+				title: `${RUN_PREFIX} Late application`,
+				caseType: closedType,
+			}),
 		)
 
 		const lateTerms = await readTerms(request, late)
@@ -292,44 +347,68 @@ test.describe('The four clocks on a case', () => {
 		).toBe(true)
 	})
 
-	test('an extension beyond the declared period is refused, and one inside it is not', async ({ request }) => {
+	test('an extension beyond the declared period is refused, and one inside it is not', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId } = await seedDeclaringType(request, token)
 		const caseId = objectId(
-			await seedCase(request, token, { title: `${RUN_PREFIX} Extension`, caseType: caseTypeId }),
+			await seedCase(request, token, {
+				title: `${RUN_PREFIX} Extension`,
+				caseType: caseTypeId,
+			}),
 		)
 
 		const terms = await readTerms(request, caseId)
 		const statutory = terms.terms.find((term: any) => term.kind === 'statutory')
 
-		const tooFar = new Date(Date.now() + (STATUTORY_DAYS + 60) * 86_400_000).toISOString().slice(0, 10)
+		const tooFar = new Date(Date.now() + (STATUTORY_DAYS + 60) * 86_400_000)
+			.toISOString()
+			.slice(0, 10)
 		const refused = await request.post(
 			`/index.php/apps/dossiq/api/termijn/instances/${statutory.id}/verleng`,
-			{ headers: { requesttoken: token }, data: { rationale: 'Extra onderzoek', newEinddatum: tooFar } },
+			{
+				headers: { requesttoken: token },
+				data: { rationale: 'Extra onderzoek', newEinddatum: tooFar },
+			},
 		)
 
-		expect(refused.status(), 'a sixty day move on a forty-two day period is a 4xx').toBeGreaterThanOrEqual(400)
+		expect(
+			refused.status(),
+			'a sixty day move on a forty-two day period is a 4xx',
+		).toBeGreaterThanOrEqual(400)
 		expect(refused.status()).toBeLessThan(500)
 		const refusal = await refused.json()
-		expect(refusal.error ?? refusal.message, 'the refusal names its rule').toBeTruthy()
+		expect(
+			refusal.error ?? refusal.message,
+			'the refusal names its rule',
+		).toBeTruthy()
 	})
 
-	test('the letter and the pause happen together, and a failed letter leaves the clock running', async ({ request }) => {
+	test('the letter and the pause happen together, and a failed letter leaves the clock running', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId } = await seedDeclaringType(request, token)
 		const caseId = objectId(
-			await seedCase(request, token, { title: `${RUN_PREFIX} Aanvulling`, caseType: caseTypeId }),
+			await seedCase(request, token, {
+				title: `${RUN_PREFIX} Aanvulling`,
+				caseType: caseTypeId,
+			}),
 		)
 
-		const asked = await request.post(`${TERMS_BASE}/${caseId}/information-request`, {
-			headers: { requesttoken: token },
-			data: {
-				items: ['Bankafschrift', 'Bouwtekening'],
-				recipient: 'admin',
-				durationDays: 14,
-				rationale: 'Aanvraag is onvolledig',
+		const asked = await request.post(
+			`${TERMS_BASE}/${caseId}/information-request`,
+			{
+				headers: { requesttoken: token },
+				data: {
+					items: ['Bankafschrift', 'Bouwtekening'],
+					recipient: 'admin',
+					durationDays: 14,
+					rationale: 'Aanvraag is onvolledig',
+				},
 			},
-		})
+		)
 
 		const body = await asked.json()
 
@@ -341,10 +420,13 @@ test.describe('The four clocks on a case', () => {
 				'Bouwtekening',
 			])
 
-			const resumed = await request.post(`${TERMS_BASE}/${caseId}/information-request/received`, {
-				headers: { requesttoken: token },
-				data: { items: ['Bankafschrift', 'Bouwtekening'] },
-			})
+			const resumed = await request.post(
+				`${TERMS_BASE}/${caseId}/information-request/received`,
+				{
+					headers: { requesttoken: token },
+					data: { items: ['Bankafschrift', 'Bouwtekening'] },
+				},
+			)
 			expect(resumed.ok()).toBeTruthy()
 			expect((await resumed.json()).resumed).toBe(true)
 			return
@@ -353,7 +435,10 @@ test.describe('The four clocks on a case', () => {
 		// The transport is not configured on this instance, which is the OTHER
 		// half of the requirement: a send that did not happen must leave the
 		// clock running. A 200 with `sent: false` would be the failure.
-		expect(asked.status(), 'a failed send is not answered 200').toBeGreaterThanOrEqual(400)
+		expect(
+			asked.status(),
+			'a failed send is not answered 200',
+		).toBeGreaterThanOrEqual(400)
 		expect(body.suspended ?? false, 'the term was NOT suspended').toBe(false)
 
 		const after = await readTerms(request, caseId)
@@ -361,7 +446,9 @@ test.describe('The four clocks on a case', () => {
 		expect(statutory.status, 'the clock is still running').not.toBe('paused')
 	})
 
-	test('the age of the open workload is answered per status, over open cases', async ({ request }) => {
+	test('the age of the open workload is answered per status, over open cases', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseTypeId, phaseId } = await seedDeclaringType(request, token)
 		await seedCase(request, token, {
@@ -370,22 +457,32 @@ test.describe('The four clocks on a case', () => {
 			status: phaseId,
 		})
 
-		const response = await request.get('/index.php/apps/dossiq/api/termijn/reports/open-workload-age')
+		const response = await request.get(
+			'/index.php/apps/dossiq/api/termijn/reports/open-workload-age',
+		)
 		expect(response.ok(), 'the workload report answers').toBeTruthy()
 
 		const body = await response.json()
 		expect(body.generatedAt, 'the report says when it was read').toBeTruthy()
 		expect(Array.isArray(body.perStatus), 'it answers per status').toBe(true)
-		expect(body.openCases, 'it counted the open cases it read').toBeGreaterThan(0)
+		expect(body.openCases, 'it counted the open cases it read').toBeGreaterThan(
+			0,
+		)
 
 		for (const row of body.perStatus) {
 			expect(row.status, 'every row names its status').toBeTruthy()
 			expect(row.cases, 'every row counts its cases').toBeGreaterThan(0)
-			expect(row.oldestDays, 'every row carries an age').toBeGreaterThanOrEqual(0)
+			expect(
+				row.oldestDays,
+				'every row carries an age',
+			).toBeGreaterThanOrEqual(0)
 		}
 	})
 
-	test('a case whose type declares no term says so rather than showing a blank panel', async ({ request, page }) => {
+	test('a case whose type declares no term says so rather than showing a blank panel', async ({
+		request,
+		page,
+	}) => {
 		const token = await getRequestToken(request)
 		const suffix = Math.floor(Math.random() * 1e6)
 		const bare = await createObject(request, token, 'caseType', {
@@ -395,7 +492,10 @@ test.describe('The four clocks on a case', () => {
 			isDraft: false,
 		})
 		const caseId = objectId(
-			await seedCase(request, token, { title: `${RUN_PREFIX} No clock`, caseType: objectId(bare) }),
+			await seedCase(request, token, {
+				title: `${RUN_PREFIX} No clock`,
+				caseType: objectId(bare),
+			}),
 		)
 
 		const stored = await showObject(request, 'case', caseId)

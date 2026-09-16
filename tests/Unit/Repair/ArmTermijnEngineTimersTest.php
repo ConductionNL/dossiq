@@ -46,6 +46,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ArmTermijnEngineTimersTest extends TestCase {
 	use MakesCaseDateNormaliser;

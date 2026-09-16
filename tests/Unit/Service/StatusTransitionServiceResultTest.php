@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * A final transition writes a result, or it does not happen.
  *
  * @covers \OCA\Dossiq\Service\StatusTransitionService
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 class StatusTransitionServiceResultTest extends TestCase {
 	use MakesStatusDeclarations;

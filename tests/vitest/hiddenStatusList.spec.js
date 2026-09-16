@@ -122,7 +122,7 @@ describe('the counts agree with the lists', () => {
 		)
 		expect(kpiSource).toContain('filters: self::OPEN_WORK')
 		expect(kpiSource).toContain(
-			'filters: (self::OPEN_WORK + [\'deadline\' => [\'lt\' => $today]])',
+			"filters: (self::OPEN_WORK + ['deadline' => ['lt' => $today]])",
 		)
 	})
 
@@ -146,9 +146,9 @@ describe('the counts agree with the lists', () => {
 	it.each(['cases-by-status', 'cases-by-type'])(
 		'the %s chart counts open work only',
 		(id) => {
-			expect(
-				widget('Dashboard', id).content.dataSource.filter[FLAG],
-			).toBe(false)
+			expect(widget('Dashboard', id).content.dataSource.filter[FLAG]).toBe(
+				false,
+			)
 		},
 	)
 

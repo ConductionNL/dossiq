@@ -154,7 +154,9 @@ test.describe('The case archives through openregister', () => {
 	})
 
 	test('the archival settings carry the review reminder frequency', async () => {
-		const response = await api.get(SETTINGS, { headers: { 'OCS-APIRequest': 'true' } })
+		const response = await api.get(SETTINGS, {
+			headers: { 'OCS-APIRequest': 'true' },
+		})
 		expect(response.status()).toBe(200)
 
 		const body = await response.json()

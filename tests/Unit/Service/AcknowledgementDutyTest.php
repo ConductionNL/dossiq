@@ -108,6 +108,8 @@ class AcknowledgementCaseStore {
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class AcknowledgementDutyTest extends TestCase {
 

@@ -25,7 +25,8 @@ export function templateOptions(data) {
 			id: String(item.id),
 			name: String(item.name || item.id),
 			body: String(item.body || ''),
-			presets: item.presets && typeof item.presets === 'object' ? item.presets : {},
+			presets:
+				item.presets && typeof item.presets === 'object' ? item.presets : {},
 		}))
 }
 

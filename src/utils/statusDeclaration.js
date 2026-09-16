@@ -105,7 +105,9 @@ export function derivationReasons(derivation) {
 	}
 
 	const unmet = Array.isArray(derivation.unmet)
-		? derivation.unmet.map((reason) => String(reason ?? '').trim()).filter(Boolean)
+		? derivation.unmet
+				.map((reason) => String(reason ?? '').trim())
+				.filter(Boolean)
 		: []
 
 	if (unmet.length === 0) {
@@ -133,18 +135,22 @@ export function withheldTransitions(withheld) {
 		return []
 	}
 
-	return withheld
-		.map((entry) => ({
-			id: String(entry?.id ?? ''),
-			label: String(entry?.label ?? '').trim(),
-			reasons: Array.isArray(entry?.reasons)
-				? entry.reasons.map((reason) => String(reason ?? '').trim()).filter(Boolean)
-				: [],
-		}))
-		// An entry with no reason is worse than no entry: it says a move is
-		// unavailable and refuses to say why, which is the failure this whole
-		// change exists to remove.
-		.filter((entry) => entry.reasons.length > 0)
+	return (
+		withheld
+			.map((entry) => ({
+				id: String(entry?.id ?? ''),
+				label: String(entry?.label ?? '').trim(),
+				reasons: Array.isArray(entry?.reasons)
+					? entry.reasons
+							.map((reason) => String(reason ?? '').trim())
+							.filter(Boolean)
+					: [],
+			}))
+			// An entry with no reason is worse than no entry: it says a move is
+			// unavailable and refuses to say why, which is the failure this whole
+			// change exists to remove.
+			.filter((entry) => entry.reasons.length > 0)
+	)
 }
 
 /**

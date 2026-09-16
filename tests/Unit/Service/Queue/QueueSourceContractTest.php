@@ -128,6 +128,10 @@ class FakeQueueSource implements QueueSource {
  * @covers \OCA\Dossiq\Service\Queue\PersonalQueueService
  * @covers \OCA\Dossiq\Service\Queue\QueueItem
  * @covers \OCA\Dossiq\Service\Queue\QueueOrdering
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Queue\QueueSourceCatalogue
+ * @uses \OCA\Dossiq\Service\Queue\QueueViewPreferences
+ * @uses \OCA\Dossiq\Service\WorkQueueService
  */
 class QueueSourceContractTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -53,10 +53,7 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 
 /** Every sidebar tab declared on any page of the manifest. */
@@ -111,7 +108,13 @@ describe('The access panel reads OpenRegister and computes nothing', () => {
 					{
 						schema: CASE_SCHEMA,
 						actions: ['read', 'update'],
-						provenance: { read: { granted: true, source: 'role', role: 'behandelaar' } },
+						provenance: {
+							read: {
+								granted: true,
+								source: 'role',
+								role: 'behandelaar',
+							},
+						},
 					},
 				],
 			},
@@ -125,7 +128,10 @@ describe('The access panel reads OpenRegister and computes nothing', () => {
 
 	it('answers null when no scope row names the case schema', async () => {
 		axios.get.mockResolvedValueOnce({
-			data: { user: 'alice', scopes: [{ schema: 'caseType', actions: ['read'] }] },
+			data: {
+				user: 'alice',
+				scopes: [{ schema: 'caseType', actions: ['read'] }],
+			},
 		})
 
 		expect(await fetchCallerScope()).toBeNull()
@@ -137,19 +143,33 @@ describe('The access panel reads OpenRegister and computes nothing', () => {
 				{ principal: 'gemeente-noord', actions: ['read'], source: 'group' },
 				{ principal: 'partner-zuid', actions: ['read'] },
 			],
-			roleGrants: { roles: [{ role: 'behandelaar', actions: ['read', 'update'] }] },
+			roleGrants: {
+				roles: [{ role: 'behandelaar', actions: ['read', 'update'] }],
+			},
 			callerScope: null,
 			denyRules: null,
 		})
 
 		expect(rows).toContainEqual(
-			expect.objectContaining({ holder: 'gemeente-noord', right: 'read', source: 'group' }),
+			expect.objectContaining({
+				holder: 'gemeente-noord',
+				right: 'read',
+				source: 'group',
+			}),
 		)
 		expect(rows).toContainEqual(
-			expect.objectContaining({ holder: 'partner-zuid', right: 'read', source: 'share' }),
+			expect.objectContaining({
+				holder: 'partner-zuid',
+				right: 'read',
+				source: 'share',
+			}),
 		)
 		expect(rows).toContainEqual(
-			expect.objectContaining({ holder: 'behandelaar', right: 'update', source: 'role' }),
+			expect.objectContaining({
+				holder: 'behandelaar',
+				right: 'update',
+				source: 'role',
+			}),
 		)
 	})
 
@@ -160,14 +180,25 @@ describe('The access panel reads OpenRegister and computes nothing', () => {
 			callerScope: null,
 			denyRules: {
 				enforcing: false,
-				rules: [{ level: 'schema', subject: 'case', action: 'read', principal: 'waarnemers' }],
+				rules: [
+					{
+						level: 'schema',
+						subject: 'case',
+						action: 'read',
+						principal: 'waarnemers',
+					},
+				],
 			},
 		})
 
 		// Two rows on one holder and one right: the grant, and the rule that
 		// takes it away. One row would mean this panel decided which of the two
 		// wins, which is the second evaluator D-1 forbids.
-		expect(rows.filter((row) => row.holder === 'waarnemers' && row.right === 'read')).toHaveLength(2)
+		expect(
+			rows.filter(
+				(row) => row.holder === 'waarnemers' && row.right === 'read',
+			),
+		).toHaveLength(2)
 		expect(rows.map((row) => row.source)).toContain('role')
 		expect(rows.map((row) => row.source)).toContain('staged-deny')
 	})
@@ -179,7 +210,14 @@ describe('The access panel reads OpenRegister and computes nothing', () => {
 			callerScope: null,
 			denyRules: {
 				enforcing: true,
-				rules: [{ level: 'schema', subject: 'case', action: 'read', principal: 'waarnemers' }],
+				rules: [
+					{
+						level: 'schema',
+						subject: 'case',
+						action: 'read',
+						principal: 'waarnemers',
+					},
+				],
 			},
 		})
 
@@ -229,13 +267,19 @@ describe("The object's own permission set, and the rule behind each row", () => 
 		refusal.response = { status: 403 }
 		axios.get.mockRejectedValueOnce(refusal)
 
-		expect(await fetchObjectPermissions('case-1')).toEqual({ status: 403, set: null })
+		expect(await fetchObjectPermissions('case-1')).toEqual({
+			status: 403,
+			set: null,
+		})
 	})
 
 	it('reports 0 when nothing answered at all, which is not a refusal', async () => {
 		axios.get.mockRejectedValueOnce(new Error('openregister is down'))
 
-		expect(await fetchObjectPermissions('case-1')).toEqual({ status: 0, set: null })
+		expect(await fetchObjectPermissions('case-1')).toEqual({
+			status: 0,
+			set: null,
+		})
 	})
 
 	it('answers null for a body with no holders list, never an empty set', async () => {
@@ -284,7 +328,14 @@ describe("The object's own permission set, and the rule behind each row", () => 
 				{
 					principal: 'archivaris',
 					verbs: ['obliterate'],
-					rules: [{ principal: 'archivaris', action: 'obliterate', level: 'object', declared: false }],
+					rules: [
+						{
+							principal: 'archivaris',
+							action: 'obliterate',
+							level: 'object',
+							declared: false,
+						},
+					],
 				},
 			],
 		})
@@ -299,16 +350,34 @@ describe("The object's own permission set, and the rule behind each row", () => 
 				{
 					principal: 'waarnemers',
 					verbs: ['read'],
-					rules: [{ principal: 'waarnemers', action: 'read', level: 'register', declared: true }],
+					rules: [
+						{
+							principal: 'waarnemers',
+							action: 'read',
+							level: 'register',
+							declared: true,
+						},
+					],
 				},
 			],
-			denied: [{ principal: 'waarnemers', action: 'read', level: 'object', declared: true }],
+			denied: [
+				{
+					principal: 'waarnemers',
+					action: 'read',
+					level: 'object',
+					declared: true,
+				},
+			],
 		})
 
 		// Two rows on one holder and one right, exactly as the five-read path
 		// keeps them. One row would mean this function picked a winner, which
 		// is the second evaluator D-1 forbids.
-		expect(rows.filter((row) => row.holder === 'waarnemers' && row.right === 'read')).toHaveLength(2)
+		expect(
+			rows.filter(
+				(row) => row.holder === 'waarnemers' && row.right === 'read',
+			),
+		).toHaveLength(2)
 		expect(rows.map((row) => row.source)).toContain('deny')
 	})
 
@@ -331,14 +400,23 @@ describe("The object's own permission set, and the rule behind each row", () => 
 					{
 						principal: 'behandelaars',
 						verbs: ['read'],
-						rules: [{ principal: 'behandelaars', action: 'read', level: 'schema' }],
+						rules: [
+							{
+								principal: 'behandelaars',
+								action: 'read',
+								level: 'schema',
+							},
+						],
 					},
 				],
 			},
 			objectGrants: [{ principal: 'behandelaars', actions: ['read'] }],
 			roleGrants: { roles: [{ role: 'behandelaar', actions: ['read'] }] },
 			callerScope: null,
-			denyRules: { enforcing: true, rules: [{ principal: 'behandelaars', action: 'read' }] },
+			denyRules: {
+				enforcing: true,
+				rules: [{ principal: 'behandelaars', action: 'read' }],
+			},
 		})
 
 		expect(rows).toHaveLength(1)
@@ -352,19 +430,27 @@ describe("The object's own permission set, and the rule behind each row", () => 
 			roleGrants: null,
 			callerScope: {
 				user: 'alice',
-				provenance: { read: { granted: true, source: 'role', role: 'behandelaar' } },
+				provenance: {
+					read: { granted: true, source: 'role', role: 'behandelaar' },
+				},
 			},
 			denyRules: null,
 		})
 
-		expect(rows).toContainEqual(expect.objectContaining({ holder: 'alice', right: 'read' }))
+		expect(rows).toContainEqual(
+			expect.objectContaining({ holder: 'alice', right: 'read' }),
+		)
 	})
 })
 
 describe('An end and an area are rendered, never evaluated', () => {
 	it('reads the end off a verb grant, which carries the entry itself', () => {
-		expect(constraintsOf({ group: 'waarnemers', until: '2026-10-01T17:00:00+02:00' }, 'waarnemers'))
-			.toEqual({ until: '2026-10-01T17:00:00+02:00', scopedTo: null })
+		expect(
+			constraintsOf(
+				{ group: 'waarnemers', until: '2026-10-01T17:00:00+02:00' },
+				'waarnemers',
+			),
+		).toEqual({ until: '2026-10-01T17:00:00+02:00', scopedTo: null })
 	})
 
 	it('picks the holder out of a role grant, which carries the whole list', () => {
@@ -376,13 +462,19 @@ describe('An end and an area are rendered, never evaluated', () => {
 			{ group: 'waarnemers', until: '2026-10-01T17:00:00+02:00' },
 		]
 
-		expect(constraintsOf(rule, 'waarnemers').until).toBe('2026-10-01T17:00:00+02:00')
+		expect(constraintsOf(rule, 'waarnemers').until).toBe(
+			'2026-10-01T17:00:00+02:00',
+		)
 		expect(constraintsOf(rule, 'behandelaars').until).toBe('')
 	})
 
 	it('reads the area a grant is confined to', () => {
-		expect(constraintsOf({ group: 'beheerders', scopedTo: { registers: ['zaken'] } }, 'beheerders'))
-			.toEqual({ until: '', scopedTo: { registers: ['zaken'] } })
+		expect(
+			constraintsOf(
+				{ group: 'beheerders', scopedTo: { registers: ['zaken'] } },
+				'beheerders',
+			),
+		).toEqual({ until: '', scopedTo: { registers: ['zaken'] } })
 	})
 
 	it('renders an end that has already passed, and drops no row for it', () => {
@@ -400,7 +492,10 @@ describe('An end and an area are rendered, never evaluated', () => {
 							principal: 'waarnemers',
 							action: 'read',
 							level: 'object',
-							rule: { group: 'waarnemers', until: '1999-01-01T00:00:00+00:00' },
+							rule: {
+								group: 'waarnemers',
+								until: '1999-01-01T00:00:00+00:00',
+							},
 						},
 					],
 				},
@@ -412,7 +507,10 @@ describe('An end and an area are rendered, never evaluated', () => {
 	})
 
 	it('carries a bare string entry without inventing a constraint for it', () => {
-		expect(constraintsOf('behandelaars', 'behandelaars')).toEqual({ until: '', scopedTo: null })
+		expect(constraintsOf('behandelaars', 'behandelaars')).toEqual({
+			until: '',
+			scopedTo: null,
+		})
 	})
 })
 
@@ -439,7 +537,13 @@ describe('The panel answers who held a right on a past date', () => {
 					{
 						principal: 'behandelaars',
 						verbs: ['read'],
-						rules: [{ principal: 'behandelaars', action: 'read', level: 'object' }],
+						rules: [
+							{
+								principal: 'behandelaars',
+								action: 'read',
+								level: 'object',
+							},
+						],
 					},
 				],
 			},
@@ -470,7 +574,10 @@ describe('The access tab is wired, not orphaned', () => {
 	it('is declared as a sidebar tab on the case page', () => {
 		const tab = sidebarTabs().find((entry) => entry.id === 'access')
 
-		expect(tab, 'A case with no access tab answers nobody about who could open it.').toBeTruthy()
+		expect(
+			tab,
+			'A case with no access tab answers nobody about who could open it.',
+		).toBeTruthy()
 		expect(tab.component).toBe('CaseAccessTab')
 	})
 

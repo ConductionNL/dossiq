@@ -25,7 +25,12 @@
 		@closing="$emit('close')">
 		<div class="case-handover-dialog">
 			<p class="case-handover-dialog__explainer">
-				{{ t('dossiq', 'The case keeps its number, its history and its term. Only the team changes.') }}
+				{{
+					t(
+						'dossiq',
+						'The case keeps its number, its history and its term. Only the team changes.',
+					)
+				}}
 			</p>
 
 			<NcTextField
@@ -43,7 +48,12 @@
 				:modelValue="doorzending"
 				data-testid="case-handover-doorzending"
 				@update:modelValue="doorzending = $event">
-				{{ t('dossiq', 'Tell the applicant, this is a doorzending (Awb 2:3)') }}
+				{{
+					t(
+						'dossiq',
+						'Tell the applicant, this is a doorzending (Awb 2:3)',
+					)
+				}}
 			</NcCheckboxRadioSwitch>
 
 			<p
@@ -170,8 +180,8 @@ export default {
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
 			} catch (error) {
-				this.error
-					= error?.response?.data?.message
+				this.error =
+					error?.response?.data?.message
 					|| t('dossiq', 'The case was not handed on.')
 			} finally {
 				this.busy = false

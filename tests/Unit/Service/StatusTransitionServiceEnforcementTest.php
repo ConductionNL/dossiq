@@ -80,6 +80,8 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * RISKY without this line. `@uses`, not `@covers`: it is not the subject.
  *
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  *
  * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
  */

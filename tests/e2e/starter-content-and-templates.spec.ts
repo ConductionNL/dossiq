@@ -60,7 +60,12 @@ const APP_BASE = '/index.php/apps/dossiq'
  * step picker. They go FIRST because a case type references a step, and a
  * child removed after its parent reports rows it cannot find.
  */
-const EXTRA_SCHEMAS = ['contentTemplate', 'reusableStep', 'shippedOrigin', 'starterSetAdoption']
+const EXTRA_SCHEMAS = [
+	'contentTemplate',
+	'reusableStep',
+	'shippedOrigin',
+	'starterSetAdoption',
+]
 
 /**
  * The starter API, which every admin assertion below goes through.
@@ -80,7 +85,9 @@ test.afterAll(async ({ request }) => {
 })
 
 test.describe('the shipped configuration', () => {
-	test('reads shipped, changed here or ours per object, and names the set', async ({ request }) => {
+	test('reads shipped, changed here or ours per object, and names the set', async ({
+		request,
+	}) => {
 		const res = await starterGet(request, '/shipped/caseType')
 
 		// 503 is a legitimate answer on an instance where OpenRegister is not
@@ -103,7 +110,9 @@ test.describe('the shipped configuration', () => {
 		}
 	})
 
-	test('a shipped object an administrator edited reads as changed here', async ({ request }) => {
+	test('a shipped object an administrator edited reads as changed here', async ({
+		request,
+	}) => {
 		// 🔑 THIS TEST OWNS BOTH ROWS AND EDITS NEITHER OF THE INSTANCE'S OWN.
 		// The obvious version of this test picks a genuinely seeded case type,
 		// edits it and asserts it now reads "changed here". That leaves a real
@@ -134,7 +143,10 @@ test.describe('the shipped configuration', () => {
 			fingerprint: 'e2e-fingerprint-that-cannot-match',
 			seededAt: new Date().toISOString(),
 		})
-		expect(objectId(ledger), 'the provenance row did not survive the write').toBeTruthy()
+		expect(
+			objectId(ledger),
+			'the provenance row did not survive the write',
+		).toBeTruthy()
 
 		const res = await starterGet(request, '/shipped/caseType')
 		expect([200, 503]).toContain(res.status())
@@ -143,9 +155,14 @@ test.describe('the shipped configuration', () => {
 			return
 		}
 
-		const row = (await res.json()).items.find((item: any) => item.targetObject === caseTypeId)
+		const row = (await res.json()).items.find(
+			(item: any) => item.targetObject === caseTypeId,
+		)
 
-		expect(row, 'the seeded fixture did not appear on the shipped screen').toBeTruthy()
+		expect(
+			row,
+			'the seeded fixture did not appear on the shipped screen',
+		).toBeTruthy()
 		expect(row.state).toBe('changed')
 		expect(row.set).toBe('bezwaar-beroep')
 
@@ -159,10 +176,14 @@ test.describe('the shipped configuration', () => {
 		})
 		const again = await (await starterGet(request, '/shipped/caseType')).json()
 
-		expect(again.items.some((item: any) => item.targetObject === objectId(local))).toBeFalsy()
+		expect(
+			again.items.some((item: any) => item.targetObject === objectId(local)),
+		).toBeFalsy()
 	})
 
-	test('the role set is offered rather than already granted', async ({ request }) => {
+	test('the role set is offered rather than already granted', async ({
+		request,
+	}) => {
 		const res = await starterGet(request, '/roles')
 
 		// The literal path must win over `/shipped/{schema}`; a 404 here is the
@@ -185,7 +206,9 @@ test.describe('the shipped configuration', () => {
 })
 
 test.describe('a case type is retired and its cases carry on', () => {
-	test('a retired case type takes no new case and its cases stay open', async ({ request }) => {
+	test('a retired case type takes no new case and its cases stay open', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const caseType = await ensureCaseType(request, token)
 		const running = await seedCase(request, token, {
@@ -200,7 +223,10 @@ test.describe('a case type is retired and its cases carry on', () => {
 
 		expect([200, 409, 404, 503]).toContain(retire.status())
 		if (retire.status() !== 200) {
-			test.skip(true, `the case type could not be retired: ${await retire.text()}`)
+			test.skip(
+				true,
+				`the case type could not be retired: ${await retire.text()}`,
+			)
 			return
 		}
 
@@ -209,7 +235,9 @@ test.describe('a case type is retired and its cases carry on', () => {
 		// The running case is the whole reason retirement exists rather than a
 		// delete, so it is read back rather than assumed.
 		const stillThere = await listObjects(request, 'case', { _limit: '200' })
-		expect(stillThere.some((row: any) => objectId(row) === objectId(running))).toBeTruthy()
+		expect(
+			stillThere.some((row: any) => objectId(row) === objectId(running)),
+		).toBeTruthy()
 
 		const restore = await request.post(
 			`${APP_BASE}/api/starter/case-types/${caseType.id}/restore`,
@@ -221,7 +249,9 @@ test.describe('a case type is retired and its cases carry on', () => {
 })
 
 test.describe('a case starts from a template', () => {
-	test('a template presets the new case and the case names the template', async ({ request }) => {
+	test('a template presets the new case and the case names the template', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const caseType = await ensureCaseType(request, token)
 
@@ -238,7 +268,10 @@ test.describe('a case starts from a template', () => {
 
 		// The property has to have survived the import. A dropped `isTemplate`
 		// reads back as undefined here and as a template in every unit test.
-		expect(template.isTemplate, 'isTemplate did not survive the write').toBeTruthy()
+		expect(
+			template.isTemplate,
+			'isTemplate did not survive the write',
+		).toBeTruthy()
 
 		const offered = await request.get(`${APP_BASE}/api/case-templates`, {
 			params: { caseType: caseType.id },
@@ -248,15 +281,19 @@ test.describe('a case starts from a template', () => {
 			test.skip(true, 'OpenRegister is not configured on this instance')
 			return
 		}
-		expect((await offered.json()).items.some(
-			(row: any) => row.id === objectId(template),
-		)).toBeTruthy()
+		expect(
+			(await offered.json()).items.some(
+				(row: any) => row.id === objectId(template),
+			),
+		).toBeTruthy()
 
 		const started = await request.post(
 			`${APP_BASE}/api/case-templates/${objectId(template)}/start`,
 			{
 				headers: { requesttoken: token },
-				data: { overrides: { title: `${RUN_PREFIX} Sloopmelding Kerkstraat 4` } },
+				data: {
+					overrides: { title: `${RUN_PREFIX} Sloopmelding Kerkstraat 4` },
+				},
 			},
 		)
 
@@ -267,7 +304,10 @@ test.describe('a case starts from a template', () => {
 		expect(created.isTemplate).toBeFalsy()
 	})
 
-	test('a template is not work: it stays out of the case list', async ({ page, request }) => {
+	test('a template is not work: it stays out of the case list', async ({
+		page,
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const caseType = await ensureCaseType(request, token)
 		const templateName = `${RUN_PREFIX} Template that must not appear`
@@ -288,13 +328,17 @@ test.describe('a case starts from a template', () => {
 
 		// The control: the list has to be rendering SOMETHING, or an empty page
 		// would pass this assertion while proving nothing.
-		await expect(page.getByTestId('cn-index-page').or(page.locator('main'))).toBeVisible()
+		await expect(
+			page.getByTestId('cn-index-page').or(page.locator('main')),
+		).toBeVisible()
 		await expect(page.getByText(templateName, { exact: true })).toHaveCount(0)
 	})
 })
 
 test.describe('a reusable step is changed once for two case types', () => {
-	test('both case types read the new lead time, and the step names both', async ({ request }) => {
+	test('both case types read the new lead time, and the step names both', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 
 		const step = await createObject(request, token, 'reusableStep', {
@@ -316,9 +360,14 @@ test.describe('a reusable step is changed once for two case types', () => {
 			reusableSteps: [stepId],
 		})
 
-		expect(first.reusableSteps, 'reusableSteps did not survive the write').toContain(stepId)
+		expect(
+			first.reusableSteps,
+			'reusableSteps did not survive the write',
+		).toContain(stepId)
 
-		await updateObject(request, token, 'reusableStep', stepId, { leadTimeDays: 10 })
+		await updateObject(request, token, 'reusableStep', stepId, {
+			leadTimeDays: 10,
+		})
 
 		const usedBy = await starterGet(request, `/steps/${stepId}/used-by`)
 		expect(usedBy.status()).toBe(200)
@@ -327,16 +376,21 @@ test.describe('a reusable step is changed once for two case types', () => {
 		expect(titles).toContain(second.title)
 
 		// A step in use is not deleted, and the refusal names a case type.
-		const refused = await request.delete(`${APP_BASE}/api/starter/steps/${stepId}`, {
-			headers: { requesttoken: token },
-		})
+		const refused = await request.delete(
+			`${APP_BASE}/api/starter/steps/${stepId}`,
+			{
+				headers: { requesttoken: token },
+			},
+		)
 		expect(refused.status()).toBe(409)
 		expect((await refused.json()).usedBy).toBeTruthy()
 	})
 })
 
 test.describe('a task template is offered where a task is created', () => {
-	test('the library answers for the kind asked, scoped to the case type', async ({ request }) => {
+	test('the library answers for the kind asked, scoped to the case type', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const caseType = await ensureCaseType(request, token)
 
@@ -344,7 +398,10 @@ test.describe('a task template is offered where a task is created', () => {
 			name: `${RUN_PREFIX} Vraag advies aan juridische zaken`,
 			kind: 'task',
 			caseTypes: [caseType.id],
-			presets: { title: 'Vraag advies aan juridische zaken', leadTimeDays: 10 },
+			presets: {
+				title: 'Vraag advies aan juridische zaken',
+				leadTimeDays: 10,
+			},
 		})
 
 		const offered = await request.get(`${APP_BASE}/api/content-templates/task`, {
@@ -357,17 +414,24 @@ test.describe('a task template is offered where a task is created', () => {
 
 		// Scoped means scoped: the same template is not offered on a case type
 		// it does not name.
-		const elsewhere = await request.get(`${APP_BASE}/api/content-templates/task`, {
-			params: { caseType: 'a-case-type-this-template-does-not-name' },
-		})
+		const elsewhere = await request.get(
+			`${APP_BASE}/api/content-templates/task`,
+			{
+				params: { caseType: 'a-case-type-this-template-does-not-name' },
+			},
+		)
 		expect(elsewhere.status()).toBe(200)
-		expect((await elsewhere.json()).items.map((row: any) => row.name))
-			.not.toContain(`${RUN_PREFIX} Vraag advies aan juridische zaken`)
+		expect(
+			(await elsewhere.json()).items.map((row: any) => row.name),
+		).not.toContain(`${RUN_PREFIX} Vraag advies aan juridische zaken`)
 	})
 })
 
 test.describe('a StUF endpoint is probed', () => {
-	test('an untested connection reads not tested, and a probe names the endpoint', async ({ page, request }) => {
+	test('an untested connection reads not tested, and a probe names the endpoint', async ({
+		page,
+		request,
+	}) => {
 		await page.goto('/index.php/settings/admin/dossiq', PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -380,7 +444,9 @@ test.describe('a StUF endpoint is probed', () => {
 			// No endpoint is configured, so there is nothing to probe. The
 			// column still has to exist, or the button shipped on a screen
 			// nobody can reach.
-			await expect(table.getByRole('columnheader', { name: 'Connection test' })).toBeVisible()
+			await expect(
+				table.getByRole('columnheader', { name: 'Connection test' }),
+			).toBeVisible()
 			return
 		}
 
@@ -388,14 +454,23 @@ test.describe('a StUF endpoint is probed', () => {
 		await expect(page.getByText('Not tested').first()).toBeVisible()
 
 		const token = await getRequestToken(request)
-		const id = (await buttons.first().getAttribute('data-testid'))!.replace('stuf-test-', '')
-		const probed = await request.post(`${APP_BASE}/api/connections/stuf/${id}/test`, {
-			headers: { requesttoken: token },
-		})
+		const id = (await buttons.first().getAttribute('data-testid'))!.replace(
+			'stuf-test-',
+			'',
+		)
+		const probed = await request.post(
+			`${APP_BASE}/api/connections/stuf/${id}/test`,
+			{
+				headers: { requesttoken: token },
+			},
+		)
 
 		expect(probed.status()).toBe(200)
 		const result = await probed.json()
 		expect(['reachable', 'failed']).toContain(result.state)
-		expect(result.measuredAt, 'a probe that ran carries the moment it ran').toBeTruthy()
+		expect(
+			result.measuredAt,
+			'a probe that ran carries the moment it ran',
+		).toBeTruthy()
 	})
 })

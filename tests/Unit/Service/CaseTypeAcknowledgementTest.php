@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
  * The declaration, and the cases it applies to.
  *
  * @covers \OCA\Dossiq\Service\CaseTypeAcknowledgement
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  */
 class CaseTypeAcknowledgementTest extends TestCase {
 

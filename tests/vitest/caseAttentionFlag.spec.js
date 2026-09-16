@@ -51,7 +51,8 @@ const stubs = {
 	NcButton: { template: '<button v-bind="$attrs"><slot /></button>' },
 	NcTextField: {
 		props: ['value'],
-		template: '<input v-bind="$attrs" :value="value" @input="$emit(\'update:value\', $event.target.value)">',
+		template:
+			'<input v-bind="$attrs" :value="value" @input="$emit(\'update:value\', $event.target.value)">',
 	},
 }
 
@@ -80,11 +81,20 @@ async function mountStrip(flag, objectData = {}) {
 
 describe('the strip is declared on the case page', () => {
 	it('sits under the unread strip, above the panels', () => {
-		const unread = caseDetail.config.layout.find((l) => l.widgetId === 'case-unread')
-		const attention = caseDetail.config.layout.find((l) => l.widgetId === 'case-attention')
-		const panels = caseDetail.config.layout.find((l) => l.widgetId === 'case-panels')
+		const unread = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-unread',
+		)
+		const attention = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-attention',
+		)
+		const panels = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-panels',
+		)
 
-		expect(attention, 'the attention strip is missing from the layout').toBeTruthy()
+		expect(
+			attention,
+			'the attention strip is missing from the layout',
+		).toBeTruthy()
 		expect(unread.gridY).toBeLessThan(attention.gridY)
 		expect(attention.gridY).toBeLessThan(panels.gridY)
 		expect(attention.gridWidth).toBe(12)
@@ -94,7 +104,9 @@ describe('the strip is declared on the case page', () => {
 		// A layout grid item falls through to CnDetailWidgetHost, which
 		// resolves a renderer from `cnRegistry[widget.type]` and renders
 		// NOTHING, silently, when no key answers.
-		const widget = caseDetail.config.widgets.find((w) => w.id === 'case-attention')
+		const widget = caseDetail.config.widgets.find(
+			(w) => w.id === 'case-attention',
+		)
 		expect(widget).toBeTruthy()
 		expect(widget.type).toBe('case-attention')
 		expect(registrySource).toContain("'case-attention': {")
@@ -113,15 +125,22 @@ describe('the strip is declared on the case page', () => {
 
 describe('the work list finds the flagged ones', () => {
 	it('filters on the stored flag and not on the read state', () => {
-		const chip = cases.config.quickFilters.find((q) => q.label === 'Needs attention')
+		const chip = cases.config.quickFilters.find(
+			(q) => q.label === 'Needs attention',
+		)
 
 		expect(chip, 'the Needs attention chip is missing').toBeTruthy()
 		expect(chip.filter.needsAttention).toBe(true)
-		expect(chip.filter._unread, 'the flag is not the per-user read state').toBeUndefined()
+		expect(
+			chip.filter._unread,
+			'the flag is not the per-user read state',
+		).toBeUndefined()
 	})
 
 	it('narrows the risk chip to the levels that are worth finding', () => {
-		const chip = cases.config.quickFilters.find((q) => q.label === 'Assessed high risk')
+		const chip = cases.config.quickFilters.find(
+			(q) => q.label === 'Assessed high risk',
+		)
 
 		expect(chip).toBeTruthy()
 		expect(chip.filter.riskLevel).toEqual(['high', 'critical'])
@@ -148,26 +167,45 @@ describe('raising and clearing go through dossiq, never through an object write'
 	})
 
 	it('raises with the reason that was written', async () => {
-		const wrapper = await mountStrip({ raised: false, flag: {}, history: [], raisings: 0, clearings: 0 })
+		const wrapper = await mountStrip({
+			raised: false,
+			flag: {},
+			history: [],
+			raisings: 0,
+			clearings: 0,
+		})
 
 		axios.post.mockResolvedValue({
 			data: {
 				raised: true,
 				flag: { reason: 'The applicant is in hospital', raisedBy: 'ahmed' },
-				history: [{ act: 'raised', reason: 'The applicant is in hospital', actor: 'ahmed', moment: '2026-03-01T09:00:00+00:00' }],
+				history: [
+					{
+						act: 'raised',
+						reason: 'The applicant is in hospital',
+						actor: 'ahmed',
+						moment: '2026-03-01T09:00:00+00:00',
+					},
+				],
 				raisings: 1,
 				clearings: 0,
 			},
 		})
 
-		await wrapper.find('[data-testid="case-attention-reason"]').setValue('The applicant is in hospital')
+		await wrapper
+			.find('[data-testid="case-attention-reason"]')
+			.setValue('The applicant is in hospital')
 		await wrapper.find('[data-testid="case-attention-raise"]').trigger('click')
 		await Promise.resolve()
 		await wrapper.vm.$nextTick()
 
 		expect(axios.post).toHaveBeenCalledTimes(1)
-		expect(axios.post.mock.calls[0][0]).toBe('/index.php/apps/dossiq/api/case/case-7/attention/raise')
-		expect(axios.post.mock.calls[0][1]).toEqual({ reason: 'The applicant is in hospital' })
+		expect(axios.post.mock.calls[0][0]).toBe(
+			'/index.php/apps/dossiq/api/case/case-7/attention/raise',
+		)
+		expect(axios.post.mock.calls[0][1]).toEqual({
+			reason: 'The applicant is in hospital',
+		})
 		expect(axios.put).not.toHaveBeenCalled()
 		expect(axios.patch).not.toHaveBeenCalled()
 	})
@@ -176,27 +214,56 @@ describe('raising and clearing go through dossiq, never through an object write'
 		const wrapper = await mountStrip({
 			raised: true,
 			flag: { reason: 'The applicant is in hospital', raisedBy: 'ahmed' },
-			history: [{ act: 'raised', reason: 'The applicant is in hospital', actor: 'ahmed', moment: '2026-03-01T09:00:00+00:00' }],
+			history: [
+				{
+					act: 'raised',
+					reason: 'The applicant is in hospital',
+					actor: 'ahmed',
+					moment: '2026-03-01T09:00:00+00:00',
+				},
+			],
 			raisings: 1,
 			clearings: 0,
 		})
 
-		expect(wrapper.find('[data-testid="case-attention-raised"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-attention-raised"]').exists()).toBe(
+			true,
+		)
 		expect(wrapper.text()).toContain('The applicant is in hospital')
 
-		axios.post.mockResolvedValue({ data: { raised: false, flag: {}, history: [], raisings: 1, clearings: 1 } })
+		axios.post.mockResolvedValue({
+			data: {
+				raised: false,
+				flag: {},
+				history: [],
+				raisings: 1,
+				clearings: 1,
+			},
+		})
 
-		await wrapper.find('[data-testid="case-attention-reason"]').setValue('They are home and the file is complete')
+		await wrapper
+			.find('[data-testid="case-attention-reason"]')
+			.setValue('They are home and the file is complete')
 		await wrapper.find('[data-testid="case-attention-clear"]').trigger('click')
 		await Promise.resolve()
 		await wrapper.vm.$nextTick()
 
-		expect(axios.post.mock.calls[0][0]).toBe('/index.php/apps/dossiq/api/case/case-7/attention/clear')
-		expect(axios.post.mock.calls[0][1]).toEqual({ reason: 'They are home and the file is complete' })
+		expect(axios.post.mock.calls[0][0]).toBe(
+			'/index.php/apps/dossiq/api/case/case-7/attention/clear',
+		)
+		expect(axios.post.mock.calls[0][1]).toEqual({
+			reason: 'They are home and the file is complete',
+		})
 	})
 
 	it('will not send an act with nothing written', async () => {
-		const wrapper = await mountStrip({ raised: false, flag: {}, history: [], raisings: 0, clearings: 0 })
+		const wrapper = await mountStrip({
+			raised: false,
+			flag: {},
+			history: [],
+			raisings: 0,
+			clearings: 0,
+		})
 
 		await wrapper.find('[data-testid="case-attention-reason"]').setValue('   ')
 		await wrapper.find('[data-testid="case-attention-raise"]').trigger('click')
@@ -206,10 +273,22 @@ describe('raising and clearing go through dossiq, never through an object write'
 	})
 
 	it('shows the server refusal rather than a sentence of its own', async () => {
-		const wrapper = await mountStrip({ raised: false, flag: {}, history: [], raisings: 0, clearings: 0 })
+		const wrapper = await mountStrip({
+			raised: false,
+			flag: {},
+			history: [],
+			raisings: 0,
+			clearings: 0,
+		})
 
 		axios.post.mockRejectedValue({
-			response: { status: 400, data: { error: 'Write down why, and the flag will change.', code: 'reason_required' } },
+			response: {
+				status: 400,
+				data: {
+					error: 'Write down why, and the flag will change.',
+					code: 'reason_required',
+				},
+			},
 		})
 
 		await wrapper.find('[data-testid="case-attention-reason"]').setValue('x')
@@ -217,7 +296,9 @@ describe('raising and clearing go through dossiq, never through an object write'
 		await Promise.resolve()
 		await wrapper.vm.$nextTick()
 
-		expect(mockShowError).toHaveBeenCalledWith('Write down why, and the flag will change.')
+		expect(mockShowError).toHaveBeenCalledWith(
+			'Write down why, and the flag will change.',
+		)
 	})
 
 	it('shows every raising and every clearing, oldest first', async () => {
@@ -225,10 +306,30 @@ describe('raising and clearing go through dossiq, never through an object write'
 			raised: false,
 			flag: {},
 			history: [
-				{ act: 'raised', reason: 'Round one', actor: 'ahmed', moment: '2026-01-01T09:00:00+00:00' },
-				{ act: 'cleared', reason: 'Round one answered', actor: 'nadia', moment: '2026-01-14T09:00:00+00:00' },
-				{ act: 'raised', reason: 'Round two', actor: 'ahmed', moment: '2026-02-01T09:00:00+00:00' },
-				{ act: 'cleared', reason: 'Round two answered', actor: 'nadia', moment: '2026-02-14T09:00:00+00:00' },
+				{
+					act: 'raised',
+					reason: 'Round one',
+					actor: 'ahmed',
+					moment: '2026-01-01T09:00:00+00:00',
+				},
+				{
+					act: 'cleared',
+					reason: 'Round one answered',
+					actor: 'nadia',
+					moment: '2026-01-14T09:00:00+00:00',
+				},
+				{
+					act: 'raised',
+					reason: 'Round two',
+					actor: 'ahmed',
+					moment: '2026-02-01T09:00:00+00:00',
+				},
+				{
+					act: 'cleared',
+					reason: 'Round two answered',
+					actor: 'nadia',
+					moment: '2026-02-14T09:00:00+00:00',
+				},
 			],
 			raisings: 2,
 			clearings: 2,
@@ -238,7 +339,12 @@ describe('raising and clearing go through dossiq, never through an object write'
 		expect(rows).toHaveLength(4)
 		expect(rows[0].text()).toContain('Round one')
 		expect(rows[3].text()).toContain('Round two answered')
-		expect(rows.map((r) => r.attributes('data-act'))).toEqual(['raised', 'cleared', 'raised', 'cleared'])
+		expect(rows.map((r) => r.attributes('data-act'))).toEqual([
+			'raised',
+			'cleared',
+			'raised',
+			'cleared',
+		])
 	})
 
 	it('stays silent rather than erroring where the endpoint does not exist', async () => {
@@ -279,8 +385,12 @@ describe('the assessment is absent, not blank, for a reader without the permissi
 		const block = wrapper.find('[data-testid="case-attention-risk"]')
 		expect(block.exists()).toBe(true)
 		expect(wrapper.find('[data-risk-level="high"]').exists()).toBe(true)
-		expect(block.text()).toContain('Two incidents at the address in twelve months')
-		expect(wrapper.find('[data-testid="case-attention-risk-stale"]').exists()).toBe(false)
+		expect(block.text()).toContain(
+			'Two incidents at the address in twelve months',
+		)
+		expect(
+			wrapper.find('[data-testid="case-attention-risk-stale"]').exists(),
+		).toBe(false)
 	})
 
 	it('draws nothing at all where OpenRegister filtered the property out', async () => {
@@ -288,18 +398,32 @@ describe('the assessment is absent, not blank, for a reader without the permissi
 		// `riskAssessment` key, which is the same thing a case nobody assessed
 		// carries. There is deliberately no third state.
 		const filtered = await mountStrip(flag, { title: 'Melding geluidsoverlast' })
-		const never = await mountStrip(flag, { title: 'Melding geluidsoverlast', riskAssessment: {} })
+		const never = await mountStrip(flag, {
+			title: 'Melding geluidsoverlast',
+			riskAssessment: {},
+		})
 
-		expect(filtered.find('[data-testid="case-attention-risk"]').exists()).toBe(false)
-		expect(never.find('[data-testid="case-attention-risk"]').exists()).toBe(false)
+		expect(filtered.find('[data-testid="case-attention-risk"]').exists()).toBe(
+			false,
+		)
+		expect(never.find('[data-testid="case-attention-risk"]').exists()).toBe(
+			false,
+		)
 		expect(filtered.text()).not.toContain('Assessed risk')
 	})
 
 	it('says an assessment past its review date is due for review', async () => {
 		const wrapper = await mountStrip(flag, {
-			riskAssessment: { level: 'medium', ground: 'One incident', assessor: 'nadia', reviewDate: '2020-01-01' },
+			riskAssessment: {
+				level: 'medium',
+				ground: 'One incident',
+				assessor: 'nadia',
+				reviewDate: '2020-01-01',
+			},
 		})
 
-		expect(wrapper.find('[data-testid="case-attention-risk-stale"]').exists()).toBe(true)
+		expect(
+			wrapper.find('[data-testid="case-attention-risk-stale"]').exists(),
+		).toBe(true)
 	})
 })

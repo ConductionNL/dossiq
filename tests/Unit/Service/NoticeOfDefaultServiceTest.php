@@ -40,6 +40,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\NoticeOfDefaultService
  *
  * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\TermijnTimerService
  */
 class NoticeOfDefaultServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

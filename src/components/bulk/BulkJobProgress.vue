@@ -53,7 +53,9 @@
 			<ul v-else class="bulk-job__list">
 				<li v-for="row in rows" :key="row.id" class="bulk-job__row">
 					<span class="bulk-job__case">{{ row.objectUuid }}</span>
-					<span class="bulk-job__reason">{{ row.reason || t('dossiq', 'No reason recorded.') }}</span>
+					<span class="bulk-job__reason">{{
+						row.reason || t('dossiq', 'No reason recorded.')
+					}}</span>
 				</li>
 			</ul>
 
@@ -213,7 +215,10 @@ export default {
 		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		showsProgress() {
-			return (this.isRunning || isFinished(this.job)) && Number(this.job.total || 0) > 0
+			return (
+				(this.isRunning || isFinished(this.job))
+				&& Number(this.job.total || 0) > 0
+			)
 		},
 
 		/**
@@ -246,18 +251,38 @@ export default {
 			const processed = Number(this.job.processed || 0)
 
 			switch (String(this.job.state)) {
-			case 'previewed':
-				return t('dossiq', 'Nothing has been written yet. This is what would happen to {total} cases.', { total })
-			case 'running':
-				return t('dossiq', 'Running. {processed} of {total} cases done.', { processed, total })
-			case 'cancelling':
-				return t('dossiq', 'Stopping after the case it is on.')
-			case 'cancelled':
-				return t('dossiq', 'Stopped. {processed} of {total} cases were done first.', { processed, total })
-			case 'failed':
-				return t('dossiq', 'The act stopped on an error after {processed} of {total} cases.', { processed, total })
-			default:
-				return t('dossiq', 'Finished. {processed} of {total} cases done.', { processed, total })
+				case 'previewed':
+					return t(
+						'dossiq',
+						'Nothing has been written yet. This is what would happen to {total} cases.',
+						{ total },
+					)
+				case 'running':
+					return t(
+						'dossiq',
+						'Running. {processed} of {total} cases done.',
+						{ processed, total },
+					)
+				case 'cancelling':
+					return t('dossiq', 'Stopping after the case it is on.')
+				case 'cancelled':
+					return t(
+						'dossiq',
+						'Stopped. {processed} of {total} cases were done first.',
+						{ processed, total },
+					)
+				case 'failed':
+					return t(
+						'dossiq',
+						'The act stopped on an error after {processed} of {total} cases.',
+						{ processed, total },
+					)
+				default:
+					return t(
+						'dossiq',
+						'Finished. {processed} of {total} cases done.',
+						{ processed, total },
+					)
 			}
 		},
 
@@ -276,7 +301,7 @@ export default {
 		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		counts() {
-			const counts = (this.job.counts || {})
+			const counts = this.job.counts || {}
 
 			return {
 				applied: Number(counts.applied || 0),
@@ -298,10 +323,30 @@ export default {
 		 */
 		outcomeTabs() {
 			return [
-				{ outcome: 'applied', label: t('dossiq', '{count} changed', { count: this.counts.applied }) },
-				{ outcome: 'skipped', label: t('dossiq', '{count} skipped', { count: this.counts.skipped }) },
-				{ outcome: 'refused', label: t('dossiq', '{count} you may not write', { count: this.counts.refused }) },
-				{ outcome: 'failed', label: t('dossiq', '{count} failed', { count: this.counts.failed }) },
+				{
+					outcome: 'applied',
+					label: t('dossiq', '{count} changed', {
+						count: this.counts.applied,
+					}),
+				},
+				{
+					outcome: 'skipped',
+					label: t('dossiq', '{count} skipped', {
+						count: this.counts.skipped,
+					}),
+				},
+				{
+					outcome: 'refused',
+					label: t('dossiq', '{count} you may not write', {
+						count: this.counts.refused,
+					}),
+				},
+				{
+					outcome: 'failed',
+					label: t('dossiq', '{count} failed', {
+						count: this.counts.failed,
+					}),
+				},
 			]
 		},
 
@@ -317,7 +362,9 @@ export default {
 		 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 		 */
 		commitLabel() {
-			return t('dossiq', 'Apply to {total} cases', { total: Number(this.job.total || 0) })
+			return t('dossiq', 'Apply to {total} cases', {
+				total: Number(this.job.total || 0),
+			})
 		},
 
 		/**
@@ -390,7 +437,10 @@ export default {
 					}
 				} catch {
 					this.stopPolling()
-					this.error = t('dossiq', 'The act is still running, but its progress could not be read.')
+					this.error = t(
+						'dossiq',
+						'The act is still running, but its progress could not be read.',
+					)
 				}
 			}, POLL_INTERVAL)
 		},
@@ -428,15 +478,22 @@ export default {
 			}
 
 			this.openOutcome = outcome
-			this.loadingRows = (reset === false)
+			this.loadingRows = reset === false
 			this.error = ''
 
 			try {
-				const page = await fetchBulkJobMembers(this.job.id, { outcome, limit: PAGE_SIZE, offset: 0 })
+				const page = await fetchBulkJobMembers(this.job.id, {
+					outcome,
+					limit: PAGE_SIZE,
+					offset: 0,
+				})
 				this.rows = page.results
 				this.rowTotal = page.total
 			} catch {
-				this.error = t('dossiq', 'The cases with this outcome could not be read.')
+				this.error = t(
+					'dossiq',
+					'The cases with this outcome could not be read.',
+				)
 			} finally {
 				this.loadingRows = false
 			}
@@ -478,7 +535,10 @@ export default {
 			try {
 				this.$emit('update:job', await commitBulkJob(this.job.id))
 			} catch (e) {
-				this.error = this.messageOf(e, t('dossiq', 'The act could not be started.'))
+				this.error = this.messageOf(
+					e,
+					t('dossiq', 'The act could not be started.'),
+				)
 			}
 		},
 
@@ -494,7 +554,10 @@ export default {
 			try {
 				this.$emit('update:job', await cancelBulkJob(this.job.id))
 			} catch (e) {
-				this.error = this.messageOf(e, t('dossiq', 'The act could not be stopped.'))
+				this.error = this.messageOf(
+					e,
+					t('dossiq', 'The act could not be stopped.'),
+				)
 			}
 		},
 
@@ -510,7 +573,10 @@ export default {
 			try {
 				this.$emit('update:job', await retryBulkJob(this.job.id))
 			} catch (e) {
-				this.error = this.messageOf(e, t('dossiq', 'The rest of the cases could not be run.'))
+				this.error = this.messageOf(
+					e,
+					t('dossiq', 'The rest of the cases could not be run.'),
+				)
 			}
 		},
 

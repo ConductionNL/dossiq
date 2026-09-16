@@ -56,6 +56,7 @@ use Psr\Log\NullLogger;
  * The five term endpoints, behind their guards.
  *
  * @covers \OCA\Dossiq\Controller\CaseTermsController
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseTermsControllerContractTest extends TestCase {
 	/**

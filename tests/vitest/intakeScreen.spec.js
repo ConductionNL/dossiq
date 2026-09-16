@@ -21,13 +21,18 @@ const pages = [
 
 describe('intakeScreenFor', () => {
 	it('opens the screen the case type names', () => {
-		expect(intakeScreenFor({ handling: { intakeScreen: 'vergunning-intake' } }, pages))
-			.toBe('vergunning-intake')
+		expect(
+			intakeScreenFor(
+				{ handling: { intakeScreen: 'vergunning-intake' } },
+				pages,
+			),
+		).toBe('vergunning-intake')
 	})
 
 	it('opens a different screen for a different case type', () => {
-		expect(intakeScreenFor({ handling: { intakeScreen: 'bezwaar-intake' } }, pages))
-			.toBe('bezwaar-intake')
+		expect(
+			intakeScreenFor({ handling: { intakeScreen: 'bezwaar-intake' } }, pages),
+		).toBe('bezwaar-intake')
 	})
 
 	it('opens the standard screen when the case type names none', () => {
@@ -37,12 +42,20 @@ describe('intakeScreenFor', () => {
 	})
 
 	it('falls back rather than routing to a page the manifest does not have', () => {
-		expect(intakeScreenFor({ handling: { intakeScreen: 'page-that-went-away' } }, pages))
-			.toBe('case-intake')
+		expect(
+			intakeScreenFor(
+				{ handling: { intakeScreen: 'page-that-went-away' } },
+				pages,
+			),
+		).toBe('case-intake')
 	})
 
 	it('falls back when the manifest pages could not be read at all', () => {
-		expect(intakeScreenFor({ handling: { intakeScreen: 'vergunning-intake' } }, null))
-			.toBe('case-intake')
+		expect(
+			intakeScreenFor(
+				{ handling: { intakeScreen: 'vergunning-intake' } },
+				null,
+			),
+		).toBe('case-intake')
 	})
 })
