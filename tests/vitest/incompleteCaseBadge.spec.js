@@ -65,12 +65,15 @@ describe('the state column on the case list', () => {
 	it('is declared on the Cases index and resolves to the widget', () => {
 		const cases = manifest.pages.find((page) => page.id === 'Cases')
 		const column = cases.config.columns.find(
-			(entry) => typeof entry === 'object' && entry.widget === 'caseStateMarkers',
+			(entry) =>
+				typeof entry === 'object' && entry.widget === 'caseStateMarkers',
 		)
 
 		expect(column, 'the Cases index declares the state column').toBeTruthy()
 		expect(column.sortable).toBe(false)
-		expect(cellWidgetsSource).toContain('caseStateMarkers: CaseStateMarkersCell,')
+		expect(cellWidgetsSource).toContain(
+			'caseStateMarkers: CaseStateMarkersCell,',
+		)
 	})
 })
 
@@ -96,7 +99,9 @@ describe('an incomplete case is marked wherever it is listed', () => {
 	it('carries a word and not only a colour', () => {
 		// WCAG 2.2 SC 1.4.1. A reader who cannot separate the hues still gets
 		// the state, because the state is written in the cell.
-		const wrapper = mount(CaseStateMarkersCell, { props: { row: { isIncomplete: true } } })
+		const wrapper = mount(CaseStateMarkersCell, {
+			props: { row: { isIncomplete: true } },
+		})
 
 		expect(wrapper.text().trim()).not.toBe('')
 	})

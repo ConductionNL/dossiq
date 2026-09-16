@@ -69,10 +69,9 @@ describe('the one lifecycle menu', () => {
 			acts: ACTS,
 		})
 
-		expect(menu.filter((row) => row.kind === 'transition').map((row) => row.id)).toEqual([
-			'lc-approve',
-			'lc-close',
-		])
+		expect(
+			menu.filter((row) => row.kind === 'transition').map((row) => row.id),
+		).toEqual(['lc-approve', 'lc-close'])
 	})
 
 	it('shows a refused transition disabled, carrying the guard sentence', () => {
@@ -82,7 +81,9 @@ describe('the one lifecycle menu', () => {
 					id: 'lc-close',
 					label: 'Close',
 					guardsPassed: false,
-					failedGuards: [{ failureMessage: 'The besluitnota is missing.' }],
+					failedGuards: [
+						{ failureMessage: 'The besluitnota is missing.' },
+					],
 				},
 			],
 			state: OPEN,
@@ -115,7 +116,9 @@ describe('the one lifecycle menu', () => {
 		expect(entry(menu, 'resume').disabled).toBe(true)
 		expect(entry(menu, 'resume').reason).toBe('This case is not suspended.')
 		expect(entry(menu, 'reopen').disabled).toBe(true)
-		expect(entry(menu, 'reopen').reason).toBe('Only a closed case can be reopened.')
+		expect(entry(menu, 'reopen').reason).toBe(
+			'Only a closed case can be reopened.',
+		)
 	})
 
 	it('shows an act the role forbids, disabled, naming the group', () => {
@@ -170,7 +173,10 @@ describe('the menu when a read failed', () => {
 		const menu = buildActsMenu({ transitions: [], state: OPEN, acts: null })
 
 		for (const act of ['finish', 'abort', 'archive']) {
-			expect(entry(menu, act).disabled, `${act} must not be offered unread`).toBe(true)
+			expect(
+				entry(menu, act).disabled,
+				`${act} must not be offered unread`,
+			).toBe(true)
 			expect(entry(menu, act).reason).toContain('could not be read')
 		}
 	})
@@ -203,9 +209,14 @@ describe('hold, release and promote follow the case state', () => {
 	})
 
 	it('offers Promote only on a draft', () => {
-		expect(entry(buildActsMenu({ state: OPEN, acts: ACTS }), 'promote')).toBeUndefined()
 		expect(
-			entry(buildActsMenu({ state: OPEN, acts: { ...ACTS, draft: true } }), 'promote'),
+			entry(buildActsMenu({ state: OPEN, acts: ACTS }), 'promote'),
+		).toBeUndefined()
+		expect(
+			entry(
+				buildActsMenu({ state: OPEN, acts: { ...ACTS, draft: true } }),
+				'promote',
+			),
 		).toBeTruthy()
 	})
 
@@ -233,7 +244,14 @@ describe('what each act asks for before it posts', () => {
 		// Promote starts a term rather than changing one, so a reason field
 		// would be one nobody can fill in honestly.
 		expect(inputsFor({ id: 'promote' }).reason).toBe(false)
-		for (const act of ['finish', 'abort', 'archive', 'hold', 'release-hold', 'suspend']) {
+		for (const act of [
+			'finish',
+			'abort',
+			'archive',
+			'hold',
+			'release-hold',
+			'suspend',
+		]) {
 			expect(inputsFor({ id: act }).reason, `${act} records why`).toBe(true)
 		}
 	})
@@ -246,6 +264,8 @@ describe('what each act asks for before it posts', () => {
 	it('posts a transition through the transition endpoint, not an act one', () => {
 		expect(endpointFor({ kind: 'transition', id: 'lc-close' })).toBe('')
 		expect(endpointFor({ kind: 'ending', id: 'archive' })).toBe('archive')
-		expect(endpointFor({ kind: 'state', id: 'release-hold' })).toBe('release-hold')
+		expect(endpointFor({ kind: 'state', id: 'release-hold' })).toBe(
+			'release-hold',
+		)
 	})
 })

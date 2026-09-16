@@ -48,9 +48,7 @@
 						:data-testid="'case-act-reason-' + entry.id">
 						{{ refusalOn(entry) }}
 					</span>
-					<span
-						v-else-if="entry.explainer"
-						class="case-acts__explainer">
+					<span v-else-if="entry.explainer" class="case-acts__explainer">
 						{{ explainer(entry) }}
 					</span>
 				</li>
@@ -123,7 +121,10 @@ import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import { buildActsMenu, endpointFor, inputsFor } from '../utils/caseActsMenu.js'
-import { buildTransitionPayload, refusalMessage } from '../utils/caseLifecycleHelpers.js'
+import {
+	buildTransitionPayload,
+	refusalMessage,
+} from '../utils/caseLifecycleHelpers.js'
 
 const PAGE_REFRESH = 'cn:page:refresh'
 
@@ -250,17 +251,32 @@ export default {
 		explainer(entry) {
 			switch (String(entry?.id ?? '')) {
 				case 'finish':
-					return t('dossiq', 'The case reached its result. The result decides what is kept.')
+					return t(
+						'dossiq',
+						'The case reached its result. The result decides what is kept.',
+					)
 				case 'abort':
-					return t('dossiq', 'An intrekking. There is a result, and it is not a besluit.')
+					return t(
+						'dossiq',
+						'An intrekking. There is a result, and it is not a besluit.',
+					)
 				case 'archive':
-					return t('dossiq', 'The case moves to the retention rule its result type carries.')
+					return t(
+						'dossiq',
+						'The case moves to the retention rule its result type carries.',
+					)
 				case 'hold':
-					return t('dossiq', 'You park the case until a date. The statutory term keeps running.')
+					return t(
+						'dossiq',
+						'You park the case until a date. The statutory term keeps running.',
+					)
 				case 'release-hold':
 					return t('dossiq', 'You pick the case up again before its date.')
 				case 'promote':
-					return t('dossiq', 'The term starts now. The case leaves your drafts.')
+					return t(
+						'dossiq',
+						'The term starts now. The case leaves your drafts.',
+					)
 				default:
 					return ''
 			}
@@ -306,15 +322,24 @@ export default {
 			}
 			const id = encodeURIComponent(this.targetCaseId)
 			const [moves, state, acts] = await Promise.allSettled([
-				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/available-transitions`)),
+				axios.get(
+					generateUrl(`/apps/dossiq/api/case/${id}/available-transitions`),
+				),
 				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/lifecycle`)),
 				axios.get(generateUrl(`/apps/dossiq/api/case/${id}/acts`)),
 			])
 
 			this.entries = buildActsMenu({
-				transitions: moves.status === 'fulfilled' ? (moves.value?.data?.transitions ?? []) : [],
-				state: state.status === 'fulfilled' ? (state.value?.data ?? null) : null,
-				acts: acts.status === 'fulfilled' ? (acts.value?.data ?? null) : null,
+				transitions:
+					moves.status === 'fulfilled'
+						? (moves.value?.data?.transitions ?? [])
+						: [],
+				state:
+					state.status === 'fulfilled'
+						? (state.value?.data ?? null)
+						: null,
+				acts:
+					acts.status === 'fulfilled' ? (acts.value?.data ?? null) : null,
 			})
 			this.loading = false
 		},
@@ -374,7 +399,9 @@ export default {
 					)
 				} else {
 					await axios.post(
-						generateUrl(`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`),
+						generateUrl(
+							`/apps/dossiq/api/case/${id}/${endpointFor(this.chosen)}`,
+						),
 						{
 							reason: this.reason,
 							resultTypeId: this.resultTypeId,
@@ -386,7 +413,9 @@ export default {
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
 			} catch (error) {
-				this.error = refusalMessage(error?.response?.data ?? {}, (s) => t('dossiq', s))
+				this.error = refusalMessage(error?.response?.data ?? {}, (s) =>
+					t('dossiq', s),
+				)
 			} finally {
 				this.busy = false
 			}

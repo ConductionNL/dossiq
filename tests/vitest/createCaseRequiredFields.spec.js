@@ -114,7 +114,9 @@ describe('what still blocks the save', () => {
 
 	it('reads a blank string as unanswered and a false as an answer', () => {
 		const declaration = {
-			intakeRequirements: { requiredBeforeCreation: ['confidentiality', 'urgent'] },
+			intakeRequirements: {
+				requiredBeforeCreation: ['confidentiality', 'urgent'],
+			},
 		}
 
 		expect(
@@ -142,7 +144,10 @@ describe('the values a field offers', () => {
 
 	it('offers the classification values the scheme resolved to', () => {
 		const declaration = {
-			classification: { scheme: 'tmlo-2019', classificationIsAccessRule: true },
+			classification: {
+				scheme: 'tmlo-2019',
+				classificationIsAccessRule: true,
+			},
 			classificationValues: ['openbaar', 'beperkt'],
 		}
 
@@ -160,7 +165,10 @@ describe('the values a field offers', () => {
 describe('an unresolvable scheme', () => {
 	it('is reported on the declaration rather than being read as resolved', () => {
 		const unresolved = normaliseDeclaration({
-			classification: { scheme: 'tmlo-2019', classificationIsAccessRule: true },
+			classification: {
+				scheme: 'tmlo-2019',
+				classificationIsAccessRule: true,
+			},
 			schemeResolves: false,
 		})
 

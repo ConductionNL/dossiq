@@ -51,7 +51,12 @@
 
 		<template v-else>
 			<p v-if="reviewRefused" class="case-access-tab__unreadable">
-				{{ t('dossiq', 'You may open this case. You may not review who else can.') }}
+				{{
+					t(
+						'dossiq',
+						'You may open this case. You may not review who else can.',
+					)
+				}}
 			</p>
 
 			<p v-else-if="unreadable.length > 0" class="case-access-tab__unreadable">
@@ -87,19 +92,42 @@
 						class="case-access-tab__row">
 						<td>{{ row.holder || t('dossiq', 'Not named') }}</td>
 						<td>
-							<span class="case-access-tab__right">{{ row.right }}</span>
-							<span v-if="describe(row.right)" class="case-access-tab__hint">
+							<span class="case-access-tab__right">{{
+								row.right
+							}}</span>
+							<span
+								v-if="describe(row.right)"
+								class="case-access-tab__hint">
 								{{ describe(row.right) }}
 							</span>
-							<span v-if="row.declared === false" class="case-access-tab__hint">
-								{{ t('dossiq', 'OpenRegister does not publish this right.') }}
+							<span
+								v-if="row.declared === false"
+								class="case-access-tab__hint">
+								{{
+									t(
+										'dossiq',
+										'OpenRegister does not publish this right.',
+									)
+								}}
 							</span>
 						</td>
 						<td>
-							<span class="case-access-tab__source">{{ sourceLabel(row.source) }}</span>
-							<span v-if="roleHint(row)" class="case-access-tab__hint">{{ roleHint(row) }}</span>
-							<span v-if="row.until" class="case-access-tab__hint">{{ endsHint(row) }}</span>
-							<span v-if="areaHint(row)" class="case-access-tab__hint">{{ areaHint(row) }}</span>
+							<span class="case-access-tab__source">{{
+								sourceLabel(row.source)
+							}}</span>
+							<span
+								v-if="roleHint(row)"
+								class="case-access-tab__hint"
+								>{{ roleHint(row) }}</span
+							>
+							<span v-if="row.until" class="case-access-tab__hint">{{
+								endsHint(row)
+							}}</span>
+							<span
+								v-if="areaHint(row)"
+								class="case-access-tab__hint"
+								>{{ areaHint(row) }}</span
+							>
 						</td>
 					</tr>
 				</tbody>
@@ -109,12 +137,14 @@
 				<h4>{{ t('dossiq', 'Who held a right on a date') }}</h4>
 
 				<label class="case-access-tab__moment">
-					<span>{{ t('dossiq', 'Report the rights as they stood on') }}</span>
+					<span>{{
+						t('dossiq', 'Report the rights as they stood on')
+					}}</span>
 					<input
 						v-model="moment"
 						type="date"
 						:max="today"
-						@change="loadMoment">
+						@change="loadMoment" />
 				</label>
 
 				<p v-if="momentLoading" class="case-access-tab__empty">
@@ -136,7 +166,9 @@
 						<p class="case-access-tab__enforcement">
 							{{ setBySentence }}
 						</p>
-						<p v-if="asOf.changedAfterwardsBy" class="case-access-tab__enforcement">
+						<p
+							v-if="asOf.changedAfterwardsBy"
+							class="case-access-tab__enforcement">
 							{{ changedAfterwardsSentence }}
 						</p>
 						<table class="case-access-tab__table">
@@ -144,7 +176,9 @@
 								<tr>
 									<th scope="col">{{ t('dossiq', 'Holder') }}</th>
 									<th scope="col">{{ t('dossiq', 'Right') }}</th>
-									<th scope="col">{{ t('dossiq', 'Where it came from') }}</th>
+									<th scope="col">
+										{{ t('dossiq', 'Where it came from') }}
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -152,11 +186,19 @@
 									v-for="(row, index) in asOf.rows"
 									:key="`asof-${row.holder}-${row.right}-${index}`"
 									class="case-access-tab__row">
-									<td>{{ row.holder || t('dossiq', 'Not named') }}</td>
+									<td>
+										{{ row.holder || t('dossiq', 'Not named') }}
+									</td>
 									<td>{{ row.right }}</td>
 									<td>
-										<span class="case-access-tab__source">{{ sourceLabel(row.source) }}</span>
-										<span v-if="roleHint(row)" class="case-access-tab__hint">{{ roleHint(row) }}</span>
+										<span class="case-access-tab__source">{{
+											sourceLabel(row.source)
+										}}</span>
+										<span
+											v-if="roleHint(row)"
+											class="case-access-tab__hint"
+											>{{ roleHint(row) }}</span
+										>
 									</td>
 								</tr>
 							</tbody>
@@ -233,7 +275,10 @@ export default {
 		 */
 		setBySentence() {
 			if (!this.asOf?.setBy) {
-				return t('dossiq', 'These rights stood on that date. Nobody is named as setting them.')
+				return t(
+					'dossiq',
+					'These rights stood on that date. Nobody is named as setting them.',
+				)
 			}
 			return t('dossiq', '{who} set these rights.', { who: this.asOf.setBy })
 		},
@@ -266,7 +311,10 @@ export default {
 				return t('dossiq', 'A refusal below is in force now.')
 			}
 			if (this.enforcement === 'off') {
-				return t('dossiq', 'Refusals are switched off, so no rule below removes a right.')
+				return t(
+					'dossiq',
+					'Refusals are switched off, so no rule below removes a right.',
+				)
 			}
 			return t(
 				'dossiq',
@@ -295,8 +343,8 @@ export default {
 			// A 403 is OpenRegister answering, and the answer is "not you". The
 			// fallback reads are skipped: they would assemble a partial list
 			// under a sentence saying this reader may not see one (D-7).
-			this.reviewRefused = (permissions.status === REVIEW_REFUSED)
-			this.historyReadable = (permissions.set !== null)
+			this.reviewRefused = permissions.status === REVIEW_REFUSED
+			this.historyReadable = permissions.set !== null
 
 			const [catalogue, objectGrants, roleGrants, callerScope, denyRules] =
 				await Promise.all([
@@ -310,16 +358,19 @@ export default {
 			// Each failed read is NAMED. An auditor reading a short list has to
 			// know which source is missing from it.
 			const missing = []
-			if (catalogue === null) missing.push(t('dossiq', 'the rights it publishes'))
+			if (catalogue === null)
+				missing.push(t('dossiq', 'the rights it publishes'))
 			if (permissions.set === null) {
-				if (objectGrants === null) missing.push(t('dossiq', 'the shares on this case'))
+				if (objectGrants === null)
+					missing.push(t('dossiq', 'the shares on this case'))
 				if (roleGrants === null) missing.push(t('dossiq', 'the roles'))
 				if (denyRules === null) missing.push(t('dossiq', 'the refusals'))
 			}
 			if (callerScope === null) missing.push(t('dossiq', 'your own rights'))
 
 			this.catalogue = catalogue?.permissions || []
-			this.enforcement = permissions.set?.denyEnforcement
+			this.enforcement =
+				permissions.set?.denyEnforcement
 				|| catalogue?.denyEnforcement
 				|| denyRules?.denyEnforcement
 				|| ''
@@ -365,7 +416,10 @@ export default {
 			// End of that day, so a grant written during it is reported as
 			// standing on it. Asking about midnight answers about the day before,
 			// which is the answer nobody meant to ask for.
-			const { history } = await fetchAccessHistory(this.objectId, `${this.moment}T23:59:59`)
+			const { history } = await fetchAccessHistory(
+				this.objectId,
+				`${this.moment}T23:59:59`,
+			)
 			this.asOf = asOfRows(history)
 			this.momentLoading = false
 		},
@@ -380,7 +434,7 @@ export default {
 		 */
 		roleHint(row) {
 			if (!row?.role) {
-				return (row?.detail || '')
+				return row?.detail || ''
 			}
 			return t('dossiq', 'Through the role {role}', { role: row.role })
 		},
@@ -430,7 +484,9 @@ export default {
 		 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
 		 */
 		describe(right) {
-			const entry = this.catalogue.find((permission) => permission?.action === right)
+			const entry = this.catalogue.find(
+				(permission) => permission?.action === right,
+			)
 			return entry?.description || ''
 		},
 

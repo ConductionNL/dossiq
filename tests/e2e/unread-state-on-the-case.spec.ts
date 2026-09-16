@@ -71,7 +71,7 @@ const cases: Record<string, string> = {}
 async function markRead(caseId: string, subResource?: string): Promise<void> {
 	const res = await api.put(readStateUrl(caseId), {
 		headers: { requesttoken: token, 'Content-Type': 'application/json' },
-		data: (subResource ? { subResource } : {}),
+		data: subResource ? { subResource } : {},
 	})
 	expect(res.ok(), `marking ${caseId} read answered ${res.status()}`).toBeTruthy()
 }
@@ -85,7 +85,10 @@ async function markUnread(caseId: string): Promise<void> {
 	const res = await api.delete(readStateUrl(caseId), {
 		headers: { requesttoken: token },
 	})
-	expect(res.ok(), `marking ${caseId} unread answered ${res.status()}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`marking ${caseId} unread answered ${res.status()}`,
+	).toBeTruthy()
 }
 
 /**
@@ -97,7 +100,10 @@ async function readState(caseId: string): Promise<any> {
 	const res = await api.get(readStateUrl(caseId), {
 		headers: { requesttoken: token },
 	})
-	expect(res.ok(), `reading ${caseId}'s read state answered ${res.status()}`).toBeTruthy()
+	expect(
+		res.ok(),
+		`reading ${caseId}'s read state answered ${res.status()}`,
+	).toBeTruthy()
 	return res.json()
 }
 
@@ -170,7 +176,9 @@ test.describe('Unread state on the case', () => {
 	/**
 	 * @e2e REQ-URS-01 the unread lens narrows the list to what moved
 	 */
-	test('the Unread chip shows the case that changed and not the one that did not', async ({ page }) => {
+	test('the Unread chip shows the case that changed and not the one that did not', async ({
+		page,
+	}) => {
 		const errors = trackDossiqErrors(page)
 
 		await markUnread(cases.moved)
@@ -191,20 +199,28 @@ test.describe('Unread state on the case', () => {
 	/**
 	 * @e2e REQ-URS-01 a handler puts a case back to unread
 	 */
-	test('marking a case unread from its row puts it back on the lens', async ({ page }) => {
+	test('marking a case unread from its row puts it back on the lens', async ({
+		page,
+	}) => {
 		await markRead(cases.seen)
 		expect((await readState(cases.seen)).unread).toBe(false)
 
 		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
-		const row = page.getByRole('row', { name: new RegExp(`${RUN_PREFIX} unread seen`) })
+		const row = page.getByRole('row', {
+			name: new RegExp(`${RUN_PREFIX} unread seen`),
+		})
 		await expect(row).toBeVisible(PAGE_LOAD)
 		await row.getByRole('button').last().click()
-		await page.getByRole('menuitem', { name: /^(Mark unread|Markeer als ongelezen)$/ }).click()
+		await page
+			.getByRole('menuitem', { name: /^(Mark unread|Markeer als ongelezen)$/ })
+			.click()
 
 		await expect
-			.poll(async () => (await readState(cases.seen)).unread, { timeout: 15_000 })
+			.poll(async () => (await readState(cases.seen)).unread, {
+				timeout: 15_000,
+			})
 			.toBe(true)
 	})
 
@@ -219,14 +235,18 @@ test.describe('Unread state on the case', () => {
 		await dismissSupportDialog(page)
 
 		await expect
-			.poll(async () => (await readState(cases.withDocument)).unread, { timeout: 20_000 })
+			.poll(async () => (await readState(cases.withDocument)).unread, {
+				timeout: 20_000,
+			})
 			.toBe(false)
 	})
 
 	/**
 	 * @e2e REQ-URS-02 the case page says which panel holds something unseen
 	 */
-	test('the strip names a panel with something new, and goes when it is read', async ({ page }) => {
+	test('the strip names a panel with something new, and goes when it is read', async ({
+		page,
+	}) => {
 		const state = await readState(cases.withDocument)
 		expect(
 			state.unreadCounts,
@@ -256,19 +276,29 @@ test.describe('Unread state on the case', () => {
 		await expect(panel).toHaveCount(0)
 
 		await expect
-			.poll(async () => Number(((await readState(cases.withDocument)).unreadCounts ?? {}).files ?? 0), {
-				timeout: 15_000,
-			})
+			.poll(
+				async () =>
+					Number(
+						((await readState(cases.withDocument)).unreadCounts ?? {})
+							.files ?? 0,
+					),
+				{
+					timeout: 15_000,
+				},
+			)
 			.toBe(0)
 	})
 
 	/**
 	 * @e2e REQ-URS-01 a read state is private to the person it belongs to
 	 */
-	test('asking about somebody else\'s read state is refused, not answered about yourself', async () => {
-		const res = await api.get(`${readStateUrl(cases.seen)}?userId=somebody-else`, {
-			headers: { requesttoken: token },
-		})
+	test("asking about somebody else's read state is refused, not answered about yourself", async () => {
+		const res = await api.get(
+			`${readStateUrl(cases.seen)}?userId=somebody-else`,
+			{
+				headers: { requesttoken: token },
+			},
+		)
 
 		// The query parameter is ignored or refused; what must never happen is
 		// an answer ABOUT ANOTHER USER. Either way the body describes the

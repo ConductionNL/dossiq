@@ -28,12 +28,12 @@
 <template>
 	<div class="case-timeline" data-testid="case-timeline">
 		<form
-v-if="canManage"
+			v-if="canManage"
 			class="case-timeline__composer"
 			data-testid="case-timeline-composer"
 			@submit.prevent="submit">
 			<NcSelect
-v-if="textBlocks.length"
+				v-if="textBlocks.length"
 				v-model="chosenBlock"
 				class="case-timeline__filter"
 				:options="blockOptions"
@@ -55,13 +55,13 @@ v-if="textBlocks.length"
 				data-testid="case-timeline-draft" />
 
 			<NcCheckboxRadioSwitch
-v-model="draftIsPublic"
+				v-model="draftIsPublic"
 				data-testid="case-timeline-draft-public">
 				{{ t('dossiq', 'Visible to the applicant') }}
 			</NcCheckboxRadioSwitch>
 
 			<NcButton
-variant="primary"
+				variant="primary"
 				type="submit"
 				:disabled="saving || !draft.trim()"
 				data-testid="case-timeline-save">
@@ -71,7 +71,7 @@ variant="primary"
 
 		<div class="case-timeline__controls">
 			<NcSelect
-v-model="kindFilter"
+				v-model="kindFilter"
 				class="case-timeline__filter"
 				:options="kindOptions"
 				:clearable="true"
@@ -82,7 +82,7 @@ v-model="kindFilter"
 				@input="load" />
 
 			<NcSelect
-v-if="canManage"
+				v-if="canManage"
 				v-model="visibilityFilter"
 				class="case-timeline__filter"
 				:options="visibilityOptions"
@@ -96,22 +96,24 @@ v-if="canManage"
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
-		<NcNoteCard
-v-else-if="error"
-			type="error"
-			data-testid="case-timeline-error">
+		<NcNoteCard v-else-if="error" type="error" data-testid="case-timeline-error">
 			{{ error }}
 		</NcNoteCard>
 
 		<NcEmptyContent
-v-else-if="entries.length === 0"
+			v-else-if="entries.length === 0"
 			:name="t('dossiq', 'Nothing recorded yet')"
-			:description="t('dossiq', 'Notes, calls and messages on this case appear here in the order they happened.')"
+			:description="
+				t(
+					'dossiq',
+					'Notes, calls and messages on this case appear here in the order they happened.',
+				)
+			"
 			data-testid="case-timeline-empty" />
 
 		<ul v-else class="case-timeline__list" data-testid="case-timeline-list">
 			<li
-v-for="entry in entries"
+				v-for="entry in entries"
 				:key="entry.id"
 				class="case-timeline__entry"
 				:class="{ 'case-timeline__entry--pinned': entry.pinned }"
@@ -120,15 +122,17 @@ v-for="entry in entries"
 				<div class="case-timeline__head">
 					<span class="case-timeline__kind">{{ kindLabel(entry) }}</span>
 					<span class="case-timeline__author">{{ entry.author }}</span>
-					<span class="case-timeline__moment">{{ moment(entry.created) }}</span>
+					<span class="case-timeline__moment">{{
+						moment(entry.created)
+					}}</span>
 					<span
-v-if="entry.visibility === 'public'"
+						v-if="entry.visibility === 'public'"
 						class="case-timeline__badge"
 						data-testid="case-timeline-public">
 						{{ t('dossiq', 'Visible to the applicant') }}
 					</span>
 					<span
-v-if="entry.followUp === 'open'"
+						v-if="entry.followUp === 'open'"
 						class="case-timeline__badge case-timeline__badge--open"
 						data-testid="case-timeline-followup-open">
 						{{ t('dossiq', 'Needs an answer') }}
@@ -138,21 +142,30 @@ v-if="entry.followUp === 'open'"
 				<p class="case-timeline__message">{{ entry.message }}</p>
 
 				<p
-v-if="entry.siblings && entry.siblings.length"
+					v-if="entry.siblings && entry.siblings.length"
 					class="case-timeline__siblings"
 					data-testid="case-timeline-siblings">
-					{{ n('dossiq', 'Also written on %n other case', 'Also written on %n other cases', entry.siblings.length) }}
+					{{
+						n(
+							'dossiq',
+							'Also written on %n other case',
+							'Also written on %n other cases',
+							entry.siblings.length,
+						)
+					}}
 				</p>
 
 				<div v-if="canManage" class="case-timeline__actions">
 					<NcButton
-variant="tertiary"
+						variant="tertiary"
 						:data-testid="'case-timeline-pin-' + entry.id"
 						@click="togglePin(entry)">
-						{{ entry.pinned ? t('dossiq', 'Unpin') : t('dossiq', 'Pin') }}
+						{{
+							entry.pinned ? t('dossiq', 'Unpin') : t('dossiq', 'Pin')
+						}}
 					</NcButton>
 					<NcButton
-v-if="entry.followUp === 'open'"
+						v-if="entry.followUp === 'open'"
 						variant="tertiary"
 						:data-testid="'case-timeline-followup-' + entry.id"
 						@click="closeFollowUp(entry)">
@@ -374,7 +387,9 @@ export default {
 		pickBlock(block) {
 			this.chosenBlock = block || null
 			if (block) {
-				const declared = this.textBlocks.find((entry) => entry.slug === block.id)
+				const declared = this.textBlocks.find(
+					(entry) => entry.slug === block.id,
+				)
 				this.draft = declared?.title || block.label
 			}
 		},

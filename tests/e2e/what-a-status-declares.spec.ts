@@ -115,9 +115,9 @@ test.describe('A status declares what it means', () => {
 		const answer = await getAvailableTransitions(api, token, objectId(seeded))
 
 		expect(answer.status).toBe(200)
-		expect(answer.body.transitions.map((entry: any) => entry.toStatus)).toContain(
-			machine.statusInProgress,
-		)
+		expect(
+			answer.body.transitions.map((entry: any) => entry.toStatus),
+		).toContain(machine.statusInProgress)
 	})
 
 	test('a queue is counted by who is waited on, and an undeclared case is ours', async () => {
@@ -145,7 +145,13 @@ test.describe('A status declares what it means', () => {
 		// which is what lets a team count narrow on it server-side. Read back
 		// off the stored case rather than asked of a dossiq endpoint, because
 		// the calculation running is the thing that can silently not happen.
-		const waitingRow = await updateObject(api, token, 'case', objectId(waiting), {})
+		const waitingRow = await updateObject(
+			api,
+			token,
+			'case',
+			objectId(waiting),
+			{},
+		)
 		const oursRow = await updateObject(api, token, 'case', objectId(ours), {})
 
 		expect(waitingRow.waitingOn).toBe('applicant')
@@ -223,9 +229,12 @@ test.describe('A status declares what it means', () => {
 			status: machine.statusReceived,
 		})
 
-		const report = await api.get('/index.php/apps/dossiq/api/reports/process-mining', {
-			headers: { requesttoken: token },
-		})
+		const report = await api.get(
+			'/index.php/apps/dossiq/api/reports/process-mining',
+			{
+				headers: { requesttoken: token },
+			},
+		)
 		expect(report.status()).toBe(200)
 
 		const body = await report.json()

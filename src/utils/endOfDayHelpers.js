@@ -40,13 +40,15 @@ export function notesUrlFor(item) {
 	}
 
 	if (item?.subjectType === 'task') {
-		return generateUrl(`/apps/openregister/api/flow-tasks/${encodeURIComponent(id)}/notes`)
+		return generateUrl(
+			`/apps/openregister/api/flow-tasks/${encodeURIComponent(id)}/notes`,
+		)
 	}
 
 	if (item?.subjectType === 'case') {
 		return generateUrl(
 			`/apps/openregister/api/objects/${encodeURIComponent(CASE_REGISTER)}`
-			+ `/case/${encodeURIComponent(id)}/notes`,
+				+ `/case/${encodeURIComponent(id)}/notes`,
 		)
 	}
 

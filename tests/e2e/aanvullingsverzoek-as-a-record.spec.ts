@@ -60,7 +60,8 @@ test.describe('A case records what it asked the applicant for', () => {
 			await createObject(api, token, 'caseType', {
 				title: `${RUN_PREFIX} aanvulling`,
 				identifier: `${RUN_PREFIX.toLowerCase()}-aanvulling`,
-				description: 'Throwaway caseType for the aanvullingsverzoek e2e layer.',
+				description:
+					'Throwaway caseType for the aanvullingsverzoek e2e layer.',
 				processingDeadline: 'P30D',
 				suspensionAllowed: true,
 				isDraft: false,
@@ -84,7 +85,16 @@ test.describe('A case records what it asked the applicant for', () => {
 			cases[key] = objectId(row)
 		}
 
-		for (const key of ['ask', 'partial', 'full', 'list1', 'list2', 'list3', 'plain1', 'plain2']) {
+		for (const key of [
+			'ask',
+			'partial',
+			'full',
+			'list1',
+			'list2',
+			'list3',
+			'plain1',
+			'plain2',
+		]) {
 			await seed(key)
 		}
 
@@ -107,15 +117,18 @@ test.describe('A case records what it asked the applicant for', () => {
 	 * @param items  What is missing.
 	 */
 	const ask = async (api: any, token: string, caseId: string, items: string[]) =>
-		api.post(`/index.php/apps/${REGISTER}/api/cases/${caseId}/information-request`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: {
-				items,
-				recipient: 'aanvrager@example.org',
-				durationDays: 14,
-				rationale: `${RUN_PREFIX} zonder deze stukken kan de aanvraag niet worden beoordeeld`,
+		api.post(
+			`/index.php/apps/${REGISTER}/api/cases/${caseId}/information-request`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+				data: {
+					items,
+					recipient: 'aanvrager@example.org',
+					durationDays: 14,
+					rationale: `${RUN_PREFIX} zonder deze stukken kan de aanvraag niet worden beoordeeld`,
+				},
 			},
-		})
+		)
 
 	/**
 	 * Record what arrived.
@@ -133,10 +146,13 @@ test.describe('A case records what it asked the applicant for', () => {
 		items: string[],
 		complete: boolean,
 	) =>
-		api.post(`/index.php/apps/${REGISTER}/api/cases/${caseId}/information-request/received`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: { items, complete },
-		})
+		api.post(
+			`/index.php/apps/${REGISTER}/api/cases/${caseId}/information-request/received`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+				data: { items, complete },
+			},
+		)
 
 	/**
 	 * Every request on a case, as the read answers them.
@@ -145,7 +161,11 @@ test.describe('A case records what it asked the applicant for', () => {
 	 * @param caseId The case.
 	 */
 	const requestsOn = async (api: any, caseId: string) =>
-		(await api.get(`/index.php/apps/${REGISTER}/api/cases/${caseId}/aanvullingsverzoeken`)).json()
+		(
+			await api.get(
+				`/index.php/apps/${REGISTER}/api/cases/${caseId}/aanvullingsverzoeken`,
+			)
+		).json()
 
 	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#asking-writes-the-request-and-suspends-the-term
 	test('asking writes the request naming both items, and suspends the term', async ({
@@ -155,11 +175,20 @@ test.describe('A case records what it asked the applicant for', () => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
-		const response = await ask(api, token, cases.ask, ['Bankafschrift', 'Huurcontract'])
-		expect(response.ok(), 'the ask must succeed on a case with a running term').toBeTruthy()
+		const response = await ask(api, token, cases.ask, [
+			'Bankafschrift',
+			'Huurcontract',
+		])
+		expect(
+			response.ok(),
+			'the ask must succeed on a case with a running term',
+		).toBeTruthy()
 
 		const body = await response.json()
-		expect(body.suspended, 'the term is suspended through the engine timer').toBe(true)
+		expect(
+			body.suspended,
+			'the term is suspended through the engine timer',
+		).toBe(true)
 
 		const state = await requestsOn(api, cases.ask)
 		expect(state.waiting).toBe(true)
@@ -191,16 +220,26 @@ test.describe('A case records what it asked the applicant for', () => {
 		const token = await getRequestToken(api)
 
 		await ask(api, token, cases.partial, ['Bankafschrift', 'Huurcontract'])
-		const recorded = await answer(api, token, cases.partial, ['Bankafschrift'], false)
+		const recorded = await answer(
+			api,
+			token,
+			cases.partial,
+			['Bankafschrift'],
+			false,
+		)
 		expect(recorded.ok()).toBeTruthy()
 
 		const state = await requestsOn(api, cases.partial)
-		expect(state.waiting, 'the case is still waiting on the applicant').toBe(true)
+		expect(state.waiting, 'the case is still waiting on the applicant').toBe(
+			true,
+		)
 
 		const request = state.requests[0]
 		expect(request.state).toBe('open')
 
-		const outstanding = request.missingItems.filter((i: any) => i.received !== true)
+		const outstanding = request.missingItems.filter(
+			(i: any) => i.received !== true,
+		)
 		expect(outstanding.map((i: any) => i.item)).toEqual(['Huurcontract'])
 
 		// The term stays suspended: the applicant has not supplied what was
@@ -261,14 +300,19 @@ test.describe('A case records what it asked the applicant for', () => {
 
 		const waiting = await api.get(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/case`
-			+ `?waitingOnApplicant=true&_search=${encodeURIComponent(RUN_PREFIX)}&_limit=50`,
+				+ `?waitingOnApplicant=true&_search=${encodeURIComponent(RUN_PREFIX)}&_limit=50`,
 		)
-		const ids = ((await waiting.json()).results ?? []).map((row: any) => objectId(row))
+		const ids = ((await waiting.json()).results ?? []).map((row: any) =>
+			objectId(row),
+		)
 
 		expect(ids).toEqual(
 			expect.arrayContaining([cases.list1, cases.list2, cases.list3]),
 		)
-		expect(ids, 'a case nobody asked anything is not in the filter').not.toContain(cases.plain1)
+		expect(
+			ids,
+			'a case nobody asked anything is not in the filter',
+		).not.toContain(cases.plain1)
 		expect(ids).not.toContain(cases.plain2)
 
 		// Each one shows how long its request has been open, computed on the
@@ -294,9 +338,11 @@ test.describe('A case records what it asked the applicant for', () => {
 
 		const waiting = await api.get(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/case`
-			+ `?waitingOnApplicant=true&_search=${encodeURIComponent(RUN_PREFIX)}&_limit=50`,
+				+ `?waitingOnApplicant=true&_search=${encodeURIComponent(RUN_PREFIX)}&_limit=50`,
 		)
-		const ids = ((await waiting.json()).results ?? []).map((r: any) => objectId(r))
+		const ids = ((await waiting.json()).results ?? []).map((r: any) =>
+			objectId(r),
+		)
 		expect(ids).not.toContain(cases.list1)
 
 		// And the record is still there, which is the whole point of it.
@@ -309,6 +355,8 @@ test.describe('A case records what it asked the applicant for', () => {
 	// @e2e openspec/changes/aanvullingsverzoek-as-a-record/specs/termijn-pause-extension/spec.md#the-request-names-who-asked
 	test('a case page opens with the request on it', async ({ page }) => {
 		await page.goto(`/apps/${REGISTER}/cases/${cases.ask}`, PAGE_LOAD)
-		await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
 	})
 })

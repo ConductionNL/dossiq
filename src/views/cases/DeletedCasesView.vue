@@ -21,7 +21,12 @@
 		<div class="deleted-cases__header">
 			<h2>{{ t('dossiq', 'Deleted cases') }}</h2>
 			<p class="deleted-cases__lead">
-				{{ t('dossiq', 'A deleted case can be recovered until the date below. After that it can be destroyed, which cannot be undone.') }}
+				{{
+					t(
+						'dossiq',
+						'A deleted case can be recovered until the date below. After that it can be destroyed, which cannot be undone.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -31,7 +36,12 @@
 			v-else-if="rows.length === 0"
 			class="deleted-cases__empty"
 			:name="t('dossiq', 'Nothing was deleted')"
-			:description="t('dossiq', 'Deleted cases land here, with the date each one can still be recovered until.')" />
+			:description="
+				t(
+					'dossiq',
+					'Deleted cases land here, with the date each one can still be recovered until.',
+				)
+			" />
 
 		<table v-else class="deleted-cases__table" data-testid="deleted-cases-table">
 			<thead>
@@ -57,7 +67,11 @@
 							{{ t('dossiq', 'the window has passed') }}
 						</span>
 						<span v-else class="deleted-cases__remaining">
-							{{ t('dossiq', '{days} days left', { days: row.daysRemaining || 0 }) }}
+							{{
+								t('dossiq', '{days} days left', {
+									days: row.daysRemaining || 0,
+								})
+							}}
 						</span>
 					</td>
 					<td class="deleted-cases__row-actions">
@@ -105,10 +119,22 @@ import {
 function refusalSentence(code) {
 	const sentences = {
 		case_not_deleted: t('dossiq', 'This case is not in the recovery window.'),
-		destroy_role_undeclared: t('dossiq', 'This case type names no role that may destroy a case. Declare one on the case type first.'),
-		destroy_role_missing: t('dossiq', 'You do not hold the role this case type requires to destroy a case.'),
-		retention_clocks_disagree: t('dossiq', 'The lawful purpose of this case has ended while its archive period has not. Somebody has to decide which rule wins.'),
-		recovery_window_open: t('dossiq', 'This case can still be recovered, so it is not destroyed yet.'),
+		destroy_role_undeclared: t(
+			'dossiq',
+			'This case type names no role that may destroy a case. Declare one on the case type first.',
+		),
+		destroy_role_missing: t(
+			'dossiq',
+			'You do not hold the role this case type requires to destroy a case.',
+		),
+		retention_clocks_disagree: t(
+			'dossiq',
+			'The lawful purpose of this case has ended while its archive period has not. Somebody has to decide which rule wins.',
+		),
+		recovery_window_open: t(
+			'dossiq',
+			'This case can still be recovered, so it is not destroyed yet.',
+		),
 	}
 
 	return sentences[code] || t('dossiq', 'The case does not allow this.')
@@ -185,7 +211,12 @@ export default {
 			this.busy = row.id
 			try {
 				await destroyCase(row.id)
-				showSuccess(t('dossiq', 'The case is destroyed, and the record of it stays.'))
+				showSuccess(
+					t(
+						'dossiq',
+						'The case is destroyed, and the record of it stays.',
+					),
+				)
 				await this.load()
 			} catch (error) {
 				showError(refusalSentence(error?.response?.data?.code))
