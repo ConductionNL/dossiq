@@ -95,6 +95,12 @@
 						<span v-if="item.dueAt" class="personal-queue__due">{{
 							item.dueAt
 						}}</span>
+						<span
+							v-if="waitingOn(item)"
+							class="personal-queue__waiting"
+							:data-testid="`queue-waiting-${item.id}`">
+							{{ waitingOn(item) }}
+						</span>
 					</li>
 				</ul>
 			</section>
@@ -133,7 +139,7 @@ import {
 	hideGroupForToday,
 	showGroupAgain,
 } from '../../services/personalQueueApi.js'
-import { visibleGroups } from '../../utils/personalQueueHelpers.js'
+import { visibleGroups, waitingSentence } from '../../utils/personalQueueHelpers.js'
 
 export default {
 	name: 'PersonalQueueView',
@@ -203,6 +209,17 @@ export default {
 			if (item?.route?.name) {
 				this.$router.push(item.route)
 			}
+		},
+
+		/**
+		 * Who this item is waiting on, and what has already been tried.
+		 *
+		 * @param {object} item The item.
+		 * @return {string} The sentence, empty when nobody is being waited on.
+		 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+		 */
+		waitingOn(item) {
+			return waitingSentence(item, t)
 		},
 
 		/**
@@ -301,6 +318,11 @@ export default {
 }
 
 .personal-queue__covered,
+.personal-queue__waiting {
+	color: var(--color-text-maxcontrast);
+	font-size: 0.9em;
+}
+
 .personal-queue__due {
 	color: var(--color-text-maxcontrast);
 }

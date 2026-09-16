@@ -86,8 +86,14 @@ describe('the one personal settings screen', () => {
 		// held against this person by `CnAppRoot`'s preference group. A page
 		// that also offered them would be the second place, and the two would
 		// drift.
+		// The pattern was `/personal|preference/i` and matched PersonalQueue
+		// (one-personal-queue, #2842), which is a WORK list and not a place to
+		// set anything: it holds what is waiting on the reader across four
+		// stores. `settings` keeps the guard's teeth on the page that would
+		// actually be the second place, whatever it is called, without firing
+		// on every page whose name starts with Personal.
 		const preferencePages = (manifest.pages || []).filter((page) =>
-			/personal|preference/i.test(`${page.id} ${page.title}`),
+			/preference|settings/i.test(`${page.id} ${page.title}`),
 		)
 		expect(preferencePages.map((page) => page.id)).toEqual([])
 	})

@@ -31,10 +31,14 @@ use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
+use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -116,6 +120,13 @@ class CaseTypePublishValidationTest extends TestCase {
 			acknowledgement: new CaseTypeAcknowledgement(),
 			unreadTriggers: new UnreadTriggerService(),
 			handling: new CaseTypeHandling(),
+			fieldRules: new CaseStateFieldRuleProjector(
+				store: $store,
+				declaration: new StatusFieldRuleDeclaration(),
+				slugs: $this->createMock(SchemaSlugResolver::class),
+				container: $this->createMock(ContainerInterface::class),
+				logger: new NullLogger(),
+			),
 			logger: new NullLogger(),
 		);
 	}//end service()

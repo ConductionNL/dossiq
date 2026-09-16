@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.26-unstable.20260916080000</version>
+    <version>0.4.26-unstable.20260916093000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -164,6 +164,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
         -->
         <job>OCA\Dossiq\BackgroundJob\AutoCloseOnSilenceJob</job>
         <job>OCA\Dossiq\BackgroundJob\BezwaarTermijnJob</job>
+        <!--
+            pause-reason-with-chasing REQ-TERM-011: a pause reason declares its
+            own reminder interval and budget, and the engine rung armed with the
+            pause fires them. This sweep is the SECOND trigger, not a second
+            schedule: OpenRegister's timer engine is optional, and a pause on an
+            instance without it would otherwise chase nobody. The count on the
+            instance is what stops the two triggers from both sending.
+        -->
+        <job>OCA\Dossiq\BackgroundJob\PauseChaseJob</job>
         <job>OCA\Dossiq\BackgroundJob\DsoDeadlineJob</job>
         <job>OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob</job>
         <!--
@@ -575,6 +584,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 an OpenRegister without the timeline is a line of output.
             -->
             <step>OCA\Dossiq\Repair\DeclareTimelineKinds</step>
+            <!--
+                The Dutch notification templates dossiq can answer for. It fills
+                only the events the platform reports as having no text at all:
+                the store is app config on openregister and serves every app, so
+                overwriting a template another app uses would relabel its notices
+                in silence. A filled gap is no longer a gap, so a second run
+                writes nothing.
+            -->
+            <step>OCA\Dossiq\Repair\DeclareNotificationTemplates</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -747,6 +765,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 an OpenRegister without the timeline is a line of output.
             -->
             <step>OCA\Dossiq\Repair\DeclareTimelineKinds</step>
+            <!--
+                The Dutch notification templates dossiq can answer for. It fills
+                only the events the platform reports as having no text at all:
+                the store is app config on openregister and serves every app, so
+                overwriting a template another app uses would relabel its notices
+                in silence. A filled gap is no longer a gap, so a second run
+                writes nothing.
+            -->
+            <step>OCA\Dossiq\Repair\DeclareNotificationTemplates</step>
         </install>
     </repair-steps>
 

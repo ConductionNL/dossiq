@@ -140,6 +140,7 @@ class AanvullingsverzoekService {
 			recipient: $recipient,
 			durationDays: $durationDays,
 			rationale: $rationale,
+			pauseReason: $pauseReason,
 		);
 
 		if (($outcome['sent'] ?? false) !== true) {
