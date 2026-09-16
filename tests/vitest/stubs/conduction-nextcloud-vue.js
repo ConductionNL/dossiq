@@ -36,6 +36,26 @@ export function createObjectStore(_id, _options) {
 	}
 }
 
+/**
+ * Stand-in for the library's own `useObjectStore` (pinia id
+ * `conduction-objects`).
+ *
+ * 🔴 IT IS NOT dossiq's `src/store/modules/object.js`, WHICH IS A SECOND
+ * STORE UNDER THE ID `object`. CnIndexPage's self-fetch mode reads the
+ * library one, so a surface that wants the Cases list's own loading state or
+ * its last error has to read the same instance. A spec that stubbed dossiq's
+ * store instead would assert against a store the page never wrote to, and
+ * pass.
+ *
+ * A spec overrides the `objectStore` computed on the component under test, so
+ * this only has to satisfy the `import` at module load.
+ *
+ * @return {object} An empty store.
+ */
+export function useObjectStore() {
+	return { collections: {}, errors: {}, loading: {}, facets: {}, pagination: {} }
+}
+
 export const filesPlugin = () => ({})
 export const auditTrailsPlugin = () => ({})
 export const relationsPlugin = () => ({})
