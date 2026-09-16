@@ -119,10 +119,12 @@ import CaseAccessTab from './views/cases/components/CaseAccessTab.vue'
 // wraps the EmailThread component (display only), reuses NC Mail as
 // the email engine, and triggers prefillDraft via the case-email API.
 // @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseConversationsPanel from './views/cases/components/CaseConversationsPanel.vue'
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
+import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -523,6 +525,14 @@ const registry = {
 		_note: 'The Email tab of the case panels: correspondence linked to the case, consuming the mail leaf. Was a sidebar tab; moved into the strip so the two logs a handler reads, email and contact moments, sit beside each other rather than one in each chrome.',
 	},
 
+	// @spec openspec/changes/live-conversation-on-the-case/specs/case-management/spec.md
+	'case-conversations-pane': {
+		// @custom-widget-ratchet exclude the surface is an ACT, not a collection of OpenRegister objects: it starts a Talk room, declares the case major and opens the one channel that declaration made, and a built-in object-list takes a register and a schema and offers no button. The records it lists live on the case itself as `case.conversations`, which no widget type can read as a collection either. Deleted the day the library ships a widget type that posts to an app endpoint and renders the array a field holds
+		kind: 'widget',
+		component: CaseConversationsPanel,
+		_note: 'The Live conversation section of the Communication tab: start a conversation in Talk from any case, see what the case recorded of the ones already held, and declare the case major. The hoorzitting reaches the same mechanism through HearingService; this is the surface for every other case. Absent Talk, it says so rather than offering a button that cannot work.',
+	},
+
 	// @spec openspec/specs/case-dashboard-view/spec.md
 	'case-decisions-pane': {
 		// @custom-widget-ratchet exclude the decisions surface is decidiq's own integration leaf, reached through leafTab('decidesk-decisions'), so there is nothing in this repository for a built-in widget to read: no register, no schema, and no `integration` id that resolves it as a widget rather than as a sidebar tab. It moved from a `component:` sidebar tab to a tab child and needs a TYPE to render by; the definition is otherwise the same component. Deleted the day a leaf can be placed as a built-in widget
@@ -732,6 +742,13 @@ const registry = {
 		kind: 'widget',
 		component: CaseUnreadPanel,
 		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
+	},
+
+	'case-timeline-pane': {
+		// @custom-widget-ratchet exclude the surface is OpenRegister's TIMELINE, not a collection of OpenRegister objects: the entries come from /api/objects/{register}/{schema}/{id}/timeline, which takes no register-and-schema pair of its own, and a built-in object-list takes exactly that. There is no `integration` id for the timeline either, so `type: "integration"` cannot reach it. The pin and the follow-up are PATCHes on a sub-resource, which no declarative widget writes. This entry is deleted the day the library ships a timeline widget type
+		kind: 'widget',
+		component: CaseTimelineTab,
+		_note: 'CaseDetail Timeline tab: one chronological read of every note, logged call, message and acknowledgement on this case, from OpenRegister\'s timeline. Notes, Communication and Email stay beside it because each is the place to DO that one thing; this is the place to see the order. The audit sidebar keeps the change history.',
 	},
 
 	'case-attention': {

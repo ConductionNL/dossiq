@@ -352,5 +352,11 @@ class ConfigKeys {
 		// integriq (ADR-041, and the dossiq-delivers-nothing ruling).
 		'berichtenbox_adapter',
 		'beschikking_template_adapter',
+		// What a new instance starts with (starter-content-and-templates).
+		'shipped_origin_schema',
+		'starter_set_adoption_schema',
+		'reusable_step_schema',
+		'content_template_schema',
+		'case_type_group_schema',
 	];
 }//end class

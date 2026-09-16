@@ -54,6 +54,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+
 /**
  * ZRC (Zaken API) business rule validation and enrichment.
  *
@@ -210,8 +212,11 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 				$ztData = $caseType->jsonSerialize();
 			}
 
-			if (empty($ztData['defaultAssignee']) === false) {
-				return $ztData['defaultAssignee'];
+			// CaseTypeHandling is the one reader: the declared block first, the
+			// legacy `defaultAssignee` for a case type nobody has migrated.
+			$handler = (new CaseTypeHandling())->defaultHandler(caseType: (array)$ztData);
+			if ($handler !== '') {
+				return $handler;
 			}
 		} catch (\Throwable $e) {
 			// Zaaktype not found; skip auto-assignment.

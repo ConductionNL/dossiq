@@ -537,6 +537,14 @@
                             }
                         }
                     },
+                    "responders": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Responders",
+                        "description": "Who is pulled into the working channel when a case of this type is declared major. A user id, or a group as group:<gid>, or a bare group id. A name that does not resolve refuses the declaration rather than opening a channel that is missing the one person who had to be in it (ADR-102). A type that names nobody cannot be declared major. NOT visible:false: this is the field an administrator fills in on the case type, and visible:false hides a property on every surface, including the editor."
+                    },
                     "startableFlows": {
                         "type": "array",
                         "items": {
@@ -1283,6 +1291,32 @@
                             "nl": "Zaak \"{{title}}\" aan je toegewezen",
                             "en": "Case \"{{title}}\" assigned to you"
                         }
+                    },
+                    "caseDeclaredMajor": {
+                        "trigger": {
+                            "type": "updated",
+                            "condition": {
+                                "field": "isMajor",
+                                "operator": "equals",
+                                "value": true,
+                                "from": false
+                            }
+                        },
+                        "enabled": true,
+                        "channels": [
+                            "nc-notification"
+                        ],
+                        "recipients": [
+                            {
+                                "kind": "field",
+                                "field": "majorResponders"
+                            }
+                        ],
+                        "subject": {
+                            "nl": "Zaak \"{{title}}\" is opgeschaald naar calamiteit",
+                            "en": "Case \"{{title}}\" has been declared major"
+                        },
+                        "x-notes": "Declared rather than dispatched, per ADR-031. A `condition`, NOT a `filter`: AnnotationNotificationDispatcher reads `filter` only on a `created` trigger, so a filter here would be ignored in silence and every save of a major case would notify the responders again. The non-numeric field-change `condition` on `updated` has landed in the engine, which openspec/fleet-notification-plan.md still names as a gap; that doc is stale. `from: false` casts to the empty string, which is what both an absent isMajor and a false one read as, so the rule fires at the declaration and not after it."
                     },
                     "caseHandoffIntake": {
                         "trigger": {
@@ -2968,6 +3002,50 @@
                                 "type": "bijdrage"
                             }
                         }
+                    },
+                    "conversations": {
+                        "type": "array",
+                        "title": "Conversations",
+                        "description": "Live conversations held on this case, one object per conversation: kind (conversation|majorChannel), subject, roomId, roomUrl, startedAt, startedBy, participants, durationSeconds and endedAt. Written by CaseConversationService so the archive sees a call that only Talk would otherwise remember. What a conversation produced is filed separately as a case document, under the case type's visibility declaration.",
+                        "items": {
+                            "type": "object"
+                        },
+                        "visible": false
+                    },
+                    "isMajor": {
+                        "type": "boolean",
+                        "default": false,
+                        "title": "Major",
+                        "description": "Whether this case has been declared major. Declaring it is the act; the working channel is the consequence. Set by MajorCaseDeclaration through a permissioned endpoint, never by hand.",
+                        "facetable": true
+                    },
+                    "majorChannel": {
+                        "type": "object",
+                        "title": "Major channel",
+                        "description": "The one working channel a major declaration opened: roomId, roomUrl, openedAt and closedAt. One channel per case, never one per person who wants one, so a second declaration finds this one. Closing the case closes it and fills closedAt.",
+                        "visible": false
+                    },
+                    "majorDeclaredBy": {
+                        "type": "string",
+                        "title": "Major declared by",
+                        "description": "The user that declared this case major.",
+                        "visible": false
+                    },
+                    "majorDeclaredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Major declared at",
+                        "description": "The moment this case was declared major.",
+                        "visible": false
+                    },
+                    "majorResponders": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Major responders",
+                        "description": "The users pulled into the working channel when this case was declared major, resolved from the responders the case type names. Recorded so a gemeente can show afterwards who was in the room.",
+                        "visible": false
                     },
                     "associatedCases": {
                         "type": "array",
