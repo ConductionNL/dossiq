@@ -5,7 +5,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'

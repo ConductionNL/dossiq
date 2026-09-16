@@ -81,28 +81,6 @@
 - [ ] G3 `./scripts/run-hydra-gates.sh .` — no new findings.
 - [ ] G4 `openspec validate page-topology-cleanup` passes.
 
-
-## H. Data subject requests drive the platform
-
-Added 2026-09-16. The same ownership question this change settles for the
-processing-activities page, settled for the requests themselves: dossiq runs
-the case, OpenRegister does the erasing and the exporting.
-Consumes openregister `data-subject-rights-across-the-instance` (#3759, #3800).
-
-- [x] H1.1 `register.d/54-data-subject-request.json`: the `dataSubjectRequest` block on the `case` schema, holding the request kind, the subject, the platform's preview id and digest, the approval and the run outcome.
-- [x] H1.2 The same fragment seeds the `data-subject-request` case type with `processingDeadline: P1M`, its six statuses and its workflow template.
-- [x] H1.3 The three closing transitions are pinned to their request kind with `fieldEquals`, and the verwijdering one also declares `erasureComplete`.
-- [x] H1.4 The approving transition declares `notPerformedBy` against the preparing act, so the preparer cannot approve their own erasure.
-- [x] H2.1 `Service/Gdpr/PlatformDataSubjectRights`: the one door to OpenRegister's preview, approval, run and subject export. No erasure logic of its own.
-- [x] H2.2 `Service/Gdpr/DataSubjectRequestCase`: the case side. Writes the preview onto the case, refuses a run without the approving act, records the outcome and the timeline entry.
-- [x] H2.3 `TimelineKinds` gains `avg-verzoek`, declared once like every other kind.
-- [x] H2.4 `TransitionPreconditions` gains the `erasureComplete` dependency kind, which names the withheld items rather than reporting a failed condition.
-- [x] H3.1 `DataSubjectRequestController` and its four routes.
-- [x] H3.2 `src/services/dataSubjectRequestApi.js` and the `DataSubjectRequestTab` on the case page, showing the counts, the protected items with their grounds, and the export download.
-- [x] H4.1 Unit tests for the platform door, the case side and the precondition, each mutation-checked.
-- [x] H4.2 A contract test for the new controller, per gate 25.
-- [x] H4.3 `tests/e2e/data-subject-requests-drive-the-platform.spec.ts`, written and tagged, not run locally.
-
 ## Acceptance Criteria
 
 - All three analytics pages are `type: "dashboard"` with two or more widgets; the dashboard-antipattern gate is green.

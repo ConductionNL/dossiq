@@ -47,7 +47,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 
 declare(strict_types=1);
@@ -66,7 +66,7 @@ use Throwable;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Four platform services behind one door is the point.
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 class PlatformDataSubjectRights {
 
@@ -141,7 +141,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @return bool True when the platform's erasure services resolve.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function isAvailable(): bool {
 		return $this->container->has(self::PREVIEW_SERVICE)
@@ -169,7 +169,7 @@ class PlatformDataSubjectRights {
 	 * @psalm-suppress MixedAssignment OpenRegister is resolved by name.
 	 * @psalm-suppress MixedArgument OpenRegister is resolved by name.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function previewErasure(
 		string $subject,
@@ -202,7 +202,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function preview(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
@@ -225,7 +225,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function approvePreview(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
@@ -245,7 +245,7 @@ class PlatformDataSubjectRights {
 	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
 	 * @psalm-suppress MixedArgument OpenRegister is resolved by name.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function runErasure(string $previewId): array {
 		$store = $this->service(name: self::PREVIEW_STORE);
@@ -273,7 +273,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function requestExport(string $subject, ?string $type, ?string $requestId): array {
 		$service = $this->service(name: self::EXPORT_SERVICE);
@@ -301,7 +301,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function export(string $exportId): array {
 		$service = $this->service(name: self::EXPORT_SERVICE);
@@ -325,7 +325,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When this instance's OpenRegister does not have it.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function service(string $name): object {
 		try {
@@ -361,7 +361,7 @@ class PlatformDataSubjectRights {
 	 * @psalm-suppress MixedMethodCall OpenRegister's exception is resolved by name.
 	 * @psalm-suppress MixedArgument OpenRegister's exception is resolved by name.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function guarded(callable $call): array {
 		try {
@@ -411,7 +411,7 @@ class PlatformDataSubjectRights {
 	 *
 	 * @return string A mode the platform knows.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function knownMode(string $mode): string {
 		if (trim($mode) === self::MODE_WHOLE_OBJECT) {

@@ -356,7 +356,7 @@ class TemplateLibraryService {
 	 *
 	 * @return string The workflow uuid, or the empty string when the template declares none.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function createWorkflowTemplate(
 		object $objectService,

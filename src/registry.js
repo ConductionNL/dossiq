@@ -830,7 +830,7 @@ const registry = {
 	// CnObjectSidebar's four built-ins can call the AVG endpoints or render a
 	// protected item with its ground. kind `page`, so it adds nothing to the
 	// ADR-049 widget count.
-	// @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	// @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	DataSubjectRequestTab: {
 		kind: 'page',
 		component: DataSubjectRequestTab,

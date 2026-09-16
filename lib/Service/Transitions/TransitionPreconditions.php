@@ -301,7 +301,7 @@ class TransitionPreconditions {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function erasureReason(array $dependency, array $case): string {
 		$label = trim((string)($dependency['label'] ?? ''));
@@ -342,7 +342,7 @@ class TransitionPreconditions {
 	 *
 	 * @return string The names, comma separated, or the empty string.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function withheldNames(array $outcome): string {
 		$names = [];
@@ -376,7 +376,7 @@ class TransitionPreconditions {
 	 *
 	 * @return string The name, or the empty string.
 	 *
-	 * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	private function nameOf(mixed $entry): string {
 		if (is_string($entry) === true) {

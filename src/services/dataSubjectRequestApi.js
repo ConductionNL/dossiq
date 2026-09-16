@@ -21,7 +21,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 
 import axios from '@nextcloud/axios'
@@ -44,7 +44,7 @@ function avgUrl(caseId, act) {
  * @param {string} caseId The case uuid.
  * @return {Promise<object>} The preview, with `report.counts` and `report.protected`.
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 export async function previewErasure(caseId) {
 	const { data } = await axios.post(avgUrl(caseId, 'erasure-preview'))
@@ -58,7 +58,7 @@ export async function previewErasure(caseId) {
  * @param {string} caseId The case uuid.
  * @return {Promise<object>} `{destroyed, pseudonymised, withheld, refused, failed, complete}`.
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 export async function runErasure(caseId) {
 	const { data } = await axios.post(avgUrl(caseId, 'erasure-run'))
@@ -72,7 +72,7 @@ export async function runErasure(caseId) {
  * @param {string} caseId The case uuid.
  * @return {Promise<object>} The export record.
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 export async function requestSubjectExport(caseId) {
 	const { data } = await axios.post(avgUrl(caseId, 'subject-export'))
@@ -86,7 +86,7 @@ export async function requestSubjectExport(caseId) {
  * @param {string} caseId The case uuid.
  * @return {Promise<{exportId: string, downloadable: boolean, expiresAt: string, expired: boolean}>} The state.
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 export async function fetchSubjectExportState(caseId) {
 	const { data } = await axios.get(avgUrl(caseId, 'subject-export'))
@@ -105,7 +105,7 @@ export async function fetchSubjectExportState(caseId) {
  * @param {string} exportId The export uuid.
  * @return {string} The absolute url.
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 export function subjectExportDownloadUrl(exportId) {
 	return generateUrl(`/apps/openregister/api/gdpr/subject-exports/${encodeURIComponent(exportId)}/download`)
@@ -122,7 +122,7 @@ export function subjectExportDownloadUrl(exportId) {
  * @param {object} error The axios error.
  * @return {{rule: string, message: string}} The refusal.
  *
- * @spec openspec/changes/page-topology-cleanup/specs/avg-processing-surface/spec.md
+ * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 export function refusalOf(error) {
 	const body = error?.response?.data ?? {}
