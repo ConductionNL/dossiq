@@ -578,6 +578,19 @@ The fourth, integriq `outbound-sender-identity-and-deliverability`
 requirement on `inbound-mail-filters` rather than a change, because its
 noun is outbound mail and REQ-IMF-12 is where that already sits.
 
+### Consumer half of openregister's search change
+
+openregister `search-quality-operators-and-facets` merged on 2026-09-15 as
+#3768 and #3806: a missing-value facet, boolean operators and wildcards in
+the term, a declared match type and input control per property, and an
+administered index rebuild. dossiq's half is
+`case-search-declares-its-fields` (rows 9.2, 9.1 and 9.12): the case
+declares how each of its fields is searched, a refused term says where it
+broke instead of rendering an empty list, and the admin reaches the index
+status. The not-set chip in the facet sidebar is nextcloud-vue#1176 and is
+named rather than built, because `normalizeFacets()` drops the count before
+any app can read it.
+
 ### Changes this wave asks another repo to open
 
 Each is named in the proposal that needs it, under "Needs a change in
