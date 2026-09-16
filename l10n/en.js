@@ -4649,6 +4649,14 @@ OC.L10N.register(
         "We could not find these responders: {names}": "We could not find these responders: {names}",
         "Unknown error": "Unknown error",
         "{minutes} min": "{minutes} min"
+,
+        "First run": "First run",
+        "Still open": "Still open",
+        "The first run status could not be read.": "The first run status could not be read.",
+        "These tour steps point at a screen that is gone, so they teach nobody: {steps}": "These tour steps point at a screen that is gone, so they teach nobody: {steps}",
+        "This could not be read: {reason}": "This could not be read: {reason}",
+        "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.": "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.",
+        "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.": "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app."
     },
     "nplurals=2; plural=(n != 1);"
 )

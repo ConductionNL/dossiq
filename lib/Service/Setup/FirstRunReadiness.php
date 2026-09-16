@@ -141,12 +141,17 @@ class FirstRunReadiness {
 	 * reported as unverifiable rather than counted as broken. Judging them
 	 * belongs in the runner, which can see the DOM.
 	 *
+	 * @param array<string, mixed>|null $manifest The manifest to judge, or null
+	 *        for the shipped one. Taken as an argument so a test can hand it a
+	 *        tour that DOES name a missing page: a scan that only ever runs
+	 *        over a healthy tree reports the same green as one that works.
+	 *
 	 * @return array<int, array<string, mixed>> The broken and unverifiable steps.
 	 *
 	 * @spec openspec/changes/first-run-and-the-tour/specs/first-time-setup/spec.md
 	 */
-	public function brokenTourSteps(): array {
-		$manifest = $this->manifest();
+	public function brokenTourSteps(?array $manifest = null): array {
+		$manifest = ($manifest ?? $this->manifest());
 		$surfaces = $this->declaredSurfaces(manifest: $manifest);
 		$broken = [];
 

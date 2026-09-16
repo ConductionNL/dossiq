@@ -4649,6 +4649,14 @@ OC.L10N.register(
         "We could not find these responders: {names}": "We konden deze opgeroepenen niet vinden: {names}",
         "Unknown error": "Onbekende fout",
         "{minutes} min": "{minutes} min"
+,
+        "First run": "Eerste keer",
+        "Still open": "Nog open",
+        "The first run status could not be read.": "We konden de status van de eerste keer niet lezen.",
+        "These tour steps point at a screen that is gone, so they teach nobody: {steps}": "Deze rondleidingsstappen wijzen naar een scherm dat er niet meer is, dus ze leren niemand iets: {steps}",
+        "This could not be read: {reason}": "Dit konden we niet lezen: {reason}",
+        "What this instance still needs before it can take a case. Nothing here blocks the app: you can leave an item open and carry on.": "Wat deze omgeving nog nodig heeft voordat er een zaak in kan. Niets hiervan blokkeert de app: je kunt een punt open laten en doorgaan.",
+        "What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.": "Wat deze omgeving nog nodig heeft voordat er een zaak in kan. We melden het, we eisen het niet: alleen de registercontrole blokkeert de app."
     },
     "nplurals=2; plural=(n != 1);"
 )
