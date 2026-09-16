@@ -246,4 +246,105 @@ class CorrespondentWriterTest extends TestCase {
 			actual: $this->writer->partyHolding(caseId: 'case-1', address: '   '),
 		);
 	}//end testTheWriterResolvesAgainstTheCasesOwnParties()
+
+	/**
+	 * A listing carries the names and can be narrowed to one party.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function testAListingIsNamedAndCanBeNarrowedToOneParty(): void {
+		$documents = [
+			['id' => 'doc-a', 'sender' => '', 'recipients' => ['party-council']],
+			['id' => 'doc-b', 'sender' => 'party-jan', 'recipients' => []],
+		];
+
+		$all = $this->writer->describeAll(caseId: 'case-1', documents: $documents);
+		$this->assertCount(expectedCount: 2, haystack: $all);
+		$this->assertSame(expected: ['Gemeente Utrecht'], actual: $all[0]['recipientNames']);
+		$this->assertSame(expected: 'Jan Jansen', actual: $all[1]['senderName']);
+
+		$narrowed = $this->writer->describeAll(
+			caseId: 'case-1',
+			documents: $documents,
+			correspondent: 'party-jan',
+		);
+		$this->assertSame(expected: ['doc-b'], actual: array_column($narrowed, 'id'));
+	}//end testAListingIsNamedAndCanBeNarrowedToOneParty()
+
+	/**
+	 * The parties are read ONCE for a listing, not once per document. Forty
+	 * letters must not make forty identical reads to draw one column.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function testTheListingReadsThePartiesOnce(): void {
+		$people = $this->createMock(originalClassName: PersonLinkReader::class);
+		$people->expects($this->once())->method('peopleOn')->willReturn(self::PARTIES);
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+
+		$writer = new CorrespondentWriter(
+			rules: new DocumentCorrespondents(),
+			people: $people,
+			settingsService: $settings,
+		);
+
+		$writer->describeAll(
+			caseId: 'case-1',
+			documents: [
+				['id' => 'doc-a', 'sender' => 'party-jan'],
+				['id' => 'doc-b', 'sender' => 'party-council'],
+				['id' => 'doc-c', 'sender' => 'party-jan'],
+			],
+		);
+	}//end testTheListingReadsThePartiesOnce()
+
+	/**
+	 * A letter goes to the addressee when the case names one, and to the
+	 * requester only when it does not. The roles are not merged.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-013-the-writers-set-the-correspondent-not-the-person
+	 */
+	public function testTheFirstRoleThatAnswersWinsAndTheRolesAreNotMerged(): void {
+		$people = $this->createMock(originalClassName: PersonLinkReader::class);
+		$people->method('peopleOn')->willReturn([
+			['partyUuid' => 'party-jan', 'role' => 'aanvrager'],
+			['partyUuid' => 'party-council', 'role' => 'geadresseerde'],
+		]);
+
+		$settings = $this->createMock(originalClassName: SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => (self::CONFIG[$key] ?? $default)
+		);
+
+		$writer = new CorrespondentWriter(
+			rules: new DocumentCorrespondents(),
+			people: $people,
+			settingsService: $settings,
+		);
+
+		$this->assertSame(
+			expected: ['party-council'],
+			actual: $writer->addressedParties(caseId: 'case-1', roles: ['geadresseerde', 'aanvrager']),
+		);
+		$this->assertSame(
+			expected: ['party-jan'],
+			actual: $writer->addressedParties(caseId: 'case-1', roles: ['aanvrager']),
+		);
+		$this->assertSame(
+			expected: [],
+			actual: $writer->addressedParties(caseId: 'case-1', roles: ['belanghebbende']),
+		);
+	}//end testTheFirstRoleThatAnswersWinsAndTheRolesAreNotMerged()
 }//end class

@@ -272,4 +272,70 @@ class DocumentCorrespondentsTest extends TestCase {
 			actual: $this->rules->nameOf(identifier: '  ', parties: self::PARTIES),
 		);
 	}//end testAStoredCorrespondentIsNamedAndAnUnknownOneIsNotBlank()
+
+	/**
+	 * A row carries the names beside the identifiers, never instead of them:
+	 * two parties with the same display name are two parties.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function testADocumentIsDescribedWithNamesForItsCorrespondents(): void {
+		$described = $this->rules->describe(
+			document: ['sender' => 'party-jan', 'recipients' => ['party-council', 'uid-ouder']],
+			parties: self::PARTIES,
+		);
+
+		$this->assertSame(expected: 'Jan Jansen', actual: $described['senderName']);
+		$this->assertSame(
+			expected: ['Gemeente Utrecht', 'Ouder Link'],
+			actual: $described['recipientNames'],
+		);
+	}//end testADocumentIsDescribedWithNamesForItsCorrespondents()
+
+	/**
+	 * A document written before this change carries no correspondents at all,
+	 * and a schema that dropped the property answers null. Both read as none,
+	 * and neither throws.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function testADocumentWithoutCorrespondentsIsDescribedAsEmpty(): void {
+		$this->assertSame(
+			expected: ['senderName' => '', 'recipientNames' => []],
+			actual: $this->rules->describe(document: ['title' => 'Oud'], parties: self::PARTIES),
+		);
+		$this->assertSame(
+			expected: ['senderName' => '', 'recipientNames' => []],
+			actual: $this->rules->describe(
+				document: ['sender' => null, 'recipients' => null],
+				parties: self::PARTIES,
+			),
+		);
+	}//end testADocumentWithoutCorrespondentsIsDescribedAsEmpty()
+
+	/**
+	 * The filter behind "show me everything that went to this person", and
+	 * the empty filter that means everything.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function testAFilterMatchesASenderAnAddresseeAndNobodyElse(): void {
+		$letter = ['sender' => '', 'recipients' => ['party-council']];
+		$reply = ['sender' => 'party-jan', 'recipients' => []];
+
+		$this->assertTrue(condition: $this->rules->mentions(document: $letter, identifier: 'party-council'));
+		$this->assertTrue(condition: $this->rules->mentions(document: $reply, identifier: 'party-jan'));
+		$this->assertFalse(condition: $this->rules->mentions(document: $letter, identifier: 'party-jan'));
+		$this->assertFalse(condition: $this->rules->mentions(document: $reply, identifier: 'party-council'));
+
+		// No filter is every document, not no document.
+		$this->assertTrue(condition: $this->rules->mentions(document: $letter, identifier: ''));
+		$this->assertTrue(condition: $this->rules->mentions(document: $reply, identifier: '  '));
+	}//end testAFilterMatchesASenderAnAddresseeAndNobodyElse()
 }//end class

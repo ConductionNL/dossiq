@@ -90,7 +90,13 @@ class ZaakdossierController extends Controller {
 		}
 
 		try {
-			$file = $this->fileService->getDossierForCase(caseId: $caseId);
+			$file = $this->fileService->getDossierForCase(
+				caseId: $caseId,
+				// "Show me everything that went to this person." The value is
+				// a party of the case, never a name: two people called Jansen
+				// are two filters.
+				correspondent: (string)$this->request->getParam('correspondent', ''),
+			);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}

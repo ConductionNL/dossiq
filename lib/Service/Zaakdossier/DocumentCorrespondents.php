@@ -187,6 +187,93 @@ class DocumentCorrespondents {
 	}//end nameOf()
 
 	/**
+	 * A document's correspondents, named for a reader.
+	 *
+	 * The stored identifiers stay on the row beside the names. A list filters
+	 * and groups on the identifier and renders the name, and handing it only
+	 * names would make two parties with the same display name one party.
+	 *
+	 * @param array<string, mixed> $document The document row.
+	 * @param array<int, array<string, mixed>> $parties The party links of the case.
+	 *
+	 * @return array{senderName: string, recipientNames: array<int, string>} The names.
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function describe(array $document, array $parties): array {
+		$recipients = [];
+		foreach ($this->storedRecipients(document: $document) as $identifier) {
+			$recipients[] = $this->nameOf(identifier: $identifier, parties: $parties);
+		}
+
+		return [
+			'senderName' => $this->nameOf(
+				identifier: trim((string)($document['sender'] ?? '')),
+				parties: $parties,
+			),
+			'recipientNames' => $recipients,
+		];
+	}//end describe()
+
+	/**
+	 * Whether a document names one party, as sender or as addressee.
+	 *
+	 * The filter behind "show me everything that went to this person". An
+	 * empty identifier matches everything, which is what no filter means.
+	 *
+	 * @param array<string, mixed> $document The document row.
+	 * @param string $identifier The party's identifier.
+	 *
+	 * @return bool True when the document names that party.
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function mentions(array $document, string $identifier): bool {
+		$wanted = trim($identifier);
+		if ($wanted === '') {
+			return true;
+		}
+
+		if (trim((string)($document['sender'] ?? '')) === $wanted) {
+			return true;
+		}
+
+		return in_array($wanted, $this->storedRecipients(document: $document), true);
+	}//end mentions()
+
+	/**
+	 * The recipients a stored document carries, as a list of identifiers.
+	 *
+	 * A document written before this change has no `recipients` at all, and a
+	 * schema that dropped the property answers null rather than an empty
+	 * array. Both read as none.
+	 *
+	 * @param array<string, mixed> $document The document row.
+	 *
+	 * @return array<int, string> The identifiers.
+	 */
+	private function storedRecipients(array $document): array {
+		$stored = ($document['recipients'] ?? []);
+		if (is_array($stored) === false) {
+			return [];
+		}
+
+		$identifiers = [];
+		foreach ($stored as $entry) {
+			if (is_string($entry) === false && is_numeric($entry) === false) {
+				continue;
+			}
+
+			$identifier = trim((string)$entry);
+			if ($identifier !== '' && in_array($identifier, $identifiers, true) === false) {
+				$identifiers[] = $identifier;
+			}
+		}
+
+		return $identifiers;
+	}//end storedRecipients()
+
+	/**
 	 * The identifier a party link is stored under: its party uuid, else its
 	 * contact uid.
 	 *

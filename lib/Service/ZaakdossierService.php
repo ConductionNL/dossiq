@@ -377,14 +377,16 @@ class ZaakdossierService {
 	 * so the service stays testable without a user context.
 	 *
 	 * @param string $caseId The case (zaak) UUID.
+	 * @param string $correspondent Narrow to the documents naming this party, or '' for all.
 	 *
 	 * @return array<string, mixed> Structure with `total`, `groups` and `informatieobjecten`.
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
-	public function getDossierForCase(string $caseId): array {
+	public function getDossierForCase(string $caseId, string $correspondent = ''): array {
 		[$objectService, $register] = $this->requireRegister();
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
@@ -415,7 +417,17 @@ class ZaakdossierService {
 			}
 		}
 
-		return $this->groupByType(documents: $documents);
+		// Every row carries who the document was from and to, named. The
+		// parties are read once for the whole listing rather than once per
+		// document, which is the difference between one OpenRegister read and
+		// forty to draw one column.
+		return $this->groupByType(
+			documents: $this->correspondents->describeAll(
+				caseId: $caseId,
+				documents: $documents,
+				correspondent: $correspondent,
+			)
+		);
 	}//end getDossierForCase()
 
 	/**

@@ -138,6 +138,43 @@ class CorrespondentWriter {
 	}//end addressedParties()
 
 	/**
+	 * A case's documents with their correspondents named, optionally narrowed
+	 * to the ones naming one party.
+	 *
+	 * The parties are read ONCE for the whole listing, not once per document:
+	 * a dossier of forty letters would otherwise make forty identical reads
+	 * against OpenRegister to render one column.
+	 *
+	 * @param string $caseId The case.
+	 * @param array<int, array<string, mixed>> $documents The documents.
+	 * @param string $correspondent A party identifier to narrow to, or ''.
+	 *
+	 * @return array<int, array<string, mixed>> The documents, named and narrowed.
+	 *
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
+	 */
+	public function describeAll(string $caseId, array $documents, string $correspondent = ''): array {
+		$parties = $this->partiesOf(caseId: $caseId);
+		$described = [];
+		foreach ($documents as $document) {
+			if (is_array($document) === false) {
+				continue;
+			}
+
+			if ($this->rules->mentions(document: $document, identifier: $correspondent) === false) {
+				continue;
+			}
+
+			$described[] = array_merge(
+				$document,
+				$this->rules->describe(document: $document, parties: $parties)
+			);
+		}
+
+		return $described;
+	}//end describeAll()
+
+	/**
 	 * Record one dispatch per correspondent of a document.
 	 *
 	 * Idempotent per party and role: a document saved twice with the same
