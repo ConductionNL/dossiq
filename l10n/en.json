@@ -4664,6 +4664,17 @@
         "Answer by": "Answer by",
         "Asked by": "Asked by",
         "Asked at": "Asked at",
-        "Answered": "Answered"
+        "Answered": "Answered",
+        "Add to favourites": "Add to favourites",
+        "Add to or remove from favourites": "Add to or remove from favourites",
+        "Added to your favourites.": "Added to your favourites.",
+        "Cases you open show up here": "Cases you open show up here",
+        "Favourite": "Favourite",
+        "Favourites": "Favourites",
+        "Recently opened": "Recently opened",
+        "Remove from favourites": "Remove from favourites",
+        "Removed from your favourites.": "Removed from your favourites.",
+        "Star a case to find it here": "Star a case to find it here",
+        "Your favourites": "Your favourites"
     }
 }

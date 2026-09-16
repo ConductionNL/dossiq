@@ -154,6 +154,13 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// are read BEFORE the panels for the same reason the tiles are. The
 		// assertion therefore allows exactly the rows that carry a widget and
 		// still refuses an empty one, which is what it was guarding.
+		//
+		// FOUR ROWS NOW. `case-attention` (markers-and-assessments-on-the-case)
+		// landed without being named here and left this assertion RED on
+		// `development`; `case-favourite` (case-number-and-favourites) is added
+		// with it. The star reads FIRST because it is part of what identifies
+		// this case to the reader, where the three strips under it are about
+		// the case rather than about you.
 		const layout = caseDetail().config.layout
 		const tiles = layout.filter((c) => c.gridY === 0)
 		const panels = cells('case-panels')[0]
@@ -165,7 +172,12 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		expect(
 			between.map((c) => c.widgetId),
 			'every row between the tiles and the panels must carry a widget',
-		).toEqual(['case-unread', 'case-status-declaration'])
+		).toEqual([
+			'case-favourite',
+			'case-unread',
+			'case-status-declaration',
+			'case-attention',
+		])
 		expect(panels.gridY).toBe(
 			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
 		)

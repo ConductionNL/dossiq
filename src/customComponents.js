@@ -90,6 +90,10 @@ import { countMatchingCases } from './services/bulkJobApi.js'
 // can reach it without importing every page this file mounts.
 // @spec openspec/changes/case-claim-action/specs/case-management/spec.md
 import { claimCase } from './utils/caseClaim.js'
+// Star a case, or take the star off, from a list row
+// (case-number-and-favourites, row 2.19).
+// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+import { toggleCaseFavourite } from './utils/caseFavourite.js'
 // Mark a case read or unread from a list row (unread-state-on-the-case).
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
@@ -320,6 +324,14 @@ export default {
 	// render a menu item that does nothing when clicked.
 	markCaseRead,
 	markCaseUnread,
+	// The Queue's and Cases' `favourite` row action
+	// (case-number-and-favourites). One entry rather than a star and an
+	// unstar, because `@self.favourite` rides every row, so the menu item can
+	// say what the click will do. A function handler for the same reason the
+	// two above are ones, plus one of its own: the gesture is PUT to star and
+	// DELETE to unstar on one path, and no declarative write takes two
+	// methods.
+	toggleCaseFavourite,
 	// --- Genuine exceptions: no abstract analogue. ---
 	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
 	// manifest's declarative `handler: "open-modal"` path: that path emits an

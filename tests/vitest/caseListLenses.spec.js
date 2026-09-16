@@ -114,6 +114,11 @@ const DRAFTS_LENS = 'My drafts'
 const CASE_LENSES = [
 	'All',
 	'Unread',
+	'Favourites',
+	'Recently opened',
+	'Waiting on the applicant',
+	'Needs attention',
+	'Assessed high risk',
 	'Mine',
 	'Unclaimed',
 	'Handed on',
@@ -139,10 +144,20 @@ const CASE_LENSES = [
  * STATUS longer than that status allows, and a task has neither a status type
  * nor a maximum dwell.
  */
-const CASES_ONLY = ['Unread', 'Handed on', DRAFTS_LENS, 'Stuck']
+const CASES_ONLY = [
+	'Unread',
+	'Favourites',
+	'Recently opened',
+	'Waiting on the applicant',
+	'Needs attention',
+	'Assessed high risk',
+	'Handed on',
+	DRAFTS_LENS,
+	'Stuck',
+]
 
 describe('Cases index lenses', () => {
-	it('declares the ten chips in order', () => {
+	it('declares the fifteen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
