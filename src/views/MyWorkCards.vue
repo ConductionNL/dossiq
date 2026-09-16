@@ -24,8 +24,18 @@
 		:rowClickToView="true"
 		:sortKey="sortConfig.key"
 		:sortOrder="sortConfig.order"
+		:excludeFields="caseForm.excludeFields"
+		:includeFields="caseForm.includeFields"
+		:fieldOverrides="caseForm.fieldOverrides"
+		:createDefaults="caseForm.createDefaults"
+		:formSize="caseForm.formSize"
+		:formColumns="caseForm.formColumns"
+		:createSuccessRoute="caseForm.createSuccessRoute"
+		:createSuccessMessage="caseForm.createSuccessMessage"
+		editOpensDetail
 		@view="openCase"
-		@rowClick="openCase">
+		@rowClick="openCase"
+		@editOpen="openCase">
 		<template #below-header>
 			<WorkloadSummaryBar :handlers="workloadHandlers" />
 			<div
@@ -33,12 +43,12 @@
 				role="group"
 				:aria-label="t('dossiq', 'Sort My Work')">
 				<NcButton
-					:type="sortMode === 'urgency' ? 'primary' : 'tertiary'"
+					:variant="sortMode === 'urgency' ? 'primary' : 'tertiary'"
 					@click="setSortMode('urgency')">
 					{{ t('dossiq', 'Urgency') }}
 				</NcButton>
 				<NcButton
-					:type="sortMode === 'newest' ? 'primary' : 'tertiary'"
+					:variant="sortMode === 'newest' ? 'primary' : 'tertiary'"
 					@click="setSortMode('newest')">
 					{{ t('dossiq', 'Newest') }}
 				</NcButton>
@@ -111,6 +121,7 @@ import WorkloadSummaryBar from './WorkloadSummaryBar.vue'
 import { fetchSubstitutedWork } from '../services/substitutionApi.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { initializeStores } from '../store/store.js'
+import { caseCreateFormProps } from '../utils/caseCreateForm.js'
 import {
 	applySubstitutedFilter,
 	asSubstitutedItems,
@@ -219,6 +230,14 @@ export default {
 		 */
 		sidebar() {
 			return { enabled: true, showMetadata: false }
+		},
+
+		/**
+		 * The shared case create-form definition, so filing a case here asks
+		 * what the Dashboard's New case button asks.
+		 */
+		caseForm() {
+			return caseCreateFormProps()
 		},
 
 		/**

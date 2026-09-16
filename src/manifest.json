@@ -1103,6 +1103,17 @@
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
+				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
+				"includeFields": ["caseType", "title", "requester", "description", "assignee", "impact", "urgency", "confidentiality", "intakeChannel", "startDate", "plannedEndDate"],
+				"fieldOverrides": {
+					"description": { "widget": "textarea" },
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+				},
+				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
+				"createSuccessRoute": "CaseDetail",
+				"createSuccessMessage": "Case created.",
+				"formSize": "large",
+				"formColumns": 2,
 				"viewModes": ["table", "cards"],
 				"showViewAction": false,
 				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of customComponents.js, because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
@@ -1248,6 +1259,17 @@
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
+				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
+				"includeFields": ["caseType", "title", "requester", "description", "assignee", "impact", "urgency", "confidentiality", "intakeChannel", "startDate", "plannedEndDate"],
+				"fieldOverrides": {
+					"description": { "widget": "textarea" },
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+				},
+				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
+				"createSuccessRoute": "CaseDetail",
+				"createSuccessMessage": "Case created.",
+				"formSize": "large",
+				"formColumns": 2,
 				"viewModes": ["table", "cards", "map"],
 				"mapConfig": {
 					"geoField": "geometry",
