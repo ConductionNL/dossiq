@@ -68,6 +68,13 @@ class CaseTimeline {
 	public const WRITE_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineWriteService';
 
 	/**
+	 * OpenRegister's timeline reader, named the same way and for the same reason.
+	 *
+	 * @var string
+	 */
+	public const READ_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineEntryService';
+
+	/**
 	 * An entry only the handling organisation reads.
 	 *
 	 * @var string
@@ -193,6 +200,116 @@ class CaseTimeline {
 			return '';
 		}//end try
 	}//end record()
+
+	/**
+	 * The entries on a case that the applicant may read.
+	 *
+	 * ONE READER FOR BOTH OUTSIDE SURFACES. The portal contribution and the
+	 * public status page ask the same question, and a second reader beside
+	 * this one is how the two would come to disagree: the disagreement would
+	 * be an internal note on a citizen's screen, and it would look like a
+	 * working page right up until someone read it.
+	 *
+	 * THE FILTER IS THE READER'S, NOT THE CALLER'S. `publicEntries()` takes no
+	 * visibility argument, so no caller can ask it for the internal ones. A
+	 * surface that wants the whole feed reads OpenRegister's own endpoint with
+	 * a signed-in user behind it, which is where the access check belongs.
+	 *
+	 * THE AUTHOR DOES NOT TRAVEL. A handler's user id is not part of what
+	 * happened on the case as far as the applicant is concerned, and a public
+	 * projection is the last place to hand one out.
+	 *
+	 * Answers the empty array on every failure, for the reason the writer
+	 * softens: a page that shows no history is poor, a page that 500s because
+	 * OpenRegister is a release behind is worse.
+	 *
+	 * @param string  $caseId The case to read.
+	 * @param integer $limit  How many entries at most, newest first.
+	 *
+	 * @return array<int, array<string, mixed>> The public entries.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function publicEntries(string $caseId, int $limit = 50): array {
+		if (trim($caseId) === '') {
+			return [];
+		}
+
+		if ($this->settings->isOpenRegisterAvailable() === false || $this->container->has(self::READ_SERVICE) === false) {
+			return [];
+		}
+
+		$coordinates = $this->coordinates();
+		if ($coordinates === null) {
+			return [];
+		}
+
+		[$objectService, $register, $schema] = $coordinates;
+
+		try {
+			$object = $objectService->find($caseId, register: $register, schema: $schema);
+			if ($object === null) {
+				return [];
+			}
+
+			$entries = $this->container->get(self::READ_SERVICE)->listForObject(
+				object: $object,
+				visibility: self::PUBLIC_ENTRY,
+				limit: $limit,
+			);
+		} catch (Throwable $e) {
+			$this->soften(caseId: $caseId, kind: 'public read', reason: $e->getMessage());
+			return [];
+		}
+
+		$projected = [];
+		foreach ((array)$entries as $entry) {
+			$projected[] = $this->project(entry: $entry);
+		}
+
+		return $projected;
+	}//end publicEntries()
+
+	/**
+	 * One entry, cut down to what an applicant may be shown.
+	 *
+	 * @param mixed $entry The entry as OpenRegister answered it.
+	 *
+	 * @return array<string, mixed> The projection.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	private function project(mixed $entry): array {
+		$row = $entry;
+		if (is_object($entry) === true && method_exists($entry, 'jsonSerialize') === true) {
+			$row = $entry->jsonSerialize();
+		}
+
+		$row = (array)$row;
+
+		return [
+			'id' => (string)($row['uuid'] ?? ($row['id'] ?? '')),
+			'kind' => (string)($row['kind'] ?? ''),
+			'message' => (string)($row['message'] ?? ''),
+			'fields' => (array)($row['fields'] ?? []),
+			'occurredAt' => $this->moment(value: ($row['created'] ?? null)),
+		];
+	}//end project()
+
+	/**
+	 * A timestamp as a string, whichever shape it arrived in.
+	 *
+	 * @param mixed $value The raw value.
+	 *
+	 * @return string The moment, or '' when there is none.
+	 */
+	private function moment(mixed $value): string {
+		if ($value instanceof \DateTimeInterface === true) {
+			return $value->format(\DateTimeInterface::ATOM);
+		}
+
+		return (string)($value ?? '');
+	}//end moment()
 
 	/**
 	 * Resolve the further cases an entry also belongs on.

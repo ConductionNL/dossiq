@@ -61,6 +61,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+
 /**
  * Declares what an external Portaliq subject may see and do in Dossiq.
  *
@@ -108,6 +110,46 @@ class PortalContributionProvider {
 		'endDate',
 		'deadline',
 	];
+
+	/**
+	 * Constructor.
+	 *
+	 * THE ONE DEPENDENCY, AND WHY IT IS OPTIONAL. Portaliq discovers this
+	 * class by FQCN and may build it with `new`, so a required constructor
+	 * argument would make the provider undiscoverable on exactly the
+	 * instances it exists to serve. Defaulting to null keeps `new
+	 * PortalContributionProvider()` working: the manifest below is still pure
+	 * data, and only {@see self::caseTimeline()} needs the reader.
+	 *
+	 * @param CaseTimeline|null $timeline The one reader of the public feed, or null.
+	 */
+	public function __construct(
+		private readonly ?CaseTimeline $timeline = null,
+	) {
+	}//end __construct()
+
+	/**
+	 * The public entries on one case, as the portal's case timeline.
+	 *
+	 * THE PROVIDER DOES NOT DECIDE WHAT IS PUBLIC. It asks
+	 * {@see CaseTimeline::publicEntries()}, which is the same call
+	 * `#PublicStatus` makes, so the portal and the status page cannot come to
+	 * show different histories of the same case. A provider that filtered for
+	 * itself would be the second reader this design exists to avoid.
+	 *
+	 * @param string $caseId The case the subject is looking at.
+	 *
+	 * @return array<int, array<string, mixed>> The public entries, newest first.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function caseTimeline(string $caseId): array {
+		if ($this->timeline === null) {
+			return [];
+		}
+
+		return $this->timeline->publicEntries(caseId: $caseId);
+	}//end caseTimeline()
 
 	/**
 	 * The audiences this provider contributes to (contract v2, preferred).
@@ -283,6 +325,14 @@ class PortalContributionProvider {
 					'listable' => true,
 					'minTrust' => 'low',
 					'fields' => self::CITIZEN_CASE_FIELDS,
+					// The case detail carries what has happened on it. The
+					// contract names the method rather than embedding the
+					// entries, because the manifest is built once per subject
+					// and a timeline is read once per case.
+					'timeline' => [
+						'label' => 'Wat er is gebeurd',
+						'provider' => 'caseTimeline',
+					],
 				],
 				[
 					'id' => 'berichten',
