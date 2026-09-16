@@ -23,7 +23,7 @@
     "postbuild": "node scripts/check-single-dexie.js",
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --watch",
-    "lint": "eslint src tests scripts",
+    "lint": "eslint src tests scripts tools",
     "lint-fix": "npm run lint -- --fix",
     "stylelint": "stylelint \"{src,css}/**/*.{vue,scss,css}\"",
     "stylelint-fix": "stylelint 'src/**/*.vue' 'src/**/*.scss' 'src/**/*.css' --fix",
@@ -37,7 +37,7 @@
     "check:dexie": "node scripts/check-single-dexie.js",
     "format": "prettier --check \"**/*.{js,ts,vue,css,scss}\"",
     "format:fix": "prettier --write \"**/*.{js,ts,vue,css,scss}\"",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true; git config merge.l10n.name 'l10n catalogue key-wise merge' || true; git config merge.l10n.driver 'node tools/merge-l10n.js %O %A %B %P' || true"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"
