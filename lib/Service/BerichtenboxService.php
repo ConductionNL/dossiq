@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service;
 use DateTime;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,6 +52,7 @@ class BerichtenboxService {
 	 * @param LoggerInterface $logger The logger.
 	 * @param OwningCaseResolver $owningCase Resolves a message's owning case.
 	 * @param BerichtenboxAdapterInterface $adapter The transport this instance has.
+	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
@@ -58,6 +61,7 @@ class BerichtenboxService {
 		private LoggerInterface $logger,
 		private readonly OwningCaseResolver $owningCase,
 		private readonly BerichtenboxAdapterInterface $adapter,
+		private readonly CaseTimeline $timeline,
 	) {
 	}//end __construct()
 
@@ -128,6 +132,22 @@ class BerichtenboxService {
 			object: $messageData,
 			register: (int)$register,
 			schema: (int)$schema,
+		);
+
+		// PUBLIC, and deliberately WITHOUT the BSN. The recipient already has
+		// the message; the identifier they were addressed by is not part of
+		// what happened on the case, and a public entry is the last place to
+		// put one.
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::PORTAL_MESSAGE,
+			message: $subject,
+			fields: [
+				'subject' => $subject,
+				'messageId' => (string)($result['messageId'] ?? ''),
+				'status' => (string)($result['status'] ?? 'sent'),
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 
 		$this->logger->info(

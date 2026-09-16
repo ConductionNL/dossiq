@@ -3737,7 +3737,7 @@
             "caseObject": {
                 "slug": "caseObject",
                 "icon": "CubeOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-zgw-equivalent": "ZaakObject",
                 "title": "Case Object",
                 "description": "Links an external object to a case",
@@ -3746,6 +3746,44 @@
                     "case",
                     "objectType"
                 ],
+                "configuration": {
+                    "objectNameField": "case | objectIdentification | objectType",
+                    "objectDescriptionField": "description",
+                    "x-notes": "THE NAME OF A LINK ROW IS THE CASE IT BELONGS TO, and that is what makes the reverse view readable. OpenRegister's /referenced-by groups the records that reference an object and titles each row with the stored object NAME, which it fills from objectNameField at save time. A caseObject is the row that holds the reference, so the group on a building's page is a list of link rows; naming each one after its case is what turns that list into the answer to 'which cases is this building in'. THE FIRST LINK IN THE CHAIN IS THE RELATION ITSELF, NOT A MIRROR OF IT: `case` carries a $ref, so MetadataHydrationHandler resolves the uuid to the referenced case's own name through the name cache. A calculated mirror was tried first and is wrong here, because metadata is hydrated in SaveObject BEFORE ObjectCreatingEvent materialises a calculation, so the mirror is empty on the save that names the row and the name would only arrive on the next one. The chain falls back to the identification and then to the required objectType, so a row is never unnamed.",
+                    "x-openregister-lenses": {
+                        "objectTitle": {
+                            "through": "objectUrl",
+                            "property": "name",
+                            "label": "Object"
+                        },
+                        "objectStatus": {
+                            "through": "objectUrl",
+                            "property": "status",
+                            "label": "Object status"
+                        }
+                    },
+                    "x-openregister-list": {
+                        "columns": [
+                            {
+                                "property": "objectType",
+                                "label": "Object type"
+                            },
+                            {
+                                "property": "objectIdentification",
+                                "label": "Identification"
+                            },
+                            {
+                                "property": "description",
+                                "label": "Description"
+                            }
+                        ],
+                        "searchFields": [
+                            "objectIdentification",
+                            "description",
+                            "objectType"
+                        ]
+                    }
+                },
                 "properties": {
                     "case": {
                         "type": "string",
@@ -5614,7 +5652,7 @@
             "case-location": {
                 "slug": "case-location",
                 "icon": "MapMarker",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Place",
                 "title": "Case Location",
                 "description": "A geographic location attached to a case (BAG nummeraanduiding, parcel, or free address): 0..N locations per case via back-reference on `case`.",
@@ -5623,7 +5661,24 @@
                     "case",
                     "source"
                 ],
+                "configuration": {
+                    "x-notes": "A CASE BORROWS ITS GEOMETRY FROM THE OBJECT IT IS ABOUT. Where a location is taken from a linked object, the object already holds the address point or the parcel outline, and copying that geometry onto the case makes two shapes that disagree the moment the parcel is redrawn. `linkedObject` holds the path instead, and OpenRegister's /geo-features endpoint collects the object's own features alongside the case location's, each one marked `_source: inherited`, `_through: linkedObject` and `_fromObject`, so a map says where a pin came from. A location that carries its own geometry for the same purpose outranks the inherited one, which comes back marked `_superseded` rather than dropped.",
+                    "x-openregister-geo-inheritance": {
+                        "from": [
+                            {
+                                "through": "linkedObject",
+                                "label": "Linked object"
+                            }
+                        ]
+                    }
+                },
                 "properties": {
+                    "linkedObject": {
+                        "type": "string",
+                        "format": "uri",
+                        "description": "The object this location is taken from, as the URI the caseObject link holds. Where it is set the location inherits the object's own address point or parcel outline through x-openregister-geo-inheritance, with the provenance shown on the map rather than copied into this record.",
+                        "title": "Linked Object"
+                    },
                     "case": {
                         "type": "string",
                         "format": "uuid",

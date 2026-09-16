@@ -370,7 +370,7 @@ change that already covers the area.
 | 4.20 | openregister | `dossiq/openspec/specs/archief-edepot-handover/spec.md` | run the transfer on closed cases from the handover; the zip stays a convenience |
 | 5.4 | openregister | `openregister/openspec/changes/contacts-leaf-cases-panel/proposal.md` | ContactDetail in contacts-domain places the cases panel |
 | 5.11 | integriq | `integriq/openspec/changes/brp-kvk-store-and-subscriptions/proposal.md` | react to the change announcement on the case's requester |
-| 6.4 | openregister | `openregister/openspec/changes/activity-leaf/proposal.md` | place it as the History tab (case-history-surface) and drop the duplicate version-history tab |
+| 6.4 | openregister | `openregister/openspec/changes/timeline-entries-are-records/proposal.md` (merged, #3762) | `one-timeline-on-the-case` places it as the Timeline tab of the case panels and moves every communication writer onto it; the audit sidebar keeps the change history |
 | 6.5 | integriq | `integriq/openspec/changes/mail-intake-creates-cases/proposal.md` | the assign target and the created case |
 | 6.7 | portaliq | `dossiq/openspec/changes/archive/2026-09-09-move-portals-to-portaliq/pr` | contribute portaalBericht to the citizen audience; re-rate, move-portals-to-portaliq archived 09-09 with one task open |
 | 6.13 | pipelinq | `pipelinq/openspec/specs/kcc-werkplek/spec.md (the panel); integriq/ope` | the case actions inside the panel (kcc-werkplek-zaaksysteem-bridge); no panel page of its own |
@@ -562,6 +562,16 @@ declared on the case type.
 | `decision-outcomes-on-the-case` | decidiq `the-decision-as-a-walked-process` (decidiq#1316), cluster 22 | C-decisions-1, C-decisions-13, C-decisions-25 |
 | `widget-roles-declared` | launchpad `dashboards-and-who-may-see-them` (launchpad#637), cluster 12, ledger row 10.1 | C-reporting-22 |
 | `fees-and-payments-on-the-case` | shillinq `fees-payments-and-the-contract-register` (shillinq#1608), cluster 55, ledger rows 1.11 and 12.12 | C-intake-44, C-intake-7, C-deadlines-10, C-parties-and-contacts-1 |
+| `case-objects-hinge-on-the-object` | openregister `objects-as-the-hinge-between-cases` (openregister#3765, merged), cluster 5, ledger row 2.15 | the row's own candidates; the register holds the list |
+
+**Row 2.15's reason is out of date and the change says so.** The ledger
+rates dossiq partial on "custom objects linked to cases" because it reads
+"the `caseObject` schema only, no page or widget". Both shipped in
+`custom-objects-on-the-case`, archived 2026-09-08: the `case-objects`
+widget is a section of the Related tab and `CaseObjects` is an index at
+`/case-objects`, both asserted by `tests/vitest/caseObjects.spec.js`. The
+gap is what the surface can say, which is why the consumer half is a set
+of declarations rather than a page.
 
 The fourth, integriq `outbound-sender-identity-and-deliverability`
 (integriq#2012, cluster 61, candidate C-communication-44), is a sibling

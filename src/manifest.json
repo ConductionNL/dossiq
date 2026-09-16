@@ -1015,6 +1015,13 @@
 							"borderless": true,
 							"emptyText": "No cases found"
 						}
+					},
+					{
+						"id": "archival-reviews",
+						"type": "custom",
+						"title": "My archival reviews",
+						"icon": "ArchiveOutline",
+						"_note": "The destruction list entries this person has to sign off, read from openregister's /archival/reviews/pending (page slot widget-archival-reviews -> MyArchivalReviews). That endpoint reads the session user id, so no id is sent and nothing is narrowed in the browser: a filter over a wider list would be a different, weaker thing wearing the same label. It fails CLOSED. A failed read draws an error with a retry, never an empty list, because a reviewer with nothing to sign off and an unreachable openregister look identical from an empty array, and only one of them means somebody's work is invisible. It is a custom widget and not an object-table because a destruction list entry is not a dossiq object: it lives on openregister's destruction list, and each of the three answers carries a reason that has to be collected before the post."
 					}
 				],
 				"layout": [
@@ -1044,12 +1051,22 @@
 						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
+					},
+					{
+						"id": "4",
+						"widgetId": "archival-reviews",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"slots": {
-				"widget-my-work": "MyWorkWidget"
+				"widget-my-work": "MyWorkWidget",
+				"widget-archival-reviews": "MyArchivalReviews"
 			}
 		},
 		{
@@ -1077,11 +1094,13 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "A case template is a case row marked `isTemplate`, so it is in this store like any other case and every list has to take it out (starter-content-and-templates, D-5). The filter sits on the PAGE and not on each chip, so a lens added later cannot forget it: a template turning up in an open-cases count reads as work nobody is doing, which is the same complaint hidden statuses were introduced to fix.",
 				"filter": {
 					"assignee": "IS NULL",
 					"isFinalStatus": false,
 					"statusHiddenInLists": false,
-					"isDraft": false
+					"isDraft": false,
+					"isTemplate": false
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
@@ -1224,6 +1243,10 @@
 				],
 				"register": "dossiq",
 				"schema": "case",
+				"_templateNote": "Same exclusion as the Queue's, and here it is a page-level filter rather than a chip for the same reason: eight lenses would be eight places to forget it. A case template is never work (starter-content-and-templates, D-5).",
+				"filter": {
+					"isTemplate": false
+				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
 				"viewModes": ["table", "cards", "map"],
@@ -1340,7 +1363,8 @@
 							"assignee": "IS NULL",
 							"isFinalStatus": false,
 							"statusHiddenInLists": false,
-							"isDraft": false
+							"isDraft": false,
+							"isTemplate": false
 						}
 					},
 					{
@@ -1644,7 +1668,7 @@
 						"type": "tabs",
 						"title": "Case panels",
 						"icon": "ViewDashboard",
-						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries SIX, which is what the placement work asked for. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
+						"_note": "Panels describing one case used to be cards stacked down the page, each with its own header and Actions menu, only one of them ever being read. The strip takes over the title and the card, the children render bare, and the Actions menu is hoisted into the bar where it rebinds to whichever tab is open. Every child is DELIBERATELY absent from `layout`: the tabs widget renders them, so a layout entry would render each one twice. THE COUNT IS THE POINT. This strip carried FOURTEEN tabs and now carries TEN: it went to SIX, which is what the placement work asked for, and then Notes (2026-09-12) and Timeline (one-timeline-on-the-case) were each added on a reason recorded in their own entry. Timeline is the one tab here that does NOT own a collection: it reads the entries the tabs beside it write, which is why it adds a tab rather than replacing three. FOUR went because they were already somewhere else on this page: Notes, Mail and Decisions each duplicated a sidebar tab, and the sidebar copy is the better one in at least the Notes case, because CaseNotesTab emits @mention and the body widget predates it. That is the rule the History tab already set on this page: one log in two places is duplication, not coverage. FOUR MORE went by folding, through the `case-sections` container widget, which puts two panels behind one label. That is why Files did not have to be dropped to leave the strip: it keeps the files leaf's share and comment surface as a section of Documents. `case-core` is the only tab that still names one widget. It is the case's own fields, and the raw-data view plan item 2.22 asks for is a SIDEBAR tab over every property, not this surface. It moved IN from the layout grid because reading the case data cost a scroll past the panels that answer the same question. NO TAB ENTRY NEEDS `visibleIf` ANY MORE, and that blocker can be closed rather than waited on. It was wanted so a collection holding nothing could be absent rather than empty. With six tabs each holding two collections, an empty section is a line of text inside a tab a handler opened on purpose, which is not the same failure as a tab that promises content and has none.",
 						"content": {
 							"ariaLabel": "Case details",
 							"tabs": [
@@ -1659,6 +1683,10 @@
 								{
 									"widgetId": "case-notes-panel",
 									"label": "Notes"
+								},
+								{
+									"widgetId": "case-timeline-panel",
+									"label": "Timeline"
 								},
 								{
 									"widgetId": "case-people-panel",
@@ -1683,6 +1711,10 @@
 								{
 									"widgetId": "case-related-panel",
 									"label": "Related"
+								},
+								{
+									"widgetId": "case-archival-panel",
+									"label": "Archiving"
 								}
 							]
 						}
@@ -1863,6 +1895,13 @@
 							],
 							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked"
 						}
+					},
+					{
+						"id": "case-timeline-panel",
+						"type": "case-timeline-pane",
+						"title": "Timeline",
+						"icon": "Timeline",
+						"_note": "The Timeline tab: one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on this case, from OpenRegister's timeline (timeline-entries-are-records, #3762). It does NOT replace the three tabs beside it. Notes, Communication and Email each remain the place to DO that one thing; this is the only place that puts them in one order, which is the whole of gap-register row 6.4. The audit sidebar keeps the change history, which is the rule case-history-surface already set. Rendered by TYPE (case-timeline-pane in registry.js) because a tab child resolves from cnRegistry[widget.type] and a component:-only entry draws an empty panel and logs nothing, which this page has shipped twice."
 					},
 					{
 						"id": "case-notes-panel",
@@ -2171,6 +2210,7 @@
 										"title": "Objects",
 										"icon": "CubeOutline",
 										"_note": "The things a case is about: a building, a vehicle, a tree. `type` is `object-list` and not `custom` on purpose, because a tab child resolves by REGISTRY TYPE, so a `custom` widget named as a tab child renders nothing and logs nothing. Like its twelve siblings this widget is DELIBERATELY absent from `layout`: `case-panels` renders it, so a layout cell would render it twice. No `rowRoute`: a case object is a link row, not a record with a page of its own.",
+										"_lensNote": "The Object and Object status columns are LENSES, not stored fields. `objectTitle` and `objectStatus` are declared in `x-openregister-lenses` on the `caseObject` schema and resolved by OpenRegister on every read, so the tab shows what the linked object says about itself now rather than what somebody typed when they linked it. Nothing writes them: OpenRegister refuses a write that names a lens with a 400. They carry `widget: lensedValue` because an unreadable value arrives as `{\"@withheld\": true}`, an object, and the default cell would print `[object Object]`; a blank cell would be worse still, because blank reads as \"there is no object\". CnObjectListWidget forwards `widget` and `widgetProps` to CnCellRenderer, which resolves the name against the app's `cnCellWidgets`, so this needs no change in the library.",
 										"content": {
 											"register": "dossiq",
 											"schema": "caseObject",
@@ -2184,8 +2224,18 @@
 											"limit": 25,
 											"columns": [
 												{
+													"key": "objectTitle",
+													"label": "Object",
+													"widget": "lensedValue"
+												},
+												{
 													"key": "objectType",
 													"label": "Object type"
+												},
+												{
+													"key": "objectStatus",
+													"label": "Object status",
+													"widget": "lensedValue"
 												},
 												{
 													"key": "objectIdentification",
@@ -2220,6 +2270,13 @@
 						"title": "New since you last looked",
 						"icon": "BellBadgeOutline",
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
+					},
+					{
+						"id": "case-archival-panel",
+						"type": "custom",
+						"title": "Archiving",
+						"icon": "ArchiveOutline",
+						"_note": "What happens to this case when its business use ends, as openregister decided it (page slot widget-case-archival -> CaseArchivalPanel). Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
 					},
 					{
 						"id": "case-attention",
@@ -2577,7 +2634,8 @@
 				]
 			},
 			"slots": {
-				"widget-cmmn-case-plan": "CasePlanPanel"
+				"widget-cmmn-case-plan": "CasePlanPanel",
+				"widget-case-archival": "CaseArchivalPanel"
 			}
 		},
 		{
