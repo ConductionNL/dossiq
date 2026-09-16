@@ -86,11 +86,15 @@ describe('nothing in the readiness list gates the app', () => {
 		// of the fact fails on the code that is right, which is what it did
 		// from the merge that added it.
 		expect(controller).toContain("'readiness' => $this->readiness->report()")
-		expect(controller).toContain("'tourSteps' => $this->readiness->brokenTourSteps()")
+		expect(controller).toContain(
+			"'tourSteps' => $this->readiness->brokenTourSteps()",
+		)
 		// And that block reaches the status payload at the top level. Building
 		// it and never merging it is the silent half of this failure: the
 		// method reads correct and the endpoint reports nothing.
-		expect(controller).toContain('$response = array_merge($response, $this->firstRun())')
+		expect(controller).toContain(
+			'$response = array_merge($response, $this->firstRun())',
+		)
 		// Not folded into `steps`: an unreported step is UNKNOWN to CnAppRoot
 		// and a reported one it cannot prompt for is worse.
 		expect(controller).not.toContain("'steps' => $this->readiness")

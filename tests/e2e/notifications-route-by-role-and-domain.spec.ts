@@ -52,8 +52,12 @@ test.describe('notifications routed by role and domain', () => {
 		).not.toHaveText('')
 	})
 
-	test('switching a notification records it as the reader own value', async ({ page }) => {
-		const toggle = page.getByTestId(`notification-routing-switch-${CASE_ASSIGNED}`)
+	test('switching a notification records it as the reader own value', async ({
+		page,
+	}) => {
+		const toggle = page.getByTestId(
+			`notification-routing-switch-${CASE_ASSIGNED}`,
+		)
 		const layer = page.getByTestId(`notification-routing-layer-${CASE_ASSIGNED}`)
 
 		await toggle.click()
@@ -64,8 +68,12 @@ test.describe('notifications routed by role and domain', () => {
 		await expect(layer).not.toContainText('You set this')
 	})
 
-	test('handing a notification back reports the layer below again', async ({ page }) => {
-		const toggle = page.getByTestId(`notification-routing-switch-${CASE_ASSIGNED}`)
+	test('handing a notification back reports the layer below again', async ({
+		page,
+	}) => {
+		const toggle = page.getByTestId(
+			`notification-routing-switch-${CASE_ASSIGNED}`,
+		)
 		const layer = page.getByTestId(`notification-routing-layer-${CASE_ASSIGNED}`)
 
 		await toggle.click()
@@ -78,7 +86,9 @@ test.describe('notifications routed by role and domain', () => {
 		).toBeHidden()
 	})
 
-	test('the settings can be shown as they apply to one domain', async ({ page }) => {
+	test('the settings can be shown as they apply to one domain', async ({
+		page,
+	}) => {
 		await page.getByTestId('notification-routing-scope').click()
 		await page.getByRole('option', { name: 'Cases' }).click()
 

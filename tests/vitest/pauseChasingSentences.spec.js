@@ -20,7 +20,10 @@
 
 import { describe, expect, it } from 'vitest'
 import { pauseSentence, termRows } from '../../src/utils/caseTerms.js'
-import { waitingParty, waitingSentence } from '../../src/utils/personalQueueHelpers.js'
+import {
+	waitingParty,
+	waitingSentence,
+} from '../../src/utils/personalQueueHelpers.js'
 
 /**
  * A `t` that fills the placeholders, so the assertions read like the screen.
@@ -31,20 +34,26 @@ import { waitingParty, waitingSentence } from '../../src/utils/personalQueueHelp
  * @return {string} The filled string.
  */
 function t(app, text, vars = {}) {
-	return text.replace(/\{(\w+)\}/g, (match, key) => (key in vars ? String(vars[key]) : match))
+	return text.replace(/\{(\w+)\}/g, (match, key) =>
+		key in vars ? String(vars[key]) : match,
+	)
 }
 
 describe('the waiting sentence in the personal queue', () => {
 	it('names the party, the days and the reminders', () => {
 		const item = { waiting: { on: 'applicant', days: 9, chases: 2 } }
 
-		expect(waitingSentence(item, t)).toBe('Waiting on the applicant for 9 days, chased 2 times')
+		expect(waitingSentence(item, t)).toBe(
+			'Waiting on the applicant for 9 days, chased 2 times',
+		)
 	})
 
 	it('says chased once rather than chased 1 times', () => {
 		const item = { waiting: { on: 'thirdParty', days: 12, chases: 1 } }
 
-		expect(waitingSentence(item, t)).toBe('Waiting on a third party for 12 days, chased once')
+		expect(waitingSentence(item, t)).toBe(
+			'Waiting on a third party for 12 days, chased once',
+		)
 	})
 
 	it('leaves the reminders out until one has gone', () => {
@@ -66,15 +75,27 @@ describe('the waiting sentence in the personal queue', () => {
 
 describe('the pause sentence on the case terms panel', () => {
 	it('names the reason and how many reminders went out', () => {
-		const term = { status: 'paused', pauseReason: 'Aanvulling gevraagd', chasesSent: 2 }
+		const term = {
+			status: 'paused',
+			pauseReason: 'Aanvulling gevraagd',
+			chasesSent: 2,
+		}
 
-		expect(pauseSentence(term, t)).toBe('Suspended: Aanvulling gevraagd. 2 reminders sent.')
+		expect(pauseSentence(term, t)).toBe(
+			'Suspended: Aanvulling gevraagd. 2 reminders sent.',
+		)
 	})
 
 	it('says one reminder rather than 1 reminders', () => {
-		const term = { status: 'paused', pauseReason: 'Aanvulling gevraagd', chasesSent: 1 }
+		const term = {
+			status: 'paused',
+			pauseReason: 'Aanvulling gevraagd',
+			chasesSent: 1,
+		}
 
-		expect(pauseSentence(term, t)).toBe('Suspended: Aanvulling gevraagd. One reminder sent.')
+		expect(pauseSentence(term, t)).toBe(
+			'Suspended: Aanvulling gevraagd. One reminder sent.',
+		)
 	})
 
 	it('still says the term is suspended when no reason was declared', () => {
@@ -84,15 +105,26 @@ describe('the pause sentence on the case terms panel', () => {
 	})
 
 	it('says nothing at all about a clock that is running', () => {
-		expect(pauseSentence({ status: 'lopend', pauseReason: 'x', chasesSent: 2 }, t)).toBe('')
+		expect(
+			pauseSentence({ status: 'lopend', pauseReason: 'x', chasesSent: 2 }, t),
+		).toBe('')
 	})
 
 	it('reaches the rows the panel renders', () => {
 		const rows = termRows(
-			[{ kind: 'statutory', status: 'paused', pauseReason: 'Advies gevraagd', chasesSent: 0 }],
+			[
+				{
+					kind: 'statutory',
+					status: 'paused',
+					pauseReason: 'Advies gevraagd',
+					chasesSent: 0,
+				},
+			],
 			t,
 		)
 
-		expect(rows[0].pause).toBe('Suspended: Advies gevraagd. No reminder sent yet.')
+		expect(rows[0].pause).toBe(
+			'Suspended: Advies gevraagd. No reminder sent yet.',
+		)
 	})
 })

@@ -131,17 +131,25 @@ test.describe('A pause names a reason, and the reason chases', () => {
 	 * @param caseId      The case.
 	 * @param pauseReason The declared reason key.
 	 */
-	const ask = async (api: any, token: string, caseId: string, pauseReason: string) =>
-		api.post(`/index.php/apps/${REGISTER}/api/cases/${caseId}/information-request`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-			data: {
-				items: ['Bankafschrift'],
-				recipient: 'aanvrager@example.org',
-				durationDays: 14,
-				pauseReason,
-				rationale: `${RUN_PREFIX} zonder dit stuk kan de aanvraag niet worden beoordeeld`,
+	const ask = async (
+		api: any,
+		token: string,
+		caseId: string,
+		pauseReason: string,
+	) =>
+		api.post(
+			`/index.php/apps/${REGISTER}/api/cases/${caseId}/information-request`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+				data: {
+					items: ['Bankafschrift'],
+					recipient: 'aanvrager@example.org',
+					durationDays: 14,
+					pauseReason,
+					rationale: `${RUN_PREFIX} zonder dit stuk kan de aanvraag niet worden beoordeeld`,
+				},
 			},
-		})
+		)
 
 	/**
 	 * The clocks on a case, as the case page reads them.
@@ -150,7 +158,9 @@ test.describe('A pause names a reason, and the reason chases', () => {
 	 * @param caseId The case.
 	 */
 	const termsOn = async (api: any, caseId: string) =>
-		(await api.get(`/index.php/apps/${REGISTER}/api/cases/${caseId}/terms`)).json()
+		(
+			await api.get(`/index.php/apps/${REGISTER}/api/cases/${caseId}/terms`)
+		).json()
 
 	// @e2e openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md#a-pause-is-registered-under-a-declared-reason
 	test('a pause carries the declared reason and the party it waits on', async ({
@@ -161,7 +171,10 @@ test.describe('A pause names a reason, and the reason chases', () => {
 		const token = await getRequestToken(api)
 
 		const response = await ask(api, token, cases.reason, REASON)
-		expect(response.ok(), 'the ask must succeed on a case with a running term').toBeTruthy()
+		expect(
+			response.ok(),
+			'the ask must succeed on a case with a running term',
+		).toBeTruthy()
 		expect((await response.json()).suspended).toBe(true)
 
 		const terms = await termsOn(api, cases.reason)
@@ -214,7 +227,12 @@ test.describe('A pause names a reason, and the reason chases', () => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
-		const response = await ask(api, token, cases.stale, 'een-reden-die-niet-bestaat')
+		const response = await ask(
+			api,
+			token,
+			cases.stale,
+			'een-reden-die-niet-bestaat',
+		)
 		expect(response.ok(), 'a stale reason key must be refused').toBeFalsy()
 
 		const terms = await termsOn(api, cases.stale)

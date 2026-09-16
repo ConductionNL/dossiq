@@ -152,7 +152,10 @@ export function waitingSentence(item, t) {
 	}
 
 	if (chases === 1) {
-		return t('dossiq', 'Waiting on {party} for {days} days, chased once', { party, days })
+		return t('dossiq', 'Waiting on {party} for {days} days, chased once', {
+			party,
+			days,
+		})
 	}
 
 	return t('dossiq', 'Waiting on {party} for {days} days, chased {chases} times', {
