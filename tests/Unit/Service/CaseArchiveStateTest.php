@@ -47,8 +47,11 @@ class CaseArchiveStateTest extends TestCase {
 	 */
 	private function settings(string $register = 'dossiq'): SettingsService {
 		$settings = $this->createMock(originalClassName: SettingsService::class);
-		$settings->method('getConfigValue')->willReturnCallback(
-			fn (string $key, string $default = ''): string => ($key === 'register' ? $register : 'case')
+		$settings->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', $register],
+				['case_schema', '', 'case'],
+			]
 		);
 
 		return $settings;

@@ -191,7 +191,7 @@ class CaseArchiveState {
 		$handler = $this->handler();
 
 		try {
-			/** @psalm-suppress MixedMethodCall */
+			// The handler is resolved by name, so its methods are called by name too.
 			$answer = $handler->{$verb}($caseId, $reason, $register, $schema);
 		} catch (RefusedException $e) {
 			throw $e;
