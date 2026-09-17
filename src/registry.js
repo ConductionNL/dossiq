@@ -33,6 +33,11 @@ import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
 // The star on the case page (case-number-and-favourites, row 2.19).
 // @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
+// Follow a case you do not own, and see who else does (case-followers,
+// row 13.18), over OpenRegister's own subscription (`object-watchers`).
+// @spec openspec/changes/case-followers/specs/case-management/spec.md
+import CaseFollowersPanel from './components/case/CaseFollowersPanel.vue'
+import CaseFollowStrip from './components/case/CaseFollowStrip.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -781,6 +786,28 @@ const registry = {
 		kind: 'widget',
 		component: CaseUnreadPanel,
 		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
+	},
+
+	// --- Following a case you do not own (case-followers, row 13.18). ---
+	//
+	// A LAYOUT grid item and a widget TYPE for the strip, and a TAB CHILD type
+	// for the panel. Both resolve from `cnRegistry[widget.type]`: CnDetailPage
+	// falls back to CnDetailWidgetHost for a grid item with no `widget-<id>`
+	// slot, and CnTabsWidget resolves a panel the same way and renders nothing
+	// at all, logging nothing, when no key answers.
+	// @spec openspec/changes/case-followers/specs/case-management/spec.md
+	'case-follow': {
+		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to follow and DELETE to stop, and no declarative action writes both: `executeApiCall` maps every method that is not `PUT` to `post`, so an `api-call` declared `method: "DELETE"` would POST to a route that takes DELETE and there is nothing in the manifest to say it could never have worked. `CnActionButtons`' `toggle` type writes with one `method` for both directions, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.watching` is attached per reader on the render path, so a data widget over a property would render nothing. Deleted the day the library takes a DELETE verb and a two-verb toggle, which is where this belongs for every app in the fleet
+		kind: 'widget',
+		component: CaseFollowStrip,
+		_note: 'CaseDetail: follow a case you do not own, beside the star and saying the opposite kind of thing. The star is private and silent; following subscribes you to the case\'s own notifications through OpenRegister\'s `{"watchers": true}` recipient block, and the people who may edit the case can see that you took it. The strip renders from `@self.watching`, which every object read already carries, so it makes no call until somebody presses it. The count beside the button is silent for a reader OpenRegister told no count, because an absent `@self.watcherCount` means "not your business" and never "nobody".',
+	},
+
+	'case-followers': {
+		// @custom-widget-ratchet exclude a subscription is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/watchers`, a sub-resource that takes no register-and-schema pair of its own, and there is no `integration` id that reaches it. The 403 a reader without `update` gets has to be drawn APART from an empty list, which a declarative list cannot do: both would render as no rows. Deleted the day nextcloud-vue ships a watchers widget type over that listing
+		kind: 'widget',
+		component: CaseFollowersPanel,
+		_note: 'CaseDetail People tab, the Followers section: who is watching this case, as against the Parties, Roles and Seats sections beside it, which say who the case is about. Reading the list needs `update` on the case, so a reader without it is told that rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else\'s subscription needs `manage`, and you stop following from the button on the case page, which acts on your own row only.',
 	},
 
 	// --- Who is on the case, and in which role (the party model, #3761). ---

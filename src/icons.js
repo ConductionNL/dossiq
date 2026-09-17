@@ -40,6 +40,7 @@ import BadgeAccountOutline from 'vue-material-design-icons/BadgeAccountOutline.v
 import BankTransfer from 'vue-material-design-icons/BankTransfer.vue'
 import BellBadgeOutline from 'vue-material-design-icons/BellBadgeOutline.vue'
 import BellCogOutline from 'vue-material-design-icons/BellCogOutline.vue'
+import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BellPlusOutline from 'vue-material-design-icons/BellPlusOutline.vue'
 import BellRing from 'vue-material-design-icons/BellRing.vue'
 import BellRingOutline from 'vue-material-design-icons/BellRingOutline.vue'
@@ -240,6 +241,7 @@ export default {
 	BankTransfer,
 	BellBadgeOutline,
 	BellCogOutline,
+	BellOutline,
 	BellPlusOutline,
 	BellRing,
 	BellRingOutline,
