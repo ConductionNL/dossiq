@@ -35,6 +35,9 @@ use PHPUnit\Framework\TestCase;
  * REQ-TERM-011: a pause names a reason that chases.
  *
  * @covers \OCA\Dossiq\Service\DeadlinePauseService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
+ * @uses \OCA\Dossiq\Service\Pause\PauseReason
  */
 class DeadlinePauseReasonTest extends TestCase {
 	use MakesCaseDateNormaliser;

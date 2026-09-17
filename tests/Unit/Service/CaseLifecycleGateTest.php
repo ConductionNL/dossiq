@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * The per-act, per-case-type role gate.
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\LifecycleActorGate
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseLifecycleGateTest extends TestCase {
 

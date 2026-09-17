@@ -35,9 +35,9 @@ const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'u
 
 /**
  * The manifest and every backend-merged fragment beside it. A fragment names
- * components exactly as the manifest does (`MailIntakeLogView` and
- * `ExternalConsultationResponsePage` are only ever named from one), so a sweep
- * that read manifest.json alone would miss the two pages hardest to notice.
+ * components exactly as the manifest does — `MailIntakeLogView` is only ever
+ * named from one — so a sweep that read manifest.json alone would miss the
+ * pages hardest to notice.
  *
  * @return {Array<{name: string, doc: object}>} The parsed documents.
  */

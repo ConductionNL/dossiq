@@ -78,7 +78,7 @@ class JsonEncodedStringProperties {
 		'advisoryReport' => ['committeeMembers'],
 		'automaticAction' => ['config'],
 		'case' => ['activity', 'geometry', 'missingFields', 'relatedCases', 'skippedPhases', 'statusHistory'],
-		'caseShare' => ['fieldExclusions'],
+		'caseShare' => ['fieldExclusions', 'sharedDocuments'],
 		'caseType' => ['referenceProcess', 'relatedCaseTypes'],
 		'document' => ['fileParts'],
 		'documentType' => ['allowedMimeTypes'],

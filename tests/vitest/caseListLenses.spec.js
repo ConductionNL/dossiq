@@ -127,11 +127,17 @@ const CASE_LENSES = [
 	// person raised. They are the everyday two, which is why they are pills.
 	'Waiting on the applicant',
 	'Needs attention',
-	// Two lenses over per-user platform state rather than a field of the case
-	// (case-number-and-favourites row 2.19, openregister#3766). They answer
-	// about YOU, not about the case: the star you set and the cases you last
-	// opened.
+	// Three lenses over per-user platform state rather than a field of the case
+	// (case-number-and-favourites row 2.19, openregister#3766; case-followers
+	// row 13.18, openregister `object-watchers`). They answer about YOU, not
+	// about the case: the star you set, the cases you subscribed to and the
+	// ones you last opened. Followed sits next to Favourites because both
+	// answer "which cases did I pick out", and before Recently opened because
+	// a case you chose outranks one you happened to open. All three are behind
+	// the '⋯' chip rather than in the strip: the cap keeps the pills for the
+	// lenses a handler reaches for every morning.
 	'Favourites',
+	'Followed',
 	'Recently opened',
 	// The risk this organisation assessed
 	// (markers-and-assessments-on-the-case row 2.40, #2837). It sits before
@@ -143,8 +149,9 @@ const CASE_LENSES = [
 	'Handed on',
 	'Closed',
 	// case-search-declares-its-fields REQ-CSD-04: closed, with nobody having
-	// recorded what the outcome was. Deliberately not folded into Closed,
-	// which is finished work.
+	// recorded what the outcome was. It sits after Closed because it narrows
+	// that set, and is deliberately not folded into it: Closed is finished
+	// work.
 	'Closed with no result',
 	DRAFTS_LENS,
 	'Overdue',
@@ -173,25 +180,27 @@ const CASE_LENSES = [
 const CASES_ONLY = [
 	'Unread',
 	'Favourites',
+	'Followed',
 	'Recently opened',
 	'Waiting on the applicant',
 	'Needs attention',
 	'Assessed high risk',
 	'Handed on',
+	// A case closes with or without a result; a task completes and has none.
 	'Closed with no result',
 	DRAFTS_LENS,
 	'Stuck',
 ]
 
 describe('Cases index lenses', () => {
-	it('declares the sixteen chips in order', () => {
+	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
 	it('shows four chips and hands the rest to the overflow chip', () => {
 		const cases = page('Cases').config
 		expect(cases.quickFilterMaxVisible).toBe(VISIBLE_LENS_COUNT)
-		// Fifteen pills wrap the actions bar and squeeze the count beside them.
+		// Seventeen pills wrap the actions bar and squeeze the count beside them.
 		// The cap makes the ORDER above load-bearing, so the four are named
 		// here: moving a lens up or down moves it in or out of the strip.
 		expect(cases.quickFilters.slice(0, VISIBLE_LENS_COUNT).map((entry) => entry.label)).toEqual([

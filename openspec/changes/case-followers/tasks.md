@@ -1,14 +1,26 @@
 # Tasks: case-followers
 
-Tier: V1. Kind: config. Row 13.18. Waits on openregister
-`object-watchers` (not yet a change on openregister `development`).
+Tier: V1. Kind: config. Row 13.18.
 
-- [ ] 1.1 `src/manifest.json` `#CaseDetail`: Follow and Unfollow with
-  `visibleIf` on the subscription (D-1).
-  - `tests/vitest/caseActionsMenu.spec.js`
+The wait is over: openregister `object-watchers` is on `development`. It
+ships `PUT|DELETE .../watch`, `GET .../watchers`, the `_watching` lens,
+`@self.watching` and `@self.watcherCount`, and the `{"watchers": true}`
+recipient kind. dossiq declares and renders; no PHP here.
+
+- [x] 1.1 `#CaseDetail`: a Follow strip beside the star (D-1), over
+  `PUT|DELETE /api/objects/{r}/{s}/{id}/watch`. It rides `CaseBannerStack`,
+  the one grid row the page's strips share, rather than a row of its own.
+  - `src/components/case/CaseFollowStrip.vue`,
+    `src/components/case/CaseBannerStack.vue`,
+    `src/services/watcherApi.js`, `src/registry.js`, `src/icons.js`
+  - `tests/vitest/caseFollowers.spec.js`
   - `@spec openspec/changes/case-followers/specs/case-management/spec.md`
-- [ ] 1.2 `#Cases` lens Followed; `#MyWorkHome` tile Cases I follow.
-  - `tests/vitest/caseListLenses.spec.js`
-- [ ] 1.3 People tab: Followers section (D-2).
-- [ ] 2.1 `tests/e2e/case-followers.spec.ts`; `openspec validate
+- [x] 1.2 `#Cases` lens Followed; `#MyWorkHome` tile Cases you follow, both
+  over `_watching`.
+  - `tests/vitest/caseListLenses.spec.js`, `tests/vitest/caseFollowers.spec.js`
+- [x] 1.3 People tab: Followers section (D-2).
+  - `src/components/case/CaseFollowersPanel.vue`
+- [x] 1.4 `lib/Settings/dossiq_register.json`: the case schema addresses its
+  watchers on a `transition` trigger and on the escalation (D-3).
+- [x] 2.1 `tests/e2e/case-followers.spec.ts`; `openspec validate
   case-followers --strict`.

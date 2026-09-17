@@ -37,6 +37,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Lifecycle\DraftCaseActs
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class DraftCaseTest extends TestCase {
 

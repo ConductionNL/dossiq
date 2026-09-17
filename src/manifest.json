@@ -1108,6 +1108,43 @@
 						}
 					},
 					{
+						"id": "followed-cases",
+						"type": "object-table",
+						"title": "Cases you follow",
+						"_note": "case-followers, row 13.18. The cases this reader subscribed to, over OpenRegister's `_watching` lens (object-watchers). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the subscription sits on the case row. No `isFinalStatus` filter, for the reason the chip carries none: you follow a case to hear how it ends. View all leads to the Followed chip on Cases, which is the same lens, so the tile and the list cannot show different sets. It lives on My Work rather than on the Dashboard because following is about what you are keeping an eye on today, which is the question this page answers.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_watching": true
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted"
+								},
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"_watching": "true"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "Follow a case to keep an eye on it here"
+						}
+					},
+					{
 						"id": "archival-reviews",
 						"type": "custom",
 						"title": "My archival reviews",
@@ -1149,6 +1186,15 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "5",
+						"widgetId": "followed-cases",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
 					}
@@ -1491,6 +1537,15 @@
 						}
 					},
 					{
+						"label": "Followed",
+						"_note": "case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for. It sits beside Favourites, behind the '⋯' chip rather than in the strip: the four pills are the lenses a handler reaches for every morning, and this one answers which cases you chose to keep an eye on.",
+						"filter": {
+							"_watching": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						}
+					},
+					{
 						"label": "Recently opened",
 						"_note": "case-number-and-favourites, row 2.19. `_recent` is the second OpenRegister lens, over the per-user view history the platform writes when you open an object's detail, ordered by last view descending and kept to the last hundred. Deliberately no `_order` of its own: the lens already carries its order, and a sort key declared here would override the one thing the lens is for. No `isDraft` or `statusHiddenInLists` either: this list answers 'what was I just looking at', and a case you opened five minutes ago dropping out of it because an administrator hid its status is a list that lies about your own morning.",
 						"filter": {
@@ -1586,7 +1641,7 @@
 						"_note": "what-a-status-declares, task 3.2. A lens of its own, deliberately NOT folded into Overdue: a case can breach its status maximum while its statutory term is comfortable, and merging the two would bury exactly the case this lens exists to surface. It narrows on `statusDwellBreached`, which the engine writes on the case, so the page, the total and the facets are resolved by one query rather than by a post-filter over a page of twenty-five. A case in a status that declares no maximum can never carry the flag, so on a fleet that has annotated nothing this lens is simply empty."
 					}
 				],
-				"_quickFilterMaxVisibleNote": "Fifteen pills wrap the actions bar onto a second line and squeeze the 'Showing X of Y' count onto two, so only the first four render and the rest sit behind one more CHIP at the end of the row — a '⋯' pill, not a toolbar button, because what it opens is a filter like the ones beside it. The four are the everyday ones and the cap is the reason the ORDER of quickFilters is now load-bearing: moving a lens up or down moves it in or out of the strip. A lens picked from the panel is applied exactly as a pill is, and the chip then wears its label and its fill, so a narrowed list never presents itself as All.",
+				"_quickFilterMaxVisibleNote": "Seventeen pills wrap the actions bar onto a second line and squeeze the 'Showing X of Y' count onto two, so only the first four render and the rest sit behind one more CHIP at the end of the row — a '⋯' pill, not a toolbar button, because what it opens is a filter like the ones beside it. The four are the everyday ones and the cap is the reason the ORDER of quickFilters is now load-bearing: moving a lens up or down moves it in or out of the strip. A lens picked from the panel is applied exactly as a pill is, and the chip then wears its label and its fill, so a narrowed list never presents itself as All.",
 				"quickFilterMaxVisible": 4,
 				"columns": [
 					{
@@ -2149,6 +2204,16 @@
 											}
 										}
 									}
+								},
+								{
+									"label": "Followers",
+									"widget": {
+										"id": "case-followers",
+										"type": "case-followers",
+										"title": "Followers",
+										"icon": "AccountMultipleOutline",
+										"_note": "case-followers, row 13.18. Who is watching this case, over OpenRegister's GET /api/objects/{register}/{schema}/{id}/watchers (object-watchers). It sits LAST on this tab because the three sections above it say who the case is about and this one says who is reading over their shoulder: a teamleider following a sensitive case holds no role on it and appears here and nowhere else. TYPE names the registry key rather than \"custom\": a tab child resolves from cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. Reading the list needs `update` on the case, so a reader without it is told that in words rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else's subscription needs `manage`, and you stop following from the strip on the case page, which acts on your own row only."
+									}
 								}
 							]
 						}
@@ -2444,7 +2509,7 @@
 						"type": "case-banner-stack",
 						"title": "Case banners",
 						"icon": "FlagOutline",
-						"_note": "Favourite, New since you last looked, What this status asks for and Attention in ONE row rather than four. Three of the four are a root v-if, so four rows reserved three empty ones on an ordinary case — nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The four widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
+						"_note": "Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than five. Three of the five are a root v-if, so five rows reserved three empty ones on an ordinary case — nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The five widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
 					},
 					{
 						"id": "case-archival-panel",
@@ -2580,6 +2645,13 @@
 							"label": "Sharing",
 							"icon": "ShareVariant",
 							"component": "CaseSharingTab"
+						},
+						{
+							"id": "avg",
+							"label": "AVG",
+							"icon": "ShieldLockOutline",
+							"_note": "data-subject-requests-drive-the-platform REQ-AVG-DSR-01: what OpenRegister reported about this case's data subject, and the acts dossiq drives on it. Declared on every case rather than only on a data subject request, because a sidebar tab list is one declaration on the case page and gating it on a field would need a per-case condition the host does not evaluate here. The panel reads the request kind itself and shows the erasure half, the export half, or an empty state saying this case is not a data subject request; the empty state is what stops one platform request per case opened. A `component:` tab and not a `widgets[]` one, because none of CnObjectSidebar's built-ins can call the AVG endpoints or render a protected item with its ground and its remedy.",
+							"component": "DataSubjectRequestTab"
 						},
 						{
 							"id": "tags",

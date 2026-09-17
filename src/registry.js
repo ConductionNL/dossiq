@@ -36,6 +36,11 @@ import CaseBannerStack from './components/case/CaseBannerStack.vue'
 // The star on the case page (case-number-and-favourites, row 2.19).
 // @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
+// Follow a case you do not own, and see who else does (case-followers,
+// row 13.18), over OpenRegister's own subscription (`object-watchers`).
+// @spec openspec/changes/case-followers/specs/case-management/spec.md
+import CaseFollowersPanel from './components/case/CaseFollowersPanel.vue'
+import CaseFollowStrip from './components/case/CaseFollowStrip.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -137,6 +142,9 @@ import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
+// The AVG panel on a data subject request case
+// (data-subject-requests-drive-the-platform).
+import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -173,7 +181,6 @@ import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
 import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
 import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
-import ExternalConsultationResponsePage from './views/public/ExternalConsultationResponsePage.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
@@ -886,6 +893,32 @@ const registry = {
 		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
 	},
 
+	// --- Following a case you do not own (case-followers, row 13.18). ---
+	//
+	// A widget TYPE for the strip and a TAB CHILD type for the panel. Both
+	// resolve from `cnRegistry[widget.type]`: CnDetailPage falls back to
+	// CnDetailWidgetHost for a grid item with no `widget-<id>` slot, and
+	// CnTabsWidget resolves a panel the same way and renders nothing at all,
+	// logging nothing, when no key answers. CaseDetail mounts the strip
+	// through CaseBannerStack rather than as a row of its own — the type is
+	// still a valid placement, just not the one that page uses.
+	// @spec openspec/changes/case-followers/specs/case-management/spec.md
+	'case-follow': {
+		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to follow and DELETE to stop, and no declarative action writes both: `executeApiCall` maps every method that is not `PUT` to `post`, so an `api-call` declared `method: "DELETE"` would POST to a route that takes DELETE and there is nothing in the manifest to say it could never have worked. `CnActionButtons`' `toggle` type writes with one `method` for both directions, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.watching` is attached per reader on the render path, so a data widget over a property would render nothing. Deleted the day the library takes a DELETE verb and a two-verb toggle, which is where this belongs for every app in the fleet
+		kind: 'widget',
+		component: CaseFollowStrip,
+		...STRIP_WIDGET_META,
+		_note: 'CaseDetail: follow a case you do not own, beside the star and saying the opposite kind of thing. The star is private and silent; following subscribes you to the case\'s own notifications through OpenRegister\'s `{"watchers": true}` recipient block, and the people who may edit the case can see that you took it. The strip renders from `@self.watching`, which every object read already carries, so it makes no call until somebody presses it. The count beside the button is silent for a reader OpenRegister told no count, because an absent `@self.watcherCount` means "not your business" and never "nobody".',
+	},
+
+	'case-followers': {
+		// @custom-widget-ratchet exclude a subscription is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/watchers`, a sub-resource that takes no register-and-schema pair of its own, and there is no `integration` id that reaches it. The 403 a reader without `update` gets has to be drawn APART from an empty list, which a declarative list cannot do: both would render as no rows. Deleted the day nextcloud-vue ships a watchers widget type over that listing
+		kind: 'widget',
+		component: CaseFollowersPanel,
+		...PANEL_WIDGET_META,
+		_note: 'CaseDetail People tab, the Followers section: who is watching this case, as against the Parties, Roles and Seats sections beside it, which say who the case is about. Reading the list needs `update` on the case, so a reader without it is told that rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else\'s subscription needs `manage`, and you stop following from the button on the case page, which acts on your own row only.',
+	},
+
 	// --- Who is on the case, and in which role (the party model, #3761). ---
 	// Keyed by the widget's `type` and not by a component name, for the reason
 	// `case-unread` records: a tab child renders through CnTabsWidget, which
@@ -951,6 +984,17 @@ const registry = {
 		kind: 'page',
 		component: CaseAccessTab,
 		_note: "Who holds which right on the case and where each grant came from, read from OpenRegister's permission catalogue, object shares, role definitions, effective scopes and deny preview. dossiq evaluates nothing: every row restates one rule OpenRegister reported, and a deny is its own row rather than subtracted from a grant, because a second evaluator of this question eventually disagrees with the first and the disagreement is a disclosure (D-1, D-5).",
+	},
+	// --- The AVG panel (data-subject-requests-drive-the-platform). ---
+	// A `component:` tab for the same reason CaseAccessTab is: none of
+	// CnObjectSidebar's four built-ins can call the AVG endpoints or render a
+	// protected item with its ground. kind `page`, so it adds nothing to the
+	// ADR-049 widget count.
+	// @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	DataSubjectRequestTab: {
+		kind: 'page',
+		component: DataSubjectRequestTab,
+		_note: 'What OpenRegister reported about a data subject, and the acts dossiq drives on it. The protected items are rendered in full, ground and basis and remedy, because a count of what cannot be erased is not an answer a handler can give the person who asked. dossiq computes no erasure here: every value is one the server read back from the platform.',
 	},
 	// --- The four clocks on the case (phase-terms-and-the-internal-target). ---
 	// A `component:` tab and not a `widgets[]` one, for the same reason
@@ -1088,11 +1132,10 @@ const registry = {
 		component: StoreGallery,
 		_note: 'Remote store cards (ADR-080). A store item is a REMOTE object, so the index renderer — which resolves a local register+schema — cannot address it.',
 	},
-	ExternalConsultationResponsePage: {
-		kind: 'page',
-		component: ExternalConsultationResponsePage,
-		_note: 'Named by src/manifest.d/consultation-public.json. Token-addressed advice-response surface for external advisory bodies (consultation-management TASK-CN-06); its absence rendered the empty-page placeholder on /public/consultations/:token.',
-	},
+	// The token-addressed advice-response page is gone with
+	// case-sharing-mints-access-links: nothing ever minted the token it read,
+	// so the route could not be entered. An advisory body now answers over an
+	// OpenRegister access link declaring `comment` (openregister#3817).
 	CaseTimelineTab: {
 		kind: 'page',
 		component: CaseTimelineTab,
