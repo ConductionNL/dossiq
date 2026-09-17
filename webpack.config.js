@@ -70,6 +70,16 @@ webpackConfig.entry = {
 // it in) and run its own build there.
 webpackConfig.resolve = {
 	extensions: ['.vue', '.js'],
+	// Resolve the symlinked local checkout from its place INSIDE this app's
+	// node_modules, not its real path. Needed because the library's dist
+	// VENDORS @nextcloud/dialogs and imports it by relative path, which the
+	// `@nextcloud/dialogs$` alias below cannot intercept — so that copy's bare
+	// `@nextcloud/files` request resolves in the lib's own tree, and the
+	// `buffer` polyfill it ends up needing is then searched for by walking up
+	// from `../nextcloud-vue/`, escaping to `/` past the copy this app has
+	// installed. Keeping the symlinked path gives npm-link semantics: the lib's
+	// deps win, ours are the fallback. No effect when nothing is symlinked.
+	symlinks: false,
 	// @nextcloud/dialogs v6's FilePicker chunk imports node's 'path' module
 	// (webpack 5 no longer auto-polyfills node core modules). The FilePicker
 	// UI is not used by this app; stub it out rather than shipping a real
