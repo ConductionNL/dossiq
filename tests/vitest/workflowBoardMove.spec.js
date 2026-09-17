@@ -48,12 +48,16 @@ vi.mock('@nextcloud/dialogs', () => ({ showError, showWarning }))
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: { name: 'NcButton', render: () => h('button') },
 	NcLoadingIcon: { name: 'NcLoadingIcon', render: () => h('span') },
-	NcActions: { name: 'NcActions', render: () => h('div') },
-	NcActionButton: { name: 'NcActionButton', render: () => h('button') },
 	NcCheckboxRadioSwitch: {
 		name: 'NcCheckboxRadioSwitch',
 		render: () => h('input'),
 	},
+	// MoveCaseDialog's, reached because the board imports it. NcActions and
+	// NcActionButton used to be here for the card's own 200-item move menu,
+	// which the context menu replaced.
+	NcDialog: { name: 'NcDialog', render: () => h('div') },
+	NcNoteCard: { name: 'NcNoteCard', render: () => h('div') },
+	NcSelect: { name: 'NcSelect', render: () => h('div') },
 }))
 
 // One store object for every call: the board reads `objectStore` from a

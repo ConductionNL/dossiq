@@ -39,25 +39,42 @@
  *
  * ⚠️ BOTH TESTS NOW MOVE A CARD, AND READ THE MOVE BACK FROM STORAGE
  * -----------------------------------------------------------------
- * They used to stop short. The keyboard test opened the "Move to…" menu,
- * saw the target offered, and pressed Escape; the drag test read
- * `draggable="true"` off the card. Neither could fail when the move itself
- * broke: a menu item whose handler did nothing, or a drop handler that
- * ignored the card, left both green. Each test now owns its own card (one
- * move would otherwise change the column the other starts from), completes
- * the move, and asserts the case's STORED `status` is the target statusType
- * id, which is what both scenarios require.
+ * They used to stop short. The keyboard test opened the move menu, saw the
+ * target offered, and pressed Escape; the drag test read `draggable="true"`
+ * off the card. Neither could fail when the move itself broke: a menu item
+ * whose handler did nothing, or a drop handler that ignored the card, left
+ * both green. Each test now owns its own card (one move would otherwise
+ * change the column the other starts from), completes the move, and asserts
+ * the case's STORED `status` is the target statusType id, which is what both
+ * scenarios require.
+ *
+ * ⚠️ THE KEYBOARD PATH IS NOW THE M KEY, NOT A TABBABLE MENU
+ * ---------------------------------------------------------
+ * The card used to carry an NcActions listing every board column, and that is
+ * what this test tabbed to. A column exists per status NAME across every case
+ * type on the instance, so on a populated register the menu offered two
+ * hundred statuses, nearly all of them out of workflows the case has nothing
+ * to do with — which is why the old version of this test had to ArrowDown up
+ * to sixty times to reach its target.
+ *
+ * The control is gone. Moving is asked for by right-clicking the card or
+ * pressing M on it, and answered by a dialog listing what
+ * `/api/case/{id}/available-transitions` offers for THAT case. The keyboard
+ * path this file exists to protect is preserved, and it is now shorter than
+ * it was; the test asserts the old control's ABSENCE first, so a leftover
+ * cannot quietly coexist with it.
  *
  * MUTATION POINTS, NOT YET RUN. The mutation runs for this file were refused
  * by the permission system on 2026-09-11, so each point below is where the
  * check goes, with the assertion that should redden. Both are client-side.
  *
- *  - Keyboard (006f): in `src/views/workflow-board/CaseCard.vue`, make the
- *    "Move to…" item a no-op (`@click="$emit('move', caseItem.id, col.id)"`
- *    becomes `@click="() => {}"`). Expected red: `selecting "In behandeling"
- *    with Enter must write the "In behandeling" statusType id to the stored
- *    case`. Dropping `@keydown.enter` from the card root instead should
- *    redden `Enter on the card body must still open the case detail`.
+ *  - Keyboard (006f): in `src/views/workflow-board/CaseCard.vue`, drop the
+ *    `@keydown.m` binding. Expected red: `selecting "In behandeling" with
+ *    Enter must write the "In behandeling" statusType id to the stored case`,
+ *    because the dialog never opens. Making `WorkflowBoard.onMoveConfirmed` a
+ *    no-op reddens the same assertion one step later. Dropping
+ *    `@keydown.enter` from the card root instead should redden `Enter on the
+ *    card body must still open the case detail`.
  *  - Drag (006g): in the same file, `onDragStart` writes the id under
  *    `text/plain`; write it under any other type and `BoardColumn.onDrop`
  *    reads nothing. Expected red: `dropping the card on "In behandeling" must
@@ -121,9 +138,10 @@ test.describe('Workflow Board keyboard status transition', () => {
 		token = await getRequestToken(api)
 		// caseType + Ontvangen/In behandeling (non-final) + Afgehandeld (final)
 		// + an active workflowTemplate whose `t1` runs Ontvangen -> In
-		// behandeling with no guard. Two non-final statusTypes is the minimum
-		// the move control needs: CaseCard renders its NcActions only when
-		// `otherColumns.length > 0`, i.e. when a card has somewhere to go.
+		// behandeling with no guard. That unguarded transition is what the
+		// move dialog has to offer: it lists what the ENGINE offers, so a
+		// fixture with statuses but no workflow template would render an
+		// empty dialog and the test would fail for the wrong reason.
 		sm = await seedStateMachine(api, token)
 		keyboardCaseId = objectId(
 			await seedCase(api, token, {
@@ -252,49 +270,48 @@ test.describe('Workflow Board keyboard status transition', () => {
 	}) => {
 		const card = await openBoardAndFindSeededCard(page, KEYBOARD_TITLE)
 
-		// TAB to the control, as the scenario's keyboard-only user does. The
-		// card body takes focus first; the move trigger is a separate focusable
-		// NcActions control a few tab stops further on (the selection checkbox
-		// sits between them).
-		const moveTrigger = card.locator('.case-card__move-actions button').first()
-		await expect(moveTrigger).toBeVisible()
-		await card.focus()
-		let reached = false
-		for (let stop = 0; stop < 6 && !reached; stop++) {
-			await page.keyboard.press('Tab')
-			reached = await moveTrigger.evaluate(
-				(button) => document.activeElement === button,
-			)
-		}
-		expect(reached, 'Tab must reach the card\'s "Move to…" control').toBe(true)
+		// THE CARD CARRIES NO MOVE CONTROL ANY MORE, and asserting its absence
+		// is half of what this test is for: the tabbable NcActions it used to
+		// hold listed every board column — one per status NAME across every
+		// case type on the instance — so on a populated register it offered
+		// two hundred statuses, nearly none of them reachable. A leftover
+		// would mean two ways to move a card that disagree about what is on
+		// offer.
+		await expect(card.locator('.case-card__move-actions')).toHaveCount(0)
 
-		await page.keyboard.press('Enter')
-		const target = page.getByRole('menuitem', {
-			name: new RegExp(`Move to ${IN_PROGRESS}`),
+		// The keyboard path is now M on the focused card, which opens the move
+		// dialog directly. It is announced in the card's accessible name,
+		// because there is nothing on screen to find it by.
+		await expect(card).toHaveAttribute('aria-label', /M to move/)
+		await card.focus()
+		await page.keyboard.press('m')
+
+		const dialog = page.locator('[data-testid="move-case-dialog"]')
+		await expect(dialog).toBeVisible({ timeout: 15000 })
+
+		// The dropdown offers what the ENGINE offers for this case, so the
+		// seeded target is there and the statuses of other workflows are not.
+		const select = dialog.locator('[data-testid="move-case-select"]')
+		await expect(select).toBeVisible()
+		await select.click()
+		const target = page.getByRole('option', {
+			name: new RegExp(IN_PROGRESS),
 		})
 		await expect(target).toBeVisible({ timeout: 5000 })
 
-		// Arrow to the target item rather than clicking it: no mouse event may
-		// take part in this move. The menu lists every other board column, so
-		// on a populated instance the target can sit several items down.
-		let focused = false
-		for (let step = 0; step < 60 && !focused; step++) {
-			focused = await target.evaluate(
-				(item) =>
-					document.activeElement === item
-					|| item.contains(document.activeElement),
-			)
-			if (!focused) {
-				await page.keyboard.press('ArrowDown')
-			}
-		}
-		expect(focused, 'ArrowDown must reach the "In behandeling" menu item').toBe(
-			true,
-		)
+		// Typed and chosen with the keyboard alone: no mouse event may take
+		// part in the move itself. Typing is what the dropdown buys over the
+		// list it replaced — the handler narrows instead of scrolling.
+		await page.keyboard.type(IN_PROGRESS)
 		await page.keyboard.press('Enter')
 
-		// The move control stops propagation, so activating it must not also
-		// fire the card's own open-detail handler.
+		const confirm = dialog.locator('[data-testid="move-case-confirm"]')
+		await expect(confirm).toBeEnabled()
+		await confirm.focus()
+		await page.keyboard.press('Enter')
+
+		// Opening the dialog must not also fire the card's own open-detail
+		// handler: M is a keydown on the same element Enter opens the case on.
 		await expect(page).toHaveURL(/\/workflow-board/)
 
 		await expectStoredStatus(

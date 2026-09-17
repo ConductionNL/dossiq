@@ -4,10 +4,23 @@
 	Workflow-board case card — a single draggable Kanban card. Shows the case
 	identifier, truncated title, case-type chip, assignee and a deadline
 	indicator. Emits `dragstart` (with the case id), `click` (open detail),
-	`move` (caseId, newStatusId) from the keyboard-operable "Move to…" menu —
-	the same status-transition path as the drag gesture (WCAG 2.1.1 Keyboard) —
-	and `toggle-select` (caseId) from its selection checkbox, used by the
+	`contextMenu` (caseId, event) on right-click, `requestMove` (caseId) on the
+	M key, and `toggle-select` (caseId) from its selection checkbox, used by the
 	column-scoped bulk-selection UI (case-bulk-status-transition).
+
+	THE CARD CARRIES NO MOVE CONTROL OF ITS OWN ANY MORE, and the M key is why
+	it is still keyboard-operable. It used to hold an NcActions listing every
+	board column, which is one per status NAME across every case type on the
+	instance: two hundred items on a real register, nearly all of them statuses
+	this case cannot reach. Moving is now asked for — right-click, or M on the
+	focused card — and answered by a dialog the board fills from the engine's
+	offer for THIS case.
+
+	The M key is the WCAG 2.1.1 path the menu used to be (dragging is
+	mouse-only), so it is named in the card's aria-label: a gesture with no
+	visible control has to be announced or it does not exist. A right-click is
+	also reachable from the keyboard via Shift+F10 / the Menu key, but that is
+	a fallback, not the affordance.
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
@@ -24,10 +37,13 @@
 		draggable="true"
 		role="button"
 		tabindex="0"
+		:aria-label="ariaLabel"
 		@dragstart="onDragStart"
 		@click="$emit('click', caseItem.id)"
+		@contextmenu.prevent="$emit('contextMenu', caseItem.id, $event)"
 		@keydown.enter="$emit('click', caseItem.id)"
-		@keydown.space.prevent="$emit('click', caseItem.id)">
+		@keydown.space.prevent="$emit('click', caseItem.id)"
+		@keydown.m.prevent="$emit('requestMove', caseItem.id)">
 		<NcCheckboxRadioSwitch
 			class="case-card__select"
 			:modelValue="selected"
@@ -62,43 +78,17 @@
 				{{ deadlineLabel }}
 			</span>
 		</div>
-
-		<!-- Keyboard-operable status move control (REQ-KBD-01). Separate
-			focusable control from the card body's open-detail action; stop
-			propagation so activating it never also fires the card's own
-			click/open handler. -->
-		<NcActions
-			v-if="otherColumns.length > 0"
-			class="case-card__move-actions"
-			:inline="0"
-			@click.stop
-			@keydown.stop>
-			<template #icon>
-				<ArrowRightBoldCircleOutline :size="18" />
-			</template>
-			<NcActionButton
-				v-for="col in otherColumns"
-				:key="col.id"
-				@click="$emit('move', caseItem.id, col.id)">
-				{{ t('dossiq', 'Move to {status}', { status: col.name }) }}
-			</NcActionButton>
-		</NcActions>
 	</div>
 </template>
 
 <script>
-import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue'
-import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
+import { NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { getDaysRemaining } from '../../utils/caseHelpers.js'
-import { columnsExcludingCurrent } from '../../utils/workflowBoardHelpers.js'
 
 export default {
 	name: 'CaseCard',
 	components: {
-		NcActions,
-		NcActionButton,
 		NcCheckboxRadioSwitch,
-		ArrowRightBoldCircleOutline,
 	},
 
 	props: {
@@ -106,13 +96,6 @@ export default {
 		caseItem: { type: Object, required: true },
 		/** Resolved case-type display name (parent resolves from the type map). */
 		caseTypeName: { type: String, default: '' },
-		/**
-		 * All board columns (status types), used to populate the "Move to…"
-		 * menu with every status other than this card's current one.
-		 *
-		 * @type {Array<{id: string, name: string}>}
-		 */
-		columns: { type: Array, default: () => [] },
 		/** Whether this card is currently in the bulk-selection set. */
 		selected: { type: Boolean, default: false },
 		/**
@@ -123,16 +106,29 @@ export default {
 		selectionMode: { type: Boolean, default: false },
 	},
 
-	emits: ['click', 'dragstart', 'move', 'toggle-select'],
+	emits: ['click', 'contextMenu', 'dragstart', 'requestMove', 'toggle-select'],
 	computed: {
 		/**
-		 * Status columns the card can move to — every column except the one
-		 * it is currently in.
+		 * What the card announces, including how to move it.
 		 *
-		 * @return {Array<{id: string, name: string}>}
+		 * The move gesture is named here because it has no visible control to
+		 * find: dragging is a mouse gesture, and `m` is the keyboard one. An
+		 * affordance a screen-reader user cannot discover is not an
+		 * affordance, and this is the only place left that can say it.
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
-		otherColumns() {
-			return columnsExcludingCurrent(this.columns, this.caseItem.status)
+		ariaLabel() {
+			return this.t(
+				'dossiq',
+				'Case {identifier}: {title}. Press Enter to open, or M to move it to another status.',
+				{
+					identifier: this.caseItem.identifier || this.caseItem.id,
+					title: this.caseItem.title || '',
+				},
+			)
 		},
 
 		/**
@@ -217,12 +213,6 @@ export default {
 	transition:
 		box-shadow 0.15s ease,
 		background 0.15s ease;
-}
-
-.case-card__move-actions {
-	position: absolute;
-	top: 4px;
-	right: 4px;
 }
 
 .case-card__select {

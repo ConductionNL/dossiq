@@ -719,14 +719,31 @@ advance a case's status.
 
 - GIVEN case "2026-0042" is in the "Ontvangen" column and the user is navigating with only a
   keyboard (no mouse/touch)
-- WHEN the user tabs to the case card's "Move to…" control and selects "In behandeling" via
-  Enter/Space
+- WHEN the user focuses the case card and presses `M`, then picks "In behandeling" from the move
+  dialog
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID via the
-  same persistence path as the drag-and-drop scenario (optimistic move, `saveObject('case', …)`,
-  revert-and-toast on failure)
+  same persistence path as the drag-and-drop scenario (optimistic move, the offered transition
+  posted to the status-transition engine, revert-and-toast on failure)
 - AND the card MUST move to the "In behandeling" column
 - AND the card's existing "open case detail" keyboard activation (Enter/Space on the card body)
-  MUST remain unaffected by the new control
+  MUST remain unaffected by the move gesture
+- AND the card MUST announce the `M` gesture in its accessible name, because the gesture has no
+  visible control to discover
+
+> Superseded the tabbable "Move to…" menu this scenario originally specified. That menu listed
+> every board column, and columns are merged by status NAME across every case type on the
+> instance — two hundred entries on a real register, nearly all of them statuses the case cannot
+> reach. The keyboard path is preserved as the `M` key; the list is now the engine's offer for
+> that one case.
+
+#### Scenario DASH-V1-006h: The move dialog offers only what the case can reach (NEW)
+
+- GIVEN a case whose workflow offers two transitions, one of them held by a failing guard
+- WHEN the user opens the move dialog, by right-clicking the card or pressing `M` on it
+- THEN the dialog MUST list exactly the statuses `/api/case/{id}/available-transitions` offers,
+  never the board's columns
+- AND a transition whose guards failed MUST be listed, unselectable, showing the guard's reason
+- AND a failure to read the offer MUST be reported as a failure, never as an empty list
 
 #### Scenario DASH-V1-006g: Drag path unchanged (NEW)
 

@@ -5,10 +5,11 @@
 	a header (status name + case count), a scrollable list of CaseCard children,
 	and accepts drag-and-drop of cards. On drop it emits `drop(caseId, statusId)`
 	to the parent board, which performs the actual status transition. Also
-	re-emits `move(caseId, newStatusId)` from each CaseCard's keyboard-operable
-	"Move to…" menu — the same status-transition path as drag-and-drop — and
-	`toggle-select(caseId, columnId)` from each CaseCard's selection checkbox,
-	used by the column-scoped bulk-selection UI (case-bulk-status-transition).
+	re-emits each CaseCard's `contextMenu(caseId, event)` and
+	`requestMove(caseId)` — the two ways a move is asked for now that the card
+	carries no menu of its own — and `toggle-select(caseId, columnId)` from its
+	selection checkbox, used by the column-scoped bulk-selection UI
+	(case-bulk-status-transition).
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
@@ -46,14 +47,14 @@
 					:key="c.id"
 					:caseItem="c"
 					:caseTypeName="caseTypeName(c.caseType)"
-					:columns="allColumns"
 					:selected="selectedCaseIds.includes(String(c.id))"
 					:selectionMode="selectionColumnId === statusType.id"
 					@click="$emit('click-case', $event)"
 					@dragstart="$emit('dragstart', $event)"
-					@move="
-						(caseId, newStatusId) => $emit('move', caseId, newStatusId)
+					@contextMenu="
+						(caseId, event) => $emit('contextMenu', caseId, event)
 					"
+					@requestMove="(caseId) => $emit('requestMove', caseId)"
 					@toggleSelect="
 						(caseId) => $emit('toggle-select', caseId, statusType.id)
 					" />
@@ -86,20 +87,21 @@ export default {
 		loading: { type: Boolean, default: false },
 		/** Map of caseType id → display name, supplied by the parent board. */
 		caseTypeMap: { type: Object, default: () => ({}) },
-		/**
-		 * Every board column (status type), forwarded to each CaseCard so its
-		 * keyboard "Move to…" menu can list every status other than its own.
-		 *
-		 * @type {Array<{id: string, name: string}>}
-		 */
-		allColumns: { type: Array, default: () => [] },
 		/** Case ids currently selected (bulk selection), as strings. */
 		selectedCaseIds: { type: Array, default: () => [] },
 		/** The column id that owns the active selection scope, or null. */
 		selectionColumnId: { type: String, default: null },
 	},
 
-	emits: ['drop', 'click-case', 'dragstart', 'move', 'toggle-select'],
+	emits: [
+		'drop',
+		'click-case',
+		'contextMenu',
+		'dragstart',
+		'requestMove',
+		'toggle-select',
+	],
+
 	data() {
 		return {
 			dragOver: false,

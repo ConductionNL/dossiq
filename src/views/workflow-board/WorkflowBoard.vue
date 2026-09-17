@@ -3,16 +3,28 @@
 <!--
 	Workflow Board — a Kanban board with one column per non-final status type,
 	open cases grouped into their current status, and status transitions
-	operable by both drag-and-drop AND keyboard alone (each CaseCard's "Move
-	to…" menu). Both paths call the same onDrop(), which posts the case's
-	offered transition to the status-transition engine — the single write-path
-	for case.status, and the one the case page uses — so a board move is role
-	checked, guard evaluated and side-effecting exactly as the same move made
-	from the case page. On a refusal the card goes back and the engine's own
-	reason is toasted. Also holds the column-scoped bulk-selection state: a
-	case card's checkbox toggles selection via toggleSelection() (cross-column
-	selection resets), and a bulk-actions bar opens BulkTransitionDialog to
-	preview/execute one status transition across every selected case.
+	operable by drag-and-drop AND by keyboard alone. Both paths call the same
+	onDrop(), which posts the case's offered transition to the
+	status-transition engine — the single write-path for case.status, and the
+	one the case page uses — so a board move is role checked, guard evaluated
+	and side-effecting exactly as the same move made from the case page. On a
+	refusal the card goes back and the engine's own reason is toasted.
+
+	ASKING TO MOVE A CARD IS A SEPARATE QUESTION FROM MAKING THE MOVE, and this
+	page owns both halves. Each CaseCard used to carry an NcActions listing
+	every board column, and a column exists per status NAME across every case
+	type on the instance: two hundred entries on a real register, nearly all of
+	them statuses the case cannot reach, because merged columns say nothing
+	about one case's workflow. A right-click (CnContextMenu) or M on the
+	focused card now opens MoveCaseDialog, which the board fills from
+	/available-transitions for THAT case — the same answer onDrop validates a
+	drop against, so the two gestures cannot drift apart. Picking one hands
+	onDrop the column name a drop would have passed.
+
+	Also holds the column-scoped bulk-selection state: a case card's checkbox
+	toggles selection via toggleSelection() (cross-column selection resets),
+	and a bulk-actions bar opens BulkTransitionDialog to preview/execute one
+	status transition across every selected case.
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
@@ -26,7 +38,7 @@
 					{{
 						t(
 							'dossiq',
-							'Drag cases between statuses, or use a case card\'s "Move to…" menu, to advance their workflow',
+							'Drag a case between statuses to advance its workflow. Right-click a card, or press M with it focused, to pick from the statuses it can reach.',
 						)
 					}}
 				</p>
@@ -91,17 +103,34 @@
 					:statusType="col"
 					:cases="casesByStatus[col.id] || []"
 					:caseTypeMap="caseTypeMap"
-					:allColumns="columns"
 					:loading="false"
 					:selectedCaseIds="selection.caseIds.map((id) => String(id))"
 					:selectionColumnId="selection.columnId"
 					@drop="onDrop"
-					@move="onDrop"
 					@clickCase="goToCase"
+					@contextMenu="onCardContextMenu"
+					@requestMove="openMoveDialog"
 					@dragstart="onDragStart"
 					@toggleSelect="onToggleSelect" />
 			</div>
 		</template>
+
+		<!-- One menu for the board, not one per card: it is positioned at the
+			cursor and only ever describes the card that was right-clicked. -->
+		<CnContextMenu
+			v-model:open="contextMenuOpen"
+			:targetItem="contextMenuCaseId"
+			:actions="contextMenuActions"
+			@close="closeContextMenu" />
+
+		<MoveCaseDialog
+			v-if="moveDialogOpen"
+			:caseTitle="moveDialogCaseTitle"
+			:targets="moveTargets"
+			:loading="moveTargetsLoading"
+			:error="moveTargetsError"
+			@update:open="moveDialogOpen = $event"
+			@confirm="onMoveConfirmed" />
 
 		<BulkTransitionDialog
 			v-if="showBulkDialog"
@@ -112,12 +141,15 @@
 </template>
 
 <script>
+import { CnContextMenu, useContextMenu } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showError, showWarning } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
 import BoardColumn from './BoardColumn.vue'
+import MoveCaseDialog from './MoveCaseDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import {
@@ -134,14 +166,27 @@ import {
 } from '../../utils/caseLifecycleHelpers.js'
 import { mergeColumnColour } from '../../utils/statusColour.js'
 import { failedActionsWarning } from '../../utils/transitionOutcome.js'
+import { moveTargetsFromTransitions } from '../../utils/workflowBoardHelpers.js'
 
 export default {
 	name: 'WorkflowBoard',
 	components: {
+		CnContextMenu,
 		NcButton,
 		NcLoadingIcon,
 		BoardColumn,
 		BulkTransitionDialog,
+		MoveCaseDialog,
+	},
+
+	setup() {
+		const ctx = useContextMenu()
+		return {
+			contextMenuOpen: ctx.isOpen,
+			contextMenuCaseId: ctx.targetItem,
+			openContextMenu: ctx.open,
+			closeContextMenu: ctx.close,
+		}
 	},
 
 	data() {
@@ -172,6 +217,12 @@ export default {
 			selection: emptySelection(),
 			/** Whether the bulk-transition dialog is open. */
 			showBulkDialog: false,
+			/** The single-case move dialog: which case, and what it may reach. */
+			moveDialogOpen: false,
+			moveDialogCaseId: null,
+			moveTargets: [],
+			moveTargetsLoading: false,
+			moveTargetsError: '',
 			/**
 			 * Live-updates handle for the or-collection-{register}-{schema}
 			 * subscription on the `case` type (nc-vue liveUpdatesPlugin,
@@ -194,6 +245,32 @@ export default {
 	computed: {
 		objectStore() {
 			return useObjectStore()
+		},
+
+		/**
+		 * The right-click menu. One entry: moving is the only thing the card
+		 * could not already do by clicking or dragging it.
+		 *
+		 * @return {Array<object>} CnContextMenu action definitions.
+		 */
+		contextMenuActions() {
+			return [
+				{
+					label: this.t('dossiq', 'Move…'),
+					icon: ArrowRightBoldCircleOutline,
+					handler: (caseId) => this.openMoveDialog(caseId),
+				},
+			]
+		},
+
+		/**
+		 * The title of the case the move dialog is about.
+		 *
+		 * @return {string}
+		 */
+		moveDialogCaseTitle() {
+			const found = this.cardById(this.moveDialogCaseId)
+			return found?.title || found?.identifier || ''
 		},
 	},
 
@@ -589,6 +666,106 @@ export default {
 					),
 				)
 			}
+		},
+
+		/**
+		 * One card by id, wherever it currently sits.
+		 *
+		 * @param {string} caseId The case id
+		 * @return {object|null} The card, or null when the board does not hold it
+		 */
+		cardById(caseId) {
+			if (caseId === null || caseId === undefined) {
+				return null
+			}
+			for (const list of Object.values(this.casesByStatus)) {
+				const found = list.find((c) => String(c.id) === String(caseId))
+				if (found) {
+					return found
+				}
+			}
+			return null
+		},
+
+		/**
+		 * Open the right-click menu over a card.
+		 *
+		 * @param {string} caseId The right-clicked case
+		 * @param {MouseEvent} event The native contextmenu event, for the position
+		 * @return {void}
+		 */
+		onCardContextMenu(caseId, event) {
+			this.openContextMenu({ item: caseId, event })
+		},
+
+		/**
+		 * Open the move dialog and fill it with what the engine offers.
+		 *
+		 * The offer is read HERE rather than in the dialog because it is the
+		 * same question the drop path asks, of the same endpoint: the board
+		 * owns the move, and a dialog that fetched its own answer would be a
+		 * second place for the two to drift apart.
+		 *
+		 * A failure is shown in the dialog, not as an empty list. "Nowhere to
+		 * go" and "we could not find out" are different answers, and the
+		 * second one is the handler's cue to try again.
+		 *
+		 * @param {string} caseId The case to move
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 */
+		async openMoveDialog(caseId) {
+			this.closeContextMenu()
+			this.moveDialogCaseId = caseId
+			this.moveTargets = []
+			this.moveTargetsError = ''
+			this.moveTargetsLoading = true
+			this.moveDialogOpen = true
+
+			try {
+				const offered = await this.offeredTransitions(caseId)
+				// Guard against a second open racing the first: only the case
+				// the dialog is still about may fill it.
+				if (String(this.moveDialogCaseId) !== String(caseId)) {
+					return
+				}
+				this.moveTargets = moveTargetsFromTransitions(
+					offered,
+					this.statusById,
+				)
+			} catch (err) {
+				// Reported in the dialog rather than the console: the handler
+				// is standing in front of it waiting for a list, and an empty
+				// one would read as "this case cannot move".
+				this.moveTargetsError = this.t(
+					'dossiq',
+					'Could not read which statuses this case can move to: {reason}',
+					{ reason: err?.message || this.t('dossiq', 'unknown error') },
+				)
+			} finally {
+				this.moveTargetsLoading = false
+			}
+		},
+
+		/**
+		 * Move the case the dialog was about, through the drop path.
+		 *
+		 * `onDrop` takes a column name and resolves the status id inside the
+		 * case's own workflow, so the dialog hands over the same argument a
+		 * drop does and both gestures are one write path — role check, guard
+		 * evaluation, optimistic move and revert included.
+		 *
+		 * @param {string} columnName The chosen status name
+		 * @return {void}
+		 */
+		onMoveConfirmed(columnName) {
+			const caseId = this.moveDialogCaseId
+			this.moveDialogCaseId = null
+			if (caseId === null || columnName === '') {
+				return
+			}
+			this.onDrop(caseId, columnName)
 		},
 
 		/**
