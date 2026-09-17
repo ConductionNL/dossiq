@@ -143,11 +143,9 @@ const CASE_LENSES = [
 	'Unclaimed',
 	'Handed on',
 	'Closed',
-	// A lens over a stored boolean pair, `isFinalStatus` with a null `result`
-	// (case-search-declares-its-fields, b2106382). It landed on the manifest
-	// without being named here and left this assertion RED on `development`,
-	// which is the third time that has happened to this list; corrected here
-	// because the file was already open, not because it is this change's.
+	// The closed cases that ended without a result (b210638, the search change
+	// that made the no-result closures a lens of their own). It sits after
+	// Closed because it narrows that set.
 	'Closed with no result',
 	DRAFTS_LENS,
 	'Overdue',
@@ -179,6 +177,7 @@ const CASES_ONLY = [
 	'Needs attention',
 	'Assessed high risk',
 	'Handed on',
+	// A case closes with or without a result; a task completes and has none.
 	'Closed with no result',
 	DRAFTS_LENS,
 	'Stuck',
