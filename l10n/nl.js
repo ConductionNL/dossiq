@@ -466,6 +466,7 @@ OC.L10N.register(
         "Ask a question about this case…": "Stel een vraag over deze zaak…",
         "Ask for an explanation": "Vraag om uitleg",
         "Ask for the export": "Vraag het export aan",
+        "Ask for this approval": "Vraag deze goedkeuring aan",
         "Ask the assistant": "Vraag de assistent",
         "Ask the platform what erasing this person would touch.": "Vraag het platform wat het wissen van deze persoon zou raken.",
         "Asked at": "Gevraagd op",

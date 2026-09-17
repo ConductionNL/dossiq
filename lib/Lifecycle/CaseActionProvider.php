@@ -35,7 +35,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Lifecycle;
 
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
-use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
@@ -138,19 +137,16 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @param CaseResultWriter $resultWriter Decides whether a target status closes the case.
 	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
 	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
-	 * @param ApprovalGate $approvals Whether a walked approval decidiq owns still blocks an act.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 * @spec openspec/changes/case-grants-name-their-source/specs/case-management/spec.md
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
 	 */
 	public function __construct(
 		private readonly StatusTransitionService $transitionEngine,
 		private readonly CaseResultWriter $resultWriter,
 		private readonly OpenRegisterGrantsGateway $grants,
 		private readonly ExternalHome $externalHome,
-		private readonly ApprovalGate $approvals,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -247,58 +243,12 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			return [];
 		}
 
-		// An act the case type says waits for an approval decidiq walks
-		// (REQ-DEC-01). Blocked with the approval named, drawn before the
-		// click, for the same reason the external home is: a refusal a handler
-		// meets only after pressing the button teaches them nothing about who
-		// to chase.
-		$actions = $this->honourApprovals(actions: $actions, object: $object, userId: $caller ?? '');
-
 		// A case homed in another application (REQ-HAND-04). The acts stay in
 		// the list and come back BLOCKED, carrying the application that holds
 		// the work: an act that vanished would read as a permission problem
 		// and send somebody to the rights matrix for an afternoon.
 		return $this->honourExternalHome(actions: $actions, object: $object);
 	}//end availableActions()
-
-	/**
-	 * Block the acts whose walked approval decidiq has not granted.
-	 *
-	 * 🔑 THE VERDICT IS {@see ApprovalGate}'S, READ AND NOT DERIVED, and it is
-	 * the same call `execute()` makes. Deriving a second opinion here is how a
-	 * button ends up enabled over an endpoint that refuses it.
-	 *
-	 * An act already blocked by a guard keeps the guard's own sentence. The
-	 * approval is the rule a handler can do something about, so it wins the
-	 * description only where there was nothing else to say.
-	 *
-	 * @param list<array<string, mixed>> $actions The moves as published.
-	 * @param array<string, mixed>       $object  The loaded case payload.
-	 * @param string                     $userId  Who is asking.
-	 *
-	 * @return list<array<string, mixed>> The moves, blocked where an approval is outstanding.
-	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
-	 */
-	private function honourApprovals(array $actions, array $object, string $userId): array {
-		$gated = [];
-		foreach ($actions as $action) {
-			$verdict = $this->approvals->verdictFor(
-				case: $object,
-				act: (string)($action['action'] ?? ''),
-				userId: $userId,
-			);
-
-			if ($verdict['allowed'] === false) {
-				$action['blocked'] = true;
-				$action['description'] = (string)$verdict['sentence'];
-			}
-
-			$gated[] = $action;
-		}//end foreach
-
-		return $gated;
-	}//end honourApprovals()
 
 	/**
 	 * Disable the acts that perform work on a case handled elsewhere.
@@ -449,16 +399,6 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		if ($elsewhere !== '') {
 			throw new RuntimeException($elsewhere);
 		}
-
-		// 🔴 THE APPROVAL IS ENFORCED HERE TOO, AND FOR THE SAME REASON
-		// (REQ-DEC-01). `availableActions()` publishes a gated act disabled;
-		// a client that posts it anyway meets the same verdict, because a
-		// block nothing checks on the write path is a suggestion. The
-		// exception is a {@see RefusedException}, so the answer carries
-		// `{message, error}` with the approval named in `error` per ADR-050,
-		// and an outcome that could not be read carries 503 rather than
-		// letting the act through (ADR-102).
-		$this->approvals->requireApproved(case: $object, act: $action, userId: $caller ?? '');
 
 		try {
 			return $this->transitionEngine->execute(

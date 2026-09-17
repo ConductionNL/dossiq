@@ -31,10 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
-use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use PHPUnit\Framework\TestCase;
@@ -50,24 +47,6 @@ use RuntimeException;
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */
 class ExternallyHomedCaseTest extends TestCase {
-
-	/**
-	 * A REAL approval gate over a case type that declares no gates.
-	 *
-	 * The real class rather than a double, for the reason the provider's own
-	 * tests record: a mocked gate would answer whatever this file told it to,
-	 * and every assertion here is about the external home reaching the acts,
-	 * which only holds if the gate in front of them lets an ungated act through.
-	 *
-	 * @return ApprovalGate
-	 */
-	private function ungatedApprovals(): ApprovalGate {
-		return new ApprovalGate(
-			caseTypes: $this->createMock(originalClassName: CaseTypeResolver::class),
-			decisions: $this->createMock(originalClassName: ContractDecisionDelegationService::class),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
-		);
-	}//end ungatedApprovals()
 
 	/**
 	 * A case whose work happens in a specialist application.
@@ -180,7 +159,6 @@ class ExternallyHomedCaseTest extends TestCase {
 			resultWriter: $this->createMock(originalClassName: CaseResultWriter::class),
 			grants: $this->createMock(originalClassName: OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
@@ -219,7 +197,6 @@ class ExternallyHomedCaseTest extends TestCase {
 			resultWriter: $resultWriter,
 			grants: $this->createMock(originalClassName: OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end provider()

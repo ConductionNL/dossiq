@@ -319,8 +319,8 @@ class BeschikkingServiceTest extends TestCase {
 		$this->remedy->method('termDaysFor')->willReturn(28);
 		$this->remedy->expects($this->once())->method('bindTerm')->with(
 			'zaak-2026-wmo-1',
-			$this->isType('string'),
-			$this->isInstanceOf(\DateTimeImmutable::class),
+			$this->isType(type: 'string'),
+			$this->isInstanceOf(className: \DateTimeImmutable::class),
 		);
 
 		$id = $this->composeWmo()['id'];

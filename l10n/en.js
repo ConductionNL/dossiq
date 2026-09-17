@@ -466,6 +466,7 @@ OC.L10N.register(
         "Ask a question about this case…": "Ask a question about this case…",
         "Ask for an explanation": "Ask for an explanation",
         "Ask for the export": "Ask for the export",
+        "Ask for this approval": "Ask for this approval",
         "Ask the assistant": "Ask the assistant",
         "Ask the platform what erasing this person would touch.": "Ask the platform what erasing this person would touch.",
         "Asked at": "Asked at",

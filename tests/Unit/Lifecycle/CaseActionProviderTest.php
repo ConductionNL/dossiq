@@ -29,10 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
-use OCA\Dossiq\Service\CaseTypeResolver;
-use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\Cases\ExternalHome;
-use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -110,28 +107,9 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: $finalStatuses),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerAnswering()
-
-	/**
-	 * A REAL approval gate over a case type that declares no gates.
-	 *
-	 * The real class rather than a double: a mocked gate would answer whatever
-	 * this file told it to, and every assertion below is about the list the
-	 * engine's transitions become, which only holds if the gate in front of
-	 * them genuinely lets an ungated act through.
-	 *
-	 * @return ApprovalGate
-	 */
-	private function ungatedApprovals(): ApprovalGate {
-		return new ApprovalGate(
-			caseTypes: $this->createMock(originalClassName: CaseTypeResolver::class),
-			decisions: $this->createMock(originalClassName: ContractDecisionDelegationService::class),
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
-		);
-	}//end ungatedApprovals()
 
 	/**
 	 * A result writer that calls exactly the named statuses final.
@@ -367,7 +345,6 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -401,7 +378,6 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -509,7 +485,6 @@ class CaseActionProviderTest extends TestCase {
 				]
 			),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -557,7 +532,6 @@ class CaseActionProviderTest extends TestCase {
 				]
 			),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -603,7 +577,6 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->grantsAnswering(provenance: null),
 			externalHome: new ExternalHome(),
-			approvals: $this->ungatedApprovals(),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

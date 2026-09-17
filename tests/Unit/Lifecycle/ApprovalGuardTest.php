@@ -42,6 +42,16 @@ use OCA\Dossiq\Service\CaseType\ApprovalGateDeclaration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
+use OCA\Dossiq\Service\Transitions\ApprovalGuard;
+use OCA\Dossiq\Service\Transitions\ChecklistGuard;
+use OCA\Dossiq\Service\Transitions\GuardRegistry;
+use OCA\Dossiq\Service\Transitions\GuardResult;
+use OCA\Dossiq\Service\Transitions\MandaatGuard;
+use OCA\Dossiq\Service\Transitions\RequiredDocumentGuard;
+use OCA\Dossiq\Service\Transitions\RequiredFieldGuard;
+use OCA\Dossiq\Service\Transitions\RoleGuard;
+use OCA\Dossiq\Service\Transitions\StatusChecklistGuard;
+use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use PHPUnit\Framework\TestCase;
@@ -293,6 +303,103 @@ class ApprovalGuardTest extends TestCase {
 			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $refusal->getStatus());
 		}
 	}//end testRequireApprovedThrowsTheVerdictAsARefusal()
+
+	/**
+	 * A registry with the approval evaluator wired, over a real checklist pass.
+	 *
+	 * @param ApprovalGuard|null $approvals The evaluator, or null for an old wiring.
+	 *
+	 * @return GuardRegistry The registry.
+	 */
+	private function registryWith(?ApprovalGuard $approvals): GuardRegistry {
+		$checklist = $this->createMock(originalClassName: StatusChecklistGuard::class);
+		$checklist->method('evaluate')->willReturn(new GuardResult(passed: true));
+
+		return new GuardRegistry(
+			checklist: $this->createMock(originalClassName: ChecklistGuard::class),
+			requiredField: $this->createMock(originalClassName: RequiredFieldGuard::class),
+			requiredDocument: $this->createMock(originalClassName: RequiredDocumentGuard::class),
+			roleGuard: $this->createMock(originalClassName: RoleGuard::class),
+			mandateGuard: $this->createMock(originalClassName: MandaatGuard::class),
+			statusChecklist: $checklist,
+			logger: new NullLogger(),
+			approvalGuard: $approvals,
+		);
+	}//end registryWith()
+
+	/**
+	 * Every transition carries the approval gate, declared or not, on BOTH doors.
+	 *
+	 * The offer and the move read one list. This drives that list through the
+	 * real registry, so a gated transition that declares no guard of its own
+	 * still comes back refused with the approval named, which is what the acts
+	 * dialog and OpenRegister's lifecycle provider both render.
+	 *
+	 * @return void
+	 */
+	public function testAnUndeclaredTransitionIsStillGatedThroughTheEngine(): void {
+		$registry = $this->registryWith(
+			approvals: new ApprovalGuard(gate: $this->gateOver(answer: $this->concludedAs(status: 'pending')))
+		);
+		$transition = ['id' => self::ACT, 'label' => 'Verzend besluit', 'toStatus' => 'st-verzonden'];
+
+		$guards = (new TransitionSpecReader())->guardsWithImplicit(
+			transition: $transition,
+			approvalsWired: $registry->knows(type: GuardRegistry::APPROVAL_GATE),
+		);
+		$eval = $registry->evaluateAll(guards: $guards, case: $this->caseWaiting(), userId: 'behandelaar');
+
+		self::assertSame(
+			expected: ['statusChecklist', 'approvalGate'],
+			actual: array_column($eval, 'type'),
+		);
+		self::assertFalse(condition: $registry->allPassed(results: $eval));
+		self::assertStringContainsString(needle: 'Approval by the teamleider', haystack: (string)$eval[1]['failureMessage']);
+		self::assertSame(expected: ApprovalGate::RULE_OUTSTANDING, actual: $eval[1]['details']['rule']);
+	}//end testAnUndeclaredTransitionIsStillGatedThroughTheEngine()
+
+	/**
+	 * An approved transition passes the engine's gate.
+	 *
+	 * @return void
+	 */
+	public function testAnApprovedTransitionPassesTheEngine(): void {
+		$registry = $this->registryWith(
+			approvals: new ApprovalGuard(gate: $this->gateOver(answer: $this->concludedAs(status: 'approved')))
+		);
+
+		$eval = $registry->evaluateAll(
+			guards: (new TransitionSpecReader())->guardsWithImplicit(
+				transition: ['id' => self::ACT],
+				approvalsWired: true,
+			),
+			case: $this->caseWaiting(),
+			userId: 'behandelaar',
+		);
+
+		self::assertTrue(condition: $registry->allPassed(results: $eval));
+	}//end testAnApprovedTransitionPassesTheEngine()
+
+	/**
+	 * A registry with no approval evaluator appends no approval guard.
+	 *
+	 * An implicit guard nobody answers for is refused as unknown, on every
+	 * transition of every case. That is a broken engine, not a closed gate.
+	 *
+	 * @return void
+	 */
+	public function testAnUnwiredRegistryAppendsNoApprovalGuard(): void {
+		$registry = $this->registryWith(approvals: null);
+
+		self::assertFalse(condition: $registry->knows(type: GuardRegistry::APPROVAL_GATE));
+		self::assertSame(
+			expected: [['type' => GuardRegistry::STATUS_CHECKLIST]],
+			actual: (new TransitionSpecReader())->guardsWithImplicit(
+				transition: ['id' => self::ACT],
+				approvalsWired: false,
+			),
+		);
+	}//end testAnUnwiredRegistryAppendsNoApprovalGuard()
 
 	/**
 	 * A case type nobody could read refuses rather than declaring no gates.

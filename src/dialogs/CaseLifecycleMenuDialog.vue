@@ -53,8 +53,23 @@
 						:data-testid="'case-awaiting-people-' + entry.act">
 						{{ approvers(entry) }}
 					</span>
+					<NcButton
+						v-if="!entry.decisionRef"
+						:disabled="busy"
+						:data-testid="'case-awaiting-ask-' + entry.act"
+						@click="askForApproval(entry)">
+						{{ t('dossiq', 'Ask for this approval') }}
+					</NcButton>
 				</li>
 			</ul>
+
+			<p
+				v-if="error"
+				class="case-acts__error"
+				data-testid="case-awaiting-error"
+				role="alert">
+				{{ error }}
+			</p>
 
 			<ul v-else class="case-acts__list" data-testid="case-acts-list">
 				<li
@@ -378,6 +393,36 @@ export default {
 			})
 			this.awaiting = awaitingApprovals(actsBody)
 			this.loading = false
+		},
+
+		/**
+		 * Ask decidiq to walk the approval one act waits on, then re-read.
+		 *
+		 * Only offered while no approval has been asked for. Once decidiq has
+		 * it, the walk and its people are decidiq's, and the row says who it
+		 * waits on instead.
+		 *
+		 * @param {object} entry One row of the awaiting list.
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+		 */
+		async askForApproval(entry) {
+			this.busy = true
+			this.error = ''
+			const id = encodeURIComponent(this.targetCaseId)
+			const act = encodeURIComponent(entry.act)
+			try {
+				await axios.post(
+					generateUrl(`/apps/dossiq/api/case/${id}/approvals/${act}`),
+				)
+				await this.load()
+			} catch (e) {
+				this.error = refusalMessage(e?.response?.data ?? {}, (key) =>
+					t('dossiq', key),
+				)
+			} finally {
+				this.busy = false
+			}
 		},
 
 		/**
