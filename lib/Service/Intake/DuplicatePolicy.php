@@ -240,30 +240,16 @@ class DuplicatePolicy {
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	public function matchesFor(array $case): array {
-		$detection = $this->detectionService();
-		if ($detection === null) {
-			return [];
-		}
+		$candidate = $this->candidateFrom(case: $case);
 
-		try {
-			$matches = $detection->checkCandidate(
+		return $this->askDetection(
+			what: 'the duplicate check',
+			call: static fn (object $detection): mixed => $detection->checkCandidate(
 				register: self::REGISTER,
 				schema: self::SCHEMA,
-				candidate: $this->candidateFrom(case: $case)
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the duplicate check could not run: ' . $e->getMessage()
-			);
-
-			return [];
-		}
-
-		if (is_array($matches) === false) {
-			return [];
-		}
-
-		return $matches;
+				candidate: $candidate
+			)
+		);
 	}//end matchesFor()
 
 	/**
@@ -378,48 +364,51 @@ class DuplicatePolicy {
 	 * @return array<string, mixed> The annotation, empty when unreadable.
 	 */
 	private function dedupAnnotation(): array {
-		$detection = $this->detectionService();
-		if ($detection === null) {
-			return [];
-		}
-
-		try {
-			$annotation = $detection->dedupAnnotation(
+		return $this->askDetection(
+			what: 'the dedup declaration',
+			call: static fn (object $detection): mixed => $detection->dedupAnnotation(
 				register: self::REGISTER,
 				schema: self::SCHEMA
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: the dedup declaration could not be read: ' . $e->getMessage()
-			);
-
-			return [];
-		}
-
-		if (is_array($annotation) === false) {
-			return [];
-		}
-
-		return $annotation;
+			)
+		);
 	}//end dedupAnnotation()
 
 	/**
-	 * OpenRegister's duplicate scorer, or null when OpenRegister is not
-	 * installed.
+	 * Ask OpenRegister's duplicate scorer one question, or answer nothing.
 	 *
-	 * @return object|null The DuplicateDetectionService.
+	 * ONE catch for both questions this class asks, on purpose. Resolving the
+	 * scorer and calling it fail the same way as far as a caseworker is
+	 * concerned: OpenRegister could not answer, so the case is filed and the
+	 * warning is not drawn. Two catches would be two entries on the swallowing
+	 * catch ceiling for one degradation, and the ceiling only goes down.
 	 *
-	 * @psalm-return \OCA\OpenRegister\Service\Quality\DuplicateDetectionService|null
+	 * The empty array is the documented degraded value and is logged at
+	 * warning, naming what could not be asked, because an empty match list
+	 * with nothing in the log is indistinguishable from "nothing looks like
+	 * this case".
+	 *
+	 * @param string   $what What is being asked, for the log line.
+	 * @param callable $call Receives the scorer, returns its answer.
+	 *
+	 * @return array<array-key, mixed> The answer, empty when it could not be had.
+	 *
+	 * @psalm-param callable(\OCA\OpenRegister\Service\Quality\DuplicateDetectionService): mixed $call
 	 */
-	private function detectionService(): ?object {
+	private function askDetection(string $what, callable $call): array {
 		try {
-			return $this->container->get(self::DETECTION_SERVICE);
+			$answer = $call($this->container->get(self::DETECTION_SERVICE));
 		} catch (Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: OpenRegister duplicate detection is unavailable: ' . $e->getMessage()
+			$this->logger->warning(
+				'Dossiq: OpenRegister could not answer ' . $what . ': ' . $e->getMessage()
 			);
 
-			return null;
+			return [];
 		}
-	}//end detectionService()
+
+		if (is_array($answer) === false) {
+			return [];
+		}
+
+		return $answer;
+	}//end askDetection()
 }//end class
