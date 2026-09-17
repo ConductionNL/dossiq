@@ -44,8 +44,8 @@ use OCA\Dossiq\Controller\Support\TranslatesRefusals;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseType\CaseVersionMove;
-use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -76,7 +76,7 @@ class CaseVersionController extends Controller {
 	 * @param IRequest               $request        The request.
 	 * @param CaseTypeVersionChain   $chain          The versions of one case type.
 	 * @param CaseVersionMove        $move           What a move would change, and the move.
-	 * @param CaseTypePublishService $publishService The one writer of a case type.
+	 * @param CaseTypeVersionWindow  $window         When a version starts and stops being offered.
 	 * @param CaseAccessGuard        $accessGuard    Per-case authorization, failing closed.
 	 * @param IUserSession           $userSession    The session.
 	 * @param LoggerInterface        $logger         The logger.
@@ -90,7 +90,7 @@ class CaseVersionController extends Controller {
 		IRequest $request,
 		private readonly CaseTypeVersionChain $chain,
 		private readonly CaseVersionMove $move,
-		private readonly CaseTypePublishService $publishService,
+		private readonly CaseTypeVersionWindow $window,
 		private readonly CaseAccessGuard $accessGuard,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -148,7 +148,7 @@ class CaseVersionController extends Controller {
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function deprecate(string $id): JSONResponse {
 		try {
-			$result = $this->publishService->deprecate(caseTypeId: $id);
+			$result = $this->window->deprecate(caseTypeId: $id);
 		} catch (Throwable $e) {
 			return $this->broke(op: 'deprecate', e: $e);
 		}

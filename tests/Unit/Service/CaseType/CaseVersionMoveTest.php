@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
+use OCA\Dossiq\Service\CaseType\CaseVersionDiff;
 use OCA\Dossiq\Service\CaseType\CaseVersionMove;
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -44,6 +45,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\CaseType\CaseVersionMove
  *
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeVersionChain
+ * @uses \OCA\Dossiq\Service\CaseType\CaseVersionDiff
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
@@ -135,11 +137,17 @@ class CaseVersionMoveTest extends TestCase {
 
 		$store = new CaseTypeStore($settings);
 
+		$chain = new CaseTypeVersionChain(store: $store, payloads: new DerivedCaseTypePayload());
+
 		return new CaseVersionMove(
 			settingsService: $settings,
 			store: $store,
-			resolver: new CaseTypeResolver(store: $store),
-			chain: new CaseTypeVersionChain(store: $store, payloads: new DerivedCaseTypePayload()),
+			chain: $chain,
+			diff: new CaseVersionDiff(
+				store: $store,
+				resolver: new CaseTypeResolver(store: $store),
+				chain: $chain,
+			),
 			logger: new NullLogger(),
 		);
 	}//end service()

@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -92,13 +93,15 @@ class CaseTypeCopyService {
 	 *
 	 * @param SettingsService        $settingsService Shared OR register/schema resolver.
 	 * @param CaseTypeStore          $store           The app's one row and reference normaliser.
-	 * @param DerivedCaseTypePayload $payloads        What a duplicate and a version look like.
-	 * @param LoggerInterface        $logger          Logger.
+	 * @param DerivedCaseTypePayload    $payloads        What a duplicate and a version look like.
+	 * @param DerivedCaseTypeReferences $references      Pointing the copy at its own children.
+	 * @param LoggerInterface           $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeStore $store,
 		private readonly DerivedCaseTypePayload $payloads,
+		private readonly DerivedCaseTypeReferences $references,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -309,7 +312,7 @@ class CaseTypeCopyService {
 			);
 		}
 
-		$created = $this->repointOwnedReferences(
+		$created = $this->references->repoint(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseTypeSchema,
@@ -461,84 +464,6 @@ class CaseTypeCopyService {
 
 
 
-
-	/**
-	 * Point the new case type's own references at its OWN copies.
-	 *
-	 * Two references, one save. `initialStatus` names a statusType and
-	 * `workflowDefinition` names a workflowTemplate, and both are copied
-	 * children of the case type, so both hold the SOURCE's id the moment the
-	 * new row is written.
-	 *
-	 * Without this the copy files new cases into the SOURCE's status row: the
-	 * children are copied but `initialStatus` still holds the old id, and the
-	 * two are never reconciled. Publish validation catches it (the initial
-	 * status is not one of the type's own statuses) so it never reached a
-	 * running case, but it made every duplicate and every new version ask the
-	 * author to re-pick a status they had already picked.
-	 *
-	 * 🔴 AN UNMAPPABLE WORKFLOW PIN IS CLEARED, NOT LEFT POINTING BACKWARDS.
-	 * `caseType.workflowDefinition` is filtered on `caseType: @objectId`, so a
-	 * pin at another version's template is a route the type's own Workflow tab
-	 * cannot show: the field reads filled in and the picker reads empty, and
-	 * nothing says which is right. That only arises when the template copy did
-	 * not run or did not carry — a duplicate, or a version whose template
-	 * schema is unconfigured — and in both of those the honest answer is no
-	 * default route.
-	 *
-	 * @param object                $objectService The OpenRegister ObjectService.
-	 * @param string                $register      The register slug.
-	 * @param string                $schema        The case type schema id.
-	 * @param array<string, mixed>  $caseType      The freshly created case type.
-	 * @param array<string, string> $statusMap     Old status id to new status id.
-	 * @param array<string, string> $templateMap   Old template id to new template id.
-	 *
-	 * @return array<string, mixed> The case type, repointed when it needed it.
-	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-	 */
-	private function repointOwnedReferences(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $caseType,
-		array $statusMap,
-		array $templateMap,
-	): array {
-		$changed = false;
-
-		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
-		if ($initial !== '' && isset($statusMap[$initial]) === true) {
-			$caseType['initialStatus'] = $statusMap[$initial];
-			$changed = true;
-		}
-
-		$pin = $this->store->referenceId(value: ($caseType['workflowDefinition'] ?? ''));
-		if ($pin !== '') {
-			$caseType['workflowDefinition'] = ($templateMap[$pin] ?? null);
-			$changed = true;
-		}
-
-		if ($changed === false) {
-			return $caseType;
-		}
-
-		try {
-			$saved = $objectService->saveObject(
-				object: $caseType,
-				register: $register,
-				schema: $schema,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'CaseTypeCopyService: could not repoint the copy on its own children',
-				['caseType' => ($caseType['id'] ?? ''), 'exception' => $e->getMessage()]
-			);
-			return $caseType;
-		}
-
-		return $this->store->asRow(value: $saved);
-	}//end repointOwnedReferences()
 
 
 	/**

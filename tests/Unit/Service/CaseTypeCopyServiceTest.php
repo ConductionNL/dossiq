@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use OCA\Dossiq\Service\CaseTypeCopyService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -293,6 +294,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$copy = $service->copy('ct-1');
@@ -375,6 +380,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$next = $service->newVersion('ct-1');
@@ -419,6 +428,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$service->newVersion('ct-1');
@@ -446,6 +459,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$next = $service->newVersion('ct-1');
@@ -468,6 +485,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -488,6 +509,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -510,6 +535,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -567,6 +596,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -664,6 +697,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -701,6 +738,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -729,6 +770,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -763,6 +808,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -802,6 +851,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -839,6 +892,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 
@@ -867,6 +924,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$result = $service->deleteDraft('ct-draft');
@@ -894,6 +955,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$result = $service->deleteDraft('ct-pub');
@@ -917,6 +982,10 @@ class CaseTypeCopyServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			store: new CaseTypeStore($this->settingsService),
 			payloads: new DerivedCaseTypePayload(),
+			references: new DerivedCaseTypeReferences(
+				store: new CaseTypeStore($this->settingsService),
+				logger: $this->logger,
+			),
 			logger: $this->logger
 		);
 		$result = $service->deleteDraft('does-not-exist');

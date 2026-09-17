@@ -40,8 +40,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
-use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -63,7 +63,7 @@ class CaseTypePublishService {
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseStateFieldRuleProjector $fieldRules   What each status asks of the fields on the case.
-	 * @param ITimeFactory            $time             The day a version takes effect, and the day the last one closes.
+	 * @param CaseTypeVersionWindow   $window           When a version starts and stops being offered.
 	 * @param LoggerInterface         $logger           The logger.
 	 */
 	public function __construct(
@@ -74,7 +74,7 @@ class CaseTypePublishService {
 		private readonly UnreadTriggerService $unreadTriggers,
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseStateFieldRuleProjector $fieldRules,
-		private readonly ITimeFactory $time,
+		private readonly CaseTypeVersionWindow $window,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -236,7 +236,7 @@ class CaseTypePublishService {
 			];
 		}
 
-		$today = $this->time->getDateTime()->format('Y-m-d');
+		$today = $this->window->today();
 
 		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
 		$caseType['isDraft'] = false;
@@ -244,17 +244,7 @@ class CaseTypePublishService {
 			$caseType['version'] = 1;
 		}
 
-		// The day this version takes effect, and the day it is dated. Written
-		// only when empty: an author who typed a future `validFrom` because the
-		// new fee schedule starts next month meant it, and overwriting it with
-		// today would quietly bring the change forward.
-		if (trim((string)($caseType['validFrom'] ?? '')) === '') {
-			$caseType['validFrom'] = $today;
-		}
-
-		if (trim((string)($caseType['versionDate'] ?? '')) === '') {
-			$caseType['versionDate'] = $today;
-		}
+		$caseType = $this->window->open(caseType: $caseType);
 
 		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
 			return [
@@ -265,7 +255,7 @@ class CaseTypePublishService {
 			];
 		}
 
-		$this->retire(
+		$this->window->closePrevious(
 			caseType: $caseType,
 			caseTypeId: $caseTypeId,
 			takesEffect: (string)($caseType['validFrom'] ?? $today)
@@ -296,134 +286,6 @@ class CaseTypePublishService {
 			'version' => $version,
 		];
 	}//end publish()
-
-	/**
-	 * Close a published version for new cases, as a deliberate act.
-	 *
-	 * 🔴 IT IS A SERVER ACT AND NOT A FIELD WRITE FROM THE PAGE, AND THE REASON
-	 * IS THE WORD "TODAY". The design had Deprecate patch `validUntil: @today`
-	 * through the object store. A declared `object-op` merges its `values` into
-	 * the row VERBATIM: the token is not resolved for that action type, so the
-	 * string `@today` would have been written into a date field, and OpenRegister
-	 * would have stored it. The field reads filled in, the date reads as
-	 * nonsense, and nothing refuses. Here the day comes from the clock.
-	 *
-	 * The guard is the second reason. A version with nothing to replace it is
-	 * the only version cases can be filed under, so closing it would leave the
-	 * case type unusable with no message saying why. The page hides the button
-	 * in that state; this refuses it, because a hidden button is not a rule.
-	 *
-	 * @param string $caseTypeId The version to close.
-	 *
-	 * @return array{deprecated: bool, findings: array<int, string>, validUntil: ?string}
-	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-	 */
-	public function deprecate(string $caseTypeId): array {
-		$caseType = $this->store->readCaseType(caseTypeId: $caseTypeId);
-		if ($caseType === []) {
-			return ['deprecated' => false, 'findings' => ['This case type could not be read.'], 'validUntil' => null];
-		}
-
-		if (($caseType['isDraft'] ?? false) === true) {
-			return [
-				'deprecated' => false,
-				'findings' => ['A draft is not in use yet, so there is nothing to close. Delete it instead.'],
-				'validUntil' => null,
-			];
-		}
-
-		if ($this->store->referenceId(value: ($caseType['supersededBy'] ?? '')) === '') {
-			return [
-				'deprecated' => false,
-				'findings' => ['This is the version new cases are filed under. Publish its successor first.'],
-				'validUntil' => null,
-			];
-		}
-
-		$today = $this->time->getDateTime()->format('Y-m-d');
-		$caseType['validUntil'] = $today;
-
-		if ($this->save(schemaKey: 'case_type_schema', object: $caseType) === false) {
-			return ['deprecated' => false, 'findings' => ['The case type could not be saved.'], 'validUntil' => null];
-		}
-
-		return ['deprecated' => true, 'findings' => [], 'validUntil' => $today];
-	}//end deprecate()
-
-	/**
-	 * Close the version this one replaces.
-	 *
-	 * 🔴 THIS IS THE MOMENT A CASE TYPE VERSION STOPS BEING OFFERED, AND THE
-	 * ONLY ONE. Publishing is the single write dossiq owns on a case type (the
-	 * page writes everything else straight to OpenRegister), so the forward
-	 * link has to be written here or nowhere. Written anywhere else it would be
-	 * a rule with two implementations, and the failure mode is silent: two
-	 * versions of one case type both offered in the picker, under the same
-	 * name, and no way for the person choosing to tell them apart.
-	 *
-	 * The previous version keeps `isDraft: false` on purpose. Its cases are
-	 * still running on it and still resolve their statuses, results and
-	 * deadlines through it. It is closed to NEW cases, not retired.
-	 *
-	 * 🔴 THE FORWARD LINK AND THE CLOSING DATE ARE ONE WRITE, BECAUSE THEY ARE
-	 * ONE FACT. `supersededBy` is what the pickers and the index read, and
-	 * `validUntil` is what a person reads, and for as long as only the first
-	 * was written the two disagreed: the Case types index showed a version with
-	 * an open-ended validity beside its own successor, and an auditor reading
-	 * the catalogue saw two versions of one zaaktype both valid indefinitely.
-	 * The closing day is the day the successor TAKES EFFECT, not today: an
-	 * author may publish a version whose `validFrom` is next month, and closing
-	 * the running version today would leave the type with no version in force
-	 * for a month. That leaves the two overlapping on the switch-over day
-	 * itself, which is deliberate and is the smaller wrong: `supersededBy`, not
-	 * the date, is what stops new cases landing on the old version, so the
-	 * overlap misleads nobody while a gap would leave real days uncovered.
-	 *
-	 * An existing `validUntil` is never moved. A version already closed on a
-	 * date somebody chose is a decision, and publishing a successor is not the
-	 * moment to overrule it.
-	 *
-	 * A failure here is logged and not fatal. The new version is already
-	 * published, and refusing after that write would leave the two halves
-	 * disagreeing with nothing to say which one ran.
-	 *
-	 * @param array<string, mixed> $caseType    The version just published.
-	 * @param string               $caseTypeId  Its id.
-	 * @param string               $takesEffect The day the new version is valid from.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
-	 */
-	private function retire(array $caseType, string $caseTypeId, string $takesEffect): void {
-		$previousId = $this->store->referenceId(value: ($caseType['previousVersion'] ?? ''));
-		if ($previousId === '' || $previousId === $caseTypeId) {
-			return;
-		}
-
-		$previous = $this->store->readCaseType(caseTypeId: $previousId);
-		if ($previous === []) {
-			$this->logger->warning(
-				'Case type publish: the previous version could not be read, so it was not closed',
-				['caseType' => $caseTypeId, 'previousVersion' => $previousId]
-			);
-			return;
-		}
-
-		$previous['supersededBy'] = $caseTypeId;
-
-		if (trim((string)($previous['validUntil'] ?? '')) === '' && $takesEffect !== '') {
-			$previous['validUntil'] = $takesEffect;
-		}
-
-		if ($this->save(schemaKey: 'case_type_schema', object: $previous) === false) {
-			$this->logger->warning(
-				'Case type publish: the previous version stays open for new cases',
-				['caseType' => $caseTypeId, 'previousVersion' => $previousId]
-			);
-		}
-	}//end retire()
 
 	/**
 	 * Mark the case type's active workflow template published, with the note.

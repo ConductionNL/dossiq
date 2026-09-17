@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTime;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -192,10 +193,44 @@ class CaseTypePublishServiceTest extends TestCase {
 				container: $this->createMock(ContainerInterface::class),
 				logger: new NullLogger(),
 			),
-			time: $this->clock(),
+			window: new CaseTypeVersionWindow(
+				settingsService: $settings,
+				store: $store,
+				time: $this->clock(),
+				logger: new NullLogger(),
+			),
 			logger: new NullLogger(),
 		);
 	}//end service()
+
+	/**
+	 * The version window over the same fake store `service()` just built.
+	 *
+	 * Deprecate moved out of the publish service when that class went past the
+	 * complexity threshold, and the tests moved with it rather than being
+	 * deleted: closing a superseded version is publishing's other half, and it
+	 * is asserted against the same recorded writes.
+	 *
+	 * @param array<string, array<string, mixed>> $caseTypes Case types by id.
+	 *
+	 * @return CaseTypeVersionWindow The window.
+	 */
+	private function window(array $caseTypes): CaseTypeVersionWindow {
+		$this->service($caseTypes);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ($key === 'register' ? 'dossiq' : $key)
+		);
+
+		return new CaseTypeVersionWindow(
+			settingsService: $settings,
+			store: new CaseTypeStore($settings),
+			time: $this->clock(),
+			logger: new NullLogger(),
+		);
+	}//end window()
 
 	/**
 	 * A draft with a lifecycle a case can enter and leave.
@@ -602,11 +637,11 @@ class CaseTypePublishServiceTest extends TestCase {
 	 * resolved and the literal string would have been stored in a date field.
 	 */
 	public function testDeprecateClosesASupersededVersionToday(): void {
-		$service = $this->service(
+		$window = $this->window(
 			['ct-v1' => ['id' => 'ct-v1', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 1, 'supersededBy' => 'ct']]
 		);
 
-		$result = $service->deprecate(caseTypeId: 'ct-v1');
+		$result = $window->deprecate(caseTypeId: 'ct-v1');
 
 		self::assertTrue($result['deprecated']);
 		self::assertSame(self::TODAY, $result['validUntil']);
@@ -622,11 +657,11 @@ class CaseTypePublishServiceTest extends TestCase {
 	 * succeeding one on stale data shows it.
 	 */
 	public function testDeprecateRefusesTheVersionInUse(): void {
-		$service = $this->service(
+		$window = $this->window(
 			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => false, 'version' => 2]]
 		);
 
-		$result = $service->deprecate(caseTypeId: 'ct');
+		$result = $window->deprecate(caseTypeId: 'ct');
 
 		self::assertFalse($result['deprecated']);
 		self::assertStringContainsString('successor', $result['findings'][0]);
@@ -637,11 +672,11 @@ class CaseTypePublishServiceTest extends TestCase {
 	 * Deprecate refuses a draft, which is not in use to begin with.
 	 */
 	public function testDeprecateRefusesADraft(): void {
-		$service = $this->service(
+		$window = $this->window(
 			['ct' => ['id' => 'ct', 'title' => 'Bezwaar', 'isDraft' => true, 'supersededBy' => 'ct-v3']]
 		);
 
-		self::assertFalse($service->deprecate(caseTypeId: 'ct')['deprecated']);
+		self::assertFalse($window->deprecate(caseTypeId: 'ct')['deprecated']);
 	}//end testDeprecateRefusesADraft()
 
 	/**

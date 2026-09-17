@@ -45,8 +45,8 @@ use OCA\Dossiq\Controller\CaseVersionController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseType\CaseVersionMove;
-use OCA\Dossiq\Service\CaseTypePublishService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -81,11 +81,11 @@ class CaseVersionControllerTest extends TestCase {
 	private CaseVersionMove $move;
 
 	/**
-	 * The one writer of a case type.
+	 * When a version starts and stops being offered.
 	 *
-	 * @var CaseTypePublishService&MockObject
+	 * @var CaseTypeVersionWindow&MockObject
 	 */
-	private CaseTypePublishService $publishService;
+	private CaseTypeVersionWindow $window;
 
 	/**
 	 * The per-case guard, which fails closed.
@@ -123,7 +123,7 @@ class CaseVersionControllerTest extends TestCase {
 	protected function setUp(): void {
 		$this->chain = $this->createMock(originalClassName: CaseTypeVersionChain::class);
 		$this->move = $this->createMock(originalClassName: CaseVersionMove::class);
-		$this->publishService = $this->createMock(originalClassName: CaseTypePublishService::class);
+		$this->window = $this->createMock(originalClassName: CaseTypeVersionWindow::class);
 		$this->guard = $this->createMock(originalClassName: CaseAccessGuard::class);
 		$this->userSession = $this->createMock(originalClassName: IUserSession::class);
 		$this->request = $this->createMock(originalClassName: IRequest::class);
@@ -146,7 +146,7 @@ class CaseVersionControllerTest extends TestCase {
 			request: $this->request,
 			chain: $this->chain,
 			move: $this->move,
-			publishService: $this->publishService,
+			window: $this->window,
 			accessGuard: $this->guard,
 			userSession: $this->userSession,
 			logger: new NullLogger(),
@@ -349,7 +349,7 @@ class CaseVersionControllerTest extends TestCase {
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
 	 */
 	public function testARefusedDeprecateCarriesItsFinding(): void {
-		$this->publishService->method('deprecate')->willReturn(
+		$this->window->method('deprecate')->willReturn(
 			[
 				'deprecated' => false,
 				'findings' => ['This is the version new cases are filed under. Publish its successor first.'],
@@ -371,7 +371,7 @@ class CaseVersionControllerTest extends TestCase {
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
 	 */
 	public function testADeprecateThatRanAnswersTheClosingDay(): void {
-		$this->publishService->method('deprecate')->willReturn(
+		$this->window->method('deprecate')->willReturn(
 			['deprecated' => true, 'findings' => [], 'validUntil' => '2026-09-16']
 		);
 

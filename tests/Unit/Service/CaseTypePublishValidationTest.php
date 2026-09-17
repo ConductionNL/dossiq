@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTime;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -154,7 +155,12 @@ class CaseTypePublishValidationTest extends TestCase {
 				container: $this->createMock(ContainerInterface::class),
 				logger: new NullLogger(),
 			),
-			time: $this->clock(),
+			window: new CaseTypeVersionWindow(
+				settingsService: $settings,
+				store: $store,
+				time: $this->clock(),
+				logger: new NullLogger(),
+			),
 			logger: new NullLogger(),
 		);
 	}//end service()
