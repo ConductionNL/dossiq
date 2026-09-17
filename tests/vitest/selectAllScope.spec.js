@@ -167,7 +167,9 @@ describe('readListFilters', () => {
 	})
 
 	it('reads the search term off the address bar too', () => {
-		expect(readLocationFilters('?caseType=bezwaar&_search=dakkapel&_page=3')).toEqual({
+		expect(
+			readLocationFilters('?caseType=bezwaar&_search=dakkapel&_page=3'),
+		).toEqual({
 			caseType: 'bezwaar',
 			_search: 'dakkapel',
 		})
@@ -178,7 +180,9 @@ describe('readListFilters', () => {
 			buildSelection({
 				scope: SCOPE_RESULT,
 				selectedIds: ['1', '2'],
-				filters: readLocationFilters('?status=open&_search=dakkapel&_order=title'),
+				filters: readLocationFilters(
+					'?status=open&_search=dakkapel&_order=title',
+				),
 			}),
 		).toEqual({ query: { status: 'open', _search: 'dakkapel' } })
 	})

@@ -51,6 +51,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Controller\ConsultationLinkController
  *
  * @uses \OCA\Dossiq\Service\Consultation\ConsultationAccessGuard
+ * @uses \OCA\Dossiq\Service\Consultation\ConsultationAccess
  */
 class ConsultationControllerContractTest extends TestCase {
 

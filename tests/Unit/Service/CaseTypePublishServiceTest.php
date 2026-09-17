@@ -27,6 +27,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTime;
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
@@ -189,10 +191,12 @@ class CaseTypePublishServiceTest extends TestCase {
 			fieldRules: new CaseStateFieldRuleProjector(
 				store: $store,
 				declaration: new StatusFieldRuleDeclaration(),
+				roles: new FieldRoleRuleDeclaration(),
 				slugs: $this->createMock(SchemaSlugResolver::class),
 				container: $this->createMock(ContainerInterface::class),
 				logger: new NullLogger(),
 			),
+			fieldRoles: $this->createMock(CaseFieldRoleProjector::class),
 			window: new CaseTypeVersionWindow(
 				settingsService: $settings,
 				store: $store,

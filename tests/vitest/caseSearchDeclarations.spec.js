@@ -41,7 +41,14 @@ const FRAGMENT_DIR = path.join(ROOT, 'lib', 'Settings', 'register.d')
 const MATCH_TYPES = ['exact', 'prefix', 'range', 'fuzzy', 'fulltext']
 
 /** `PropertySearchProfile::INPUT_CONTROLS`, openregister development. */
-const INPUT_CONTROLS = ['text', 'select', 'multiselect', 'range', 'date-range', 'boolean']
+const INPUT_CONTROLS = [
+	'text',
+	'select',
+	'multiselect',
+	'range',
+	'date-range',
+	'boolean',
+]
 
 /**
  * The properties that deliberately declare neither: an object, an array of
@@ -50,13 +57,33 @@ const INPUT_CONTROLS = ['text', 'select', 'multiselect', 'range', 'date-range', 
  * put a serialised blob into the free-text scan.
  */
 const SILENT = [
-	'acknowledgementDuty', 'actionResult', 'activity', 'aanvulling',
-	'attentionFlag', 'attentionFlagHistory', 'attentionMarkers',
-	'casePlanState', 'commissieBesluit', 'conversations', 'geometry',
-	'handoverRecord', 'intakeRefusal', 'majorChannel', 'missingFields',
-	'outboundCommunications', 'properties', 'publications', 'relatedCases',
-	'riskAssessment', 'skippedPhases', 'statusDwellTotals', 'statusHistory',
-	'taskAttachments', 'toetsRegisterB', 'tweedeToets', 'voorbereiding',
+	'acknowledgementDuty',
+	'actionResult',
+	'activity',
+	'aanvulling',
+	'attentionFlag',
+	'attentionFlagHistory',
+	'attentionMarkers',
+	'casePlanState',
+	'commissieBesluit',
+	'conversations',
+	'geometry',
+	'handoverRecord',
+	'intakeRefusal',
+	'majorChannel',
+	'missingFields',
+	'outboundCommunications',
+	'properties',
+	'publications',
+	'relatedCases',
+	'riskAssessment',
+	'skippedPhases',
+	'statusDwellTotals',
+	'statusHistory',
+	'taskAttachments',
+	'toetsRegisterB',
+	'tweedeToets',
+	'voorbereiding',
 ]
 
 /**
@@ -76,8 +103,12 @@ function deepMerge(base, over) {
 			return
 		}
 		if (
-			value && typeof value === 'object' && !Array.isArray(value)
-			&& current && typeof current === 'object' && !Array.isArray(current)
+			value
+			&& typeof value === 'object'
+			&& !Array.isArray(value)
+			&& current
+			&& typeof current === 'object'
+			&& !Array.isArray(current)
 		) {
 			out[key] = deepMerge(current, value)
 			return
@@ -94,7 +125,9 @@ function deepMerge(base, over) {
  */
 function mergedCaseProperties() {
 	const readJson = (file) => JSON.parse(fs.readFileSync(file, 'utf8'))
-	let register = readJson(path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'))
+	let register = readJson(
+		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
+	)
 	fs.readdirSync(FRAGMENT_DIR)
 		.filter((name) => name.endsWith('.json'))
 		.sort()
@@ -109,11 +142,17 @@ const properties = mergedCaseProperties()
 describe('the case declares how each of its fields is searched', () => {
 	it('uses only match types and input controls openregister accepts', () => {
 		const offenders = Object.entries(properties)
-			.filter(([, definition]) => (
-				(definition.matchType !== undefined && !MATCH_TYPES.includes(definition.matchType))
-				|| (definition.inputControl !== undefined && !INPUT_CONTROLS.includes(definition.inputControl))
-			))
-			.map(([name, definition]) => `${name}: ${definition.matchType}/${definition.inputControl}`)
+			.filter(
+				([, definition]) =>
+					(definition.matchType !== undefined
+						&& !MATCH_TYPES.includes(definition.matchType))
+					|| (definition.inputControl !== undefined
+						&& !INPUT_CONTROLS.includes(definition.inputControl)),
+			)
+			.map(
+				([name, definition]) =>
+					`${name}: ${definition.matchType}/${definition.inputControl}`,
+			)
 
 		expect(offenders).toEqual([])
 	})
@@ -130,8 +169,9 @@ describe('the case declares how each of its fields is searched', () => {
 	})
 
 	it('gives a boolean a control and never a match type', () => {
-		const booleans = Object.entries(properties)
-			.filter(([, definition]) => definition.type === 'boolean')
+		const booleans = Object.entries(properties).filter(
+			([, definition]) => definition.type === 'boolean',
+		)
 
 		expect(booleans.length).toBeGreaterThan(0)
 		booleans.forEach(([name, definition]) => {
@@ -147,11 +187,11 @@ describe('the case declares how each of its fields is searched', () => {
 	})
 
 	it('brackets every date rather than matching a term against it', () => {
-		const dates = Object.entries(properties)
-			.filter(([name, definition]) => (
+		const dates = Object.entries(properties).filter(
+			([name, definition]) =>
 				!SILENT.includes(name)
-				&& ['date', 'date-time'].includes(definition.format)
-			))
+				&& ['date', 'date-time'].includes(definition.format),
+		)
 
 		expect(dates.length).toBeGreaterThan(10)
 		dates.forEach(([name, definition]) => {
@@ -161,7 +201,14 @@ describe('the case declares how each of its fields is searched', () => {
 	})
 
 	it('picks a status, a type and a priority from a list', () => {
-		;['status', 'caseType', 'priority', 'impact', 'urgency', 'confidentiality'].forEach((name) => {
+		;[
+			'status',
+			'caseType',
+			'priority',
+			'impact',
+			'urgency',
+			'confidentiality',
+		].forEach((name) => {
 			expect(`${name}:${properties[name].matchType}`).toBe(`${name}:exact`)
 			expect(`${name}:${properties[name].inputControl}`).toBe(`${name}:select`)
 		})

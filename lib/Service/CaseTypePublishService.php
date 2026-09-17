@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
@@ -63,8 +64,17 @@ class CaseTypePublishService {
 	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseStateFieldRuleProjector $fieldRules   What each status asks of the fields on the case.
+	 * @param CaseFieldRoleProjector  $fieldRoles       What each role may see and change on the case.
 	 * @param CaseTypeVersionWindow   $window           When a version starts and stops being offered.
 	 * @param LoggerInterface         $logger           The logger.
+	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Constructor DI, and the
+	 *  tenth collaborator is the version window. Each one answers a different
+	 *  question publishing has to ask before or during the one write it owns:
+	 *  is the draft valid, what does it warn about, what do its statuses and
+	 *  roles declare, and which version is in force from when. Moving the window
+	 *  out to the caller would split that write across two layers, and a publish
+	 *  that half-ran is the failure this class exists to prevent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -74,6 +84,7 @@ class CaseTypePublishService {
 		private readonly UnreadTriggerService $unreadTriggers,
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseStateFieldRuleProjector $fieldRules,
+		private readonly CaseFieldRoleProjector $fieldRoles,
 		private readonly CaseTypeVersionWindow $window,
 		private readonly LoggerInterface $logger,
 	) {
@@ -269,6 +280,13 @@ class CaseTypePublishService {
 		// projection that cannot be written is logged and the declarations wait
 		// on the rows for the next publish.
 		$this->fieldRules->publish(caseTypeId: $caseTypeId);
+
+		// The role half goes onto the same schema at the same moment, and onto
+		// the PROPERTIES rather than the lifecycle. It is a second write and not
+		// a second decision: a case in a state this type does not declare has no
+		// lifecycle rule to apply, and the property block is what keeps the field
+		// from the role there. It never fails the publish either.
+		$this->fieldRoles->publish(caseTypeId: $caseTypeId);
 
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 

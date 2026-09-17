@@ -83,7 +83,8 @@ export function readSearchRefusal({ error, term } = {}) {
 	}
 
 	const position = positionOf(error)
-	const index = position === null ? typed.length : Math.min(position - 1, typed.length)
+	const index =
+		position === null ? typed.length : Math.min(position - 1, typed.length)
 
 	return {
 		message: String(error.message || ''),
