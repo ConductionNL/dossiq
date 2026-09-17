@@ -56,6 +56,7 @@ const manifest = readJson('src', 'manifest.json')
 const menuLayout = readJson('src', 'menu-layout.json')
 const iconsSource = read('src', 'icons.js')
 const mainSource = read('src', 'main.js')
+const registerSource = read('src', 'components', 'case', 'registerCaseSections.js')
 
 /** OpenRegister's schema list for the dossiq register. One target, two doors. */
 const TARGET = '/apps/openregister/#/registers/dossiq'
@@ -63,11 +64,33 @@ const TARGET = '/apps/openregister/#/registers/dossiq'
 const entry = manifest.menu.find((m) => m.id === 'DataModelLink')
 const page = (id) => manifest.pages.find((p) => p.id === id)
 
-/** The one nav card on a page, by the page's id. */
-function objectTypesCard (pageId) {
-	const widgets = page(pageId).widgets ?? []
-	const grid = widgets.find((w) => w.widgetKey === 'nav-card-grid')
-	return grid?.props?.entries?.find((e) => e.id === 'manage-object-types')
+/**
+ * The Object types section of the case page's Related tab.
+ *
+ * @return {object|undefined} The section, `{ label, widget }`.
+ */
+function caseObjectTypesSection() {
+	const related = page('CaseDetail').config.widgets.find((w) => w.id === 'case-related-panel')
+	return related?.content?.sections?.find((sec) => sec.widget?.id === 'case-object-types-link')
+}
+
+/**
+ * The Manage object types card on a page, by the page's id.
+ *
+ * Two spellings, because the two page types host a widget two ways. An index
+ * page takes a page-level `widgets[]` entry (`widgetKey`, `props`); a detail
+ * page that already has `config.widgets` may NOT, since carrying both is the
+ * render-path shadowing gate-55 refuses, so there the card is a case section
+ * (`type`, `content`).
+ *
+ * @param {string} pageId The page id.
+ * @return {object|undefined} The card entry.
+ */
+function objectTypesCard(pageId) {
+	const entries = pageId === 'CaseDetail'
+		? caseObjectTypesSection()?.widget?.content?.entries
+		: (page(pageId).widgets ?? []).find((w) => w.widgetKey === 'nav-card-grid')?.props?.entries
+	return entries?.find((e) => e.id === 'manage-object-types')
 }
 
 describe('the Data model entry', () => {
@@ -174,19 +197,32 @@ describe('Manage object types', () => {
 		},
 	)
 
-	it.each(['CaseObjects', 'CaseDetail'])(
-		'sits beside the page rather than replacing it on %s',
-		(pageId) => {
-			// `widgetsBySlot.has('body')` makes CnPageRenderer render the grid
-			// INSTEAD of the typed page component. A nav card in the body slot
-			// would silently replace the objects list with one link.
-			const widgets = page(pageId).widgets ?? []
-			const grid = widgets.find((w) => w.widgetKey === 'nav-card-grid')
+	it('sits beside the objects list rather than replacing it', () => {
+		// `widgetsBySlot.has('body')` makes CnPageRenderer render the grid
+		// INSTEAD of the typed page component. A nav card in the body slot
+		// would silently replace the objects list with one link.
+		const grid = page('CaseObjects').widgets.find((w) => w.widgetKey === 'nav-card-grid')
 
-			expect(grid.slot).toBe('footer')
-			expect(grid.gridX + grid.gridWidth).toBeLessThanOrEqual(12)
-		},
-	)
+		expect(grid.slot).toBe('footer')
+		expect(grid.gridX + grid.gridWidth).toBeLessThanOrEqual(12)
+	})
+
+	it('sits right after the Objects section on the case page', () => {
+		const related = page('CaseDetail').config.widgets.find((w) => w.id === 'case-related-panel')
+		const ids = related.content.sections.map((sec) => sec.widget.id)
+
+		expect(ids.indexOf('case-object-types-link')).toBe(ids.indexOf('case-objects') + 1)
+		// gate-55: a detail page carries config.widgets OR page widgets, never both.
+		expect(page('CaseDetail').widgets).toBeUndefined()
+	})
+
+	it('resolves on the case page, because the shared catalog carries the type', () => {
+		// CnDetailWidgetHost reads the shared catalog only. Without this
+		// registration the section renders nothing and logs nothing.
+		expect(caseObjectTypesSection().widget.type).toBe('nav-card-grid')
+		expect(registerSource).toContain("registerDashboardWidget('nav-card-grid'")
+		expect(registerSource).toContain('renderer: CnNavCardGrid')
+	})
 
 	it('has a runtime to resolve user.isAdmin against', () => {
 		// passesContextPredicates returns false when runtime is absent, so a
