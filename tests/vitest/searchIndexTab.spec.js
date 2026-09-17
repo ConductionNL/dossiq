@@ -31,25 +31,34 @@ function stub(name) {
 		name,
 		props: ['type', 'size'],
 		render() {
-			return h('div', { class: `${name}-stub`, 'data-type': this.type }, this.$slots.default?.())
+			return h(
+				'div',
+				{ class: `${name}-stub`, 'data-type': this.type },
+				this.$slots.default?.(),
+			)
 		},
 	})
 }
 
-vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({ default: stub('NcLoadingIcon') }))
-vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({ default: stub('NcNoteCard') }))
+vi.mock('@nextcloud/vue/components/NcLoadingIcon', () => ({
+	default: stub('NcLoadingIcon'),
+}))
+vi.mock('@nextcloud/vue/components/NcNoteCard', () => ({
+	default: stub('NcNoteCard'),
+}))
 
 /** What openregister answers. Replaced per test. */
 let answer = () => ({})
 
 vi.mock('../../src/services/searchIndexApi.js', () => ({
 	SEARCH_INDEX_COMMAND: 'occ openregister:tables:search-index',
-	searchIndexStatus: () => Promise.resolve(answer()).then((value) => {
-		if (value instanceof Error) {
-			throw value
-		}
-		return value
-	}),
+	searchIndexStatus: () =>
+		Promise.resolve(answer()).then((value) => {
+			if (value instanceof Error) {
+				throw value
+			}
+			return value
+		}),
 }))
 
 const { default: SearchIndexTab } =
@@ -57,7 +66,10 @@ const { default: SearchIndexTab } =
 
 const HEALTHY = {
 	concurrentRebuildSupported: true,
-	tables: { dossiq_case: ['idx_case_search'], dossiq_beroep: ['idx_beroep_search'] },
+	tables: {
+		dossiq_case: ['idx_case_search'],
+		dossiq_beroep: ['idx_beroep_search'],
+	},
 	tableCount: 2,
 	indexCount: 2,
 	lastRun: '2026-09-15T22:00:00+00:00',
@@ -87,44 +99,54 @@ describe('SearchIndexTab', () => {
 
 		expect(wrapper.find('[data-testid="search-index-tables"]').text()).toBe('2')
 		expect(wrapper.find('[data-testid="search-index-indexes"]').text()).toBe('2')
-		expect(wrapper.find('[data-testid="search-index-last-run"]').text())
-			.toBe('2026-09-15T22:00:00+00:00')
+		expect(wrapper.find('[data-testid="search-index-last-run"]').text()).toBe(
+			'2026-09-15T22:00:00+00:00',
+		)
 	})
 
 	it('says a rebuild is safe when the platform can do it concurrently', async () => {
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="search-index-concurrent"]').text()).toBe('Yes')
+		expect(wrapper.find('[data-testid="search-index-concurrent"]').text()).toBe(
+			'Yes',
+		)
 	})
 
 	it('says a rebuild locks the table when the platform cannot do it concurrently', async () => {
 		answer = () => ({ ...HEALTHY, concurrentRebuildSupported: false })
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="search-index-concurrent"]').text())
-			.toContain('a rebuild locks the table')
+		expect(
+			wrapper.find('[data-testid="search-index-concurrent"]').text(),
+		).toContain('a rebuild locks the table')
 	})
 
 	it('says never rather than nothing when maintenance has not run', async () => {
 		answer = () => ({ ...HEALTHY, lastRun: null })
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="search-index-last-run"]').text()).toBe('Never')
+		expect(wrapper.find('[data-testid="search-index-last-run"]').text()).toBe(
+			'Never',
+		)
 	})
 
 	it('names the occ command that acts on the indexes', async () => {
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="search-index-commands"]').text())
-			.toContain('occ openregister:tables:search-index')
+		expect(
+			wrapper.find('[data-testid="search-index-commands"]').text(),
+		).toContain('occ openregister:tables:search-index')
 	})
 
 	it('draws the failure rather than a table of zeroes', async () => {
 		answer = () => new Error('The search index status could not be read.')
 		const wrapper = await mountPanel()
 
-		expect(wrapper.find('[data-testid="search-index-error"]').text())
-			.toBe('The search index status could not be read.')
-		expect(wrapper.find('[data-testid="search-index-tables"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="search-index-error"]').text()).toBe(
+			'The search index status could not be read.',
+		)
+		expect(wrapper.find('[data-testid="search-index-tables"]').exists()).toBe(
+			false,
+		)
 	})
 })

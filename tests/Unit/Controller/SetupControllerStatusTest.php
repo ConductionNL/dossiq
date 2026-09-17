@@ -46,6 +46,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for SetupController::status().
  *
  * @covers \OCA\Dossiq\Controller\SetupController
+ * @uses \OCA\Dossiq\Service\Setup\FirstRunReadiness
  */
 class SetupControllerStatusTest extends TestCase {
 

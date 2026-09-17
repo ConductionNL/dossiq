@@ -27,6 +27,7 @@ use PHPUnit\Framework\TestCase;
  * REQ-TERM-011: the queue reads the waiting sentence off the case.
  *
  * @covers \OCA\Dossiq\Service\Queue\Source\AssignedCasesSource
+ * @uses \OCA\Dossiq\Service\Queue\Source\RegisterBackedSource
  */
 class AssignedCasesWaitingTest extends TestCase {
 	/**

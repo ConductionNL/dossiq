@@ -91,7 +91,8 @@ describe('the caseTitle formatter', () => {
  */
 describe('the connection formatters the Integrations page reads', () => {
 	it('come from the library, so a switched-off connection reads Switched off', async () => {
-		const { BUILT_IN_FORMATTERS } = await import('@conduction/nextcloud-vue/src/utils/builtInFormatters.js')
+		const { BUILT_IN_FORMATTERS } =
+			await import('@conduction/nextcloud-vue/src/utils/builtInFormatters.js')
 		const registry = { ...BUILT_IN_FORMATTERS, ...formatters }
 
 		expect(registry.connectionStatus('disabled')).toBe('Switched off')

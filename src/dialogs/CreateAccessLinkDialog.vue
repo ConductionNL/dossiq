@@ -29,7 +29,9 @@
 			</p>
 
 			<div class="form-group">
-				<label for="access-link-label">{{ t('dossiq', 'Who is this for?') }}</label>
+				<label for="access-link-label">{{
+					t('dossiq', 'Who is this for?')
+				}}</label>
 				<NcTextField
 					id="access-link-label"
 					:modelValue="form.label"
@@ -43,18 +45,18 @@
 				<NcCheckboxRadioSwitch :modelValue="true" :disabled="true">
 					{{ t('dossiq', 'Read the case') }}
 				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch
-					v-model="form.comment">
+				<NcCheckboxRadioSwitch v-model="form.comment">
 					{{ t('dossiq', 'Write a comment') }}
 				</NcCheckboxRadioSwitch>
-				<NcCheckboxRadioSwitch
-					v-model="form.upload">
+				<NcCheckboxRadioSwitch v-model="form.upload">
 					{{ t('dossiq', 'Add a document') }}
 				</NcCheckboxRadioSwitch>
 			</div>
 
 			<div class="form-group">
-				<label for="access-link-expiry">{{ t('dossiq', 'Stops working on') }}</label>
+				<label for="access-link-expiry">{{
+					t('dossiq', 'Stops working on')
+				}}</label>
 				<NcTextField
 					id="access-link-expiry"
 					type="date"
@@ -64,7 +66,9 @@
 			</div>
 
 			<div class="form-group">
-				<label for="access-link-password">{{ t('dossiq', 'Password') }}</label>
+				<label for="access-link-password">{{
+					t('dossiq', 'Password')
+				}}</label>
 				<NcTextField
 					id="access-link-password"
 					type="password"
@@ -99,7 +103,11 @@
 				{{ t('dossiq', 'Cancel') }}
 			</NcButton>
 			<NcButton variant="primary" :disabled="saving" @click="createLink">
-				{{ saving ? t('dossiq', 'Creating the link') : t('dossiq', 'Create the link') }}
+				{{
+					saving
+						? t('dossiq', 'Creating the link')
+						: t('dossiq', 'Create the link')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
