@@ -195,7 +195,9 @@ async function openTasksWithFilters(page: any): Promise<any> {
 		.first()
 		.click()
 	const sidebar = page.locator('.app-sidebar')
-	await expect(sidebar, 'the filters sidebar opens').toBeVisible({ timeout: 15_000 })
+	await expect(sidebar, 'the filters sidebar opens').toBeVisible({
+		timeout: 15_000,
+	})
 	return sidebar
 }
 
@@ -233,7 +235,7 @@ test.describe('the Tasks index offers its search fields', () => {
 })
 
 test.describe('Narrow to one case', () => {
-	test('keeps that case\'s tasks and drops the other case\'s', async ({ page }) => {
+	test("keeps that case's tasks and drops the other case's", async ({ page }) => {
 		const sidebar = await openTasksWithFilters(page)
 		await page.getByRole('tab', { name: CHIPS.all }).click()
 
@@ -251,7 +253,7 @@ test.describe('Narrow to one case', () => {
 		).toBeVisible({ timeout: 20_000 })
 		await expect(
 			row(page, 'beta-task'),
-			'the other case\'s task is gone; a filter that leaves it looks '
+			"the other case's task is gone; a filter that leaves it looks "
 				+ 'exactly like one that matched everything',
 		).toHaveCount(0, { timeout: 20_000 })
 
@@ -298,7 +300,9 @@ test.describe('Due window inside a lens', () => {
 		).toHaveAttribute('aria-selected', 'true')
 
 		await expect
-			.poll(() => new URL(page.url()).searchParams.get('dueAt'), { timeout: 10_000 })
+			.poll(() => new URL(page.url()).searchParams.get('dueAt'), {
+				timeout: 10_000,
+			})
 			.toContain('..')
 	})
 })

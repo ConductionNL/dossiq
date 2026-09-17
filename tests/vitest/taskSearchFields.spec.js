@@ -67,12 +67,20 @@ function declaredFilterKeys() {
 
 describe('the Tasks index declares its search fields', () => {
 	it('offers case, state, priority and a due window, in that order', () => {
-		expect(declaredFilterKeys()).toEqual(['objectUuid', 'state', 'priority', 'dueAt'])
+		expect(declaredFilterKeys()).toEqual([
+			'objectUuid',
+			'state',
+			'priority',
+			'dueAt',
+		])
 	})
 
 	it('gives each field the widget its question needs', () => {
 		const byKey = Object.fromEntries(
-			filtersFromSchema({ properties: declaredProperties }).map((filter) => [filter.key, filter]),
+			filtersFromSchema({ properties: declaredProperties }).map((filter) => [
+				filter.key,
+				filter,
+			]),
 		)
 
 		expect(byKey.objectUuid.type).toBe('reference')
@@ -103,7 +111,9 @@ describe('the Tasks index declares its search fields', () => {
 	it('declares the fields on the sidebar, not as the page schema', () => {
 		expect(tasksPage.config.schema).toBeUndefined()
 		expect(tasksPage.config.sidebar.enabled).toBe(true)
-		expect(Object.keys(tasksPage.config.sidebar.fields).length).toBeGreaterThan(0)
+		expect(Object.keys(tasksPage.config.sidebar.fields).length).toBeGreaterThan(
+			0,
+		)
 	})
 })
 
@@ -112,29 +122,40 @@ describe('every declared field maps to an inbox argument', () => {
 		const mapped = inboxArguments()
 
 		for (const key of declaredFilterKeys()) {
-			expect(mapped[key], `no inbox argument for the declared filter "${key}"`).toBeTruthy()
+			expect(
+				mapped[key],
+				`no inbox argument for the declared filter "${key}"`,
+			).toBeTruthy()
 		}
 	})
 
 	it('narrows to one case with the argument the inbox reads', () => {
 		const mapped = inboxArguments()
 
-		expect(searchFieldParams(mapped, { objectUuid: ['case-7'] }))
-			.toEqual({ objectUuid: 'case-7' })
+		expect(searchFieldParams(mapped, { objectUuid: ['case-7'] })).toEqual({
+			objectUuid: 'case-7',
+		})
 	})
 
 	it('sends the window as the two arguments it is on the wire', () => {
 		const mapped = inboxArguments()
 
-		expect(searchFieldParams(mapped, { dueAt: { from: '2026-09-21', to: '2026-09-25' } }))
-			.toEqual({ dueAfter: '2026-09-21', dueBefore: '2026-09-25' })
+		expect(
+			searchFieldParams(mapped, {
+				dueAt: { from: '2026-09-21', to: '2026-09-25' },
+			}),
+		).toEqual({ dueAfter: '2026-09-21', dueBefore: '2026-09-25' })
 	})
 
 	it('carries several states and exactly one priority', () => {
 		const mapped = inboxArguments()
 
-		expect(searchFieldParams(mapped, { state: ['available', 'active'], priority: ['high'] }))
-			.toEqual({ state: 'available,active', priority: 'high' })
+		expect(
+			searchFieldParams(mapped, {
+				state: ['available', 'active'],
+				priority: ['high'],
+			}),
+		).toEqual({ state: 'available,active', priority: 'high' })
 	})
 
 	it('only ever names states and priorities the declaration offers', () => {
@@ -146,7 +167,9 @@ describe('every declared field maps to an inbox argument', () => {
 			expect(searchFieldParams(mapped, { state: [state] })).toEqual({ state })
 		}
 		for (const priority of priorities) {
-			expect(searchFieldParams(mapped, { priority: [priority] })).toEqual({ priority })
+			expect(searchFieldParams(mapped, { priority: [priority] })).toEqual({
+				priority,
+			})
 		}
 	})
 })
