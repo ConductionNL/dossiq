@@ -134,7 +134,9 @@ test.describe('The case declares how each of its fields is searched', () => {
 			`${OBJECTS}/${REGISTER}/case?_search=${encodeURIComponent(IDENTIFIER)}&_limit=200`,
 		)
 		expect(whole.ok(), `whole identifier -> ${whole.status()}`).toBeTruthy()
-		const wholeIds = (await whole.json()).results.map((row: any) => String(row.id ?? row['@self']?.id))
+		const wholeIds = (await whole.json()).results.map((row: any) =>
+			String(row.id ?? row['@self']?.id),
+		)
 
 		expect(wholeIds).toContain(byIdentifier)
 		expect(wholeIds).toContain(byDescription)
@@ -144,7 +146,9 @@ test.describe('The case declares how each of its fields is searched', () => {
 			`${OBJECTS}/${REGISTER}/case?_search=${encodeURIComponent(HALF_IDENTIFIER)}&_limit=200`,
 		)
 		expect(half.ok(), `half identifier -> ${half.status()}`).toBeTruthy()
-		const halfIds = (await half.json()).results.map((row: any) => String(row.id ?? row['@self']?.id))
+		const halfIds = (await half.json()).results.map((row: any) =>
+			String(row.id ?? row['@self']?.id),
+		)
 
 		expect(halfIds).not.toContain(byIdentifier)
 		expect(halfIds).toContain(byDescription)
@@ -162,7 +166,10 @@ test.describe('The case declares how each of its fields is searched', () => {
 			`${OBJECTS}/${REGISTER}/case?_search=${encodeURIComponent('(dakkapel AND NOT geweigerd')}`,
 		)
 
-		expect(refused.status(), 'a malformed term is a refusal, not an empty page').toBe(400)
+		expect(
+			refused.status(),
+			'a malformed term is a refusal, not an empty page',
+		).toBe(400)
 
 		const body = await refused.json()
 		expect(typeof body.position).toBe('number')
@@ -171,7 +178,10 @@ test.describe('The case declares how each of its fields is searched', () => {
 		await api.dispose()
 	})
 
-	test('a plain term reaches openregister as typed', async ({ playwright, baseURL }) => {
+	test('a plain term reaches openregister as typed', async ({
+		playwright,
+		baseURL,
+	}) => {
 		const api = await playwright.request.newContext({ baseURL })
 
 		const plain = await api.get(
@@ -179,7 +189,9 @@ test.describe('The case declares how each of its fields is searched', () => {
 		)
 
 		expect(plain.ok(), `plain term -> ${plain.status()}`).toBeTruthy()
-		const ids = (await plain.json()).results.map((row: any) => String(row.id ?? row['@self']?.id))
+		const ids = (await plain.json()).results.map((row: any) =>
+			String(row.id ?? row['@self']?.id),
+		)
 		expect(ids).toContain(byIdentifier)
 
 		await api.dispose()
@@ -193,10 +205,14 @@ test.describe('The case declares how each of its fields is searched', () => {
 
 		const hint = page.getByTestId('case-search-refusal')
 		await expect(hint).toBeVisible(PAGE_LOAD)
-		await expect(page.getByTestId('case-search-refusal-term')).toContainText('dakkapel')
+		await expect(page.getByTestId('case-search-refusal-term')).toContainText(
+			'dakkapel',
+		)
 	})
 
-	test('the Cases page shows no hint for a term it could read', async ({ page }) => {
+	test('the Cases page shows no hint for a term it could read', async ({
+		page,
+	}) => {
 		await page.goto(
 			`/index.php/apps/dossiq/cases?_search=${encodeURIComponent(RUN_PREFIX)}`,
 			PAGE_LOAD,
@@ -223,7 +239,9 @@ test.describe('The case declares how each of its fields is searched', () => {
 			`${OBJECTS}/${REGISTER}/case?result_isnull=true&_limit=200`,
 		)
 		expect(missing.ok(), `result_isnull -> ${missing.status()}`).toBeTruthy()
-		const ids = (await missing.json()).results.map((row: any) => String(row.id ?? row['@self']?.id))
+		const ids = (await missing.json()).results.map((row: any) =>
+			String(row.id ?? row['@self']?.id),
+		)
 
 		expect(ids).toContain(closedWithoutResult)
 		expect(ids).not.toContain(closedWithResult)

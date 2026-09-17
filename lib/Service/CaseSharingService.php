@@ -27,8 +27,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
-use OCA\Dossiq\Service\Sharing\CaseTokenShareService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use Psr\Log\LoggerInterface;
@@ -39,8 +40,9 @@ use Psr\Log\LoggerInterface;
  * Dossiq shares a case in three distinct ways, each with its own trust model,
  * and this class is the seam between them:
  *
- *  - a PUBLIC token link, delegated to {@see CaseTokenShareService}, which
- *    mints nothing itself and defers entirely to OpenRegister's shares leaf;
+ *  - a PUBLIC access link, delegated to {@see CaseAccessLinkService}, which
+ *    mints nothing itself: OpenRegister owns the anchor, the expiry, the
+ *    password and the revoke (openregister#3817);
  *  - a PARTNER-organisation hand-off, owned here, because org-to-org case
  *    hand-off inside one instance is zaak-domain logic and carries no public
  *    token (ADR-022);
@@ -83,7 +85,8 @@ class CaseSharingService {
 	 * @param SettingsService $settingsService The settings service
 	 * @param OpenRegisterSharingGateway $gateway OpenRegister resolution for the sharing surface
 	 * @param CaseAccessPolicy $accessPolicy Per-case access decisions
-	 * @param CaseTokenShareService $tokenShares Public "track your case" token links
+	 * @param CaseAccessLinkService $accessLinks Public access links over the case
+	 * @param CaseLinkShares $linkShares The share records those links are stored on
 	 * @param FederatedCaseShareService $federatedShares Cross-org (OCM) case shares
 	 * @param LoggerInterface $logger The logger
 	 *
@@ -93,7 +96,8 @@ class CaseSharingService {
 		private SettingsService $settingsService,
 		private OpenRegisterSharingGateway $gateway,
 		private CaseAccessPolicy $accessPolicy,
-		private CaseTokenShareService $tokenShares,
+		private CaseAccessLinkService $accessLinks,
+		private CaseLinkShares $linkShares,
 		private FederatedCaseShareService $federatedShares,
 		private LoggerInterface $logger,
 	) {
@@ -114,64 +118,95 @@ class CaseSharingService {
 	}//end canUserAccessCase()
 
 	/**
-	 * Create a public "track your case" token link through OpenRegister's
-	 * shares integration leaf.
+	 * Share a case with somebody who has no account, by minting an
+	 * OpenRegister access link over it.
+	 *
+	 * Each document named on the share mints its own `file` link, so an
+	 * outsider who needs one report does not receive the dossier.
 	 *
 	 * @param string $caseId The UUID of the case to share
 	 * @param string $label Human-readable label for the link
-	 * @param string $createdBy User ID of the creator (audit log)
-	 * @param string|null $expiresAt ISO 8601 expiration datetime, or null
-	 *                               for a non-expiring link
+	 * @param string $createdBy User ID of the creator
+	 * @param string|null $expiresAt ISO 8601 date the share stops opening
+	 * @param array<int, string> $capabilities What the holder may do
+	 * @param string|null $password An optional password, checked at use
+	 * @param array<int, string> $sharedDocuments File ids to share beside the case
+	 * @param array<string, mixed> $extra Extra fields to record on the share
 	 *
-	 * @return array The minted token metadata + public resolve URL, or an
-	 *               error array when the leaf is unavailable.
+	 * @return array The stored share plus the link, or an error array.
 	 *
-	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.2
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
 	public function createTokenShare(
 		string $caseId,
 		string $label,
 		string $createdBy,
 		?string $expiresAt = null,
+		array $capabilities = CaseAccessLinkService::DEFAULT_CAPABILITIES,
+		?string $password = null,
+		array $sharedDocuments = [],
+		array $extra = [],
 	): array {
-		return $this->tokenShares->createTokenShare(
+		$named = null;
+		if ($label !== '') {
+			$named = $label;
+		}
+
+		$link = $this->accessLinks->mintCaseLink(
+			caseId: $caseId,
+			userId: $createdBy,
+			capabilities: $capabilities,
+			expiresAt: $expiresAt,
+			password: $password,
+			label: $named
+		);
+
+		if (isset($link['error']) === true) {
+			return $link;
+		}
+
+		$documents = [];
+		foreach ($sharedDocuments as $fileId) {
+			$fileLink = $this->accessLinks->mintFileLink(
+				caseId: $caseId,
+				fileId: (string)$fileId,
+				userId: $createdBy,
+				expiresAt: ($link['expiresAt'] ?? $expiresAt),
+				password: $password,
+				label: $named
+			);
+
+			if (isset($fileLink['error']) === true) {
+				$this->logger->warning(
+					'Dossiq: a document named on a case share did not get a link',
+					['caseId' => $caseId, 'fileId' => $fileId, 'error' => $fileLink['error']]
+				);
+				continue;
+			}
+
+			$documents[] = [
+				'fileId' => (string)$fileId,
+				'linkId' => ($fileLink['id'] ?? null),
+				'linkUuid' => ($fileLink['uuid'] ?? null),
+				'url' => ($fileLink['url'] ?? null),
+			];
+		}//end foreach
+
+		$stored = $this->linkShares->store(
 			caseId: $caseId,
 			label: $label,
 			createdBy: $createdBy,
-			expiresAt: $expiresAt
+			link: $link,
+			documents: $documents,
+			extra: $extra
 		);
+
+		if (isset($stored['error']) === true) {
+			return $stored;
+		}
+
+		return ['share' => $stored, 'link' => $link, 'url' => ($link['url'] ?? '')];
 	}//end createTokenShare()
-
-	/**
-	 * Resolve whether a leaf-minted token belongs to the given case.
-	 *
-	 * @param string $tokenId The leaf token id (numeric) or opaque token.
-	 * @param string $caseId The candidate case UUID.
-	 *
-	 * @return bool True when the token is one of the case's minted tokens.
-	 *
-	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.3
-	 */
-	public function tokenBelongsToCase(string $tokenId, string $caseId): bool {
-		return $this->tokenShares->tokenBelongsToCase(tokenId: $tokenId, caseId: $caseId);
-	}//end tokenBelongsToCase()
-
-	/**
-	 * Revoke a public "track your case" token link through the OR shares leaf.
-	 *
-	 * The caller MUST have already authorised the revoke against the owning
-	 * case (see {@see tokenBelongsToCase()} + {@see canUserAccessCase()}).
-	 *
-	 * @param string $tokenId The token id (or the opaque token) minted by
-	 *                        the leaf.
-	 *
-	 * @return bool True when the leaf accepted the revoke.
-	 *
-	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.3
-	 */
-	public function revokeTokenShare(string $tokenId): bool {
-		return $this->tokenShares->revokeTokenShare(tokenId: $tokenId);
-	}//end revokeTokenShare()
 
 	/**
 	 * Create a partner organization-based case share.
@@ -312,6 +347,8 @@ class CaseSharingService {
 			$shareData = $shareObj->jsonSerialize();
 		}
 
+		$refused = $this->linkShares->revokeLinksOf(share: $shareData, userId: $userId);
+
 		$shareData['status'] = 'revoked';
 		$shareData['revokedBy'] = $userId;
 		$shareData['revokedAt'] = (new DateTime())->format('c');
@@ -323,11 +360,12 @@ class CaseSharingService {
 			['shareId' => $shareId, 'revokedBy' => $userId]
 		);
 
-		if (is_array($result) === true) {
-			return $result;
+		$revoked = $this->gateway->toArray($result);
+		if ($refused !== []) {
+			$revoked['linksNotRevoked'] = $refused;
 		}
 
-		return $result->jsonSerialize();
+		return $revoked;
 	}//end revokeShare()
 
 	/**
