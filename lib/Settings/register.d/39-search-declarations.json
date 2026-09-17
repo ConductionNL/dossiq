@@ -392,6 +392,45 @@
           "chasesSent": {
             "matchType": "range",
             "inputControl": "range"
+          },
+          "dataSubjectRequestType": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "dataSubject": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "dataSubjectType": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "erasurePreviewId": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "erasureDigest": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "erasureApprovedBy": {
+            "matchType": "prefix",
+            "inputControl": "text"
+          },
+          "erasureApprovedAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "subjectExportId": {
+            "matchType": "exact",
+            "inputControl": "text"
+          },
+          "subjectExportExpiresAt": {
+            "matchType": "range",
+            "inputControl": "date-range"
+          },
+          "subjectExportReady": {
+            "inputControl": "boolean"
           }
         }
       }

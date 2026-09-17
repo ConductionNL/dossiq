@@ -67,6 +67,10 @@ const SILENT = [
 	'casePlanState',
 	'commissieBesluit',
 	'conversations',
+	// The platform's erasure reports, kept verbatim (dossiq#2890).
+	'erasureCounts',
+	'erasureOutcome',
+	'erasureProtected',
 	'geometry',
 	'handoverRecord',
 	'intakeRefusal',
