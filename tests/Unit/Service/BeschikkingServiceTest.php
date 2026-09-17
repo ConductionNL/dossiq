@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\BerichtenboxRoutingService;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\MockSigningAdapter;
@@ -162,12 +163,24 @@ class BeschikkingServiceTest extends TestCase {
 	private BeschikkingService $service;
 
 	/**
+	 * The remedy the case's decisions carry, driven per test.
+	 *
+	 * A double answers '' and 0 unless told otherwise, which is exactly a case
+	 * type that declares no remedy, so every test written before the
+	 * declaration existed keeps its six weeks.
+	 *
+	 * @var CaseRemedy&\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseRemedy $remedy;
+
+	/**
 	 * Set up fixtures with a wired-up service graph.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
 		$this->objects = new FakeObjectService();
+		$this->remedy = $this->createMock(originalClassName: CaseRemedy::class);
 
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
@@ -201,6 +214,7 @@ class BeschikkingServiceTest extends TestCase {
 			new AuditPacketBuilder($settings, $signingAdapter, $logger),
 			new BezwaarTermijnScheduler($settings, $logger),
 			$this->createMock(CoordinatorRequirement::class),
+			remedy: $this->remedy,
 		);
 
 		// Seed a WMO mandaatregeling covering the afdelingsmanager level.
@@ -274,6 +288,52 @@ class BeschikkingServiceTest extends TestCase {
 		$stored = $this->service->find($decision['id']);
 		$this->assertSame('v1', ($stored['templateVersion'] ?? null), 'and must survive the round trip');
 	}//end testComposeStoresTheResolvedTemplateVersion()
+
+	/**
+	 * A besluit prints the clause its case type declares (REQ-DEC-03).
+	 *
+	 * The clause is read from the case, not from the template, which is the
+	 * whole point: the same template on two case types prints two terms.
+	 *
+	 * @return void
+	 */
+	public function testComposePrintsTheClauseTheCaseTypeDeclares(): void {
+		$this->remedy->method('clauseFor')->willReturnMap(
+			[['zaak-2026-wmo-1', 'U kunt bezwaar maken tegen dit besluit. Doe dat binnen 42 dagen bij het college.']]
+		);
+
+		$decision = $this->composeWmo();
+
+		$this->assertSame(
+			expected: 'U kunt bezwaar maken tegen dit besluit. Doe dat binnen 42 dagen bij het college.',
+			actual: ($this->service->find($decision['id'])['legalRemediesClause'] ?? null),
+		);
+	}//end testComposePrintsTheClauseTheCaseTypeDeclares()
+
+	/**
+	 * Sending the besluit binds the remedy clock on the declared term (REQ-DEC-04).
+	 *
+	 * @return void
+	 */
+	public function testSendingBindsTheRemedyTermOnTheDeclaredDays(): void {
+		$this->remedy->method('termDaysFor')->willReturn(28);
+		$this->remedy->expects($this->once())->method('bindTerm')->with(
+			'zaak-2026-wmo-1',
+			$this->isType('string'),
+			$this->isInstanceOf(\DateTimeImmutable::class),
+		);
+
+		$id = $this->composeWmo()['id'];
+		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
+		$sent = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
+
+		// The stored end is the declared 28 days, not the scheduler's six
+		// weeks: the printed clause and the stored date come from one read.
+		$expected = (new \DateTimeImmutable((string)$sent['announcementDate']))
+			->modify('+28 days')->format('Y-m-d');
+		$this->assertSame(expected: $expected, actual: $sent['objectionTermEndDate']);
+	}//end testSendingBindsTheRemedyTermOnTheDeclaredDays()
 
 	/**
 	 * The full lifecycle reaches gearchiveerd with all evidence recorded. [V01]
