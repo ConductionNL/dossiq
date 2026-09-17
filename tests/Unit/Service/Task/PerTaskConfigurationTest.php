@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\Task\TaskDeclaration
@@ -275,13 +276,19 @@ class PerTaskConfigurationTest extends TestCase {
 	 *
 	 * The validator only ever asks it to DECODE a definition it was handed,
 	 * never to look one up, so the lookup half is deliberately a double that
-	 * would fail loudly if anything started using it.
+	 * would fail loudly if anything started using it. The reader resolves that
+	 * half through the container, so the double is handed over the same way.
 	 *
 	 * @return TaskDeclarationReader The reader.
 	 */
 	private function reader(): TaskDeclarationReader {
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturn(
+			$this->createMock(originalClassName: WorkflowDefinitionService::class)
+		);
+
 		return new TaskDeclarationReader(
-			definitions: $this->createMock(originalClassName: WorkflowDefinitionService::class),
+			container: $container,
 			json: new WorkflowJsonProperty(),
 			declaration: new TaskDeclaration()
 		);
