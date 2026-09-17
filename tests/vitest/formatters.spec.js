@@ -44,6 +44,14 @@ vi.mock('../../src/store/modules/deelzaak.js', () => ({
 
 const { default: formatters } = await import('../../src/services/formatters.js')
 
+// Loaded at collection, not inside the test below. The library module pulls
+// in @nextcloud/auth and its dependencies, and a cold transform of that graph
+// took over five seconds when the whole suite ran in parallel, which failed
+// the test on its own timeout while the assertion itself never ran.
+const { BUILT_IN_FORMATTERS } = await import(
+	'@conduction/nextcloud-vue/src/utils/builtInFormatters.js'
+)
+
 describe('the caseTitle formatter', () => {
 	beforeEach(() => {
 		cases = []
@@ -90,9 +98,7 @@ describe('the caseTitle formatter', () => {
  * @spec openspec/specs/admin-settings/spec.md
  */
 describe('the connection formatters the Integrations page reads', () => {
-	it('come from the library, so a switched-off connection reads Switched off', async () => {
-		const { BUILT_IN_FORMATTERS } =
-			await import('@conduction/nextcloud-vue/src/utils/builtInFormatters.js')
+	it('come from the library, so a switched-off connection reads Switched off', () => {
 		const registry = { ...BUILT_IN_FORMATTERS, ...formatters }
 
 		expect(registry.connectionStatus('disabled')).toBe('Switched off')
