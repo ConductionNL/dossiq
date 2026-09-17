@@ -65,6 +65,13 @@ class LetterNamesItsAddresseeTest extends TestCase {
 		);
 
 		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('has')->willReturnCallback(
+			static fn (string $id): bool => in_array(
+				$id,
+				[ZaakdossierService::class, CorrespondentWriter::class],
+				true
+			)
+		);
 		$container->method('get')->willReturnCallback(
 			static fn (string $id): object => match ($id) {
 				ZaakdossierService::class => $dossier,

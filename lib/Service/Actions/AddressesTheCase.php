@@ -29,7 +29,6 @@ namespace OCA\Dossiq\Service\Actions;
 use OCA\Dossiq\Service\People\CaseRoleProjection;
 use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
-use Throwable;
 
 /**
  * The addressed parties of a case, for a handler that files a letter.
@@ -70,12 +69,16 @@ trait AddressesTheCase {
 			return [];
 		}
 
-		try {
-			$writer = $this->container->get(CorrespondentWriter::class);
-		} catch (Throwable) {
+		// `has()` rather than a swallowed `get()`. An absent writer is a
+		// question the container can answer, and asking it keeps the "it
+		// threw, so pretend there is nobody" shape out of this file: a writer
+		// that EXISTS and cannot be built is a real error and belongs in the
+		// handler's own failure path, not silently in an empty addressee.
+		if ($this->container->has(CorrespondentWriter::class) === false) {
 			return [];
 		}
 
+		$writer = $this->container->get(CorrespondentWriter::class);
 		if (($writer instanceof CorrespondentWriter) === false) {
 			return [];
 		}
