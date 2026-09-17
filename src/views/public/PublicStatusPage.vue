@@ -30,9 +30,17 @@
 				<div class="public-status-page__status-label">
 					{{ t('dossiq', 'Current status') }}
 				</div>
-				<div class="public-status-page__status-value">
+				<div
+					class="public-status-page__status-value"
+					data-testid="public-status-value">
 					{{ statusData.currentStatus || t('dossiq', 'In progress') }}
 				</div>
+				<p
+					v-if="statusData.currentStatusDescription"
+					class="public-status-page__status-description"
+					data-testid="public-status-description">
+					{{ statusData.currentStatusDescription }}
+				</p>
 			</section>
 
 			<!-- Dates -->
@@ -75,6 +83,10 @@
 
 <script>
 import { NcLoadingIcon } from '@nextcloud/vue'
+import {
+	descriptionOnCase,
+	labelOnCase,
+} from '../../utils/statusPublicLabel.js'
 
 export default {
 	name: 'PublicStatusPage',
@@ -127,10 +139,21 @@ export default {
 				const data = await response.json()
 				const obj = data.object || {}
 				// Map the public-safe OR object view onto the citizen status fields.
+				//
+				// 🔴 THE STATUS THE APPLICANT READS IS ON THE CASE, NOT BEHIND
+				// IT. `obj.status` is the statusType's uuid, because the
+				// endpoint above renders the object with `_extend: []` and this
+				// page has no session to fetch the statusType with. It was
+				// being printed as the current status: a citizen who opened
+				// this page read 32 hex characters. `statusPublicLabel` is the
+				// case schema's own calculation over the linked statusType, so
+				// the words arrive with the case and the fallback to the status
+				// name has already been resolved server-side.
 				this.statusData = {
 					title: obj.title || data.label || '',
 					identifier: obj.identifier || '',
-					currentStatus: obj.status || '',
+					currentStatus: labelOnCase(obj),
+					currentStatusDescription: descriptionOnCase(obj),
 					plannedEndDate: obj.plannedEndDate || null,
 					startDate: obj.startDate || null,
 				}
@@ -210,6 +233,12 @@ export default {
 	font-size: 20px;
 	font-weight: bold;
 	color: var(--color-primary-element);
+}
+
+.public-status-page__status-description {
+	margin: 8px 0 0;
+	font-size: 14px;
+	color: var(--color-main-text);
 }
 
 .public-status-page__dates {

@@ -61,6 +61,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+
 /**
  * Declares what an external Portaliq subject may see and do in Dossiq.
  *
@@ -96,6 +98,15 @@ class PortalContributionProvider {
 	 * bug. So the acknowledgement reads this constant through
 	 * {@see self::citizenCaseFields()} instead of keeping a second one.
 	 *
+	 * 🔑 `status` STAYS, AND IT IS NOT WHAT THE CITIZEN READS. It is the
+	 * statusType's uuid, which the portal needs to tell one status from another
+	 * and which says nothing to a person. The words come from
+	 * `statusPublicLabel`, the case schema's own calculation over the linked
+	 * statusType: its publicLabel, or its name when the status declares none
+	 * (citizen-status-labels, REQ-CT-25). Both are named from
+	 * {@see StatusPublicLabels} so the page and the portal cannot spell them
+	 * differently.
+	 *
 	 * @var array<int, string>
 	 */
 	public const CITIZEN_CASE_FIELDS = [
@@ -103,6 +114,8 @@ class PortalContributionProvider {
 		'title',
 		'caseType',
 		'status',
+		StatusPublicLabels::CASE_LABEL_FIELD,
+		StatusPublicLabels::CASE_DESCRIPTION_FIELD,
 		'result',
 		'startDate',
 		'endDate',

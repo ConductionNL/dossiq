@@ -12,6 +12,14 @@
 // hiddenInLists, and every checklist item becomes a task on the case — and none
 // of them could be set without hand-editing register JSON.
 //
+// Two more landed with citizen-status-labels: `publicLabel` and
+// `publicDescription`, the words the applicant reads instead of the internal
+// name. Both normalise to the empty string, because empty is what makes them
+// additive: a status that declares neither reads to the applicant exactly as
+// it did, and the form must not invent a label by copying the name into the
+// field. The copy would then be stored, and nobody could tell a label somebody
+// chose from one the form guessed.
+//
 // The shape lives here rather than in the tab so the normalising can be tested
 // without mounting anything. Normalising is the part that matters: a status row
 // saved before these properties existed carries none of them, and the form has
@@ -104,6 +112,8 @@ export function emptyStatusTypeForm(order = 1) {
 	return {
 		name: '',
 		description: '',
+		publicLabel: '',
+		publicDescription: '',
 		order,
 		isFinal: false,
 		role: '',
@@ -176,6 +186,9 @@ export function statusTypeToForm(statusType) {
 		caseType: row.caseType,
 		name: typeof row.name === 'string' ? row.name : '',
 		description: typeof row.description === 'string' ? row.description : '',
+		publicLabel: typeof row.publicLabel === 'string' ? row.publicLabel : '',
+		publicDescription:
+			typeof row.publicDescription === 'string' ? row.publicDescription : '',
 		order: Number.isFinite(Number(row.order)) ? Number(row.order) : 0,
 		isFinal: row.isFinal === true || row.isFinal === 'true',
 		role: isStatusRole(row.role) ? row.role : '',
@@ -213,6 +226,8 @@ export function formToStatusType(form) {
 	const payload = {
 		name: String(form.name ?? '').trim(),
 		description: String(form.description ?? '').trim(),
+		publicLabel: String(form.publicLabel ?? '').trim(),
+		publicDescription: String(form.publicDescription ?? '').trim(),
 		order: Number(form.order) || 0,
 		isFinal: form.isFinal === true,
 		role: isStatusRole(form.role) ? form.role : '',
