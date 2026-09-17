@@ -101,4 +101,3 @@ export const PublicAppointmentPage = '/public/appointments/e2e-unresolvable-toke
  */
 export const PublicFederatedTransferPage =
 	'/public/federation/transfer/e2e-unresolvable-token/e2e-transfer'
-

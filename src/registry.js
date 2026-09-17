@@ -138,6 +138,9 @@ import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
 import CaseTermsTab from './views/cases/components/CaseTermsTab.vue'
 import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
+// The AVG panel on a data subject request case
+// (data-subject-requests-drive-the-platform).
+import DataSubjectRequestTab from './views/cases/components/DataSubjectRequestTab.vue'
 // CMMN adaptive case-plan panel — sibling to the BPMN status-transition
 // engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
 // @spec openspec/specs/cmmn-adaptive-case/spec.md
@@ -850,6 +853,17 @@ const registry = {
 		kind: 'page',
 		component: CaseAccessTab,
 		_note: "Who holds which right on the case and where each grant came from, read from OpenRegister's permission catalogue, object shares, role definitions, effective scopes and deny preview. dossiq evaluates nothing: every row restates one rule OpenRegister reported, and a deny is its own row rather than subtracted from a grant, because a second evaluator of this question eventually disagrees with the first and the disagreement is a disclosure (D-1, D-5).",
+	},
+	// --- The AVG panel (data-subject-requests-drive-the-platform). ---
+	// A `component:` tab for the same reason CaseAccessTab is: none of
+	// CnObjectSidebar's four built-ins can call the AVG endpoints or render a
+	// protected item with its ground. kind `page`, so it adds nothing to the
+	// ADR-049 widget count.
+	// @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
+	DataSubjectRequestTab: {
+		kind: 'page',
+		component: DataSubjectRequestTab,
+		_note: 'What OpenRegister reported about a data subject, and the acts dossiq drives on it. The protected items are rendered in full, ground and basis and remedy, because a count of what cannot be erased is not an answer a handler can give the person who asked. dossiq computes no erasure here: every value is one the server read back from the platform.',
 	},
 	// --- The four clocks on the case (phase-terms-and-the-internal-target). ---
 	// A `component:` tab and not a `widgets[]` one, for the same reason

@@ -310,11 +310,12 @@ export default {
 				}
 
 				const type = this.activeTab === 'person' ? 'brpPerson' : 'kvkCompany'
-				const shape = this.activeTab === 'person' ? personResult : companyResult
-				const rows = await this.objectStore.fetchCollection(
-					type,
-					{ _search: query, _limit: 20 },
-				)
+				const shape =
+					this.activeTab === 'person' ? personResult : companyResult
+				const rows = await this.objectStore.fetchCollection(type, {
+					_search: query,
+					_limit: 20,
+				})
 
 				// The term openregister could not parse, said rather than
 				// rendered as an empty list. The store holds the refusal

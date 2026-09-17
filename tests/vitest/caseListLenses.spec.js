@@ -141,11 +141,9 @@ const CASE_LENSES = [
 	// excludes the archive from, which is why not one of them spells the
 	// exclusion out.
 	'Archived',
-	// The missing-value lens (case-search-declares-its-fields REQ-CSD-04). It
-	// shipped in #2884 and was never added here, so this list and the manifest
-	// have disagreed since; inherited, and corrected in passing rather than
-	// left for the sweep, because the same two assertions are the ones the
-	// Archived chip has to pass.
+	// The closed cases that ended without a result (b210638, the search change
+	// that made the no-result closures a lens of their own). It sits after
+	// Closed because it narrows that set.
 	'Closed with no result',
 	DRAFTS_LENS,
 	'Overdue',
@@ -180,7 +178,7 @@ const CASES_ONLY = [
 	// OpenRegister's task engine through a named entity source, not the `case`
 	// schema, so `_archived` on that list would narrow nothing.
 	'Archived',
-	// A task has no result type, so it cannot be closed without one.
+	// A case closes with or without a result; a task completes and has none.
 	'Closed with no result',
 	DRAFTS_LENS,
 	'Stuck',

@@ -35,7 +35,9 @@
 						t('dossiq', 'Created by {who}', { who: link.createdBy })
 					}}</span>
 					<span v-if="link.expiresAt">{{
-						t('dossiq', 'Stops working on {date}', { date: link.expiresAt })
+						t('dossiq', 'Stops working on {date}', {
+							date: link.expiresAt,
+						})
 					}}</span>
 					<span v-if="link.advisoryBody">{{
 						t('dossiq', 'Asked for advice from {body}', {
@@ -72,7 +74,9 @@
 			</NcButton>
 		</div>
 
-		<h3 class="share-tab__partner-heading">{{ t('dossiq', 'Partner shares') }}</h3>
+		<h3 class="share-tab__partner-heading">
+			{{ t('dossiq', 'Partner shares') }}
+		</h3>
 
 		<!--
 			Partner-organisation handovers only (zaak-domain). Public
