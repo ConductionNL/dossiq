@@ -241,7 +241,7 @@ describe('the surfaces that read in exactly one chrome', () => {
 	)
 
 	it('leaves the sidebar the tabs that have no strip counterpart', () => {
-		// History, Terms, Access, Sharing and Tags duplicate nothing, so they
+		// History, Terms, Access, Sharing, AVG and Tags duplicate nothing, so they
 		// stay. Asserted exactly: a later change that empties the sidebar, or
 		// refills it, has to say so here rather than drift.
 		//
@@ -257,11 +257,17 @@ describe('the surfaces that read in exactly one chrome', () => {
 		// end, the internal target and the phase term. It has no strip
 		// counterpart either. The strip says what happened; this says what is
 		// still owed and by when.
+		//
+		// `avg` arrived with data-subject-requests-drive-the-platform
+		// (dossiq#2890): what OpenRegister reported about the case's data
+		// subject, and the erasure and export acts dossiq drives on it. No
+		// strip tab carries a data subject request, so it duplicates nothing.
 		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
 			'audit',
 			'terms',
 			'access',
 			'sharing',
+			'avg',
 			'tags',
 		])
 	})
