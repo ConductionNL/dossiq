@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Status;
 
+use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
 use Psr\Container\ContainerInterface;
@@ -73,6 +74,7 @@ class CaseStateFieldRuleProjector {
 	 *
 	 * @param CaseTypeStore                $store       Reads the statusType and propertyDefinition rows.
 	 * @param StatusFieldRuleDeclaration   $declaration Turns one status's rules into OpenRegister's shape.
+	 * @param FieldRoleRuleDeclaration     $roles       Turns the case type's per-role rules into the same shape.
 	 * @param SchemaSlugResolver           $slugs       Resolves the case schema inside our own register.
 	 * @param ContainerInterface           $container   The DI container, for OpenRegister's SchemaMapper.
 	 * @param LoggerInterface              $logger      The logger.
@@ -80,6 +82,7 @@ class CaseStateFieldRuleProjector {
 	public function __construct(
 		private readonly CaseTypeStore $store,
 		private readonly StatusFieldRuleDeclaration $declaration,
+		private readonly FieldRoleRuleDeclaration $roles,
 		private readonly SchemaSlugResolver $slugs,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
@@ -117,6 +120,15 @@ class CaseStateFieldRuleProjector {
 	 * A status the case type declares nothing for gets no entry, which keeps
 	 * the block the size of what was actually declared.
 	 *
+	 * A THIRD SOURCE FEEDS IT, AND IT IS STATE-BLIND ON PURPOSE. The case type's
+	 * own `fieldRoleRules` say what a role may see and change in EVERY status,
+	 * so each one is folded into every state this type declares rather than into
+	 * one of them. It is published here rather than by its own writer because
+	 * this class replaces the whole entry for a state it owns: a second writer
+	 * adding to the same entry would have its work deleted by the next publish
+	 * of either half, and the deletion would look exactly like a rule nobody had
+	 * declared yet.
+	 *
 	 * @param string $caseTypeId The case type UUID.
 	 *
 	 * @return array<string, array<string, mixed>> The states block.
@@ -130,6 +142,9 @@ class CaseStateFieldRuleProjector {
 		);
 
 		$requiredByStatus = $this->requiredByStatus(caseTypeId: $caseTypeId);
+		$roleFields = $this->roles->lifecycleFields(
+			caseType: $this->store->readCaseType(caseTypeId: $caseTypeId)
+		);
 
 		$states = [];
 		foreach ($statusTypes as $statusType) {
@@ -143,6 +158,7 @@ class CaseStateFieldRuleProjector {
 				fields: $fields,
 				required: ($requiredByStatus[$stateKey] ?? [])
 			);
+			$fields = $this->roles->foldInto(fields: $fields, roles: $roleFields);
 
 			if ($fields === []) {
 				continue;

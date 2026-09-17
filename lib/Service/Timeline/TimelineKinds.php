@@ -126,6 +126,18 @@ final class TimelineKinds {
 	public const DECISION_SENT = 'beschikking-verzonden';
 
 	/**
+	 * An act on a data subject request: a preview taken, an erasure run, an export asked for.
+	 *
+	 * One kind rather than three, because a handler reading the case wants the
+	 * AVG story in one strand, and `act` already says which of the three it
+	 * was. Three kinds would put the preview and the run it approved in
+	 * different filters.
+	 *
+	 * @var string
+	 */
+	public const DATA_SUBJECT_REQUEST = 'avg-verzoek';
+
+	/**
 	 * Every declaration, in the shape `TimelineKindService::declareKind()` takes.
 	 *
 	 * @var array<int, array<string, mixed>>
@@ -243,6 +255,26 @@ final class TimelineKinds {
 				'beschikkingId' => ['type' => 'string'],
 			],
 			'required' => ['channel'],
+			'followUp' => false,
+		],
+		[
+			'slug' => self::DATA_SUBJECT_REQUEST,
+			'title' => 'AVG-verzoek',
+			'description' => 'What OpenRegister was asked on behalf of a data subject, and what it answered.',
+			'properties' => [
+				'act' => [
+					'type' => 'string',
+					'enum' => ['preview', 'run', 'export'],
+				],
+				'previewId' => ['type' => 'string'],
+				'exportId' => ['type' => 'string'],
+				'erasable' => ['type' => 'integer'],
+				'pseudonymised' => ['type' => 'integer'],
+				'protected' => ['type' => 'integer'],
+				'withheld' => ['type' => 'integer'],
+				'complete' => ['type' => 'boolean'],
+			],
+			'required' => ['act'],
 			'followUp' => false,
 		],
 	];

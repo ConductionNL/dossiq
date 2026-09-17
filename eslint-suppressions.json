@@ -440,17 +440,6 @@
       "count": 3
     }
   },
-  "src/views/public/ExternalConsultationResponsePage.vue": {
-    "@nextcloud/l10n-enforce-ellipsis": {
-      "count": 3
-    },
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
-    "@typescript-eslint/no-unused-vars": {
-      "count": 2
-    }
-  },
   "src/views/public/PublicAppointmentPage.vue": {
     "@nextcloud/no-deprecated-library-props": {
       "count": 1

@@ -780,6 +780,7 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::STATUS_CHANGE,
 			TimelineKinds::TERM_EVENT,
 			TimelineKinds::DECISION_SENT,
+			TimelineKinds::DATA_SUBJECT_REQUEST,
 		];
 
 		foreach ($named as $slug) {
