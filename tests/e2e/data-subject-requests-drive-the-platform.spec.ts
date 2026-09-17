@@ -68,9 +68,12 @@ test.describe('data subject requests drive the platform', () => {
 		})
 		const caseId = objectId(created)
 
-		const res = await request.post(`${DOSSIQ_API}/cases/${caseId}/avg/erasure-preview`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-		})
+		const res = await request.post(
+			`${DOSSIQ_API}/cases/${caseId}/avg/erasure-preview`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+			},
+		)
 
 		expect(res.status()).toBe(200)
 		const preview = await res.json()
@@ -99,7 +102,9 @@ test.describe('data subject requests drive the platform', () => {
 		}
 	})
 
-	test('a run without the approving act is refused, and nothing is written', async ({ request }) => {
+	test('a run without the approving act is refused, and nothing is written', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const machine = await seedStateMachine(request, token)
 		const created = await seedCase(request, token, {
@@ -114,9 +119,12 @@ test.describe('data subject requests drive the platform', () => {
 			headers: { requesttoken: token, 'Content-Type': 'application/json' },
 		})
 
-		const res = await request.post(`${DOSSIQ_API}/cases/${caseId}/avg/erasure-run`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-		})
+		const res = await request.post(
+			`${DOSSIQ_API}/cases/${caseId}/avg/erasure-run`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+			},
+		)
 
 		// The rule, not just the status: `erasure-not-approved` is fixed by
 		// asking a colleague, and `erasure-preview-stale` by taking the
@@ -129,7 +137,9 @@ test.describe('data subject requests drive the platform', () => {
 		expect(stored.erasureApprovedBy ?? '').toBe('')
 	})
 
-	test('an incomplete erasure withholds the close and names what is left', async ({ request }) => {
+	test('an incomplete erasure withholds the close and names what is left', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const machine = await seedStateMachine(request, token)
 		const created = await seedCase(request, token, {
@@ -168,7 +178,9 @@ test.describe('data subject requests drive the platform', () => {
 		expect(reasons).toContain(`${RUN_PREFIX} subsidiedossier`)
 	})
 
-	test('an inzage case is handed the platform export, not an erasure', async ({ request }) => {
+	test('an inzage case is handed the platform export, not an erasure', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const machine = await seedStateMachine(request, token)
 		const created = await seedCase(request, token, {
@@ -180,21 +192,30 @@ test.describe('data subject requests drive the platform', () => {
 		const caseId = objectId(created)
 
 		// A preview is refused on a case that did not ask to be erased.
-		const refused = await request.post(`${DOSSIQ_API}/cases/${caseId}/avg/erasure-preview`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-		})
+		const refused = await request.post(
+			`${DOSSIQ_API}/cases/${caseId}/avg/erasure-preview`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+			},
+		)
 		expect(refused.status()).toBe(409)
 		expect((await refused.json()).error).toBe('not-an-erasure-request')
 
-		const asked = await request.post(`${DOSSIQ_API}/cases/${caseId}/avg/subject-export`, {
-			headers: { requesttoken: token, 'Content-Type': 'application/json' },
-		})
+		const asked = await request.post(
+			`${DOSSIQ_API}/cases/${caseId}/avg/subject-export`,
+			{
+				headers: { requesttoken: token, 'Content-Type': 'application/json' },
+			},
+		)
 		expect(asked.status()).toBe(200)
 		expect((await asked.json()).uuid).toBeTruthy()
 
-		const state = await request.get(`${DOSSIQ_API}/cases/${caseId}/avg/subject-export`, {
-			headers: { requesttoken: token },
-		})
+		const state = await request.get(
+			`${DOSSIQ_API}/cases/${caseId}/avg/subject-export`,
+			{
+				headers: { requesttoken: token },
+			},
+		)
 		expect(state.status()).toBe(200)
 		const read = await state.json()
 

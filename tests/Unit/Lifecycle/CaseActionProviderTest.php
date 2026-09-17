@@ -62,6 +62,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway
  * @uses \OCA\Dossiq\Service\Cases\ExternalHome
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 class CaseActionProviderTest extends TestCase {
 	use MakesStatusDeclarations;

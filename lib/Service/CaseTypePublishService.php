@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
@@ -66,6 +67,7 @@ class CaseTypePublishService {
 	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseStateFieldRuleProjector $fieldRules   What each status asks of the fields on the case.
+	 * @param CaseFieldRoleProjector  $fieldRoles       What each role may see and change on the case.
 	 * @param LoggerInterface         $logger           The logger.
 	 */
 	public function __construct(
@@ -78,6 +80,7 @@ class CaseTypePublishService {
 		private readonly RemedyClauseDeclaration $remedy,
 		private readonly CaseTypeHandling $handling,
 		private readonly CaseStateFieldRuleProjector $fieldRules,
+		private readonly CaseFieldRoleProjector $fieldRoles,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -272,6 +275,13 @@ class CaseTypePublishService {
 		// projection that cannot be written is logged and the declarations wait
 		// on the rows for the next publish.
 		$this->fieldRules->publish(caseTypeId: $caseTypeId);
+
+		// The role half goes onto the same schema at the same moment, and onto
+		// the PROPERTIES rather than the lifecycle. It is a second write and not
+		// a second decision: a case in a state this type does not declare has no
+		// lifecycle rule to apply, and the property block is what keeps the field
+		// from the role there. It never fails the publish either.
+		$this->fieldRoles->publish(caseTypeId: $caseTypeId);
 
 		$version = $this->publishActiveTemplate(caseTypeId: $caseTypeId, changeNote: $changeNote);
 

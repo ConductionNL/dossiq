@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
+use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
 use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
@@ -53,6 +55,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\UnreadTriggerService
+ * @uses \OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector
  */
 class CaseTypePublishValidationTest extends TestCase {
 
@@ -127,10 +130,12 @@ class CaseTypePublishValidationTest extends TestCase {
 			fieldRules: new CaseStateFieldRuleProjector(
 				store: $store,
 				declaration: new StatusFieldRuleDeclaration(),
+				roles: new FieldRoleRuleDeclaration(),
 				slugs: $this->createMock(SchemaSlugResolver::class),
 				container: $this->createMock(ContainerInterface::class),
 				logger: new NullLogger(),
 			),
+			fieldRoles: $this->createMock(CaseFieldRoleProjector::class),
 			logger: new NullLogger(),
 		);
 	}//end service()

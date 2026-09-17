@@ -33,6 +33,7 @@ use OCA\Dossiq\Controller\DashboardController;
 use OCA\Dossiq\Controller\SettingsController;
 use OCA\Dossiq\Repair\InitializeSettings;
 use OCA\Dossiq\Sections\SettingsSection;
+use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -102,6 +103,7 @@ class BespokeServiceRegistrar {
 			static function (ContainerInterface $c): InitializeSettings {
 				return new InitializeSettings(
 					settingsService: $c->get(SettingsService::class),
+					fieldRoles: $c->get(CaseFieldRoleProjector::class),
 					logger: $c->get('Psr\\Log\\LoggerInterface')
 				);
 			}

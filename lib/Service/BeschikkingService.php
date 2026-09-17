@@ -310,14 +310,16 @@ class BeschikkingService {
 			throw new RuntimeException('invalid_transition');
 		}
 
+		// The term the CASE TYPE declares, when it declares one, read BEFORE
+		// the besluit is dispatched: a read that fails after the letter went
+		// out would leave a sent decision with no stored term. Falling back to
+		// the scheduler's six weeks keeps every case type that declares nothing
+		// behaving exactly as it did.
+		$declaredDays = $this->remedy->termDaysFor(caseId: (string)($decision['caseId'] ?? ''));
+
 		$dispatch = $this->berichtenbox->routeToBerichtenbox($decision);
 
 		$bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
-		// The term the CASE TYPE declares, when it declares one. Falling back
-		// to the scheduler's six weeks keeps every case type that declares
-		// nothing behaving exactly as it did, and stops a decision printing
-		// forty-two days over a clock that runs for six weeks.
-		$declaredDays = $this->remedy->termDaysFor(caseId: (string)($decision['caseId'] ?? ''));
 		$term = $this->bezwaarScheduler->computeTermijn(
 			bekendmaking: $bekendmaking,
 			termDays: $declaredDays,

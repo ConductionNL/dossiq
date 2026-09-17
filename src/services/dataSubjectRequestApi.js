@@ -35,7 +35,9 @@ import { generateUrl } from '@nextcloud/router'
  * @return {string} The absolute url.
  */
 function avgUrl(caseId, act) {
-	return generateUrl(`/apps/dossiq/api/cases/${encodeURIComponent(caseId)}/avg/${act}`)
+	return generateUrl(
+		`/apps/dossiq/api/cases/${encodeURIComponent(caseId)}/avg/${act}`,
+	)
 }
 
 /**
@@ -108,7 +110,9 @@ export async function fetchSubjectExportState(caseId) {
  * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 export function subjectExportDownloadUrl(exportId) {
-	return generateUrl(`/apps/openregister/api/gdpr/subject-exports/${encodeURIComponent(exportId)}/download`)
+	return generateUrl(
+		`/apps/openregister/api/gdpr/subject-exports/${encodeURIComponent(exportId)}/download`,
+	)
 }
 
 /**

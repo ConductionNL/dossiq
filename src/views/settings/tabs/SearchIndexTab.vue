@@ -20,10 +20,7 @@
 	<div class="search-index" data-testid="search-index">
 		<NcLoadingIcon v-if="loading" :size="24" />
 
-		<NcNoteCard
-			v-else-if="error"
-			type="error"
-			data-testid="search-index-error">
+		<NcNoteCard v-else-if="error" type="error" data-testid="search-index-error">
 			{{ error }}
 		</NcNoteCard>
 
@@ -31,11 +28,15 @@
 			<dl class="search-index__figures">
 				<div>
 					<dt>{{ t('dossiq', 'Tables in scope') }}</dt>
-					<dd data-testid="search-index-tables">{{ status.tableCount }}</dd>
+					<dd data-testid="search-index-tables">
+						{{ status.tableCount }}
+					</dd>
 				</div>
 				<div>
 					<dt>{{ t('dossiq', 'Indexes on them') }}</dt>
-					<dd data-testid="search-index-indexes">{{ status.indexCount }}</dd>
+					<dd data-testid="search-index-indexes">
+						{{ status.indexCount }}
+					</dd>
 				</div>
 				<div>
 					<dt>{{ t('dossiq', 'Last run') }}</dt>

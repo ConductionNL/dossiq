@@ -11,10 +11,11 @@
  * besluit and the term instance bound when it is sent are the same declaration,
  * so a decision cannot say forty-two days and start a clock of six weeks.
  *
- * 🔴 A CASE WHOSE TYPE CANNOT BE READ GETS NO CLAUSE AND NO CLOCK, and says so
- * in the log. Printing a default clause would put a term nobody chose onto a
- * decision somebody has to act on, and starting a default clock would make the
- * case answer "still open to bezwaar" on a term the case type never declared.
+ * 🔴 A CASE TYPE THAT DECLARES NO REMEDY GETS NO CLAUSE AND NO CLOCK. Printing
+ * a default clause would put a term nobody chose onto a decision somebody has
+ * to act on, and starting a default clock would make the case answer "still
+ * open to bezwaar" on a term the case type never declared. A case type that
+ * could not be READ is a different answer, and it is thrown, not swallowed.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Beschikking
@@ -43,7 +44,6 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\TermKind;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Answers the clause a case's decisions print and binds the clock they start.
@@ -153,15 +153,11 @@ class CaseRemedy {
 			return [];
 		}
 
-		try {
-			return $this->caseTypes->effectiveCaseType(caseTypeId: $caseTypeId);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq remedy: the case type could not be read, so the decision carries no clause',
-				['caseId' => $caseId, 'caseType' => $caseTypeId, 'exception' => $e->getMessage()],
-			);
-
-			return [];
-		}
+		// NOT CAUGHT. A case type that exists and could not be read is not a
+		// case type that declares no remedy: swallowing it would print a
+		// besluit with no bezwaarclausule, or send one whose clock nobody
+		// bound, on the strength of a failed read. The failure travels to the
+		// caller, which reads the remedy BEFORE it composes or sends anything.
+		return $this->caseTypes->effectiveCaseType(caseTypeId: $caseTypeId);
 	}//end caseTypeOf()
 }//end class

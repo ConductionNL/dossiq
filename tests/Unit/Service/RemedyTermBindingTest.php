@@ -147,6 +147,33 @@ class RemedyTermBindingTest extends TestCase {
 	}//end testNoDeclarationBindsNothing()
 
 	/**
+	 * A case type that could not be read is thrown, not read as "no remedy".
+	 *
+	 * Swallowed, it would print a besluit with no bezwaarclausule on the
+	 * strength of a failed read, and nothing would say the clause was missing
+	 * for that reason rather than by choice.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableCaseTypeIsNotReadAsNoRemedy(): void {
+		$store = $this->createMock(originalClassName: CaseStatusStore::class);
+		$store->method('loadCase')->willReturn(['id' => 'case-1', 'caseType' => 'ct-omgeving']);
+		$resolver = $this->createMock(originalClassName: CaseTypeResolver::class);
+		$resolver->method('effectiveCaseType')->willThrowException(new \RuntimeException('register down'));
+
+		$remedy = new CaseRemedy(
+			store: $store,
+			caseTypes: $resolver,
+			declaration: new RemedyClauseDeclaration(),
+			terms: $this->createMock(originalClassName: CaseTermsService::class),
+			logger: new NullLogger(),
+		);
+
+		$this->expectException(exception: \RuntimeException::class);
+		$remedy->clauseFor(caseId: 'case-1');
+	}//end testAnUnreadableCaseTypeIsNotReadAsNoRemedy()
+
+	/**
 	 * A decision sent fifty days ago on a 42-day term reads as expired.
 	 *
 	 * The question "is this still open to bezwaar" is answered by the case's
