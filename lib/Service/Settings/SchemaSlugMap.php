@@ -110,6 +110,10 @@ class SchemaSlugMap {
 		// request the holder answers.
 		'caseCustody' => 'case_custody_schema',
 		'caseTakeover' => 'case_takeover_schema',
+		// One dated event inside a case, with its own owner
+		// (splitting-a-case-and-its-incidents, row 2.45). Not a deelzaak: it
+		// carries no term and no decision of its own.
+		'incident' => 'incident_schema',
 		// The sociaal-domein consent. Declared in `register.d/50-sociaal-domein.json`
 		// since that fragment shipped and never mapped, so no service could
 		// resolve it and the hand-off gate had nothing to read. Mapping it is

@@ -673,6 +673,19 @@
                         "title": "Intake form",
                         "description": "The hash of the Nextcloud Forms form that opens a case of this type. Leave it empty and nothing listens. A submission of a bound form starts the case with this type’s first status and the clock running from the day it came in.",
                         "visible": true
+                    },
+                    "splitMayDivide": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "documents",
+                                "parties",
+                                "tasks"
+                            ]
+                        },
+                        "title": "A split may divide",
+                        "description": "Which kinds of material a split of this case type may move to the new case. An ABSENT value allows all three, so shipping this changes nothing for a case type nobody has administered. A case type whose documents may not be separated says so once here instead of relying on every handler to remember it (ADR-031)."
                     }
                 }
             },
@@ -3538,6 +3551,45 @@
                         "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
                         "title": "Area address id",
                         "readOnly": true
+                    },
+                    "splitFrom": {
+                        "type": "string",
+                        "title": "Split from",
+                        "description": "The case this one was split off. Written on the new case beside the typed relation, because a relation answers `relatedCases` and a filter over the case list needs a plain field.",
+                        "facetable": true
+                    },
+                    "splitInto": {
+                        "type": "string",
+                        "title": "Split into",
+                        "description": "The case this one was split into. A split MOVES material rather than copying it, so without this the original file reads as though the missing documents were never there.",
+                        "facetable": true
+                    },
+                    "splitMovedItems": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "schema": {
+                                    "type": "string",
+                                    "title": "Schema"
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Id"
+                                },
+                                "movedTo": {
+                                    "type": "string",
+                                    "title": "Moved to"
+                                },
+                                "movedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "title": "Moved at"
+                                }
+                            }
+                        },
+                        "title": "Moved out by a split",
+                        "description": "One row per item a split moved off this case: what it was, where it went and when. This is the reference that keeps the original readable as a whole, and it is written rather than derived because the item itself no longer names this case once it has moved."
                     }
                 },
                 "searchable": true
@@ -11160,6 +11212,75 @@
                         "description": "The engine task that carries the request to the holder."
                     }
                 }
+            },
+            "incident": {
+                "slug": "incident",
+                "icon": "AlertOutline",
+                "version": "1.0.0",
+                "title": "Incident",
+                "description": "One dated event inside a case. A case about an address holds the address and the history; the reports that arrive on it are incidents, each with its own date, its own reporter, its own owner and its own outcome. An incident is NOT a deelzaak: a deelzaak has its own number, its own beslistermijn and its own decision, and giving every report a term it does not have is how a case with three reports acquires three statutory clocks.",
+                "type": "object",
+                "required": [
+                    "case",
+                    "eventDate",
+                    "description"
+                ],
+                "properties": {
+                    "case": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case this incident happened inside. One case holds several."
+                    },
+                    "eventDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Event date",
+                        "description": "When the event happened. This is what the list is ordered by, and it is not the moment it was written down: a report recorded three weeks late belongs where it happened."
+                    },
+                    "recordedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Recorded at",
+                        "description": "When it was written down. Kept beside the event date so the delay between the two is visible rather than hidden by ordering on the creation moment."
+                    },
+                    "reporter": {
+                        "type": "string",
+                        "title": "Reporter",
+                        "description": "Who reported it. A neighbour, an inspector or a colleague; the case's own requester is not assumed."
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "What happened",
+                        "description": "The report itself."
+                    },
+                    "assignee": {
+                        "type": "string",
+                        "title": "Owner",
+                        "description": "Who is working this incident. Its own, and deliberately not the case's: the case can sit with the area handler while one report inside it is worked by an inspector."
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": [
+                            "open",
+                            "in-behandeling",
+                            "afgehandeld"
+                        ],
+                        "default": "open",
+                        "title": "State",
+                        "description": "Where this incident stands. `open` is what the work list counts."
+                    },
+                    "outcome": {
+                        "type": "string",
+                        "title": "Outcome",
+                        "description": "What came of it. Empty until the incident is settled."
+                    },
+                    "settledAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Settled at",
+                        "description": "When the incident was settled."
+                    }
+                }
             }
         },
         "registers": {
@@ -11242,6 +11363,7 @@
                     "casetransfer",
                     "caseCustody",
                     "caseTakeover",
+                    "incident",
                     "checklistItem",
                     "consultation",
                     "obligation",

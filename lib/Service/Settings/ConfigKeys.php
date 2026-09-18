@@ -113,6 +113,8 @@ class ConfigKeys {
 		// one (custody-and-handover-of-a-case).
 		'case_custody_schema',
 		'case_takeover_schema',
+		// The dated events inside a case (splitting-a-case-and-its-incidents).
+		'incident_schema',
 		// The sociaal-domein consent a hand-off across organisations needs.
 		'consent_schema',
 		// Federated case collaboration (OCM, via OpenRegister's federation leaf).
