@@ -1,24 +1,32 @@
 <?php
 
 /**
- * CaseAccessGuard — a deelzaak inherits its parent's grants.
+ * A deelzaak inherits its parent's grants, and dossiq no longer resolves it.
  *
- * Competitor gap register row Q13.23. Before this, somebody given a case could
- * not open its deelzaken, so the deelzaken were granted separately and the two
- * grants drifted: the deelzaak stayed open to a person taken off the parent a
- * year earlier.
+ * Competitor gap register row Q13.23. This suite used to pin dossiq's OWN walk
+ * up the `parentCase` chain: the depth cap, the cycle guard, the provenance and
+ * the levels it reached. openregister#3873 resolves a per-object grant over the
+ * declared `x-openregister-hierarchy` edge, so the walk is gone and those cases
+ * went with it — they now pin behaviour that lives in the other app, and a test
+ * that asserts somebody else's rule from the outside is a copy that drifts.
  *
- * Every test here is written so the BAD path is the thing under test. The
- * inheritance is the feature, and each of these is a way it could be wrong
- * while looking right:
+ * WHAT IS PINNED HERE INSTEAD is the seam, which is dossiq's:
  *
- *  - the read widening into a write on the way down (D-3), which would hand
- *    every reader of a parent an editor's rights on its children;
- *  - the walk following `relatedCases`, which is a peer link, so access would
- *    travel sideways along every relation a handler ever made;
- *  - a cycle written by an import making the question never return;
- *  - an unresolvable ancestor being read as "no obstacle" rather than as a
- *    refusal.
+ *  - the platform's answer is CONSULTED, so an inherited grant actually admits
+ *    somebody who is on no case at all. A consumer that declared the edge and
+ *    then never asked would look exactly like a working one, because the only
+ *    visible symptom is a colleague who cannot open a deelzaak;
+ *  - 🔴 it is consulted for READS ONLY. The verb must not widen, and it now has
+ *    an app boundary to widen across: a mutation path that asked the platform
+ *    would inherit the write this whole rule refuses;
+ *  - a platform that cannot be asked answers NOT GRANTED. Absent app, missing
+ *    method, throwing resolver: all deny, which is both fail-closed and exactly
+ *    the behaviour dossiq had before inheritance existed;
+ *  - 🔴 and the guard does NOT defer wholesale to the case resolving. That was
+ *    the tempting shape: `ObjectService::find()` applies the SCHEMA's read
+ *    rule, and a case schema whose rule is `authenticated` resolves every case
+ *    for every logged-in user, so deferring would have turned this guard into
+ *    one that everybody passes with nothing looking different.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Service
@@ -47,7 +55,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * Unit tests for the grant that travels down the deelzaak chain.
+ * Unit tests for the seam between dossiq's guard and the platform's grants.
  *
  * @covers \OCA\Dossiq\Service\CaseAccessGuard
  */
@@ -87,17 +95,22 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 	}//end user()
 
 	/**
-	 * Give the guard a whole register of cases, keyed by id.
+	 * Give the guard a register of cases and a platform grant answer.
 	 *
-	 * A chain needs a store and not one payload: a double that answers the
-	 * same case for every id would make a walk that never moved look exactly
-	 * like a walk that reached the root.
+	 * The grant resolver double answers from a set of (user, object) pairs,
+	 * which is the shape OpenRegister's own resolver answers in: it does not
+	 * know or care whether a grant was written on the object or inherited from
+	 * an ancestor, and neither does dossiq. That is the point of the seam, and
+	 * a double that modelled the chain here would be dossiq re-implementing the
+	 * rule it just deleted.
 	 *
 	 * @param array<string, array<string, mixed>> $cases The cases, by id.
+	 * @param array<int, string> $grants Granted pairs, as `uid|objectUuid`.
+	 * @param bool $resolverPresent Whether OpenRegister answers at all.
 	 *
 	 * @return void
 	 */
-	private function givenCases(array $cases): void {
+	private function given(array $cases, array $grants = [], bool $resolverPresent = true): void {
 		$objectService = new class($cases) {
 
 			/**
@@ -129,7 +142,38 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 				['case_schema', '', '24'],
 			]
 		);
-	}//end givenCases()
+
+		if ($resolverPresent === false) {
+			$this->settingsService->method('getObjectGrantResolver')->willReturn(null);
+			return;
+		}
+
+		$resolver = new class($grants) {
+
+			/**
+			 * @param array<int, string> $grants Granted `uid|objectUuid` pairs.
+			 */
+			public function __construct(
+				private readonly array $grants,
+			) {
+			}
+
+			/**
+			 * Mimic ObjectGrantResolver::isGranted().
+			 *
+			 * @param string|null $userId The caller.
+			 * @param string|null $objectUuid The object.
+			 * @param string $action The action.
+			 *
+			 * @return bool Whether a grant carries it.
+			 */
+			public function isGranted(?string $userId, ?string $objectUuid, string $action = 'read'): bool {
+				return in_array($userId . '|' . $objectUuid . '|' . $action, $this->grants, true);
+			}
+		};
+
+		$this->settingsService->method('getObjectGrantResolver')->willReturn($resolver);
+	}//end given()
 
 	/**
 	 * Build the guard under test.
@@ -145,8 +189,11 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 	}//end guard()
 
 	/**
-	 * A parent, its deelzaak and that deelzaak's deelzaak, worked by alice at
-	 * the top only.
+	 * A parent, its deelzaak and that deelzaak's deelzaak.
+	 *
+	 * The chain is still here, and nothing in this file walks it. It is the
+	 * fixture an inherited grant is ABOUT, so a reader can see what the
+	 * platform's answer refers to.
 	 *
 	 * @return array<string, array<string, mixed>> The three cases.
 	 */
@@ -163,220 +210,251 @@ class CaseAccessGuardInheritanceTest extends TestCase {
 	}//end threeDeep()
 
 	/**
-	 * A grant on the case reaches its deelzaak, and the deelzaak of that.
+	 * 🔴 Inherited access still holds, because the platform is asked.
+	 *
+	 * Dave is on no case at all. OpenRegister answers that he holds a read
+	 * grant on the grandchild, which is what it does when a grant written on
+	 * the parent is expanded over the declared hierarchy, and the guard admits
+	 * him. A consumer that declared the edge and never asked would fail exactly
+	 * here and nowhere else.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
 	 */
-	public function testReadReachesTheDeepestDeelzaak(): void {
-		$this->givenCases($this->threeDeep());
-		$guard = $this->guard();
+	public function testInheritedAccessHoldsThroughThePlatform(): void {
+		$this->given($this->threeDeep(), ['dave|grandchild|read']);
 
-		$this->assertTrue($guard->hasCaseReadAccess('child', $this->user('alice')));
-		$this->assertTrue($guard->hasCaseReadAccess('grandchild', $this->user('alice')));
-	}//end testReadReachesTheDeepestDeelzaak()
+		$this->assertTrue($this->guard()->hasCaseReadAccess('grandchild', $this->user('dave')));
+	}//end testInheritedAccessHoldsThroughThePlatform()
 
 	/**
-	 * 🔴 The read does not widen into a write on the way down (D-3).
+	 * 🔴 The verb does not widen, and now it has an app boundary to widen across.
 	 *
-	 * This is the assertion the whole change turns on. Alice works the parent
-	 * and may read every deelzaak under it; she may change none of them.
+	 * The test this change was told to keep. Dave reads the deelzaak through a
+	 * grant; he may change nothing. A mutation path that consulted the platform
+	 * would inherit the write, which is the measured half of the competitor's
+	 * behaviour and the one that is easy to lose in a refactor.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
 	 */
 	public function testReadDoesNotBecomeWrite(): void {
-		$this->givenCases($this->threeDeep());
+		$this->given(
+			$this->threeDeep(),
+			['dave|grandchild|read', 'dave|child|read', 'dave|child|update']
+		);
 		$guard = $this->guard();
-		$alice = $this->user('alice');
+		$dave = $this->user('dave');
 
-		$this->assertTrue($guard->hasCaseReadAccess('grandchild', $alice));
-		$this->assertFalse($guard->hasCaseMutationAccess('child', $alice));
-		$this->assertFalse($guard->hasCaseMutationAccess('grandchild', $alice));
+		$this->assertTrue($guard->hasCaseReadAccess('grandchild', $dave));
+		$this->assertFalse(
+			$guard->hasCaseMutationAccess('child', $dave),
+			'the mutation path must not ask the platform, even for a grant that carries update'
+		);
+		$this->assertFalse($guard->hasCaseMutationAccess('grandchild', $dave));
 	}//end testReadDoesNotBecomeWrite()
 
 	/**
-	 * The grant travels down, never up. Carol works the grandchild and has no
-	 * business reading the parent it hangs under.
+	 * The per-case relationship still admits, with no grant anywhere.
+	 *
+	 * dossiq's own rule, unchanged since the gate-7 remediation. Deleting the
+	 * walk must not delete the reason this guard exists.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	public function testAccessDoesNotTravelUpwards(): void {
-		$this->givenCases($this->threeDeep());
+	public function testTheAssigneeStillReadsTheirOwnCase(): void {
+		$this->given($this->threeDeep(), []);
 		$guard = $this->guard();
 
+		$this->assertTrue($guard->hasCaseReadAccess('child', $this->user('bob')));
 		$this->assertTrue($guard->hasCaseReadAccess('grandchild', $this->user('carol')));
-		$this->assertFalse($guard->hasCaseReadAccess('parent', $this->user('carol')));
-		$this->assertFalse($guard->hasCaseReadAccess('child', $this->user('carol')));
-	}//end testAccessDoesNotTravelUpwards()
+	}//end testTheAssigneeStillReadsTheirOwnCase()
 
 	/**
-	 * A related case is not a parent, so nothing travels along it.
-	 *
-	 * `relatedCases` is a typed PEER relation written symmetrically, so a walk
-	 * that followed it would carry a grant sideways across every link a
-	 * handler ever made.
+	 * A member of `assignees` still reads the case.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	public function testARelatedCaseIsNotAParent(): void {
-		$this->givenCases(
-			[
-				'granted' => ['id' => 'granted', 'assignee' => 'alice'],
-				'peer' => [
-					'id' => 'peer',
-					'assignee' => 'bob',
-					'relatedCases' => '[{"caseId":"granted","aardRelatie":"vervolg"}]',
-				],
-			]
+	public function testAnAssigneesMemberStillReads(): void {
+		$this->given(
+			['child' => ['id' => 'child', 'assignee' => 'bob', 'assignees' => ['erin']]],
+			[]
 		);
 
-		$this->assertFalse($this->guard()->hasCaseReadAccess('peer', $this->user('alice')));
-	}//end testARelatedCaseIsNotAParent()
+		$this->assertTrue($this->guard()->hasCaseReadAccess('child', $this->user('erin')));
+	}//end testAnAssigneesMemberStillReads()
 
 	/**
-	 * A cycle refuses rather than resolving forever.
+	 * 🔴 The least privileged principal: on no case, holding no grant.
 	 *
-	 * Nothing validates the chain on write, so an import can file a case under
-	 * its own descendant.
+	 * The control, and the one that would catch a guard that deferred wholesale
+	 * to `loadCase()` resolving. Mallory resolves every case in this fixture,
+	 * because the double answers them all; the guard must still refuse her.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
 	 */
-	public function testACycleRefusesRatherThanHanging(): void {
-		$this->givenCases(
-			[
-				'a' => ['id' => 'a', 'assignee' => 'bob', 'parentCase' => 'b'],
-				'b' => ['id' => 'b', 'assignee' => 'bob', 'parentCase' => 'a'],
-			]
-		);
-
-		$this->assertFalse($this->guard()->hasCaseReadAccess('a', $this->user('mallory')));
-	}//end testACycleRefusesRatherThanHanging()
-
-	/**
-	 * A chain longer than the declared cap stops at the cap.
-	 *
-	 * The grant is at the very top of a chain of twelve, past
-	 * `HIERARCHY_MAX_DEPTH`, so it does not reach the bottom. A cap that was
-	 * not enforced would make this pass, which is why it is asserted as a
-	 * refusal and not skipped.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
-	 */
-	public function testTheDepthCapIsEnforced(): void {
-		$cases = ['case-0' => ['id' => 'case-0', 'assignee' => 'alice']];
-		for ($level = 1; $level <= 12; $level++) {
-			$cases['case-' . $level] = [
-				'id' => 'case-' . $level,
-				'assignee' => 'bob',
-				'parentCase' => 'case-' . ($level - 1),
-			];
-		}
-
-		$this->givenCases($cases);
-		$guard = $this->guard();
-		$alice = $this->user('alice');
-
-		// Within the cap: nine hops up from case-9 reaches case-0.
-		$this->assertTrue($guard->hasCaseReadAccess('case-9', $alice));
-		// Past it: twelve hops is more than the chain is allowed to carry.
-		$this->assertFalse($guard->hasCaseReadAccess('case-12', $alice));
-	}//end testTheDepthCapIsEnforced()
-
-	/**
-	 * An ancestor nobody can resolve refuses, rather than being stepped over.
-	 *
-	 * The fail-closed rule the rest of this guard already follows, applied to
-	 * every level of the walk and not only to the first.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
-	 */
-	public function testAnUnresolvableAncestorDenies(): void {
-		$this->givenCases(
-			[
-				'child' => ['id' => 'child', 'assignee' => 'bob', 'parentCase' => 'gone'],
-			]
-		);
-
-		$this->assertFalse($this->guard()->hasCaseReadAccess('child', $this->user('alice')));
-	}//end testAnUnresolvableAncestorDenies()
-
-	/**
-	 * The provenance names the case that granted the read, not the case read.
-	 *
-	 * A handler looking at a colleague on a deelzaak cannot remove the grant
-	 * from the case in front of them, so the page has to say which case to go
-	 * to.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
-	 */
-	public function testTheProvenanceNamesTheGrantingCase(): void {
-		$this->givenCases($this->threeDeep());
-		$guard = $this->guard();
-
-		$this->assertSame('parent', $guard->readAccessSource('grandchild', $this->user('alice')));
-		$this->assertSame('child', $guard->readAccessSource('child', $this->user('bob')));
-		$this->assertNull($guard->readAccessSource('parent', $this->user('carol')));
-	}//end testTheProvenanceNamesTheGrantingCase()
-
-	/**
-	 * A member of `assignees` on an ancestor inherits too.
-	 *
-	 * A case is worked by more people than the one it is filed to, and the
-	 * direct read already honours the array. An inheritance that honoured only
-	 * `assignee` would be a second, narrower rule nobody declared.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
-	 */
-	public function testAnAssigneesMemberOnTheParentInherits(): void {
-		$this->givenCases(
-			[
-				'parent' => [
-					'id' => 'parent',
-					'assignee' => 'alice',
-					'assignees' => ['dave'],
-				],
-				'child' => ['id' => 'child', 'assignee' => 'bob', 'parentCase' => 'parent'],
-			]
-		);
-
-		$this->assertTrue($this->guard()->hasCaseReadAccess('child', $this->user('dave')));
-	}//end testAnAssigneesMemberOnTheParentInherits()
-
-	/**
-	 * A stranger is refused at every depth.
-	 *
-	 * The control: without it, a walk that granted on any resolvable case
-	 * would pass every test above.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
-	 */
-	public function testAStrangerIsRefusedAtEveryDepth(): void {
-		$this->givenCases($this->threeDeep());
+	public function testAStrangerWithNoGrantIsRefused(): void {
+		$this->given($this->threeDeep(), ['dave|grandchild|read']);
 		$guard = $this->guard();
 		$mallory = $this->user('mallory');
 
 		$this->assertFalse($guard->hasCaseReadAccess('parent', $mallory));
 		$this->assertFalse($guard->hasCaseReadAccess('child', $mallory));
 		$this->assertFalse($guard->hasCaseReadAccess('grandchild', $mallory));
-		$this->assertNull($guard->readAccessSource('grandchild', $mallory));
-	}//end testAStrangerIsRefusedAtEveryDepth()
+		$this->assertFalse($guard->hasCaseMutationAccess('grandchild', $mallory));
+	}//end testAStrangerWithNoGrantIsRefused()
+
+	/**
+	 * Somebody else's grant is not this caller's.
+	 *
+	 * The narrower control: the platform IS answering, and it answers about a
+	 * principal. A seam that passed the wrong uid, or none, would admit
+	 * everybody the moment anybody held a grant.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function testAnotherPersonsGrantAdmitsNobodyElse(): void {
+		$this->given($this->threeDeep(), ['dave|grandchild|read']);
+
+		$this->assertFalse($this->guard()->hasCaseReadAccess('grandchild', $this->user('erin')));
+	}//end testAnotherPersonsGrantAdmitsNobodyElse()
+
+	/**
+	 * A platform that cannot be asked answers NOT GRANTED.
+	 *
+	 * Fail-closed, and also exactly the behaviour dossiq had before any of this
+	 * existed: an instance that cannot ask loses inheritance rather than
+	 * gaining access.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function testAnAbsentResolverDenies(): void {
+		$this->given($this->threeDeep(), [], false);
+
+		$this->assertFalse($this->guard()->hasCaseReadAccess('grandchild', $this->user('dave')));
+		// And the relationship path still works, so an instance without the
+		// resolver is not an instance without a case guard.
+		$this->assertTrue($this->guard()->hasCaseReadAccess('grandchild', $this->user('carol')));
+	}//end testAnAbsentResolverDenies()
+
+	/**
+	 * An older OpenRegister without the method denies rather than fataling.
+	 *
+	 * The duck-typed lookup returns whatever the container holds. A resolver
+	 * from before openregister#3873 has no `isGranted()`, and calling it would
+	 * be a fatal on every case read rather than a missing feature.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function testAResolverWithoutTheMethodDenies(): void {
+		$this->settingsService->method('getObjectService')->willReturn(
+			new class {
+
+				/**
+				 * Mimic ObjectService::find().
+				 *
+				 * @param string $id The object id.
+				 * @param mixed $register The register.
+				 * @param mixed $schema The schema.
+				 *
+				 * @return array<string, mixed> The object.
+				 */
+				public function find(string $id, mixed $register = null, mixed $schema = null): array {
+					return ['id' => $id, 'assignee' => 'carol'];
+				}
+			}
+		);
+		$this->settingsService->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', '14'],
+				['case_schema', '', '24'],
+			]
+		);
+		$this->settingsService->method('getObjectGrantResolver')->willReturn(new \stdClass());
+
+		$this->assertFalse($this->guard()->hasCaseReadAccess('grandchild', $this->user('dave')));
+	}//end testAResolverWithoutTheMethodDenies()
+
+	/**
+	 * A resolver that throws denies rather than taking the page down.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function testAThrowingResolverDenies(): void {
+		$this->settingsService->method('getObjectService')->willReturn(
+			new class {
+
+				/**
+				 * Mimic ObjectService::find().
+				 *
+				 * @param string $id The object id.
+				 * @param mixed $register The register.
+				 * @param mixed $schema The schema.
+				 *
+				 * @return array<string, mixed>|null The object.
+				 */
+				public function find(string $id, mixed $register = null, mixed $schema = null): ?array {
+					return null;
+				}
+			}
+		);
+		$this->settingsService->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', '14'],
+				['case_schema', '', '24'],
+			]
+		);
+		$this->settingsService->method('getObjectGrantResolver')->willReturn(
+			new class {
+
+				/**
+				 * Mimic a resolver whose backend is down.
+				 *
+				 * @param string|null $userId The caller.
+				 * @param string|null $objectUuid The object.
+				 * @param string $action The action.
+				 *
+				 * @return bool Never returns.
+				 *
+				 * @throws \RuntimeException Always.
+				 */
+				public function isGranted(?string $userId, ?string $objectUuid, string $action = 'read'): bool {
+					throw new \RuntimeException('share backend down');
+				}
+			}
+		);
+
+		$this->assertFalse($this->guard()->hasCaseReadAccess('grandchild', $this->user('dave')));
+	}//end testAThrowingResolverDenies()
+
+	/**
+	 * An empty case id or an empty uid denies before anything is asked.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	public function testEmptyIdentifiersDeny(): void {
+		$this->given($this->threeDeep(), ['dave|grandchild|read']);
+		$guard = $this->guard();
+
+		$this->assertFalse($guard->hasCaseReadAccess('', $this->user('dave')));
+		$this->assertFalse($guard->hasCaseReadAccess('grandchild', $this->user('')));
+	}//end testEmptyIdentifiersDeny()
 }//end class
