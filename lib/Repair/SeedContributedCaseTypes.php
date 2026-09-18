@@ -5,8 +5,9 @@
  *
  * `CaseTypeContributionRegistry` has asked every installed app for the kinds of
  * work it handles since case-types shipped, duck-typing a provider at the
- * convention FQCN the fleet uses, and NOTHING CALLED IT. pipelinq ships one:
- * `OCA\Pipelinq\Dossiq\CaseTypeContributionProvider` declares `pipelinq-ticket`
+ * convention FQCN the fleet uses, and NOTHING CALLED IT. pipelinq ships one —
+ * `PipelinqGateway::CASE_TYPE_CONTRIBUTIONS`, which is the only place in this
+ * app that spells the class name — declaring `pipelinq-ticket`
  * with its discriminator, its assignee and its status property. So a ticket has
  * been a declared dossiq case type for as long as both apps have been
  * installed, and the case-type list has never shown it.
