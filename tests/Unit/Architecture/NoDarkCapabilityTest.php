@@ -106,8 +106,6 @@ class NoDarkCapabilityTest extends TestCase {
 		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. Needs the address seam decided first.',
 		'QueueItemLifecycle' => 'one-personal-queue (dossiq#2842): answers whether a queue item still stands, given the subject AS ITS MECHANISM ANSWERS IT NOW. QueueSource returns QueueItems and no subjects, so feeding it means widening the source contract. Its `onRemoveRequested` also expects a remove gesture the queue has no endpoint for.',
 		'CaseTypeContributionRegistry' => 'case-types under My work (2026-09-02): gathers work surfaces other apps contribute. Nothing reads it and no app contributes yet, so the caller is the contribution endpoint that has not been specified.',
-		'CofinancieringValidator' => 'pre-parity (2026-06-04), subsidieverlening-keten. Debt sweep.',
-		'StaatssteunClassifier' => 'pre-parity (2026-06-04), subsidieverlening-keten. Debt sweep.',
 		'DsoLvAuthService' => 'pre-parity (2026-06-06), DSO Omgevingsloket. Debt sweep.',
 		'EvidenceMetadataService' => 'pre-parity (2026-06-03), mobiel-inspectie-offline. Debt sweep.',
 		'MapTileService' => 'pre-parity (2026-06-11), mobiel-inspectie-offline. Debt sweep.',
