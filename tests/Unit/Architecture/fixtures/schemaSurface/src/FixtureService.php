@@ -27,4 +27,17 @@ class FixtureService {
 	public function slug(): string {
 		return 'quotedInCode';
 	}//end slug()
+
+	/**
+	 * A schema fetched by URL rather than named on its own.
+	 *
+	 * The `case-location` shape: the slug is the last segment of an
+	 * OpenRegister object URL and appears nowhere else. `fetched` is a
+	 * deliberate PREFIX of it and must NOT come out reachable off this line.
+	 *
+	 * @return string The URL.
+	 */
+	public function url(): string {
+		return '/apps/openregister/api/objects/dossiq/fetchedByUrl';
+	}//end url()
 }//end class

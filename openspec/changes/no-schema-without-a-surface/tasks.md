@@ -54,3 +54,13 @@ then the retirements.
 - [x] 3.1 Every allowlist entry names its owning change, which is the
   `ownerChange` field D-1 provides for exactly this.
 - [x] 4.1 `openspec validate no-schema-without-a-surface --strict`.
+- [x] 5.1 The list is empty, and one of the sixteen was never dark.
+  `case-location` was reported as having no reader and had one all along:
+  `CaseLocationMap` fetches it, scoped to the case, from the Locations
+  section of the case page. The slug sits inside an OpenRegister object URL
+  and the scanner only looked for a bare quoted slug. A change to build it a
+  surface was queued off that report, which is what an instrument that calls
+  a working surface dark costs: somebody builds the thing a second time.
+  The scanner now reads the URL shape, anchored at both ends so a slug that
+  is a PREFIX of another is not carried by its neighbour, and a fixture pair
+  covers both halves.

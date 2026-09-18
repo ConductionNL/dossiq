@@ -5,7 +5,12 @@
         "slug": "shownCase",
         "title": "A case that is on a page",
         "properties": {
-          "objects": { "type": "array", "items": { "$ref": "caseObject" } }
+          "objects": {
+            "type": "array",
+            "items": {
+              "$ref": "caseObject"
+            }
+          }
         }
       },
       "caseObject": {
@@ -24,12 +29,25 @@
         "slug": "orphan",
         "title": "Nothing shows this",
         "properties": {
-          "children": { "type": "array", "items": { "$ref": "orphanChild" } }
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "orphanChild"
+            }
+          }
         }
       },
       "orphanChild": {
         "slug": "orphanChild",
         "title": "A child of an orphan, which is no better off"
+      },
+      "fetchedByUrl": {
+        "slug": "fetchedByUrl",
+        "title": "Named only as the last segment of an object URL"
+      },
+      "fetched": {
+        "slug": "fetched",
+        "title": "A PREFIX of that URL segment, and nothing else"
       }
     }
   }

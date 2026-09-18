@@ -201,9 +201,9 @@ class SchemaHasSurfaceTest extends TestCase {
 	 */
 	public function testTheCeilingOnlyGoesDown(): void {
 		$this->assertLessThanOrEqual(
-			1,
+			0,
 			count($this->allowlisted()),
-			'the allowlist was 16 when it was written and 1 by the end of the same day; it may only shrink, and a new schema needs a surface rather than a line here'
+			'the allowlist was 16 when it was written and 0 by the end of the same day; it may only shrink, and a new schema needs a surface rather than a line here'
 		);
 	}
 
@@ -252,6 +252,34 @@ class SchemaHasSurfaceTest extends TestCase {
 		// The `toestemming` case in miniature: the slug appears in the same
 		// file as a bare word inside a sentence, and that is not a reader.
 		$this->assertContains('mentionedInProse', $orphans, 'a word in a comment is not a surface');
+	}
+
+	/**
+	 * A schema fetched by URL is reached, and its PREFIX is not.
+	 *
+	 * 🔴 THIS IS THE FALSE POSITIVE THIS TEST SHIPPED WITH. `case-location`
+	 * was reported as having no reader for a day, and a coordinator queued a
+	 * change to build it a surface. It already had one: `CaseLocationMap`
+	 * fetches it, scoped to the case, from the Locations section of the case
+	 * page, and the slug sits inside an object URL rather than on its own. A
+	 * scanner that reports a working surface as dark is worse than no scanner,
+	 * because it sends somebody to build the thing a second time.
+	 *
+	 * The second half is the control, and it is the trap the first half walks
+	 * straight into: `fetched` is a prefix of `fetchedByUrl`, so an unanchored
+	 * match would call it reachable off the very line that reaches its
+	 * neighbour, and every short slug in the register would come out
+	 * reachable for free.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/no-schema-without-a-surface/specs/quality-gates/spec.md
+	 */
+	public function testASchemaFetchedByUrlIsReachedAndItsPrefixIsNot(): void {
+		$orphans = $this->fixtureScanner()->orphanSlugs();
+
+		$this->assertNotContains('fetchedByUrl', $orphans, 'a slug fetched as an object URL has a reader');
+		$this->assertContains('fetched', $orphans, 'a prefix of that URL segment has not');
 	}
 
 	/**
