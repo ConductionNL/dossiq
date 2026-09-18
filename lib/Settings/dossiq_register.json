@@ -1517,7 +1517,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.26.0",
+                "version": "1.27.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1577,6 +1577,39 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-merge": {
+                        "entityType": "case",
+                        "statusField": "mergeState",
+                        "survivorStatus": "active",
+                        "mergedStatus": "merged",
+                        "reversalWindowDays": 7,
+                        "x-dossiq-relink": [
+                            {
+                                "schema": "role",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseDocument",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseObject",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseProperty",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "customerContact",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "decision",
+                                "field": "case"
+                            }
+                        ]
+                    },
                     "_hierarchyNote": "Row Q13.23. The edge is `parentCase` and NOTHING ELSE. `relatedCases` is a typed PEER relation written symmetrically by CaseRelationService, so declaring it here would make a grant travel sideways along every link a handler ever made, without limit and without anyone having asked for it. `maxDepth` is not a performance dial: a deelzaak chain is a graph nobody validates on write, and a cycle written by an import would otherwise resolve forever. `inheritedVerbs` names READ and no more, which is the measured half of the competitor's behaviour (Vikunja 2.6.0 read on the root reached the grandchild and was refused a write): a right to see the parent is not a right to change the child. THIS BLOCK IS INERT UNTIL OPENREGISTER READS IT (`rbac-inherits-to-children`, row Q13.23), and it is declared now so the edge is one thing rather than two. It is also listed in SchemaSlugMap::SCHEMA_ANNOTATION_KEYS, without which OpenRegister DROPS an unknown configuration key in silence and the declaration would never reach the instance at all.",
                     "x-openregister-hierarchy": {
                         "parentField": "parentCase",
@@ -2560,7 +2593,8 @@
                             "finish",
                             "abort",
                             "archive",
-                            "autoClose"
+                            "autoClose",
+                            "merged"
                         ],
                         "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
                         "title": "Ending act",
@@ -2910,6 +2944,47 @@
                         "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
                         "title": "Override reason",
                         "order": 24
+                    },
+                    "mergedInto": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "readOnly": true,
+                        "title": "Merged into",
+                        "description": "The case this one was merged into. Written by CaseMergedListener when OpenRegister reports the merge, and cleared when the merge is reversed inside its window. The old case number keeps working: mail matching and the public status page follow this reference until they reach a case that carries none.",
+                        "order": 27
+                    },
+                    "mergeRelinked": {
+                        "type": "array",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Relinked at merge",
+                        "description": "Which rows moved to the survivor when this case was merged away, so a reversal can put exactly those back. Written by CaseMergeService; empty on every case that was never merged.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "schema": {
+                                    "type": "string",
+                                    "title": "Schema"
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Row"
+                                }
+                            }
+                        }
+                    },
+                    "mergeState": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "merged"
+                        ],
+                        "default": "active",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Merge state",
+                        "description": "Whether this case is still its own case. The OpenRegister merge engine writes this field and reads it back, which is why it is a plain value of its own and not the ending act: the engine compares it as a string and refuses a survivor that is not active. An absent value reads as active, so every case written before merging existed stays mergeable."
                     },
                     "duplicateOverrideOf": {
                         "type": "array",

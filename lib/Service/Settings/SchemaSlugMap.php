@@ -284,6 +284,12 @@ class SchemaSlugMap {
 		// same reason `x-openregister-read-state` is: an absent block is not
 		// an inert default, it is a different answer.
 		'x-openregister-dedup',
+		// What happens when two cases become one. OpenRegister's MergeService
+		// reads this block off `Schema::getConfiguration()`, and an absent
+		// block is not an inert default: the reversal window falls back to the
+		// service default, so a merge an instance believes it can still undo
+		// may already be past undoing. Same reason as the dedup key above.
+		'x-openregister-merge',
 		// Which edge a grant travels down. OpenRegister resolves an inherited
 		// grant from `Schema::getConfiguration()` and from nowhere else, and
 		// an unknown configuration key is DROPPED on import in silence, so an
