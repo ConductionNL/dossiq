@@ -359,9 +359,15 @@ describe('The Related cases tab', () => {
 			.caseWidget('case-related-panel')
 			.content.sections.map((section) => section.widget.id)
 		// Objects joined the Related tab on 2026-09-13, from the retired
-		// Objects and locations tab. Related cases stays FIRST, which is what
-		// this test is about; the list is exact so a silent reorder reddens.
-		expect(sections).toEqual(['case-related', 'case-sub-cases', 'case-objects'])
+		// Objects and locations tab, and the Data model link followed it
+		// (data-model-link). Related cases stays FIRST, which is what this
+		// test is about; the list is exact so a silent reorder reddens.
+		expect(sections).toEqual([
+			'case-related',
+			'case-sub-cases',
+			'case-objects',
+			'case-object-types-link',
+		])
 	})
 
 	it('stays out of the layout, which would render it twice', () => {
@@ -574,6 +580,110 @@ describe('The series row on the Related tab', () => {
 		// identical on this tab: the row only disappears on the reload.
 		expect(widget).toContain('case-planned-error')
 		expect(widget).toContain('caseActionRefusal')
+	})
+})
+
+describe('Inspect, for an administrator', () => {
+	/** The gate both entries carry. */
+	const GATE = {
+		endpoint: '/index.php/apps/dossiq/api/inspect/availability',
+		field: 'isAdmin',
+		op: 'eq',
+		value: true,
+	}
+
+	it('is TWO flat header actions, because a detail page drops children', () => {
+		// 🔴 THE ASSERTION THIS BLOCK EXISTS FOR. The design asked for one
+		// Inspect action carrying two children. CnDetailPage runs
+		// CnActionButtons in `display: "menu"`, and that mode renders no
+		// buttons itself: it emits `menuEntries`, which maps the visible
+		// actions and never looks at `children`. The chevron the `children`
+		// key documents renders only in the inline `barActions` mode, which a
+		// detail page never uses. A parent with children would have shown one
+		// menu item and neither entry, warning nobody.
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			expect(headerAction(id), `${id} must be a header action of its own`).toBeTruthy()
+			expect(headerAction(id).children).toBeUndefined()
+		}
+		expect(headerAction('case-inspect')).toBeUndefined()
+	})
+
+	it('gates BOTH entries on the READER, which only an endpoint can ask about', () => {
+		// The design named `adminOnly`. There is no such key: an action is a
+		// CLOSED object in the schema, so the manifest would not have
+		// validated with one. Of visibleWhen's three modes only `endpoint`
+		// knows who is looking: a local gate dot-paths into the case record
+		// and a source gate queries OpenRegister objects.
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			expect(headerAction(id).visibleWhen).toEqual(GATE)
+			expect(headerAction(id).adminOnly).toBeUndefined()
+		}
+	})
+
+	it('has the endpoint behind it', () => {
+		expect(routes).toContain("'inspect#availability'")
+		expect(routes).toContain('/api/inspect/availability')
+	})
+
+	it('names icons that are registered', () => {
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			expect(iconIsRegistered(headerAction(id).icon)).toBe(true)
+		}
+	})
+
+	it('opens the raw data on a modal the registry declares', () => {
+		// An `open-modal` whose target is not a registry entry of kind `modal`
+		// opens NOTHING and logs one console warning. The design named
+		// `CnObjectMetadataModal`, a library component that is in no registry.
+		expect(headerAction('case-inspect-raw').type).toBe('open-modal')
+		expect(headerAction('case-inspect-raw').target).toBe('CaseRawDataDialog')
+		expect(registryDeclares('CaseRawDataDialog', 'modal')).toBe(true)
+	})
+
+	it('sends the flow runs to the OpenRegister runs page, filtered to this case', () => {
+		expect(headerAction('case-inspect-runs').type).toBe('navigate')
+		expect(headerAction('case-inspect-runs').target).toContain(
+			'/apps/openregister/#/flows/runs',
+		)
+		expect(headerAction('case-inspect-runs').target).toContain('subjectUuid={id}')
+	})
+
+	it('labels both entries in sentence case, with no em-dash', () => {
+		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
+			const label = headerAction(id).label
+			expect(label).not.toContain('—')
+			expect(label.split(' ').slice(1).join(' ')).toBe(
+				label.split(' ').slice(1).join(' ').toLowerCase(),
+			)
+		}
+	})
+})
+
+describe('The Raw data dialog', () => {
+	const dialog = fs.readFileSync(
+		path.join(ROOT, 'src', 'dialogs', 'CaseRawDataDialog.vue'),
+		'utf8',
+	)
+
+	it('reads the case from the route, because open-modal carries no object', () => {
+		expect(dialog).toContain('this.$route?.params?.id')
+	})
+
+	it('reads the stored object from OpenRegister, not from a dossiq copy', () => {
+		expect(dialog).toContain('/apps/openregister/api/objects/dossiq/case/')
+	})
+
+	it('prints the whole record, indented', () => {
+		expect(dialog).toContain('JSON.stringify(data, null, 2)')
+		expect(dialog).toContain('case-raw-data-json')
+	})
+
+	it('says out loud when the case cannot be read', () => {
+		// A dialog that opens blank on a refusal is the failure this whole
+		// change exists to prevent: the reader is already here because
+		// something does not add up.
+		expect(dialog).toContain('case-raw-data-error')
+		expect(dialog).toContain('You may not read this case.')
 	})
 })
 

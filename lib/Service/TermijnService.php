@@ -39,6 +39,7 @@ use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -72,6 +73,7 @@ class TermijnService {
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermEventEntry $termEntry = null,
+		private readonly ?WorkingDayRoll $roll = null,
 	) {
 	}//end __construct()
 
@@ -122,7 +124,24 @@ class TermijnService {
 		}
 
 		$durationDays = (int)($definitie['standardDurationDays'] ?? 0);
-		$endDate = $startDate->modify('+' . $durationDays . ' days')->format('Y-m-d');
+		$computed = $startDate->modify('+' . $durationDays . ' days');
+
+		// THE ALGEMENE TERMIJNENWET ROLL, WHEN THE DEFINITION ASKS FOR IT.
+		// `+N days` on its own lands a third of dossiq's terms on a Saturday,
+		// a Sunday or a recognised holiday, which Awt art. 1 says must move to
+		// the next ordinary day. Which days those are is the organisation
+		// calendar's answer and not a list here.
+		//
+		// The armed timer inherits this without a second rule: it derives its
+		// SLA from `endDateCurrent` through
+		// {@see TermijnTimerService::slaDaysFor()}, so one computation decides
+		// both the stored date and the deadline the engine counts to. A second
+		// roll applied at arming time is how the two would come to disagree.
+		if ($this->roll !== null) {
+			$computed = $this->roll->roll(date: $computed, definition: $definitie);
+		}
+
+		$endDate = $computed->format('Y-m-d');
 
 		$instance = [
 			'case' => $caseId,

@@ -52,6 +52,12 @@
             "description": "Standard duration in weeks (alternative representation)",
             "minimum": 0
           },
+          "rollToWorkingDay": {
+            "type": "boolean",
+            "title": "Roll to the next ordinary day",
+            "description": "When on, a term whose end date falls on a Saturday, Sunday or recognised holiday ends on the next ordinary day instead, as the Algemene termijnenwet requires. The days it moves over are the organisation calendar's, not a list dossiq keeps. Off by default, and that default is a legal question rather than a technical one: turning it on for Algemene termijnenwet terms waits on somebody qualified confirming the recognised-holiday list against Awt art. 3 for these case types.",
+            "default": false
+          },
           "extensionCapacity": {
             "type": "integer",
             "title": "Extension Allowance Days",

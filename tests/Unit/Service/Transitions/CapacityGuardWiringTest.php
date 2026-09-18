@@ -163,10 +163,21 @@ class CapacityGuardWiringTest extends TestCase {
 
 		// An unknown configuration key is dropped in silence and a register
 		// whose version did not move is not imported at all, so the number has
-		// to leave 0.19.2 behind for any of this to reach an instance.
+		// to leave the last shipped number behind for any of this to reach an
+		// instance.
+		//
+		// 🔴 THE FLOOR MOVED TO 0.20.1 BECAUSE 0.20.0 COLLIDED. leaf-integrations
+		// (#2927) and this change both bumped 0.19.2 to 0.20.0 on their own
+		// branches. Two branches writing the SAME new number merge that line
+		// with no conflict at all, so nothing anywhere said so, and an instance
+		// that had already imported 0.20.0 skipped the 0.20.0 that carried
+		// `statusType.capacity`. A floor written against the version a change
+		// started from cannot see that; one written against the version the
+		// fleet is on can.
 		$this->assertTrue(
-			version_compare($register['info']['version'], '0.19.2', '>'),
-			'the register version must move, or ImportHandler skips the import entirely'
+			version_compare($register['info']['version'], '0.20.0', '>'),
+			'the register version must move past 0.20.0, which two changes already took, '
+			. 'or ImportHandler skips the import on every instance that has it'
 		);
 	}//end testTheStatusTypeCarriesACapacity()
 
