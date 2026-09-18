@@ -96,11 +96,17 @@ class SubsidieService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
+	 * @param CofinancieringValidator $cofinanciering Whether the budget adds up
+	 *        (REQ-SUB-008). Defaulted rather than required: this service is
+	 *        constructed directly in several suites, and a required argument
+	 *        would make wiring the validator a test-rewriting exercise instead
+	 *        of a wiring one.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly CofinancieringValidator $cofinanciering = new CofinancieringValidator(),
 	) {
 	}//end __construct()
 
@@ -249,6 +255,8 @@ class SubsidieService {
 			throw new OCSBadRequestException('subsidieregeling is verplicht');
 		}
 
+		$this->assertCofinancieringReconciles(payload: $payload);
+
 		$now = new DateTimeImmutable();
 		$record = array_merge(
 			$payload,
@@ -269,6 +277,94 @@ class SubsidieService {
 			throw new OCSBadRequestException('Kon subsidieaanvraag niet aanmaken');
 		}
 	}//end createAanvraag()
+
+	/**
+	 * Refuse an application whose co-financing does not add up.
+	 *
+	 * `CofinancieringValidator` has answered this since the subsidy chain
+	 * shipped and nothing asked it, so a budget that did not reconcile was
+	 * accepted at intake and discovered, if at all, at the beschikking, by
+	 * which point a decision term has been running for weeks.
+	 *
+	 * 🔴 IT ONLY FIRES ON AN APPLICATION THAT DECLARED BOTH HALVES. An
+	 * application with no `coFinancingList`, or no project total, is passed
+	 * through untouched: those are the applications every caller sends today,
+	 * and refusing them would be this wiring inventing a requirement rather
+	 * than enforcing one.
+	 *
+	 * The error code is the validator's own (`COFIN_SUM_MISMATCH`,
+	 * `COFIN_PROJECT_TOTAL_INVALID`) and travels in the message, because an
+	 * applicant told only "that did not work" cannot tell a typo in the project
+	 * total from a missing contribution.
+	 *
+	 * @param array<string, mixed> $payload The application as submitted.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSBadRequestException When the declared budget does not reconcile.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function assertCofinancieringReconciles(array $payload): void {
+		$rows = $this->rowsOf(value: ($payload['coFinancingList'] ?? null));
+		if ($rows === []) {
+			return;
+		}
+
+		// 🔴 `budget` IS NOT A NUMBER. The schema declares it as a JSON array of
+		// cost items, `[{kostenpost, bedrag, eenheid}]`, so casting it to float
+		// yields 0 and this guard would return early on every real application:
+		// wired that way it would have looked wired and done nothing, which is
+		// the failure this whole sweep is about. The project total is the sum of
+		// the cost items.
+		$projectTotal = $this->cofinanciering->sumBedragen(rows: $this->rowsOf(value: ($payload['budget'] ?? null)));
+		if ($projectTotal <= 0.0) {
+			return;
+		}
+
+		$verdict = $this->cofinanciering->validate(
+			subsidyAmount: (float)($payload['requestedAmount'] ?? 0),
+			cofinanciering: array_values($rows),
+			projectTotal: $projectTotal,
+		);
+
+		if ($verdict['valid'] === false) {
+			throw new OCSBadRequestException(
+				'De cofinanciering sluit niet aan op het projecttotaal (' . (string)$verdict['error'] . ')'
+			);
+		}
+	}//end assertCofinancieringReconciles()
+
+	/**
+	 * One declared list as rows, however it was stored.
+	 *
+	 * Both `coFinancingList` and `budget` are declared as JSON STRINGS holding
+	 * an array, so a caller may hand over either the string or the decoded
+	 * array. Reading only one shape is how a guard ends up looking wired and
+	 * doing nothing.
+	 *
+	 * @param mixed $value The stored value.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowsOf(mixed $value): array {
+		if (is_string($value) === true) {
+			$value = json_decode($value, true);
+		}
+
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		$rows = [];
+		foreach ($value as $row) {
+			if (is_array($row) === true) {
+				$rows[] = $row;
+			}
+		}
+
+		return $rows;
+	}//end rowsOf()
 
 	/**
 	 * Transition an aanvraag to a new status, enforcing the state machine.
