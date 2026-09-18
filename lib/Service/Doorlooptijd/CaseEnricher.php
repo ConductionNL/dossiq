@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service\Doorlooptijd;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\ProcessMining\WorkingTimeMeasurer;
 use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
@@ -54,6 +55,11 @@ class CaseEnricher {
 	 * @param CaseDateNormaliser $dates The one date write path.
 	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
 	 *        statutory term end lands on a day the administered calendar works.
+	 * @param WorkingTimeMeasurer|null $workingTime The engine-calendar measurer, so a
+	 *        closed case carries the working days it took beside the calendar days.
+	 *        Optional: a caller that only wants the wall-clock figures builds the
+	 *        enricher unchanged, and the working figure is then simply absent
+	 *        rather than silently equal to the wall one.
 	 *
 	 * @return void
 	 */
@@ -61,6 +67,7 @@ class CaseEnricher {
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?TermijnTimerService $timerService = null,
+		private readonly ?WorkingTimeMeasurer $workingTime = null,
 	) {
 	}//end __construct()
 
@@ -164,6 +171,15 @@ class CaseEnricher {
 		$caseData['_deadline'] = $deadline;
 		$caseData['_daysRemaining'] = $daysRemaining;
 		$caseData['_throughputDays'] = $throughputDays;
+		// The same interval on the organisation's calendar. Null, not zero,
+		// when it cannot be measured: a case that took no working days and a
+		// case nobody could measure are different statements, and averaging the
+		// second as a zero is how a case type comes to look faster than it is.
+		$caseData['_throughputWorkingDays'] = $this->computeThroughputWorkingDays(
+			startDate: $startDate,
+			endDate: $endDate,
+			throughputDays: $throughputDays
+		);
 		$caseData['_caseTypeTitle'] = $caseTypeTitle;
 
 		return $caseData;
@@ -217,6 +233,42 @@ class CaseEnricher {
 
 		return $throughputDays;
 	}//end computeThroughputDays()
+
+	/**
+	 * The working days a closed case took, on the engine's calendar.
+	 *
+	 * @param string|null $startDate      The normalised start date.
+	 * @param string|null $endDate        The normalised end date.
+	 * @param int|null    $throughputDays The wall-clock days, or null when the case is open or undated.
+	 *
+	 * @return float|null The working days, or null when they cannot be measured.
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function computeThroughputWorkingDays(
+		?string $startDate,
+		?string $endDate,
+		?int $throughputDays,
+	): ?float {
+		if ($this->workingTime === null || $throughputDays === null || $startDate === null || $endDate === null) {
+			return null;
+		}
+
+		try {
+			$measured = $this->workingTime->measureDays(
+				from: new DateTimeImmutable($startDate),
+				to: new DateTimeImmutable($endDate)
+			);
+		} catch (\Throwable $e) {
+			$this->logger->info(
+				'Dossiq: the working days of a closed case could not be measured: ' . $e->getMessage()
+			);
+
+			return null;
+		}
+
+		return (float)$measured['workingDays'];
+	}//end computeThroughputWorkingDays()
 
 	/**
 	 * Compute a deadline from a start-date + ISO 8601 duration (e.g. `P8W`).

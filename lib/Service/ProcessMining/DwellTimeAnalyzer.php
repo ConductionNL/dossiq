@@ -48,6 +48,13 @@ class DwellTimeAnalyzer {
 	 * Constructor.
 	 *
 	 * @param CaseDateNormaliser      $dates The one date write path.
+	 * @param WorkingTimeMeasurer|null $workingTime The engine-calendar measurer.
+	 *                                      Optional for the same reason $held is:
+	 *                                      a caller that only wants the wall-clock
+	 *                                      reconstruction builds the analyzer
+	 *                                      unchanged, and every interval then
+	 *                                      reports its working hours on the
+	 *                                      fallback clock rather than on none.
 	 * @param StatusDwellService|null $held  The numbers the case itself carries.
 	 *                                      Optional so a caller that only wants
 	 *                                      the reconstruction — every existing
@@ -59,6 +66,7 @@ class DwellTimeAnalyzer {
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?StatusDwellService $held = null,
+		private readonly ?WorkingTimeMeasurer $workingTime = null,
 	) {
 	}//end __construct()
 
@@ -129,9 +137,9 @@ class DwellTimeAnalyzer {
 	 * @param DateTimeImmutable $periodFrom Inclusive period start.
 	 * @param DateTimeImmutable $periodTo Inclusive period end.
 	 *
-	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
+	 * @return array<int, array<string, mixed>> Rows of {caseId, statusId, hours, wallHours, workingHours, clock, actorId}.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function computeDwellIntervals(
 		array $recordsByCase,
@@ -185,9 +193,9 @@ class DwellTimeAnalyzer {
 	 * @param DateTimeImmutable $windowStart Inclusive window start.
 	 * @param DateTimeImmutable $windowEnd Inclusive window end.
 	 *
-	 * @return array<int, array{caseId: string, statusId: string, hours: float}>
+	 * @return array<int, array<string, mixed>> Rows of {caseId, statusId, hours, wallHours, workingHours, clock, actorId}.
 	 *
-	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
 	 */
 	private function dwellIntervalsForCase(
 		array $records,
@@ -227,17 +235,140 @@ class DwellTimeAnalyzer {
 			$hours = (($exitedAt->getTimestamp() - $enteredAt->getTimestamp()) / 3600.0);
 			if ($hours < 0.0) {
 				$hours = 0.0;
+				$exitedAt = $enteredAt;
 			}
+
+			// Two numbers from one interval (design D-1): the working hours the
+			// organisation actually spent, and the wall clock the case sat
+			// through. `hours` stays the wall clock, so every existing caller
+			// reads the number it has always read.
+			$measured = $this->measureInterval(enteredAt: $enteredAt, exitedAt: $exitedAt, wallHours: $hours);
 
 			$intervals[] = [
 				'caseId' => $caseId,
 				'statusId' => $statusId,
 				'hours' => $hours,
+				'wallHours' => $measured['wallHours'],
+				'workingHours' => $measured['workingHours'],
+				'clock' => $measured['clock'],
+				'actorId' => $this->extractActor(record: $records[$i]),
 			];
 		}//end for
 
 		return $intervals;
 	}//end dwellIntervalsForCase()
+
+	/**
+	 * Measure one interval on both clocks.
+	 *
+	 * Without a measurer the working figure is the wall figure's working-day
+	 * share at eight hours a day, which is what the analyser could always have
+	 * said; it is marked with the fallback clock so the page never labels it
+	 * "on the organisation calendar" when it was not.
+	 *
+	 * @param DateTimeImmutable $enteredAt When the status was entered.
+	 * @param DateTimeImmutable $exitedAt  When it was left.
+	 * @param float             $wallHours The wall-clock hours between them.
+	 *
+	 * @return array{workingHours: float, wallHours: float, clock: string}
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function measureInterval(
+		DateTimeImmutable $enteredAt,
+		DateTimeImmutable $exitedAt,
+		float $wallHours,
+	): array {
+		if ($this->workingTime !== null) {
+			return $this->workingTime->measure(from: $enteredAt, to: $exitedAt);
+		}
+
+		return [
+			'workingHours' => round($wallHours, 2),
+			'wallHours' => round($wallHours, 2),
+			'clock' => WorkingTimeMeasurer::CLOCK_FALLBACK,
+		];
+	}//end measureInterval()
+
+	/**
+	 * The handler a status record names, or an empty string.
+	 *
+	 * Design D-3: the records already carry the actor, so grouping by handler
+	 * needs no new data and no second walk. An unnamed actor is kept as the
+	 * empty string rather than dropped, so the per-assignee table can say how
+	 * much time belongs to nobody in particular instead of quietly losing it.
+	 *
+	 * @param array<string, mixed> $record A statusRecord row.
+	 *
+	 * @return string The actor id, or an empty string.
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function extractActor(array $record): string {
+		foreach (['actorId', 'userId', 'behandelaarId', 'assigneeId', 'createdBy'] as $key) {
+			$value = ($record[$key] ?? null);
+			if (is_string($value) === true && trim($value) !== '') {
+				return trim($value);
+			}
+		}
+
+		$owner = ($record['@self']['owner'] ?? null);
+		if (is_string($owner) === true && trim($owner) !== '') {
+			return trim($owner);
+		}
+
+		return '';
+	}//end extractActor()
+
+	/**
+	 * Aggregate the same intervals per HANDLER rather than per status.
+	 *
+	 * The same intervals, the same arithmetic, a different key: a table that
+	 * disagreed with the per-phase one about the same case would be the
+	 * two-measurements defect this change exists to remove.
+	 *
+	 * @param array<int, array<string, mixed>> $intervals Dwell intervals.
+	 *
+	 * @return array<int, array<string, mixed>> Rows of {actorId, visitCount, medianHours, p90Hours, meanHours, medianWallHours}.
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function aggregateDwellStatsByActor(array $intervals): array {
+		$byActor = [];
+		foreach ($intervals as $interval) {
+			$actorId = (string)($interval['actorId'] ?? '');
+			$byActor[$actorId][] = $interval;
+		}
+
+		$out = [];
+		foreach ($byActor as $actorId => $rows) {
+			$working = [];
+			$wall = [];
+			foreach ($rows as $row) {
+				$working[] = (float)($row['workingHours'] ?? ($row['hours'] ?? 0.0));
+				$wall[] = (float)($row['wallHours'] ?? ($row['hours'] ?? 0.0));
+			}
+
+			sort($working);
+			sort($wall);
+
+			$out[] = [
+				'actorId' => $actorId,
+				'visitCount' => count($rows),
+				'medianHours' => round(self::percentile(sorted: $working, percentile: 50.0), 1),
+				'p90Hours' => round(self::percentile(sorted: $working, percentile: 90.0), 1),
+				'meanHours' => round((array_sum($working) / count($working)), 1),
+				'medianWallHours' => round(self::percentile(sorted: $wall, percentile: 50.0), 1),
+			];
+		}
+
+		usort(
+			$out,
+			static fn (array $left, array $right): int => ($right['medianHours'] <=> $left['medianHours'])
+		);
+
+		return $out;
+	}//end aggregateDwellStatsByActor()
 
 	/**
 	 * Aggregate dwell-time intervals per status into median/p90/mean stats.
@@ -254,15 +385,23 @@ class DwellTimeAnalyzer {
 		foreach ($intervals as $interval) {
 			$statusId = $interval['statusId'];
 			if (isset($byStatus[$statusId]) === false) {
-				$byStatus[$statusId] = [];
+				$byStatus[$statusId] = ['working' => [], 'wall' => []];
 			}
 
-			$byStatus[$statusId][] = $interval['hours'];
+			// The headline is the WORKING figure, and the wall clock travels
+			// beside it rather than instead of it: a reader who wants to know
+			// how long the case sat there in real time still has that number,
+			// under its own name (spec V1).
+			$byStatus[$statusId]['working'][] = (float)($interval['workingHours'] ?? $interval['hours']);
+			$byStatus[$statusId]['wall'][] = (float)($interval['wallHours'] ?? $interval['hours']);
 		}
 
 		$out = [];
-		foreach ($byStatus as $statusId => $hoursList) {
+		foreach ($byStatus as $statusId => $lists) {
+			$hoursList = $lists['working'];
+			$wallList = $lists['wall'];
 			sort($hoursList);
+			sort($wallList);
 			$out[] = [
 				'statusId' => $statusId,
 				'statusName' => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
@@ -270,6 +409,8 @@ class DwellTimeAnalyzer {
 				'medianHours' => round(self::percentile(sorted: $hoursList, percentile: 50.0), 1),
 				'p90Hours' => round(self::percentile(sorted: $hoursList, percentile: 90.0), 1),
 				'meanHours' => round((array_sum($hoursList) / count($hoursList)), 1),
+				'medianWallHours' => round(self::percentile(sorted: $wallList, percentile: 50.0), 1),
+				'p90WallHours' => round(self::percentile(sorted: $wallList, percentile: 90.0), 1),
 			];
 		}
 

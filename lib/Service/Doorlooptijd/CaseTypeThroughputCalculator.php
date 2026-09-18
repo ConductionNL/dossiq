@@ -50,7 +50,7 @@ class CaseTypeThroughputCalculator {
 	 * @param array<int, array<string, mixed>> $cases Enriched cases.
 	 * @param array<int, array<string, mixed>> $caseTypes Indexed case-type metadata.
 	 *
-	 * @return array<int, array{id: string, title: string, avgDays: int, count: int}>
+	 * @return array<int, array{id: string, title: string, avgDays: int, avgWorkingDays: float|null, count: int}>
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
@@ -72,10 +72,23 @@ class CaseTypeThroughputCalculator {
 				$title = (string)$caseTypeIndex[$caseTypeId]['title'];
 			}
 
+			// Two numbers from one set of cases, the way the dwell table
+			// reports two from one interval: the working days a case type
+			// actually consumed, and the calendar days it spanned. The working
+			// average counts only the cases that could be measured on the
+			// calendar, and is null when none of them could, because averaging
+			// an unmeasured case as a zero makes a case type look faster than
+			// it is.
+			$avgWorkingDays = null;
+			if ($stats['workingCount'] > 0) {
+				$avgWorkingDays = round(($stats['workingSum'] / $stats['workingCount']), 1);
+			}
+
 			$out[] = [
 				'id' => $caseTypeId,
 				'title' => $title,
 				'avgDays' => (int)round($stats['sum'] / $stats['count']),
+				'avgWorkingDays' => $avgWorkingDays,
 				'count' => $stats['count'],
 			];
 		}
@@ -93,7 +106,7 @@ class CaseTypeThroughputCalculator {
 	 *
 	 * @param array<int, array<string, mixed>> $cases Enriched cases.
 	 *
-	 * @return array<string, array{sum: int, count: int}>
+	 * @return array<string, array{sum: int, count: int, workingSum: float, workingCount: int}>
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
@@ -110,11 +123,17 @@ class CaseTypeThroughputCalculator {
 			}
 
 			if (isset($accum[$caseTypeId]) === false) {
-				$accum[$caseTypeId] = ['sum' => 0, 'count' => 0];
+				$accum[$caseTypeId] = ['sum' => 0, 'count' => 0, 'workingSum' => 0.0, 'workingCount' => 0];
 			}
 
 			$accum[$caseTypeId]['sum'] += $caseData['_throughputDays'];
 			$accum[$caseTypeId]['count']++;
+
+			$workingDays = ($caseData['_throughputWorkingDays'] ?? null);
+			if (is_numeric($workingDays) === true) {
+				$accum[$caseTypeId]['workingSum'] += (float)$workingDays;
+				$accum[$caseTypeId]['workingCount']++;
+			}
 		}//end foreach
 
 		return $accum;
