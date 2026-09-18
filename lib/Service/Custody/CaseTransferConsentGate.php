@@ -104,11 +104,10 @@ class CaseTransferConsentGate {
 	 * the second caller ask the same question twice and risk the two answers
 	 * disagreeing.
 	 *
-	 * @param string $caseId                 The case being handed on.
-	 * @param string $sourceOrganisation     The organisation letting go of it.
-	 * @param string $receivingOrganisation  The organisation receiving it.
-	 * @param bool   $consentInsideOrgNeeded Whether the case type demands consent for an internal move too.
-	 * @param string $at                     The moment of the hand-off in ISO 8601, or empty for now.
+	 * @param string $caseId                The case being handed on.
+	 * @param string $sourceOrganisation    The organisation letting go of it.
+	 * @param string $receivingOrganisation The organisation receiving it.
+	 * @param string $at                    The moment of the hand-off in ISO 8601, or empty for now.
 	 *
 	 * @return array{allowed: bool, rule: string, sentence: string, consent: array<string, mixed>|null, scope: array<int, string>, until: string, crossesOrganisation: bool}
 	 *         The verdict, and the scope when there is one.
@@ -119,7 +118,6 @@ class CaseTransferConsentGate {
 		string $caseId,
 		string $sourceOrganisation,
 		string $receivingOrganisation,
-		bool $consentInsideOrgNeeded = false,
 		string $at = '',
 	): array {
 		$receiver = trim($receivingOrganisation);
@@ -128,7 +126,7 @@ class CaseTransferConsentGate {
 			receivingOrganisation: $receiver,
 		);
 
-		if ($crosses === false && $consentInsideOrgNeeded === false) {
+		if ($crosses === false && $this->consentRequiredInside(caseId: $caseId) === false) {
 			// A move between two teams of one organisation is not a
 			// disclosure (D-7), so there is nothing to consent to.
 			return $this->verdict(allowed: true, rule: '', sentence: '', consent: null, crosses: false);
@@ -254,6 +252,61 @@ class CaseTransferConsentGate {
 
 		return [$reach];
 	}//end scopeOf()
+
+	/**
+	 * Whether this case's type demands consent for a move inside the organisation.
+	 *
+	 * Declared on the case type rather than decided here, under ADR-031: an
+	 * administrator can read which case types may not move without one, and a
+	 * Jeugdwet file and a parking permit are not the same question (D-7).
+	 *
+	 * An unreadable case or case type answers FALSE, and deliberately: this
+	 * branch only ever runs for a move that stays inside one organisation,
+	 * where the default is that no consent is needed. The cross-organisation
+	 * refusal does not pass through here at all.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return bool Whether an internal move needs consent too.
+	 *
+	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 */
+	public function consentRequiredInside(string $caseId): bool {
+		$caseId = trim($caseId);
+		if ($caseId === '') {
+			return false;
+		}
+
+		try {
+			[$objectService, $register] = $this->context();
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->schema(key: 'case_schema'),
+				id: $caseId,
+			);
+			$caseTypeId = trim((string)($case['caseType'] ?? ''));
+			if ($caseTypeId === '') {
+				return false;
+			}
+
+			$caseType = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->schema(key: 'case_type_schema'),
+				id: $caseTypeId,
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq consent: the case type could not be read for the internal-move rule',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+
+			return false;
+		}
+
+		return (($caseType['consentRequiredInsideOrganisation'] ?? false) === true);
+	}//end consentRequiredInside()
 
 	/**
 	 * The consents recorded for a case that name this receiver.

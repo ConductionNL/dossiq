@@ -8100,6 +8100,25 @@
                         "type": "string",
                         "description": "User ID of the revoker",
                         "title": "Revoked By"
+                    },
+                    "consentId": {
+                        "type": "string",
+                        "title": "Consent",
+                        "description": "The `toestemming` that allowed this share to exist. A partner share is written only when one covers the case, the receiver and the moment, so this is never empty on a partner share."
+                    },
+                    "consentScope": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Consent scope",
+                        "description": "What the consent names the receiving organisation may read: the data fields it lists, or its free-text reach when it lists none. Recording a scope that nothing enforces is the defect row 13.28 already names, so the scope travels with the share and the enforcement is asked of the platform (D-6)."
+                    },
+                    "consentUntil": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Consent runs until",
+                        "description": "The day the consent behind this share ends. Empty when the consent names no end."
                     }
                 }
             },
