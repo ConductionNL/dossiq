@@ -302,10 +302,15 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 		// ImportHandler skips an app import when
 		// version_compare(new, existing, '<=') holds, so a schema change with
 		// the number left alone reaches a fresh CI install and no existing
-		// instance at all. 0.19.2 is what this change started from.
+		// instance at all.
+		//
+		// 🔴 THE FLOOR IS 0.20.1, NOT THE 0.19.2 THIS CHANGE STARTED FROM.
+		// This change and status-capacity-limit both took 0.20.0 on their own
+		// branches, and two branches writing the same new number merge that
+		// line with no conflict, silently.
 		$this->assertTrue(
-			version_compare($version, '0.19.2', '>'),
-			sprintf('the register version must move past 0.19.2, got %s', $version)
+			version_compare($version, '0.20.0', '>'),
+			sprintf('the register version must move past 0.20.0, got %s', $version)
 		);
 	}//end testTheRegisterVersionMoved()
 
