@@ -445,6 +445,12 @@ $extra = [
     ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
     ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
 
+        // The two answers to a followed term move (dependent-term-follows-
+        // predecessor, row Q3.21). The days are on the task, not in the body,
+        // so neither endpoint takes one.
+    ['name' => 'caseTermFollow#accept',  'url' => '/api/case/{caseId}/term-follow/{taskId}/accept',  'verb' => 'POST'],
+    ['name' => 'caseTermFollow#decline', 'url' => '/api/case/{caseId}/term-follow/{taskId}/decline', 'verb' => 'POST'],
+
         // The Awb 4:3a acknowledgement of receipt (ontvangstbevestiging). One
         // read that answers "did we confirm receipt, when, to whom and by
         // which channel", and one write for the case an acknowledgement never
