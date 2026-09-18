@@ -45,6 +45,17 @@ class GuardRegistry {
 	public const STATUS_CHECKLIST = 'statusChecklist';
 
 	/**
+	 * The other guard type every transition is checked against.
+	 *
+	 * The limit is authored on the STATUS BEING ENTERED, so a transition that
+	 * never names it is still subject to it — see CapacityGuard. Unlike the
+	 * checklist it needs one value from the transition, `toStatus`, because it
+	 * evaluates the status the case is moving INTO rather than the one it is
+	 * in.
+	 */
+	public const STATUS_CAPACITY = 'statusCapacity';
+
+	/**
 	 * Registered evaluators keyed by guard type.
 	 *
 	 * @var array<string, GuardEvaluatorInterface>
@@ -60,6 +71,7 @@ class GuardRegistry {
 	 * @param RoleGuard $roleGuard Built-in role evaluator
 	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
 	 * @param StatusChecklistGuard $statusChecklist Required-items-of-the-current-status evaluator
+	 * @param CapacityGuard $capacity Capacity-of-the-status-being-entered evaluator
 	 * @param LoggerInterface $logger Logger for unknown guard types
 	 */
 	public function __construct(
@@ -69,6 +81,7 @@ class GuardRegistry {
 		RoleGuard $roleGuard,
 		MandaatGuard $mandateGuard,
 		StatusChecklistGuard $statusChecklist,
+		CapacityGuard $capacity,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->evaluators = [
@@ -80,6 +93,9 @@ class GuardRegistry {
 			// Registered like any other type, but declared by no template: the
 			// engine appends it to every transition's guard list itself.
 			self::STATUS_CHECKLIST => $statusChecklist,
+			// Appended by the engine too, and carrying the one thing it needs
+			// from the transition: which status is being entered.
+			self::STATUS_CAPACITY => $capacity,
 		];
 	}//end __construct()
 

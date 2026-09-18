@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.19.2"
+        "version": "0.20.0"
     },
     "x-openregister": {
         "type": "application",
@@ -715,6 +715,13 @@
                         "default": false,
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0,
+                        "title": "Capacity",
+                        "description": "How many cases this status may hold at once. Leave it at zero and the status takes as many as arrive, which is how every status behaves today. Set a number and the case past it is refused, with the status, the limit and the count in the sentence. A final status is never capped: a case type that could not close its thirteenth case would be worse off than one with no limit at all."
                     },
                     "phaseTermDays": {
                         "type": "integer",
