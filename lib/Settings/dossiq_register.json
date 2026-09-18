@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.1"
+        "version": "0.20.2"
     },
     "x-openregister": {
         "type": "application",
@@ -651,6 +651,17 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "consentRequiredInsideOrganisation": {
+                        "type": "boolean",
+                        "title": "Consent required inside the organisation",
+                        "description": "Whether a move between two teams of this organisation also needs a recorded consent. Off by default, because a move inside one organisation is not a disclosure. A Jeugdwet file and a parking permit are not the same question, which is why this is declared per case type rather than decided in the service."
+                    },
+                    "takeoverAnswerPeriodDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Takeover answer period, in days",
+                        "description": "How long the holder has to accept or refuse a takeover request before it goes to the unit holding the case. Empty means the fleet default of three days."
                     },
                     "intakeFormRef": {
                         "type": "string",
@@ -7615,7 +7626,7 @@
             "inspectionChecklistRun": {
                 "slug": "inspectionChecklistRun",
                 "icon": "ClipboardCheckMultipleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Inspection Checklist Run",
                 "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
@@ -8142,6 +8153,25 @@
                         "type": "string",
                         "description": "User ID of the revoker",
                         "title": "Revoked By"
+                    },
+                    "consentId": {
+                        "type": "string",
+                        "title": "Consent",
+                        "description": "The `toestemming` that allowed this share to exist. A partner share is written only when one covers the case, the receiver and the moment, so this is never empty on a partner share."
+                    },
+                    "consentScope": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Consent scope",
+                        "description": "What the consent names the receiving organisation may read: the data fields it lists, or its free-text reach when it lists none. Recording a scope that nothing enforces is the defect row 13.28 already names, so the scope travels with the share and the enforcement is asked of the platform (D-6)."
+                    },
+                    "consentUntil": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Consent runs until",
+                        "description": "The day the consent behind this share ends. Empty when the consent names no end."
                     }
                 }
             },
@@ -8911,7 +8941,7 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
                 "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
@@ -10806,6 +10836,154 @@
                         "default": 0
                     }
                 }
+            },
+            "caseCustody": {
+                "slug": "caseCustody",
+                "icon": "AccountSwitchOutline",
+                "version": "1.0.0",
+                "title": "Case custody",
+                "description": "One period a case was held by one organisation unit. The chain of these records answers who held a case on a given day, which the audit trail cannot: the audit says what changed, and reading a sequence of diffs back into a holding is a reconstruction, not a record. Exactly one holding per case is open at a time, and a move closes the open one and opens the next in the same act, so the chain has no gap by construction.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "organisationUnit",
+                    "from"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case this holding belongs to."
+                    },
+                    "organisationUnit": {
+                        "type": "string",
+                        "title": "Organisation unit",
+                        "description": "The unit that held the case for this period. A team inside the organisation or a partner organisation, whichever the move named."
+                    },
+                    "handler": {
+                        "type": "string",
+                        "title": "Handler",
+                        "description": "The person on the seat during this holding, where there was one. A unit can hold a case with nobody named on it."
+                    },
+                    "from": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Held from",
+                        "description": "The moment this holding began, in ISO 8601."
+                    },
+                    "until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Held until",
+                        "description": "The moment this holding ended, in ISO 8601. Empty on the open holding."
+                    },
+                    "open": {
+                        "type": "boolean",
+                        "title": "Open",
+                        "description": "Whether this is the holding that is running now. Stored rather than derived so a reader can ask the register for the open holding instead of sorting the chain."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "title": "Reason",
+                        "description": "Why the case moved into this holding."
+                    },
+                    "movedBy": {
+                        "type": "string",
+                        "title": "Moved by",
+                        "description": "Who made the move that opened this holding."
+                    },
+                    "sequence": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Sequence",
+                        "description": "The position of this holding in the chain, counted from one. Two holdings that begin in the same second still read back in order."
+                    }
+                }
+            },
+            "caseTakeover": {
+                "slug": "caseTakeover",
+                "icon": "HandBackRightOutline",
+                "version": "1.0.0",
+                "title": "Case takeover request",
+                "description": "A colleague asking the current holder for a case. A case nobody holds is claimed rather than requested; a case somebody holds needs that person's answer, because the holder knows something the asker does not. The answer is accept or refuse, a refusal carries a reason, and a request nobody answers escalates to the holding unit rather than expiring in silence.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "requestedBy",
+                    "reason",
+                    "status"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case being asked for."
+                    },
+                    "requestedBy": {
+                        "type": "string",
+                        "title": "Asked by",
+                        "description": "Who wants to take the case over."
+                    },
+                    "holder": {
+                        "type": "string",
+                        "title": "Holder",
+                        "description": "The person holding the case when the request was made, where there is one."
+                    },
+                    "holdingUnit": {
+                        "type": "string",
+                        "title": "Holding unit",
+                        "description": "The organisation unit holding the case when the request was made. The escalation goes here."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "title": "Reason",
+                        "description": "Why the asker should have the case."
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "accepted",
+                            "refused",
+                            "escalated"
+                        ],
+                        "title": "Status",
+                        "description": "Where the request stands. `escalated` is still open: the question moved to the unit, it was not answered."
+                    },
+                    "requestedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Asked at",
+                        "description": "When the request was made, in ISO 8601."
+                    },
+                    "answeredBy": {
+                        "type": "string",
+                        "title": "Answered by",
+                        "description": "Who accepted or refused."
+                    },
+                    "answeredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Answered at",
+                        "description": "When the answer was given, in ISO 8601."
+                    },
+                    "refusalReason": {
+                        "type": "string",
+                        "title": "Refusal reason",
+                        "description": "Why the holder is keeping the case. A refusal without one is not an answer."
+                    },
+                    "escalatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Escalated at",
+                        "description": "When the unanswered request went to the holding unit, in ISO 8601."
+                    },
+                    "taskId": {
+                        "type": "string",
+                        "title": "Task",
+                        "description": "The engine task that carries the request to the holder."
+                    }
+                }
             }
         },
         "registers": {
@@ -10886,6 +11064,8 @@
                     "caseFederatedShare",
                     "caseShare",
                     "casetransfer",
+                    "caseCustody",
+                    "caseTakeover",
                     "checklistItem",
                     "consultation",
                     "obligation",
