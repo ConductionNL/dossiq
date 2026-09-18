@@ -31,7 +31,10 @@ export function buildDwellSeries(dwellTime, seriesName) {
 	return [
 		{
 			name: seriesName,
-			data: rows.map((r) => r.medianHours),
+			// The headline number, which is working hours when the server
+			// measured any and the wall clock when it did not. The series
+			// NAME says which, so the bar and its label can never disagree.
+			data: rows.map((r) => headlineHours(r)),
 		},
 	]
 }
@@ -92,6 +95,7 @@ export function buildBottleneckRows(caseTypes, limit = 10) {
 				caseTypeTitle: caseType.title,
 				statusName: bottleneck.statusName,
 				medianHours: bottleneck.medianHours,
+				medianWorkingHours: headlineHours(bottleneck),
 				visitCount: bottleneck.visitCount,
 				score: bottleneck.score,
 			})
@@ -136,4 +140,94 @@ export function buildKpiSummary(report) {
 		topBottleneck,
 		caseTypeCount: caseTypes.length,
 	}
+}
+
+/**
+ * The clocks a duration on this page can be on.
+ *
+ * Mirrors `WorkingClock`'s constants. One spelling on both sides, because the
+ * server sends the string and the page decides what to call it: a mismatch
+ * would fall through to the wall-clock label on a report that had really been
+ * counted on the calendar, and nothing would look wrong.
+ *
+ * @type {object}
+ */
+export const CLOCKS = Object.freeze({
+	CALENDAR: 'working-calendar',
+	DAYS_TIMES_EIGHT: 'working-days-times-eight',
+	WALL: 'wall-clock',
+})
+
+/**
+ * What to call the headline duration column, given the clock it is on.
+ *
+ * THE HEADER IS THE DISCLOSURE. There is no other place on the page that can
+ * say a number is an approximation, and a working-hours column counted as
+ * working days times eight looks exactly like one counted on the calendar:
+ * both are hours, both are plausible, and one of them calls a case that sat an
+ * hour on Friday and an hour on Monday sixteen hours of work.
+ *
+ * @param {string} clock - One of the CLOCKS values.
+ * @param {(key: string) => string} translate - The bound t(), taking one string.
+ * @return {string} The column title.
+ */
+export function workingHoursLabel(clock, translate) {
+	if (clock === CLOCKS.CALENDAR) {
+		return translate('Working hours')
+	}
+	if (clock === CLOCKS.DAYS_TIMES_EIGHT) {
+		return translate('Working hours (working days x 8)')
+	}
+	return translate('Hours, wall clock')
+}
+
+/**
+ * What to call the second duration column. Always the wall clock.
+ *
+ * @param {(key: string) => string} translate - The bound t(), taking one string.
+ * @return {string} The column title.
+ */
+export function wallHoursLabel(translate) {
+	return translate('Wall-clock hours')
+}
+
+/**
+ * The value the headline column reads for one aggregated row.
+ *
+ * Falls back to the wall-clock number when the row carries no working-hours
+ * one, which is every row from a server that predates this change. Paired with
+ * `workingHoursLabel`, which then says the column is the wall clock, so the
+ * fallback is labelled rather than disguised.
+ *
+ * @param {object} row - One dwell or bottleneck row.
+ * @return {number} The headline duration in hours.
+ */
+export function headlineHours(row) {
+	if (typeof row?.medianWorkingHours === 'number') {
+		return row.medianWorkingHours
+	}
+	return row?.medianHours ?? 0
+}
+
+/**
+ * Rows for the dwell-by-assignee table.
+ *
+ * Time no status record attributed keeps its row and is named, rather than
+ * being dropped: a table that omits it shows less work than was done.
+ *
+ * @param {Array<object>} dwellByAssignee - `report.caseTypes[n].dwellByAssignee`.
+ * @param {(key: string) => string} translate - The bound t(), taking one string.
+ * @return {Array<object>} Rows: { actor, actorLabel, workingHours, wallHours, visitCount }.
+ */
+export function buildAssigneeRows(dwellByAssignee, translate) {
+	return (dwellByAssignee || []).map((row) => ({
+		actor: row.actor ?? '',
+		actorLabel:
+			String(row.actor ?? '').trim() === ''
+				? translate('Not recorded')
+				: String(row.actor),
+		workingHours: headlineHours(row),
+		wallHours: row.medianHours ?? 0,
+		visitCount: row.visitCount ?? 0,
+	}))
 }

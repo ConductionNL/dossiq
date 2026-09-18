@@ -28,7 +28,10 @@
 				data-testid="board-column-colour"
 				aria-hidden="true" />
 			<span class="board-column__name">{{ statusType.name }}</span>
-			<span class="board-column__count">{{ cases.length }}</span>
+			<span
+				class="board-column__count"
+				:class="{ 'board-column__count--full': atCapacity }"
+				data-testid="board-column-count">{{ countLabel }}</span>
 		</div>
 
 		<div class="board-column__body">
@@ -65,6 +68,7 @@
 <script>
 import { NcLoadingIcon } from '@nextcloud/vue'
 import CaseCard from './CaseCard.vue'
+import { capacityOf, countLabel, isFull } from '../../utils/statusCapacity.js'
 import {
 	normaliseStatusColour,
 	statusColourToken,
@@ -78,7 +82,11 @@ export default {
 	},
 
 	props: {
-		/** The status type for this column: { id, name, order, isFinal }. */
+		/**
+		 * The status type for this column: { id, name, order, isFinal,
+		 * capacity }. `capacity` is null on a column that merged more than
+		 * one status type — see the `capacity` computed below.
+		 */
 		statusType: { type: Object, required: true },
 		/** Cases currently in this status. */
 		cases: { type: Array, default: () => [] },
@@ -137,6 +145,50 @@ export default {
 		colourStyle() {
 			return { backgroundColor: statusColourToken(this.colour) }
 		},
+
+		/**
+		 * The limit this column shows, when it has one to show.
+		 *
+		 * 🔴 NULL ON A MERGED COLUMN, AND THAT IS NOT A GAP. A capacity is
+		 * authored on one status type; this column holds the cases of every
+		 * type whose status shares this name. One number over two different
+		 * limits would be wrong in both directions, and a header reading
+		 * "9 of 12" beside an engine that refuses at 4 is worse than no
+		 * header number at all. The refusal still bites, per case, on the
+		 * concrete status the case moves into.
+		 *
+		 * @return {number|null} The limit, or null for no limit to show.
+		 *
+		 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+		 */
+		capacity() {
+			return capacityOf(this.statusType)
+		},
+
+		/**
+		 * Whether this column is at or past its limit.
+		 *
+		 * @return {boolean} True when it is full.
+		 *
+		 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+		 */
+		atCapacity() {
+			return isFull(this.statusType, this.cases.length)
+		},
+
+		/**
+		 * What the header says: the count, and the limit when there is one.
+		 *
+		 * Seeing the number is what stops the attempt; the refusal is the
+		 * backstop. A column with no limit reads exactly as it did before.
+		 *
+		 * @return {string} The label.
+		 *
+		 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+		 */
+		countLabel() {
+			return countLabel(this.cases.length, this.capacity)
+		},
 	},
 
 	methods: {
@@ -180,6 +232,14 @@ export default {
 	background: var(--color-background-dark);
 	border-radius: var(--border-radius-large);
 	padding: 8px;
+}
+
+/* The word beside it carries the meaning: a colour alone would say nothing
+   to a reader who cannot see it (WCAG 2.2 SC 1.4.1). The count IS the word
+   here — "12 / 12" reads as full whatever colour it is drawn in. */
+.board-column__count--full {
+	color: var(--color-error);
+	font-weight: bold;
 }
 
 .board-column--dragover {

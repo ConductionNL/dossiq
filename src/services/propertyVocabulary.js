@@ -73,6 +73,11 @@ export const PENDING_PLATFORM_KEYS = {
 		owner: 'openregister',
 		reason: 'Asked for by integriq registry-backed-field-source, not published yet.',
 	},
+	conceptScheme: {
+		key: 'x-openregister-concept-scheme',
+		owner: 'openregister',
+		reason: 'The SKOS scheme binding code-lists-from-concepts declares, owned by openregister skos-concept-registers, not published yet.',
+	},
 }
 
 /**

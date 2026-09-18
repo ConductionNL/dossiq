@@ -2156,7 +2156,7 @@
       "brpPerson": {
         "slug": "brpPerson",
         "icon": "AccountOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Person",
         "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
         "title": "BRP person (test register set)",
@@ -2168,6 +2168,13 @@
         ],
         "properties": {
           "citizenServiceNumber": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "pattern": "^[0-9]{9}$",
             "format": "bsn",
@@ -4986,7 +4993,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.3.0",
+        "version": "1.4.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -5050,11 +5057,25 @@
             "description": "Calculated duration in seconds"
           },
           "callerIdentification": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Caller Identification",
             "description": "Phone number, email or social handle of the caller"
           },
           "geidentificeerdeBurgerId": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Identified Citizen ID",
             "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"
@@ -5118,6 +5139,13 @@
             "description": "Nature of the contact"
           },
           "summary": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Summary",
             "description": "Summary of the contact"
@@ -5134,6 +5162,13 @@
             "description": "Whether the issue was resolved in one contact"
           },
           "transcript": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Transcription",
             "description": "Optional voice-to-text transcription"
@@ -6458,7 +6493,7 @@
       "gezinsplan": {
         "slug": "gezinsplan",
         "icon": "FileTreeOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Gezinsplan",
         "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
         "type": "object",
@@ -6484,6 +6519,13 @@
             "description": "Datum van opstellen"
           },
           "gezinsleden": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Family Members",
             "type": "array",
             "description": "Gezinsleden met akkoord-tracking",
@@ -6991,7 +7033,7 @@
       "indicatiestelling": {
         "slug": "indicatiestelling",
         "icon": "ClipboardPulseOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Indicatiestelling",
         "description": "WMO-assessment record met geadviseerde ondersteuningsvorm, omvang en duur. OpenRegister-backed.",
         "type": "object",
@@ -7027,11 +7069,25 @@
             "description": "Vorm van het onderzoek"
           },
           "investigationMinutes": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Investigation Report",
             "type": "string",
             "description": "Optionele Nextcloud file-referentie naar het onderzoeksverslag"
           },
           "advisedSupport": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Recommended Support",
             "type": "object",
             "description": "Geadviseerde ondersteuning (soort, omvang, duur)",
@@ -8203,7 +8259,7 @@
       "jeugdwetZaak": {
         "slug": "jeugdwetZaak",
         "icon": "HumanMaleChild",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Jeugdwet Zaak",
         "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
         "type": "object",
@@ -8234,6 +8290,13 @@
             "description": "Identifier van het gezinssysteem (gezinsgerichte eenheid)"
           },
           "jeugdigeBsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Youth BSN",
             "type": "string",
             "description": "BSN van de jeugdige (bijzonder persoonsgegeven)"
@@ -8260,6 +8323,13 @@
             "description": "Verwijzende partij (huisarts, jeugdarts, gecertificeerde instelling, ...)"
           },
           "supportRequest": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Support Request",
             "type": "string",
             "description": "Inhoudelijke ondersteuningsvraag (alleen-jeugdteam zichtbaar)"
@@ -8296,11 +8366,25 @@
             "description": "Gezinsgerichte status-lifecycle (ADR-031: declaratief)"
           },
           "gezinsplanId": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Family Plan ID",
             "type": "string",
             "description": "Referentie naar het actuele Gezinsplan"
           },
           "mdoConsultationIds": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "MDO Meeting IDs",
             "type": "array",
             "items": {
@@ -8309,6 +8393,13 @@
             "description": "Referenties naar MdoOverleg-records"
           },
           "supervisionOrderActive": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Supervision Order Active",
             "type": "boolean",
             "description": "Of een ondertoezichtstelling (OTS) actief is"
@@ -9650,7 +9741,7 @@
       "mdoOverleg": {
         "slug": "mdoOverleg",
         "icon": "AccountGroupOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Multidisciplinair Overleg (MDO)",
         "description": "Multidisciplinair overleg met expliciete toestemmingsregistratie per externe deelnemer; verslag wordt geanonimiseerd bij ontbrekende toestemming. OpenRegister-backed.",
         "type": "object",
@@ -9709,6 +9800,13 @@
             "description": "Agenda van het overleg"
           },
           "minutes": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Report",
             "type": "string",
             "description": "Verslag (geanonimiseerd indien toestemming ontbreekt)"
@@ -9719,6 +9817,13 @@
             "description": "Of alle vereiste toestemmingen geregistreerd zijn"
           },
           "gedeeldeGegevens": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Shared Data",
             "type": "string",
             "enum": [
@@ -10599,7 +10704,7 @@
       "participatiewetZaak": {
         "slug": "participatiewetZaak",
         "icon": "BriefcaseAccountOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Participatiewet Zaak",
         "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
         "type": "object",
@@ -10624,6 +10729,13 @@
             "description": "Zaakidentifier in formaat zaak-{jaar}-pw-{5-cijferig}"
           },
           "bsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "BSN",
             "type": "string",
             "description": "BSN van de aanvrager (bijzonder persoonsgegeven)"
@@ -10657,11 +10769,25 @@
             "description": "Leeftijdsgroep van de aanvrager"
           },
           "householdsSituation": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Household Situation",
             "type": "string",
             "description": "Huishoudenssituatie (alleenstaand, alleenstaand-met-kinderen, gehuwd, ...)"
           },
           "equityAssessment": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Means Test",
             "type": "object",
             "description": "Vermogenstoets (art. 34)",
@@ -10690,6 +10816,13 @@
             }
           },
           "incomeAssessment": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Income Test",
             "type": "object",
             "description": "Inkomenstoets (art. 31-33)",
@@ -11359,6 +11492,14 @@
             "description": "Longer explanation of this property",
             "title": "Description"
           },
+          "category": {
+            "type": "string",
+            "maxLength": 255,
+            "default": "Uncategorised",
+            "facetable": true,
+            "description": "The folder this attribute sits in on the Attributes index, a free word rather than a fixed list: an organisation's own grouping (Adres, Financieel, Persoon) is the one it recognises. Attributes with no category are listed under Uncategorised.",
+            "title": "Category"
+          },
           "caseType": {
             "type": "string",
             "format": "uuid",
@@ -11642,7 +11783,7 @@
       "role": {
         "slug": "role",
         "icon": "AccountKeyOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "Rol",
         "title": "Role",
@@ -11713,13 +11854,20 @@
             "format": "date-time",
             "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
             "title": "Delegate Until"
+          },
+          "representedParty": {
+            "type": "string",
+            "format": "uuid",
+            "facetable": true,
+            "description": "Whom this participant acts for on this case. Filled on a role of type Gemachtigde (Awb 2:1) and empty on every other role. It is NOT delegateFrom: that is the start of a delegation window and RoleDelegationResolver reads it as a date.",
+            "title": "Represented by"
           }
         }
       },
       "roleType": {
         "slug": "roleType",
         "icon": "BadgeAccountOutline",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "RolType",
         "title": "Role Type",
@@ -11748,6 +11896,22 @@
             "$ref": "caseType",
             "description": "Reference to the parent case type",
             "title": "Case Type"
+          },
+          "genericRole": {
+            "type": "string",
+            "enum": [
+              "initiator",
+              "co_initiator",
+              "handler",
+              "advisor",
+              "decision_maker",
+              "coordinator",
+              "stakeholder",
+              "contact",
+              "gemachtigde"
+            ],
+            "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it.",
+            "title": "Generic Role"
           },
           "ncGroupId": {
             "type": "string",
@@ -11832,12 +11996,11 @@
       "sociaalDomeinAuditLog": {
         "slug": "sociaalDomeinAuditLog",
         "icon": "FileEyeOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Sociaal Domein Audit Log",
-        "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd.",
+        "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd. V1.1 additief: een raadpleging kan over een BURGER gaan in plaats van over een zaak, dus subjectId is toegevoegd en caseId is niet langer verplicht. Elke bestaande rij blijft geldig en elke bestaande schrijver blijft werken.",
         "type": "object",
         "required": [
-          "caseId",
           "action",
           "moment"
         ],
@@ -11845,7 +12008,13 @@
           "caseId": {
             "title": "Case ID",
             "type": "string",
-            "description": "Referentie naar de geraadpleegde zaak"
+            "description": "Referentie naar de geraadpleegde zaak. Leeg bij een raadpleging die over een burger gaat en geen enkele zaak oplevert, bijvoorbeeld een geweigerde lookup."
+          },
+          "subjectId": {
+            "title": "Subject ID",
+            "type": "string",
+            "facetable": true,
+            "description": "De burgerreferentie waarmee is geraadpleegd (BSN of burgerId). Dit is waarop een inzageverzoek zoekt: de vraag is wie er over MIJ heeft gekeken, niet wie er in een zaak heeft gekeken."
           },
           "employeeId": {
             "title": "Employee ID",
@@ -14112,7 +14281,7 @@
       "toestemming": {
         "slug": "toestemming",
         "icon": "HandshakeOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Toestemming",
         "description": "Expliciete, herroepbare toestemming voor gegevensdeling met externe partijen (AVG art. 6/9). OpenRegister-backed; gedeeld door alle sociaal-domein zaaktypes.",
         "type": "object",
@@ -14127,6 +14296,13 @@
             "description": "Referentie naar de betrokken zaak"
           },
           "grantedByBsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Granted By BSN",
             "type": "string",
             "description": "BSN van de toestemming-verlenende burger/ouder"
@@ -14239,7 +14415,7 @@
       "wmoZaak": {
         "slug": "wmoZaak",
         "icon": "HumanWheelchair",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "WMO Zaak",
         "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
         "type": "object",
@@ -14265,6 +14441,13 @@
             "description": "Zaakidentifier in formaat zaak-{jaar}-wmo-{5-cijferig}"
           },
           "bsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "BSN",
             "type": "string",
             "description": "BSN van de aanvrager (bijzonder persoonsgegeven; gemaskeerd bij export zonder toestemming)"
@@ -14299,11 +14482,25 @@
             "description": "Kanaal waarlangs de melding binnenkwam (telefonisch, balie, online, ...)"
           },
           "supportRequest": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Support Request",
             "type": "string",
             "description": "Inhoudelijke ondersteuningsvraag (alleen-wijkteam zichtbaar)"
           },
           "householdsComposition": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Household Composition",
             "type": "string",
             "description": "Optionele beschrijving van de huishoudenssamenstelling"
@@ -14370,6 +14567,13 @@
             "description": "Gezet door de batch-job wanneer de onderzoekstermijn is overschreden"
           },
           "needsAssessmentId": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Indication ID",
             "type": "string",
             "description": "Referentie naar de bijbehorende Indicatiestelling"

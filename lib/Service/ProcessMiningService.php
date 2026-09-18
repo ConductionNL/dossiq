@@ -156,6 +156,10 @@ class ProcessMiningService {
 					casesById: $group['cases'],
 					now: $now,
 				),
+				// The same intervals keyed by who held them. No second walk
+				// of the records: a by-assignee table computed on its own
+				// would drift from the by-phase one beside it.
+				'dwellByAssignee' => $this->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
 				'bottlenecks' => $bottlenecks,
 				'transitionMatrix' => $transitions['matrix'],
 				'reworkPercent' => $transitions['reworkPercent'],
@@ -170,6 +174,13 @@ class ProcessMiningService {
 
 		return [
 			'period' => ['from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')],
+			// WHICH CLOCK THE NUMBERS ARE ON, published with them. The page
+			// puts it in the column header. A report that serves working
+			// hours counted on working days times eight, and looks exactly
+			// like one counted on the calendar, is the failure this whole
+			// change is about, so the answer travels with the payload rather
+			// than being assumed by the reader.
+			'clock' => $this->dwellTimeAnalyzer->clock(),
 			'caseTypeFilter' => $caseTypeFilter,
 			'caseTypes' => $caseTypeReports,
 			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),

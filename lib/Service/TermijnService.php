@@ -453,10 +453,10 @@ class TermijnService {
 	 * @param DateTimeImmutable|null $voltooiDatum When completed (default now).
 	 * @param string $documentLink Optional document ref.
 	 * @param string $rationale Why the term ended, as the timeline will read it.
-	 *        The default names a beschikking because that is what closed every
-	 *        term before another act could: a merge closes one too, and a
-	 *        timeline that calls it a beschikking says the case was decided
-	 *        when it was not.
+	 *        Left empty it reads "Termijn voltooid door beschikking", which is
+	 *        what closed every term before another act could. A rebind and a
+	 *        merge close one too, and a timeline that calls either a
+	 *        beschikking says the case was decided when it was not.
 	 *
 	 * @return array<string, mixed>|null
 	 *
@@ -466,7 +466,7 @@ class TermijnService {
 		string $termInstanceId,
 		?DateTimeImmutable $voltooiDatum = null,
 		string $documentLink = '',
-		string $rationale = 'Termijn voltooid door beschikking',
+		string $rationale = '',
 	): ?array {
 		$voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
 
@@ -480,7 +480,13 @@ class TermijnService {
 				termInstanceId: $termInstanceId,
 				type: 'voltooi',
 				basis: 'AWB 4:13',
-				rationale: $rationale,
+				// WHY A TERM ENDED IS NOT ALWAYS "door beschikking". A rebind
+				// closes a running term to re-arm it against the new case
+				// type's definition, and recording that as a decision would put
+				// a beschikking in the audit trail of a case that never got
+				// one. The default is the old sentence, so every existing
+				// caller reads exactly as it did.
+				rationale: (trim($rationale) !== '') ? trim($rationale) : 'Termijn voltooid door beschikking',
 				daysImpact: 0,
 				moment: $voltooiDatum,
 				documentLink: $documentLink,
@@ -490,12 +496,290 @@ class TermijnService {
 			// same operation that made the term terminal (REQ-TOT-001).
 			$this->timerService?->cancelForInstance(
 				instanceId: $termInstanceId,
-				reason: $rationale
+				reason: (trim($rationale) !== '') ? trim($rationale) : 'Termijn voltooid door beschikking'
 			);
 		}
 
 		return $updated;
 	}//end markTermijnCompleted()
+
+	/**
+	 * Re-arm this case's running terms against another case type's definition.
+	 *
+	 * 🔴 A REBIND MOVES NO STATUTORY CLOCK, AND THAT IS THE WHOLE RULE. The
+	 * case was received on a day, and the Awb term runs from the day it was
+	 * received, not from the day somebody noticed it had been filed under the
+	 * wrong type. So the new instance keeps the old one's `startDate`, and the
+	 * only thing the target definition supplies is the DURATION. Starting the
+	 * clock again at the rebind would hand the organisation weeks it is not
+	 * entitled to, silently, on every case that was ever refiled.
+	 *
+	 * 🔑 EXTENSIONS AND SUSPENSIONS TRAVEL AS DAYS, NOT AS DATES. An Awb 4:14
+	 * verdaging is "this term is longer by N days", and the days are what
+	 * survives a change of definition: carrying the old `endDateCurrent`
+	 * forward would carry the old duration with it and quietly ignore the
+	 * target's rule. Each carried event is re-recorded on the new instance, so
+	 * the trail says why the end date is where it is rather than leaving a
+	 * number nobody can account for. D-2's fixture is the test of exactly this:
+	 * a 56-day term started 1 June, extended once by 14 days, rebound on 20
+	 * June to an 84-day definition, ends on 1 June plus 98 days.
+	 *
+	 * A target case type with no term definition is NOT an empty answer. The
+	 * old instances are left running and the count of them is reported, because
+	 * completing a statutory clock that has no successor is how a case silently
+	 * stops being watched.
+	 *
+	 * @param string $caseId       The case whose terms are re-armed.
+	 * @param string $caseTypeSlug The TARGET case type, as the slug the term
+	 *                             definitions are keyed by. A uuid matches no
+	 *                             definition and the re-arm silently does
+	 *                             nothing, so callers holding one convert it
+	 *                             through {@see CaseTypeSlugResolver} first.
+	 * @param string $reason       Why the case was rebound, for the trail.
+	 *
+	 * @return array{rearmed: int, kept: int, note: string} What happened to the clocks.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	public function rearmForDefinition(string $caseId, string $caseTypeSlug, string $reason): array {
+		$running = [];
+		foreach ($this->instancesForCase(caseId: $caseId) as $instance) {
+			if ((string)($instance['status'] ?? '') === 'lopend') {
+				$running[] = $instance;
+			}
+		}
+
+		if ($running === []) {
+			return ['rearmed' => 0, 'kept' => 0, 'note' => ''];
+		}
+
+		$definitie = $this->getTermijnDefinitie(caseType: $caseTypeSlug);
+		if ($definitie === null) {
+			$this->logger->warning(
+				'TermijnService.rearmForDefinition: the target case type has no active term definition, '
+					. 'so the running terms were left on the definition they started under',
+				['case' => $caseId, 'caseType' => $caseTypeSlug, 'running' => count($running)]
+			);
+
+			return [
+				'rearmed' => 0,
+				'kept' => count($running),
+				'note' => 'The target case type has no active term definition, so this case\'s running terms '
+					. 'were left as they are rather than closed with nothing to replace them.',
+			];
+		}
+
+		$rearmed = 0;
+		foreach ($running as $instance) {
+			if ($this->rearmOne(instance: $instance, caseId: $caseId, caseTypeSlug: $caseTypeSlug, reason: $reason) === true) {
+				$rearmed++;
+			}
+		}
+
+		return [
+			'rearmed' => $rearmed,
+			'kept' => (count($running) - $rearmed),
+			'note' => '',
+		];
+	}//end rearmForDefinition()
+
+	/**
+	 * Close one running term and open its successor on the same start date.
+	 *
+	 * @param array<string, mixed> $instance     The running instance.
+	 * @param string               $caseId       The case.
+	 * @param string               $caseTypeSlug The target case type's slug.
+	 * @param string               $reason       Why the case was rebound.
+	 *
+	 * @return boolean True when the successor was created.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	private function rearmOne(array $instance, string $caseId, string $caseTypeSlug, string $reason): bool {
+		$instanceId = (string)($instance['id'] ?? '');
+		if ($instanceId === '') {
+			return false;
+		}
+
+		$carried = $this->carriedEvents(termInstanceId: $instanceId);
+		$startDate = $this->startOf(instance: $instance);
+
+		try {
+			$successor = $this->createTermijnInstance(
+				caseId: $caseId,
+				caseType: $caseTypeSlug,
+				startDate: $startDate
+			);
+		} catch (NoTermijnDefinitieException | RuntimeException $e) {
+			// The successor is created BEFORE the old one is closed, so a
+			// failure here leaves the case with the clock it already had
+			// rather than with none at all.
+			$this->logger->error(
+				'TermijnService.rearmForDefinition: the successor term could not be created, '
+					. 'so the running term was left alone',
+				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
+			);
+
+			return false;
+		}
+
+		$this->markTermijnCompleted(
+			termInstanceId: $instanceId,
+			rationale: 'Termijn afgesloten bij herbinding naar een ander zaaktype: ' . $reason,
+		);
+
+		$this->replay(successor: $successor, carried: $carried);
+
+		return true;
+	}//end rearmOne()
+
+	/**
+	 * Re-record the old term's extensions and suspensions on its successor.
+	 *
+	 * @param array<string, mixed>             $successor The new instance.
+	 * @param array<int, array<string, mixed>> $carried   The events to carry.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	private function replay(array $successor, array $carried): void {
+		$successorId = (string)($successor['id'] ?? '');
+		if ($successorId === '' || $carried === []) {
+			return;
+		}
+
+		$days = 0;
+		$extensions = 0;
+		foreach ($carried as $event) {
+			$impact = (int)($event['daysImpact'] ?? 0);
+			$days += $impact;
+			if ((string)($event['type'] ?? '') === 'verdaging') {
+				$extensions++;
+			}
+
+			$this->recordEvent(
+				termInstanceId: $successorId,
+				type: (string)($event['type'] ?? 'verdaging'),
+				basis: (string)($event['basis'] ?? 'AWB 4:14'),
+				rationale: (string)($event['rationale'] ?? ''),
+				daysImpact: $impact,
+				moment: $this->momentOf(event: $event),
+				actor: (string)($event['actor'] ?? 'system'),
+			);
+		}
+
+		if ($days === 0 && $extensions === 0) {
+			return;
+		}
+
+		$calculated = (string)($successor['endDateCalculated'] ?? '');
+		$current = $calculated;
+		if ($calculated !== '' && $days !== 0) {
+			$current = (new DateTimeImmutable($calculated))
+				->modify((($days >= 0) ? '+' : '-') . abs($days) . ' days')
+				->format('Y-m-d');
+		}
+
+		$this->updateTermijnInstance(
+			termInstanceId: $successorId,
+			patch: ['endDateCurrent' => $current, 'countExtensions' => $extensions]
+		);
+	}//end replay()
+
+	/**
+	 * The events of one instance that change how long it runs.
+	 *
+	 * `start` is excluded because the successor's own start event already
+	 * carries the target definition's duration, and adding the old one would
+	 * count a duration twice. `voltooi` is excluded because it ends a term
+	 * rather than lengthening it.
+	 *
+	 * @param string $termInstanceId The instance.
+	 *
+	 * @return array<int, array<string, mixed>> The events, oldest first.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	private function carriedEvents(string $termInstanceId): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_gebeurtenis_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: ['deadlineInstance' => $termInstanceId]
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'TermijnService.carriedEvents lookup failed, so no extension was carried forward',
+				['instance' => $termInstanceId, 'error' => $e->getMessage()]
+			);
+
+			return [];
+		}
+
+		$carried = [];
+		foreach ($rows as $row) {
+			if (in_array((string)($row['type'] ?? ''), ['start', 'voltooi'], true) === false) {
+				$carried[] = $row;
+			}
+		}
+
+		usort(
+			$carried,
+			static fn (array $a, array $b): int
+				=> strcmp((string)($a['moment'] ?? ''), (string)($b['moment'] ?? ''))
+		);
+
+		return $carried;
+	}//end carriedEvents()
+
+	/**
+	 * The day a running term started, as a date.
+	 *
+	 * @param array<string, mixed> $instance The instance.
+	 *
+	 * @return DateTimeImmutable|null The start, or null when it carries none.
+	 */
+	private function startOf(array $instance): ?DateTimeImmutable {
+		$raw = trim((string)($instance['startDate'] ?? ''));
+		if ($raw === '') {
+			return null;
+		}
+
+		try {
+			return new DateTimeImmutable($raw);
+		} catch (\Throwable $e) {
+			return null;
+		}
+	}//end startOf()
+
+	/**
+	 * The moment an event was recorded, as a date.
+	 *
+	 * @param array<string, mixed> $event The event.
+	 *
+	 * @return DateTimeImmutable|null The moment, or null for now.
+	 */
+	private function momentOf(array $event): ?DateTimeImmutable {
+		$raw = trim((string)($event['moment'] ?? ''));
+		if ($raw === '') {
+			return null;
+		}
+
+		try {
+			return new DateTimeImmutable($raw);
+		} catch (\Throwable $e) {
+			return null;
+		}
+	}//end momentOf()
 
 	/**
 	 * Append an immutable TermijnGebeurtenis row.

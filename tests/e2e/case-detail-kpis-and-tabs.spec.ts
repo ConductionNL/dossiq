@@ -42,6 +42,7 @@ import {
 	objectId,
 	REGISTER,
 	seedCase,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 
@@ -904,5 +905,48 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		await expect(panel.locator('.cn-sidebar-tab__composer').first()).toBeVisible(
 			{ timeout: 15_000 },
 		)
+	})
+
+	// @e2e openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md#a-colleagues-change-appears
+	// @e2e realtime-updates-ui::a-colleagues-change-appears
+	test('a change made in another session appears without a reload', async ({
+		page,
+		playwright,
+		baseURL,
+	}) => {
+		// Gap register row 2.20. The subscription is pinned against a store
+		// double in `tests/vitest/caseLiveUpdates.spec.js`; what only a live
+		// instance can show is whether an event ever ARRIVES. Three things have
+		// to line up for that and none of them is dossiq: notify_push has to be
+		// running, OpenRegister has to emit for the object, and the transport
+		// has to reach this browser. Where it does not, the plugin falls back
+		// to its own object poll, which is slower than this test can wait for
+		// on a `php -S` runner.
+		//
+		// So the WAIT is generous and the failure is NAMED rather than left as
+		// a bare timeout: a title that never changes here means the page is not
+		// subscribed, or nothing is delivering, and those are worth telling
+		// apart in the report.
+		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		// The SECOND session: a separate request context, which is what makes
+		// this a colleague's change rather than this page's own write.
+		const colleague = await playwright.request.newContext({ baseURL })
+		const token = await getRequestToken(colleague)
+		const renamed = `E2E live update ${Date.now().toString(36)}`
+		await updateObject(colleague, token, 'case', caseId, { title: renamed })
+		await colleague.dispose()
+
+		// No reload, no navigation, no click. Anything that refetches by hand
+		// would pass on a page that is not subscribed at all, which is the one
+		// result this test must not be able to produce.
+		await expect(
+			page.locator('.cn-detail-page'),
+			'the case page did not pick up a change made in another session: either it is not subscribed, or no live event reached this browser and the plugin poll had not yet fired',
+		).toContainText(renamed, { timeout: 90_000 })
 	})
 })

@@ -110,12 +110,70 @@ class PortalContributionProviderTest extends TestCase {
 		$ids = array_column($contribution['collections'], 'id');
 		$this->assertSame(['mijnZaken', 'berichten', 'verzoeken'], $ids);
 
-		// Exactly one safe create — the standalone complaint.
+		// Three creates. The two that name a case were deferred until Portaliq
+		// could check a reference against the sender's own scope; they are
+		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
-		$this->assertSame(['createKlacht'], $actionIds);
-		// The deferred bezwaar / message-reply creates must NOT be declared.
-		$this->assertNotContains('createBezwaar', $actionIds);
-		$this->assertNotContains('sendMessage', $actionIds);
+		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage'], $actionIds);
+	}
+
+	/**
+	 * Every citizen create that names a case declares that case as a guarded
+	 * reference to the citizen's own cases.
+	 *
+	 * This is the assertion the two deferred creates were waiting on. Without
+	 * it, `againstCaseId` and `caseId` are uuids the writer takes as typed,
+	 * which is how a citizen could object to somebody else's case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-creates-with-cross-refs/specs/portal-contribution/spec.md
+	 */
+	public function testEveryCitizenCreateNamingACaseGuardsIt(): void {
+		$contribution = $this->provider->getContribution(['audience' => 'citizen']);
+		$guarded = [];
+
+		foreach ($contribution['actions'] as $action) {
+			foreach (['againstCaseId', 'caseId'] as $reference) {
+				if (in_array($reference, (array)($action['fields'] ?? []), true) === false) {
+					continue;
+				}
+
+				$guarded[(string)$action['id']] = ($action['crossRefs'][$reference] ?? null);
+			}
+		}
+
+		$this->assertSame(['createBezwaar', 'replyToMessage'], array_keys($guarded));
+		foreach ($guarded as $id => $declaration) {
+			$this->assertIsArray($declaration, $id . ' names a case without guarding it');
+			$this->assertSame('case', $declaration['schema'], $id);
+			$this->assertSame('portalSubject', $declaration['scopeField'], $id);
+			$this->assertTrue($declaration['required'], $id);
+		}
+	}
+
+	/**
+	 * What the write IS never comes from the sender.
+	 *
+	 * A bezwaar and a klacht run different statutory clocks, and a reply that
+	 * could name its own direction could be filed as one the desk sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-creates-with-cross-refs/specs/portal-contribution/spec.md
+	 */
+	public function testTheKindAndDirectionAreStampedNotOffered(): void {
+		$actions = [];
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['actions'] as $action) {
+			$actions[(string)$action['id']] = $action;
+		}
+
+		$this->assertSame('bezwaarschrift', $actions['createBezwaar']['defaults']['kind']);
+		$this->assertNotContains('kind', $actions['createBezwaar']['fields']);
+
+		$this->assertSame('citizen_to_handler', $actions['replyToMessage']['defaults']['direction']);
+		$this->assertNotContains('direction', $actions['replyToMessage']['fields']);
+		$this->assertSame('senderRef', $actions['replyToMessage']['scopeField']);
 	}
 
 	/**
@@ -204,8 +262,17 @@ class PortalContributionProviderTest extends TestCase {
 		foreach ($contribution['collections'] as $collection) {
 			$this->assertSame('assignedInspectorRef', $collection['scopeField']);
 		}
-		// Run-submit create is deferred (write-IDOR).
-		$this->assertSame([], $contribution['actions']);
+		// The run submit ships as an UPDATE on a run the inspector already
+		// holds, which is what removes the write-IDOR rather than guarding it:
+		// the client sends no `case` and no `template` at all, and the status
+		// is the server's.
+		$actions = $contribution['actions'];
+		$this->assertSame(['submitChecklistRun'], array_column($actions, 'id'));
+		$this->assertSame('update', $actions[0]['type']);
+		$this->assertSame('assignedInspectorRef', $actions[0]['scopeField']);
+		$this->assertNotContains('case', $actions[0]['fields']);
+		$this->assertNotContains('template', $actions[0]['fields']);
+		$this->assertSame(['status' => 'submitted'], $actions[0]['set']);
 	}
 
 	/**

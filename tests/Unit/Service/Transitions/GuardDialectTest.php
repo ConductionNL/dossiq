@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\MandaatValidationService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\MandaatGuard;
@@ -202,6 +203,7 @@ class GuardDialectTest extends TestCase {
 			new RoleGuard($this->createMock(IGroupManager::class), $userManager, new NullLogger()),
 			new MandaatGuard($this->createMock(MandaatValidationService::class)),
 			$this->createMock(StatusChecklistGuard::class),
+			$this->createMock(CapacityGuard::class),
 			$logger,
 		);
 	}//end buildRegistry()

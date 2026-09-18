@@ -155,7 +155,7 @@ describe("a party's documents on the People tab", () => {
 	})
 })
 
-describe('the Files tab declares the two columns', () => {
+describe('the Files tab declares its columns', () => {
 	const manifest = JSON.parse(
 		fs.readFileSync(path.resolve(__dirname, '../../src/manifest.json'), 'utf8'),
 	)
@@ -170,23 +170,26 @@ describe('the Files tab declares the two columns', () => {
 		return panels.caseWidget('case-files')
 	}
 
-	it('binds each column to a property the dossier listing answers', () => {
+	it('binds each column to a property something answers', () => {
 		const columns = filesTab().props.columns
 
 		// 🔴 The property, not the label. A column bound to a key nothing
 		// answers renders blank forever and raises nothing anywhere: the
-		// listing carries senderName and recipientNames, and those two names
-		// are what this asserts.
+		// dossier listing carries senderName and recipientNames, and
+		// scan-verdict-on-the-row added scanVerdict, which the scan endpoint
+		// answers rather than the listing. Those three names are what this
+		// asserts.
 		expect(columns.map((column) => column.property)).toEqual([
 			'senderName',
 			'recipientNames',
+			'scanVerdict',
 		])
 	})
 
 	it('labels them in sentence case with no em-dash', () => {
 		const labels = filesTab().props.columns.map((column) => column.label)
 
-		expect(labels).toEqual(['Sender', 'Recipients'])
+		expect(labels).toEqual(['Sender', 'Recipients', 'Scan'])
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}
