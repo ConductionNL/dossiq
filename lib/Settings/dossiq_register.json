@@ -7596,7 +7596,7 @@
             "inspectionChecklistRun": {
                 "slug": "inspectionChecklistRun",
                 "icon": "ClipboardCheckMultipleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Inspection Checklist Run",
                 "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
@@ -8911,7 +8911,7 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
                 "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",

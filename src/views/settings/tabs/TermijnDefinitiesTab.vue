@@ -14,6 +14,24 @@
 					)
 				}}
 			</p>
+			<p
+				v-if="timezone"
+				class="termijn-definities-tab__calendar"
+				data-testid="termijn-calendar-line">
+				{{
+					t('dossiq', 'Days and dates are counted in {zone}.', {
+						zone: timezone,
+					})
+				}}
+				<span v-if="rollAvailable === false">
+					{{
+						t(
+							'dossiq',
+							'No organisation calendar is answering, so a term set to move off a weekend or a holiday will not move.',
+						)
+					}}
+				</span>
+			</p>
 			<NcButton type="primary" @click="openNew">
 				<template #icon>
 					<Plus :size="18" />
@@ -67,6 +85,12 @@
 					<span
 						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
 						v{{ def.version || 1 }}
+					</span>
+					<span
+						v-if="rollsToWorkingDay(def)"
+						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt"
+						data-testid="termijn-roll-pill">
+						{{ t('dossiq', 'Moves off a closed day') }}
 					</span>
 					<span class="termijn-definities-tab__validity">
 						{{ def.validFrom || '?' }} → {{ def.validUntil || '∞' }}
@@ -131,6 +155,10 @@ export default {
 			definitions: [],
 			editorOpen: false,
 			editingDefinition: null,
+			/** The zone every date on this instance is counted in. */
+			timezone: '',
+			/** Whether an organisation calendar answers the Awt roll. */
+			rollAvailable: null,
 		}
 	},
 
@@ -152,6 +180,7 @@ export default {
 
 	mounted() {
 		this.load()
+		this.loadCalendar()
 	},
 
 	methods: {
@@ -175,6 +204,41 @@ export default {
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * What the terms are counted against: the zone, and whether a
+		 * calendar answers.
+		 *
+		 * Failure is silent here on purpose. The line it feeds is context, so
+		 * an error banner over the definitions would be louder than the
+		 * failure warrants; an unanswered call simply leaves the line off.
+		 *
+		 * @return {Promise<void>} Nothing.
+		 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+		 */
+		async loadCalendar() {
+			try {
+				const res = await axios.get(
+					generateUrl('/apps/dossiq/api/termijn/calendar'),
+				)
+				this.timezone = String(res.data?.timezone ?? '')
+				this.rollAvailable = res.data?.rollAvailable === true
+			} catch {
+				this.timezone = ''
+				this.rollAvailable = null
+			}
+		},
+
+		/**
+		 * Whether a definition asks for the Awt roll.
+		 *
+		 * @param {object} def The definition.
+		 * @return {boolean} True when it does.
+		 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+		 */
+		rollsToWorkingDay(def) {
+			return def?.rollToWorkingDay === true
 		},
 
 		/**
@@ -273,6 +337,11 @@ export default {
 
 .termijn-definities-tab__header {
 	margin-bottom: 16px;
+}
+
+.termijn-definities-tab__calendar {
+	color: var(--color-text-maxcontrast);
+	margin: 0 0 8px;
 }
 
 .termijn-definities-tab__description {
