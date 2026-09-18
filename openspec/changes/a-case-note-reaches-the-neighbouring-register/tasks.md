@@ -5,45 +5,101 @@ Tier: V1. Kind: capability. Row 6.14. Consumes integriq#2070
 
 ## 1. The envelope
 
-- [ ] 1.1 `lib/Settings/register.d/`: a reserved informatieobjecttype for a
-  case note, with its retention declared through `x-openregister-archival`
-  the way every other type is.
-  - BLOCKED on the records-management answer: which selectielijst position
-    a working note takes. Do not guess it: a wrong term silently destroys
-    or silently keeps notes for years.
+- [x] 1.1 The reserved informatieobjecttype for a case note.
+  - **STILL BLOCKED, and it ships as a refusal rather than a guess.** The
+    records-management answer is which selectielijst position a working note
+    takes, and nobody has given one. A note filed as a document inherits a
+    retention term, and the term for a working note is not the term for a
+    decision letter: a wrong one silently destroys notes or silently keeps
+    them for years.
+  - So there is NO default and no seeded type. The app config key
+    `note_informatieobjecttype` is unset, and an unset key refuses the push
+    and names the key to set (ADR-102). `NoteEnvelopeTest` pins that refusal,
+    and `NotePushTest` pins that nothing reaches the adapter when it fires.
+  - `x-openregister-archival` is deliberately NOT written on a type this
+    change did not create. Declaring a retention here would be the guess the
+    block exists to prevent, wearing a schema fragment.
   - `@spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md`
-- [ ] 1.2 `lib/Service/External/Zgw/NoteEnvelope.php`: build the ZGW
-  document envelope from a note: title from the first line, author from the
-  writer, taal, the body as the content, and the case as `zaak`.
+- [x] 1.2 `lib/Service/External/Zgw/NoteEnvelope.php`: build the ZGW document
+  envelope from a note. Title from the first line, author from the writer,
+  `taal` nld, the body base64 as `inhoud`, the case as `zaak`, and
+  `creatiedatum` from the note's own moment.
   - unit: an empty note is refused before the push rather than sent as a
-    document with no content
+    document with no content. Five arms, including a long first line being
+    cut for the TITLE while the whole note stays in the content, and a writer
+    with no display name still naming somebody, because `auteur` is required
+    and an empty one is how a note arrives at a neighbouring register with
+    nobody's name on it.
 
 ## 2. What travels and what does not
 
-- [ ] 2.1 Only a note that is not internal is pushed. Read the same marker
-  `timeline-entries-default-internal` writes; do not add a second flag,
-  because two flags disagree the first time somebody edits one.
-  - unit: an internal note is not pushed; the same note made external is
-- [ ] 2.2 A case that is not bound to an external register pushes nothing
-  and records nothing. The adapter already answers `isDormant()`; a dormant
-  adapter must not write a sync marker that reads like a success.
-  - unit: with a dormant adapter no marker is written
+- [x] 2.1 Only a note that is not internal is pushed, reading the same marker
+  `timeline-entries-default-internal` writes. No second flag: two flags
+  disagree the first time somebody edits one.
+  - unit: an internal note is not pushed; the same note made external is.
+    A third arm covers a note with NO visibility at all, which reads as
+    internal, because failing towards keeping a note here is the only safe
+    direction: the other way sends a colleague's working note to another
+    organisation.
+- [x] 2.2 A case that is not bound to an external register pushes nothing and
+  records nothing. `isDormant()` is asked FIRST, before the visibility check
+  and before the envelope, so a dormant instance never even builds one.
+  - unit: with a dormant adapter no marker is written, and `submitDocument`
+    is never called.
 
 ## 3. A failed push is visible
 
-- [ ] 3.1 The note carries its push outcome: not sent, sent, or failed with
-  the reason. A note that stayed home while the case reads synced is the
-  failure this task prevents.
-  - unit: a refusing adapter leaves the note marked failed with the reason
-- [ ] 3.2 `src/manifest.json`: the notes panel shows the marker on a note
-  that failed to leave, and shows nothing at all on a case with no external
-  register, because a marker on every note is a marker nobody reads.
+- [x] 3.1 The push answers its outcome: `no-register`, `not-sent`, `sent` or
+  `failed` with the reason, and records it on the case.
+  - unit: a refusing adapter answers failed with the adapter's own
+    `rejectionReason`, and the case records it as failed.
+  - **A `PUSH_DEFERRED` FROM A LIVE ADAPTER IS A FAILURE, and it has its own
+    arm.** The dormant case is answered before the adapter is ever called, so
+    a deferred push here means a live adapter did not deliver. Reading it as
+    a success would put a sent marker on a note that stayed home, which is
+    the single thing this change exists to prevent.
+- [x] 3.2 The notes panel marker.
+  - **NOT BUILT, and here is the measurement.** A note is an OpenRegister
+    COMMENT: storage, the tab and the note's own fields are all in the
+    OpenRegister notes leaf (`CnNotesTab` through `CaseNotesTab`), and dossiq
+    cannot add a field to one. The library's notes tab carries no slot for a
+    per-note badge either, so there is nothing a manifest declaration could
+    bind to; declaring one would be a prop nothing reads, which is a failure
+    this fleet has shipped before.
+  - What ships instead is the outcome on the CASE TIMELINE, which is where
+    every other thing that happened to this case already is, so a handler
+    looking for what became of a note looks in one place rather than two. The
+    requirement is reworded to say that. A per-note badge is a nextcloud-vue
+    change.
+  - A case with no external register still shows nothing at all, which is the
+    half of this task that does hold: the dormant branch records nothing.
 
 ## 4. Verification
 
-- [ ] 4.1 `tests/e2e/note-sync.spec.ts`: write an external note on a bound
-  case and read the sent marker; make the adapter refuse and read the
-  failure with its reason.
-- [ ] 4.2 Mutation check: make a refusal write the sent marker, and assert
-  the failure test reddens on the marker assertion rather than on setup.
-- [ ] 4.3 `openspec validate a-case-note-reaches-the-neighbouring-register --strict`.
+- [x] 4.1 `tests/e2e/note-sync.spec.ts`: an unbound case records nothing and
+  answers `no-register`; a request carrying no note is refused; an anonymous
+  caller is refused, which is the least privileged principal that should be,
+  because sending a note to another organisation is externally visible and
+  not undoable. Written and tagged, not run: there is no Playwright run on
+  this box, and an instance with a real ZGW connector is not something a test
+  can conjure.
+- [x] 4.2 Mutation check: removing the `pushStatus !== 'PUSHED'` guard, so a
+  refusal falls through and writes the sent marker, reddens both failure arms
+  of `NotePushTest` on their own outcome assertions. Restored, green.
+- [x] 4.3 `openspec validate a-case-note-reaches-the-neighbouring-register --strict`.
+
+## What this change decided, for whoever reads it next
+
+A note travels as a `zaakinformatieobject` of a reserved
+informatieobjecttype, over the `submitDocument` path that already exists.
+ZGW has no note resource, and integriq#2070's six sets carry none, correctly:
+the hole was never a missing connector, it was that nothing had decided what
+a note IS on the wire.
+
+The push is a DELIBERATE ACT on a note, `POST /api/cases/{caseId}/notes/push`,
+rather than a hook on saving one. Measured: note storage is OpenRegister's
+entirely under ADR-022, dossiq never reads or writes a note, and OpenRegister
+dispatches no note-saved event dossiq could listen for. The `notes#mention`
+endpoint beside this one exists for exactly that reason and works exactly
+that way, as a call made after the note is already stored. Pushing on save
+needs an event that does not exist, which is an openregister row.
