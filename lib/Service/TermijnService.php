@@ -91,6 +91,12 @@ class TermijnService {
 	 *        through {@see CaseTypeSlugResolver} first — a uuid matches no
 	 *        definition and the term silently never starts.
 	 * @param DateTimeImmutable|null $startDate Optional start (defaults to now).
+	 * @param array<string, mixed>|null $resolution The resolution a caller already
+	 *        made, as {@see \OCA\Dossiq\Service\Term\TermResolution::resolve()}
+	 *        answers it. Passed in rather than made here because resolving needs
+	 *        the case's organisation, service and priority, which this method is
+	 *        never given; absent, the case type's own term is used exactly as
+	 *        before, which is what every caller written before this did.
 	 *
 	 * @return array<string, mixed>
 	 *
@@ -98,10 +104,16 @@ class TermijnService {
 	 * @throws RuntimeException When the instance cannot be persisted.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
 	 */
-	public function createTermijnInstance(string $caseId, string $caseType, ?DateTimeImmutable $startDate = null): array {
+	public function createTermijnInstance(
+		string $caseId,
+		string $caseType,
+		?DateTimeImmutable $startDate = null,
+		?array $resolution = null,
+	): array {
 		$startDate = ($startDate ?? new DateTimeImmutable());
-		$definitie = $this->getTermijnDefinitie(caseType: $caseType);
+		$definitie = (($resolution['definition'] ?? null) ?? $this->getTermijnDefinitie(caseType: $caseType));
 		if ($definitie === null) {
 			// A DISTINCT type, because this is the one refusal a caller can
 			// act on and the one that must not be swallowed at debug level:
@@ -146,6 +158,14 @@ class TermijnService {
 			'countExtensions' => 0,
 			'notificatiesVerstuurd' => [],
 		];
+
+		// Which rule produced this term, recorded rather than re-derivable. A
+		// term somebody disputes has to be explainable a year later, and the
+		// configuration will have changed by then.
+		if ($resolution !== null) {
+			$instance['resolvedFrom'] = (string)($resolution['resolvedFrom'] ?? '');
+			$instance['resolutionSnapshot'] = (array)($resolution['snapshot'] ?? []);
+		}
 
 		$saved = $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
 		if ($saved === null) {
@@ -401,15 +421,37 @@ class TermijnService {
 			return $this->definitieCache[$caseType];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
+		$active = $this->definitionsFor(caseType: $caseType);
+		if (count($active) === 0) {
 			return null;
 		}
 
+		$this->definitieCache[$caseType] = $active[0];
+		return $active[0];
+	}//end getTermijnDefinitie()
+
+	/**
+	 * EVERY active TermijnDefinitie for a zaaktype, newest validFrom first.
+	 *
+	 * {@see getTermijnDefinitie()} answers the ONE a case type falls back to.
+	 * A case type can carry several: one per participating organisation, per
+	 * service and per priority, which is what lets one shared case type serve
+	 * five municipalities with five agreed norms and no duplication. Choosing
+	 * between them is {@see \OCA\Dossiq\Service\Term\TermResolution}'s
+	 * job, because the order is a policy and this is the store.
+	 *
+	 * @param string $caseType The zaaktype slug.
+	 *
+	 * @return array<int, array<string, mixed>> The active definitions.
+	 *
+	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function definitionsFor(string $caseType): array {
+		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($register === '' || $schema === '') {
-			return null;
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
 		}
 
 		try {
@@ -421,18 +463,14 @@ class TermijnService {
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'TermijnService.getTermijnDefinitie lookup failed',
+				'TermijnService.definitionsFor lookup failed',
 				['caseType' => $caseType, 'error' => $e->getMessage()]
 			);
-			return null;
+			return [];
 		}
 
 		$today = (new DateTimeImmutable())->format('Y-m-d');
 		$active = $this->filterActiveDefinities(rows: $rows, today: $today);
-
-		if (count($active) === 0) {
-			return null;
-		}
 
 		usort(
 			$active,
@@ -440,9 +478,8 @@ class TermijnService {
 				=> strcmp((string)($b['validFrom'] ?? ''), (string)($a['validFrom'] ?? ''))
 		);
 
-		$this->definitieCache[$caseType] = $active[0];
-		return $active[0];
-	}//end getTermijnDefinitie()
+		return $active;
+	}//end definitionsFor()
 
 	/**
 	 * Keep the TermijnDefinitie rows whose validity window covers today.
@@ -471,6 +508,11 @@ class TermijnService {
 	 * @param string $termInstanceId Instance id.
 	 * @param DateTimeImmutable|null $voltooiDatum When completed (default now).
 	 * @param string $documentLink Optional document ref.
+	 * @param string $rationale Why the term ended, as the timeline will read it.
+	 *        Left empty it reads "Termijn voltooid door beschikking", which is
+	 *        what closed every term before another act could. A rebind and a
+	 *        merge close one too, and a timeline that calls either a
+	 *        beschikking says the case was decided when it was not.
 	 *
 	 * @return array<string, mixed>|null
 	 *
