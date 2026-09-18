@@ -475,6 +475,15 @@ foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusR
 	}
 }
 
+// Shillinq's payment-request leaf (fees-and-payments-on-the-case). dossiq reads
+// a case's payment state through it and resolves the class by name, so the app
+// stays installable without the money app. Without this stub the lookup can
+// only ever answer false, every test of the reader would exercise the absent
+// branch alone, and static analysis would report the resolution as dead code.
+if (class_exists('\\OCA\\Shillinq\\Integration\\PaymentRequestLeafProvider') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Integration/PaymentRequestLeafProvider.php';
+}
+
 // Hermiq's oversight contract. procest resolves it by name so it stays
 // installable without hermiq, which means the contract is only exercised in
 // tests if something supplies the class.
