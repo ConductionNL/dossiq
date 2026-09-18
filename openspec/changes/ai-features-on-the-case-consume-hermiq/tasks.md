@@ -48,3 +48,33 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
   the intake tool's delegation.
 - [ ] 8.2 e2e coverage or a reason-bearing exclusion per scenario, per gate 19.
   - `tests/e2e/ai-features-on-the-case.spec.ts`
+
+## Rescue verdict, 2026-09-18: NOT LANDED, and why
+
+`feat/ai-features-on-the-case-consume-hermiq` had no pull request of any state
+and merges onto `parity/round2` cleanly. It is still not landable, and the
+repo's own guard is what says so:
+
+    NoDarkCapabilityTest::testEveryDecidingClassIsCalledOrExplained
+    These classes are shipped and nothing calls them, so the capability does
+    not exist:  HermiqAiFeatureClient
+
+**The caller belongs to a part nobody built.** The branch ships exactly one
+file from this task list — task 2.1's `HermiqAiFeatureClient` — and none of the
+classes the list names as its callers: `CaseTypeAiFeatures` (1.2),
+`CaseAiFeatureGateway` (3.1), `ReportGroupingConsumer` (4.1), nor the panel at
+3.2. There is no route, no controller method and no surface. A client with no
+caller is a capability that does not exist, and merging it would put the claim
+in the tree without the thing.
+
+Two ways out, and neither is a merge decision:
+
+1. Build 1.2 and 3.1 — the gateway and the case-type declaration — which is
+   what would make the client answer somebody. That is the rest of this change,
+   not a rescue.
+2. Add the client to `DARK_TODAY` with what wiring it would take, which the
+   guard explicitly offers. That records the gap instead of hiding it, but it
+   still ships a class nobody asks.
+
+The branch is left as it is. What must NOT happen is the third way: deleting
+the guard, or deleting the client to make a suite green.
