@@ -1948,6 +1948,10 @@
 									"label": "Related"
 								},
 								{
+									"widgetId": "case-custody-panel",
+									"label": "Custody"
+								},
+								{
 									"widgetId": "case-archival-panel",
 									"label": "Archiving"
 								}
@@ -2652,6 +2656,13 @@
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
 					},
 					{
+						"id": "case-custody-panel",
+						"type": "case-custody-pane",
+						"title": "Custody",
+						"icon": "AccountSwitchOutline",
+						"_note": "Who has held this case, and who is asking for it (registry type case-custody-pane -> CaseCustodyPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, which is how two earlier panels in this app shipped as an empty tab that logged nothing. It sits beside Timeline rather than inside it on purpose: the timeline says what CHANGED and this says who HELD it, and reading a sequence of diffs back into a holding is a reconstruction rather than a record. It is a custom widget and NOT a data widget because a holding is only meaningful as a JOIN, between the moment one holding ended and the moment the next began; a row of values per holding would look complete on a chain with a gap in it."
+					},
+					{
 						"id": "case-archival-panel",
 						"type": "case-archival-pane",
 						"title": "Archiving",
@@ -3010,6 +3021,23 @@
 						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
 						"target": "CaseLifecycleMenuDialog"
+					},
+					{
+						"id": "case-merge",
+						"type": "open-modal",
+						"target": "CaseMergeDialog",
+						"label": "Merge into",
+						"icon": "CallMerge",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"_note": "Two cases for one request become one (REQ-CM-37). Hidden on a closed case, because a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog: hiding them here would leave a handler wondering why an act they were told about is not there.",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
 					},
 					{
 						"id": "case-claim",

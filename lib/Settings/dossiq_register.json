@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.1"
+        "version": "0.20.3"
     },
     "x-openregister": {
         "type": "application",
@@ -651,6 +651,22 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "areaFallbackRoleType": {
+                        "type": "string",
+                        "description": "The roleType a case of this type routes to when its address falls in no administered boundary. Declared per case type because the right fallback differs: a melding goes to the central desk, a vergunning goes to the duty handler. Absent, an unresolvable area routes by the rule's own roleType and the case still says the fallback was used.",
+                        "title": "Area fallback role type"
+                    },
+                    "consentRequiredInsideOrganisation": {
+                        "type": "boolean",
+                        "title": "Consent required inside the organisation",
+                        "description": "Whether a move between two teams of this organisation also needs a recorded consent. Off by default, because a move inside one organisation is not a disclosure. A Jeugdwet file and a parking permit are not the same question, which is why this is declared per case type rather than decided in the service."
+                    },
+                    "takeoverAnswerPeriodDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Takeover answer period, in days",
+                        "description": "How long the holder has to accept or refuse a takeover request before it goes to the unit holding the case. Empty means the fleet default of three days."
                     },
                     "intakeFormRef": {
                         "type": "string",
@@ -1561,6 +1577,39 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-merge": {
+                        "entityType": "case",
+                        "statusField": "mergeState",
+                        "survivorStatus": "active",
+                        "mergedStatus": "merged",
+                        "reversalWindowDays": 7,
+                        "x-dossiq-relink": [
+                            {
+                                "schema": "role",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseDocument",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseObject",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseProperty",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "customerContact",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "decision",
+                                "field": "case"
+                            }
+                        ]
+                    },
                     "_hierarchyNote": "Row Q13.23. The edge is `parentCase` and NOTHING ELSE. `relatedCases` is a typed PEER relation written symmetrically by CaseRelationService, so declaring it here would make a grant travel sideways along every link a handler ever made, without limit and without anyone having asked for it. `maxDepth` is not a performance dial: a deelzaak chain is a graph nobody validates on write, and a cycle written by an import would otherwise resolve forever. `inheritedVerbs` names READ and no more, which is the measured half of the competitor's behaviour (Vikunja 2.6.0 read on the root reached the grandchild and was refused a write): a right to see the parent is not a right to change the child. THIS BLOCK IS INERT UNTIL OPENREGISTER READS IT (`rbac-inherits-to-children`, row Q13.23), and it is declared now so the edge is one thing rather than two. It is also listed in SchemaSlugMap::SCHEMA_ANNOTATION_KEYS, without which OpenRegister DROPS an unknown configuration key in silence and the declaration would never reach the instance at all.",
                     "x-openregister-hierarchy": {
                         "parentField": "parentCase",
@@ -2555,7 +2604,8 @@
                             "finish",
                             "abort",
                             "archive",
-                            "autoClose"
+                            "autoClose",
+                            "merged"
                         ],
                         "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
                         "title": "Ending act",
@@ -2905,6 +2955,47 @@
                         "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
                         "title": "Override reason",
                         "order": 24
+                    },
+                    "mergedInto": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "readOnly": true,
+                        "title": "Merged into",
+                        "description": "The case this one was merged into. Written by CaseMergedListener when OpenRegister reports the merge, and cleared when the merge is reversed inside its window. The old case number keeps working: mail matching and the public status page follow this reference until they reach a case that carries none.",
+                        "order": 27
+                    },
+                    "mergeRelinked": {
+                        "type": "array",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Relinked at merge",
+                        "description": "Which rows moved to the survivor when this case was merged away, so a reversal can put exactly those back. Written by CaseMergeService; empty on every case that was never merged.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "schema": {
+                                    "type": "string",
+                                    "title": "Schema"
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Row"
+                                }
+                            }
+                        }
+                    },
+                    "mergeState": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "merged"
+                        ],
+                        "default": "active",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Merge state",
+                        "description": "Whether this case is still its own case. The OpenRegister merge engine writes this field and reads it back, which is why it is a plain value of its own and not the ending act: the engine compares it as a string and refuses a survivor that is not active. An absent value reads as active, so every case written before merging existed stays mergeable."
                     },
                     "duplicateOverrideOf": {
                         "type": "array",
@@ -3359,6 +3450,44 @@
                                 "type": "samenhang"
                             }
                         }
+                    },
+                    "district": {
+                        "type": "string",
+                        "description": "The wijk this case's address falls in, resolved once when the address is set rather than on every routing decision: resolving per query makes routing depend on an external service being up, and an unresolvable boundary would then read as a case with no area. Held here so a routing rule and a list filter can read the same value.",
+                        "title": "District",
+                        "facetable": true
+                    },
+                    "neighbourhood": {
+                        "type": "string",
+                        "description": "The buurt this case's address falls in, resolved with the district and from the same answer.",
+                        "title": "Neighbourhood",
+                        "facetable": true
+                    },
+                    "areaResolvedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the area was resolved. Boundaries change, and a municipality may redraw its own division, so a value on a case can only be explained beside the moment it was read.",
+                        "title": "Area resolved at",
+                        "readOnly": true
+                    },
+                    "areaSource": {
+                        "type": "string",
+                        "description": "The boundary set the area was read from, so the value can be explained by the boundaries in force at the time. Today that is PDOK's locatieserver through `PdokService`; when integriq publishes the `pdok-geo-boundaries` connection (ADR-019) this names that connection instead.",
+                        "title": "Area source",
+                        "readOnly": true
+                    },
+                    "areaFallbackUsed": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this case was routed by the case type's fallback because its address fell in no administered boundary. Addresses do: new developments, water, an address abroad, a case with no address at all. The flag is what keeps that from looking like routing that silently did nothing.",
+                        "title": "Area fallback used",
+                        "readOnly": true
+                    },
+                    "areaAddressId": {
+                        "type": "string",
+                        "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
+                        "title": "Area address id",
+                        "readOnly": true
                     }
                 },
                 "searchable": true
@@ -3437,6 +3566,19 @@
                         "format": "date-time",
                         "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
                         "title": "Delegate Until"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 1,
+                        "description": "How large a share of the pool's work this membership takes. The weight is on the MEMBERSHIP and not on the person, because the same handler may carry a full share of intake and a quarter share of objections, and one number on the person would be wrong for one of the two. A pool whose weights are all one is routed exactly as it was before weights existed. Zero means this member takes no new work without leaving the pool.",
+                        "title": "Weight"
+                    },
+                    "team": {
+                        "type": "string",
+                        "description": "The team this membership belongs to, so a routing rule can name a position INSIDE a team (the senior handler of team zuid) without an organisation-wide role for every senior of every team. That is how a role list reaches forty entries that mean six things. The value comes from the organisation; dossiq holds no second org chart.",
+                        "title": "Team",
+                        "facetable": true
                     },
                     "representedParty": {
                         "type": "string",
@@ -7610,7 +7752,7 @@
             "inspectionChecklistRun": {
                 "slug": "inspectionChecklistRun",
                 "icon": "ClipboardCheckMultipleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Inspection Checklist Run",
                 "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
@@ -8137,6 +8279,25 @@
                         "type": "string",
                         "description": "User ID of the revoker",
                         "title": "Revoked By"
+                    },
+                    "consentId": {
+                        "type": "string",
+                        "title": "Consent",
+                        "description": "The `toestemming` that allowed this share to exist. A partner share is written only when one covers the case, the receiver and the moment, so this is never empty on a partner share."
+                    },
+                    "consentScope": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Consent scope",
+                        "description": "What the consent names the receiving organisation may read: the data fields it lists, or its free-text reach when it lists none. Recording a scope that nothing enforces is the defect row 13.28 already names, so the scope travels with the share and the enforcement is asked of the platform (D-6)."
+                    },
+                    "consentUntil": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Consent runs until",
+                        "description": "The day the consent behind this share ends. Empty when the consent names no end."
                     }
                 }
             },
@@ -8906,7 +9067,7 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
                 "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
@@ -10801,6 +10962,154 @@
                         "default": 0
                     }
                 }
+            },
+            "caseCustody": {
+                "slug": "caseCustody",
+                "icon": "AccountSwitchOutline",
+                "version": "1.0.0",
+                "title": "Case custody",
+                "description": "One period a case was held by one organisation unit. The chain of these records answers who held a case on a given day, which the audit trail cannot: the audit says what changed, and reading a sequence of diffs back into a holding is a reconstruction, not a record. Exactly one holding per case is open at a time, and a move closes the open one and opens the next in the same act, so the chain has no gap by construction.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "organisationUnit",
+                    "from"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case this holding belongs to."
+                    },
+                    "organisationUnit": {
+                        "type": "string",
+                        "title": "Organisation unit",
+                        "description": "The unit that held the case for this period. A team inside the organisation or a partner organisation, whichever the move named."
+                    },
+                    "handler": {
+                        "type": "string",
+                        "title": "Handler",
+                        "description": "The person on the seat during this holding, where there was one. A unit can hold a case with nobody named on it."
+                    },
+                    "from": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Held from",
+                        "description": "The moment this holding began, in ISO 8601."
+                    },
+                    "until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Held until",
+                        "description": "The moment this holding ended, in ISO 8601. Empty on the open holding."
+                    },
+                    "open": {
+                        "type": "boolean",
+                        "title": "Open",
+                        "description": "Whether this is the holding that is running now. Stored rather than derived so a reader can ask the register for the open holding instead of sorting the chain."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "title": "Reason",
+                        "description": "Why the case moved into this holding."
+                    },
+                    "movedBy": {
+                        "type": "string",
+                        "title": "Moved by",
+                        "description": "Who made the move that opened this holding."
+                    },
+                    "sequence": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Sequence",
+                        "description": "The position of this holding in the chain, counted from one. Two holdings that begin in the same second still read back in order."
+                    }
+                }
+            },
+            "caseTakeover": {
+                "slug": "caseTakeover",
+                "icon": "HandBackRightOutline",
+                "version": "1.0.0",
+                "title": "Case takeover request",
+                "description": "A colleague asking the current holder for a case. A case nobody holds is claimed rather than requested; a case somebody holds needs that person's answer, because the holder knows something the asker does not. The answer is accept or refuse, a refusal carries a reason, and a request nobody answers escalates to the holding unit rather than expiring in silence.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "requestedBy",
+                    "reason",
+                    "status"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case being asked for."
+                    },
+                    "requestedBy": {
+                        "type": "string",
+                        "title": "Asked by",
+                        "description": "Who wants to take the case over."
+                    },
+                    "holder": {
+                        "type": "string",
+                        "title": "Holder",
+                        "description": "The person holding the case when the request was made, where there is one."
+                    },
+                    "holdingUnit": {
+                        "type": "string",
+                        "title": "Holding unit",
+                        "description": "The organisation unit holding the case when the request was made. The escalation goes here."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "title": "Reason",
+                        "description": "Why the asker should have the case."
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "accepted",
+                            "refused",
+                            "escalated"
+                        ],
+                        "title": "Status",
+                        "description": "Where the request stands. `escalated` is still open: the question moved to the unit, it was not answered."
+                    },
+                    "requestedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Asked at",
+                        "description": "When the request was made, in ISO 8601."
+                    },
+                    "answeredBy": {
+                        "type": "string",
+                        "title": "Answered by",
+                        "description": "Who accepted or refused."
+                    },
+                    "answeredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Answered at",
+                        "description": "When the answer was given, in ISO 8601."
+                    },
+                    "refusalReason": {
+                        "type": "string",
+                        "title": "Refusal reason",
+                        "description": "Why the holder is keeping the case. A refusal without one is not an answer."
+                    },
+                    "escalatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Escalated at",
+                        "description": "When the unanswered request went to the holding unit, in ISO 8601."
+                    },
+                    "taskId": {
+                        "type": "string",
+                        "title": "Task",
+                        "description": "The engine task that carries the request to the holder."
+                    }
+                }
             }
         },
         "registers": {
@@ -10881,6 +11190,8 @@
                     "caseFederatedShare",
                     "caseShare",
                     "casetransfer",
+                    "caseCustody",
+                    "caseTakeover",
                     "checklistItem",
                     "consultation",
                     "obligation",
