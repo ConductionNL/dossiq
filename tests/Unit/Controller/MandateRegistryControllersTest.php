@@ -114,13 +114,14 @@ class MandateRegistryControllersTest extends TestCase {
 		// The two collaborators the calendar line needs. Real doubles rather
 		// than nullable constructor defaults: a null branch nothing exercises
 		// is a branch that breaks the day somebody removes the null check.
+		// The roll is the timer service's, which is the app's only one.
 		return new TermijnDefinitieController(
 			'dossiq',
 			$this->request,
 			$this->generic,
 			$this->logger,
 			$this->createMock(\OCA\Dossiq\Service\CaseDateNormaliser::class),
-			$this->createMock(\OCA\Dossiq\Service\Termijn\WorkingDayRoll::class)
+			$this->createMock(\OCA\Dossiq\Service\TermijnTimerService::class)
 		);
 	}//end termijnController()
 

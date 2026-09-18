@@ -45,7 +45,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
 use OCA\Dossiq\Service\CaseDateNormaliser;
-use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -79,7 +79,7 @@ class TermijnDefinitieController extends Controller {
 	 * @param ConfiguredRegistryService $registry Generic configured-schema registry CRUD.
 	 * @param LoggerInterface $logger Logger.
 	 * @param CaseDateNormaliser $dates The one date path, which knows the zone.
-	 * @param WorkingDayRoll $roll The Awt roll, which knows whether a calendar answers.
+	 * @param TermijnTimerService $timers The one roll, which knows whether a calendar answers.
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */
@@ -89,7 +89,7 @@ class TermijnDefinitieController extends Controller {
 		private readonly ConfiguredRegistryService $registry,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
-		private readonly WorkingDayRoll $roll,
+		private readonly TermijnTimerService $timers,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -138,7 +138,7 @@ class TermijnDefinitieController extends Controller {
 		return new JSONResponse(
 			data: [
 				'timezone' => $this->dates->timeZone()->getName(),
-				'rollAvailable' => $this->roll->isAvailable(),
+				'rollAvailable' => $this->timers->calendarAnswers(),
 			],
 			statusCode: Http::STATUS_OK
 		);
