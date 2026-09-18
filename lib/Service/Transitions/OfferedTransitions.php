@@ -168,19 +168,13 @@ class OfferedTransitions {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function guardsFor(array $transition): array {
-		$guards = $this->specReader->extractGuards(transition: $transition);
-		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
-		// The capacity of the status being ENTERED, which is the one value
-		// this guard cannot read off the case: the case still carries the
-		// status it is leaving. Appended for the same reason the checklist is,
-		// because a limit authored on a status must bind every road into it,
-		// including a transition written before the limit existed.
-		$guards[] = [
-			'type' => GuardRegistry::STATUS_CAPACITY,
-			'toStatus' => (string)($transition['toStatus'] ?? ''),
-		];
-
-		return $guards;
+		// The implicit guards (the status checklist, the status capacity and
+		// the walked approval) come from the one list the offer and the move
+		// both read.
+		return $this->specReader->guardsWithImplicit(
+			transition: $transition,
+			approvalsWired: $this->guardRegistry->knows(type: GuardRegistry::APPROVAL_GATE),
+		);
 	}//end guardsFor()
 
 	/**

@@ -323,6 +323,11 @@ function ruleRow(rule, refusing, enforcing) {
 		right: rule?.action || '',
 		source,
 		detail: rule?.role || '',
+		// Which case handed this rule down, when OpenRegister says one did
+		// (row Q13.23). It is carried and never compared to anything: whether
+		// an inherited grant still answers is resolved in OpenRegister, on
+		// every path a question takes.
+		inheritedFrom: rule?.inheritedFrom || '',
 		level: rule?.level || '',
 		role: rule?.role || '',
 		declared: rule?.declared !== false,
@@ -463,7 +468,18 @@ export function grantRows({
 				// `rbac-inherits-to-children` reports one: the grant on a case
 				// type GROUP arrives here saying `group`, and this row says so
 				// instead of calling every grant on the object a share.
-				source: grant.source || grant.inheritedFrom || 'share',
+				//
+				// 🔴 `inheritedFrom` IS NOT A SOURCE NAME, it is the id of the
+				// case the grant came from, and it used to fall into `source`
+				// whenever OpenRegister reported one without a `source`. That
+				// put a uuid through `sourceLabel`, which returns its argument
+				// unchanged for a key it does not know, so the Where it comes
+				// from column read as a raw identifier where a sentence
+				// belongs. The two are separated here: the source says what
+				// kind of rule it is, the ancestor rides alongside and the
+				// panel names it.
+				source: grant.source || (grant.inheritedFrom ? 'inherited' : 'share'),
+				inheritedFrom: grant.inheritedFrom || '',
 				detail: grant.expires ? String(grant.expires) : '',
 			})
 		}

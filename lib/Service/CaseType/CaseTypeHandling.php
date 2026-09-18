@@ -92,6 +92,7 @@ final class CaseTypeHandling {
 		'hersteltermijn-request',
 		'hersteltermijn-reminder',
 		'doorzending',
+		'niet-ontvankelijk',
 	];
 
 	/**

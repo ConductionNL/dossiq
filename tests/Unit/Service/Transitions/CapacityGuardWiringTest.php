@@ -78,29 +78,51 @@ class CapacityGuardWiringTest extends TestCase {
 	 * @return void
 	 */
 	public function testBothAssemblersAppendTheGuard(): void {
+		// REWRITTEN 2026-09-18 ON THE MERGE WITH `approval-gate`, AND THE
+		// INVARIANT GOT STRONGER RATHER THAN WEAKER. This test used to read both
+		// files and assert each one appended the capacity guard itself. That
+		// change moved the implicit guards into one method both assemblers call,
+		// `TransitionSpecReader::guardsWithImplicit()`, so the capacity guard now
+		// lives there. Keeping the old assertion would have reddened on a merge
+		// that made the thing it protects IMPOSSIBLE to get wrong: with one list,
+		// the offer and the move cannot disagree at all.
+		//
+		// So it asserts that instead: neither assembler builds a list of its own,
+		// and the one list appends the capacity guard with the target status.
 		foreach (self::ASSEMBLERS as $path) {
 			$source = file_get_contents($this->root() . '/' . $path);
 			$this->assertNotFalse($source, sprintf('%s must be readable', $path));
 
 			$this->assertStringContainsString(
-				'GuardRegistry::STATUS_CAPACITY',
+				'guardsWithImplicit(',
 				$source,
 				sprintf(
-					'%s must append the capacity guard; a limit only bites on the roads it is '
-					. 'appended to, and a transition written before the limit names it nowhere',
+					'%s must take its guards from the one list the offer and the move both read; '
+					. 'two lists that must agree is how the board offers a move the engine refuses',
 					$path
 				)
 			);
-			$this->assertStringContainsString(
-				"'toStatus' => (string)(\$transition['toStatus'] ?? '')",
+			$this->assertStringNotContainsString(
+				"\$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST]",
 				$source,
-				sprintf(
-					'%s must put the TARGET status on the guard entry; the case still carries the '
-					. 'status it is leaving, and a guard with no target passes everything',
-					$path
-				)
+				sprintf('%s must not assemble an implicit guard list of its own', $path)
 			);
 		}
+
+		$reader = file_get_contents($this->root() . '/lib/Service/Transitions/TransitionSpecReader.php');
+		$this->assertNotFalse($reader, 'the spec reader must be readable');
+		$this->assertStringContainsString(
+			'GuardRegistry::STATUS_CAPACITY',
+			$reader,
+			'the shared guard list must append the capacity guard; a limit only bites on the roads '
+			. 'it is appended to, and a transition written before the limit names it nowhere'
+		);
+		$this->assertStringContainsString(
+			"'toStatus' => (string)(\$transition['toStatus'] ?? '')",
+			$reader,
+			'the guard entry must carry the TARGET status; the case still carries the status it is '
+			. 'leaving, and a guard with no target passes everything'
+		);
 	}//end testBothAssemblersAppendTheGuard()
 
 	/**
