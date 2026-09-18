@@ -91,6 +91,12 @@ class CaseMergeService {
 	private const MAX_HOPS = 16;
 
 	/**
+	 * OpenRegister's merge engine, reached by name so dossiq still enables
+	 * without it.
+	 */
+	private const MERGE_SERVICE_CLASS = 'OCA\\OpenRegister\\Service\\Merge\\MergeService';
+
+	/**
 	 * The merge rule, read once per request.
 	 *
 	 * @var array<string, mixed>|null
@@ -204,16 +210,92 @@ class CaseMergeService {
 	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function isMergeable(array $case): bool {
+		return $this->refusalFor(case: $case) === '';
+	}//end isMergeable()
+
+	/**
+	 * Which rule refuses this case as a merge source, if any.
+	 *
+	 * The rule is named rather than counted, because a caseworker who is told
+	 * no is owed the reason: a decided case and an already merged one are
+	 * refused for different reasons and have different ways out.
+	 *
+	 * @param array<string, mixed> $case The case payload.
+	 *
+	 * @return string The rule, empty when the case may be merged away.
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 */
+	public function refusalFor(array $case): string {
 		if (($case['isFinalStatus'] ?? false) === true) {
-			return false;
+			return 'final-status';
 		}
 
 		if ($this->referencedId(value: ($case['besluitDocument'] ?? null)) !== '') {
-			return false;
+			return 'signed-beschikking';
 		}
 
-		return $this->referencedId(value: ($case['mergedInto'] ?? null)) === '';
-	}//end isMergeable()
+		if ($this->referencedId(value: ($case['mergedInto'] ?? null)) !== '') {
+			return 'already-merged';
+		}
+
+		return '';
+	}//end refusalFor()
+
+	/**
+	 * Ask OpenRegister to merge one case into another.
+	 *
+	 * dossiq decides whether this case may be merged away, because the rules
+	 * that refuse it are case management's; OpenRegister does the merge,
+	 * because the merge is the platform's (ADR-045). The refusal is written
+	 * here and not only in the browser: an action the browser hides is still
+	 * an endpoint anyone may call.
+	 *
+	 * @param string $mergedId   The case to merge away.
+	 * @param string $survivorId The case it becomes part of.
+	 * @param string $reason     What the caseworker typed.
+	 * @param string $actor      The acting user's uid.
+	 *
+	 * @return array{refused?: string, operation?: array<string, mixed>} The outcome.
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 */
+	public function requestMerge(string $mergedId, string $survivorId, string $reason, string $actor): array {
+		if ($mergedId === '' || $survivorId === '' || $mergedId === $survivorId) {
+			return ['refused' => 'same-case'];
+		}
+
+		$source = $this->readCase(caseId: $mergedId);
+		$survivor = $this->readCase(caseId: $survivorId);
+		if ($source === null || $survivor === null) {
+			return ['refused' => 'unknown-case'];
+		}
+
+		$refusal = $this->refusalFor(case: $source);
+		if ($refusal !== '') {
+			return ['refused' => $refusal];
+		}
+
+		if ($this->referencedId(value: ($survivor['mergedInto'] ?? null)) !== '') {
+			return ['refused' => 'survivor-already-merged'];
+		}
+
+		$merger = $this->settingsService->getOpenRegisterClass(class: self::MERGE_SERVICE_CLASS);
+		if ($merger === null || method_exists($merger, 'executeMerge') === false) {
+			return ['refused' => 'platform-unavailable'];
+		}
+
+		try {
+			$operation = $merger->executeMerge($mergedId, $survivorId, $reason, $actor);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: OpenRegister refused the merge of "' . $mergedId . '": ' . $e->getMessage()
+			);
+			return ['refused' => 'platform-refused'];
+		}
+
+		return ['operation' => (array)$operation];
+	}//end requestMerge()
 
 	/**
 	 * Apply dossiq's consequences of a merge.
