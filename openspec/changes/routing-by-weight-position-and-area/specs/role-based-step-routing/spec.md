@@ -43,6 +43,15 @@ position SHALL NOT require an organisation-wide role for it.
 
 ### Requirement: Work not taken up returns to the pool (REQ-RTP-03)
 
+> NOT BUILT IN THIS CHANGE, and said here rather than discovered by somebody
+> reading the requirement and looking for the code. Take-back needs an armed
+> window rather than a sweep (D-4), and the window is openregister's
+> `flow-business-timers`: dossiq arming its own timer would be the second
+> scheduler ADR-022 exists to prevent, and a background sweep would be the
+> unpredictable reassignment D-4 rules out. It moves when the case-level timer
+> seam is agreed with the openregister lane; the weight, the position and the
+> area are independent of it and ship now.
+
 A pool SHALL be able to declare a window within which an assignment must be
 accepted or started. When the window passes, the work SHALL return to the
 pool and be routed on by the same strategy. The return SHALL record who held
