@@ -148,6 +148,16 @@ $extra = [
     ['name' => 'caseVersion#deprecate',     'url' => '/api/case-types/{id}/deprecate',    'verb' => 'POST'],
     ['name' => 'caseVersion#options',       'url' => '/api/case/{caseId}/version-move',   'verb' => 'GET'],
     ['name' => 'caseVersion#moveToVersion', 'url' => '/api/case/{caseId}/version-move',   'verb' => 'POST'],
+        // Rebinding a running case to a DIFFERENT case type (case-type-rebind).
+        // Deliberately not folded into version-move: that act derives its
+        // landing status by name across two versions of one type, and across
+        // two types a name means nothing, so the mapping is asked for. The
+        // permission route carries no case id on purpose: the manifest's
+        // `visibleWhen` fetches a URL and compares one field, and the question
+        // it asks is about the caller's group rather than about a case.
+    ['name' => 'caseRebind#permission',     'url' => '/api/rebind/permission',            'verb' => 'GET'],
+    ['name' => 'caseRebind#options',        'url' => '/api/case/{caseId}/rebind',         'verb' => 'GET'],
+    ['name' => 'caseRebind#rebind',         'url' => '/api/case/{caseId}/rebind',         'verb' => 'POST'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
@@ -415,6 +425,9 @@ $extra = [
         // perform, with the sentence naming the role, because an act that is
         // simply absent teaches nobody why.
     ['name' => 'caseActs#acts',           'url' => '/api/case/{caseId}/acts',           'verb' => 'GET'],
+        // Decision outcomes on the case: start the decidiq walk a gated act
+        // waits for, and link its decision id to the case.
+    ['name' => 'caseApproval#raise',      'url' => '/api/case/{caseId}/approvals/{act}', 'verb' => 'POST'],
     ['name' => 'caseActs#finish',         'url' => '/api/case/{caseId}/finish',         'verb' => 'POST'],
     ['name' => 'caseActs#abort',          'url' => '/api/case/{caseId}/abort',          'verb' => 'POST'],
     ['name' => 'caseActs#archive',        'url' => '/api/case/{caseId}/archive',        'verb' => 'POST'],
@@ -713,6 +726,11 @@ $extra = [
     // controller body, because they read and write the triage queue.
     ['name' => 'intakeTriage#requirements', 'url' => '/api/intake/case-types/{caseTypeId}/requirements', 'verb' => 'GET'],
     ['name' => 'intakeTriage#refuse',       'url' => '/api/cases/{caseId}/refuse',                       'verb' => 'POST'],
+    // Decision outcomes on the case: intake ends with an ontvankelijkheid
+    // verdict on the case types that declare one. It goes through the same
+    // per-case guard `refuse` does, because it mutates a case and, on an
+    // inadmissible verdict, closes it.
+    ['name' => 'intakeTriage#judgeAdmissibility', 'url' => '/api/cases/{caseId}/admissibility',          'verb' => 'POST'],
     ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
     ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
     ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],

@@ -33,7 +33,8 @@
                     "dwangsom-payment",
                     "hersteltermijn-request",
                     "hersteltermijn-reminder",
-                    "doorzending"
+                    "doorzending",
+                    "niet-ontvankelijk"
                   ]
                 }
               },

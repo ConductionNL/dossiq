@@ -73,6 +73,20 @@ final class TermKind {
 	public const PHASE = 'phase';
 
 	/**
+	 * The clock a decision's remedy runs on, started when the decision is sent.
+	 *
+	 * Its own kind and not a phase term, because it is not a phase: it starts
+	 * when the besluit goes out and it runs against the DECISION, not against
+	 * the work. Modelled as a phase it would enter the phase strip and the
+	 * progress figure, and a closed case would read as unfinished for six
+	 * weeks. It is what makes "is this decision still open to bezwaar"
+	 * answerable from the case without arithmetic.
+	 *
+	 * @var string
+	 */
+	public const REMEDY = 'remedy';
+
+	/**
 	 * Every kind, in the order a case page reads them.
 	 *
 	 * @var array<int, string>
@@ -82,6 +96,7 @@ final class TermKind {
 		self::PLANNED,
 		self::INTERNAL,
 		self::PHASE,
+		self::REMEDY,
 	];
 
 	/**

@@ -106,6 +106,7 @@ import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
+import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
 // change note, and a route to the copy (case-type-authoring-extras D5).
@@ -376,6 +377,12 @@ const registry = {
 		kind: 'modal',
 		component: CaseVersionMoveDialog,
 		_note: 'CaseDetail Actions menu: move this case to another version of its own case type. The PREVIEW is why it is a modal and not a confirm gate: a case is pinned to the version it was filed under because its status is a row only that version holds, so the person moving it is shown the landing status and the statuses and fields the other version adds and drops, including the dropped ones this case has answered. It derives NONE of that: canMove and every refusal sentence come from the server, so the dialog cannot disagree with the write.',
+	},
+	// @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	CaseRebindDialog: {
+		kind: 'modal',
+		component: CaseRebindDialog,
+		_note: 'CaseDetail Actions menu: move this case to a DIFFERENT case type, which the version move beside it cannot do. It is a modal and not a confirm gate because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for rather than derived, and so is every property the target requires in that status and the case does not carry. The dialog derives no verdict: canRebind, the missing names and every refusal come from the server, and the group check lives in the service rather than in this button.',
 	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	CaseHandoverDialog: {
