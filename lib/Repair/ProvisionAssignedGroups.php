@@ -146,6 +146,14 @@ class ProvisionAssignedGroups implements IRepairStep {
 		'dossiq-coordinators',
 		'dossiq-quality',
 		'dossiq-risk-assessment',
+		// The extra permission on a BSN and on the special-category fields of
+		// the sociaal-domein schemas (sensitive-fields-declared, row 5.6). Same
+		// direction of failure as the three above: an authorization group the
+		// server does not have matches nobody, so the field is withheld from
+		// every reader who is not an administrator. The group is created EMPTY
+		// on purpose. Sensitive data should be readable by the people an
+		// administrator names, not by everybody who happened to be installed.
+		'dossiq-sensitive',
 	];
 
 	/**

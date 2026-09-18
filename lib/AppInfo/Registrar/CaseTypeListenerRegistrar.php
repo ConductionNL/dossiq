@@ -32,6 +32,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseInheritedDeadlineListener;
 use OCA\Dossiq\Listener\CaseTypeParentCycleListener;
+use OCA\Dossiq\Listener\MilestoneDependencyCycleListener;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
@@ -68,6 +69,13 @@ class CaseTypeListenerRegistrar {
 			$context->registerEventListener(
 				event: $event,
 				listener: CaseTypeParentCycleListener::class
+			);
+			// The same shape one level down: a milestone whose `dependsOn`
+			// closes a loop is refused by the edit that creates it, not by
+			// whatever touches the case type next.
+			$context->registerEventListener(
+				event: $event,
+				listener: MilestoneDependencyCycleListener::class
 			);
 			$context->registerEventListener(
 				event: $event,

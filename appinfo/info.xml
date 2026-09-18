@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.26-unstable.20260916093000</version>
+    <version>0.4.31-unstable.20260918120500</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -567,6 +567,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <!-- documents-live-on-the-case: every document's file moves into the
                  folder of the case that owns it, once, behind a persisted key. -->
             <step>OCA\Dossiq\Repair\MoveDocumentsIntoCaseFolders</step>
+            <!-- gemachtigde-role-on-every-case-type: the one role type that names
+                 no case type, so every case type can record a representative
+                 under Awb 2:1. MUST come before SyncCaseRoleVocabulary, which
+                 writes the role types onto the case schema: seeding after it
+                 would leave the new row out of the vocabulary for a whole
+                 upgrade, and the picker offers exactly what the schema holds. -->
+            <step>OCA\Dossiq\Repair\SeedGemachtigdeRoleType</step>
             <!-- people-on-the-case: the case schema declares this instance's role
                  types as the roles a person can hold. Every upgrade, not once:
                  role types are data an admin adds whenever the process needs one. -->
@@ -593,6 +600,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 writes nothing.
             -->
             <step>OCA\Dossiq\Repair\DeclareNotificationTemplates</step>
+            <!--
+                The family plan's `goals` and `deploymentTrajectories` string
+                arrays become goals and interventions. Every string is carried
+                with its text intact, its unmapped fields empty and a mark that
+                it came from the old shape; nothing is dropped and no provider
+                or target date is invented for a field the old shape never had
+                (REQ-CPN-02). Idempotent per PLAN rather than per string: a
+                string whose text a consulent has since corrected no longer
+                matches, so matching per string would give the household both.
+                Post-migration only, deliberately: there is nothing to carry on
+                a fresh install, and the step reads the register, which is not
+                imported yet at install time.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateCasePlanStrings</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -750,6 +771,9 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 uid and an upgrade runs as nobody); it names what is outstanding
                 and the command that completes it. It never throws.
             -->
+            <!-- gemachtigde-role-on-every-case-type: before the vocabulary sync,
+                 for the reason spelled out on the post-migration entry. -->
+            <step>OCA\Dossiq\Repair\SeedGemachtigdeRoleType</step>
             <step>OCA\Dossiq\Repair\SyncCaseRoleVocabulary</step>
             <step>OCA\Dossiq\Repair\ReportShippedFlowAdoption</step>
             <!-- inbound-mail-filters: Nextcloud Mail holds the account now, so
