@@ -120,6 +120,56 @@ class DashboardWidgetScope {
 	}//end narrowFor()
 
 	/**
+	 * Which declared widgets this reader may see, keyed by widget id.
+	 *
+	 * 🔑 THE SAME VERDICT `narrowFor()` USES, ANSWERED AS A MAP. That class
+	 * already decides per widget; what it did not do was let the PAGE ask, so
+	 * a reader who may not see a tile still had the tile drawn, empty or
+	 * erroring, over a payload that correctly carried none of its figures. The
+	 * verdict is computed here rather than in the controller so there is one
+	 * decision, not two that can disagree.
+	 *
+	 * IT IS NOT THE ENFORCEMENT AND MUST NOT BECOME IT. The data is withheld by
+	 * `narrowFor()` and by the endpoints behind the other widgets; this only
+	 * lays the page out. A reader who calls it learns which tiles they would be
+	 * shown, which is a fact about them.
+	 *
+	 * @param string $userId The reader.
+	 *
+	 * @return array<string, bool> Widget id to whether it is drawn.
+	 *
+	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md#requirement-a-widget-answers-nothing-to-a-reader-who-may-not-see-it-req-wrd-02
+	 */
+	public function visibilityFor(string $userId): array {
+		$manifest = $this->manifest();
+		if ($manifest === []) {
+			return [];
+		}
+
+		$held = $this->heldBy(userId: $userId);
+		$known = $this->knownGroups();
+
+		$visible = [];
+		foreach ($this->widgets->dashboardWidgets(manifest: $manifest) as $widget) {
+			if ($this->widgets->rolesOf(widget: $widget) === []) {
+				// Declared for everyone. It is not in the map at all, because a
+				// map claiming to answer for every widget in the app would be a
+				// second, partial copy of the manifest, and `visibleWhen` only
+				// names the ones that carry it.
+				continue;
+			}
+
+			$visible[(string)$widget['id']] = ($this->widgets->verdictFor(
+				widget: $widget,
+				held: $held,
+				known: $known,
+			) === 'visible');
+		}
+
+		return $visible;
+	}//end visibilityFor()
+
+	/**
 	 * The groups this reader is in.
 	 *
 	 * @param string $userId The reader.
