@@ -62,7 +62,9 @@
         "6 weeks": "6 weeks",
         "8 weeks": "8 weeks",
         "> 90 dagen": "> 90 dagen",
-        "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": [
+        "An administrator decides this one, so it is not yours to change.": "An administrator decides this one, so it is not yours to change.",
+    "That setting was not saved.": "That setting was not saved.",
+    "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": [
             "You moved the case, but {count} automatic action did not run. Its status record shows which.",
             "You moved the case, but {count} automatic actions did not run. Its status record shows which."
         ],
