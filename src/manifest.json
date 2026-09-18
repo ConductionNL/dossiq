@@ -2445,6 +2445,17 @@
 											"emptyText": "No next action is planned on this case"
 										}
 									}
+								},
+								{
+									"label": "Cards",
+									"widget": {
+										"id": "case-deck",
+										"type": "integration",
+										"integrationId": "deck",
+										"title": "Coordination board",
+										"icon": "ViewColumnOutline",
+										"_note": "leaf-integrations REQ-LEAF-105: a board for the ad-hoc coordination around a case, beside the tasks and never instead of them. NOTHING IN DOSSIQ READS OR WRITES A DECK CARD FROM A `task`, OR THE OTHER WAY ROUND. Task lifecycle belongs to WorkflowEngineService alone and the kanban WorkflowBoardView is the workflow surface; a mirror would give a handler two places to finish the same work and no rule about which one counts. A SECTION of the Work panel rather than a body widget with a layout entry, which is what the design named: the case body is a tab strip and its grid is full, and a card board is work, so it belongs beside the tasks. The leaf owns link, create and unlink, so dossiq ships no Deck code at all; with the Deck app absent the library renders its own empty state rather than an error."
+									}
 								}
 							]
 						}
@@ -2604,6 +2615,14 @@
 						"_note": "case-number-and-favourites, row 2.19. The per-reader star, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/favourite (favourites-and-recent, openregister#3766). It sits directly under the identity tiles and above the unread strip because it is part of what identifies this case TO YOU, where every strip below it is about the case rather than about you. Starring writes NOTHING to the case: the star lives in OpenRegister's own table, so no version is cut, no audit entry is written and no colleague can see it. The widget renders from `@self.favourite`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT a header action because the gesture is two verbs on one path: CnActionButtons' `toggle` type writes with one `method`, and a `handler` action is handed action.args verbatim with no token resolved, so it would run with no case to act on."
 					},
 					{
+						"id": "family-plan",
+						"type": "family-plan",
+						"title": "Family plan",
+						"icon": "FileTreeOutline",
+						"_note": "the-social-domain-plan-and-its-grounds REQ-CPN-01 and REQ-CPN-03, rows 14.1 and 5.18. The Jeugdwet gezinsplan: the goals this household agreed to work on, the interventions under each with their provider and their target date, and what is late. NOT the adaptive case plan: `cmmn-case-plan` renders OpenRegister\u2019s case layer, the stages and milestones of any case, and this is what was agreed with one family. Two things called a plan, and confusing them would put a household\u2019s goals in a widget every case type shows. The register declared `gezinsplan.goals` and `deploymentTrajectories` as plain string arrays and nothing read them, so the plan a family is worked to did not exist as data at all; that is why the row was rated `no` and not `partial`. TYPE is a registry key rather than a declarative widget because the plan is THREE schemas read together, `gezinsplan` with its `casePlanGoal` rows and the `intervention` rows under those, with `overdue` and `dueForReview` computed server-side against today; no widget type joins three schemas, and a `data` widget over `gezinsplan` would render the plan\u2019s own fields and none of its goals. Silent on a case that names no plan, which is every case outside Jeugdwet.",
+						"content": {}
+					},
+					{
 						"id": "case-archived",
 						"type": "case-archived",
 						"title": "Archived",
@@ -2677,6 +2696,15 @@
 						"showTitle": false
 					},
 					{
+						"id": "family-plan-panel",
+						"widgetId": "family-plan",
+						"gridX": 0,
+						"gridY": 22,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
 						"id": "archived-strip",
 						"widgetId": "case-archived",
 						"gridX": 0,
@@ -2685,6 +2713,7 @@
 						"gridHeight": 1,
 						"showTitle": false
 					},
+
 					{
 						"id": "favourite-strip",
 						"widgetId": "case-favourite",
@@ -2844,6 +2873,7 @@
 				"_editLockNote": "edit-lock-on-the-case-page REQ-CM-39, row 2.27. Two caseworkers silently overwriting each other was, in the gap register's own words, a real failure mode we had no answer to. The answer is the PLATFORM lock, and the take, the release and both displays belong to CnDetailPage rather than to this manifest: opening the edit form acquires, closing it and a successful save release, leaving the page releases through the composable's scope, and Edit is withdrawn while another user holds it rather than offered and then refused by the write. Nothing here declares any of that, and nothing should: a key that turned the lock on per page would be a second answer to a question one detail page answers for every app in the fleet. \ud83d\udd34 WHAT THIS PAGE OWES THE LOCK IS TWO STRINGS. The lock url is built from `config.register` and `config.schema`, and a slug no register answers to comes back 404, at which point the acquire fails for a reason that is not a conflict, the form stays open on purpose and the edit proceeds with NO LOCK AT ALL, silently. That is not hypothetical: nextcloud-vue passed the object-cache key `<register>-<schema>` into that url until #1202, and the release sent a DELETE to a route OpenRegister does not declare and read its own 404 as success, so no lock was ever taken or handed back on any manifest-driven detail page. `tests/vitest/caseEditLock.spec.js` is what keeps the pair honest here. \u26a0\ufe0f A HELD LOCK DOES NOT YET REFUSE A SAVE: openregister `run-scoped-object-locking` is unshipped, so today the lock is what the second handler is SHOWN, and the write guard arrives with that change.",
 				"_archivedNote": "archived-cases-leave-the-lenses REQ-CM-43, D-4. Six header actions that WRITE to the case are gated on `@self.archived`, the platform's own marker, read straight off the case object the page already holds: the LOCAL form of `visibleWhen` dot-paths into that object, so the gate costs no round trip. `eq null` is how absence is spelled, and it is exact rather than loose: an absent marker is null and a present one is an object, and String(object) is never \"null\". THE FOUR THAT ARE NOT GATED ARE DELIBERATE. Claim, Release and Hand to another team already carry `isFinalStatus neq true`, and a case can only be archived once it has ended, so they are already gone on an archived case; `visibleWhen` holds ONE condition and no AND, so adding the archive to them would mean dropping the condition doing the work. Copy case stays, because a copy is a NEW case and writes nothing to this one. The Lifecycle menu stays, because Restore lives inside it and gating it would hide the one act that undoes the archive. Start keeps its own `hasStartableFlows` gate for the same one-condition reason, and a flow that writes to an archived case is refused by OpenRegister with a sentence naming the archive. \ud83d\udd34 THE GENERIC EDIT BUTTON IS STILL OFFERED, AND DOSSIQ CANNOT TAKE IT AWAY PER RECORD. `config.showEditAction` is a page-level boolean in the manifest schema and CnDetailPage has no predicate form of it, so pressing Edit opens the form, saving is refused by the platform, and the refusal names the archive, the archiving user and the date. That is the reason reaching the reader rather than a silent failure, but it arrives after the click where the other six are simply not there. It belongs in nextcloud-vue, where one detail page reading `@self.archived` answers for every app in the fleet.",
 				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. NEITHER IS GATED ON THE ASSIGNEE, though the requirement is worded that way. A local `visibleWhen` compares a dot-path against a LITERAL with eq or neq: it has no empty operator, it does not resolve `@me` in `value`, and neither its endpoint nor its source mode can name this case (the endpoint URL is fetched verbatim, and OpenRegister's object list ignores an `id` filter). So the gate is the one thing the record says for certain, which is that a closed case is not picked up, and the SERVER refuses a claim on a case that already has a handler, or a release by anyone who is not that handler, with a 409 and a sentence. That is this page's own convention, the one `case-resume` follows: a gesture the case does not allow is refused in words rather than silently accepted. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
+				"_crossDomainNote": "the-social-domain-plan-and-its-grounds REQ-XDV-01 and REQ-XDV-02, row 5.18. Whether an open case exists in another social-domain register, which one, and who to call. Three facts, and there is no show-more: purpose limitation between Wmo, Jeugdwet and Participatiewet does not allow the 360 view row 5.4 asks for, and every field beyond those three is one somebody has to justify. A modal rather than an api-call because the GROUND is the act and is chosen BEFORE the answer: a ground filled in afterwards is a formality, and choosing it first is what makes the log mean something when the person asks what was looked up about them. Not gated on a group here, deliberately: the guard is that a ground has been chosen, the service refuses without one before it reads anything, and it writes the ground, the person, the requester, the moment and what came back to `sociaalDomeinAuditLog` in the same act as the answer, which is the field that had been declared and unread since the register was written.",
 				"_rebindNote": "case-rebind (case-type-rebind): move a running case to a DIFFERENT case type, which the version move beside it refuses by design. A case filed under the wrong type used to be closed and refiled, with a new number, a new term and a paper trail that stops; a rebind keeps all three. It is a modal because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for and so is every property the target requires in that status. The action is gated on `visibleWhen` rather than on a group key, because an action carries no group vocabulary: the endpoint answers whether the caller is a case coordinator, and the service checks the same group itself, since a hidden button is not an authorization.",
 				"_versionMoveNote": "case-version-move (case-type-version-chain): move this case to another version of its OWN case type, which nothing could do. A case filed the day before a correction was published had to be closed and refiled under a new number. It is a modal and not a confirm-gated api-call because the PREVIEW is the act's substance: the person moving the case is shown the status it lands in, the statuses and fields the other version adds and drops, and which of the dropped fields this case has already answered. Every one of those, and the refusal when the other version has no status by the name this case is sitting in, comes from the server, so the dialog cannot disagree with the write. Moving a case to a DIFFERENT case type is a rebind and is not this act: `case-type-rebind` owns that and declares this change as its dependency. Hidden on a closed case, like the other acts that rewrite what governs it.",
 				"headerActions": [
@@ -3042,6 +3072,13 @@
 							"op": "neq",
 							"value": true
 						}
+					},
+					{
+						"id": "cross-domain-lookup",
+						"type": "open-modal",
+						"label": "Known in another domain",
+						"icon": "AccountSearchOutline",
+						"target": "CrossDomainLookupDialog"
 					},
 					{
 						"id": "case-rebind",
@@ -4023,7 +4060,7 @@
 					},
 					{
 						"id": "pm-dwell",
-						"title": "Dwell time by status (median hours)",
+						"title": "Dwell time by status",
 						"type": "custom"
 					},
 					{
@@ -4034,6 +4071,11 @@
 					{
 						"id": "pm-bottlenecks",
 						"title": "Bottleneck ranking",
+						"type": "custom"
+					},
+					{
+						"id": "pm-dwell-by-assignee",
+						"title": "Dwell time by handler",
 						"type": "custom"
 					}
 				],
@@ -4069,6 +4111,14 @@
 						"gridY": 9,
 						"gridWidth": 12,
 						"gridHeight": 6
+					},
+					{
+						"id": 5,
+						"widgetId": "pm-dwell-by-assignee",
+						"gridX": 0,
+						"gridY": 15,
+						"gridWidth": 12,
+						"gridHeight": 6
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
@@ -4078,7 +4128,8 @@
 				"widget-pm-kpis": "PmKpiWidget",
 				"widget-pm-dwell": "PmDwellChartWidget",
 				"widget-pm-throughput": "PmThroughputChartWidget",
-				"widget-pm-bottlenecks": "PmBottleneckTableWidget"
+				"widget-pm-bottlenecks": "PmBottleneckTableWidget",
+				"widget-pm-dwell-by-assignee": "PmDwellByAssigneeWidget"
 			}
 		},
 		{

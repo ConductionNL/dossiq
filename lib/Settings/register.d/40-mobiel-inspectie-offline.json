@@ -26,6 +26,11 @@
           "inspectorRef",
           "status"
         ],
+        "configuration": {
+          "linkedTypes": [
+            "maps"
+          ]
+        },
         "properties": {
           "caseRef": {
             "type": "string",

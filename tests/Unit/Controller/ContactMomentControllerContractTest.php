@@ -45,6 +45,7 @@ use OCA\Dossiq\Controller\ContactMomentController;
 use OCA\Dossiq\Service\BurgerIdentificationService;
 use OCA\Dossiq\Service\CaseVoorbladService;
 use OCA\Dossiq\Service\CitizenLookupGuard;
+use OCA\Dossiq\Service\Kcc\CitizenLookupRecorder;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\DoorverbindingService;
 use OCA\Dossiq\Service\QuickActionService;
@@ -129,6 +130,7 @@ class ContactMomentControllerContractTest extends TestCase {
 			burgerService: $this->createMock(BurgerIdentificationService::class),
 			userSession: $this->userSession,
 			citizenLookupGuard: $this->createMock(CitizenLookupGuard::class),
+			citizenLookupRecorder: $this->createMock(CitizenLookupRecorder::class),
 		);
 	}//end setUp()
 
