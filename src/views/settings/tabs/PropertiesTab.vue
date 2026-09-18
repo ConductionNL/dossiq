@@ -16,77 +16,82 @@
 
 			<template v-else>
 				<div v-if="propertyDefs.length > 0" class="properties-tab__list">
-					<div
-						v-for="pd in propertyDefs"
-						:key="pd.id"
-						class="property-row"
-						:class="{ 'property-row--editing': editingId === pd.id }">
-						<template v-if="editingId !== pd.id">
-							<span class="property-row__name">{{ pd.name }}</span>
-							<span class="property-row__format">{{
-								typeSummary(pd)
-							}}</span>
-							<span v-if="pd.maxLength" class="property-row__max">
-								{{ t('dossiq', 'max {n}', { n: pd.maxLength }) }}
-							</span>
-							<span class="property-row__required">
-								{{ requiredLabel(pd) }}
-							</span>
-							<div class="property-row__actions">
-								<NcButton
-									variant="tertiary"
-									:aria-label="
-										t('dossiq', 'Edit {name}', {
-											name: pd.name,
-										})
-									"
-									@click="startEdit(pd)">
-									<template #icon>
-										<PencilIcon :size="20" />
-									</template>
-								</NcButton>
-								<NcButton
-									variant="tertiary"
-									:aria-label="
-										t('dossiq', 'Delete {name}', {
-											name: pd.name,
-										})
-									"
-									@click="deleteProperty(pd)">
-									<template #icon>
-										<DeleteIcon :size="20" />
-									</template>
-								</NcButton>
-							</div>
-						</template>
-
-						<template v-else>
-							<div class="property-row__edit-form">
-								<PropertyDefinitionFields
-									:value="editForm"
-									:vocabulary="vocabulary"
-									:vocabularySource="vocabularySource"
-									:statusTypes="statusTypes"
-									:nameError="editError"
-									idPrefix="pd-edit"
-									@update="applyEdit" />
-								<span v-if="editError" class="field-error">{{
-									editError
+					<template v-for="group in groupedPropertyDefs" :key="group.category">
+						<h5 class="properties-tab__group" :data-category="group.category">
+							{{ group.category }}
+						</h5>
+						<div
+							v-for="pd in group.properties"
+							:key="pd.id"
+							class="property-row"
+							:class="{ 'property-row--editing': editingId === pd.id }">
+							<template v-if="editingId !== pd.id">
+								<span class="property-row__name">{{ pd.name }}</span>
+								<span class="property-row__format">{{
+									typeSummary(pd)
 								}}</span>
-								<div class="edit-row edit-row--actions">
+								<span v-if="pd.maxLength" class="property-row__max">
+									{{ t('dossiq', 'max {n}', { n: pd.maxLength }) }}
+								</span>
+								<span class="property-row__required">
+									{{ requiredLabel(pd) }}
+								</span>
+								<div class="property-row__actions">
 									<NcButton
-										variant="primary"
-										:disabled="editSaving"
-										@click="saveEdit">
-										{{ t('dossiq', 'Save') }}
+										variant="tertiary"
+										:aria-label="
+											t('dossiq', 'Edit {name}', {
+												name: pd.name,
+											})
+										"
+										@click="startEdit(pd)">
+										<template #icon>
+											<PencilIcon :size="20" />
+										</template>
 									</NcButton>
-									<NcButton variant="tertiary" @click="cancelEdit">
-										{{ t('dossiq', 'Cancel') }}
+									<NcButton
+										variant="tertiary"
+										:aria-label="
+											t('dossiq', 'Delete {name}', {
+												name: pd.name,
+											})
+										"
+										@click="deleteProperty(pd)">
+										<template #icon>
+											<DeleteIcon :size="20" />
+										</template>
 									</NcButton>
 								</div>
-							</div>
-						</template>
-					</div>
+							</template>
+
+							<template v-else>
+								<div class="property-row__edit-form">
+									<PropertyDefinitionFields
+										:value="editForm"
+										:vocabulary="vocabulary"
+										:vocabularySource="vocabularySource"
+										:statusTypes="statusTypes"
+										:nameError="editError"
+										idPrefix="pd-edit"
+										@update="applyEdit" />
+									<span v-if="editError" class="field-error">{{
+										editError
+									}}</span>
+									<div class="edit-row edit-row--actions">
+										<NcButton
+											variant="primary"
+											:disabled="editSaving"
+											@click="saveEdit">
+											{{ t('dossiq', 'Save') }}
+										</NcButton>
+										<NcButton variant="tertiary" @click="cancelEdit">
+											{{ t('dossiq', 'Cancel') }}
+										</NcButton>
+									</div>
+								</div>
+							</template>
+						</div>
+					</template>
 				</div>
 
 				<p v-else class="properties-tab__empty">
@@ -146,6 +151,7 @@ function blankForm() {
 		name: '',
 		definition: '',
 		description: '',
+		category: '',
 		propertyType: 'string',
 		format: '',
 		pattern: '',
@@ -216,6 +222,52 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		objectStore() {
 			return useObjectStore()
+		},
+
+		/**
+		 * The attributes of this case type, in their folders.
+		 *
+		 * The catalogue index groups by the FACET OpenRegister computes, which
+		 * is why `category` is facetable. This tab cannot: it fetches its own
+		 * rows through the object store and gets no facet map with them, so the
+		 * grouping is done here over the rows in hand. That is sound precisely
+		 * because the set is bounded: the fetch asks for one case type's
+		 * definitions at `_limit: 100`, so there is no later page for a
+		 * category to hide on.
+		 *
+		 * An attribute with no category is filed under Uncategorised rather
+		 * than dropped. The schema default writes that word on every new
+		 * definition, but a definition authored before this change carries no
+		 * category at all, and leaving those out of the list would hide the
+		 * attributes an author most needs to file. The stored default is the
+		 * English literal, so it is folded into the translated label here: read
+		 * in Dutch, the two would otherwise be two folders holding the same
+		 * kind of nothing.
+		 *
+		 * @return {Array<{category: string, properties: Array<object>}>} The groups, Uncategorised last.
+		 * @spec openspec/changes/attribute-catalogue-folders/specs/property-definition-management/spec.md
+		 */
+		groupedPropertyDefs() {
+			const uncategorised = t('dossiq', 'Uncategorised')
+			const groups = new Map()
+			this.propertyDefs.forEach((pd) => {
+				const stored = String(pd.category || '').trim()
+				const category
+					= stored === '' || stored === 'Uncategorised'
+						? uncategorised
+						: stored
+				if (!groups.has(category)) {
+					groups.set(category, [])
+				}
+				groups.get(category).push(pd)
+			})
+			return Array.from(groups.entries())
+				.map(([category, properties]) => ({ category, properties }))
+				.sort((a, b) => {
+					if (a.category === uncategorised) return 1
+					if (b.category === uncategorised) return -1
+					return a.category.localeCompare(b.category)
+				})
 		},
 	},
 
@@ -467,6 +519,16 @@ export default {
 
 .properties-tab__list {
 	margin-bottom: 24px;
+}
+
+.properties-tab__group {
+	margin: 16px 0 4px;
+	color: var(--color-text-maxcontrast);
+	font-weight: bold;
+}
+
+.properties-tab__group:first-child {
+	margin-top: 0;
 }
 
 .property-row {

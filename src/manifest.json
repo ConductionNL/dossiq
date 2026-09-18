@@ -371,6 +371,14 @@
 			"order": 90
 		},
 		{
+			"id": "PropertyDefinitionsMenu",
+			"label": "Attributes",
+			"icon": "TagMultiple",
+			"route": "PropertyDefinitions",
+			"section": "settings",
+			"order": 91
+		},
+		{
 			"id": "FlowsMenu",
 			"label": "Flows",
 			"icon": "Sitemap",
@@ -5387,6 +5395,50 @@
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"_note": "A case type is the blueprint every case is governed by — lifecycle, deadlines, classification, the workflow that drives it — and `case.caseType` references it. It had no surface at all: the original `CaseTypesMenu` pointed at the in-app `/settings` page, which page-topology-cleanup B1 retired for mounting AdminRoot through the in-app router (ADR-004), and no replacement was ever built. The capability went with the page and only its stale `settingsSection` id was left behind. WorkflowDefinitionDetail's own note still says cases are 'reached through their caseType index', naming this page. Restored as an ordinary schema-driven index rather than by reviving the retired settings route."
+		},
+		{
+			"id": "PropertyDefinitions",
+			"route": "/settings/attributes",
+			"type": "index",
+			"title": "Attributes",
+			"config": {
+				"register": "dossiq",
+				"schema": "propertyDefinition",
+				"columns": [
+					"name",
+					"category",
+					"propertyType",
+					"definition",
+					"isRequired"
+				],
+				"showViewAction": false,
+				"_showViewActionNote": "There is no PropertyDefinitionDetail page and a view action with no route pushes vue-router at a name it cannot resolve, so the row opens the metadata sidebar instead. An attribute is eight fields; a page of its own would be the sidebar with a header.",
+				"formSize": "large",
+				"formColumns": 2,
+				"includeFields": [
+					"name",
+					"category",
+					"propertyType",
+					"definition",
+					"description",
+					"isRequired",
+					"defaultValue",
+					"maxLength"
+				],
+				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`: CnFolderSidebar's validator takes custom, field and files only, and a sidebar declared as a facet falls through to `custom`, finds no `folders` array and renders an empty pane. The shape is the one `#CaseTypes` carries. Since nextcloud-vue 2.42.0 the `field` source PREFERS the facet, which OpenRegister computes over the whole query with pagination stripped, so a category is reachable even when all of its attributes sit on a later page; `facetable: true` on `propertyDefinition.category` plus this block is the whole contract and the object store adds `_facets=extend` on its own. AN ATTRIBUTE WITH NO CATEGORY GETS ITS FOLDER FROM THE SCHEMA DEFAULT, not from this pane: `fieldTree()` skips a row whose grouping value is null, undefined or empty, so there is nowhere here to name an empty bucket, and `category` defaults to Uncategorised on the register instead. ⚠️ The facet arrives up to an hour stale, because OpenRegister caches the response and no object write invalidates it (OpenRegister#3560), so a category added today may get no folder today.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "category",
+					"filterField": "category",
+					"allLabel": "All attributes"
+				},
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			},
+			"_note": "The attribute catalogue, row 11.23 of the competitor gap register. Case types were in folders and attributes were a flat list, so a municipality with two hundred attributes scrolled. An attribute is not per case type: `caseType` is not in propertyDefinition's required list, and an attribute with no case type is shared across every one of them, which is exactly what makes a catalogue page worth having. Templates stay filinq's: the register names no slug for a template category and dossiq stores nothing about it."
 		},
 		{
 			"id": "CaseTypeDetail",

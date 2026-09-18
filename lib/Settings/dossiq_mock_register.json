@@ -11359,6 +11359,14 @@
             "description": "Longer explanation of this property",
             "title": "Description"
           },
+          "category": {
+            "type": "string",
+            "maxLength": 255,
+            "default": "Uncategorised",
+            "facetable": true,
+            "description": "The folder this attribute sits in on the Attributes index, a free word rather than a fixed list: an organisation's own grouping (Adres, Financieel, Persoon) is the one it recognises. Attributes with no category are listed under Uncategorised.",
+            "title": "Category"
+          },
           "caseType": {
             "type": "string",
             "format": "uuid",
