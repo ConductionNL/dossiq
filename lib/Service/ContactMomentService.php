@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Pipelinq\ContactMomentBridge;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -67,6 +68,13 @@ class ContactMomentService {
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
+		// 🔴 THE BRANCH ALSO ADDED `CaseTimeline` HERE AND IT IS DELIBERATELY
+		// NOT KEPT. While this branch sat unopened, parity moved the timeline
+		// write to `ContactMomentTimelineListener`, and parity's own comment
+		// below says so. Keeping both would write every contact moment onto
+		// the case timeline twice, and the branch's `recordOnTimeline()` no
+		// longer exists in this file to call.
+		private readonly ContactMomentBridge $pipelinqBridge,
 	) {
 	}//end __construct()
 
@@ -139,7 +147,23 @@ class ContactMomentService {
 			throw new RuntimeException('Could not create contactmoment');
 		}
 
-		return $this->normalize(result: $created);
+		$record = $this->normalize(result: $created);
+
+		// The same moment, appended to the fleet's own record. Best effort and
+		// AFTER the dossiq write on purpose: a handler logging a call they
+		// have just taken must not lose it because another app said no. The
+		// refusal travels back on the record so the surface can show it.
+		$bridged = $this->pipelinqBridge->append(
+			caseId: (string)($data['case'] ?? ''),
+			moment: $record,
+		);
+
+		if ($bridged['appended'] === false && $bridged['reason'] !== '') {
+			$record['pipelinqRefusal'] = $bridged['reason'];
+			$record['pipelinqIndicators'] = $bridged['indicators'];
+		}
+
+		return $record;
 	}//end createContactMoment()
 
 	/**

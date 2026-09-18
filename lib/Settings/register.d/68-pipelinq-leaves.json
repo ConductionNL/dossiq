@@ -1,0 +1,15 @@
+{
+  "_note": "parties-and-contact-moments-consume-pipelinq. The case declares pipelinq's two panels as leaves, so a handler reads the party and the contact moments on the case without dossiq querying pipelinq's register. What is deliberately NOT here is the point of the change: no party field, no indicator, no party kind, no survey, no invitation, no programme and no second contact moment schema. pipelinq owns those; dossiq declares and renders them. `linkedTypes` is a LIST, and fragments concatenate lists rather than replacing them, so this adds the two ids to whatever the monolith already declares.",
+  "components": {
+    "schemas": {
+      "case": {
+        "configuration": {
+          "linkedTypes": [
+            "pipelinq-contact-moments",
+            "pipelinq-party"
+          ]
+        }
+      }
+    }
+  }
+}
