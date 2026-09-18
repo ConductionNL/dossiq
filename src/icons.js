@@ -57,6 +57,7 @@ import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline
 import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
 import CalendarTextOutline from 'vue-material-design-icons/CalendarTextOutline.vue'
 import CallMerge from 'vue-material-design-icons/CallMerge.vue'
+import CallSplit from 'vue-material-design-icons/CallSplit.vue'
 import CameraOutline from 'vue-material-design-icons/CameraOutline.vue'
 import CardAccountDetailsOutline from 'vue-material-design-icons/CardAccountDetailsOutline.vue'
 import Cash from 'vue-material-design-icons/Cash.vue'
@@ -263,6 +264,7 @@ export default {
 	CalendarPlus,
 	CalendarTextOutline,
 	CallMerge,
+	CallSplit,
 	CameraOutline,
 	Cash,
 	CardAccountDetailsOutline,

@@ -116,6 +116,7 @@ import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
 import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
+import CaseSplitDialog from './dialogs/CaseSplitDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
 // change note, and a route to the copy (case-type-authoring-extras D5).
@@ -428,6 +429,13 @@ const registry = {
 		kind: 'modal',
 		component: CaseMergeDialog,
 		_note: 'Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server\'s and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out. WHY THE ACTION IS HIDDEN ON A CLOSED CASE, moved here from the manifest entry: a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server\'s and arrive as a sentence in the dialog; hiding them in the header too would leave a handler wondering why an act they were told about is not there. The manifest entry carries no `_note` because `$defs/action` sets `additionalProperties: false`, which is the same reason CasePlanFollowUpDialog above records.',
+	},
+
+	// @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
+	CaseSplitDialog: {
+		kind: 'modal',
+		component: CaseSplitDialog,
+		_note: "Dividing one case in two (REQ-CM-45). The inverse of CaseMergeDialog and a different act from CaseCopyDialog: a copy opens a second case holding everything, so both claim the same document, and a split MOVES what is ticked and leaves a reference behind. Nothing is ticked for the handler, because which document belongs to which half is a judgement about content and a default selection is a judgement that gets confirmed. A party ticked as moving AND as on both halves is two contradictory instructions, so the button refuses rather than the server picking one. The refusals are the server's and shown verbatim, and the one the case type produces is CaseSplitPolicy's own sentence, which names what may still be divided as well as what may not. The header action that opens it is hidden on a CLOSED case, for the same reason the merge is: a closed case is a record of what was decided. That reasoning lives here and not in the manifest because the v2 manifest schema rejects `_note` on a header action.",
 	},
 
 	// --- Copy a case, from its own page (case-actions-menu, row A24). ---

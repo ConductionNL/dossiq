@@ -1184,7 +1184,7 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::deadlineDefinition": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "edd9aacfc732e7c0033fb995a9b991e19223e32fde988a7f88664bf4ebb9a748"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::deadlineInstance": {
