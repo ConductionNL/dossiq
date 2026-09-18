@@ -91,6 +91,24 @@ class WorkingDayRoll {
 	public const UNIT_BUSINESS_DAYS = 'businessDays';
 
 	/**
+	 * The engine's word for an ordinary day count.
+	 */
+	public const UNIT_CALENDAR_DAYS = 'calendarDays';
+
+	/**
+	 * The two modes a term can count in. The default is calendar days because
+	 * an Awb beslistermijn counts them, and shipping the property must move no
+	 * date anybody is already counting on.
+	 */
+	public const MODE_CALENDAR_DAYS = 'calendarDays';
+
+	/**
+	 * A service norm, an internal handling term or a KCC callback counts the
+	 * days the organisation actually works.
+	 */
+	public const MODE_WORKING_DAYS = 'workingDays';
+
+	/**
 	 * Whether the engine has been looked for yet.
 	 *
 	 * @var boolean
@@ -161,6 +179,101 @@ class WorkingDayRoll {
 
 		return ($this->calculator !== null && $this->calendar !== null);
 	}//end isAvailable()
+
+	/**
+	 * A date this many days after the one given, counted in one mode.
+	 *
+	 * The counting mode is the term's own (`counting-mode-per-term`, row
+	 * Q8.16): an Awb beslistermijn counts calendar days, and a service norm or
+	 * a KCC callback counts working days. Both answers come from here rather
+	 * than from two places, because the SLA the engine arms and the
+	 * `endDateCalculated` the case stores have to agree at day granularity or
+	 * the badge and the timer count down to different dates.
+	 *
+	 * Working days are the ENGINE'S, per ADR-022 and for the same reason the
+	 * roll below is. When the calendar does not answer, the caller is told so
+	 * rather than handed a calendar-day date that looks like a working-day
+	 * one: null is the answer, and `TermijnService` degrades and logs.
+	 *
+	 * @param DateTimeImmutable $start The day the term starts.
+	 * @param int               $days  How many days it runs.
+	 * @param string            $mode  `calendarDays` or `workingDays`.
+	 *
+	 * @return DateTimeImmutable|null The end date, or null when working days
+	 *                                were asked for and the calendar is absent.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function endAfter(DateTimeImmutable $start, int $days, string $mode): ?DateTimeImmutable {
+		if ($mode !== self::MODE_WORKING_DAYS) {
+			return $start->modify('+' . $days . ' days');
+		}
+
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return $this->calculator->add(
+				from: $start,
+				value: (float)$days,
+				unit: self::UNIT_BUSINESS_DAYS,
+				calendar: $this->calendar
+			);
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar refused a working-day end date',
+				['error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+	}//end endAfter()
+
+	/**
+	 * How many days lie between two dates, counted in one mode.
+	 *
+	 * The counterpart of {@see endAfter()}, and the reason the timer's SLA
+	 * VALUE moves with its unit: a ten working day term spans fourteen
+	 * calendar days, so arming `value: 14, unit: businessDays` would give the
+	 * case two weeks it is not entitled to.
+	 *
+	 * @param DateTimeImmutable $from The start.
+	 * @param DateTimeImmutable $to   The end.
+	 * @param string            $mode `calendarDays` or `workingDays`.
+	 *
+	 * @return int|null The span, or null when working days were asked for and
+	 *                  the calendar is absent.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function daysBetween(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
+		if ($mode !== self::MODE_WORKING_DAYS) {
+			return (int)$from->diff($to)->days;
+		}
+
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return (int)round(
+				$this->calculator->measure(
+					from: $from,
+					to: $to,
+					unit: self::UNIT_BUSINESS_DAYS,
+					calendar: $this->calendar
+				)
+			);
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar refused a working-day span',
+				['error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+	}//end daysBetween()
 
 	/**
 	 * The next ordinary day at or after this one, on the organisation calendar.

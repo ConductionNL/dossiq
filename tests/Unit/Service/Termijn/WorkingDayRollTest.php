@@ -172,6 +172,75 @@ class WorkingDayRollTest extends TestCase {
 	}
 
 	/**
+	 * Scenario: A working-day term skips the weekend.
+	 *
+	 * The fixture pair the design asks for (D-3). Five working days from a
+	 * Thursday is the next Thursday; five calendar days is the Tuesday. The
+	 * two answers come from ONE method, because the SLA the engine arms and
+	 * the date the case stores are computed here and must agree.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function testAWorkingDayTermSkipsTheWeekend(): void {
+		$thursday = new DateTimeImmutable('2026-09-10T09:00:00+02:00');
+		$roll = $this->withEngine(answering: $thursday);
+
+		$working = $roll->endAfter(start: $thursday, days: 5, mode: WorkingDayRoll::MODE_WORKING_DAYS);
+		$calendar = $roll->endAfter(start: $thursday, days: 5, mode: WorkingDayRoll::MODE_CALENDAR_DAYS);
+
+		$this->assertSame('2026-09-17', $working->format('Y-m-d'));
+		$this->assertSame('Thursday', $working->format('l'));
+		$this->assertSame('2026-09-15', $calendar->format('Y-m-d'));
+	}
+
+	/**
+	 * The span between two dates moves with the mode, which is why the SLA
+	 * value can never be carried over from one unit to the other.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function testTheSpanBetweenTwoDatesMovesWithTheMode(): void {
+		$thursday = new DateTimeImmutable('2026-09-10T09:00:00+02:00');
+		$nextThursday = new DateTimeImmutable('2026-09-17T09:00:00+02:00');
+		$roll = $this->withEngine(answering: $thursday);
+
+		$this->assertSame(
+			5,
+			$roll->daysBetween(from: $thursday, to: $nextThursday, mode: WorkingDayRoll::MODE_WORKING_DAYS)
+		);
+		$this->assertSame(
+			7,
+			$roll->daysBetween(from: $thursday, to: $nextThursday, mode: WorkingDayRoll::MODE_CALENDAR_DAYS)
+		);
+	}
+
+	/**
+	 * A calendar-day term needs no calendar at all, and a working-day one
+	 * says so rather than answering in the wrong unit.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function testWithoutACalendarOnlyTheWorkingDayAnswerIsRefused(): void {
+		$thursday = new DateTimeImmutable('2026-09-10T09:00:00+02:00');
+		$roll = $this->degraded();
+
+		$this->assertSame(
+			'2026-09-15',
+			$roll->endAfter(start: $thursday, days: 5, mode: WorkingDayRoll::MODE_CALENDAR_DAYS)->format('Y-m-d')
+		);
+		$this->assertNull($roll->endAfter(start: $thursday, days: 5, mode: WorkingDayRoll::MODE_WORKING_DAYS));
+		$this->assertNull(
+			$roll->daysBetween(from: $thursday, to: $thursday->modify('+7 days'), mode: WorkingDayRoll::MODE_WORKING_DAYS)
+		);
+	}
+
+	/**
 	 * A roll built around a calculator that answers a fixed instant.
 	 *
 	 * Not a PHPUnit double: the engine class is not on this repository's
@@ -231,8 +300,47 @@ class FakeRollCalculator {
 	 * @return DateTimeImmutable The answer.
 	 */
 	public function add(\DateTimeInterface $from, float $value, string $unit, object $calendar): DateTimeImmutable {
-		return $this->answering;
+		if ($value === 0.0) {
+			return $this->answering;
+		}
+
+		// A working-day walk, the way the seeded nl-national calendar does it:
+		// step a day at a time and count only the ones that are not a weekend.
+		$cursor = DateTimeImmutable::createFromInterface($from);
+		$left = (int)$value;
+		while ($left > 0) {
+			$cursor = $cursor->modify('+1 day');
+			if ((int)$cursor->format('N') < 6) {
+				$left--;
+			}
+		}
+
+		return $cursor;
 	}//end add()
+
+	/**
+	 * How many days of one unit lie between two instants.
+	 *
+	 * @param \DateTimeInterface $from The start.
+	 * @param \DateTimeInterface $to The end.
+	 * @param string $unit The unit.
+	 * @param object $calendar The calendar.
+	 *
+	 * @return float The span.
+	 */
+	public function measure(\DateTimeInterface $from, \DateTimeInterface $to, string $unit, object $calendar): float {
+		$cursor = DateTimeImmutable::createFromInterface($from);
+		$end = DateTimeImmutable::createFromInterface($to);
+		$days = 0;
+		while ($cursor < $end) {
+			$cursor = $cursor->modify('+1 day');
+			if ((int)$cursor->format('N') < 6) {
+				$days++;
+			}
+		}
+
+		return (float)$days;
+	}//end measure()
 }//end class
 
 /**

@@ -5557,7 +5557,10 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Counting mode": "Telwijze",
+        "Calendar days": "Kalenderdagen",
+        "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "Een Awb-beslistermijn telt kalenderdagen. Een servicenorm of een terugbelafspraak telt alleen de dagen waarop de organisatie werkt, op de organisatiekalender."
     },
     "nplurals=2; plural=(n != 1);"
 )

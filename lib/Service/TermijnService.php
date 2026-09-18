@@ -124,7 +124,7 @@ class TermijnService {
 		}
 
 		$durationDays = (int)($definitie['standardDurationDays'] ?? 0);
-		$computed = $startDate->modify('+' . $durationDays . ' days');
+		$computed = $this->endDateFor(start: $startDate, days: $durationDays, definitie: $definitie);
 
 		// THE ALGEMENE TERMIJNENWET ROLL, WHEN THE DEFINITION ASKS FOR IT.
 		// `+N days` on its own lands a third of dossiq's terms on a Saturday,
@@ -185,6 +185,69 @@ class TermijnService {
 
 		return ($this->armEngineTimer(instance: $saved, definitie: $definitie) ?? $saved);
 	}//end createTermijnInstance()
+
+	/**
+	 * The end date of a term, counted in the mode its definition declares.
+	 *
+	 * 🔴 A DEGRADED WORKING-DAY TERM IS LOGGED, NOT SILENTLY SHORTENED. When
+	 * the definition asks for working days and the organisation calendar does
+	 * not answer, the fallback counts calendar days, which gives the case a
+	 * SHORTER term than it is owed: ten working days is fourteen calendar
+	 * days, so the applicant loses four. That is the documented degradation
+	 * (D-2, the D-7 posture) and it is stated at warning naming the case type,
+	 * because a term nobody can see is short is the failure this whole change
+	 * exists to end.
+	 *
+	 * @param DateTimeImmutable    $start     The day the term starts.
+	 * @param int                  $days      The declared duration.
+	 * @param array<string, mixed> $definitie The definition.
+	 *
+	 * @return DateTimeImmutable The end date, before the Awt roll.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
+		$mode = self::countingModeOf(definitie: $definitie);
+		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS || $this->roll === null) {
+			return $start->modify('+' . $days . ' days');
+		}
+
+		$computed = $this->roll->endAfter(start: $start, days: $days, mode: $mode);
+		if ($computed !== null) {
+			return $computed;
+		}
+
+		$this->logger->warning(
+			'Dossiq termijn: a term declares working days and the organisation calendar did not answer, '
+			. 'so its end date was counted in calendar days and the term is SHORTER than it is owed',
+			['caseType' => (string)($definitie['caseType'] ?? ''), 'days' => $days]
+		);
+
+		return $start->modify('+' . $days . ' days');
+	}//end endDateFor()
+
+	/**
+	 * The counting mode a definition declares.
+	 *
+	 * Static, because the timer service asks the same question of the same row
+	 * and two readings of one declaration is how the badge and the engine come
+	 * to count down to different dates. An absent or unknown value reads as
+	 * calendar days: every definition written before this property existed
+	 * counts them, and an Awb beslistermijn counts them by law.
+	 *
+	 * @param array<string, mixed> $definitie The definition.
+	 *
+	 * @return string One of the two modes.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public static function countingModeOf(array $definitie): string {
+		$declared = trim((string)($definitie['countingMode'] ?? ''));
+
+		return ($declared === WorkingDayRoll::MODE_WORKING_DAYS
+			? WorkingDayRoll::MODE_WORKING_DAYS
+			: WorkingDayRoll::MODE_CALENDAR_DAYS);
+	}//end countingModeOf()
 
 	/**
 	 * Arm the engine timer for a freshly created instance and store its

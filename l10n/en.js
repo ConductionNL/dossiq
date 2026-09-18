@@ -5550,7 +5550,10 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Counting mode": "Counting mode",
+        "Calendar days": "Calendar days",
+        "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar."
     },
     "nplurals=2; plural=(n != 1);"
 )
