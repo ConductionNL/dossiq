@@ -5,6 +5,7 @@
     {
       "slug": "omgevingsvergunning-bouwactiviteit",
       "title": "Omgevingsvergunning Bouwactiviteit",
+      "category": "Vergunningen",
       "description": "Omgevingsvergunning voor bouwactiviteiten onder de Omgevingswet. Reguliere procedure (8 weken) of uitgebreide procedure (26 weken).",
       "processingDeadline": "P56D",
       "suspensionAllowed": true,
@@ -51,6 +52,7 @@
     {
       "slug": "sloopmelding",
       "title": "Sloopmelding",
+      "category": "Vergunningen",
       "description": "Melding voor sloopactiviteiten. Beoordelingstermijn 4 weken.",
       "processingDeadline": "P28D",
       "suspensionAllowed": false,
@@ -78,6 +80,7 @@
     {
       "slug": "toezichtzaak-bouw",
       "title": "Toezichtzaak Bouw",
+      "category": "Toezicht en handhaving",
       "description": "Toezichtzaak voor bouwactiviteiten met meerdere inspectiefases (fundering, ruwbouw, oplevering).",
       "confidentiality": "intern",
       "origin": "ambtshalve",
@@ -109,6 +112,7 @@
     {
       "slug": "toezichtzaak-milieu",
       "title": "Toezichtzaak Milieu",
+      "category": "Toezicht en handhaving",
       "description": "Toezichtzaak voor milieuactiviteiten (periodiek of incidenteel).",
       "confidentiality": "intern",
       "origin": "ambtshalve",
@@ -133,6 +137,7 @@
     {
       "slug": "handhavingszaak",
       "title": "Handhavingszaak",
+      "category": "Toezicht en handhaving",
       "description": "Handhavingszaak met LHS-classificatie (Landelijke Handhavingsstrategie). Omvat vooraankondiging, zienswijze, handhavingsbesluit, begunstigingstermijn en hercontrole.",
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
@@ -172,6 +177,7 @@
     {
       "slug": "invorderingszaak",
       "title": "Invorderingszaak",
+      "category": "Toezicht en handhaving",
       "description": "Invorderingszaak voor verbeurde dwangsommen.",
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",
