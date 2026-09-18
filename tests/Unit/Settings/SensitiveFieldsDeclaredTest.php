@@ -204,15 +204,24 @@ class SensitiveFieldsDeclaredTest extends TestCase {
 	}//end testTheGroupIsProvisioned()
 
 	/**
-	 * `CitizenLookupGuard` does not decide about a field.
+	 * `CitizenLookupGuard` evaluates no declaration.
 	 *
-	 * The scenario asks for the absence of a field-level branch. MEASURED
-	 * 2026-09-18 rather than removed: the class never had one. It answers a
-	 * single question, whether the caller may resolve a citizen identifier at
+	 * MEASURED 2026-09-18: the class never had a field-level branch. It answered
+	 * a single question, whether the caller may resolve a citizen identifier at
 	 * all, which is the endpoint guard for PROC-IDOR-01 and not the field rule
 	 * OpenRegister now enforces. Deleting it because this change "retires the
 	 * guard" would have reopened an IDOR that returned a citizen's phone number
 	 * and every previous call summary to any authenticated account.
+	 *
+	 * SHARPENED the same day, and this is why the assertion is not a method
+	 * list any more. `citizen-lookup-is-guarded-and-recorded` adds
+	 * `redactForCaller()`, which checks one group against one constant to take
+	 * four keys OUT of a payload dossiq composed itself. Pinning the method
+	 * list would have reddened on that, and reddened for the wrong reason: what
+	 * this requirement forbids is a SECOND EVALUATOR of OpenRegister's
+	 * declaration, which would eventually disagree with it. So the assertion is
+	 * now that the class reads no schema, no property and no authorization
+	 * block, which is the thing that would make it one.
 	 *
 	 * @return void
 	 *
@@ -220,17 +229,26 @@ class SensitiveFieldsDeclaredTest extends TestCase {
 	 */
 	public function testTheGuardDoesNotDecideAboutAField(): void {
 		$reflection = new ReflectionClass(CitizenLookupGuard::class);
-
-		$names = array_map(
-			static fn (\ReflectionMethod $method): string => $method->getName(),
-			$reflection->getMethods()
-		);
-		$this->assertSame(['__construct', 'isCitizenLookupAllowed'], $names);
-
 		$source = (string)file_get_contents((string)$reflection->getFileName());
-		// The two shapes a field-level branch would take here. Neither is
-		// present, and this is what says so when somebody adds one.
-		$this->assertStringNotContainsString('$field', $source);
-		$this->assertStringNotContainsString('property', $source);
+
+		// Comments are stripped first. Every phrase below appears in this
+		// class's own documentation, which names the declaration precisely so a
+		// reader knows where the rule lives. Matching the prose would fail the
+		// test for explaining itself.
+		$code = (string)preg_replace('#/\*.*?\*/|//[^\n]*#s', '', $source);
+
+		foreach (['schema', 'properties', 'authorization', 'getConfiguration'] as $needle) {
+			$this->assertStringNotContainsStringIgnoringCase(
+				$needle,
+				$code,
+				'CitizenLookupGuard must not read the declaration; a second evaluator of it '
+				. 'eventually disagrees with OpenRegister and is fixed in whichever direction is easier'
+			);
+		}
+
+		// And the redaction can only remove. `array_diff_key` over a constant
+		// is the whole mechanism; a union or an assignment into the row would
+		// be the shape that can grant.
+		$this->assertStringContainsString('array_diff_key', $code);
 	}//end testTheGuardDoesNotDecideAboutAField()
 }//end class
