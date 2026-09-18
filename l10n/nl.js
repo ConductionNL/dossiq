@@ -5490,7 +5490,13 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Incidents": "Incidenten",
+        "Happened": "Gebeurd op",
+        "Recorded": "Vastgelegd op",
+        "Reporter": "Melder",
+        "Splittable parts": "Deelbare onderdelen",
+        "No incidents recorded on this case yet": "Nog geen incidenten vastgelegd op deze zaak"
     },
     "nplurals=2; plural=(n != 1);"
 )

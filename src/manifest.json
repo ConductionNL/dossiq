@@ -2402,6 +2402,7 @@
 										}
 									}
 								},
+								{"label": "Incidents", "widget": {"id": "case-incidents", "type": "object-list", "title": "Incidents", "icon": "AlertOutline", "_note": "splitting-a-case-and-its-incidents REQ-CM-47. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is a column beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).", "content": {"register": "dossiq", "schema": "incident", "filter": {"case": "@objectId"}, "sort": {"field": "eventDate", "dir": "asc"}, "limit": 25, "columns": [{"key": "eventDate", "label": "Happened"}, {"key": "recordedAt", "label": "Recorded"}, {"key": "reporter", "label": "Reporter"}, {"key": "state", "label": "State"}, {"key": "assignee", "label": "Owner"}], "emptyText": "No incidents recorded on this case yet"}}},
 								{
 									"label": "Appointments",
 									"widget": {
