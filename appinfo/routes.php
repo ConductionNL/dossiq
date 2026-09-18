@@ -1041,6 +1041,9 @@ $extra = [
     ['name' => 'deadlineReporting#dashboard',        'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
     ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
     ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+        // The first response, counted and averaged from what was stored on the
+        // cases at the time (term-configuration-beyond-the-case-type, row 8.24).
+    ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/termijn/reports/eerste-reactie', 'verb' => 'GET'],
         // IV3/BBV taakveld reference list, for the case-type classification
         // picker. The quarterly IV3 cost report that used to sit alongside it
         // is gone under ADR-081 — Shillinq is the only statutory reporter. The
