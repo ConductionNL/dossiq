@@ -23,8 +23,18 @@ same place and only one of them is a decision somebody made.
 - **GIVEN** an incoming message with no reference and no fallback case type
 - **WHEN** integriq offers it
 - **THEN** the event result SHALL read `declined`
-- **AND** the result SHALL carry the reason, so integriq records why rather
-  than recording nothing
+- **AND** the reason SHALL be recorded where a handler can read it
+
+The reason goes in dossiq's OWN intake log rather than on the event, and
+that is measured rather than chosen: integriq's `setOutcome()` takes an
+outcome and an object reference and has no slot for a reason at all. The
+intake log entry is written before the slot is answered, and it is the
+surface a handler opens anyway.
+
+An internal failure SHALL leave the slot empty rather than declining. That
+is the one silence this requirement allows: after a crash no decision was
+made, and writing `declined` would be this app claiming a judgement it
+never reached.
 
 #### Scenario: The same message offered twice is filed once
 @e2e exclude a duplication guard over the intake log; covered by the listener test
@@ -66,12 +76,26 @@ carry no mail parser of its own, because two parsers are two answers to one
 question. An instance without integriq SHALL keep the file and say the
 message could not be read.
 
+dossiq reaches integriq's reader IN PROCESS rather than over the import
+endpoint. The endpoint is that same parser behind a session and a multipart
+upload, and calling it from PHP would mean forwarding the caller's session
+to our own server; the parser class is resolved through the fleet app id
+instead, under whichever namespace this instance's integriq has.
+
 #### Scenario: An Outlook message dropped on a case becomes readable
 
 - **GIVEN** a case and a saved `.msg` file
-- **WHEN** a handler drops it on the case and reads it as a message
+- **WHEN** a handler picks Read as a message on that row
 - **THEN** the case SHALL show the message with its subject, sender and date
-- **AND** the original `.msg` SHALL still be in the case folder
+- **AND** the original `.msg` SHALL still be in the case folder, unmoved
+
+#### Scenario: A file that is not a message is refused rather than filed
+@e2e exclude a client-side name check with the server arm driven in the e2e spec; covered by the savedMail unit test
+
+- **GIVEN** a row that is not a saved mail file
+- **WHEN** a handler picks Read as a message on it
+- **THEN** nothing SHALL be filed on the case
+- **AND** the handler SHALL be told there is no message in it to read
 
 #### Scenario: Without integriq the file is kept and the reason is given
 @e2e exclude a missing-app branch that needs integriq uninstalled; covered by the SavedMailImport unit test with the probe answering false
