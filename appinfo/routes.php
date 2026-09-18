@@ -475,6 +475,24 @@ $extra = [
     ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
     ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
 
+        // Merging two cases into one (case-merge, row 2.23). The merge itself
+        // is OpenRegister's; what lives here is the refusal, because whether a
+        // case may be merged away is a case management rule and the browser
+        // hiding the action is not a refusal.
+    ['name' => 'caseMerge#merge',        'url' => '/api/case/{caseId}/merge',      'verb' => 'POST'],
+
+        // The public "track your case" link of a case that was merged away.
+        // OpenRegister's own token endpoint answers with the case the token
+        // names; this one follows `mergedInto` and answers with the case the
+        // request became part of, under the same public-group read.
+    ['name' => 'publicCaseSurvivor#survivor', 'url' => '/api/public/case-tokens/{token}/survivor', 'verb' => 'GET', 'requirements' => ['token' => '[^/]+']],
+
+        // The two answers to a followed term move (dependent-term-follows-
+        // predecessor, row Q3.21). The days are on the task, not in the body,
+        // so neither endpoint takes one.
+    ['name' => 'caseTermFollow#accept',  'url' => '/api/case/{caseId}/term-follow/{taskId}/accept',  'verb' => 'POST'],
+    ['name' => 'caseTermFollow#decline', 'url' => '/api/case/{caseId}/term-follow/{taskId}/decline', 'verb' => 'POST'],
+
         // The Awb 4:3a acknowledgement of receipt (ontvangstbevestiging). One
         // read that answers "did we confirm receipt, when, to whom and by
         // which channel", and one write for the case an acknowledgement never

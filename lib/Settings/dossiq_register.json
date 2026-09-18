@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.2"
+        "version": "0.20.3"
     },
     "x-openregister": {
         "type": "application",
@@ -651,6 +651,11 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "areaFallbackRoleType": {
+                        "type": "string",
+                        "description": "The roleType a case of this type routes to when its address falls in no administered boundary. Declared per case type because the right fallback differs: a melding goes to the central desk, a vergunning goes to the duty handler. Absent, an unresolvable area routes by the rule's own roleType and the case still says the fallback was used.",
+                        "title": "Area fallback role type"
                     },
                     "consentRequiredInsideOrganisation": {
                         "type": "boolean",
@@ -1572,6 +1577,39 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-merge": {
+                        "entityType": "case",
+                        "statusField": "mergeState",
+                        "survivorStatus": "active",
+                        "mergedStatus": "merged",
+                        "reversalWindowDays": 7,
+                        "x-dossiq-relink": [
+                            {
+                                "schema": "role",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseDocument",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseObject",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseProperty",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "customerContact",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "decision",
+                                "field": "case"
+                            }
+                        ]
+                    },
                     "_hierarchyNote": "Row Q13.23. The edge is `parentCase` and NOTHING ELSE. `relatedCases` is a typed PEER relation written symmetrically by CaseRelationService, so declaring it here would make a grant travel sideways along every link a handler ever made, without limit and without anyone having asked for it. `maxDepth` is not a performance dial: a deelzaak chain is a graph nobody validates on write, and a cycle written by an import would otherwise resolve forever. `inheritedVerbs` names READ and no more, which is the measured half of the competitor's behaviour (Vikunja 2.6.0 read on the root reached the grandchild and was refused a write): a right to see the parent is not a right to change the child. THIS BLOCK IS INERT UNTIL OPENREGISTER READS IT (`rbac-inherits-to-children`, row Q13.23), and it is declared now so the edge is one thing rather than two. It is also listed in SchemaSlugMap::SCHEMA_ANNOTATION_KEYS, without which OpenRegister DROPS an unknown configuration key in silence and the declaration would never reach the instance at all.",
                     "x-openregister-hierarchy": {
                         "parentField": "parentCase",
@@ -2311,6 +2349,17 @@
                                 "en": "related to"
                             },
                             "symmetric": true
+                        },
+                        {
+                            "key": "waitsOn",
+                            "label": {
+                                "nl": "wacht op",
+                                "en": "waits on"
+                            },
+                            "inverseLabel": {
+                                "nl": "blokkeert",
+                                "en": "blocks"
+                            }
                         }
                     ],
                     "mailObjectTemplate": {
@@ -2555,7 +2604,8 @@
                             "finish",
                             "abort",
                             "archive",
-                            "autoClose"
+                            "autoClose",
+                            "merged"
                         ],
                         "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
                         "title": "Ending act",
@@ -2935,6 +2985,47 @@
                         "title": "First response sent",
                         "description": "When the first response actually went out. Written once, by the act that sent it.",
                         "order": 30
+                    },
+                    "mergedInto": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "readOnly": true,
+                        "title": "Merged into",
+                        "description": "The case this one was merged into. Written by CaseMergedListener when OpenRegister reports the merge, and cleared when the merge is reversed inside its window. The old case number keeps working: mail matching and the public status page follow this reference until they reach a case that carries none.",
+                        "order": 27
+                    },
+                    "mergeRelinked": {
+                        "type": "array",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Relinked at merge",
+                        "description": "Which rows moved to the survivor when this case was merged away, so a reversal can put exactly those back. Written by CaseMergeService; empty on every case that was never merged.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "schema": {
+                                    "type": "string",
+                                    "title": "Schema"
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Row"
+                                }
+                            }
+                        }
+                    },
+                    "mergeState": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "merged"
+                        ],
+                        "default": "active",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Merge state",
+                        "description": "Whether this case is still its own case. The OpenRegister merge engine writes this field and reads it back, which is why it is a plain value of its own and not the ending act: the engine compares it as a string and refuses a survivor that is not active. An absent value reads as active, so every case written before merging existed stays mergeable."
                     },
                     "duplicateOverrideOf": {
                         "type": "array",
@@ -3362,6 +3453,20 @@
                         "description": "The users pulled into the working channel when this case was declared major, resolved from the responders the case type names. Recorded so a gemeente can show afterwards who was in the room.",
                         "visible": false
                     },
+                    "blockingCases": {
+                        "type": "array",
+                        "title": "Waits on",
+                        "description": "Cases this one waits on. A vergunning that cannot be decided until a bezwaar is, for instance: when the case it waits on has its term extended or paused, the handler of this case is offered the same move. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"blokkeert\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "waitsOn"
+                            }
+                        }
+                    },
                     "associatedCases": {
                         "type": "array",
                         "title": "Associated cases",
@@ -3375,6 +3480,44 @@
                                 "type": "samenhang"
                             }
                         }
+                    },
+                    "district": {
+                        "type": "string",
+                        "description": "The wijk this case's address falls in, resolved once when the address is set rather than on every routing decision: resolving per query makes routing depend on an external service being up, and an unresolvable boundary would then read as a case with no area. Held here so a routing rule and a list filter can read the same value.",
+                        "title": "District",
+                        "facetable": true
+                    },
+                    "neighbourhood": {
+                        "type": "string",
+                        "description": "The buurt this case's address falls in, resolved with the district and from the same answer.",
+                        "title": "Neighbourhood",
+                        "facetable": true
+                    },
+                    "areaResolvedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the area was resolved. Boundaries change, and a municipality may redraw its own division, so a value on a case can only be explained beside the moment it was read.",
+                        "title": "Area resolved at",
+                        "readOnly": true
+                    },
+                    "areaSource": {
+                        "type": "string",
+                        "description": "The boundary set the area was read from, so the value can be explained by the boundaries in force at the time. Today that is PDOK's locatieserver through `PdokService`; when integriq publishes the `pdok-geo-boundaries` connection (ADR-019) this names that connection instead.",
+                        "title": "Area source",
+                        "readOnly": true
+                    },
+                    "areaFallbackUsed": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this case was routed by the case type's fallback because its address fell in no administered boundary. Addresses do: new developments, water, an address abroad, a case with no address at all. The flag is what keeps that from looking like routing that silently did nothing.",
+                        "title": "Area fallback used",
+                        "readOnly": true
+                    },
+                    "areaAddressId": {
+                        "type": "string",
+                        "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
+                        "title": "Area address id",
+                        "readOnly": true
                     }
                 },
                 "searchable": true
@@ -3453,6 +3596,19 @@
                         "format": "date-time",
                         "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
                         "title": "Delegate Until"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 1,
+                        "description": "How large a share of the pool's work this membership takes. The weight is on the MEMBERSHIP and not on the person, because the same handler may carry a full share of intake and a quarter share of objections, and one number on the person would be wrong for one of the two. A pool whose weights are all one is routed exactly as it was before weights existed. Zero means this member takes no new work without leaving the pool.",
+                        "title": "Weight"
+                    },
+                    "team": {
+                        "type": "string",
+                        "description": "The team this membership belongs to, so a routing rule can name a position INSIDE a team (the senior handler of team zuid) without an organisation-wide role for every senior of every team. That is how a role list reaches forty entries that mean six things. The value comes from the organisation; dossiq holds no second org chart.",
+                        "title": "Team",
+                        "facetable": true
                     },
                     "representedParty": {
                         "type": "string",

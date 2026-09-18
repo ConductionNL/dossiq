@@ -508,6 +508,11 @@ class TermijnService {
 	 * @param string $termInstanceId Instance id.
 	 * @param DateTimeImmutable|null $voltooiDatum When completed (default now).
 	 * @param string $documentLink Optional document ref.
+	 * @param string $rationale Why the term ended, as the timeline will read it.
+	 *        Left empty it reads "Termijn voltooid door beschikking", which is
+	 *        what closed every term before another act could. A rebind and a
+	 *        merge close one too, and a timeline that calls either a
+	 *        beschikking says the case was decided when it was not.
 	 *
 	 * @return array<string, mixed>|null
 	 *

@@ -110,6 +110,7 @@ import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
 import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
+import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
@@ -420,6 +421,13 @@ const registry = {
 		kind: 'modal',
 		component: CaseLifecycleMenuDialog,
 		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume, which is the one gesture a suspended case needs in front of the handler rather than behind a menu.',
+	},
+
+	// @spec openspec/changes/case-merge/specs/case-management/spec.md
+	CaseMergeDialog: {
+		kind: 'modal',
+		component: CaseMergeDialog,
+		_note: 'Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server\'s and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out.',
 	},
 
 	// --- Copy a case, from its own page (case-actions-menu, row A24). ---
