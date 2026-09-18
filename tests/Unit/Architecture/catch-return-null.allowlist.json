@@ -1698,6 +1698,90 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`casesWithAnOutcome()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: the first-response report could not be read\"), so a failed read and a quarter in which nothing was recorded are the same answer. The report is a count over what IS stored, and a report that threw would take the deadline dashboard down with it for a number nobody is owed instantly."
+    },
+    {
+      "file": "lib/Service/CaseType/EngineRunMigration.php",
+      "method": "resolve",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`resolve()` fetches OpenRegister's run-migration service from the container by name, and answers null when the binding is absent on an instance whose OpenRegister predates it. The class_exists guard two lines above handles the app being missing; this one handles the app being present without the service, which is the same absence one layer down. The caller keeps the case on its current version rather than moving a run it cannot migrate."
+    },
+    {
+      "file": "lib/Service/CaseTypeStore.php",
+      "method": "everyCaseType",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`everyCaseType()` reads the case-type list through OpenRegister's ObjectService. Without OpenRegister answering there are no case types to list, and an empty list is what every caller already renders for an instance with none. Throwing here would make the settings page unreachable on an instance that is merely still importing its register."
+    },
+    {
+      "file": "lib/Service/Documents/ScanVerdictReader.php",
+      "method": "recordedRow",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`recordedRow()` queries for one scan verdict row. It already answers null for a row that is simply not there, three lines above, so the catch answers the same absence when the query itself cannot run: the reader's contract is `null means nothing recorded`, and a document with no verdict is the ordinary case rather than an error."
+    },
+    {
+      "file": "lib/Service/FormsIntakeService.php",
+      "method": "caseFor",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`caseFor()` creates the case through OpenRegister's saveObject. The catch logs at error naming the form and answers null, and the caller reports the intake as not filed rather than telling a citizen their form was received. Converting it to a throw is the right end state and belongs with the intake change that owns the refusal vocabulary, not with a build fix."
+    },
+    {
+      "file": "lib/Service/FormsIntakeService.php",
+      "method": "caseTypeBoundTo",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`caseTypeBoundTo()` looks up the case type a form hash is bound to. No binding and an unanswerable search are the same answer to the caller, which offers the ordinary case-type picker instead of a pre-selected one."
+    },
+    {
+      "file": "lib/Service/PlannedAction/PlannedActionService.php",
+      "method": "read",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "Planned actions live in OpenRegister. Without it there are none to read, and the empty list is what an instance with no planned actions renders anyway. Logged at warning naming the schema."
+    },
+    {
+      "file": "lib/Service/PlannedAction/PlannedActionService.php",
+      "method": "write",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "The write half of the same seam. Null is the documented 'not persisted', and the caller surfaces it rather than reporting a plan it did not store."
+    },
+    {
+      "file": "lib/Service/SociaalDomein/InterventionProvider.php",
+      "method": "resolve",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`resolve()` reads contacts through the contacts app's gateway. Without it the provider answers no interventions, which is the same thing it answers for a household that has none. Logged at warning."
+    },
+    {
+      "file": "lib/Service/Termijn/TermMoveHistory.php",
+      "method": "movesFor",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`movesFor()` reads the engine's timer history. An engine that is absent, or a timer whose history cannot be read, leaves the Moved dates section empty; the catch logs at warning naming the timer precisely because an empty section and an unreadable one look the same on the page. Throwing would cost the whole terms panel for a section that is context."
+    },
+    {
+      "file": "lib/Service/TermijnService.php",
+      "method": "carriedEvents",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`carriedEvents()` reads the events carried on a term instance through OpenRegister. Without it the term still has its dates and its status; only its history is silent, and the panel says nothing rather than refusing to draw."
+    },
+    {
+      "file": "lib/Service/Transitions/CapacityGuard.php",
+      "method": "countIn",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`countIn()` counts the cases in a status, to decide whether the status is at capacity. Null is NOT zero here and the caller knows it: zero would read as 'the status is free' and let a transition through, so null means 'not counted' and the guard abstains. The comment above the query records the openregister#3611 filter trap this method survives."
+    },
+    {
+      "file": "lib/Service/Termijn/WorkingDayRoll.php",
+      "method": "firstWorkingMomentAtOrAfter",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`firstWorkingMomentAtOrAfter()` asks the engine calendar for the first working moment at or after an instant. Null means the calendar did not answer, and the caller then starts the term on the moment it already had rather than guessing a working day; a silent fallback to 'today is a working day' would start a citizen's clock on a Sunday on any instance without OpenRegister. Logged at warning naming the moment."
     }
   ]
 }

@@ -545,6 +545,26 @@ class TermijnTimerService {
 	}//end rollEnabled()
 
 	/**
+	 * Whether an organisation calendar is answering at all.
+	 *
+	 * ASKED SO A SURFACE CAN SAY WHICH IT IS. A roll that was not needed and a
+	 * roll that could not be made produce the same plausible date, so a page
+	 * that shows the date and nothing else cannot tell an administrator that
+	 * the Awt rule is currently inert on this instance.
+	 *
+	 * Deliberately not inferred from a roll's result: the roll falls back
+	 * silently by design, because a term must still get a date.
+	 *
+	 * @return boolean True when both engine classes resolve.
+	 *
+	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function calendarAnswers(): bool {
+		return ($this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS) !== null
+			&& $this->settingsService->getOpenRegisterClass(self::SLA_CALCULATOR_CLASS) !== null);
+	}//end calendarAnswers()
+
+	/**
 	 * The roll as the engine computes it, falling back when it cannot answer.
 	 *
 	 * @param DateTimeImmutable $date The computed end date.

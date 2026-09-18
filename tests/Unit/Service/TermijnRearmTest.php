@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -39,6 +40,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\TermijnService
  */
 class TermijnRearmTest extends TestCase {
+	use MakesCaseDateNormaliser;
 
 	/**
 	 * The in-memory store.
@@ -75,7 +77,17 @@ class TermijnRearmTest extends TestCase {
 			},
 		);
 
-		$this->service = new TermijnService($settings, new NullLogger());
+		// The one date path, injected rather than left to default. Without it
+		// `startOf()` answers null and the successor silently starts today
+		// instead of on the day the case was received, which is a statutory
+		// date moving because a test built the service with two arguments.
+		$this->service = new TermijnService(
+			$settings,
+			new NullLogger(),
+			null,
+			null,
+			$this->caseDates()
+		);
 
 		$this->objects->seed('deadlineDefinition', [
 			'id' => 'td-kap',

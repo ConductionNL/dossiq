@@ -62,113 +62,83 @@ class WorkingDayRollTest extends TestCase {
 	}
 
 	/**
-	 * The flag decides, and an absent flag is off.
+	 * This class no longer reads the roll flag, and must not read it again.
+	 *
+	 * It briefly did, beside `TermijnTimerService::rollEnabled()`, and the two
+	 * disagreed about an ABSENT flag: off here, on there, because Awt art. 1
+	 * applies by law and not by configuration. One case could then get two
+	 * different end dates depending on which path reached it, and both looked
+	 * perfectly ordinary. The duplicate is gone; this is what stops it coming
+	 * back by hand.
 	 *
 	 * @return void
 	 */
-	public function testAnAbsentFlagIsOff(): void {
+	public function testTheRollDecisionIsNotTakenHere(): void {
+		$this->assertFalse(method_exists(WorkingDayRoll::class, 'roll'));
+		$this->assertFalse(method_exists(WorkingDayRoll::class, 'isAskedFor'));
+		// The flag may be NAMED in the header, which explains why it is not
+		// read; what must not come back is a read of it. Matching the
+		// subscript rather than the word is the difference between a rule and
+		// a mention, and this file is the one place that distinction is the
+		// whole point.
+		$this->assertDoesNotMatchRegularExpression(
+			'/\\[\\s*\x27rollToWorkingDay\x27|\\[\\s*"rollToWorkingDay"/',
+			(string)file_get_contents(__DIR__.'/../../../../lib/Service/Termijn/WorkingDayRoll.php'),
+			'the flag is read by TermijnTimerService::rollEnabled() and nowhere else'
+		);
+	}
+
+	/**
+	 * Without a calendar the accessor says so, rather than guessing a day.
+	 *
+	 * The caller starts the term on the moment it already had. A silent
+	 * fallback to "today is a working day" would start a citizen's clock on a
+	 * Sunday on any instance without OpenRegister.
+	 *
+	 * @return void
+	 */
+	public function testWithoutACalendarNothingIsNamed(): void {
 		$roll = $this->degraded();
 
-		$this->assertFalse($roll->isAskedFor(definition: []));
-		$this->assertFalse($roll->isAskedFor(definition: ['rollToWorkingDay' => false]));
-		$this->assertTrue($roll->isAskedFor(definition: ['rollToWorkingDay' => true]));
-		// The shapes a checkbox arrives in from a JSON store. Each of these
-		// read the wrong way silently moves, or fails to move, a statutory
-		// date.
-		$this->assertTrue($roll->isAskedFor(definition: ['rollToWorkingDay' => 'true']));
-		$this->assertTrue($roll->isAskedFor(definition: ['rollToWorkingDay' => 1]));
-		$this->assertFalse($roll->isAskedFor(definition: ['rollToWorkingDay' => '0']));
-		$this->assertFalse($roll->isAskedFor(definition: ['rollToWorkingDay' => null]));
-	}
-
-	/**
-	 * With the flag off, nothing is asked and nothing moves.
-	 *
-	 * @return void
-	 */
-	public function testWithTheFlagOffTheDateStands(): void {
-		$koningsdag = new DateTimeImmutable('2026-04-27T00:00:00+02:00');
-
-		$this->assertEquals(
-			$koningsdag,
-			$this->degraded()->roll(date: $koningsdag, definition: ['rollToWorkingDay' => false])
+		$this->assertFalse($roll->isAvailable());
+		$this->assertNull(
+			$roll->firstWorkingMomentAtOrAfter(moment: new DateTimeImmutable('2026-04-27T09:00:00+02:00'))
 		);
 	}
 
 	/**
-	 * With no calendar answering, the date stands and the caller is told.
-	 *
-	 * A term that should have moved and did not is a statutory error. It is
-	 * logged at warning rather than swallowed, because the one thing worse
-	 * than not rolling is not rolling quietly.
+	 * With a calendar, the moment it names is the one returned.
 	 *
 	 * @return void
 	 */
-	public function testWithNoCalendarTheDateStandsAndIsLogged(): void {
-		$logger = new class extends \Psr\Log\AbstractLogger {
-			/** @var array<int, string> The messages it was given. */
-			public array $lines = [];
-
-			/**
-			 * Record a line.
-			 *
-			 * @param mixed $level The level.
-			 * @param string|\Stringable $message The message.
-			 * @param array<string, mixed> $context The context.
-			 *
-			 * @return void
-			 */
-			public function log($level, string|\Stringable $message, array $context = []): void {
-				$this->lines[] = (string)$level.': '.(string)$message;
-			}
-		};
-
-		$roll = new WorkingDayRoll(settings: $this->withoutEngine(), logger: $logger);
-		$koningsdag = new DateTimeImmutable('2026-04-27T00:00:00+02:00');
-
-		$this->assertEquals(
-			$koningsdag,
-			$roll->roll(date: $koningsdag, definition: ['rollToWorkingDay' => true])
-		);
-		$this->assertNotSame([], $logger->lines, 'a roll that could not be made is reported');
-		$this->assertStringContainsString('warning', $logger->lines[0]);
-	}
-
-	/**
-	 * The engine answers, and the rolled day is the one it named.
-	 *
-	 * @return void
-	 */
-	public function testTheEngineDecidesWhichDayIsNext(): void {
+	public function testTheCalendarNamesTheFirstWorkingMoment(): void {
 		$roll = $this->withEngine(answering: new DateTimeImmutable('2026-04-28T09:00:00+02:00'));
 
-		$rolled = $roll->roll(
-			date: new DateTimeImmutable('2026-04-27T23:59:00+02:00'),
-			definition: ['rollToWorkingDay' => true]
+		$this->assertTrue($roll->isAvailable());
+		$this->assertSame(
+			'2026-04-28T09:00:00+02:00',
+			$roll->firstWorkingMomentAtOrAfter(
+				moment: new DateTimeImmutable('2026-04-27T16:00:00+02:00')
+			)?->format('c')
 		);
-
-		$this->assertSame('2026-04-28', $rolled->format('Y-m-d'));
-		// THE TIME OF DAY IS THE TERM'S, NOT THE OFFICE'S. The engine answers
-		// the start of the next working day, which is nine in the morning on
-		// the seeded calendar. A term ends at the end of its day, so keeping
-		// the engine's time would shorten every rolled term by most of a day.
-		$this->assertSame('23:59', $rolled->format('H:i'));
 	}
 
 	/**
-	 * A calendar answering an earlier date is refused.
+	 * A moment BEFORE the one asked about is refused.
 	 *
-	 * The Awt moves a deadline later and never earlier. A roll that could move
-	 * one backwards takes days off a citizen's right of reply, so an answer
-	 * before the date asked about is discarded and reported rather than used.
+	 * Forward only: a term that started before the request arrived takes days
+	 * off a citizen without anybody seeing a wrong-looking date.
 	 *
 	 * @return void
 	 */
-	public function testAnAnswerBeforeTheDateIsRefused(): void {
-		$asked = new DateTimeImmutable('2026-04-27T12:00:00+02:00');
+	public function testAMomentBeforeTheOneAskedAboutIsRefused(): void {
 		$roll = $this->withEngine(answering: new DateTimeImmutable('2026-04-24T09:00:00+02:00'));
 
-		$this->assertEquals($asked, $roll->roll(date: $asked, definition: ['rollToWorkingDay' => true]));
+		$this->assertNull(
+			$roll->firstWorkingMomentAtOrAfter(
+				moment: new DateTimeImmutable('2026-04-27T16:00:00+02:00')
+			)
+		);
 	}
 
 	/**
