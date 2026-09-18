@@ -6917,6 +6917,71 @@
 							],
 							"emptyText": "No contact moments yet"
 						}
+					},
+					{
+						"id": "contact-documents",
+						"type": "object-list",
+						"title": "Documents",
+						"icon": "FileDocumentMultipleOutline",
+						"_note": "the-contact-360-shows-documents, gap row 5.4. What this contact sent us and what we sent them, newest first, so a KCC agent with a caller on the line can see the letter the gemeente sent last week without leaving the page. THE SOURCE IS `dispatch` AND NOT `informatieobject`, and the reason is the filter. A document names its correspondents in two fields, `sender` (one party) and `recipients` (an array), and an object-list filter is a MAP: every entry narrows, and there is no way to ask for a row matching either field. Filtering `informatieobject` would therefore have listed half the answer, or needed two panels for one question. `dispatch` is the join document-correspondents wrote for exactly this: one row per document per party per role, carrying the case, so `involvedParty` alone is the whole filter, `relationshipType` IS the direction, and `content.extend` inlines the document and the case beside it. NO `rowRoute`: it pushes the ROW's id, which here is a dispatch and not a case, so a declared route would open a case page for a uuid no case has, and that reads as a deleted case rather than as a bug. The deep link is the `open-case` row action, a function handler in src/customComponents.js. `limit` and `viewAll` are declared so a truncated list shows its footer rather than reading as the whole answer; whether the objects endpoint COUNTS what the reader may not read or drops it silently is openregister's answer and is unmeasured here, which this change's tasks record rather than assume. The `emptyText` is a sentence about this contact, because a contact with nothing on file and a listing that failed must not look the same; the widget draws its own error line above the empty state and never both.",
+						"content": {
+							"register": "dossiq",
+							"schema": "dispatch",
+							"filter": {
+								"involvedParty": "@objectId"
+							},
+							"extend": [
+								"document",
+								"case"
+							],
+							"sort": {
+								"field": "sendDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "document.title",
+									"label": "Document"
+								},
+								{
+									"key": "relationshipType",
+									"label": "Direction",
+									"enum": [
+										"afzender",
+										"geadresseerde"
+									],
+									"enumLabels": {
+										"afzender": "Sent by this contact",
+										"geadresseerde": "Sent to this contact"
+									}
+								},
+								{
+									"key": "document.informatieobjecttype",
+									"label": "Type"
+								},
+								{
+									"key": "sendDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "case.identifier",
+									"label": "Case"
+								}
+							],
+							"rowActions": [
+								{
+									"id": "open-case",
+									"label": "Open the case",
+									"icon": "FolderOutline",
+									"type": "handler",
+									"handler": "openCaseOfDocument"
+								}
+							],
+							"emptyText": "No letters or documents on file for this contact yet",
+							"errorText": "These documents could not be loaded. Try again."
+						}
 					}
 				],
 				"layout": [
@@ -6941,6 +7006,14 @@
 						"widgetId": "contact-moments",
 						"gridX": 0,
 						"gridY": 8,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "4",
+						"widgetId": "contact-documents",
+						"gridX": 0,
+						"gridY": 12,
 						"gridWidth": 12,
 						"gridHeight": 4
 					}
@@ -7135,6 +7208,71 @@
 							],
 							"emptyText": "No contact moments yet"
 						}
+					},
+					{
+						"id": "contact-documents",
+						"type": "object-list",
+						"title": "Documents",
+						"icon": "FileDocumentMultipleOutline",
+						"_note": "the-contact-360-shows-documents, gap row 5.4. What this contact sent us and what we sent them, newest first, so a KCC agent with a caller on the line can see the letter the gemeente sent last week without leaving the page. THE SOURCE IS `dispatch` AND NOT `informatieobject`, and the reason is the filter. A document names its correspondents in two fields, `sender` (one party) and `recipients` (an array), and an object-list filter is a MAP: every entry narrows, and there is no way to ask for a row matching either field. Filtering `informatieobject` would therefore have listed half the answer, or needed two panels for one question. `dispatch` is the join document-correspondents wrote for exactly this: one row per document per party per role, carrying the case, so `involvedParty` alone is the whole filter, `relationshipType` IS the direction, and `content.extend` inlines the document and the case beside it. NO `rowRoute`: it pushes the ROW's id, which here is a dispatch and not a case, so a declared route would open a case page for a uuid no case has, and that reads as a deleted case rather than as a bug. The deep link is the `open-case` row action, a function handler in src/customComponents.js. `limit` and `viewAll` are declared so a truncated list shows its footer rather than reading as the whole answer; whether the objects endpoint COUNTS what the reader may not read or drops it silently is openregister's answer and is unmeasured here, which this change's tasks record rather than assume. The `emptyText` is a sentence about this contact, because a contact with nothing on file and a listing that failed must not look the same; the widget draws its own error line above the empty state and never both.",
+						"content": {
+							"register": "dossiq",
+							"schema": "dispatch",
+							"filter": {
+								"involvedParty": "@objectId"
+							},
+							"extend": [
+								"document",
+								"case"
+							],
+							"sort": {
+								"field": "sendDate",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "document.title",
+									"label": "Document"
+								},
+								{
+									"key": "relationshipType",
+									"label": "Direction",
+									"enum": [
+										"afzender",
+										"geadresseerde"
+									],
+									"enumLabels": {
+										"afzender": "Sent by this contact",
+										"geadresseerde": "Sent to this contact"
+									}
+								},
+								{
+									"key": "document.informatieobjecttype",
+									"label": "Type"
+								},
+								{
+									"key": "sendDate",
+									"label": "Date",
+									"format": "date"
+								},
+								{
+									"key": "case.identifier",
+									"label": "Case"
+								}
+							],
+							"rowActions": [
+								{
+									"id": "open-case",
+									"label": "Open the case",
+									"icon": "FolderOutline",
+									"type": "handler",
+									"handler": "openCaseOfDocument"
+								}
+							],
+							"emptyText": "No letters or documents on file for this contact yet",
+							"errorText": "These documents could not be loaded. Try again."
+						}
 					}
 				],
 				"layout": [
@@ -7159,6 +7297,14 @@
 						"widgetId": "contact-moments",
 						"gridX": 0,
 						"gridY": 8,
+						"gridWidth": 12,
+						"gridHeight": 4
+					},
+					{
+						"id": "4",
+						"widgetId": "contact-documents",
+						"gridX": 0,
+						"gridY": 12,
 						"gridWidth": 12,
 						"gridHeight": 4
 					}
