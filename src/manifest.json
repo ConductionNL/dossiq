@@ -1886,16 +1886,11 @@
 					{
 						"key": "besluitdatum",
 						"label": "Decision date",
-						"_note": "columns-follow-the-case-type, row 11.9. The three columns below this line are on the page so a CASE TYPE can ask for them. A scope selects from the page's declared set and cannot add to it, so a case type naming a column the page does not carry has that column dropped in silence, which reads as a case type whose own columns did not take. They sit at the end because the All cases folder shows the page's list in order, and a permit's decision date is not a column a complaint's reader wants third."
+						"_note": "columns-follow-the-case-type, row 11.9. The two columns below this line are on the page so a CASE TYPE can ask for them. A scope selects from the page's declared set and cannot add to it, so a case type naming a column the page does not carry has that column dropped in silence, which reads as a case type whose own columns did not take. They sit at the end because the All cases folder shows the page's list in order, and a permit's decision date is not a column a complaint's reader wants third. A THIRD, `riskLevel`, was declared here and is removed: markers-and-assessments-on-the-case refuses a risk column on this list, and the _note on the risk chip above says why. A column is declared once for every reader, so a reader without `dossiq-risk-assessment` would get a header with nothing under it, which tells them an assessment exists and is most of what the permission was for. It lands when the list can drop a column per reader, which nothing in the stack does today."
 					},
 					{
 						"key": "procedureType",
 						"label": "Procedure"
-					},
-					{
-						"key": "riskLevel",
-						"label": "Risk",
-						"widget": "badge"
 					}
 				],
 				"sidebar": {

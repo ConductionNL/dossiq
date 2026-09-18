@@ -23,10 +23,38 @@ Tier: V1. Kind: config. Row 11.9.
     `CnIndexPage` reads the same three keys off each ROW's `x-index` block,
     keyed by the folder id. So the declaration is on the case type RECORD,
     which is task 3.1, and is also where a municipality can edit it.
-  - What the manifest DID need: the three columns a case type asks for
-    (`besluitdatum`, `procedureType`, `riskLevel`) are now declared on the
-    page. A scope selects from the page's set and cannot add to it, so a
-    column the page does not carry is dropped by the library in silence.
+  - What the manifest DID need: the columns a case type asks for
+    (`besluitdatum`, `procedureType`) are now declared on the page. A scope
+    selects from the page's set and cannot add to it, so a column the page
+    does not carry is dropped by the library in silence.
+  - 🔴 A THIRD COLUMN, `riskLevel`, WAS DECLARED HERE AND HAS BEEN REMOVED.
+    It shipped on the page and in the `toezichtzaak-bouw` and
+    `handhavingszaak` seed layouts, and
+    `markers-and-assessments-on-the-case` refuses it. Its own note on the
+    risk chip, in `src/manifest.json`, says why, verbatim: "There is NO risk
+    column beside it, and that is deliberate rather than missing. A column is
+    declared once for every reader, so a reader without the permission would
+    get a header with nothing under it, which tells them an assessment exists
+    and is most of what the permission was for. The column lands when the
+    list can drop one per reader."
+  - The chip is not the column and stays. `riskLevel` carries the same
+    declared read rule as the assessment it mirrors, so for a reader without
+    `dossiq-risk-assessment` OpenRegister filters the property out and the
+    chip narrows to nothing. An empty list says no more than that this reader
+    has nothing to see; a header with nothing under it says an assessment
+    exists.
+  - WHAT IT WOULD TAKE TO DO PROPERLY: per-reader column visibility, which
+    nothing in this stack has today. `CnIndexPage` resolves one column set
+    per scope, from the page's declaration and the case type's `x-index`,
+    and neither is evaluated against the caller. The honest shape is
+    OpenRegister answering which declared columns a caller may see, the way
+    it already filters the property itself, and the library dropping the
+    header rather than the app guessing. Until that exists this column cannot
+    ship, because the disclosure is the header and not the value.
+  - The capability is not lost, only unshipped: the two seed layouts still
+    differ from the page and from each other (`toezichtzaak-bouw` shows
+    `assignee`, `handhavingszaak` shows `besluitdatum` newest first), so
+    REQ-CM-72 is demonstrated without it.
 - [x] 2.2 `#Cases`: declare `sort` per scope where the type has a date that
   orders it better than `createdAt`.
   - The key is `defaultSort`, not `sort`: that is what `resolveScopeLayout`
@@ -47,8 +75,9 @@ Tier: V1. Kind: config. Row 11.9.
     what this app actually seeds. There is no klacht case type and the
     bezwaar ones are under `_caseTypes_disabled`, so three of the six carry a
     layout: the omgevingsvergunning shows `procedureType` and `besluitdatum`,
-    the toezichtzaak shows `riskLevel` and `assignee`, the handhavingszaak
-    shows `riskLevel` and `besluitdatum` ordered newest decision first. The
+    the toezichtzaak shows `assignee`, the handhavingszaak shows
+    `besluitdatum` ordered newest decision first. Both declared `riskLevel`
+    first and no longer do, for the reason under task 2.1. The
     permit's expiry date is NOT declared, because no case property holds one
     and a column naming a property nothing answers to is the defect REQ-CM-72
     exists to catch.

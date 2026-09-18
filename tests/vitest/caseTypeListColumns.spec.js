@@ -141,8 +141,16 @@ describe('a column names a column the page carries', () => {
 		},
 	)
 
-	it('names the three columns the case types added, on the page itself', () => {
-		for (const key of ['besluitdatum', 'procedureType', 'riskLevel']) {
+	it('names the two columns the case types added, on the page itself', () => {
+		// `riskLevel` was the third and is deliberately not here.
+		// markers-and-assessments-on-the-case refuses a risk column on this
+		// list: a column is declared once for every reader, so a reader
+		// without the permission gets a header with nothing under it, which
+		// tells them an assessment exists. The chip stays, because a chip
+		// narrows to nothing for that reader and says no more than that they
+		// have nothing to see. `caseAttentionFlag.spec.js` is what holds the
+		// absence; this list is what would quietly restore it.
+		for (const key of ['besluitdatum', 'procedureType']) {
 			expect(
 				pageColumnKeys.has(key),
 				`the Cases page dropped "${key}", so every case type naming it loses that column`,

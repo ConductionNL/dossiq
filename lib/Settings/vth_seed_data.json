@@ -99,7 +99,6 @@
           "identifier",
           "title",
           "status",
-          "riskLevel",
           "assignee",
           "deadline"
         ],
@@ -170,7 +169,6 @@
           "identifier",
           "title",
           "status",
-          "riskLevel",
           "besluitdatum",
           "deadline"
         ],
