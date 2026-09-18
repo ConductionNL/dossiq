@@ -191,13 +191,17 @@ class AreaRouting {
 		}
 
 		$declared = trim((string)($caseType[self::FALLBACK_ROLE_TYPE] ?? ''));
+		$roleType = (string)($rule['roleType'] ?? '');
+		if ($declared !== '') {
+			$roleType = $declared;
+		}
 
 		return [
 			// A case type that declares no fallback keeps the rule's own
 			// roleType: the work reaches the pool it always would have, and
 			// the flag is what says the area did not decide it. Routing to
 			// nobody would be a case nobody sees.
-			'roleType' => ($declared !== '' ? $declared : (string)($rule['roleType'] ?? '')),
+			'roleType' => $roleType,
 			'team' => '',
 			'fallbackUsed' => true,
 			'reason' => $reason,

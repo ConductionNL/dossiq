@@ -142,6 +142,14 @@ describe('CaseDetail: terms and archive', () => {
 		expect(terms.content.include).toEqual([
 			'statutoryTerm',
 			'legalBasis',
+			// fees-and-payments-on-the-case (#2930): what is owed, when that
+			// was last read from shillinq, and the contract it was read
+			// against. The three sit beside the older indication rather than
+			// replacing it, because the indication is what the case TYPE says
+			// and these are what the case itself owes.
+			'paymentState',
+			'paymentStateCheckedAt',
+			'contract',
 			'paymentIndication',
 			'lastPaymentDate',
 		])

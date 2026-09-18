@@ -105,8 +105,13 @@ class CaseRebindController extends Controller {
 	public function permission(): JSONResponse {
 		$user = $this->userSession->getUser();
 
+		$uid = '';
+		if ($user !== null) {
+			$uid = $user->getUID();
+		}
+
 		return new JSONResponse(
-			['mayRebind' => $this->rebind->mayRebind(uid: (($user === null) ? '' : $user->getUID()))]
+			['mayRebind' => $this->rebind->mayRebind(uid: $uid)]
 		);
 	}//end permission()
 
@@ -176,6 +181,9 @@ class CaseRebindController extends Controller {
 		}
 
 		$properties = $this->request->getParam('properties', []);
+		if (is_array($properties) === false) {
+			$properties = [];
+		}
 
 		try {
 			return new JSONResponse(
@@ -184,7 +192,7 @@ class CaseRebindController extends Controller {
 					targetCaseTypeId: trim((string)$this->request->getParam('target', '')),
 					targetStatusId: trim((string)$this->request->getParam('status', '')),
 					reason: (string)$this->request->getParam('reason', ''),
-					properties: ((is_array($properties) === true) ? $properties : []),
+					properties: $properties,
 					actorUid: $user->getUID(),
 				)
 			);

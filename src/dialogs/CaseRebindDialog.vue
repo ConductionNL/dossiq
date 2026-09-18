@@ -38,7 +38,9 @@
 				}}
 			</p>
 
-			<p v-if="!loading && targets.length === 0" data-testid="case-rebind-empty">
+			<p
+				v-if="!loading && targets.length === 0"
+				data-testid="case-rebind-empty">
 				{{
 					t(
 						'dossiq',
@@ -53,7 +55,7 @@
 				data-testid="case-rebind-target"
 				:inputLabel="t('dossiq', 'Case type to move to')"
 				:options="targetOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label" />
 
 			<NcSelect
@@ -62,7 +64,7 @@
 				data-testid="case-rebind-status"
 				:inputLabel="t('dossiq', 'Status it lands in')"
 				:options="statusOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label" />
 
 			<div
@@ -205,13 +207,13 @@ export default {
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 		 */
 		targetOptions() {
-			return this.targets.map(type => ({
+			return this.targets.map((type) => ({
 				id: type.id,
 				label: type.sameChain
 					? t('dossiq', '{title}, version {version}', {
-						title: type.title,
-						version: type.version,
-					})
+							title: type.title,
+							version: type.version,
+						})
 					: type.title,
 			}))
 		},
@@ -224,7 +226,7 @@ export default {
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 		 */
 		statusOptions() {
-			return (this.preview?.statuses ?? []).map(entry => ({
+			return (this.preview?.statuses ?? []).map((entry) => ({
 				id: entry.id,
 				label: entry.name,
 			}))

@@ -70,8 +70,13 @@ class CaseSplitPlan {
 	 * @param string $newId The case being split off.
 	 * @param array<string, array<int, array<string, mixed>>> $chosen The items the handler picked, by part.
 	 *
-	 * @return array{moves: array<int, array<string, mixed>>, references: array<int, array<string, mixed>>, refused: array<int, array<string, mixed>>, relation: array<string, string>}
-	 *         What to repoint, what to record on the original, what was refused as not this case's, and the relation to write.
+	 * @return array{
+	 *     moves: array<int, array<string, mixed>>,
+	 *     references: array<int, array<string, mixed>>,
+	 *     refused: array<int, array<string, mixed>>,
+	 *     relation: array<string, string>
+	 * } What to repoint, what to record on the original, what was refused as
+	 *   not this case's, and the relation to write.
 	 *
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
 	 */
@@ -165,6 +170,11 @@ class CaseSplitPlan {
 			$parts[] = sprintf('%d %s', $count, $part);
 		}
 
-		return sprintf('Split off to %s: %s.', ($newNumber !== '' ? $newNumber : 'the new case'), implode(', ', $parts));
+		$named = 'the new case';
+		if ($newNumber !== '') {
+			$named = $newNumber;
+		}
+
+		return sprintf('Split off to %s: %s.', $named, implode(', ', $parts));
 	}//end noteFor()
 }//end class

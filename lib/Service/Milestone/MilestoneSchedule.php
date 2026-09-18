@@ -223,6 +223,13 @@ class MilestoneSchedule {
 	 * @param int $depth The current recursion depth.
 	 *
 	 * @return DateTimeImmutable|null The date, or null when it cannot be resolved.
+	 *
+	 * @psalm-suppress UnusedReturnValue The return IS read, by the recursive
+	 * call that folds a predecessor's date into this one. Psalm does not count
+	 * a method's call to itself, so it sees only `project()`'s outer loop,
+	 * which discards it on purpose: that loop wants the memo, and the memo is
+	 * `$dates`, written by reference so a diamond in the chain is resolved
+	 * once rather than once per path into it.
 	 */
 	private function resolve(
 		string $identifier,
@@ -362,7 +369,10 @@ class MilestoneSchedule {
 			// read paths. Decoding here rather than at every call site is what
 			// keeps the difference from becoming "dependsOn is empty".
 			$decoded = json_decode($raw, true);
-			$raw = (is_array($decoded) === true) ? $decoded : [];
+			$raw = [];
+			if (is_array($decoded) === true) {
+				$raw = $decoded;
+			}
 		}
 
 		if (is_array($raw) === false) {

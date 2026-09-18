@@ -99,6 +99,9 @@ class ComplaintService {
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
 	 *                                          arithmetic for the Awb deadlines
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermResolution|null $resolution The case type's own first-response
+	 *                                        term, which wins over the Awb
+	 *                                        default when one is declared.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -130,7 +133,11 @@ class ComplaintService {
 
 		$declared = (int)($resolved['definition']['standardDurationDays'] ?? 0);
 
-		return ($declared > 0 ? $declared : self::AWB_ACK_WORKING_DAYS);
+		if ($declared > 0) {
+			return $declared;
+		}
+
+		return self::AWB_ACK_WORKING_DAYS;
 	}//end acknowledgementDays()
 
 	/**

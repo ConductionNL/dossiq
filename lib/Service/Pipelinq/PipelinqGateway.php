@@ -20,7 +20,7 @@ use Throwable;
 /**
  * The one place in dossiq that names a pipelinq class.
  *
- * pipelinq owns the party, the contact moment, the correspondence language,
+ * Pipelinq owns the party, the contact moment, the correspondence language,
  * the satisfaction loop and the programme above the cases. Dossiq declares and
  * renders them. Six services are consumed, and resolving each of them inline
  * would put six copies of the same class_exists / method_exists / log-once
@@ -166,11 +166,14 @@ class PipelinqGateway {
 			// the two happened.
 			$service = $this->container->get($class);
 		} catch (Throwable $e) {
+			$reason = $e->getMessage();
+			if (class_exists($class) === false) {
+				$reason = 'pipelinq is not installed on this instance';
+			}
+
 			$this->reportOnce(
 				class: $class,
-				reason: (class_exists($class) === false
-					? 'pipelinq is not installed on this instance'
-					: $e->getMessage()),
+				reason: $reason,
 			);
 
 			return null;

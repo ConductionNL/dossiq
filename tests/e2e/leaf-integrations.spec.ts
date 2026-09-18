@@ -47,9 +47,7 @@ const REGISTER = 'dossiq'
  *
  * @return The schemas, keyed by slug.
  */
-async function storedSchemas(
-	api: APIRequestContext,
-): Promise<Record<string, any>> {
+async function storedSchemas(api: APIRequestContext): Promise<Record<string, any>> {
 	const response = await api.get('/index.php/apps/openregister/api/schemas')
 	expect(
 		response.ok(),
@@ -157,9 +155,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 	})
 
 	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-inspection-location-on-the-map
-	test('the two inspection surfaces carry the maps leaf', async ({
-		request,
-	}) => {
+	test('the two inspection surfaces carry the maps leaf', async ({ request }) => {
 		const schemas = await storedSchemas(request)
 
 		expect(linkedTypes(schemas, 'inspectionChecklistRun')).toContain('maps')

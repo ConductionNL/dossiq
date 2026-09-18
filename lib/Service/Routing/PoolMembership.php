@@ -137,7 +137,11 @@ class PoolMembership {
 
 		$weight = (float)$raw;
 
-		return ($weight < 0.0 ? self::DEFAULT_WEIGHT : $weight);
+		if ($weight < 0.0) {
+			return self::DEFAULT_WEIGHT;
+		}
+
+		return $weight;
 	}//end weightOf()
 
 	/**

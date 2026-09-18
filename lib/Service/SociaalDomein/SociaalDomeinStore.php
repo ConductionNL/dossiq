@@ -202,6 +202,11 @@ class SociaalDomeinStore {
 	 */
 	public function write(string $schema, array $object): array {
 		$objectService = $this->objectService();
+		$declaredId = trim((string)($object['id'] ?? ''));
+		$uuid = null;
+		if ($declaredId !== '') {
+			$uuid = $declaredId;
+		}
 
 		try {
 			$saved = $this->saveObjectAsArray(
@@ -209,7 +214,7 @@ class SociaalDomeinStore {
 				register: self::REGISTER,
 				schema: $schema,
 				object: $object,
-				uuid: ((trim((string)($object['id'] ?? '')) !== '') ? (string)$object['id'] : null)
+				uuid: $uuid
 			);
 		} catch (Throwable $e) {
 			throw RefusedException::indeterminate(

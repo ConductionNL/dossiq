@@ -186,7 +186,11 @@ class CasePlanGoals {
 
 		$goal['state'] = $state;
 		$goal['closedObservation'] = $observation;
-		$goal['closedDate'] = (($on !== '') ? $on : (new DateTimeImmutable())->format('Y-m-d'));
+		if ($on === '') {
+			$on = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
+		$goal['closedDate'] = $on;
 
 		return $this->store->write(schema: self::SCHEMA, object: $goal);
 	}//end close()
@@ -201,6 +205,10 @@ class CasePlanGoals {
 	private function stateOf(array $goal): string {
 		$state = trim((string)($goal['state'] ?? ''));
 
-		return (in_array($state, self::STATES, true) === true) ? $state : 'open';
+		if (in_array($state, self::STATES, true) === true) {
+			return $state;
+		}
+
+		return 'open';
 	}//end stateOf()
 }//end class

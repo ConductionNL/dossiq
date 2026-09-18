@@ -16,8 +16,10 @@ import { describe, expect, it } from 'vitest'
 import { moveLines, termRows } from '../../src/utils/caseTerms.js'
 
 /** A translate that renders the key with its parameters, so the text is readable. */
-function t (key, params = {}) {
-  return String(key).replace(/\{(\w+)\}/g, (_, name) => String(params[name] ?? `{${name}}`))
+function t(key, params = {}) {
+	return String(key).replace(/\{(\w+)\}/g, (_, name) =>
+		String(params[name] ?? `{${name}}`),
+	)
 }
 
 describe('the lines under a moved term', () => {
@@ -78,9 +80,7 @@ describe('the rows the tab renders', () => {
 			t,
 		)
 
-		expect(rows[0].moves).toEqual([
-			'Moved from 2026-04-27 to 2026-04-28: Awt',
-		])
+		expect(rows[0].moves).toEqual(['Moved from 2026-04-27 to 2026-04-28: Awt'])
 	})
 
 	it('give a term that never moved an empty list, not undefined', () => {

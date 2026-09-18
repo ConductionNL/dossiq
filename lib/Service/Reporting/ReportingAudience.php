@@ -80,7 +80,12 @@ class ReportingAudience {
 	}//end __construct()
 
 	/**
-	 * Whether this caller may read a fleet-wide report.
+	 * Whether this caller is in the audience for a fleet-wide report.
+	 *
+	 * It reads GROUP MEMBERSHIP and never an object grant, which is why it is
+	 * not named `mayRead`: a report is about the fleet and has no object whose
+	 * grants could answer, and a method with an evaluator's name here reads as
+	 * a second answer to a question OpenRegister owns.
 	 *
 	 * @param IUser|null $user The caller, null for no session.
 	 *
@@ -88,7 +93,7 @@ class ReportingAudience {
 	 *
 	 * @spec openspec/specs/security-hardening/spec.md
 	 */
-	public function mayRead(?IUser $user): bool {
+	public function isInAudience(?IUser $user): bool {
 		if ($user === null) {
 			return false;
 		}
@@ -114,5 +119,5 @@ class ReportingAudience {
 			// An unresolvable group check is not an authorization.
 			return false;
 		}
-	}//end mayRead()
+	}//end isInAudience()
 }//end class

@@ -552,8 +552,7 @@ export default {
 				return
 			}
 			const options = this.partyOptions
-			this.sender =
-				selectedOptions(this.record.sender, options)[0] || null
+			this.sender = selectedOptions(this.record.sender, options)[0] || null
 			this.recipients = selectedOptions(this.record.recipients, options)
 		},
 
@@ -697,7 +696,10 @@ export default {
 				// Identifiers, never labels. The picker hands back its option
 				// object, and posting that would store a display name nothing
 				// can filter on.
-				sender: this.allowed.sender ? identifiersOf(this.sender)[0] || '' : '',
+				sender: this.allowed.sender
+					? identifiersOf(this.sender)[0] || ''
+					: '',
+
 				recipients: this.allowed.recipients
 					? identifiersOf(this.recipients)
 					: [],

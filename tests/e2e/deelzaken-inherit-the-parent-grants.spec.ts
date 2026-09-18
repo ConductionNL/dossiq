@@ -235,7 +235,9 @@ test.describe('A deelzaak inherits its parent grants', () => {
 
 		const warning = page.locator('[data-testid="sharing-reaches-deelzaken"]')
 		const opened = await page
-			.locator('[data-testid="sidebar-tab-sharing"], #sharing, [aria-controls*="sharing"]')
+			.locator(
+				'[data-testid="sidebar-tab-sharing"], #sharing, [aria-controls*="sharing"]',
+			)
 			.first()
 			.click()
 			.then(() => true)
@@ -263,7 +265,9 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		await openCase(page, childId)
 
 		const opened = await page
-			.locator('[data-testid="sidebar-tab-access"], #access, [aria-controls*="access"]')
+			.locator(
+				'[data-testid="sidebar-tab-access"], #access, [aria-controls*="access"]',
+			)
 			.first()
 			.click()
 			.then(() => true)
@@ -281,7 +285,8 @@ test.describe('A deelzaak inherits its parent grants', () => {
 			'OpenRegister reported no rule on this case, so there is no source cell to read',
 		)
 
-		const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+		const uuid =
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 		for (const text of await sources.allTextContents()) {
 			expect(
 				uuid.test(text.trim()),

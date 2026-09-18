@@ -287,9 +287,16 @@ describe('the contact on a contact moment', () => {
 	it('bumps the version past what development holds, in both files', () => {
 		// OpenRegister FAST-SKIPS a schema whose version did not move, so the
 		// property would be inert on every existing install. Development is at
-		// 1.2.0 here, not the design's 1.1.0, so the bump is to 1.3.0.
+		// 1.2.0 here, not the design's 1.1.0, so the bump was to 1.3.0.
+		//
+		// 1.3.0 -> 1.5.0: `timeline-entries-default-internal` (#2907) added
+		// `visibleToApplicant` and `citizen-lookup-is-guarded-and-recorded`
+		// (#2931) the sensitive-field read rules. The two files are asserted
+		// TOGETHER and against one value on purpose: #2907 bumped the live
+		// register and left the mock behind, and a mock one version short
+		// looks exactly like a mock that is up to date.
 		for (const register of [kccRegister, mockRegister]) {
-			expect(register.components.schemas.contactmoment.version).toBe('1.3.0')
+			expect(register.components.schemas.contactmoment.version).toBe('1.5.0')
 		}
 	})
 
@@ -304,8 +311,13 @@ describe('the contact on a contact moment', () => {
 		// Both fields resolve ns#Requester, so one picker covers both — but
 		// only once its appliesTo says so. Without this the Log contact form
 		// renders the field as a bare uuid box.
-		expect(registrySource).toContain(
-			"appliesTo: ['case.requester', 'contactmoment.contact']",
-		)
+		// Asserted as membership rather than as the whole literal: the same
+		// picker took a third field, `role.representedParty`, with
+		// `gemachtigde-role-on-every-case-type` (#2918), and a third entry is
+		// what this picker is for rather than a break in it.
+		const appliesTo = registrySource.match(/appliesTo: \[([^\]]*)\]/)
+		expect(appliesTo, 'the registry declares no appliesTo').toBeTruthy()
+		expect(appliesTo[1]).toContain("'case.requester'")
+		expect(appliesTo[1]).toContain("'contactmoment.contact'")
 	})
 })

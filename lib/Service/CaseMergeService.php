@@ -245,7 +245,7 @@ class CaseMergeService {
 	/**
 	 * Ask OpenRegister to merge one case into another.
 	 *
-	 * dossiq decides whether this case may be merged away, because the rules
+	 * Dossiq decides whether this case may be merged away, because the rules
 	 * that refuse it are case management's; OpenRegister does the merge,
 	 * because the merge is the platform's (ADR-045). The refusal is written
 	 * here and not only in the browser: an action the browser hides is still

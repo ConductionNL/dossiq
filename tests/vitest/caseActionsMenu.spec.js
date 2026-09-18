@@ -602,7 +602,10 @@ describe('Inspect, for an administrator', () => {
 		// detail page never uses. A parent with children would have shown one
 		// menu item and neither entry, warning nobody.
 		for (const id of ['case-inspect-raw', 'case-inspect-runs']) {
-			expect(headerAction(id), `${id} must be a header action of its own`).toBeTruthy()
+			expect(
+				headerAction(id),
+				`${id} must be a header action of its own`,
+			).toBeTruthy()
 			expect(headerAction(id).children).toBeUndefined()
 		}
 		expect(headerAction('case-inspect')).toBeUndefined()
@@ -645,7 +648,9 @@ describe('Inspect, for an administrator', () => {
 		expect(headerAction('case-inspect-runs').target).toContain(
 			'/apps/openregister/#/flows/runs',
 		)
-		expect(headerAction('case-inspect-runs').target).toContain('subjectUuid={id}')
+		expect(headerAction('case-inspect-runs').target).toContain(
+			'subjectUuid={id}',
+		)
 	})
 
 	it('labels both entries in sentence case, with no em-dash', () => {
@@ -803,7 +808,7 @@ describe('Archive and Restore on the case page', () => {
 		// so a prop called `object` arrives null and the strip is silent on
 		// every archived case with nothing reporting it.
 		expect(strip).toContain('objectData')
-		expect(strip).toContain("self.archived")
+		expect(strip).toContain('self.archived')
 		expect(codeOf(strip)).not.toContain('archiveStatus')
 		// Silent on a case that is not archived, which is almost every case.
 		expect(strip).toContain('v-if="archived"')

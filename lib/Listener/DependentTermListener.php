@@ -169,7 +169,12 @@ class DependentTermListener implements IEventListener {
 			return '';
 		}
 
-		return (string)(($case['title'] ?? '') ?: ($case['identifier'] ?? ''));
+		$title = (string)($case['title'] ?? '');
+		if ($title !== '') {
+			return $title;
+		}
+
+		return (string)($case['identifier'] ?? '');
 	}//end titleOf()
 
 	/**

@@ -212,9 +212,7 @@
 				</template>
 			</section>
 
-			<section
-				v-if="fieldRows.length"
-				class="case-access-tab__fields">
+			<section v-if="fieldRows.length" class="case-access-tab__fields">
 				<h4>{{ t('dossiq', 'Which fields each role reads') }}</h4>
 				<p class="case-access-tab__hint">
 					{{
@@ -248,9 +246,11 @@
 							</td>
 							<td>
 								{{ sentenceFor(row) }}
-								<span v-if="row.reason" class="case-access-tab__hint">{{
-									row.reason
-								}}</span>
+								<span
+									v-if="row.reason"
+									class="case-access-tab__hint"
+									>{{ row.reason }}</span
+								>
 							</td>
 						</tr>
 					</tbody>
@@ -549,9 +549,13 @@ export default {
 			if (!row?.inheritedFrom) {
 				return ''
 			}
-			return t('dossiq', 'Granted on case {case}, which this one hangs under', {
-				case: row.inheritedFrom,
-			})
+			return t(
+				'dossiq',
+				'Granted on case {case}, which this one hangs under',
+				{
+					case: row.inheritedFrom,
+				},
+			)
 		},
 
 		/**

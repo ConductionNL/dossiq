@@ -195,6 +195,15 @@ class CaseEmailRepository {
 		'startdatum' => 'startDate',
 	];
 
+	/**
+	 * The case, flattened to the variable names a template author writes.
+	 *
+	 * @param array<string, mixed> $caseObj The case as OpenRegister stored it.
+	 *
+	 * @return array<string, string> The variables, by the name the editor offers.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
 	public function flattenCaseVariables(array $caseObj): array {
 		if ($caseObj === []) {
 			return [];

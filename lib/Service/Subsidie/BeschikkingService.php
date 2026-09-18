@@ -61,11 +61,11 @@ class BeschikkingService {
 	 * @param SubsidieService $subsidyService Core service (voorschot validation, nummers).
 	 * @param IUserSession $userSession Acting identity source.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 * @param StaatssteunClassifier $stateAid Which state-aid ground a grant sits
 	 *        on (REQ-SUB-008). Defaulted for the same reason the validator beside
 	 *        it is: this service is constructed directly in several suites.
-	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
-	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -186,11 +186,15 @@ class BeschikkingService {
 		}
 
 		$article = trim((string)($payload['agvvArtikel'] ?? ''));
+		$agvvArtikel = null;
+		if ($article !== '') {
+			$agvvArtikel = $article;
+		}
 
 		return $this->stateAid->classify(
 			amount: (float)($payload['grantedAmount'] ?? 0),
 			eerdereDeMinimis: (float)($payload['eerdereDeMinimis'] ?? 0),
-			agvvArtikel: ($article === '' ? null : $article),
+			agvvArtikel: $agvvArtikel,
 			isDaeb: (($payload['isDaeb'] ?? false) === true),
 		);
 	}//end stateAidCategoryFor()

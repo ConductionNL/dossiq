@@ -21,12 +21,7 @@
 			v-if="missingRequired.length > 0"
 			type="error"
 			data-testid="prerequisites-blocking">
-			{{
-				t(
-					'dossiq',
-					'Dossiq cannot run until this is installed:',
-				)
-			}}
+			{{ t('dossiq', 'Dossiq cannot run until this is installed:') }}
 			{{ missingRequired.map((row) => row.id).join(', ') }}
 		</NcNoteCard>
 

@@ -176,7 +176,7 @@
 					type="text"
 					class="pd-fields__input"
 					:placeholder="t('dossiq', 'wijken')"
-					@input="setConceptScheme($event.target.value)">
+					@input="setConceptScheme($event.target.value)" />
 				<span class="pd-fields__hint">
 					{{
 						t(

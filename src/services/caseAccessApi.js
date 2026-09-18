@@ -478,7 +478,8 @@ export function grantRows({
 				// belongs. The two are separated here: the source says what
 				// kind of rule it is, the ancestor rides alongside and the
 				// panel names it.
-				source: grant.source || (grant.inheritedFrom ? 'inherited' : 'share'),
+				source:
+					grant.source || (grant.inheritedFrom ? 'inherited' : 'share'),
 				inheritedFrom: grant.inheritedFrom || '',
 				detail: grant.expires ? String(grant.expires) : '',
 			})
@@ -582,7 +583,9 @@ export async function fetchFieldRoleRules(caseId) {
 
 	return {
 		decided,
-		declared: Array.isArray(caseType.fieldRoleRules) ? caseType.fieldRoleRules : [],
+		declared: Array.isArray(caseType.fieldRoleRules)
+			? caseType.fieldRoleRules
+			: [],
 	}
 }
 

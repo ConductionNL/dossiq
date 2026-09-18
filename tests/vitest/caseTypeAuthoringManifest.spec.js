@@ -126,9 +126,7 @@ describe('statusType carries a colour and a list visibility', () => {
 		// had nothing to do with the property it was guarding, which is how it
 		// arrived on this branch red (statusType is at 1.6.0 and nothing in
 		// this change touches it).
-		const [major, minor] = schema('statusType')
-			.version.split('.')
-			.map(Number)
+		const [major, minor] = schema('statusType').version.split('.').map(Number)
 		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1005)
 	})
 })
@@ -344,9 +342,7 @@ describe('the case type page shows its version chain', () => {
 		expect(deprecate.type).toBe('api-call')
 		expect(deprecate.op).toBeUndefined()
 		expect(deprecate.values).toBeUndefined()
-		expect(deprecate.url).toBe(
-			'/apps/dossiq/api/case-types/@objectId/deprecate',
-		)
+		expect(deprecate.url).toBe('/apps/dossiq/api/case-types/@objectId/deprecate')
 		expect(deprecate.method).toBe('POST')
 		expect(deprecate.confirm).toBe(true)
 	})
@@ -534,16 +530,18 @@ describe('attributes are in folders', () => {
 	it('binds every column to a property the schema declares', () => {
 		const properties = Object.keys(schema('propertyDefinition').properties)
 		for (const column of attributes().config.columns) {
-			expect(properties, `${column} is a propertyDefinition property`).toContain(
-				column,
-			)
+			expect(
+				properties,
+				`${column} is a propertyDefinition property`,
+			).toContain(column)
 		}
 	})
 
 	it('offers no view action, because there is no detail page for one', () => {
 		expect(attributes().config.showViewAction).toBe(false)
-		expect(manifest.pages.find((p) => p.id === 'PropertyDefinitionDetail'))
-			.toBeUndefined()
+		expect(
+			manifest.pages.find((p) => p.id === 'PropertyDefinitionDetail'),
+		).toBeUndefined()
 	})
 
 	it('reaches the page from the settings menu, with a registered icon', () => {

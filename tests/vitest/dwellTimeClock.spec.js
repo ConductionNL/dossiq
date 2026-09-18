@@ -94,7 +94,13 @@ describe('the headline number', () => {
 
 	it('drives the chart bars, not just the axis title', () => {
 		const series = buildDwellSeries(
-			[{ statusName: 'In behandeling', medianWorkingHours: 1, medianHours: 65 }],
+			[
+				{
+					statusName: 'In behandeling',
+					medianWorkingHours: 1,
+					medianHours: 65,
+				},
+			],
 			'Working hours',
 		)
 		// A chart whose title said working hours and whose bars were the wall

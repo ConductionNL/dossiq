@@ -291,7 +291,11 @@ test.describe('The case says what happens next', () => {
 			ownerRole: 'assignee',
 		})
 
-		const readBack = await showObject(api, 'milestoneDefinition', objectId(decision))
+		const readBack = await showObject(
+			api,
+			'milestoneDefinition',
+			objectId(decision),
+		)
 		const dependsOn = Array.isArray(readBack.dependsOn)
 			? readBack.dependsOn
 			: JSON.parse(String(readBack.dependsOn || '[]'))

@@ -163,9 +163,10 @@ test.describe('A coordinator rebinds a running case to the right case type', () 
 		const offered = body.preview.statuses.map((entry: any) => entry.id)
 		expect(offered).toContain(omgInBehandeling)
 		expect(offered).toContain(omgToetsing)
-		expect(body.preview.canRebind, 'with no status picked, nothing may run').toBe(
-			false,
-		)
+		expect(
+			body.preview.canRebind,
+			'with no status picked, nothing may run',
+		).toBe(false)
 		expect(body.preview.run.moved, 'the engine run does not move yet').toBe(
 			false,
 		)
@@ -313,9 +314,7 @@ test.describe('A coordinator rebinds a running case to the right case type', () 
 		// reading this case does not have to dig through the store to find out
 		// what it used to be.
 		const activity = JSON.parse(String(rebound.activity ?? '[]'))
-		const entry = activity.find(
-			(row: any) => row.type === 'case-type-rebind',
-		)
+		const entry = activity.find((row: any) => row.type === 'case-type-rebind')
 		expect(entry, 'the rebind is on the journal').toBeTruthy()
 		expect(entry.fromCaseType).toBe(kapvergunning)
 		expect(entry.toCaseType).toBe(omgevingsvergunning)

@@ -223,6 +223,11 @@ describe('a key the platform has not published is not forwarded', () => {
 		})
 	})
 
+	// 30s, not the 5s default: this one READS EVERY FILE under src/ and lib/,
+	// and the two trees grew past the default over one programme. A timeout
+	// here is the tree being large, never the assertion being false, and the
+	// scan is the point: a grep for the three names is what makes "dossiq
+	// declares and integriq resolves" checkable rather than stated.
 	it('ships no resolver for a declared source', () => {
 		expect(definitionKeys).toContain('propertySource')
 		const hits = []
@@ -249,5 +254,5 @@ describe('a key the platform has not published is not forwarded', () => {
 		walk(join(ROOT, 'src'))
 		walk(join(ROOT, 'lib'))
 		expect(hits, 'integriq resolves a source, dossiq declares it').toEqual([])
-	})
+	}, 30000)
 })

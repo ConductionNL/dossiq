@@ -196,6 +196,14 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 			),
 			'every row between the tiles and the panels must carry a widget',
 		).toEqual([
+			// Two strips joined above the per-reader row, each of them a
+			// sentence the reader has to see before they do anything. Presence
+			// (#2963) says who else has this case open, so two handlers find
+			// each other before they overwrite each other. Archived (#2906)
+			// says the case is filed and a save will be refused, which is the
+			// one thing a reader must know before they start typing.
+			['case-presence'],
+			['case-archived'],
 			['case-favourite', 'case-follow'],
 			['case-unread'],
 			['case-status-declaration'],

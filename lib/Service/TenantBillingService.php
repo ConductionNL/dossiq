@@ -231,7 +231,7 @@ class TenantBillingService {
 	 * @param string $tenantId Tenant UUID.
 	 * @param string $month YYYY-MM.
 	 *
-	 * @return array{eventCount:int, totalAmount:float, byType:array<string, array{count:float, amount:float}>}
+	 * @return array{eventCount:int, totalAmount:float, byType:array<string, array{count:float, amount:float}>, unpricedCount:int}
 	 *
 	 * @throws InvalidArgumentException When month is malformed.
 	 *
@@ -251,7 +251,7 @@ class TenantBillingService {
 	 *
 	 * @param array<int, array<string,mixed>> $events Event rows.
 	 *
-	 * @return array{eventCount:int, totalAmount:float, byType:array<string, array{count:float, amount:float}>}
+	 * @return array{eventCount:int, totalAmount:float, byType:array<string, array{count:float, amount:float}>, unpricedCount:int}
 	 *
 	 * @spec openspec/specs/tenant-billing/spec.md#requirement-billing-event-emission-on-case-lifecycle-req-007-a
 	 */

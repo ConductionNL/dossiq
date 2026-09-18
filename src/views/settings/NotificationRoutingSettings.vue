@@ -270,8 +270,8 @@ export default {
 				// rather than one being assumed, because assuming the newer
 				// one renders an empty screen on every instance that has not
 				// been upgraded yet.
-				this.entries = Array.isArray(answer) ? answer : (answer?.entries || [])
-				this.channels = Array.isArray(answer) ? [] : (answer?.channels || [])
+				this.entries = Array.isArray(answer) ? answer : answer?.entries || []
+				this.channels = Array.isArray(answer) ? [] : answer?.channels || []
 			} finally {
 				this.loading = false
 			}
@@ -351,9 +351,13 @@ export default {
 				// Said out loud, and then re-read. A failed write that left
 				// the switch where the click put it is a setting somebody
 				// believes they made.
-				this.message = error?.response?.status === 403
-					? t('dossiq', 'An administrator decides this one, so it is not yours to change.')
-					: t('dossiq', 'That setting was not saved.')
+				this.message =
+					error?.response?.status === 403
+						? t(
+								'dossiq',
+								'An administrator decides this one, so it is not yours to change.',
+							)
+						: t('dossiq', 'That setting was not saved.')
 			}
 
 			await this.load()

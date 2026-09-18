@@ -294,10 +294,15 @@ class CaseRebindService {
 			targetStatusId: $targetStatusId
 		);
 		if ($missing !== []) {
+			$pronoun = 'them';
+			if (count($missing) === 1) {
+				$pronoun = 'it';
+			}
+
 			throw new RefusedException(
 				rule: 'rebind-missing-required-properties',
 				sentence: 'The target case type requires ' . implode(', ', $missing)
-					. ' in that status, and this case does not carry ' . ((count($missing) === 1) ? 'it' : 'them') . '.',
+					. ' in that status, and this case does not carry ' . $pronoun . '.',
 				status: RefusedException::STATUS_UNPROCESSABLE,
 			);
 		}
@@ -554,10 +559,17 @@ class CaseRebindService {
 		$raw = ($case['properties'] ?? []);
 		if (is_string($raw) === true && trim($raw) !== '') {
 			$decoded = json_decode($raw, true);
-			$raw = (is_array($decoded) === true) ? $decoded : [];
+			$raw = [];
+			if (is_array($decoded) === true) {
+				$raw = $decoded;
+			}
 		}
 
-		return (is_array($raw) === true) ? $raw : [];
+		if (is_array($raw) === true) {
+			return $raw;
+		}
+
+		return [];
 	}//end answersOf()
 
 	/**

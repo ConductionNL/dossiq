@@ -101,7 +101,10 @@ class CasePlanInterventions {
 			return [];
 		}
 
-		$today = (($today !== '') ? $today : (new DateTimeImmutable())->format('Y-m-d'));
+		if ($today === '') {
+			$today = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
 
 		$rows = [];
 		foreach ($this->store->rows(schema: self::SCHEMA, filters: ['plan' => $planId]) as $row) {
@@ -175,7 +178,11 @@ class CasePlanInterventions {
 		$this->provider->assertReference(value: (string)($intervention['provider'] ?? ''));
 
 		$state = trim((string)($intervention['state'] ?? ''));
-		$intervention['state'] = ((in_array($state, self::STATES, true) === true) ? $state : 'planned');
+		if (in_array($state, self::STATES, true) === false) {
+			$state = 'planned';
+		}
+
+		$intervention['state'] = $state;
 		$intervention['migratedFrom'] = (string)($intervention['migratedFrom'] ?? '');
 
 		return $this->store->write(schema: self::SCHEMA, object: $intervention);

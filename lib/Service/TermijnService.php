@@ -38,6 +38,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -66,6 +67,8 @@ class TermijnService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
 	 * @param TermEventEntry|null $termEntry The timeline entry a term event writes.
+	 * @param CaseDateNormaliser|null $dates Reads a date off a case in the one place that knows its shapes.
+	 * @param WorkingDayRoll|null $roll Counts a term in working days when its definition asks for them.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -73,6 +76,7 @@ class TermijnService {
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermEventEntry $termEntry = null,
 		private readonly ?CaseDateNormaliser $dates = null,
+		private readonly ?WorkingDayRoll $roll = null,
 	) {
 	}//end __construct()
 
@@ -207,6 +211,11 @@ class TermijnService {
 	 * @return DateTimeImmutable The end date, before the Awt roll.
 	 *
 	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 *
+	 * @psalm-suppress FalsableReturnStatement `modify()` is falsable in the
+	 * stub because its argument is an arbitrary string. Here the string is
+	 * built from an int, so the only value that could make it unparseable does
+	 * not exist; PHP 8.3 throws rather than returning false in any case.
 	 */
 	private function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		$mode = self::countingModeOf(definitie: $definitie);
@@ -246,9 +255,11 @@ class TermijnService {
 	public static function countingModeOf(array $definitie): string {
 		$declared = trim((string)($definitie['countingMode'] ?? ''));
 
-		return ($declared === WorkingDayRoll::MODE_WORKING_DAYS
-			? WorkingDayRoll::MODE_WORKING_DAYS
-			: WorkingDayRoll::MODE_CALENDAR_DAYS);
+		if ($declared === WorkingDayRoll::MODE_WORKING_DAYS) {
+			return WorkingDayRoll::MODE_WORKING_DAYS;
+		}
+
+		return WorkingDayRoll::MODE_CALENDAR_DAYS;
 	}//end countingModeOf()
 
 	/**
@@ -597,6 +608,11 @@ class TermijnService {
 		);
 
 		if ($updated !== null) {
+			$why = trim($rationale);
+			if ($why === '') {
+				$why = 'Termijn voltooid door beschikking';
+			}
+
 			$this->recordEvent(
 				termInstanceId: $termInstanceId,
 				type: 'voltooi',
@@ -607,7 +623,7 @@ class TermijnService {
 				// a beschikking in the audit trail of a case that never got
 				// one. The default is the old sentence, so every existing
 				// caller reads exactly as it did.
-				rationale: (trim($rationale) !== '') ? trim($rationale) : 'Termijn voltooid door beschikking',
+				rationale: $why,
 				daysImpact: 0,
 				moment: $voltooiDatum,
 				documentLink: $documentLink,
@@ -617,7 +633,7 @@ class TermijnService {
 			// same operation that made the term terminal (REQ-TOT-001).
 			$this->timerService?->cancelForInstance(
 				instanceId: $termInstanceId,
-				reason: (trim($rationale) !== '') ? trim($rationale) : 'Termijn voltooid door beschikking'
+				reason: $why
 			);
 		}
 
@@ -797,8 +813,13 @@ class TermijnService {
 		$calculated = (string)($successor['endDateCalculated'] ?? '');
 		$current = $calculated;
 		if ($calculated !== '' && $days !== 0) {
+			$sign = '-';
+			if ($days >= 0) {
+				$sign = '+';
+			}
+
 			$current = (new DateTimeImmutable($calculated))
-				->modify((($days >= 0) ? '+' : '-') . abs($days) . ' days')
+				->modify($sign . abs($days) . ' days')
 				->format('Y-m-d');
 		}
 

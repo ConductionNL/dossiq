@@ -116,7 +116,10 @@ class DependentTermOffer {
 			return [];
 		}
 
-		$property = (string)(CaseRelationCodec::TYPED_PROPERTIES[CaseRelationService::RELATION_WAITS_ON] ?? '');
+		// No `?? ''`: the key is a constant of the same codec, so the offset
+		// always exists and the coalesce reads as a guard against something
+		// that cannot happen.
+		$property = CaseRelationCodec::TYPED_PROPERTIES[CaseRelationService::RELATION_WAITS_ON];
 		$dependents = [];
 
 		foreach ($this->store->relationRows(caseUuid: $sourceCaseId, incoming: true) as $row) {
@@ -325,7 +328,11 @@ class DependentTermOffer {
 		int $daysImpact,
 		string $instanceId,
 	): string {
-		$named = ($sourceTitle !== '' ? $sourceTitle : $sourceCaseId);
+		$named = $sourceCaseId;
+		if ($sourceTitle !== '') {
+			$named = $sourceTitle;
+		}
+
 
 		$task = [
 			'id' => self::TASK_KIND . ':' . $dependent['caseId'] . ':' . $sourceCaseId . ':' . $instanceId,

@@ -222,8 +222,8 @@ export default {
 					reminderPayload(this.form, this.targetCaseId),
 				)
 				if (created === null) {
-					this.error
-						= this.tasks.error
+					this.error =
+						this.tasks.error
 						|| t('dossiq', 'The reminder could not be set.')
 					return
 				}

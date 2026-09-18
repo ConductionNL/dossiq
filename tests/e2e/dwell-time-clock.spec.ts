@@ -96,7 +96,9 @@ test.describe('REQ-DT-30 the report says which clock it counted on', () => {
 			// Working time can never exceed wall-clock time on any of the
 			// three clocks, so a row where it does is a mixed-up pair rather
 			// than a slow case.
-			expect(row.medianWorkingHours).toBeLessThanOrEqual(row.medianHours + 0.05)
+			expect(row.medianWorkingHours).toBeLessThanOrEqual(
+				row.medianHours + 0.05,
+			)
 		}
 	})
 
@@ -104,7 +106,10 @@ test.describe('REQ-DT-30 the report says which clock it counted on', () => {
 		const body = await report()
 		const caseTypes = body?.caseTypes ?? []
 
-		test.skip(caseTypes.length === 0, 'no case types in the period on this instance')
+		test.skip(
+			caseTypes.length === 0,
+			'no case types in the period on this instance',
+		)
 
 		for (const caseType of caseTypes) {
 			expect(

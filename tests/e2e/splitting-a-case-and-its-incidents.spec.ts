@@ -25,7 +25,15 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { cleanupRunObjects, createObject, getRequestToken, REGISTER, RUN_PREFIX, seedCase, showObject } from './helpers/fixtures.ts'
+import {
+	cleanupRunObjects,
+	createObject,
+	getRequestToken,
+	REGISTER,
+	RUN_PREFIX,
+	seedCase,
+	showObject,
+} from './helpers/fixtures.ts'
 import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
@@ -55,7 +63,10 @@ async function recordIncident(key: string, eventDate: string, recordedAt: string
 test.beforeAll(async ({ playwright, baseURL }) => {
 	api = await playwright.request.newContext({ baseURL })
 	token = await getRequestToken(api)
-	caseId = await seedCase(api, token, { title: `${RUN_PREFIX} Adres met meldingen`, assignee: 'admin' })
+	caseId = await seedCase(api, token, {
+		title: `${RUN_PREFIX} Adres met meldingen`,
+		assignee: 'admin',
+	})
 })
 
 test.afterAll(async () => {
@@ -64,14 +75,28 @@ test.afterAll(async () => {
 })
 
 test.describe('a case holds several dated incidents', () => {
-	test('the list reads as the sequence of events, not of write-ups', async ({ page }) => {
+	test('the list reads as the sequence of events, not of write-ups', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		// June is recorded LAST and happened SECOND. A list sorted by the
 		// recording moment puts it at the bottom; sorted by the event date it
 		// sits in the middle, which is where it belongs.
-		await recordIncident('Maart', '2026-03-04T10:00:00+01:00', '2026-03-04T10:30:00+01:00')
-		await recordIncident('September', '2026-09-02T09:00:00+02:00', '2026-09-02T09:15:00+02:00')
-		await recordIncident('Juni', '2026-06-11T18:00:00+02:00', '2026-09-30T16:00:00+02:00')
+		await recordIncident(
+			'Maart',
+			'2026-03-04T10:00:00+01:00',
+			'2026-03-04T10:30:00+01:00',
+		)
+		await recordIncident(
+			'September',
+			'2026-09-02T09:00:00+02:00',
+			'2026-09-02T09:15:00+02:00',
+		)
+		await recordIncident(
+			'Juni',
+			'2026-06-11T18:00:00+02:00',
+			'2026-09-30T16:00:00+02:00',
+		)
 
 		await page.goto(`${APP_URL}cases/${caseId}`, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
@@ -85,13 +110,20 @@ test.describe('a case holds several dated incidents', () => {
 	})
 
 	test('an incident is handed over without moving the case', async () => {
-		const incidentId = await recordIncident('Overdracht', '2026-04-01T10:00:00+02:00', '2026-04-01T10:00:00+02:00')
+		const incidentId = await recordIncident(
+			'Overdracht',
+			'2026-04-01T10:00:00+02:00',
+			'2026-04-01T10:00:00+02:00',
+		)
 		const before = await showObject(api, token, 'case', caseId)
 
-		await api.put(`/index.php/apps/openregister/api/objects/dossiq/incident/${incidentId}`, {
-			headers: { requesttoken: token },
-			data: { assignee: 'inspecteur' },
-		})
+		await api.put(
+			`/index.php/apps/openregister/api/objects/dossiq/incident/${incidentId}`,
+			{
+				headers: { requesttoken: token },
+				data: { assignee: 'inspecteur' },
+			},
+		)
 
 		const incident = await showObject(api, token, 'incident', incidentId)
 		const after = await showObject(api, token, 'case', caseId)
@@ -103,7 +135,11 @@ test.describe('a case holds several dated incidents', () => {
 	})
 
 	test('an incident is not a sub-case: it carries no term and no number', async () => {
-		const incidentId = await recordIncident('Geen deelzaak', '2026-05-01T10:00:00+02:00', '2026-05-01T10:00:00+02:00')
+		const incidentId = await recordIncident(
+			'Geen deelzaak',
+			'2026-05-01T10:00:00+02:00',
+			'2026-05-01T10:00:00+02:00',
+		)
 
 		const incident = await showObject(api, token, 'incident', incidentId)
 
@@ -121,16 +157,21 @@ test.describe('a split moves rather than duplicates', () => {
 		// The assertion the whole row turns on. A split that copied would pass
 		// "does the new case have it" and leave both cases claiming one
 		// document, which is the state this change exists to end.
-		const other = await seedCase(api, token, { title: `${RUN_PREFIX} Tweede helft` })
+		const other = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Tweede helft`,
+		})
 		const link = await createObject(api, token, 'caseDocument', {
 			case: caseId,
 			title: `${RUN_PREFIX} Verhuisd stuk`,
 		})
 
-		await api.put(`/index.php/apps/openregister/api/objects/dossiq/caseDocument/${link}`, {
-			headers: { requesttoken: token },
-			data: { case: other },
-		})
+		await api.put(
+			`/index.php/apps/openregister/api/objects/dossiq/caseDocument/${link}`,
+			{
+				headers: { requesttoken: token },
+				data: { case: other },
+			},
+		)
 
 		const moved = await showObject(api, token, 'caseDocument', link)
 

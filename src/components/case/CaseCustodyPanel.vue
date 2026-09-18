@@ -30,13 +30,20 @@
 
 		<NcEmptyContent
 			v-else-if="refused"
-			:name="t('dossiq', 'Only somebody who may open this case sees who has held it')"
+			:name="
+				t(
+					'dossiq',
+					'Only somebody who may open this case sees who has held it',
+				)
+			"
 			:description="t('dossiq', 'Nothing changed.')" />
 
 		<NcEmptyContent
 			v-else-if="failed"
 			:name="t('dossiq', 'We could not read who has held this case')"
-			:description="t('dossiq', 'The case has not moved. Try again in a moment.')" />
+			:description="
+				t('dossiq', 'The case has not moved. Try again in a moment.')
+			" />
 
 		<template v-else>
 			<section class="case-custody__section">
@@ -47,20 +54,31 @@
 				<NcEmptyContent
 					v-if="holdings.length === 0"
 					:name="t('dossiq', 'This case has not changed hands yet')"
-					:description="t('dossiq', 'Its first holding opens when the case is registered.')" />
+					:description="
+						t(
+							'dossiq',
+							'Its first holding opens when the case is registered.',
+						)
+					" />
 
 				<ol v-else class="case-custody__chain">
 					<li
 						v-for="holding in holdings"
 						:key="holding.id || holding.sequence"
 						class="case-custody__holding"
-						:class="{ 'case-custody__holding--open': holding.open === true }"
+						:class="{
+							'case-custody__holding--open': holding.open === true,
+						}"
 						data-testid="case-custody-holding">
-						<span class="case-custody__unit">{{ holding.organisationUnit }}</span>
+						<span class="case-custody__unit">{{
+							holding.organisationUnit
+						}}</span>
 						<span v-if="holding.handler" class="case-custody__handler">
 							{{ holding.handler }}
 						</span>
-						<span class="case-custody__period">{{ periodOf(holding) }}</span>
+						<span class="case-custody__period">{{
+							periodOf(holding)
+						}}</span>
 						<span v-if="holding.reason" class="case-custody__reason">
 							{{ holding.reason }}
 						</span>
@@ -76,7 +94,12 @@
 				<NcEmptyContent
 					v-if="takeovers.length === 0"
 					:name="t('dossiq', 'Nobody has asked for this case')"
-					:description="t('dossiq', 'A colleague can ask the holder for it, with a reason.')" />
+					:description="
+						t(
+							'dossiq',
+							'A colleague can ask the holder for it, with a reason.',
+						)
+					" />
 
 				<ul v-else class="case-custody__requests">
 					<li
@@ -85,10 +108,18 @@
 						class="case-custody__request"
 						:data-status="request.status"
 						data-testid="case-custody-request">
-						<span class="case-custody__asker">{{ request.requestedBy }}</span>
-						<span class="case-custody__request-reason">{{ request.reason }}</span>
-						<span class="case-custody__status">{{ statusOf(request) }}</span>
-						<span v-if="request.refusalReason" class="case-custody__refusal">
+						<span class="case-custody__asker">{{
+							request.requestedBy
+						}}</span>
+						<span class="case-custody__request-reason">{{
+							request.reason
+						}}</span>
+						<span class="case-custody__status">{{
+							statusOf(request)
+						}}</span>
+						<span
+							v-if="request.refusalReason"
+							class="case-custody__refusal">
 							{{ request.refusalReason }}
 						</span>
 
@@ -116,7 +147,10 @@
 				</ul>
 			</section>
 
-			<p v-if="error" class="case-custody__error" data-testid="case-custody-error">
+			<p
+				v-if="error"
+				class="case-custody__error"
+				data-testid="case-custody-error">
 				{{ error }}
 			</p>
 		</template>
@@ -300,7 +334,10 @@ export default {
 		async refuse(request) {
 			const reason = String(this.refusalReasons[request?.id] ?? '').trim()
 			if (reason === '') {
-				this.error = t('dossiq', 'Say why you are keeping the case, so the answer means something.')
+				this.error = t(
+					'dossiq',
+					'Say why you are keeping the case, so the answer means something.',
+				)
 				return
 			}
 
@@ -330,7 +367,10 @@ export default {
 			} catch (answerError) {
 				this.error = String(
 					answerError?.response?.data?.message
-						?? t('dossiq', 'We did not record the answer, so the case has not moved.'),
+						?? t(
+							'dossiq',
+							'We did not record the answer, so the case has not moved.',
+						),
 				)
 			} finally {
 				this.answering = false
@@ -351,7 +391,10 @@ export default {
 				return t('dossiq', 'Since {date}', { date: from })
 			}
 
-			return t('dossiq', 'From {from} to {to}', { from, to: this.dateOf(holding?.until) })
+			return t('dossiq', 'From {from} to {to}', {
+				from,
+				to: this.dateOf(holding?.until),
+			})
 		},
 
 		/**
@@ -367,7 +410,10 @@ export default {
 				pending: t('dossiq', 'Waiting for the holder'),
 				accepted: t('dossiq', 'Handed over'),
 				refused: t('dossiq', 'Kept by the holder'),
-				escalated: t('dossiq', 'Nobody answered, so the question went to the unit'),
+				escalated: t(
+					'dossiq',
+					'Nobody answered, so the question went to the unit',
+				),
 			}
 
 			return sentences[request?.status] ?? String(request?.status ?? '')

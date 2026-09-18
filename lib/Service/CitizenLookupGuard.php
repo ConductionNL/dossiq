@@ -241,9 +241,13 @@ class CitizenLookupGuard {
 		foreach (['contactmomenten', 'recenteContactmomenten'] as $key) {
 			if (is_array(($payload[$key] ?? null)) === true) {
 				$payload[$key] = array_map(
-					static fn (mixed $row): mixed => (is_array($row) === true
-						? array_diff_key($row, array_flip(self::SENSITIVE_CONTACT_FIELDS))
-						: $row),
+					static function (mixed $row): mixed {
+						if (is_array($row) === false) {
+							return $row;
+						}
+
+						return array_diff_key($row, array_flip(self::SENSITIVE_CONTACT_FIELDS));
+					},
 					$payload[$key]
 				);
 			}

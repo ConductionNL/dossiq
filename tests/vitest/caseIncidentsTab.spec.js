@@ -22,12 +22,16 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+)
 
 const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 const widgets = caseDetail.config?.widgets ?? caseDetail.widgets ?? []
 const workPanel = widgets.find((widget) => widget.id === 'case-work-panel')
-const incidents = workPanel.content.sections.find((section) => section.label === 'Incidents')?.widget
+const incidents = workPanel.content.sections.find(
+	(section) => section.label === 'Incidents',
+)?.widget
 
 describe('the case lists its incidents', () => {
 	it('has an incidents section on the Work tab', () => {
@@ -52,7 +56,7 @@ describe('the case lists its incidents', () => {
 		expect(columns).toContain('recordedAt')
 	})
 
-	it('shows the incident\'s own owner beside its state', () => {
+	it("shows the incident's own owner beside its state", () => {
 		const columns = incidents.content.columns.map((column) => column.key)
 		// The incident's assignee, not the case's: the case sits with the area
 		// handler while one report is worked by an inspector.

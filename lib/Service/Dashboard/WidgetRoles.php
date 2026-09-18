@@ -105,10 +105,17 @@ class WidgetRoles {
 	 * @return array<int, array<string, mixed>> The definitions.
 	 */
 	public function definitionsOn(array $page): array {
-		$candidates = array_merge(
-			(is_array($page['config']['widgets'] ?? null) === true ? $page['config']['widgets'] : []),
-			(is_array($page['widgets'] ?? null) === true ? $page['widgets'] : []),
-		);
+		$onConfig = [];
+		if (is_array($page['config']['widgets'] ?? null) === true) {
+			$onConfig = $page['config']['widgets'];
+		}
+
+		$onPage = [];
+		if (is_array($page['widgets'] ?? null) === true) {
+			$onPage = $page['widgets'];
+		}
+
+		$candidates = array_merge($onConfig, $onPage);
 
 		$definitions = [];
 		foreach ($candidates as $widget) {

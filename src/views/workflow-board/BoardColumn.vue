@@ -31,7 +31,9 @@
 			<span
 				class="board-column__count"
 				:class="{ 'board-column__count--full': atCapacity }"
-				data-testid="board-column-count">{{ countLabel }}</span>
+				data-testid="board-column-count"
+				>{{ countLabel }}</span
+			>
 		</div>
 
 		<div class="board-column__body">

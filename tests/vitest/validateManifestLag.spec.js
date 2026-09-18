@@ -50,7 +50,11 @@ function validate(manifest) {
 	fs.writeFileSync(tmp, JSON.stringify(manifest, null, '\t'))
 	try {
 		const out = execFileSync('node', [VALIDATOR], {
-			env: { ...process.env, APP_MANIFEST_SCHEMA: INSTALLED, APP_MANIFEST: tmp },
+			env: {
+				...process.env,
+				APP_MANIFEST_SCHEMA: INSTALLED,
+				APP_MANIFEST: tmp,
+			},
 			encoding: 'utf8',
 			stdio: ['ignore', 'pipe', 'pipe'],
 		})
@@ -97,28 +101,35 @@ describe('the vendored schema is newer than the installed one', () => {
 })
 
 describe('check:manifest tells a lag from a defect', () => {
+	// 30s on each of the three below, not the 5s default. Every one of them
+	// SPAWNS the validator, and Ajv compiling the manifest schema over a
+	// 62-page manifest is several seconds of real work per run. The default
+	// was already being cleared by a margin that shrank with the manifest.
 	it('the shipped manifest passes, because its only errors are the lag', () => {
 		const out = execFileSync('node', [VALIDATOR], { encoding: 'utf8' })
 
 		expect(out).toContain('PASS')
 		expect(out).toContain('pending a library release')
-	})
+	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {
 		const manifest = JSON.parse(
 			fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 		)
-		const page = manifest.pages.find(
-			(candidate) => Array.isArray(candidate?.config?.headerActions),
+		const page = manifest.pages.find((candidate) =>
+			Array.isArray(candidate?.config?.headerActions),
 		)
-		expect(page, 'a page with header actions must exist, or this measures nothing').toBeTruthy()
+		expect(
+			page,
+			'a page with header actions must exist, or this measures nothing',
+		).toBeTruthy()
 		page.config.headerActions[0]._note = 'a key $defs/action refuses'
 
 		const result = validate(manifest)
 
 		expect(result.code).toBe(1)
 		expect(result.out).toContain('FAIL')
-	})
+	}, 30000)
 
 	it('a key NEITHER schema knows fails, rather than being forgiven as a lag', () => {
 		const manifest = JSON.parse(
@@ -130,5 +141,5 @@ describe('check:manifest tells a lag from a defect', () => {
 
 		expect(result.code).toBe(1)
 		expect(result.out).toContain('FAIL')
-	})
+	}, 30000)
 })

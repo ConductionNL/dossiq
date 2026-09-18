@@ -31,7 +31,9 @@ import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/na
 const DASHBOARD_URL = `/apps/${REGISTER}/`
 
 test.describe('a restricted tile is absent, and so is its figure', () => {
-	test('a case handler receives no SLA compliance figure at all', async ({ page }) => {
+	test('a case handler receives no SLA compliance figure at all', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 
 		const payloads: Array<Record<string, unknown>> = []
@@ -43,7 +45,9 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 
 		await page.goto(DASHBOARD_URL, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
-		await expect.poll(() => payloads.length, { timeout: 15_000 }).toBeGreaterThan(0)
+		await expect
+			.poll(() => payloads.length, { timeout: 15_000 })
+			.toBeGreaterThan(0)
 
 		// The field is GONE, not zero: a zero is a figure, and a reader shown
 		// one has been told something false about the caseload.
@@ -51,7 +55,9 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 		await expect(page.getByText(/SLA Compliance/i)).toHaveCount(0)
 	})
 
-	test('the rest of the dashboard is intact, and nothing stands in the gap', async ({ page }) => {
+	test('the rest of the dashboard is intact, and nothing stands in the gap', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		await page.goto(DASHBOARD_URL, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
@@ -62,10 +68,16 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 		await expect(page.getByText(/My Tasks/i).first()).toBeVisible()
 		// And no placeholder where the restricted one was: an empty box says
 		// there is a figure you are not allowed to see.
-		await expect(page.getByText(/not available|niet beschikbaar|no permission|geen toegang/i)).toHaveCount(0)
+		await expect(
+			page.getByText(
+				/not available|niet beschikbaar|no permission|geen toegang/i,
+			),
+		).toHaveCount(0)
 	})
 
-	test('the managerial dashboards are not reachable by typing the address', async ({ page }) => {
+	test('the managerial dashboards are not reachable by typing the address', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		// The widgets on these pages all declare the team lead role, so their
 		// endpoint answers a handler nothing. The assertion is on the DATA
@@ -86,7 +98,9 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 		}
 	})
 
-	test('a renamed role hides the widget from everyone rather than showing it to everyone', async ({ page }) => {
+	test('a renamed role hides the widget from everyone rather than showing it to everyone', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		// The failure this closes is a configuration mistake becoming a
 		// disclosure: a group renamed under a declaration that still names the
@@ -96,7 +110,10 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 			const response = await route.fetch()
 			const body = JSON.parse(await response.text())
 			for (const pageDef of body.pages ?? []) {
-				for (const widget of [...(pageDef.config?.widgets ?? []), ...(pageDef.widgets ?? [])]) {
+				for (const widget of [
+					...(pageDef.config?.widgets ?? []),
+					...(pageDef.widgets ?? []),
+				]) {
 					if (Array.isArray(widget?.roles)) {
 						widget.roles = ['dossiq-teamleiders-renamed']
 					}

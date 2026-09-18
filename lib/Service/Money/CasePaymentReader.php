@@ -122,7 +122,7 @@ class CasePaymentReader {
 
 		$leaf = $this->leaf();
 		if ($leaf === null) {
-			// shillinq is not installed, or does not publish the leaf this app
+			// Shillinq is not installed, or does not publish the leaf this app
 			// knows how to read. NOT "nothing is owed": a gemeente that
 			// disabled the money app has not waived its leges.
 			return $this->states->projection(state: CasePaymentState::STALE, checkedAt: $now);

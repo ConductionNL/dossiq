@@ -77,7 +77,7 @@ class CrossAppListenerRegistrar {
 			);
 		}
 
-		// leaf-integrations REQ-LEAF-103: a submission of a form a case type
+		// REQ-LEAF-103 (leaf-integrations): a submission of a form a case type
 		// bound opens a case with the statutory clock already running. `forms`
 		// is optional, and the guard is what keeps an instance without it
 		// booting: the event name is an FQN STRING on the listener, never an

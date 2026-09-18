@@ -140,6 +140,9 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @param CaseResultWriter $resultWriter Decides whether a target status closes the case.
 	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
 	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
+	 * @param UnpaidCaseGate $unpaidCases Refuses a move its case type makes wait for payment.
+	 * @param CasePaymentReader $payments What shillinq last said this case owes.
+	 * @param CaseTypeReader $caseTypes Reads the case type behind the case being moved.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md

@@ -66,6 +66,9 @@ class CaseTermsService {
 	 * @param TermDeclarationReader $declarations What the case type and its phases declare.
 	 * @param TermijnTimerService $timers The engine calendar bridge.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermMoveHistory|null $moves The record of every move a term made, and
+	 *        why. Optional so a container that cannot build it leaves the binding
+	 *        exactly as it was.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,

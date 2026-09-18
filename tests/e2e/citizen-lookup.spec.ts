@@ -220,7 +220,10 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 	// after this has shown the value is there to withhold.
 	test('a member of the sensitive group receives the four fields', async () => {
 		const response = await lookup(officerApi as APIRequestContext)
-		expect(response.ok(), `the lookup must answer; got ${response.status()}`).toBe(true)
+		expect(
+			response.ok(),
+			`the lookup must answer; got ${response.status()}`,
+		).toBe(true)
 
 		const rows = (await response.json())?.contactmomenten ?? []
 		const row = rows.find((r: any) => String(r?.summary ?? '') === SUMMARY)
@@ -238,12 +241,18 @@ test.describe('a citizen lookup is guarded and recorded', () => {
 	// one is invisible in the file and invisible on screen.
 	test('a call handler outside the group receives the lookup without them', async () => {
 		const response = await lookup(handlerApi as APIRequestContext)
-		expect(response.ok(), `the lookup must still answer; got ${response.status()}`).toBe(true)
+		expect(
+			response.ok(),
+			`the lookup must still answer; got ${response.status()}`,
+		).toBe(true)
 
 		const rows = (await response.json())?.contactmomenten ?? []
 		// The lookup is still a lookup: a redaction that empties it is the
 		// failure that gets the whole rule removed a week later.
-		expect(rows.length, 'the handler must still see that a call happened').toBeGreaterThan(0)
+		expect(
+			rows.length,
+			'the handler must still see that a call happened',
+		).toBeGreaterThan(0)
 		for (const row of rows) {
 			for (const field of SENSITIVE_FIELDS) {
 				expect(Object.keys(row)).not.toContain(field)

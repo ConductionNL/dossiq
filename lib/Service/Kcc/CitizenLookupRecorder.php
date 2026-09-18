@@ -167,6 +167,11 @@ class CitizenLookupRecorder {
 		array $fields,
 		string $ground,
 	): array {
+		$result = self::RESULT_REFUSED;
+		if ($allowed === true) {
+			$result = self::RESULT_ALLOWED;
+		}
+
 		return [
 			'employeeId' => $employeeId,
 			'subjectId' => $subjectId,
@@ -175,7 +180,7 @@ class CitizenLookupRecorder {
 			'ipAddress' => $this->request->getRemoteAddress(),
 			'geraadpleegdeVelden' => array_values($fields),
 			'authorisationGround' => $ground,
-			'result' => ($allowed === true ? self::RESULT_ALLOWED : self::RESULT_REFUSED),
+			'result' => $result,
 		];
 	}//end row()
 

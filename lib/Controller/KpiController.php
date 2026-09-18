@@ -79,6 +79,7 @@ class KpiController extends Controller {
 	 * @param IUserSession $userSession The user session
 	 * @param KpiAggregationService $kpiAggregation The KPI aggregation service
 	 * @param ICacheFactory $cacheFactory The cache factory
+	 * @param DashboardWidgetScope $widgetScope Narrows the payload to the widgets this reader may see
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @return void

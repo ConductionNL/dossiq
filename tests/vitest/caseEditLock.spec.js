@@ -37,7 +37,7 @@ const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 
 /** The case page, which is where a case is edited. */
-const caseDetail = manifest.pages.find(page => page.id === 'CaseDetail')
+const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 
 describe('the case page can be locked for an edit', () => {
 	it('is a detail page, which is what carries the lock', () => {
@@ -59,7 +59,8 @@ describe('the case page can be locked for an edit', () => {
 		// only covers the one CnDetailPage owns. Any header action that opened
 		// its own case form would write past it.
 		const editActions = (caseDetail.config.headerActions ?? []).filter(
-			action => action.type === 'open-form'
+			(action) =>
+				action.type === 'open-form'
 				&& (action.createOverride ?? true) === false,
 		)
 

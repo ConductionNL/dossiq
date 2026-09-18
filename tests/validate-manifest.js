@@ -42,8 +42,8 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 // already overrides the schema. Added so `validateManifestLag.spec.js` can put
 // a deliberate defect in front of the classifier without editing the shipped
 // manifest, which is the only way to assert that a real error still fails.
-const MANIFEST_PATH = process.env.APP_MANIFEST
-	|| path.join(REPO_ROOT, 'src', 'manifest.json')
+const MANIFEST_PATH =
+	process.env.APP_MANIFEST || path.join(REPO_ROOT, 'src', 'manifest.json')
 
 // THE INSTALLED SCHEMA WINS OVER THE VENDORED COPY.
 //
@@ -110,7 +110,12 @@ function newerSchema() {
 	if (newerSchema.cached !== undefined) {
 		return newerSchema.cached
 	}
-	const vendored = path.join(REPO_ROOT, 'tests', 'schemas', 'app-manifest-v2.schema.json')
+	const vendored = path.join(
+		REPO_ROOT,
+		'tests',
+		'schemas',
+		'app-manifest-v2.schema.json',
+	)
 	try {
 		newerSchema.cached = fs.existsSync(vendored) ? loadJson(vendored) : null
 	} catch (_) {
@@ -157,7 +162,9 @@ function newerSchemaAccepts(instancePath, property) {
 		return false
 	}
 
-	const segments = String(instancePath || '').split('/').filter(Boolean)
+	const segments = String(instancePath || '')
+		.split('/')
+		.filter(Boolean)
 	// The two shapes an unknown property can be rejected on today. Both are
 	// resolved from the PATH, so a new one fails closed: unknown shape, not a
 	// lag, and the error keeps failing the build until somebody teaches this.
@@ -174,7 +181,9 @@ function newerSchemaAccepts(instancePath, property) {
 		segments.length === 5
 		&& segments[0] === 'pages'
 		&& segments[2] === 'config'
-		&& ['headerActions', 'actions', 'bulkActions', 'newActions'].includes(segments[3])
+		&& ['headerActions', 'actions', 'bulkActions', 'newActions'].includes(
+			segments[3],
+		)
 	) {
 		def = schema.$defs.action
 	}
@@ -380,7 +389,7 @@ function main() {
 		}
 		console.warn(
 			'[validate-manifest] Nothing in this app fixes those. They go when @conduction/nextcloud-vue '
-			+ `releases a version carrying schema ${newerSchemaVersion()}.`,
+				+ `releases a version carrying schema ${newerSchemaVersion()}.`,
 		)
 	}
 

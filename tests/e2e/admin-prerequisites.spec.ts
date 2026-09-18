@@ -133,10 +133,9 @@ test.describe('The Prerequisites block', () => {
 		// this row is the control: a block that reported everything missing
 		// would be as useless as one that reported everything present, and
 		// only asserting both verdicts can tell them apart.
-		await expect(page.getByTestId('prerequisite-app-openregister')).toContainText(
-			'present',
-			{ timeout: 20_000 },
-		)
+		await expect(
+			page.getByTestId('prerequisite-app-openregister'),
+		).toContainText('present', { timeout: 20_000 })
 
 		// The extensions are invisible from a browser, so a row about one is
 		// proof the reading came from PHP.

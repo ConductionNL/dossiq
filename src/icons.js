@@ -24,6 +24,7 @@ import AccountKeyOutline from 'vue-material-design-icons/AccountKeyOutline.vue'
 import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
 import AccountPlusOutline from 'vue-material-design-icons/AccountPlusOutline.vue'
+import AccountSearchOutline from 'vue-material-design-icons/AccountSearchOutline.vue'
 import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import AccountSwitchOutline from 'vue-material-design-icons/AccountSwitchOutline.vue'
 import AccountTieOutline from 'vue-material-design-icons/AccountTieOutline.vue'
@@ -95,6 +96,7 @@ import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
+import CurrencyEur from 'vue-material-design-icons/CurrencyEur.vue'
 import DatabaseCogOutline from 'vue-material-design-icons/DatabaseCogOutline.vue'
 import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
@@ -201,6 +203,7 @@ import Star from 'vue-material-design-icons/Star.vue'
 import StarOutline from 'vue-material-design-icons/StarOutline.vue'
 import StoreOutline from 'vue-material-design-icons/StoreOutline.vue'
 import SwapHorizontal from 'vue-material-design-icons/SwapHorizontal.vue'
+import SwapVertical from 'vue-material-design-icons/SwapVertical.vue'
 import Sync from 'vue-material-design-icons/Sync.vue'
 import TableColumn from 'vue-material-design-icons/TableColumn.vue'
 import TableLarge from 'vue-material-design-icons/TableLarge.vue'
@@ -231,6 +234,7 @@ export default {
 	AccountMultipleOutline,
 	AccountOutline,
 	AccountPlusOutline,
+	AccountSearchOutline,
 	AccountSwitch,
 	AccountSwitchOutline,
 	AccountTieOutline,
@@ -302,6 +306,7 @@ export default {
 	ContentDuplicate,
 	Creation,
 	CubeOutline,
+	CurrencyEur,
 	DatabaseCogOutline,
 	Domain,
 	Earth,
@@ -408,6 +413,7 @@ export default {
 	StarOutline,
 	StoreOutline,
 	SwapHorizontal,
+	SwapVertical,
 	Sync,
 	TableColumn,
 	TableLarge,

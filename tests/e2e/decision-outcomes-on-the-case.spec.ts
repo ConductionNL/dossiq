@@ -101,7 +101,11 @@ test.describe('decision outcomes on the case', () => {
 		const machine = await seedStateMachine(request, token)
 		await updateObject(request, token, 'caseType', machine.caseTypeId, {
 			approvalGates: [
-				{ act: 't1', decisionType: 'besluit-approval', label: APPROVAL_LABEL },
+				{
+					act: 't1',
+					decisionType: 'besluit-approval',
+					label: APPROVAL_LABEL,
+				},
 			],
 		})
 		const created = await seedCase(request, token, {
@@ -136,7 +140,9 @@ test.describe('decision outcomes on the case', () => {
 		const move = (offered.body.transitions ?? []).find((t: any) => t.id === 't1')
 		expect(move, JSON.stringify(offered.body)).toBeTruthy()
 		expect(move.guardsPassed).toBe(false)
-		const approval = (move.failedGuards ?? []).find((g: any) => g.type === 'approvalGate')
+		const approval = (move.failedGuards ?? []).find(
+			(g: any) => g.type === 'approvalGate',
+		)
 		expect(approval?.failureMessage).toContain(APPROVAL_LABEL)
 
 		// And refused on the write the dialog posts, with nothing moved.
@@ -150,7 +156,9 @@ test.describe('decision outcomes on the case', () => {
 	})
 
 	// @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#scenario-the-case-says-who-it-is-waiting-for
-	test('the case says what it is waiting for, and on whom', async ({ request }) => {
+	test('the case says what it is waiting for, and on whom', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseId } = await gatedCase(request, token)
 
@@ -168,14 +176,19 @@ test.describe('decision outcomes on the case', () => {
 
 		test.skip(!(await appEnabled(request, 'decidiq')), DECIDIQ_ABSENT)
 
-		const raised = await request.post(`${DOSSIQ_API}/case/${caseId}/approvals/t1`, {
-			headers: headers(token),
-		})
+		const raised = await request.post(
+			`${DOSSIQ_API}/case/${caseId}/approvals/t1`,
+			{
+				headers: headers(token),
+			},
+		)
 		expect(raised.status(), await raised.text()).toBe(200)
 		const link = await raised.json()
 		expect(link.decisionRef).toBeTruthy()
 
-		const again = await (await request.get(`${DOSSIQ_API}/case/${caseId}/acts`)).json()
+		const again = await (
+			await request.get(`${DOSSIQ_API}/case/${caseId}/acts`)
+		).json()
 		const row = (again.awaitingApproval ?? []).find((w: any) => w.act === 't1')
 		expect(row?.decisionRef).toBe(link.decisionRef)
 		// Named people, or the sentence that says decidiq named none: decidiq's
@@ -190,15 +203,20 @@ test.describe('decision outcomes on the case', () => {
 	})
 
 	// @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#scenario-an-approved-case-proceeds
-	test('an approval decidiq reports as granted lets the besluit through', async ({ request }) => {
+	test('an approval decidiq reports as granted lets the besluit through', async ({
+		request,
+	}) => {
 		test.skip(!(await appEnabled(request, 'decidiq')), DECIDIQ_ABSENT)
 
 		const token = await getRequestToken(request)
 		const { caseId } = await gatedCase(request, token)
 
-		const raised = await request.post(`${DOSSIQ_API}/case/${caseId}/approvals/t1`, {
-			headers: headers(token),
-		})
+		const raised = await request.post(
+			`${DOSSIQ_API}/case/${caseId}/approvals/t1`,
+			{
+				headers: headers(token),
+			},
+		)
 		expect(raised.status(), await raised.text()).toBe(200)
 		const { decisionRef } = await raised.json()
 
@@ -216,10 +234,13 @@ test.describe('decision outcomes on the case', () => {
 			},
 		)
 		for (const action of ['propose', 'deliberate', 'openVoting', 'decide']) {
-			await request.post(`/index.php/apps/decidiq/api/decisions/${decisionRef}/transition`, {
-				headers: headers(token),
-				data: { action },
-			})
+			await request.post(
+				`/index.php/apps/decidiq/api/decisions/${decisionRef}/transition`,
+				{
+					headers: headers(token),
+					data: { action },
+				},
+			)
 		}
 
 		const moved = await executeTransition(request, token, caseId, 't1')
@@ -243,9 +264,16 @@ test.describe('decision outcomes on the case', () => {
 			}),
 		)
 		await updateObject(request, token, 'caseType', machine.caseTypeId, {
-			admissibilityJudgement: { enabled: true, inadmissibleResultType: result },
+			admissibilityJudgement: {
+				enabled: true,
+				inadmissibleResultType: result,
+			},
 			notificationMoments: [
-				{ moment: 'case-inadmissible', template: 'niet-ontvankelijk', enabled: true },
+				{
+					moment: 'case-inadmissible',
+					template: 'niet-ontvankelijk',
+					enabled: true,
+				},
 			],
 		})
 		const created = await seedCase(request, token, {
@@ -265,10 +293,16 @@ test.describe('decision outcomes on the case', () => {
 		const token = await getRequestToken(request)
 		const { caseId, result } = await intakeCase(request, token)
 
-		const res = await request.post(`${DOSSIQ_API}/cases/${caseId}/admissibility`, {
-			headers: headers(token),
-			data: { verdict: 'inadmissible', reason: `${RUN_PREFIX} buiten de termijn ingediend` },
-		})
+		const res = await request.post(
+			`${DOSSIQ_API}/cases/${caseId}/admissibility`,
+			{
+				headers: headers(token),
+				data: {
+					verdict: 'inadmissible',
+					reason: `${RUN_PREFIX} buiten de termijn ingediend`,
+				},
+			},
+		)
 		expect(res.status(), await res.text()).toBe(200)
 		const body = await res.json()
 		expect(body.closed).toBe(true)
@@ -283,14 +317,22 @@ test.describe('decision outcomes on the case', () => {
 	})
 
 	// @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#scenario-the-applicant-is-told
-	test('the applicant is told through the declared moment', async ({ request }) => {
+	test('the applicant is told through the declared moment', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const { caseId } = await intakeCase(request, token)
 
-		const res = await request.post(`${DOSSIQ_API}/cases/${caseId}/admissibility`, {
-			headers: headers(token),
-			data: { verdict: 'inadmissible', reason: `${RUN_PREFIX} onvolledig` },
-		})
+		const res = await request.post(
+			`${DOSSIQ_API}/cases/${caseId}/admissibility`,
+			{
+				headers: headers(token),
+				data: {
+					verdict: 'inadmissible',
+					reason: `${RUN_PREFIX} onvolledig`,
+				},
+			},
+		)
 		expect(res.status(), await res.text()).toBe(200)
 		const body = await res.json()
 		expect(body.moment).toBe('case-inadmissible')
@@ -306,10 +348,18 @@ test.describe('decision outcomes on the case', () => {
 	 * @param days    The declared term.
 	 * @return The case id.
 	 */
-	async function caseWithRemedy(request: APIRequestContext, token: string, days: number) {
+	async function caseWithRemedy(
+		request: APIRequestContext,
+		token: string,
+		days: number,
+	) {
 		const machine = await seedStateMachine(request, token)
 		await updateObject(request, token, 'caseType', machine.caseTypeId, {
-			remedy: { kind: 'bezwaar', termDays: days, body: `het college ${RUN_PREFIX}` },
+			remedy: {
+				kind: 'bezwaar',
+				termDays: days,
+				body: `het college ${RUN_PREFIX}`,
+			},
 		})
 		const created = await seedCase(request, token, {
 			title: `${RUN_PREFIX} besluit ${days}`,
@@ -328,10 +378,18 @@ test.describe('decision outcomes on the case', () => {
 	 * @param caseId  The case.
 	 * @return The composed beschikking.
 	 */
-	async function compose(request: APIRequestContext, token: string, caseId: string) {
+	async function compose(
+		request: APIRequestContext,
+		token: string,
+		caseId: string,
+	) {
 		const res = await request.post(`${DOSSIQ_API}/beschikkingen`, {
 			headers: headers(token),
-			data: { caseId, templateId: 'tpl-default', rationale: `${RUN_PREFIX} motivering` },
+			data: {
+				caseId,
+				templateId: 'tpl-default',
+				rationale: `${RUN_PREFIX} motivering`,
+			},
 		})
 		expect(res.status(), await res.text()).toBe(201)
 		const decision = await res.json()
@@ -340,9 +398,15 @@ test.describe('decision outcomes on the case', () => {
 	}
 
 	// @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#scenario-a-besluit-carries-its-bezwaarclausule
-	test('a besluit prints the bezwaarclausule its case type declares', async ({ request }) => {
+	test('a besluit prints the bezwaarclausule its case type declares', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
-		const decision = await compose(request, token, await caseWithRemedy(request, token, 42))
+		const decision = await compose(
+			request,
+			token,
+			await caseWithRemedy(request, token, 42),
+		)
 
 		const clause = String(decision.legalRemediesClause ?? '')
 		expect(clause).toContain('bezwaar')
@@ -351,10 +415,20 @@ test.describe('decision outcomes on the case', () => {
 	})
 
 	// @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#scenario-a-change-in-the-law-is-one-configuration-change
-	test('two case types on one template print their own terms', async ({ request }) => {
+	test('two case types on one template print their own terms', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
-		const six = await compose(request, token, await caseWithRemedy(request, token, 42))
-		const four = await compose(request, token, await caseWithRemedy(request, token, 28))
+		const six = await compose(
+			request,
+			token,
+			await caseWithRemedy(request, token, 42),
+		)
+		const four = await compose(
+			request,
+			token,
+			await caseWithRemedy(request, token, 28),
+		)
 
 		expect(six.templateId).toBe(four.templateId)
 		expect(String(six.legalRemediesClause)).toContain('42')
@@ -363,26 +437,38 @@ test.describe('decision outcomes on the case', () => {
 	})
 
 	// @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#scenario-the-bezwaartermijn-starts-when-the-besluit-goes-out
-	test('sending the besluit binds a remedy term on the declared days', async ({ request }) => {
+	test('sending the besluit binds a remedy term on the declared days', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const caseId = await caseWithRemedy(request, token, 42)
 		const id = objectId(await compose(request, token, caseId))
 
 		// Straight to sent through the stored state: the mandate and signing
 		// steps are the beschikking lane's and have their own spec.
-		await updateObject(request, token, 'beschikking', id, { currentStatus: 'signed' })
-		const sent = await request.patch(`${DOSSIQ_API}/beschikkingen/${id}/verzend`, {
-			headers: headers(token),
+		await updateObject(request, token, 'beschikking', id, {
+			currentStatus: 'signed',
 		})
+		const sent = await request.patch(
+			`${DOSSIQ_API}/beschikkingen/${id}/verzend`,
+			{
+				headers: headers(token),
+			},
+		)
 		expect(sent.status(), await sent.text()).toBe(200)
 
-		const terms = await (await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`)).json()
-		const remedy = (terms.terms ?? terms ?? []).find((t: any) => t.kind === 'remedy')
+		const terms = await (
+			await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`)
+		).json()
+		const remedy = (terms.terms ?? terms ?? []).find(
+			(t: any) => t.kind === 'remedy',
+		)
 		expect(remedy, JSON.stringify(terms)).toBeTruthy()
 		serverMade.push(['deadlineInstance', String(remedy.id)])
 		const span =
-			(new Date(remedy.endDate).getTime() - new Date(remedy.startDate.slice(0, 10)).getTime()) /
-			86_400_000
+			(new Date(remedy.endDate).getTime()
+				- new Date(remedy.startDate.slice(0, 10)).getTime())
+			/ 86_400_000
 		// 42 days, then rolled onto the administered working calendar, which
 		// can only move the end LATER.
 		expect(span).toBeGreaterThanOrEqual(42)
@@ -390,7 +476,9 @@ test.describe('decision outcomes on the case', () => {
 	})
 
 	// @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md#scenario-is-this-still-open-to-bezwaar
-	test('a remedy term sent fifty days ago on 42 days reads as expired', async ({ request }) => {
+	test('a remedy term sent fifty days ago on 42 days reads as expired', async ({
+		request,
+	}) => {
 		const token = await getRequestToken(request)
 		const caseId = await caseWithRemedy(request, token, 42)
 		const sent = new Date(Date.now() - 50 * 86_400_000)
@@ -408,8 +496,12 @@ test.describe('decision outcomes on the case', () => {
 		})
 		serverMade.push(['deadlineInstance', objectId(term)])
 
-		const terms = await (await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`)).json()
-		const remedy = (terms.terms ?? terms ?? []).find((t: any) => t.kind === 'remedy')
+		const terms = await (
+			await request.get(`${DOSSIQ_API}/cases/${caseId}/terms`)
+		).json()
+		const remedy = (terms.terms ?? terms ?? []).find(
+			(t: any) => t.kind === 'remedy',
+		)
 		expect(remedy, JSON.stringify(terms)).toBeTruthy()
 		expect(remedy.overdue).toBe(true)
 		expect(remedy.daysLeft).toBeLessThan(0)

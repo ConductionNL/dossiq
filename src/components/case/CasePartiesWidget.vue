@@ -113,7 +113,9 @@
 						<span
 							v-if="correspondenceOf(party)"
 							class="case-parties__documents"
-							:data-party-documents="party.partyUuid || party.contactUid"
+							:data-party-documents="
+								party.partyUuid || party.contactUid
+							"
 							data-testid="case-parties-documents">
 							{{ correspondenceOf(party) }}
 						</span>

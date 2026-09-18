@@ -41,7 +41,13 @@ const fragment = JSON.parse(
 )
 const milestoneFragment = JSON.parse(
 	fs.readFileSync(
-		path.join(ROOT, 'lib', 'Settings', 'register.d', '65-milestone-tracking.json'),
+		path.join(
+			ROOT,
+			'lib',
+			'Settings',
+			'register.d',
+			'65-milestone-tracking.json',
+		),
 		'utf8',
 	),
 )
@@ -146,9 +152,9 @@ describe('the planned action is a declared record', () => {
 
 describe('the milestone carries an owner role', () => {
 	it('adds ownerRole to milestoneDefinition', () => {
-		expect(fragment.components.schemas.milestoneDefinition.properties).toHaveProperty(
-			'ownerRole',
-		)
+		expect(
+			fragment.components.schemas.milestoneDefinition.properties,
+		).toHaveProperty('ownerRole')
 	})
 
 	it('moves the milestoneDefinition version, or the property is inert', () => {
@@ -190,9 +196,10 @@ describe('the case says what happens next', () => {
 	it('binds every column to a property the schema declares', () => {
 		const properties = Object.keys(plannedActionSchema.properties)
 		for (const column of section().content.columns) {
-			expect(properties, `${column.key} is a plannedAction property`).toContain(
-				column.key,
-			)
+			expect(
+				properties,
+				`${column.key} is a plannedAction property`,
+			).toContain(column.key)
 		}
 	})
 

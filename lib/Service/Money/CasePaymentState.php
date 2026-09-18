@@ -172,7 +172,7 @@ class CasePaymentState {
 				continue;
 			}
 
-			$reported = (string)(($request['reported']['state'] ?? '') ?: '');
+			$reported = (string)($request['reported']['state'] ?? '');
 			if (in_array($reported, self::UNREADABLE, true) === true) {
 				$anyUnreadable = true;
 				continue;
@@ -288,8 +288,13 @@ class CasePaymentState {
 	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
 	public function projection(string $state, string $checkedAt): array {
+		$known = self::STALE;
+		if (in_array($state, self::ALL, true) === true) {
+			$known = $state;
+		}
+
 		return [
-			'paymentState' => (in_array($state, self::ALL, true) === true ? $state : self::STALE),
+			'paymentState' => $known,
 			'paymentStateCheckedAt' => $checkedAt,
 		];
 	}//end projection()

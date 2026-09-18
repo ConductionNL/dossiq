@@ -120,10 +120,7 @@
 <script>
 import { translate as t } from '@nextcloud/l10n'
 import { NcLoadingIcon } from '@nextcloud/vue'
-import {
-	descriptionOnCase,
-	labelOnCase,
-} from '../../utils/statusPublicLabel.js'
+import { descriptionOnCase, labelOnCase } from '../../utils/statusPublicLabel.js'
 
 export default {
 	name: 'PublicStatusPage',

@@ -37,13 +37,10 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
 /** The case page, which is where a family plan is read. */
-const caseDetail = manifest.pages.find(page => page.id === 'CaseDetail')
+const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 
 /** The widget this change adds. */
 const WIDGET = 'family-plan'
@@ -53,7 +50,7 @@ const ADAPTIVE = 'cmmn-case-plan'
 
 describe('the family plan reaches the case page', () => {
 	it('is declared as a widget with its own registry type', () => {
-		const widget = caseDetail.config.widgets.find(entry => entry.id === WIDGET)
+		const widget = caseDetail.config.widgets.find((entry) => entry.id === WIDGET)
 
 		expect(widget, 'the widget is declared').toBeTruthy()
 		// The type names a REGISTRY KEY rather than "custom": CnDetailPage
@@ -66,7 +63,7 @@ describe('the family plan reaches the case page', () => {
 
 	it('🔴 is PLACED in the layout, so it is not dark', () => {
 		const placed = caseDetail.config.layout.filter(
-			entry => entry.widgetId === WIDGET,
+			(entry) => entry.widgetId === WIDGET,
 		)
 
 		expect(placed).toHaveLength(1)
@@ -76,7 +73,7 @@ describe('the family plan reaches the case page', () => {
 
 	it('🔴 does not overlap another widget on the grid', () => {
 		const mine = caseDetail.config.layout.find(
-			entry => entry.widgetId === WIDGET,
+			(entry) => entry.widgetId === WIDGET,
 		)
 		const myRows = new Set()
 		for (let y = mine.gridY; y < mine.gridY + mine.gridHeight; y++) {
@@ -84,7 +81,7 @@ describe('the family plan reaches the case page', () => {
 		}
 
 		const overlapping = caseDetail.config.layout
-			.filter(entry => entry.widgetId !== WIDGET)
+			.filter((entry) => entry.widgetId !== WIDGET)
 			.filter((entry) => {
 				for (let y = entry.gridY; y < entry.gridY + entry.gridHeight; y++) {
 					if (myRows.has(y)) {
@@ -93,13 +90,13 @@ describe('the family plan reaches the case page', () => {
 				}
 				return false
 			})
-			.map(entry => entry.widgetId)
+			.map((entry) => entry.widgetId)
 
 		expect(overlapping).toEqual([])
 	})
 
 	it('🔴 is not the adaptive case plan, which is a different widget', () => {
-		const ids = caseDetail.config.widgets.map(entry => entry.id)
+		const ids = caseDetail.config.widgets.map((entry) => entry.id)
 
 		expect(ids).toContain(WIDGET)
 		expect(ids).toContain(ADAPTIVE)
@@ -110,7 +107,7 @@ describe('the family plan reaches the case page', () => {
 describe('the cross-domain lookup is offered and gated on a ground', () => {
 	it('is a header action opening the dialog, not an api-call', () => {
 		const action = caseDetail.config.headerActions.find(
-			entry => entry.id === 'cross-domain-lookup',
+			(entry) => entry.id === 'cross-domain-lookup',
 		)
 
 		expect(action, 'the action is declared').toBeTruthy()
@@ -123,7 +120,7 @@ describe('the cross-domain lookup is offered and gated on a ground', () => {
 
 	it('🔴 carries no ground of its own, so the server owns the list', () => {
 		const action = caseDetail.config.headerActions.find(
-			entry => entry.id === 'cross-domain-lookup',
+			(entry) => entry.id === 'cross-domain-lookup',
 		)
 
 		// A payload naming a ground here would be a ground nobody chose, and a

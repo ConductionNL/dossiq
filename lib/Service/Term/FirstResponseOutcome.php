@@ -148,10 +148,15 @@ class FirstResponseOutcome {
 			$total += max(0, (int)($case['firstResponseOverrunDays'] ?? 0));
 		}
 
+		$average = 0.0;
+		if ($missed !== 0) {
+			$average = round(($total / $missed), 2);
+		}
+
 		return [
 			'missed' => $missed,
 			'met' => $met,
-			'averageOverrunDays' => ($missed === 0 ? 0.0 : round(($total / $missed), 2)),
+			'averageOverrunDays' => $average,
 		];
 	}//end report()
 

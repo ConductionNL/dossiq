@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * Opening, closing and reading holdings.
@@ -52,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */
 class CaseCustodyChainTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The store every service under test reads and writes.
@@ -255,6 +258,7 @@ class CaseCustodyChainTest extends TestCase {
 		return new CaseCustodyChain(
 			settingsService: $this->settings(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
 		);
 	}//end chain()
 

@@ -47,7 +47,6 @@ namespace OCA\Dossiq\Service\Intake;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Notification\ApplicantMessage;
@@ -131,7 +130,6 @@ class AdmissibilityJudgement {
 	 * @param CaseTypeResolver         $caseTypes The effective case type, parents included.
 	 * @param CaseStatusStore          $store     Reads the case the verdict is about.
 	 * @param CaseEndingActs           $endings   The ordinary close act.
-	 * @param CaseTypeAcknowledgement  $moments   What this case type tells the applicant, and when.
 	 * @param ApplicantMessage         $letters   Sends the message the declared moment owes the applicant.
 	 * @param LoggerInterface          $logger    Says why a verdict could not be recorded.
 	 */
@@ -139,7 +137,6 @@ class AdmissibilityJudgement {
 		private readonly CaseTypeResolver $caseTypes,
 		private readonly CaseStatusStore $store,
 		private readonly CaseEndingActs $endings,
-		private readonly CaseTypeAcknowledgement $moments,
 		private readonly ApplicantMessage $letters,
 		private readonly LoggerInterface $logger,
 	) {

@@ -49,7 +49,10 @@ const createdViewIds: string[] = []
  * @param name The view's name, run-prefixed so a leftover is traceable.
  * @param body Extra fields, e.g. a presentation config.
  */
-async function createView(name: string, body: Record<string, unknown> = {}): Promise<string> {
+async function createView(
+	name: string,
+	body: Record<string, unknown> = {},
+): Promise<string> {
 	const response = await api.post(VIEWS_API, {
 		headers: { requesttoken: token },
 		data: {
@@ -81,7 +84,9 @@ test.afterAll(async () => {
 })
 
 test.describe('a saved view of the cases is a place', () => {
-	test('opens from its own address, in a tab that never saw the list', async ({ page }) => {
+	test('opens from its own address, in a tab that never saw the list', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		const viewId = await createView('Te laat')
 
@@ -94,9 +99,13 @@ test.describe('a saved view of the cases is a place', () => {
 		expect(page.url()).toContain(`/cases/views/${viewId}`)
 	})
 
-	test('keeps the view in the address when the presentation changes', async ({ page }) => {
+	test('keeps the view in the address when the presentation changes', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
-		const viewId = await createView('Kaarten', { presentation: { viewType: 'cards' } })
+		const viewId = await createView('Kaarten', {
+			presentation: { viewType: 'cards' },
+		})
 
 		await page.goto(`${CASES_URL}/views/${viewId}`, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
@@ -107,27 +116,39 @@ test.describe('a saved view of the cases is a place', () => {
 		expect(page.url()).toContain(`/cases/views/${viewId}`)
 	})
 
-	test('sends a link written before views had addresses to the view route', async ({ page }) => {
+	test('sends a link written before views had addresses to the view route', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		const viewId = await createView('Oude link')
 
 		await page.goto(`${CASES_URL}?view=${viewId}`, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
 
-		await expect.poll(() => page.url(), { timeout: 10_000 }).toContain(`/cases/views/${viewId}`)
+		await expect
+			.poll(() => page.url(), { timeout: 10_000 })
+			.toContain(`/cases/views/${viewId}`)
 	})
 
-	test('puts a pinned view under Cases, and adds no top-level entry', async ({ page }) => {
+	test('puts a pinned view under Cases, and adds no top-level entry', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		const name = `${RUN_PREFIX} Vastgezet`
 		await createView('Vastgezet')
 
 		await page.goto(CASES_URL, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
-		const topLevelBefore = await page.getByRole('navigation').getByRole('listitem').count()
+		const topLevelBefore = await page
+			.getByRole('navigation')
+			.getByRole('listitem')
+			.count()
 
 		await page.getByTestId('cn-saved-views-control').click()
-		await page.getByTestId('cn-saved-views-pin').filter({ hasText: name }).click()
+		await page
+			.getByTestId('cn-saved-views-pin')
+			.filter({ hasText: name })
+			.click()
 		await page.reload({ waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
 
@@ -135,7 +156,9 @@ test.describe('a saved view of the cases is a place', () => {
 		await expect(entry).toBeVisible()
 		// Under Cases, not beside it: the app's navigation budget is the
 		// app's to spend (ADR-097), never a user's.
-		expect(await page.getByRole('navigation').getByRole('listitem').count()).toBe(topLevelBefore)
+		expect(
+			await page.getByRole('navigation').getByRole('listitem').count(),
+		).toBe(topLevelBefore)
 	})
 
 	test('shows no view entry at all before anybody pins one', async ({ page }) => {
@@ -145,13 +168,21 @@ test.describe('a saved view of the cases is a place', () => {
 
 		// The navigation on an install where nobody pinned anything is the
 		// navigation this app has always had.
-		await expect(page.getByRole('navigation').getByRole('link', { name: new RegExp(RUN_PREFIX) })).toHaveCount(0)
+		await expect(
+			page
+				.getByRole('navigation')
+				.getByRole('link', { name: new RegExp(RUN_PREFIX) }),
+		).toHaveCount(0)
 	})
 
-	test('says which view is gone rather than showing an empty list', async ({ page }) => {
+	test('says which view is gone rather than showing an empty list', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		const viewId = await createView('Verwijderd')
-		await api.delete(`${VIEWS_API}/${viewId}`, { headers: { requesttoken: token } })
+		await api.delete(`${VIEWS_API}/${viewId}`, {
+			headers: { requesttoken: token },
+		})
 
 		await page.goto(`${CASES_URL}/views/${viewId}`, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
@@ -161,7 +192,9 @@ test.describe('a saved view of the cases is a place', () => {
 		await expect(page.getByText(new RegExp(viewId))).toBeVisible()
 	})
 
-	test('does not hand another user this view at its address', async ({ browser }) => {
+	test('does not hand another user this view at its address', async ({
+		browser,
+	}) => {
 		const viewId = await createView('Prive')
 		// The least privileged principal that should be refused: an ordinary
 		// signed-in user who is not the view's owner. OpenRegister scopes a
@@ -169,7 +202,9 @@ test.describe('a saved view of the cases is a place', () => {
 		// state rather than the list.
 		const context = await browser.newContext({ storageState: undefined })
 		const page = await context.newPage()
-		const response = await page.goto(`${CASES_URL}/views/${viewId}`, { waitUntil: PAGE_LOAD })
+		const response = await page.goto(`${CASES_URL}/views/${viewId}`, {
+			waitUntil: PAGE_LOAD,
+		})
 
 		expect(response?.status()).not.toBe(200)
 		await context.close()

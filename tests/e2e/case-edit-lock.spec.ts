@@ -53,11 +53,11 @@ const OTHER_USER = process.env.E2E_USER_NAME || 'e2euser'
 const OTHER_PASS = process.env.E2E_USER_PASS || 'e2e-user-pass'
 
 /** OpenRegister's lock routes, both POST. There is no DELETE on either. */
-function lockUrl (id: string) {
-  return `/index.php/apps/openregister/api/objects/dossiq/case/${id}/lock`
+function lockUrl(id: string) {
+	return `/index.php/apps/openregister/api/objects/dossiq/case/${id}/lock`
 }
-function unlockUrl (id: string) {
-  return `/index.php/apps/openregister/api/objects/dossiq/case/${id}/unlock`
+function unlockUrl(id: string) {
+	return `/index.php/apps/openregister/api/objects/dossiq/case/${id}/unlock`
 }
 
 test.describe('An edit takes the lock, and the next handler is told whose it is', () => {

@@ -698,7 +698,10 @@ test.describe('Case detail — the Parties tab', () => {
 			caseType: caseTypeId,
 			genericRole: 'gemachtigde',
 		})
-		expect(objectId(own), 'the own role type must have been created').toBeTruthy()
+		expect(
+			objectId(own),
+			'the own role type must have been created',
+		).toBeTruthy()
 
 		// The offer, computed the way `src/services/roleTypeOptions.js` does:
 		// this case type's own rows, then the generic rows whose key nobody

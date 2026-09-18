@@ -46,7 +46,8 @@
 			<pre
 				v-else-if="raw !== ''"
 				class="case-raw-data__json"
-				data-testid="case-raw-data-json">{{ raw }}</pre>
+				data-testid="case-raw-data-json"
+				>{{ raw }}</pre>
 
 			<p
 				v-if="error"
@@ -179,9 +180,9 @@ export default {
 	margin: 0;
 	max-height: 60vh;
 	overflow: auto;
+	overflow-wrap: anywhere;
 	padding: 12px;
 	white-space: pre-wrap;
-	word-break: break-word;
 }
 
 .case-raw-data__error {

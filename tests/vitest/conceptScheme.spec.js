@@ -33,9 +33,10 @@ import { VOCABULARY_SNAPSHOT } from '../../src/services/propertyVocabularySnapsh
 
 const propertyDefinition = register.components.schemas.propertyDefinition
 const definitionKeys = Object.keys(propertyDefinition.properties)
-const map = register.components.schemas.case.properties.caseType[
-	'x-openregister-extends-form'
-].map
+const map =
+	register.components.schemas.case.properties.caseType[
+		'x-openregister-extends-form'
+	].map
 
 describe('the binding is declared on the definition', () => {
 	it('carries conceptScheme as a string', () => {
@@ -76,8 +77,12 @@ describe('the binding is declared on the definition', () => {
 	it('still waits on the keys that are still pending', () => {
 		// The mechanism has to keep working for the entry that is left, or the
 		// next published key goes unnoticed.
-		expect(PENDING_PLATFORM_KEYS.propertySource.key).toBe('x-openregister-property-source')
-		expect(VOCABULARY_SNAPSHOT.keys).not.toContain('x-openregister-property-source')
+		expect(PENDING_PLATFORM_KEYS.propertySource.key).toBe(
+			'x-openregister-property-source',
+		)
+		expect(VOCABULARY_SNAPSHOT.keys).not.toContain(
+			'x-openregister-property-source',
+		)
 		expect(Object.values(map)).not.toContain('propertySource')
 	})
 })
@@ -142,9 +147,9 @@ describe('the inline list rules when no scheme is bound', () => {
 	})
 
 	it('does not compete with an empty scheme', () => {
-		expect(
-			hasCompetingSources({ conceptScheme: '', enumValues: ['ja'] }),
-		).toBe(false)
+		expect(hasCompetingSources({ conceptScheme: '', enumValues: ['ja'] })).toBe(
+			false,
+		)
 	})
 })
 

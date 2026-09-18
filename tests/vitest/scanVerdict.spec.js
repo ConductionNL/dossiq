@@ -78,9 +78,9 @@ describe('a verdict is read, never inferred', () => {
 	})
 
 	it('reads a cleared file with no recorded time as clean, plainly', () => {
-		expect(
-			scanVerdictLabel({ state: STATE_CLEAN, scannedAt: null }),
-		).toBe('Clean')
+		expect(scanVerdictLabel({ state: STATE_CLEAN, scannedAt: null })).toBe(
+			'Clean',
+		)
 	})
 
 	it('reads a flagged file as infected', () => {
@@ -115,8 +115,8 @@ describe('a verdict is read, never inferred', () => {
 	})
 
 	it('drops a recorded time that is not one', () => {
-		expect(
-			scanVerdictLabel({ state: STATE_CLEAN, scannedAt: 'whenever' }),
-		).toBe('Clean')
+		expect(scanVerdictLabel({ state: STATE_CLEAN, scannedAt: 'whenever' })).toBe(
+			'Clean',
+		)
 	})
 })

@@ -138,13 +138,19 @@ test.describe('@spec REQ-TERM-040 when the clock starts', () => {
 })
 
 test.describe('@spec REQ-TERM-041 what the applicant is told', () => {
-	test('the case page names when it arrived and when the clock started', async ({ page }) => {
+	test('the case page names when it arrived and when the clock started', async ({
+		page,
+	}) => {
 		const stamped = await filedAt(SUNDAY, 'confirmation says so')
 
-		await page.goto(`/apps/${REGISTER}/cases/${objectId(stamped)}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`/apps/${REGISTER}/cases/${objectId(stamped)}`, {
+			waitUntil: PAGE_LOAD,
+		})
 		await dismissSupportDialog(page)
 
-		await page.getByRole('tab', { name: /^(Communication|Communicatie)$/ }).click()
+		await page
+			.getByRole('tab', { name: /^(Communication|Communicatie)$/ })
+			.click()
 		const panel = page.locator('[data-testid="case-detail"]')
 
 		// BOTH MOMENTS OR NEITHER. A page showing only the start would read as

@@ -44,7 +44,9 @@ export function awaitingApprovals(acts) {
 			label: String(row.label ?? '').trim(),
 			sentence: String(row.sentence ?? '').trim(),
 			approvers: Array.isArray(row.approvers)
-				? row.approvers.map((name) => String(name ?? '').trim()).filter(Boolean)
+				? row.approvers
+						.map((name) => String(name ?? '').trim())
+						.filter(Boolean)
 				: [],
 			decisionRef: String(row.decisionRef ?? '').trim(),
 		}))

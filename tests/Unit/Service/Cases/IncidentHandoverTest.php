@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Cases;
 
 use OCA\Dossiq\Service\Cases\IncidentRecord;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * The incident's own hand-off.
@@ -34,6 +35,8 @@ use PHPUnit\Framework\TestCase;
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
  */
 class IncidentHandoverTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private IncidentRecord $incidents;
 
 	/**
@@ -43,7 +46,7 @@ class IncidentHandoverTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		parent::setUp();
-		$this->incidents = new IncidentRecord();
+		$this->incidents = new IncidentRecord(dates: $this->caseDates());
 	}//end setUp()
 
 	/**

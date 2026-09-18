@@ -83,7 +83,7 @@ class CaseTypeThroughputCalculator {
 	 * @param array<int, array<string, mixed>> $cases Enriched cases.
 	 * @param array<int, array<string, mixed>> $caseTypes Indexed case-type metadata.
 	 *
-	 * @return array<int, array{id: string, title: string, avgDays: int, count: int}>
+	 * @return array<int, array{id: string, title: string, avgDays: int, avgWorkingHours: float, count: int}>
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */
@@ -133,7 +133,7 @@ class CaseTypeThroughputCalculator {
 	 *
 	 * @param array<int, array<string, mixed>> $cases Enriched cases.
 	 *
-	 * @return array<string, array{sum: int, count: int}>
+	 * @return array<string, array{sum: int, count: int, workingHours: float}>
 	 *
 	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 	 */

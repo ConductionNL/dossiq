@@ -62,6 +62,9 @@ class ContactMomentController extends Controller {
 	 * @param BurgerIdentificationService $burgerService The burger identification service.
 	 * @param IUserSession $userSession The user session.
 	 * @param CitizenLookupGuard $citizenLookupGuard The citizen-lookup role guard.
+	 * @param CitizenLookupRecorder $citizenLookupRecorder Writes one audit row per
+	 *        lookup attempt, refusals included, because the refusal is what catches
+	 *        enumeration.
 	 */
 	public function __construct(
 		string $appName,

@@ -123,11 +123,15 @@ describe('the case declares which edge a grant travels down', () => {
 		// Asserted as an ABSENCE, and the schema is read beside it so this
 		// cannot pass by the declaration having quietly gone away too.
 		const hierarchy = caseSchema.configuration['x-openregister-hierarchy']
-		expect(hierarchy.maxDepth, 'the schema still declares the cap').toBeGreaterThan(0)
+		expect(
+			hierarchy.maxDepth,
+			'the schema still declares the cap',
+		).toBeGreaterThan(0)
 		expect(guardSource).not.toContain('HIERARCHY_MAX_DEPTH')
-		expect(guardSource, 'and no walk was left behind under another name').not.toContain(
-			'readAccessSource',
-		)
+		expect(
+			guardSource,
+			'and no walk was left behind under another name',
+		).not.toContain('readAccessSource')
 	})
 })
 
@@ -239,9 +243,10 @@ describe('the write does not widen on the way down', () => {
 			guardSource.indexOf('public function hasCaseMutationAccess'),
 			guardSource.indexOf('public function hasCaseReadAccess'),
 		)
-		expect(guardSource, 'the call this asserts the absence of must exist').toContain(
-			'holdsPlatformGrant(',
-		)
+		expect(
+			guardSource,
+			'the call this asserts the absence of must exist',
+		).toContain('holdsPlatformGrant(')
 		expect(mutation).not.toContain('holdsPlatformGrant(')
 		expect(mutation).not.toContain('parentCase')
 	})

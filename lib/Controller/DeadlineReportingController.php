@@ -147,7 +147,7 @@ class DeadlineReportingController extends Controller {
 			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
 		}
 
-		if ($this->audience->mayRead(user: $user) === false) {
+		if ($this->audience->isInAudience(user: $user) === false) {
 			return new JSONResponse(['message' => ReportingAudience::REFUSAL], Http::STATUS_FORBIDDEN);
 		}
 

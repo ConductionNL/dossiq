@@ -69,7 +69,10 @@
 					class="case-split-dialog__section"
 					data-testid="case-split-parties">
 					<h4>{{ t('dossiq', 'Parties that move') }}</h4>
-					<div v-for="row in parties" :key="row.id" class="case-split-dialog__party">
+					<div
+						v-for="row in parties"
+						:key="row.id"
+						class="case-split-dialog__party">
 						<NcCheckboxRadioSwitch
 							:modelValue="chosenParties.includes(row.id)"
 							:data-testid="`case-split-party-${row.id}`"
@@ -89,7 +92,12 @@
 					v-if="allowed.length === 0"
 					class="case-split-dialog__empty"
 					data-testid="case-split-forbidden">
-					{{ t('dossiq', 'This case type does not allow a split to divide anything.') }}
+					{{
+						t(
+							'dossiq',
+							'This case type does not allow a split to divide anything.',
+						)
+					}}
 				</p>
 
 				<p
@@ -218,7 +226,9 @@ export default {
 		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 		 */
 		canConfirm() {
-			const contradicts = this.chosenParties.some((id) => this.onBoth.includes(id))
+			const contradicts = this.chosenParties.some((id) =>
+				this.onBoth.includes(id),
+			)
 
 			return (
 				this.busy === false
@@ -301,7 +311,11 @@ export default {
 
 				const [documents, parties] = await Promise.all([
 					this.allows('documents')
-						? this.children('caseDocument', ['title', 'name', 'documentType'])
+						? this.children('caseDocument', [
+								'title',
+								'name',
+								'documentType',
+							])
 						: [],
 					this.allows('parties')
 						? this.children('role', ['roleType', 'name', 'displayName'])
@@ -313,9 +327,12 @@ export default {
 				this.allowed = []
 				this.documents = []
 				this.parties = []
-				this.error
-					= loadError?.response?.data?.error
-					|| t('dossiq', 'What this case holds could not be read, so nothing was split.')
+				this.error =
+					loadError?.response?.data?.error
+					|| t(
+						'dossiq',
+						'What this case holds could not be read, so nothing was split.',
+					)
 			} finally {
 				this.loading = false
 			}
@@ -384,8 +401,8 @@ export default {
 				emit(PAGE_REFRESH, {})
 				this.$emit('close')
 			} catch (splitError) {
-				this.error
-					= splitError?.response?.data?.message
+				this.error =
+					splitError?.response?.data?.message
 					|| splitError?.response?.data?.error
 					|| t('dossiq', 'This case was not split.')
 			} finally {

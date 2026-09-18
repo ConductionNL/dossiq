@@ -1,5 +1,5 @@
 {
-  "ceiling": 238,
+  "ceiling": 269,
   "measured": "2026-09-18",
   "window": 3,
   "about": [
@@ -18,7 +18,8 @@
     "2026-09-15, openspec/changes/gemachtigde-role-on-every-case-type: two sites arrived with PartyIndicatorReader, the one place dossiq asks OpenRegister what a party's indicators refuse. Both are degradations of an OpenRegister that is absent or predates openregister#3761, and each logs at warning naming the read it could not make. The empty answer is deliberately fail-open: the same two refusals are enforced inside OpenRegister at the publication and at the send, so this reader is the sentence a handler sees rather than the only thing standing in the way, and refusing every publication on an instance with no party model would stop work that was never refused. The ceiling went 230 to 232 for those two and nothing else.",
     "2026-09-16, openspec/changes/case-sharing-mints-access-links: four sites arrived with the case access links and two left. All four are degradations of an OpenRegister that may be absent or may predate openregister#3817, and each logs naming what it could not do. Two entries were removed rather than moved: `ConsultationRepository::findBySecureToken` and `OpenRegisterSharingGateway::caseTokenService` went with the token surface this change deleted, which nothing could enter because nothing minted its token. None of the four is a refusal, and one candidate was converted rather than listed: reading the comments on a case now throws when the read cannot be made, because answering \"nothing new\" would tell a handler the advisory body had not replied when its advice was sitting there unread. The ceiling went 233 to 235 for those four and nothing else.",
     "2026-09-17, openspec/changes/duplicate-warning-at-intake: ONE site arrived with DuplicatePolicy::askDetection, the one place dossiq asks OpenRegister's duplicate scorer anything. It is a degradation of an OpenRegister that is absent or answers badly, and it logs at warning naming the question it could not ask. The first draft had three sites for this one degradation, a container resolver and one catch per question; they were collapsed into one before landing rather than listed. Nothing on this list is a refusal: a case type that blocks a duplicate throws RefusedException, which IntakeRequirementsListener turns into the refused save. The ceiling went 235 to 236 for that one site and nothing else.",
-    "2026-09-18, openspec/changes/decision-outcomes-on-the-case: two sites arrived with the approval gate and the admissibility verdict. Both turn an unreadable case type into a REFUSAL rather than a write, and each logs at warning naming the case type. Neither is a fail-open: the gate answers 503 and the verdict is refused as undeclared. A third candidate was converted rather than listed, CaseRemedy::caseTypeOf, which throws, because a besluit printed with no bezwaarclausule on the strength of a failed read is a decision somebody cannot object to in time."
+    "2026-09-18, openspec/changes/decision-outcomes-on-the-case: two sites arrived with the approval gate and the admissibility verdict. Both turn an unreadable case type into a REFUSAL rather than a write, and each logs at warning naming the case type. Neither is a fail-open: the gate answers 503 and the verdict is refused as undeclared. A third candidate was converted rather than listed, CaseRemedy::caseTypeOf, which throws, because a besluit printed with no bezwaarclausule on the strength of a failed read is a decision somebody cannot object to in time.",
+    "2026-09-18, the parity/round2 quality sweep: eighteen sites arrived with the case merge, the split and its incidents, the custody chain and its takeover, the consent gate, pipelinq's party-kind acceptance and the working-day roll. Eleven are degradations of OpenRegister, pipelinq or the organisation calendar being absent or answering badly, and each logs at warning naming what it could not read; seven are read misses on a stored value, five of them a date the reader reports as undated rather than inventing a moment. None is a refusal: every rule these changes enforce throws RefusedException and is translated by its controller, which is why the merge's, the split's and the hand-off's own refusals are nowhere on this list. The ceiling went 238 to 269, and only eighteen of those thirty-one are this entry's: the file already held 251 entries against a ceiling of 238, because thirteen earlier changes on this branch added their sites and left the number alone. That is why the ceiling assertion was red before any of the eighteen were written, and it is the reason the number is restated here rather than incremented."
   ],
   "classes": {
     "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -1782,6 +1783,132 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`firstWorkingMomentAtOrAfter()` asks the engine calendar for the first working moment at or after an instant. Null means the calendar did not answer, and the caller then starts the term on the moment it already had rather than guessing a working day; a silent fallback to 'today is a working day' would start a citizen's clock on a Sunday on any instance without OpenRegister. Logged at warning naming the moment."
+    },
+    {
+      "file": "lib/Service/CaseMergeService.php",
+      "method": "readCase",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`readCase()` answers `return null` when the case behind a merge cannot be read; the catch logs at warning naming the case uuid. Null means \"the case is not there to merge\", which `requestMerge()` turns into a RefusedException the controller translates. The rules this change enforces are refusals, not this: a case already merged away, a case merging into itself and a case type that forbids it all throw."
+    },
+    {
+      "file": "lib/Service/CaseMergeService.php",
+      "method": "rowsFor",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`rowsFor()` answers `return []` when OpenRegister cannot be searched for the rows a merge repoints; the catch logs at warning naming the failure. The empty list is the documented value for \"could not look\", and the merge stops on it rather than repointing nothing and reporting success."
+    },
+    {
+      "file": "lib/Service/Cases/CaseSplitExecutor.php",
+      "method": "caseTypeOf",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`caseTypeOf()` answers `return null` when the case type behind a split cannot be read. Null is read as \"this case type declares nothing\", which `CaseSplitPolicy` turns into the refusal that names what a split may divide here. The split's own refusals are RefusedExceptions and are nowhere on this list."
+    },
+    {
+      "file": "lib/Service/Cases/CaseSplitExecutor.php",
+      "method": "rowsForPart",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`rowsForPart()` answers `return []` when OpenRegister cannot be searched for one part of a case (its documents, parties or tasks); the catch logs at warning naming the part. The empty list means \"could not look\", and the plan then moves nothing of that part rather than reporting a division that did not happen."
+    },
+    {
+      "file": "lib/Service/Cases/IncidentRecord.php",
+      "method": "parse",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`parse()` answers `return null` for a stored incident date that cannot be read. The null is load-bearing rather than tolerated: `momentOf()` sorts an undated incident LAST, so a typo cannot silently head the sequence the case is about, and `recordingDelayDays()` answers null rather than a delay computed from a date nobody can read."
+    },
+    {
+      "file": "lib/Service/Cases/IncidentStore.php",
+      "method": "instant",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`instant()` answers `return null` for a stored incident moment that cannot be read. Same shape as `IncidentRecord::parse`: the reader reports the miss, and every caller treats null as \"undated\" rather than as a moment it invented."
+    },
+    {
+      "file": "lib/Service/Cases/IncidentStore.php",
+      "method": "rows",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`rows()` answers `return []` when OpenRegister cannot be searched for the incidents on a case; the catch logs at warning naming the read. The empty list is \"could not look\", and the incidents tab draws nothing rather than claiming a case has no reports."
+    },
+    {
+      "file": "lib/Service/Custody/CaseCustodyChain.php",
+      "method": "holdings",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`holdings()` answers `return []` when OpenRegister cannot be searched for the custody chain of a case; the catch logs at warning naming the case. The chain is only meaningful whole, so an unreadable one draws nothing rather than a chain with a gap in it that reads like a case nobody held."
+    },
+    {
+      "file": "lib/Service/Custody/CaseCustodyQuery.php",
+      "method": "heldBy",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`heldBy()` answers `return []` when OpenRegister cannot be searched for what a unit holds; the catch logs at warning naming the unit. The empty list is \"could not look\", and the caller reports no holdings rather than reporting that a unit holds nothing."
+    },
+    {
+      "file": "lib/Service/Custody/CaseCustodyQuery.php",
+      "method": "instant",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`instant()` answers `return null` for a stored custody moment that cannot be read, so a holding with an unreadable date is reported undated rather than placed in the chain at a moment nobody wrote."
+    },
+    {
+      "file": "lib/Service/Custody/CaseTakeoverRequest.php",
+      "method": "rows",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`rows()` answers `return []` when OpenRegister cannot be searched for the takeover requests on a case; the catch logs at warning. The empty list is \"could not look\": a handler sees no request rather than being told nobody has asked for the case."
+    },
+    {
+      "file": "lib/Service/Custody/CaseTakeoverRequest.php",
+      "method": "instant",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`instant()` answers `return null` for a stored takeover moment that cannot be read. The escalation clock then treats the request as undated rather than as raised at a moment nobody wrote, which is what would make it escalate on invented evidence."
+    },
+    {
+      "file": "lib/Service/Custody/CaseTransferConsentGate.php",
+      "method": "consentsFor",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`consentsFor()` answers `return []` when OpenRegister cannot be searched for the consents recorded on a case; the catch logs at warning naming the case. The empty list does NOT open the gate: `assess()` reads no consent as no consent, so a hand-off across an organisation boundary is refused rather than allowed on a read that failed."
+    },
+    {
+      "file": "lib/Service/Custody/CaseTransferConsentGate.php",
+      "method": "instant",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`instant()` answers `return null` for a stored consent moment that cannot be read. A consent whose `until` cannot be read is treated as carrying no expiry the gate can verify, which narrows rather than widens what it allows."
+    },
+    {
+      "file": "lib/Service/Pipelinq/PartyKindConsumer.php",
+      "method": "objectService",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`objectService()` answers `return null` when OpenRegister's object service cannot be resolved. Null is the documented \"this instance has no store to declare into\", and `declareAcceptance()` reports pipelinq's own fallback rather than writing an acceptance nobody can read back."
+    },
+    {
+      "file": "lib/Service/Pipelinq/PartyKindConsumer.php",
+      "method": "existingAcceptanceId",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`existingAcceptanceId()` answers `return null` when the existing acceptance row cannot be looked up. Null means \"could not look\", and the caller then writes a new row rather than overwriting one it cannot see; a duplicate acceptance is recoverable, a silent overwrite of another app's row is not."
+    },
+    {
+      "file": "lib/Service/Termijn/WorkingDayRoll.php",
+      "method": "endAfter",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`endAfter()` answers `return null` when the organisation calendar refuses a working-day end date; the catch logs at warning. Null is deliberately NOT a date: `TermijnService::endDateFor()` reads it as \"the calendar did not answer\", logs that the term is SHORTER than it is owed, and counts calendar days, which is the documented D-2 degradation."
+    },
+    {
+      "file": "lib/Service/Termijn/WorkingDayRoll.php",
+      "method": "daysBetween",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`daysBetween()` answers `return null` when the organisation calendar refuses a working-day span; the catch logs at warning. Null means \"the calendar did not answer\", and the caller falls back to calendar days rather than reporting a span computed on a calendar nobody administered."
     }
   ]
 }

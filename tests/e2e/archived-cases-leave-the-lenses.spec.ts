@@ -249,7 +249,10 @@ test.describe('A closed case is archived and comes back', () => {
 		const id = cases['Gearchiveerd A']
 
 		const marker = await markerOn(id)
-		expect(marker, 'the archived case should carry the platform marker').not.toBeNull()
+		expect(
+			marker,
+			'the archived case should carry the platform marker',
+		).not.toBeNull()
 		expect(String(marker.at ?? ''), 'the marker names when').not.toBe('')
 		expect(String(marker.by ?? ''), 'the marker names who').not.toBe('')
 
@@ -295,7 +298,10 @@ test.describe('A closed case is archived and comes back', () => {
 			headers: { requesttoken: token },
 		})
 		expect(archived.ok()).toBeTruthy()
-		expect((await archived.json()).archived, 'the acts answer names the archive').toBe(true)
+		expect(
+			(await archived.json()).archived,
+			'the acts answer names the archive',
+		).toBe(true)
 
 		const open = await api.get(caseApi(cases['Open B'], 'acts'), {
 			headers: { requesttoken: token },
@@ -324,10 +330,15 @@ test.describe('Archived cases leave the working lenses', () => {
 		await expect(row(page, 'Open A').first()).toBeVisible({ timeout: 30_000 })
 
 		for (const key of OPEN_KEYS) {
-			await expect(row(page, key).first(), `${key} is open and listed`).toBeVisible()
+			await expect(
+				row(page, key).first(),
+				`${key} is open and listed`,
+			).toBeVisible()
 		}
 		for (const key of ARCHIVED_KEYS) {
-			await expect(row(page, key), `${key} is archived and gone`).toHaveCount(0)
+			await expect(row(page, key), `${key} is archived and gone`).toHaveCount(
+				0,
+			)
 		}
 	})
 
@@ -339,10 +350,15 @@ test.describe('Archived cases leave the working lenses', () => {
 			timeout: 30_000,
 		})
 		for (const key of ARCHIVED_KEYS) {
-			await expect(row(page, key).first(), `${key} is in the archive`).toBeVisible()
+			await expect(
+				row(page, key).first(),
+				`${key} is in the archive`,
+			).toBeVisible()
 		}
 		for (const key of OPEN_KEYS) {
-			await expect(row(page, key), `${key} is open, not archived`).toHaveCount(0)
+			await expect(row(page, key), `${key} is open, not archived`).toHaveCount(
+				0,
+			)
 		}
 	})
 
@@ -359,9 +375,10 @@ test.describe('Archived cases leave the working lenses', () => {
 		const joined = titles.join('\n')
 
 		for (const key of ARCHIVED_KEYS) {
-			expect(joined, `${key} should not be in the default result`).not.toContain(
-				`${RUN_PREFIX} ${key}`,
-			)
+			expect(
+				joined,
+				`${key} should not be in the default result`,
+			).not.toContain(`${RUN_PREFIX} ${key}`)
 		}
 		expect(joined).toContain(`${RUN_PREFIX} Open A`)
 	})
@@ -380,10 +397,13 @@ test.describe('Archived cases leave the working lenses', () => {
 		})
 		const archived = await ownRows(page).count()
 
-		expect(shown, 'the open cases this run seeded are listed').toBe(OPEN_KEYS.length)
-		expect(archived, 'the archived cases this run seeded are in the archive lens').toBe(
-			ARCHIVED_KEYS.length,
+		expect(shown, 'the open cases this run seeded are listed').toBe(
+			OPEN_KEYS.length,
 		)
+		expect(
+			archived,
+			'the archived cases this run seeded are in the archive lens',
+		).toBe(ARCHIVED_KEYS.length)
 	})
 })
 
@@ -416,7 +436,10 @@ test.describe('An archived case is read-only and says so', () => {
 			'cn-action-generate-document',
 			'cn-action-plan-follow-up',
 		]) {
-			await expect(page.getByTestId(id), `${id} writes to the case`).toHaveCount(0)
+			await expect(
+				page.getByTestId(id),
+				`${id} writes to the case`,
+			).toHaveCount(0)
 		}
 
 		// The control that keeps the assertion above from passing on an empty

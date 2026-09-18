@@ -22,7 +22,7 @@ use Throwable;
 /**
  * Which kinds of party a case type accepts, and who says so.
  *
- * pipelinq holds the fleet's vocabulary; dossiq knows its own case types.
+ * Pipelinq holds the fleet's vocabulary; dossiq knows its own case types.
  * So the two halves go opposite ways: the KINDS are read from pipelinq, and
  * the ACCEPTANCE per case type is declared to it, named `dossiq:case:<type>`,
  * which pipelinq stores as an opaque string and never parses.
@@ -111,7 +111,7 @@ class PartyKindConsumer {
 		$kinds = array_values(array_filter($answer['value'], static fn ($kind): bool => is_array($kind) === true));
 
 		if ($kinds === []) {
-			// pipelinq answered an empty list. That is a real answer, not an
+			// Pipelinq answered an empty list. That is a real answer, not an
 			// absence: a record type may accept no party. It is still reported
 			// as pipelinq's, so nobody papers over it with the fallback.
 			return ['source' => 'pipelinq', 'kinds' => []];
@@ -233,7 +233,11 @@ class PartyKindConsumer {
 		}
 
 		foreach ($rows as $row) {
-			$data = ($row instanceof \JsonSerializable ? $row->jsonSerialize() : $row);
+			$data = $row;
+			if ($row instanceof \JsonSerializable) {
+				$data = $row->jsonSerialize();
+			}
+
 			if (is_array($data) === false) {
 				continue;
 			}

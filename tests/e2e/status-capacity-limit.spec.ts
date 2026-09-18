@@ -190,7 +190,10 @@ test.describe('A status that holds a limit', () => {
 		const rows = offered.body?.transitions ?? []
 		const move = rows.find((row: any) => String(row?.id ?? '') === INTO_CAPPED)
 
-		expect(move, 'the move into a full status must still be OFFERED').toBeTruthy()
+		expect(
+			move,
+			'the move into a full status must still be OFFERED',
+		).toBeTruthy()
 		expect(move.guardsPassed).toBe(false)
 		expect(JSON.stringify(move.failedGuards ?? [])).toMatch(/full|vol/i)
 	})
@@ -212,7 +215,12 @@ test.describe('A status that holds a limit', () => {
 			`a case must be able to leave a full status; got ${drained.status} ${JSON.stringify(drained.body)}`,
 		).toBeLessThan(400)
 
-		const retried = await executeTransition(api!, token, overflowing, INTO_CAPPED)
+		const retried = await executeTransition(
+			api!,
+			token,
+			overflowing,
+			INTO_CAPPED,
+		)
 		expect(
 			retried.status,
 			`the freed place must be usable; got ${retried.status} ${JSON.stringify(retried.body)}`,

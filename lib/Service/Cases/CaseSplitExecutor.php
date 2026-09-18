@@ -139,10 +139,14 @@ class CaseSplitExecutor {
 	/**
 	 * Split a case, moving what the handler chose.
 	 *
-	 * @param string                                                                                          $caseId The case being split.
-	 * @param string                                                                                          $title  The new case's title.
-	 * @param array{documents?: array<int, string>, parties?: array<int, string>, tasks?: array<int, string>, partiesOnBoth?: array<int, string>} $chosen The ids the handler picked.
-	 * @param string                                                                                          $actor  Who split it.
+	 * @param string $caseId The case being split.
+	 * @param string $title  The new case's title.
+	 * @param array<string, array<int, string>> $chosen The ids the handler
+	 *        picked, under the keys `documents`, `parties`, `tasks` and
+	 *        `partiesOnBoth`. Written as a map rather than a shape because the
+	 *        line the shape needs does not fit, and the plan below is what
+	 *        actually refuses an unknown key.
+	 * @param string $actor  Who split it.
 	 *
 	 * @return array{case: array<string, mixed>, moved: array<int, array<string, mixed>>, refused: array<int, array<string, mixed>>, note: string}
 	 *         The new case, what moved, what the plan refused as not this case's, and the note recorded on the original.

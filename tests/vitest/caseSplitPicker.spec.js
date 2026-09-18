@@ -60,8 +60,10 @@ describe('the picker asks what may be divided', () => {
 	})
 
 	it('gates every section on the answer', () => {
-		expect(dialog).toContain("v-if=\"allows('documents') && documents.length > 0\"")
-		expect(dialog).toContain("v-if=\"allows('parties') && parties.length > 0\"")
+		expect(dialog).toContain(
+			'v-if="allows(\'documents\') && documents.length > 0"',
+		)
+		expect(dialog).toContain('v-if="allows(\'parties\') && parties.length > 0"')
 	})
 
 	it('does not read a part it may not offer', () => {

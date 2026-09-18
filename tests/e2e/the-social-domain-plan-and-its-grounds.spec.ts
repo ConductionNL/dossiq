@@ -55,12 +55,10 @@ const PROVIDER = `user:${RUN_PREFIX.toLowerCase()}-jeugdzorg`
 
 /** Yesterday and next year, so "overdue" is not a function of the clock. */
 const YESTERDAY = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-const NEXT_YEAR = new Date(Date.now() + 365 * 86400000)
-	.toISOString()
-	.slice(0, 10)
+const NEXT_YEAR = new Date(Date.now() + 365 * 86400000).toISOString().slice(0, 10)
 
-function planUrl (id: string) {
-  return `/index.php/apps/dossiq/api/family-plans/${encodeURIComponent(id)}`
+function planUrl(id: string) {
+	return `/index.php/apps/dossiq/api/family-plans/${encodeURIComponent(id)}`
 }
 
 test.describe('The family plan, and the ground a cross-domain lookup runs on', () => {
@@ -108,7 +106,8 @@ test.describe('The family plan, and the ground a cross-domain lookup runs on', (
 			headers: { requesttoken: token },
 			data: {
 				title: `${RUN_PREFIX} Sem gaat weer naar school`,
-				metWhen: 'Vier weken achtereen minstens vier dagen per week op school',
+				metWhen:
+					'Vier weken achtereen minstens vier dagen per week op school',
 			},
 		})
 		expect(school.ok(), await school.text()).toBeTruthy()
@@ -154,9 +153,10 @@ test.describe('The family plan, and the ground a cross-domain lookup runs on', (
 			body.interventions.filter((item: any) => item.goal === goalSchool),
 		).toHaveLength(2)
 		for (const item of body.interventions) {
-			expect(item.provider, 'the provider is the reference, not the name').toBe(
-				PROVIDER,
-			)
+			expect(
+				item.provider,
+				'the provider is the reference, not the name',
+			).toBe(PROVIDER)
 			expect(item.targetDate).toBe(NEXT_YEAR)
 		}
 	})
@@ -303,11 +303,7 @@ test.describe('The family plan, and the ground a cross-domain lookup runs on', (
 		expect(found).toHaveLength(1)
 		expect(found[0].domain).toBe('Jeugdwet')
 		expect(found[0].contact).toBe('bram')
-		expect(Object.keys(found[0]).sort()).toEqual([
-			'contact',
-			'domain',
-			'exists',
-		])
+		expect(Object.keys(found[0]).sort()).toEqual(['contact', 'domain', 'exists'])
 
 		// Said the other way round, because the key assertion above would pass
 		// on a projection that renamed a leak into one of those three.

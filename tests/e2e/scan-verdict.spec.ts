@@ -57,7 +57,10 @@ test.describe('scan verdict on the row', () => {
 	// @e2e openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md#no-scanner-no-claim
 	test('no scanner, no claim', async ({ page, request }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
-		await page.getByRole('tab', { name: /Documents|Files/ }).first().click()
+		await page
+			.getByRole('tab', { name: /Documents|Files/ })
+			.first()
+			.click()
 
 		const row = page.locator('[data-testid="cn-files-row"]').first()
 		await expect(row).toBeVisible({ timeout: 30_000 })
@@ -74,10 +77,9 @@ test.describe('scan verdict on the row', () => {
 		// reports one absent, so nobody can read the answer as a clean file.
 		const token = await getRequestToken(request)
 		const fileId = await row.getAttribute('data-file-id')
-		const response = await request.get(
-			`/apps/dossiq/api/files/${fileId}/scan`,
-			{ headers: { requesttoken: token } },
-		)
+		const response = await request.get(`/apps/dossiq/api/files/${fileId}/scan`, {
+			headers: { requesttoken: token },
+		})
 		expect(response.status()).toBe(200)
 		const verdictBody = await response.json()
 		expect(verdictBody.state).toBe('not-scanned')
@@ -93,10 +95,9 @@ test.describe('scan verdict on the row', () => {
 		// verdict on an unreachable id would enumerate the instance one file
 		// at a time.
 		const token = await getRequestToken(request)
-		const response = await request.get(
-			'/apps/dossiq/api/files/999999999/scan',
-			{ headers: { requesttoken: token } },
-		)
+		const response = await request.get('/apps/dossiq/api/files/999999999/scan', {
+			headers: { requesttoken: token },
+		})
 		expect(response.status()).toBe(404)
 	})
 })

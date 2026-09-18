@@ -35,7 +35,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
@@ -156,7 +155,6 @@ class AdmissibilityJudgementTest extends TestCase {
 			caseTypes: $resolver,
 			store: $store,
 			endings: $endings,
-			moments: $this->createMock(originalClassName: CaseTypeAcknowledgement::class),
 			letters: $letters,
 			logger: new NullLogger(),
 		);

@@ -115,6 +115,11 @@ class OpenIncidentSource implements QueueSource {
 				$title = $this->l10n->t('A report with no description');
 			}
 
+			$route = ['name' => 'PersonalQueue'];
+			if ($caseId !== '') {
+				$route = ['name' => 'CaseDetail', 'params' => ['id' => $caseId]];
+			}
+
 			$items[] = new QueueItem(
 				source: $this->name(),
 				subjectType: 'incident',
@@ -129,9 +134,7 @@ class OpenIncidentSource implements QueueSource {
 				// The route goes to the CASE. There is no incident page, and
 				// what a person needs in order to work a report is the case it
 				// sits in: the address, the history and the other reports on it.
-				route: ($caseId === ''
-					? ['name' => 'PersonalQueue']
-					: ['name' => 'CaseDetail', 'params' => ['id' => $caseId]]),
+				route: $route,
 				waiting: [],
 				subject: $incident
 			);

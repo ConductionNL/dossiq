@@ -143,7 +143,9 @@ test.describe('A dependent term follows its predecessor', () => {
 		await expect
 			.poll(
 				async () =>
-					(await listFlowTasks(api, { objectUuid: cases.Vergunning })).filter(
+					(
+						await listFlowTasks(api, { objectUuid: cases.Vergunning })
+					).filter(
 						(row: any) => row?.metadata?.dossiq?.kind === 'term-follow',
 					).length,
 				{

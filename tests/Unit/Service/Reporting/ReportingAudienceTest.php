@@ -78,7 +78,7 @@ class ReportingAudienceTest extends TestCase {
 	public function testAControllerMayRead(): void {
 		$audience = new ReportingAudience(groupManager: $this->manager(memberOf: ['controllers']));
 
-		$this->assertTrue($audience->mayRead(user: $this->caller()));
+		$this->assertTrue($audience->isInAudience(user: $this->caller()));
 	}//end testAControllerMayRead()
 
 	/**
@@ -96,7 +96,7 @@ class ReportingAudienceTest extends TestCase {
 	public function testACaseHandlerIsRefused(): void {
 		$audience = new ReportingAudience(groupManager: $this->manager(memberOf: ['behandelaars']));
 
-		$this->assertFalse($audience->mayRead(user: $this->caller()));
+		$this->assertFalse($audience->isInAudience(user: $this->caller()));
 	}//end testACaseHandlerIsRefused()
 
 	/**
@@ -113,7 +113,7 @@ class ReportingAudienceTest extends TestCase {
 	public function testAnAdministratorMayRead(): void {
 		$audience = new ReportingAudience(groupManager: $this->manager(memberOf: [], isAdmin: true));
 
-		$this->assertTrue($audience->mayRead(user: $this->caller()));
+		$this->assertTrue($audience->isInAudience(user: $this->caller()));
 	}//end testAnAdministratorMayRead()
 
 	/**
@@ -126,8 +126,8 @@ class ReportingAudienceTest extends TestCase {
 	public function testNoSessionReadsNothing(): void {
 		$audience = new ReportingAudience(groupManager: $this->manager(memberOf: ['controllers'], isAdmin: true));
 
-		$this->assertFalse($audience->mayRead(user: null));
-		$this->assertFalse($audience->mayRead(user: $this->caller(uid: '')));
+		$this->assertFalse($audience->isInAudience(user: null));
+		$this->assertFalse($audience->isInAudience(user: $this->caller(uid: '')));
 	}//end testNoSessionReadsNothing()
 
 	/**

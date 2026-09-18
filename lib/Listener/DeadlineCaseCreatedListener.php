@@ -60,6 +60,9 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *        planned end, the internal target, and the fixed closing date when the case
 	 *        type declares one instead of a lead time. Optional so a container that
 	 *        cannot build it leaves the statutory bind exactly as it was.
+	 * @param TermResolution|null $resolution The case type's own first-response term,
+	 *        which wins over the Awb default when one is declared. Optional for the
+	 *        same reason as the parameter above it.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,

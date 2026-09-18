@@ -31,8 +31,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Custody;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -71,12 +71,16 @@ class CaseCustodyChain {
 	 *
 	 * @param SettingsService $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param LoggerInterface $logger          Records every move and every failure to record one.
+	 * @param CaseDateNormaliser $dates        The one class that may resolve a time zone. A holding
+	 *                                         is a case date, so the chain reads and writes its
+	 *                                         moments through it rather than parsing them here.
 	 *
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -365,14 +369,20 @@ class CaseCustodyChain {
 	private function moment(string $at): string {
 		$at = trim($at);
 		if ($at === '') {
-			return (new DateTimeImmutable())->format('c');
+			return $this->dates->nowAsMoment();
 		}
 
-		try {
-			return (new DateTimeImmutable($at))->format('c');
-		} catch (Throwable $e) {
-			return (new DateTimeImmutable())->format('c');
+		// Read through CaseDateNormaliser and not parsed here. A holding is a
+		// case date, and a second rule for what a date is, is how one moment
+		// on the chain ends up in the server zone and the next in the
+		// administered one (openspec/changes/one-date-write-path). An
+		// unreadable value reads as now, which is what it read as before.
+		$parsed = $this->dates->tryParse($at);
+		if ($parsed === null) {
+			return $this->dates->nowAsMoment();
 		}
+
+		return $this->dates->formatMoment($parsed);
 	}//end moment()
 
 	/**

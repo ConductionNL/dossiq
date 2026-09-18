@@ -4993,7 +4993,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.4.0",
+        "version": "1.5.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -5160,6 +5160,12 @@
             "title": "First Time Fix",
             "default": false,
             "description": "Whether the issue was resolved in one contact"
+          },
+          "visibleToApplicant": {
+            "type": "boolean",
+            "title": "Visible to the applicant",
+            "default": false,
+            "description": "Off by default. Tick it to put this contact on the timeline the applicant reads."
           },
           "transcript": {
             "authorization": {

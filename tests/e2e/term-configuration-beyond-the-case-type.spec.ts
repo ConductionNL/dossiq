@@ -59,8 +59,14 @@ test.describe('A term is more than one number on one case type', () => {
 
 		// The case type's own term, and two municipalities that agreed their own.
 		await define('general', { standardDurationDays: 56 })
-		await define('alkmaar', { organisation: `${RUN_PREFIX}-alkmaar`, standardDurationDays: 42 })
-		await define('bergen', { organisation: `${RUN_PREFIX}-bergen`, standardDurationDays: 28 })
+		await define('alkmaar', {
+			organisation: `${RUN_PREFIX}-alkmaar`,
+			standardDurationDays: 42,
+		})
+		await define('bergen', {
+			organisation: `${RUN_PREFIX}-bergen`,
+			standardDurationDays: 28,
+		})
 
 		await api.dispose()
 	})
@@ -165,12 +171,16 @@ test.describe('A term is more than one number on one case type', () => {
 		const bergen = await termOf(cases.bergen)
 
 		// Two norms, two end dates, one case type and no duplication.
-		expect(String(alkmaar.endDateCurrent)).not.toBe(String(bergen.endDateCurrent))
+		expect(String(alkmaar.endDateCurrent)).not.toBe(
+			String(bergen.endDateCurrent),
+		)
 
 		// 🔴 THE EXPLANATION IS A COPY, NOT A POINTER. A term somebody disputes
 		// has to be explainable a year later, and the configuration will have
 		// changed by then, so the snapshot carries the numbers it was made from.
-		expect(String(alkmaar.resolutionSnapshot?.organisation)).toBe(`${RUN_PREFIX}-alkmaar`)
+		expect(String(alkmaar.resolutionSnapshot?.organisation)).toBe(
+			`${RUN_PREFIX}-alkmaar`,
+		)
 		expect(Number(alkmaar.resolutionSnapshot?.durationDays)).toBe(42)
 		expect(Number(bergen.resolutionSnapshot?.durationDays)).toBe(28)
 

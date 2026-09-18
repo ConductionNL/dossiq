@@ -41,6 +41,7 @@ use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * Accepting, refusing, and answering twice.
@@ -52,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */
 class CaseTakeoverAnswerTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The store every service under test reads and writes.
@@ -220,6 +223,7 @@ class CaseTakeoverAnswerTest extends TestCase {
 		return new CaseCustodyChain(
 			settingsService: $this->settings(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
 		);
 	}//end chain()
 

@@ -29,12 +29,22 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { cleanupRunObjects, createObject, getRequestToken, REGISTER, RUN_PREFIX, seedCase, showObject } from './helpers/fixtures.ts'
+import {
+	cleanupRunObjects,
+	createObject,
+	getRequestToken,
+	REGISTER,
+	RUN_PREFIX,
+	seedCase,
+	showObject,
+} from './helpers/fixtures.ts'
 
 let api: APIRequestContext
 let token: string
 
-const ROUTE_API = (caseId: string) => `/index.php/apps/${REGISTER}/api/case/${caseId}/route`
+function ROUTE_API(caseId: string) {
+	return `/index.php/apps/${REGISTER}/api/case/${caseId}/route`
+}
 
 /**
  * Bind one pool membership to a case type's pool.
@@ -70,7 +80,9 @@ test.describe('work is divided in proportion to what each member is there for', 
 
 		const tally: Record<string, number> = {}
 		for (let i = 0; i < 14; i++) {
-			const caseId = await seedCase(api, token, { title: `${RUN_PREFIX} Verdeling ${i}` })
+			const caseId = await seedCase(api, token, {
+				title: `${RUN_PREFIX} Verdeling ${i}`,
+			})
 			const answer = await api.post(ROUTE_API(caseId), {
 				headers: { requesttoken: token },
 				data: { strategy: 'round-robin', roleType: 'behandelaar' },
@@ -92,10 +104,16 @@ test.describe('a rule may name a position inside a team', () => {
 
 		const assignees: string[] = []
 		for (let i = 0; i < 4; i++) {
-			const caseId = await seedCase(api, token, { title: `${RUN_PREFIX} Team ${i}` })
+			const caseId = await seedCase(api, token, {
+				title: `${RUN_PREFIX} Team ${i}`,
+			})
 			const answer = await api.post(ROUTE_API(caseId), {
 				headers: { requesttoken: token },
-				data: { strategy: 'round-robin', roleType: 'behandelaar', team: 'zuid' },
+				data: {
+					strategy: 'round-robin',
+					roleType: 'behandelaar',
+					team: 'zuid',
+				},
 			})
 			assignees.push((await answer.json()).assignee)
 		}
@@ -108,11 +126,18 @@ test.describe('a rule may name a position inside a team', () => {
 
 test.describe('the case holds the area it is in, and routing reads it', () => {
 	test('a case at an address in wijk Zuid routes to the team declared for it', async () => {
-		const caseId = await seedCase(api, token, { title: `${RUN_PREFIX} Zuid`, district: 'Zuid' })
+		const caseId = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Zuid`,
+			district: 'Zuid',
+		})
 
 		const answer = await api.post(ROUTE_API(caseId), {
 			headers: { requesttoken: token },
-			data: { strategy: 'round-robin', roleType: 'behandelaar', areaTeams: { Zuid: 'zuid' } },
+			data: {
+				strategy: 'round-robin',
+				roleType: 'behandelaar',
+				areaTeams: { Zuid: 'zuid' },
+			},
 		})
 
 		const body = await answer.json()
@@ -121,23 +146,35 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 	})
 
 	test('correcting the address re-resolves the area', async () => {
-		const caseId = await seedCase(api, token, { title: `${RUN_PREFIX} Verhuisd`, district: 'Zuid' })
-
-		await api.put(`/index.php/apps/openregister/api/objects/dossiq/case/${caseId}`, {
-			headers: { requesttoken: token },
-			data: { district: 'Noord' },
+		const caseId = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Verhuisd`,
+			district: 'Zuid',
 		})
+
+		await api.put(
+			`/index.php/apps/openregister/api/objects/dossiq/case/${caseId}`,
+			{
+				headers: { requesttoken: token },
+				data: { district: 'Noord' },
+			},
+		)
 
 		const stored = await showObject(api, token, 'case', caseId)
 		expect(stored.district).toBe('Noord')
 	})
 
 	test('an address outside every boundary routes by the fallback and says so', async () => {
-		const caseId = await seedCase(api, token, { title: `${RUN_PREFIX} Buiten de grenzen` })
+		const caseId = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Buiten de grenzen`,
+		})
 
 		const answer = await api.post(ROUTE_API(caseId), {
 			headers: { requesttoken: token },
-			data: { strategy: 'round-robin', roleType: 'behandelaar', areaTeams: { Zuid: 'zuid' } },
+			data: {
+				strategy: 'round-robin',
+				roleType: 'behandelaar',
+				areaTeams: { Zuid: 'zuid' },
+			},
 		})
 
 		const body = await answer.json()
