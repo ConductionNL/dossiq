@@ -11642,7 +11642,7 @@
       "role": {
         "slug": "role",
         "icon": "AccountKeyOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "Rol",
         "title": "Role",
@@ -11713,13 +11713,20 @@
             "format": "date-time",
             "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
             "title": "Delegate Until"
+          },
+          "representedParty": {
+            "type": "string",
+            "format": "uuid",
+            "facetable": true,
+            "description": "Whom this participant acts for on this case. Filled on a role of type Gemachtigde (Awb 2:1) and empty on every other role. It is NOT delegateFrom: that is the start of a delegation window and RoleDelegationResolver reads it as a date.",
+            "title": "Represented by"
           }
         }
       },
       "roleType": {
         "slug": "roleType",
         "icon": "BadgeAccountOutline",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "RolType",
         "title": "Role Type",
@@ -11748,6 +11755,22 @@
             "$ref": "caseType",
             "description": "Reference to the parent case type",
             "title": "Case Type"
+          },
+          "genericRole": {
+            "type": "string",
+            "enum": [
+              "initiator",
+              "co_initiator",
+              "handler",
+              "advisor",
+              "decision_maker",
+              "coordinator",
+              "stakeholder",
+              "contact",
+              "gemachtigde"
+            ],
+            "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it.",
+            "title": "Generic Role"
           },
           "ncGroupId": {
             "type": "string",

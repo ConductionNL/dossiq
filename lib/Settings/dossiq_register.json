@@ -1013,7 +1013,7 @@
             "roleType": {
                 "slug": "roleType",
                 "icon": "BadgeAccountOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "RolType",
                 "title": "Role Type",
@@ -1053,9 +1053,10 @@
                             "decision_maker",
                             "coordinator",
                             "stakeholder",
-                            "contact"
+                            "contact",
+                            "gemachtigde"
                         ],
-                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",
+                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it, and SeedGemachtigdeRoleType keeps exactly one of it.",
                         "title": "Generic Role"
                     },
                     "ncGroupId": {
@@ -3297,7 +3298,7 @@
             "role": {
                 "slug": "role",
                 "icon": "AccountKeyOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "Rol",
                 "title": "Role",
@@ -3368,6 +3369,13 @@
                         "format": "date-time",
                         "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
                         "title": "Delegate Until"
+                    },
+                    "representedParty": {
+                        "type": "string",
+                        "format": "uuid",
+                        "facetable": true,
+                        "description": "Whom this participant acts for on this case. Filled on a role of type Gemachtigde (Awb 2:1) and empty on every other role. It is NOT delegateFrom: that is the start of a delegation window and RoleDelegationResolver reads it as a date, so writing a party uuid into it would make the resolver substitute a delegate at an unparseable moment.",
+                        "title": "Represented by"
                     }
                 }
             },
@@ -11197,6 +11205,7 @@
                     "slug": "rol-gemachtigde"
                 },
                 "name": "Gemachtigde",
+                "genericRole": "gemachtigde",
                 "description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
             },
             {
