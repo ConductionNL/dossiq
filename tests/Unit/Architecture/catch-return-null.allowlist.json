@@ -1782,6 +1782,20 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`firstWorkingMomentAtOrAfter()` asks the engine calendar for the first working moment at or after an instant. Null means the calendar did not answer, and the caller then starts the term on the moment it already had rather than guessing a working day; a silent fallback to 'today is a working day' would start a citizen's clock on a Sunday on any instance without OpenRegister. Logged at warning naming the moment."
+    },
+    {
+      "file": "lib/Service/Cases/CaseSplitPerformer.php",
+      "method": "rowsOf",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`rowsOf()` answers `return []` when the read fails; the catch logs at warning naming the part (\"a split could not read the documents on a case\"). An empty part offers the handler nothing to tick, which is what a case with none of that part looks like, and the picker draws its own empty line for it. Throwing would take the whole picker down because one of three reads failed."
+    },
+    {
+      "file": "lib/Service/Cases/CaseSplitPerformer.php",
+      "method": "openSecondCase",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`openSecondCase()` answers `return null` when the second case cannot be written; the catch logs at error and `perform()` refuses BEFORE anything moves. That ordering is the point: rows repointed at a case that was never opened would be rows pointing at nothing."
     }
   ]
 }

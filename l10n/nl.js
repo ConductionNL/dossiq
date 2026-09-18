@@ -5572,7 +5572,17 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Split this case in two": "Deze zaak in tweeën splitsen",
+        "Split in two": "In tweeën splitsen",
+        "Split": "Splitsen",
+        "What you tick moves to the new case and leaves this one. What you leave alone stays here.": "Wat u aanvinkt gaat mee naar de nieuwe zaak en verdwijnt uit deze. Wat u laat staan, blijft hier.",
+        "Title of the new case": "Titel van de nieuwe zaak",
+        "Nothing of this kind on the case.": "Hiervan staat niets op de zaak.",
+        "The case was not split.": "De zaak is niet gesplitst.",
+        "What this case holds could not be read.": "Wat er op deze zaak staat, kon niet worden gelezen.",
+        "This case no longer exists.": "Deze zaak bestaat niet meer.",
+        "You do not handle this case.": "U behandelt deze zaak niet."
     },
     "nplurals=2; plural=(n != 1);"
 )

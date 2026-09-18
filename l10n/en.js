@@ -5553,7 +5553,17 @@ OC.L10N.register(
         "{years} years": "{years} years",
         "Counting mode": "Counting mode",
         "Calendar days": "Calendar days",
-        "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar."
+        "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.",
+        "Split this case in two": "Split this case in two",
+        "Split in two": "Split in two",
+        "Split": "Split",
+        "What you tick moves to the new case and leaves this one. What you leave alone stays here.": "What you tick moves to the new case and leaves this one. What you leave alone stays here.",
+        "Title of the new case": "Title of the new case",
+        "Nothing of this kind on the case.": "Nothing of this kind on the case.",
+        "The case was not split.": "The case was not split.",
+        "What this case holds could not be read.": "What this case holds could not be read.",
+        "This case no longer exists.": "This case no longer exists.",
+        "You do not handle this case.": "You do not handle this case."
     },
     "nplurals=2; plural=(n != 1);"
 )

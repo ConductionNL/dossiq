@@ -481,6 +481,13 @@ $extra = [
     ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
     ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
 
+        // Dividing a case (case-split-surface, rows 2.35 and 2.45). The rules
+        // shipped first and reachable from nothing; these two are the surface
+        // that change named as missing. The GET answers what may be divided,
+        // so the picker offers no checkbox the server would refuse.
+    ['name' => 'caseSplit#divisible', 'url' => '/api/case/{caseId}/split', 'verb' => 'GET'],
+    ['name' => 'caseSplit#split',     'url' => '/api/case/{caseId}/split', 'verb' => 'POST'],
+
         // Merging two cases into one (case-merge, row 2.23). The merge itself
         // is OpenRegister's; what lives here is the refusal, because whether a
         // case may be merged away is a case management rule and the browser

@@ -3095,6 +3095,23 @@
 						"target": "CaseLifecycleMenuDialog"
 					},
 					{
+						"id": "case-split",
+						"type": "open-modal",
+						"target": "CaseSplitDialog",
+						"label": "Split in two",
+						"icon": "CallSplit",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"_note": "Dividing one case into two (case-split-surface, REQ-CM-48). Beside Merge into on purpose: they are inverses, and a handler who finds one expects the other. The rules for this shipped with #2945 and were reachable from nothing; this is the action that reaches them. Hidden on a closed case for the same reason the merge is; which parts may be divided is the case type\u0027s answer and arrives from the server, so no checkbox is offered that the server would refuse.",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
 						"id": "case-merge",
 						"type": "open-modal",
 						"target": "CaseMergeDialog",
