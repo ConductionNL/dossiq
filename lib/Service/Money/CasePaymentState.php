@@ -112,6 +112,19 @@ class CasePaymentState {
 	private const SETTLED = ['paid', 'overpaid'];
 
 	/**
+	 * shillinq's reported states that mean it could not do the sum.
+	 *
+	 * 🔴 THIS IS NOT "MONEY IS OWED". shillinq reports `indeterminate` when a
+	 * request's own amount cannot be read as a number (shillinq#1641), so the
+	 * amount owed is unknown, not outstanding. Reading it as outstanding sends
+	 * a handler to chase a payment that may already have been made, and tells a
+	 * citizen with the receipt in their hand that they still owe us.
+	 *
+	 * @var array<int, string>
+	 */
+	private const UNREADABLE = ['indeterminate'];
+
+	/**
 	 * The method a settlement carries when the money was let go.
 	 *
 	 * @var string
@@ -129,8 +142,10 @@ class CasePaymentState {
 	 *
 	 * @param array<int, array<string, mixed>> $requests The leaf's items for this case.
 	 *
-	 * @return string One of the constants above; never `stale`, which is what
-	 *                a failed READ means and not what any answer means.
+	 * @return string One of the constants above. `stale` is returned only where
+	 *                the answer itself says the record could not be read: a
+	 *                request shillinq cannot price, or an item this app cannot
+	 *                parse. Everything else is an answer and reads as one.
 	 *
 	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
@@ -139,20 +154,50 @@ class CasePaymentState {
 			return self::NOT_REQUIRED;
 		}
 
+		// The whole list is read before anything is decided, because returning
+		// on the first interesting row made the answer depend on the ORDER the
+		// leaf happened to send. A case with one unpaid request and one
+		// unreadable one read `outstanding` or `stale` by luck of the sort.
 		$waivedOnly = true;
+		$anyOutstanding = false;
+		$anyUnreadable = false;
+
 		foreach ($requests as $request) {
 			if (is_array($request) === false) {
+				// Skipping it was worse than it looks: a case whose ONLY
+				// request was unparseable fell through to the waiver branch
+				// and read `waived`, which opens the gate and says a person
+				// decided to let the money go. Nobody decided anything.
+				$anyUnreadable = true;
 				continue;
 			}
 
 			$reported = (string)(($request['reported']['state'] ?? '') ?: '');
+			if (in_array($reported, self::UNREADABLE, true) === true) {
+				$anyUnreadable = true;
+				continue;
+			}
+
 			if (in_array($reported, self::SETTLED, true) === false) {
-				return self::OUTSTANDING;
+				$anyOutstanding = true;
+				continue;
 			}
 
 			if ($this->wasWaived(request: $request) === false) {
 				$waivedOnly = false;
 			}
+		}
+
+		// Outstanding outranks unreadable. A request nobody has paid is a fact
+		// that holds whatever the row beside it says, and it is the one a
+		// handler can act on. Unreadable outranks every settled answer: this
+		// app cannot call a case paid while part of its record is unreadable.
+		if ($anyOutstanding === true) {
+			return self::OUTSTANDING;
+		}
+
+		if ($anyUnreadable === true) {
+			return self::STALE;
 		}
 
 		if ($waivedOnly === true) {

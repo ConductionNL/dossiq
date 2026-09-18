@@ -147,6 +147,20 @@ class TenantBillingService {
 			return $result;
 		}
 
+		// Nothing is exported and nothing is stamped while any event cannot be
+		// priced. Stamping them writes off the difference for good: an event
+		// carrying an invoiceRef is never picked up again, so the money is gone
+		// the moment a EUR0 line ships. Leaving them unbilled means the month
+		// invoices correctly once the rows are fixed.
+		if ((int)($summary['unpricedCount'] ?? 0) > 0) {
+			$result['error'] = sprintf(
+				'%d usage event(s) carry no readable price, so no invoice was exported for this month.',
+				(int)$summary['unpricedCount']
+			);
+
+			return $result;
+		}
+
 		$payload = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
 		$exportRc = $this->shillinq->exportInvoice(payload: $payload);
 		if ($exportRc['success'] !== true) {
@@ -244,22 +258,42 @@ class TenantBillingService {
 	public function aggregate(array $events): array {
 		$byType = [];
 		$totalAmount = 0.0;
+		$unpriced = 0;
 		foreach ($events as $event) {
 			$type = (string)($event['eventType'] ?? 'unknown');
-			$quantity = (float)($event['quantity'] ?? 0);
-			$unit = (float)($event['unitPrice'] ?? 0);
-			$amount = ($quantity * $unit);
+
+			// 🔴 AN EVENT NOBODY CAN PRICE IS COUNTED, NOT BILLED AT ZERO. The
+			// casts below used to turn a missing or malformed quantity or unit
+			// price into 0, and the line was invoiced for nothing: the tenant
+			// underpays and the invoice looks complete. The comment on
+			// runInvoicing() already records that every tenant invoice was once
+			// EUR0; this is the quiet version of the same failure, one line at
+			// a time.
+			$quantity = ($event['quantity'] ?? null);
+			$unit = ($event['unitPrice'] ?? null);
+			if (is_numeric($quantity) === false || is_numeric($unit) === false) {
+				++$unpriced;
+				continue;
+			}
+
+			$amount = ((float)$quantity * (float)$unit);
 
 			if (isset($byType[$type]) === false) {
 				$byType[$type] = ['count' => 0.0, 'amount' => 0.0];
 			}
 
-			$byType[$type]['count'] += $quantity;
+			$byType[$type]['count'] += (float)$quantity;
 			$byType[$type]['amount'] += $amount;
 			$totalAmount += $amount;
 		}
 
-		return ['eventCount' => count($events), 'totalAmount' => round($totalAmount, 2), 'byType' => $byType];
+		return [
+			'eventCount' => count($events),
+			'totalAmount' => round($totalAmount, 2),
+			'byType' => $byType,
+			// A total with unpriced events behind it is a floor, not a total.
+			'unpricedCount' => $unpriced,
+		];
 	}//end aggregate()
 
 	/**

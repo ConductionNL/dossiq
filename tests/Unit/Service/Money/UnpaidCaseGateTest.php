@@ -118,15 +118,15 @@ class UnpaidCaseGateTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testAnUnreadableStateRefusesAndSaysTheServiceIsUnavailable(): void {
+	public function testAnUnreadableStateRefusesAndSaysTheRecordCouldNotBeRead(): void {
 		$sentence = $this->gate->whyItWaits(
 			case: ['paymentState' => CasePaymentState::STALE],
 			caseType: ['paymentRequiredBeforeHandling' => true],
 		);
 
-		$this->assertStringContainsString('could not be reached', $sentence);
+		$this->assertStringContainsString('could not be read', $sentence);
 		$this->assertStringNotContainsString('outstanding', $sentence);
-	}//end testAnUnreadableStateRefusesAndSaysTheServiceIsUnavailable()
+	}//end testAnUnreadableStateRefusesAndSaysTheRecordCouldNotBeRead()
 
 	/**
 	 * A case that carries no state at all has never been read, which is the
@@ -137,6 +137,6 @@ class UnpaidCaseGateTest extends TestCase {
 	public function testACaseWithNoStateAtAllIsTreatedAsUnreadable(): void {
 		$sentence = $this->gate->whyItWaits(case: [], caseType: ['paymentRequiredBeforeHandling' => true]);
 
-		$this->assertStringContainsString('could not be reached', $sentence);
+		$this->assertStringContainsString('could not be read', $sentence);
 	}//end testACaseWithNoStateAtAllIsTreatedAsUnreadable()
 }//end class

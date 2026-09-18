@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use InvalidArgumentException;
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -98,15 +99,32 @@ class ShillinqIntegrationService {
 	 *
 	 * @return array<string,mixed>
 	 *
+	 * @throws InvalidArgumentException When an event carries no readable quantity or unit price.
+	 *
 	 * @spec openspec/changes/tenant-zaaksysteem-saas-10-billing-shillinq/tasks.md
 	 */
 	public function buildInvoicePayload(string $tenantId, string $month, array $events): array {
 		$lineItems = [];
 		foreach ($events as $event) {
+			// 🔴 NO LINE IS PRICED BY DEFAULT. `quantity ?? 1` and
+			// `unitPrice ?? 0` were two different guesses about the same event,
+			// so this payload and TenantBillingService::aggregate() answered
+			// different amounts for one month: the reported total and the
+			// exported invoice disagreed, and the invoice won. An event that
+			// cannot be priced throws here, and runInvoicing() already refuses
+			// before it gets this far.
+			$quantity = ($event['quantity'] ?? null);
+			$unitPrice = ($event['unitPrice'] ?? null);
+			if (is_numeric($quantity) === false || is_numeric($unitPrice) === false) {
+				throw new InvalidArgumentException(
+					'A usage event carries no readable quantity or unit price, so no invoice line was built for it.'
+				);
+			}
+
 			$lineItems[] = [
 				'description' => (string)($event['eventType'] ?? 'usage'),
-				'quantity' => (float)($event['quantity'] ?? 1),
-				'unit_price' => (float)($event['unitPrice'] ?? 0),
+				'quantity' => (float)$quantity,
+				'unit_price' => (float)$unitPrice,
 				'currency' => (string)($event['currency'] ?? 'EUR'),
 				'occurred_at' => (string)($event['occurredAt'] ?? ''),
 			];
