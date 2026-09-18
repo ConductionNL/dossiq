@@ -1191,6 +1191,11 @@
                         "title": "Calculation",
                         "description": "A JSON expression that derives this answer from other fields, evaluated by OpenRegister. A Twig expression is not accepted: the JSON form is diffable and an auditor can read it a year later, which is the decision this field carries."
                     },
+                    "conceptScheme": {
+                        "type": "string",
+                        "title": "Concept scheme",
+                        "description": "The SKOS concept scheme in OpenRegister whose concepts are this field's options, such as a municipality-wide list of wijken or afhandelkanalen. Set it and the scheme rules: the case form offers the scheme's concepts and stores the chosen concept's URI, and the inline list under Limit answers to a list is ignored. Leave it empty and enumValues rules. OpenRegister owns the scheme and the picker; dossiq stores which scheme a field is bound to. The case form does not read it yet: the key x-openregister-concept-scheme is not in OpenRegister's published vocabulary, and a form may only forward a key the vocabulary holds."
+                    },
                     "propertySource": {
                         "type": "string",
                         "title": "Values from a register",

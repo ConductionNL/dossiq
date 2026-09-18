@@ -33,6 +33,13 @@
 								<span v-if="pd.maxLength" class="property-row__max">
 									{{ t('dossiq', 'max {n}', { n: pd.maxLength }) }}
 								</span>
+								<span
+									v-if="schemeSummary(pd)"
+									class="property-row__scheme"
+									:title="schemeTitle(pd)"
+									data-testid="property-scheme">
+									{{ schemeSummary(pd) }}
+								</span>
 								<span class="property-row__required">
 									{{ requiredLabel(pd) }}
 								</span>
@@ -135,6 +142,10 @@ import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import PropertyDefinitionFields from '../../../components/PropertyDefinitionFields.vue'
 import {
+	hasCompetingSources,
+	schemeOf,
+} from '../../../services/conceptScheme.js'
+import {
 	fetchPropertyVocabulary,
 	resolveStoredType,
 } from '../../../services/propertyVocabulary.js'
@@ -162,6 +173,7 @@ function blankForm() {
 		ref: '',
 		calculation: null,
 		propertySource: '',
+		conceptScheme: '',
 		enumValues: [],
 		isRequired: false,
 		requiredAtStatus: null,
@@ -335,6 +347,44 @@ export default {
 		typeSummary(pd) {
 			const type = pd.propertyType || 'string'
 			return pd.format ? `${type} · ${pd.format}` : type
+		},
+
+		/**
+		 * Which scheme this field's choices come from, for the index.
+		 *
+		 * Empty when the field is not bound to one, so an inline list and a
+		 * free-text field read the same as they always did.
+		 *
+		 * @param {object} pd The property definition.
+		 * @return {string} The scheme reference, or an empty string.
+		 * @spec openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md
+		 */
+		schemeSummary(pd) {
+			const scheme = schemeOf(pd)
+			if (!scheme) {
+				return ''
+			}
+			return t('dossiq', 'scheme {scheme}', { scheme })
+		},
+
+		/**
+		 * What the scheme label says when a reader hovers it.
+		 *
+		 * A field carrying both sources says so here too, so the warning is
+		 * not only on the form the author has since closed.
+		 *
+		 * @param {object} pd The property definition.
+		 * @return {string} The hover text.
+		 * @spec openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md
+		 */
+		schemeTitle(pd) {
+			if (hasCompetingSources(pd)) {
+				return t(
+					'dossiq',
+					'The choices come from this concept scheme. The list typed on this field is ignored.',
+				)
+			}
+			return t('dossiq', 'The choices come from this concept scheme.')
 		},
 
 		/**
@@ -565,6 +615,11 @@ export default {
 }
 
 .property-row__max {
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+}
+
+.property-row__scheme {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }

@@ -166,6 +166,32 @@
 					class="pd-fields__textarea"
 					@input="setEnumValues($event.target.value)" />
 			</div>
+			<div class="pd-fields__field">
+				<label class="pd-fields__label" :for="id('concept-scheme')">{{
+					t('dossiq', 'Or take the choices from a concept scheme')
+				}}</label>
+				<input
+					:id="id('concept-scheme')"
+					:value="value.conceptScheme || ''"
+					type="text"
+					class="pd-fields__input"
+					:placeholder="t('dossiq', 'wijken')"
+					@input="setConceptScheme($event.target.value)">
+				<span class="pd-fields__hint">
+					{{
+						t(
+							'dossiq',
+							'The list lives in OpenRegister and every case type binds to the same one, so a municipal list is kept in one place.',
+						)
+					}}
+				</span>
+				<span
+					v-if="schemeWarning"
+					class="pd-fields__hint pd-fields__hint--warning"
+					data-testid="concept-scheme-warning">
+					{{ schemeWarning }}
+				</span>
+			</div>
 		</div>
 
 		<div class="pd-fields__row pd-fields__row--stacked">
@@ -246,6 +272,7 @@
 
 <script>
 import { NcCheckboxRadioSwitch, NcTextField } from '@nextcloud/vue'
+import { hasCompetingSources } from '../services/conceptScheme.js'
 import {
 	constraintsForType,
 	formatsForType,
@@ -381,6 +408,26 @@ export default {
 		/** @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md */
 		enumText() {
 			return (this.value.enumValues || []).join('\n')
+		},
+
+		/**
+		 * What to say when a field names a scheme and a list of its own.
+		 *
+		 * The scheme rules, so the typed list is what a handler will not see.
+		 * Saying so is the whole point: resolving it in silence is how an
+		 * administrator ships a field whose options are not the ones on screen.
+		 *
+		 * @return {string} The warning, or an empty string when there is none.
+		 * @spec openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md
+		 */
+		schemeWarning() {
+			if (!hasCompetingSources(this.value)) {
+				return ''
+			}
+			return t(
+				'dossiq',
+				'This field names a concept scheme and carries its own list. The scheme wins and the typed choices are ignored.',
+			)
 		},
 
 		/** @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md */
@@ -525,6 +572,14 @@ export default {
 		},
 
 		/**
+		 * @param {string} text The scheme reference, or an empty string to unbind.
+		 * @spec openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md
+		 */
+		setConceptScheme(text) {
+			this.set('conceptScheme', String(text).trim())
+		},
+
+		/**
 		 * @param {string} text The typed choices, one per line.
 		 * @spec openspec/changes/casetype-field-vocabulary/specs/property-definition-management/spec.md
 		 */
@@ -593,6 +648,7 @@ export default {
 }
 
 .pd-fields__select,
+.pd-fields__input,
 .pd-fields__textarea {
 	width: 100%;
 	padding: 8px;
@@ -607,6 +663,10 @@ export default {
 	font-size: 12px;
 	margin-top: 4px;
 	color: var(--color-text-maxcontrast);
+}
+
+.pd-fields__hint--warning {
+	color: var(--color-warning-text, var(--color-error));
 }
 
 .pd-fields__error {
