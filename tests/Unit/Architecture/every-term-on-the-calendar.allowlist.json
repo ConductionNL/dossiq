@@ -2,5 +2,11 @@
   "about": "Files the date-arithmetic audit marks as a statutory term path that do not reach a working calendar yet. An entry names the change that will take the file and says why it is not taken here. An entry without a named change is not an entry: EveryTermOnTheCalendarTest fails on it, because an allowlist without owners is how thirty-two files reached this repository unexamined.",
   "audit": "docs/research/date-arithmetic-audit-2026-09-14.md",
   "measured": "2026-09-18",
-  "entries": []
+  "entries": [
+    {
+      "file": "lib/Service/Term/DependentTermOffer.php",
+      "change": "dependent-term-follows-predecessor",
+      "reason": "acceptOffer() proposes `endDateCurrent + N days` for a dependent term and hands it to requestExtension(). It is a statutory end date computed off the calendar, so an offer can propose a Saturday. The fix is one call, TermijnTimerService::rollTermEndFor(), and it belongs to the change that owns the offer rather than to a build fix: routing it here would change what that change's own tests assert about the date it proposes."
+    }
+  ]
 }

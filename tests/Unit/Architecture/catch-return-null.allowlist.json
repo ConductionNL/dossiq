@@ -1775,6 +1775,13 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`countIn()` counts the cases in a status, to decide whether the status is at capacity. Null is NOT zero here and the caller knows it: zero would read as 'the status is free' and let a transition through, so null means 'not counted' and the guard abstains. The comment above the query records the openregister#3611 filter trap this method survives."
+    },
+    {
+      "file": "lib/Service/Termijn/WorkingDayRoll.php",
+      "method": "firstWorkingMomentAtOrAfter",
+      "occurrence": 1,
+      "class": "degradation",
+      "reason": "`firstWorkingMomentAtOrAfter()` asks the engine calendar for the first working moment at or after an instant. Null means the calendar did not answer, and the caller then starts the term on the moment it already had rather than guessing a working day; a silent fallback to 'today is a working day' would start a citizen's clock on a Sunday on any instance without OpenRegister. Logged at warning naming the moment."
     }
   ]
 }
