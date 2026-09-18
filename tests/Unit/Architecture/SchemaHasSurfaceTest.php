@@ -201,9 +201,9 @@ class SchemaHasSurfaceTest extends TestCase {
 	 */
 	public function testTheCeilingOnlyGoesDown(): void {
 		$this->assertLessThanOrEqual(
-			10,
+			8,
 			count($this->allowlisted()),
-			'the allowlist was 16 when it was written and 10 within the day, and may only shrink; a new schema needs a surface, not a line here'
+			'the allowlist was 16 when it was written, 10 within the day, and 8 once the two schemas holding personal data got pages; it may only shrink, and a new schema needs a surface rather than a line here'
 		);
 	}
 

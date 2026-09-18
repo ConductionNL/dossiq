@@ -401,6 +401,24 @@
 			"order": 71
 		},
 		{
+			"id": "SupplierUsersMenu",
+			"label": "Supplier portal accounts",
+			"icon": "AccountOutline",
+			"route": "SupplierUsers",
+			"section": "settings",
+			"order": 95,
+			"permission": "admin"
+		},
+		{
+			"id": "AvgIncidentsMenu",
+			"label": "Data breach register",
+			"icon": "AlertOutline",
+			"route": "AvgIncidents",
+			"section": "settings",
+			"order": 96,
+			"permission": "admin"
+		},
+		{
 			"id": "SubstitutionAdminMenu",
 			"label": "Substitutions & reassignment",
 			"icon": "AccountSwitchOutline",
@@ -5068,6 +5086,58 @@
 						}
 					]
 				}
+			}
+		},
+		{
+			"id": "SupplierUsers",
+			"route": "/settings/supplier-users",
+			"type": "index",
+			"title": "Supplier portal accounts",
+			"permission": "admin",
+			"_note": "The accounts suppliers hold on the supplier portal. The schema shipped with leverancier-zaakportaal and the page never did, so for three months an instance created the storage, filled it, and offered nobody a way to look at it. That is a privacy problem before it is a usability one: a supplier user is a named person with an email address and an eHerkenning level, and a data subject asking what is held about them could not be answered from this app at all. THE ACTIVATION TOKEN IS NOT A COLUMN, deliberately. It is a one-time credential, it is on the record because the activation flow needs it, and a list is exactly the wrong place for it: an admin screenshotting this page would be handing out account access. The sidebar shows the whole record for anybody who genuinely needs the field, which is one deliberate click rather than a wall of tokens. Admin-only for the same reason the Tenants page is: these are accounts, and the answer to `who may read them` is the same answer as `who may create them`.",
+			"config": {
+				"register": "dossiq",
+				"schema": "supplierUser",
+				"columns": [
+					"email",
+					"supplierRef",
+					"role",
+					"status",
+					"eherkenningLevel",
+					"lastLoginAt"
+				],
+				"showViewAction": true,
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "AvgIncidents",
+			"route": "/settings/avg-incidents",
+			"type": "index",
+			"title": "Data breach register",
+			"permission": "admin",
+			"_note": "The datalek register, AVG art. 33. The schema shipped with sociaal-domein-zaaktypes and nothing ever showed it, so an incident could be recorded by an import and read by nobody, and the 72-hour notification clock the schema exists to evidence had no surface at all. The columns are the three facts a supervisor asks for in that hour: when it happened, whether the AP has to be told, and whether it has been. `cause` leads because a register nobody can scan is a register nobody uses. Admin-only: a breach record names how personal data escaped, which is itself a disclosure.",
+			"config": {
+				"register": "dossiq",
+				"schema": "avgIncident",
+				"columns": [
+					"incidentDate",
+					"cause",
+					"reportAp",
+					"reportDate",
+					"reportReference"
+				],
+				"showViewAction": true,
+				"defaultSort": "-incidentDate",
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
 			}
 		},
 		{
