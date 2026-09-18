@@ -91,6 +91,12 @@ class TenantSaasService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param TenantAuditTrailService $audit Tenant-stamped audit-trail emitter.
 	 * @param IUserSession $userSession Current user session (audit actor).
+	 * @param TenantBillingService|null $billing Usage events not yet invoiced.
+	 *                                          LAST and nullable so every
+	 *                                          existing construction keeps
+	 *                                          working; null means the count is
+	 *                                          not taken and a termination
+	 *                                          behaves exactly as before.
 	 */
 	public function __construct(
 		private IAppManager $appManager,
@@ -98,6 +104,7 @@ class TenantSaasService {
 		private LoggerInterface $logger,
 		private TenantAuditTrailService $audit,
 		private IUserSession $userSession,
+		private ?TenantBillingService $billing = null,
 	) {
 	}//end __construct()
 
@@ -130,6 +137,57 @@ class TenantSaasService {
 			]
 		);
 	}//end auditMutation()
+
+	/**
+	 * What to add to the audit line when a tenant is terminated owing money.
+	 *
+	 * 🔴 IT GOES IN THE AUDIT TRAIL, NOT ONLY IN THE LOG. Termination is
+	 * irreversible and it is the moment after which nobody can invoice the
+	 * month that just ran: the organisation simply does not bill it. A warning
+	 * in a log file is a line nobody reads at the one moment it matters, and
+	 * the audit trail is the record that is actually consulted afterwards when
+	 * somebody asks where the money went.
+	 *
+	 * This check used to live in `TenantLifecycleControlService::terminate()`,
+	 * which nothing ever called, so in practice it had never run. It does not
+	 * REFUSE the termination: an operator winding up a tenant that has stopped
+	 * paying needs to be able to finish, and blocking them on an export would
+	 * be a worse failure than recording the number.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return string The note, or an empty string when there is nothing to say.
+	 *
+	 * @spec openspec/specs/tenant-lifecycle/spec.md#requirement-tenant-termination-and-data-archival-req-008-b
+	 */
+	private function unsettledBillingNote(string $tenantId): string {
+		if ($this->billing === null) {
+			return '';
+		}
+
+		$unsettled = 0;
+		foreach (
+			$this->billing->fetchEventsForMonth(
+				tenantId: $tenantId,
+				month: (new DateTimeImmutable('now'))->format('Y-m'),
+			) as $event
+		) {
+			if (($event['invoiceRef'] ?? null) === null) {
+				$unsettled++;
+			}
+		}
+
+		if ($unsettled === 0) {
+			return '';
+		}
+
+		$this->logger->warning(
+			'Dossiq: terminating a tenant with unsettled billing events — the Shillinq export has to run first',
+			['tenantId' => $tenantId, 'unsettledEvents' => $unsettled]
+		);
+
+		return ' (unsettled billing events: ' . $unsettled . ')';
+	}//end unsettledBillingNote()
 
 	/**
 	 * Create a new tenant in `onboarding` status.
@@ -276,15 +334,21 @@ class TenantSaasService {
 			$row['activatedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
 		}
 
+		$resource = 'tenant:' . $tenantId . ' ' . $current . '->' . $newStatus;
+
 		if ($newStatus === 'terminated' && empty($row['terminatedAt']) === true) {
 			$row['terminatedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
+		}
+
+		if ($newStatus === 'terminated') {
+			$resource .= $this->unsettledBillingNote(tenantId: $tenantId);
 		}
 
 		$saved = $this->saveTenant(tenant: $row, uuid: $tenantId);
 		$this->auditMutation(
 			action: 'tenant.status_changed',
 			tenantId: $tenantId,
-			resource: 'tenant:' . $tenantId . ' ' . $current . '->' . $newStatus
+			resource: $resource
 		);
 		return $saved;
 	}//end updateStatus()
