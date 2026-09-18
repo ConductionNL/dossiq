@@ -1573,6 +1573,13 @@
 						}
 					},
 					{
+						"label": "Archived",
+						"_note": "archived-cases-leave-the-lenses REQ-CM-42, D-3. The ONE lens that asks for archived cases, and a chip rather than a menu entry (ADR-097). `_archived` is openregister's own lens over the archive marker, resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree: absent or false is the working set, `true` is the archive alone and `any` is both. \ud83d\udd34 NO OTHER LENS ON THIS PAGE CARRIES AN ARCHIVE FILTER, AND THAT IS NOT AN OVERSIGHT. The platform EXCLUDES archived objects by default from the object list, the aggregation endpoint and every search provider, so a working lens that spelled the exclusion out would be a second copy of a rule that already holds, and the day the two spellings drift the page and the tile beside it disagree. It deliberately carries no `statusHiddenInLists` either, for the reason Closed does not: an archived case is in a terminal status and mostly a hidden one, so filtering here would empty the one list that is supposed to hold them.",
+						"filter": {
+							"_archived": true
+						}
+					},
+					{
 						"label": "Closed with no result",
 						"_note": "case-search-declares-its-fields REQ-CSD-04. The register's own example for the missing-value facet: \"twelve cases have no result type\" is a data quality report nobody has to write. `result_isnull=true` is openregister's declared null grammar (MagicSearchHandler::COMPARISON_OPERATORS), answered server-side, so this is one query and not a page of twenty-five filtered after the fact. A LENS AND NOT A FACET CHIP: a terms facet now carries facet.missing.results, and normalizeFacets() in nextcloud-vue rebuilds the facet from `buckets` alone and drops it, so the count never reaches a consumer (ConductionNL/nextcloud-vue#1176). Reading the raw facet payload beside the normalised one, per app, is the drift the shared normaliser exists to remove. This lens needs no facet payload at all. Deliberately NOT folded into Closed: a closed case with its result recorded is finished work, and burying the ones without it is what lets a year of them pile up unnoticed.",
 						"filter": {
@@ -2504,6 +2511,13 @@
 						"_note": "case-number-and-favourites, row 2.19. The per-reader star, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/favourite (favourites-and-recent, openregister#3766). It sits directly under the identity tiles and above the unread strip because it is part of what identifies this case TO YOU, where every strip below it is about the case rather than about you. Starring writes NOTHING to the case: the star lives in OpenRegister's own table, so no version is cut, no audit entry is written and no colleague can see it. The widget renders from `@self.favourite`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT a header action because the gesture is two verbs on one path: CnActionButtons' `toggle` type writes with one `method`, and a `handler` action is handed action.args verbatim with no token resolved, so it would run with no case to act on."
 					},
 					{
+						"id": "case-archived",
+						"type": "case-archived",
+						"title": "Archived",
+						"icon": "ArchiveOutline",
+						"_note": "archived-cases-leave-the-lenses REQ-CM-43. The sentence that says this case is in the archive, who filed it, on what day and with what reason. It is the FIRST strip, above the star and the unread badge, because it changes how everything under it should be read: the page is a record to consult, not work to do. It reads `@self.archived`, the same marker the Cases page, the queue, the tiles and the search exclude on, so the strip and every list agree about which cases are archived; reading `archiveStatus` here would make it disagree with all of them on a case imported over ZGW. Restore is NOT a button on this strip and that is deliberate: it is one entry in the Lifecycle menu beside every other act, because an act offered in two places is gated in two places and the second one is the one nobody remembers. Renders nothing at all on a case that is not archived, which is almost every case."
+					},
+					{
 						"id": "case-follow",
 						"type": "case-follow",
 						"title": "Follow",
@@ -2570,10 +2584,19 @@
 						"showTitle": false
 					},
 					{
+						"id": "archived-strip",
+						"widgetId": "case-archived",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "favourite-strip",
 						"widgetId": "case-favourite",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 6,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2582,7 +2605,7 @@
 						"id": "follow-strip",
 						"widgetId": "case-follow",
 						"gridX": 6,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 6,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2591,7 +2614,7 @@
 						"id": "unread-strip",
 						"widgetId": "case-unread",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 4,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2600,7 +2623,7 @@
 						"id": "status-declaration-strip",
 						"widgetId": "case-status-declaration",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2609,7 +2632,7 @@
 						"id": "attention-strip",
 						"widgetId": "case-attention",
 						"gridX": 0,
-						"gridY": 5,
+						"gridY": 6,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2618,7 +2641,7 @@
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2627,7 +2650,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2636,7 +2659,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 10,
+						"gridY": 11,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2644,7 +2667,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 15,
+						"gridY": 16,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2653,7 +2676,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 15,
+						"gridY": 16,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
@@ -2725,6 +2748,7 @@
 					]
 				},
 				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
+				"_archivedNote": "archived-cases-leave-the-lenses REQ-CM-43, D-4. Six header actions that WRITE to the case are gated on `@self.archived`, the platform's own marker, read straight off the case object the page already holds: the LOCAL form of `visibleWhen` dot-paths into that object, so the gate costs no round trip. `eq null` is how absence is spelled, and it is exact rather than loose: an absent marker is null and a present one is an object, and String(object) is never \"null\". THE FOUR THAT ARE NOT GATED ARE DELIBERATE. Claim, Release and Hand to another team already carry `isFinalStatus neq true`, and a case can only be archived once it has ended, so they are already gone on an archived case; `visibleWhen` holds ONE condition and no AND, so adding the archive to them would mean dropping the condition doing the work. Copy case stays, because a copy is a NEW case and writes nothing to this one. The Lifecycle menu stays, because Restore lives inside it and gating it would hide the one act that undoes the archive. Start keeps its own `hasStartableFlows` gate for the same one-condition reason, and a flow that writes to an archived case is refused by OpenRegister with a sentence naming the archive. \ud83d\udd34 THE GENERIC EDIT BUTTON IS STILL OFFERED, AND DOSSIQ CANNOT TAKE IT AWAY PER RECORD. `config.showEditAction` is a page-level boolean in the manifest schema and CnDetailPage has no predicate form of it, so pressing Edit opens the form, saving is refused by the platform, and the refusal names the archive, the archiving user and the date. That is the reason reaching the reader rather than a silent failure, but it arrives after the click where the other six are simply not there. It belongs in nextcloud-vue, where one detail page reading `@self.archived` answers for every app in the fleet.",
 				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. NEITHER IS GATED ON THE ASSIGNEE, though the requirement is worded that way. A local `visibleWhen` compares a dot-path against a LITERAL with eq or neq: it has no empty operator, it does not resolve `@me` in `value`, and neither its endpoint nor its source mode can name this case (the endpoint URL is fetched verbatim, and OpenRegister's object list ignores an `id` filter). So the gate is the one thing the record says for certain, which is that a closed case is not picked up, and the SERVER refuses a claim on a case that already has a handler, or a release by anyone who is not that handler, with a 409 and a sentence. That is this page's own convention, the one `case-resume` follows: a gesture the case does not allow is refused in words rather than silently accepted. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
 				"_versionMoveNote": "case-version-move (case-type-version-chain): move this case to another version of its OWN case type, which nothing could do. A case filed the day before a correction was published had to be closed and refiled under a new number. It is a modal and not a confirm-gated api-call because the PREVIEW is the act's substance: the person moving the case is shown the status it lands in, the statuses and fields the other version adds and drops, and which of the dropped fields this case has already answered. Every one of those, and the refusal when the other version has no status by the name this case is sitting in, comes from the server, so the dialog cannot disagree with the write. Moving a case to a DIFFERENT case type is a rebind and is not this act: `case-type-rebind` owns that and declares this change as its dependency. Hidden on a closed case, like the other acts that rewrite what governs it.",
 				"headerActions": [
@@ -2751,6 +2775,11 @@
 						"successMessage": "Party added to the case.",
 						"props": {
 							"case": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
 						}
 					},
 					{
@@ -2774,6 +2803,11 @@
 						"successMessage": "Object linked to this case.",
 						"props": {
 							"case": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
 						}
 					},
 					{
@@ -2802,6 +2836,11 @@
 							"kccEmployeeId": "@me",
 							"identificationMethod": "non_geidentificeerd",
 							"nature": "informatieverzoek"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
 						}
 					},
 					{
@@ -2814,7 +2853,12 @@
 							"caseId": "@objectId",
 							"open": true
 						},
-						"successMessage": "Document added to the case."
+						"successMessage": "Document added to the case.",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
+						}
 					},
 					{
 						"id": "case-lifecycle-menu",
@@ -2863,7 +2907,12 @@
 							"how": "Confirmed outside the app, recorded by the handler"
 						},
 						"successMessage": "Receipt confirmation recorded on this case.",
-						"errorMessage": "The confirmation could not be recorded."
+						"errorMessage": "The confirmation could not be recorded.",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
+						}
 					},
 					{
 						"id": "case-hand-over",
@@ -2913,7 +2962,12 @@
 						"type": "open-modal",
 						"label": "Plan follow-up",
 						"icon": "CalendarClock",
-						"target": "CasePlanFollowUpDialog"
+						"target": "CasePlanFollowUpDialog",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
+						}
 					}
 				]
 			},

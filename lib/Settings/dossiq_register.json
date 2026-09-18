@@ -1577,6 +1577,10 @@
                         },
                         "provider": "OCA\\Dossiq\\Lifecycle\\CaseActionProvider"
                     },
+                    "_archiveNote": "archived-cases-leave-the-lenses D-1. This one key is what lets a case be archived at all: OpenRegister's ArchiveHandler refuses archive, restore, freeze and unfreeze on a schema that does not declare it, and Schema::isArchivingEnabled() is the single place that reads it. The marker it writes is @self.archived, and THAT is the state: it is what the object list, the aggregation endpoint and every search provider exclude by default, which is why no working lens on any dossiq page carries a filter of its own for this. case.archiveStatus keeps its ZGW meaning beside it and is written by the same act, never read as the state (ADR-022).",
+                    "x-openregister-archive": {
+                        "enabled": true
+                    },
                     "objectNameField": "title",
                     "objectDescriptionField": "description",
                     "tmloDefaults": {

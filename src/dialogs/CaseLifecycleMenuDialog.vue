@@ -230,6 +230,8 @@ export default {
 					return t('dossiq', 'Abort')
 				case 'archive':
 					return t('dossiq', 'Archive')
+				case 'unarchive':
+					return t('dossiq', 'Restore from the archive')
 				case 'hold':
 					return t('dossiq', 'Hold')
 				case 'release-hold':
@@ -264,6 +266,11 @@ export default {
 					return t(
 						'dossiq',
 						'The case moves to the retention rule its result type carries.',
+					)
+				case 'unarchive':
+					return t(
+						'dossiq',
+						'The case comes back into the working lists and can be edited again.',
 					)
 				case 'hold':
 					return t(

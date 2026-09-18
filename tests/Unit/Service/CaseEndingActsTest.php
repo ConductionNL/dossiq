@@ -22,6 +22,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Lifecycle\CaseArchiveState;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\CaseIncompleteness;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
@@ -88,11 +89,35 @@ class CaseEndingActsTest extends TestCase {
 	private CaseEndingActs $acts;
 
 	/**
+	 * The platform's archive marker, doubled.
+	 *
+	 * @var (CaseArchiveState&MockObject)|null
+	 */
+	private ?CaseArchiveState $archive = null;
+
+	/**
+	 * Every marker write the acts asked the platform for.
+	 *
+	 * @var array<int, array<string, string>>
+	 */
+	private array $marked = [];
+
+	/**
+	 * Every marker the acts asked the platform to clear.
+	 *
+	 * @var array<int, array<string, string>>
+	 */
+	private array $cleared = [];
+
+	/**
 	 * A case in phase two of a five-phase process.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
+		$this->archive = null;
+		$this->marked = [];
+		$this->cleared = [];
 		$this->case = [
 			'id' => 'case-1',
 			'caseType' => 'ct-1',
@@ -136,6 +161,7 @@ class CaseEndingActsTest extends TestCase {
 			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			archiveState: $this->archiveState(),
 		);
 	}//end setUp()
 
@@ -154,6 +180,40 @@ class CaseEndingActsTest extends TestCase {
 
 		return $session;
 	}//end session()
+
+	/**
+	 * The archive state double, recording every marker write.
+	 *
+	 * Built once per test and reused by every construction site, so an
+	 * assertion about what the platform was asked to do reads the same
+	 * recorder the act wrote to.
+	 *
+	 * @return CaseArchiveState&MockObject The double.
+	 */
+	private function archiveState(): CaseArchiveState {
+		if ($this->archive !== null) {
+			return $this->archive;
+		}
+
+		$this->archive = $this->createMock(originalClassName: CaseArchiveState::class);
+		$this->archive->method('mark')->willReturnCallback(
+			function (string $caseId, string $reason): array {
+				$this->marked[] = ['caseId' => $caseId, 'reason' => $reason];
+				return ['uuid' => $caseId, 'archived' => ['by' => 'ahmed', 'at' => '2026-09-16T10:00:00+00:00', 'reason' => $reason]];
+			}
+		);
+		$this->archive->method('clear')->willReturnCallback(
+			function (string $caseId, string $reason): array {
+				$this->cleared[] = ['caseId' => $caseId, 'reason' => $reason];
+				return ['uuid' => $caseId, 'archived' => null];
+			}
+		);
+		$this->archive->method('isArchived')->willReturnCallback(
+			fn (): bool => ($this->marked !== [] && count($this->cleared) < count($this->marked))
+		);
+
+		return $this->archive;
+	}//end archiveState()
 
 	/**
 	 * A real incompleteness service over the same store.
@@ -290,6 +350,7 @@ class CaseEndingActsTest extends TestCase {
 			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			archiveState: $this->archiveState(),
 		);
 
 		$this->store->expects($this->never())->method('writeStatusRecord');
@@ -328,6 +389,7 @@ class CaseEndingActsTest extends TestCase {
 			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			archiveState: $this->archiveState(),
 		);
 
 		try {
@@ -372,6 +434,99 @@ class CaseEndingActsTest extends TestCase {
 	}//end testArchivingWritesTheRetentionRule()
 
 	/**
+	 * Archiving writes the platform's marker, which is what the lists read.
+	 *
+	 * `archiveStatus` is the ZGW fact beside it. A test that asserted only the
+	 * field would pass on a case that never left a single lens, which is the
+	 * whole of what this change is for.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	public function testArchivingMarksTheCaseOnThePlatform(): void {
+		$this->acts->finish(caseId: 'case-1', reason: 'Verleend', resultTypeId: 'rt-granted');
+
+		$answer = $this->acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
+
+		$this->assertCount(expectedCount: 1, haystack: $this->marked);
+		$this->assertSame(expected: 'case-1', actual: $this->marked[0]['caseId']);
+		$this->assertSame(expected: 'Naar het e-depot', actual: $this->marked[0]['reason']);
+		$this->assertSame(expected: 'ahmed', actual: $answer['archived']['by']);
+	}//end testArchivingMarksTheCaseOnThePlatform()
+
+	/**
+	 * Restoring clears the marker and moves the ZGW field back, in that order.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	public function testRestoringClearsTheMarkerAndTheZgwField(): void {
+		$this->acts->finish(caseId: 'case-1', reason: 'Verleend', resultTypeId: 'rt-granted');
+		$this->acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
+
+		$answer = $this->acts->unarchive(caseId: 'case-1', reason: 'Te vroeg gearchiveerd');
+
+		$this->assertCount(expectedCount: 1, haystack: $this->cleared);
+		$this->assertSame(expected: 'Te vroeg gearchiveerd', actual: $this->cleared[0]['reason']);
+		$this->assertSame(expected: 'nog_te_archiveren', actual: $answer['archiveStatus']);
+		$this->assertSame(expected: 'nog_te_archiveren', actual: $this->case['archiveStatus']);
+		$this->assertNull(actual: $answer['archived']);
+	}//end testRestoringClearsTheMarkerAndTheZgwField()
+
+	/**
+	 * Restoring keeps the appraisal the archiving act derived.
+	 *
+	 * The nomination and the action date came from the result type and they
+	 * are still true. Clearing them would make a restore read as an appraisal
+	 * somebody had undone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	public function testRestoringKeepsTheNomination(): void {
+		$this->acts->finish(caseId: 'case-1', reason: 'Verleend', resultTypeId: 'rt-granted');
+		$this->acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
+
+		$this->acts->unarchive(caseId: 'case-1', reason: 'Te vroeg gearchiveerd');
+
+		$this->assertSame(expected: 'vernietigen', actual: $this->case['archiveNomination']);
+		$this->assertSame(expected: '2031-09-15', actual: $this->case['archiveActionDate']);
+	}//end testRestoringKeepsTheNomination()
+
+	/**
+	 * A case that is not archived refuses the restore rather than no-opping.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	public function testRestoringACaseThatIsNotArchivedIsRefused(): void {
+		$this->expectException(exception: RefusedException::class);
+		$this->expectExceptionMessage(message: 'case_not_archived');
+
+		$this->acts->unarchive(caseId: 'case-1', reason: 'Terughalen');
+	}//end testRestoringACaseThatIsNotArchivedIsRefused()
+
+	/**
+	 * A restore with no reason is refused, exactly as the archiving act is.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	public function testRestoringWithoutAReasonIsRefused(): void {
+		$this->acts->finish(caseId: 'case-1', reason: 'Verleend', resultTypeId: 'rt-granted');
+		$this->acts->archive(caseId: 'case-1', reason: 'Naar het e-depot');
+
+		$this->expectException(exception: RefusedException::class);
+
+		$this->acts->unarchive(caseId: 'case-1', reason: '   ');
+	}//end testRestoringWithoutAReasonIsRefused()
+
+	/**
 	 * A result type that states no period archives with the date unknown.
 	 *
 	 * An archivist can see which cases carry no date, which is a better answer
@@ -394,6 +549,7 @@ class CaseEndingActsTest extends TestCase {
 			incompleteness: $this->incompleteness(),
 			journal: new CaseJournal(userSession: $this->session(uid: 'ahmed')),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			archiveState: $this->archiveState(),
 		);
 
 		$acts->finish(caseId: 'case-1', reason: 'Verleend', resultTypeId: 'rt-granted');
