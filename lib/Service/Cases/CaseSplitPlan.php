@@ -70,14 +70,15 @@ class CaseSplitPlan {
 	 * @param string $newId The case being split off.
 	 * @param array<string, array<int, array<string, mixed>>> $chosen The items the handler picked, by part.
 	 *
-	 * @return array{moves: array<int, array<string, mixed>>, references: array<int, array<string, mixed>>, relation: array<string, string>}
-	 *         What to repoint, what to record on the original, and the relation to write.
+	 * @return array{moves: array<int, array<string, mixed>>, references: array<int, array<string, mixed>>, refused: array<int, array<string, mixed>>, relation: array<string, string>}
+	 *         What to repoint, what to record on the original, what was refused as not this case's, and the relation to write.
 	 *
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
 	 */
 	public function forSelection(string $sourceId, string $newId, array $chosen): array {
 		$moves = [];
 		$references = [];
+		$refused = [];
 
 		foreach (CaseSplitPolicy::PARTS as $part) {
 			foreach (($chosen[$part] ?? []) as $item) {
@@ -87,6 +88,21 @@ class CaseSplitPlan {
 
 				$id = trim((string)($item['id'] ?? ''));
 				if ($id === '') {
+					continue;
+				}
+
+				// 🔴 A ROW THAT IS NOT ON THIS CASE IS NOT THIS SPLIT'S TO
+				// MOVE. The selection arrives from a client, and a plan that
+				// repointed any id handed to it would let a handler move a
+				// document off somebody else's case by editing one field in
+				// the request — a write to a record they may never have been
+				// allowed to read. A row whose own `case` names a different
+				// case is refused by name rather than skipped in silence: a
+				// selection that half happened with no word about the rest is
+				// the state nobody can reconstruct afterwards.
+				$owner = trim((string)($item['case'] ?? ''));
+				if ($owner !== '' && $owner !== $sourceId) {
+					$refused[] = ['part' => $part, 'id' => $id, 'case' => $owner];
 					continue;
 				}
 
@@ -110,6 +126,7 @@ class CaseSplitPlan {
 		return [
 			'moves' => $moves,
 			'references' => $references,
+			'refused' => $refused,
 			'relation' => [
 				'from' => $sourceId,
 				'to' => $newId,

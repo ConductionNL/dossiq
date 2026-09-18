@@ -140,6 +140,45 @@ class CaseSplitServiceTest extends TestCase {
 	}//end testAnItemWithNoIdIsSkipped()
 
 	/**
+	 * A row that belongs to another case is refused, not moved.
+	 *
+	 * The selection arrives from a client. A plan that repointed any id handed
+	 * to it would let a handler move a document off somebody else's case by
+	 * editing one field in the request, which is a write to a record they may
+	 * never have been allowed to read.
+	 *
+	 * @return void
+	 */
+	public function testARowBelongingToAnotherCaseIsRefusedByName(): void {
+		$plan = $this->plan->forSelection('case-1', 'case-2', [
+			'documents' => [
+				['id' => 'doc-1', 'case' => 'case-1'],
+				['id' => 'doc-stolen', 'case' => 'case-77'],
+			],
+		]);
+
+		$this->assertSame(['doc-1'], array_column($plan['moves'], 'id'));
+		// Named rather than skipped in silence: a selection that half happened
+		// with no word about the rest is the state nobody can reconstruct.
+		$this->assertSame(['doc-stolen'], array_column($plan['refused'], 'id'));
+		$this->assertSame('case-77', $plan['refused'][0]['case']);
+	}//end testARowBelongingToAnotherCaseIsRefusedByName()
+
+	/**
+	 * A row that names no case at all is still moved: the caller read it off
+	 * this case's own collection, and refusing it would make the ordinary
+	 * split impossible for every payload that does not echo the parent.
+	 *
+	 * @return void
+	 */
+	public function testARowThatNamesNoCaseIsStillMoved(): void {
+		$plan = $this->plan->forSelection('case-1', 'case-2', ['tasks' => [['id' => 'task-7']]]);
+
+		$this->assertSame(['task-7'], array_column($plan['moves'], 'id'));
+		$this->assertSame([], $plan['refused']);
+	}//end testARowThatNamesNoCaseIsStillMoved()
+
+	/**
 	 * The original's history gets one line, not twenty.
 	 *
 	 * @return void

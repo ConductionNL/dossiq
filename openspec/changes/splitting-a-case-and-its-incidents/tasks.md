@@ -10,6 +10,12 @@ Tier: V1. Kind: code. Size M. Rows 2.35 and 2.45.
   arrives.
   - `tests/Unit/Settings/IncidentAndSplitShippedTest.php`
 - [x] 1.2 `lib/Service/Cases/CaseSplitPlan.php`: the plan a split performs.
+  A row whose own `case` names a DIFFERENT case is refused by name and not
+  moved: the selection arrives from a client, and a plan that repointed any
+  id handed to it would let a handler move a document off somebody else's
+  case by editing one field in the request. Found by the parallel lane on
+  `wip/splitting-incidents-duplicate` and folded in here rather than lost
+  with that branch.
   Each chosen item is REPOINTED at the new case, not copied onto it (D-1),
   and each move leaves a reference naming where it went, because a move with
   no trace is indistinguishable from a deletion to whoever opens the file a

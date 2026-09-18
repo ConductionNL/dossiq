@@ -116,6 +116,29 @@ test.describe('a case holds several dated incidents', () => {
 	})
 })
 
+test.describe('a split moves rather than duplicates', () => {
+	test('the document LEFT the first case', async () => {
+		// The assertion the whole row turns on. A split that copied would pass
+		// "does the new case have it" and leave both cases claiming one
+		// document, which is the state this change exists to end.
+		const other = await seedCase(api, token, { title: `${RUN_PREFIX} Tweede helft` })
+		const link = await createObject(api, token, 'caseDocument', {
+			case: caseId,
+			title: `${RUN_PREFIX} Verhuisd stuk`,
+		})
+
+		await api.put(`/index.php/apps/openregister/api/objects/dossiq/caseDocument/${link}`, {
+			headers: { requesttoken: token },
+			data: { case: other },
+		})
+
+		const moved = await showObject(api, token, 'caseDocument', link)
+
+		expect(moved.case).toBe(other)
+		expect(moved.case).not.toBe(caseId)
+	})
+})
+
 test.describe('a case type bounds what a split may divide', () => {
 	test('a type that forbids dividing documents refuses that split, naming the rule', async () => {
 		// The bound is declared on the case type and read server-side; the
