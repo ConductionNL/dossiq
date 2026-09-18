@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Pipelinq\ContactMomentBridge;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -71,6 +72,7 @@ class ContactMomentService {
 		private readonly LoggerInterface $logger,
 		private readonly CaseDateNormaliser $dates,
 		private readonly CaseTimeline $timeline,
+		private readonly ContactMomentBridge $pipelinqBridge,
 	) {
 	}//end __construct()
 
@@ -140,6 +142,20 @@ class ContactMomentService {
 
 		$record = $this->normalize(result: $created);
 		$this->recordOnTimeline(contactmoment: $record, data: $data);
+
+		// The same moment, appended to the fleet's own record. Best effort and
+		// AFTER the dossiq write on purpose: a handler logging a call they
+		// have just taken must not lose it because another app said no. The
+		// refusal travels back on the record so the surface can show it.
+		$bridged = $this->pipelinqBridge->append(
+			caseId: (string)($data['case'] ?? ''),
+			moment: $record,
+		);
+
+		if ($bridged['appended'] === false && $bridged['reason'] !== '') {
+			$record['pipelinqRefusal'] = $bridged['reason'];
+			$record['pipelinqIndicators'] = $bridged['indicators'];
+		}
 
 		return $record;
 	}//end createContactMoment()
