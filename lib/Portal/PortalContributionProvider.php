@@ -122,6 +122,18 @@ class PortalContributionProvider {
 		'startDate',
 		'endDate',
 		'deadline',
+		// WHEN THE CLOCK STARTS, not only when it ends. A case filed on a
+		// Sunday evening does not start counting on Sunday evening, and until
+		// these three were on this list nothing anywhere told the person who
+		// filed it: they counted eight weeks from the moment they pressed send
+		// and the municipality counted eight weeks from Monday
+		// (intake-says-when-the-term-starts, row Q8.21). The portal projects a
+		// case down to this list and the ontvangstbevestiging quotes it back,
+		// so adding them here is what puts the answer on BOTH surfaces from
+		// one definition.
+		'receivedAt',
+		'termStartsAt',
+		'receivedOutsideWorkingHours',
 	];
 
 	/**
