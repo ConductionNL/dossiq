@@ -2,20 +2,24 @@
 
 ### Requirement: An admin inspects a case from its page (REQ-CM-36)
 
-`#CaseDetail` SHALL offer Inspect to administrators only, with Raw data
-opening `CnObjectMetadataModal` on the case and Flow runs opening
-OpenRegister's runs page filtered to the case.
+`#CaseDetail` SHALL offer Inspect raw data and Inspect flow runs to
+administrators only. Inspect raw data SHALL show the case exactly as Open
+Register stored it, and Inspect flow runs SHALL open Open Register's runs page
+filtered to the case.
 
-#### Scenario: Raw data opens the metadata modal
+Both are affordances and not controls: Open Register answers the read either
+way, and it is the one that refuses.
+
+#### Scenario: Raw data shows the stored case
 @e2e tests/e2e/admin-inspect.spec.ts
 
 - **GIVEN** you are an admin on a case page
-- **WHEN** you press Inspect, then Raw data
-- **THEN** the metadata modal SHALL show the case object's raw JSON
+- **WHEN** you press Inspect raw data
+- **THEN** a dialog SHALL show the case object as Open Register stored it
 
 #### Scenario: Handlers do not see Inspect
 @e2e tests/e2e/admin-inspect.spec.ts
 
 - **GIVEN** you are a handler on a case page
 - **WHEN** you open the header actions
-- **THEN** Inspect SHALL NOT be offered
+- **THEN** neither Inspect entry SHALL be offered

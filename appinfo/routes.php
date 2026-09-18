@@ -527,6 +527,10 @@ $extra = [
         // are NOT a route of their own: they ride on `caseActs#acts` above,
         // so "what may I do right now" is one endpoint feeding one menu.
     ['name' => 'caseTask#capabilities', 'url' => '/api/case-tasks/capabilities',         'verb' => 'GET'],
+    // admin-inspect-entry: the Inspect action's visibleWhen predicate. The
+    // manifest action vocabulary has no adminOnly, and only the endpoint mode
+    // of visibleWhen can ask about the READER rather than the record.
+    ['name' => 'inspect#availability', 'url' => '/api/inspect/availability', 'verb' => 'GET'],
     ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
     ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
     ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
