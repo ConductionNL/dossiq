@@ -1715,7 +1715,9 @@
                         "shares",
                         "decidesk-decisions",
                         "talk",
-                        "deck"
+                        "deck",
+                        "collectives",
+                        "xwiki"
                     ],
                     "x-openregister-processing": {
                         "logReads": true,

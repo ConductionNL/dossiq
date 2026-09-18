@@ -7,6 +7,10 @@ You open a case and read how your municipality handles this kind of case.
 Collectives page, and `#CaseDetail` SHALL show that page on every case of
 that type, without anyone linking it per case.
 
+The reference SHALL be a page and never its text. dossiq SHALL store no
+article body, because a copy goes stale and, worse, is readable by somebody
+the collective's team excludes.
+
 #### Scenario: Every case of a type shows its instruction
 @e2e tests/e2e/knowledge-base-on-the-case.spec.ts
 
