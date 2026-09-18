@@ -5376,6 +5376,12 @@
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Fees and payments": "Leges en betalingen",
+        "Payment": "Betaling",
+        "Awaiting payment": "Wacht op betaling",
+        "Payment state": "Betaalstatus",
+        "Payment state checked at": "Betaalstatus gecontroleerd op",
+        "Payment required before handling": "Betaling vereist voor behandeling"
     }
 }

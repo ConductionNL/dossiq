@@ -1615,6 +1615,14 @@
 						}
 					},
 					{
+						"label": "Awaiting payment",
+						"filter": {
+							"isFinalStatus": false,
+							"paymentState": "outstanding"
+						},
+						"_note": "fees-and-payments-on-the-case REQ-FEE-02. The lens for the money, narrowing on the projection rather than post-filtering a page of twenty-five, so the count and the facets agree with the list. It deliberately does NOT include `stale`: a case whose state could not be read is not a case that owes money, and folding the two would put every case on the instance in this chip the hour shillinq is restarted."
+					},
+					{
 						"label": "Stuck",
 						"filter": {
 							"isFinalStatus": false,
@@ -1693,6 +1701,12 @@
 						"_note": "what-a-status-declares, task 4.2. The number is HELD on the case (currentStatusDwellDays), written by the transition engine as the status changes, which is what makes this column sortable at all: CnDataTable orders on the server, and the process mining page's own dwell figure is reconstructed per request from the statusRecord chain and exists in no column. A cell WIDGET rather than a formatter for the reason deadlineCountdown is one: a formatter returns a string and a string cannot carry the breached state. Breached is statusDwellBreached, its own flag with its own chip, and it is NOT the deadline: a case can be stuck for nine weeks inside a term that runs for six months, which is the case this column exists to find."
 					},
 					{
+						"key": "paymentState",
+						"label": "Payment",
+						"widget": "badge",
+						"_note": "fees-and-payments-on-the-case REQ-FEE-02: whether the leges were paid, on the list as well as on the case, so a teamleider can see which of four hundred aanvragen is waiting on money without opening any of them. It reads the PROJECTION, refreshed hourly by PaymentStateProjectionJob, and that is the whole reason the projection exists: a column cannot ask shillinq once per row. `stale` is a value a reader will see, and it means shillinq could not be asked rather than that the money is late; the gate that refuses acts reads shillinq live and never this column."
+					},
+					{
 						"key": "id",
 						"label": "Sub-cases",
 						"formatter": "subCaseCount",
@@ -1754,6 +1768,9 @@
 							"include": [
 								"statutoryTerm",
 								"legalBasis",
+								"paymentState",
+								"paymentStateCheckedAt",
+								"contract",
 								"paymentIndication",
 								"lastPaymentDate"
 							],
@@ -1773,6 +1790,22 @@
 						"title": "Hours booked",
 						"icon": "History",
 						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' So humaniq renders them. This widget is a PLACEMENT of humaniq's `humaniq-hours` leaf, not a query against another app's register. It used to be a stats-block that summed `humaniq`/`TimeEntry` straight out of this manifest, filtered on `domainObjectType` and `domainObjectRef`. On an install without humaniq that endpoint 404s and the tile renders `0`, which is exactly what a case with no hours booked renders: no error, no empty state, nothing a reader would notice. ADR-113 names that class. A leaf whose app is absent is never registered, so the surface goes missing rather than lying. The leaf identifies the host object the way humaniq stores it: `domainObjectType` is the `<app>:<schema>` literal and `domainObjectRef` is the object uuid. Nothing here declares either one. The host forwards `register`, `schema` and `objectId` to every leaf it mounts, and this page's config carries `dossiq` and `case`, so the literal comes out `dossiq:case`. `requiredApp: humaniq` went with the query. It was the honest form of the tile while the tile still read another app's register, and no other integration widget in this manifest declares one. The `log-hours` header action went with it. It wrote a TimeEntry through `open-form`, which the leaf's own Book hours dialog now does, seeded from the same object and beside the total those hours land in. Two booking paths on one page is one more than a reader needs, and the header one was the further from the figure it changes."
+					},
+					{
+						"id": "case-payment-requests",
+						"type": "integration",
+						"integrationId": "shillinq-payment-requests",
+						"title": "Fees and payments",
+						"icon": "CurrencyEur",
+						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
+					},
+					{
+						"id": "case-contract",
+						"type": "integration",
+						"integrationId": "shillinq-contracts",
+						"title": "Contract",
+						"icon": "FileSign",
+						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
 					},
 					{
 						"id": "case-flow-runs",
@@ -2679,6 +2712,24 @@
 						"gridY": 16,
 						"gridWidth": 8,
 						"gridHeight": 6,
+						"showTitle": true
+					},
+					{
+						"id": "money-payments",
+						"widgetId": "case-payment-requests",
+						"gridX": 0,
+						"gridY": 22,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "money-contract",
+						"widgetId": "case-contract",
+						"gridX": 6,
+						"gridY": 22,
+						"gridWidth": 6,
+						"gridHeight": 4,
 						"showTitle": true
 					}
 				],

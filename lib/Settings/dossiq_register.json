@@ -651,6 +651,12 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "paymentRequiredBeforeHandling": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a case of this type waits for its leges before it may be handled. A vergunningaanvraag does; a melding openbare ruimte does not, because a pothole nobody fixed is a worse outcome than a fee nobody collected. Absent means no, so nothing on an existing install starts waiting for money the day this ships. Where it is true and the payment state cannot be read, the act is refused rather than allowed (ADR-102).",
+                        "title": "Payment required before handling"
                     }
                 }
             },
@@ -3290,6 +3296,33 @@
                                 "type": "samenhang"
                             }
                         }
+                    },
+                    "paymentState": {
+                        "type": "string",
+                        "enum": [
+                            "notRequired",
+                            "outstanding",
+                            "paid",
+                            "waived",
+                            "stale"
+                        ],
+                        "description": "What shillinq reports about the money on this case, held as a projection so the list can be filtered on it. dossiq stores the word and nothing else: no amount received, no ledger line and no payment date, because those are shillinq's and a second copy of money is a second set of books. `stale` means shillinq could not be asked, which is not the same fact as unpaid and is never read as paid.",
+                        "title": "Payment state",
+                        "facetable": true,
+                        "readOnly": true
+                    },
+                    "paymentStateCheckedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the payment state was last read from shillinq. A state with no timestamp cannot be told apart from one that stopped updating in March, and the second one is what people make decisions on.",
+                        "title": "Payment state checked at",
+                        "readOnly": true
+                    },
+                    "contract": {
+                        "type": "string",
+                        "description": "The shillinq contract this case is handled under, as a reference. dossiq copies no term, no cost and no renewal date: a copied term goes stale and then alerts on the wrong date. The contract lists its own cases through shillinq's `linkedObjects`, and the alert before it lapses is shillinq's too.",
+                        "title": "Contract",
+                        "facetable": true
                     }
                 },
                 "searchable": true
