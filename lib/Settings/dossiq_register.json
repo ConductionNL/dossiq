@@ -1517,7 +1517,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.27.0",
+                "version": "1.28.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2349,6 +2349,17 @@
                                 "en": "related to"
                             },
                             "symmetric": true
+                        },
+                        {
+                            "key": "waitsOn",
+                            "label": {
+                                "nl": "wacht op",
+                                "en": "waits on"
+                            },
+                            "inverseLabel": {
+                                "nl": "blokkeert",
+                                "en": "blocks"
+                            }
                         }
                     ],
                     "mailObjectTemplate": {
@@ -3411,6 +3422,20 @@
                         "title": "Major responders",
                         "description": "The users pulled into the working channel when this case was declared major, resolved from the responders the case type names. Recorded so a gemeente can show afterwards who was in the room.",
                         "visible": false
+                    },
+                    "blockingCases": {
+                        "type": "array",
+                        "title": "Waits on",
+                        "description": "Cases this one waits on. A vergunning that cannot be decided until a bezwaar is, for instance: when the case it waits on has its term extended or paused, the handler of this case is offered the same move. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"blokkeert\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "waitsOn"
+                            }
+                        }
                     },
                     "associatedCases": {
                         "type": "array",

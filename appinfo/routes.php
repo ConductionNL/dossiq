@@ -487,6 +487,12 @@ $extra = [
         // request became part of, under the same public-group read.
     ['name' => 'publicCaseSurvivor#survivor', 'url' => '/api/public/case-tokens/{token}/survivor', 'verb' => 'GET', 'requirements' => ['token' => '[^/]+']],
 
+        // The two answers to a followed term move (dependent-term-follows-
+        // predecessor, row Q3.21). The days are on the task, not in the body,
+        // so neither endpoint takes one.
+    ['name' => 'caseTermFollow#accept',  'url' => '/api/case/{caseId}/term-follow/{taskId}/accept',  'verb' => 'POST'],
+    ['name' => 'caseTermFollow#decline', 'url' => '/api/case/{caseId}/term-follow/{taskId}/decline', 'verb' => 'POST'],
+
         // The Awb 4:3a acknowledgement of receipt (ontvangstbevestiging). One
         // read that answers "did we confirm receipt, when, to whom and by
         // which channel", and one write for the case an acknowledgement never
