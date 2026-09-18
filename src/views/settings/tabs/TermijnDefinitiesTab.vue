@@ -87,6 +87,11 @@
 						v{{ def.version || 1 }}
 					</span>
 					<span
+						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt"
+						data-testid="termijn-counting-mode-pill">
+						{{ countingModeLabel(def) }}
+					</span>
+					<span
 						v-if="rollsToWorkingDay(def)"
 						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt"
 						data-testid="termijn-roll-pill">
@@ -239,6 +244,24 @@ export default {
 		 */
 		rollsToWorkingDay(def) {
 			return def?.rollToWorkingDay === true
+		},
+
+		/**
+		 * What this term counts, in the words a caseworker uses.
+		 *
+		 * Shown on every definition rather than only on the working-day ones,
+		 * unlike the Awt pill beside it. Which days a term counts changes
+		 * every date it produces, and a reader who sees nothing cannot tell a
+		 * calendar-day term from one whose mode nobody has set.
+		 *
+		 * @param {object} def The definition.
+		 * @return {string} The label.
+		 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+		 */
+		countingModeLabel(def) {
+			return def?.countingMode === 'workingDays'
+				? t('dossiq', 'Working days')
+				: t('dossiq', 'Calendar days')
 		},
 
 		/**

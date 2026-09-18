@@ -16,7 +16,7 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:DefinedTerm",
         "title": "Termijn Definitie",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
@@ -51,6 +51,17 @@
             "title": "Standard Duration Weeks",
             "description": "Standard duration in weeks (alternative representation)",
             "minimum": 0
+          },
+          "countingMode": {
+            "type": "string",
+            "enum": [
+              "calendarDays",
+              "workingDays"
+            ],
+            "default": "calendarDays",
+            "title": "Counting mode",
+            "description": "Whether this term counts every day or only the days the organisation works. An Awb beslistermijn counts calendar days, which is why that is the default and why shipping this property moves no date anybody is already counting on. A service norm, an internal handling term and a KCC callback count working days, and until now they could not. The working days are the organisation calendar's, not a list dossiq keeps, and the armed timer carries the same mode so the badge and the engine count down to one date.",
+            "facetable": true
           },
           "rollToWorkingDay": {
             "type": "boolean",
