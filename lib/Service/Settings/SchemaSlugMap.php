@@ -273,6 +273,18 @@ class SchemaSlugMap {
 		// same reason `x-openregister-read-state` is: an absent block is not
 		// an inert default, it is a different answer.
 		'x-openregister-dedup',
+		// Which edge a grant travels down. OpenRegister resolves an inherited
+		// grant from `Schema::getConfiguration()` and from nowhere else, and
+		// an unknown configuration key is DROPPED on import in silence, so an
+		// instance that never received this block answers that a deelzaak is
+		// closed to somebody who holds the parent. That failure is invisible
+		// from both ends: dossiq declared the edge, OpenRegister reports no
+		// inheritance, and neither says the declaration never arrived. It is
+		// listed here for the same reason `x-openregister-dedup` is, with one
+		// difference worth stating: a dropped dedup block gives a wrong
+		// answer about duplicates, and a dropped hierarchy block gives a wrong
+		// answer about who may open a dossier.
+		'x-openregister-hierarchy',
 	];
 
 	/**
