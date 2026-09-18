@@ -661,6 +661,12 @@
                         "description": "What a split of a case of this type may divide. Which documents belong to which half is a judgement about the content and only the handler has it; what may be divided AT ALL is a rule that does not change per case, so it is declared here once and the handler is offered the allowed choices and no others. ABSENT MEANS ALL THREE: every case type predates this key, and reading silence as \"nothing may be divided\" would ship a split action that refuses every split on the day it arrives.",
                         "title": "Splittable parts"
                     },
+                    "paymentRequiredBeforeHandling": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a case of this type waits for its leges before it may be handled. A vergunningaanvraag does; a melding openbare ruimte does not, because a pothole nobody fixed is a worse outcome than a fee nobody collected. Absent means no, so nothing on an existing install starts waiting for money the day this ships. Where it is true and the payment state cannot be read, the act is refused rather than allowed (ADR-102).",
+                        "title": "Payment required before handling"
+                    },
                     "areaFallbackRoleType": {
                         "type": "string",
                         "description": "The roleType a case of this type routes to when its address falls in no administered boundary. Declared per case type because the right fallback differs: a melding goes to the central desk, a vergunning goes to the duty handler. Absent, an unresolvable area routes by the rule's own roleType and the case still says the fallback was used.",
@@ -3489,6 +3495,33 @@
                                 "type": "samenhang"
                             }
                         }
+                    },
+                    "paymentState": {
+                        "type": "string",
+                        "enum": [
+                            "notRequired",
+                            "outstanding",
+                            "paid",
+                            "waived",
+                            "stale"
+                        ],
+                        "description": "What shillinq reports about the money on this case, held as a projection so the list can be filtered on it. dossiq stores the word and nothing else: no amount received, no ledger line and no payment date, because those are shillinq's and a second copy of money is a second set of books. `stale` means shillinq could not be asked, which is not the same fact as unpaid and is never read as paid.",
+                        "title": "Payment state",
+                        "facetable": true,
+                        "readOnly": true
+                    },
+                    "paymentStateCheckedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the payment state was last read from shillinq. A state with no timestamp cannot be told apart from one that stopped updating in March, and the second one is what people make decisions on.",
+                        "title": "Payment state checked at",
+                        "readOnly": true
+                    },
+                    "contract": {
+                        "type": "string",
+                        "description": "The shillinq contract this case is handled under, as a reference. dossiq copies no term, no cost and no renewal date: a copied term goes stale and then alerts on the wrong date. The contract lists its own cases through shillinq's `linkedObjects`, and the alert before it lapses is shillinq's too.",
+                        "title": "Contract",
+                        "facetable": true
                     },
                     "receivedAt": {
                         "type": "string",

@@ -364,6 +364,12 @@ $extra = [
 
         // Dashboard KPI aggregation endpoint.
     ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
+        // Which declared widgets this reader is shown (widget-roles-declared).
+        // Read by the `visibleWhen` on each declared widget, which fetches it
+        // and takes `visible.<widgetId>` out of the answer. It is the LAYOUT
+        // half: the data is already withheld by DashboardWidgetScope and by the
+        // endpoints behind the other thirteen widgets.
+    ['name' => 'widgetVisibility#index', 'url' => '/api/dashboard/widget-visibility', 'verb' => 'GET'],
 
         // Intelligent work-queue: urgency-scored personal queue + coordinator workload.
     ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],

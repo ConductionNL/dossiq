@@ -33,6 +33,10 @@ use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Money\CasePaymentReader;
+use OCA\Dossiq\Service\Money\CasePaymentState;
+use OCA\Dossiq\Service\Money\UnpaidCaseGate;
+use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -159,6 +163,9 @@ class ExternallyHomedCaseTest extends TestCase {
 			resultWriter: $this->createMock(originalClassName: CaseResultWriter::class),
 			grants: $this->createMock(originalClassName: OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 
@@ -197,6 +204,9 @@ class ExternallyHomedCaseTest extends TestCase {
 			resultWriter: $resultWriter,
 			grants: $this->createMock(originalClassName: OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end provider()

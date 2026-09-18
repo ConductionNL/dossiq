@@ -42,11 +42,12 @@ class IncidentAndSplitShippedTest extends TestCase {
 	 * taken THREE times on the integration branch at once (#2923, #2937 and
 	 * #2936), each writing the identical line, which merges in silence and
 	 * makes every later import skip; the branches ahead of this one then take
-	 * 0.20.6 and 0.20.7 to carry what accumulated under it.
+	 * 0.20.6 to carry what accumulated under it, and that is the base this
+	 * change now sits on.
 	 *
 	 * @var string
 	 */
-	private const FLOOR = '0.20.7';
+	private const FLOOR = '0.20.6';
 
 	/**
 	 * The shipped register.
