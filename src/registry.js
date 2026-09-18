@@ -36,6 +36,10 @@ import CaseArchivedStrip from './components/case/CaseArchivedStrip.vue'
 import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
 // The star on the case page (case-number-and-favourites, row 2.19).
 // @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+// Who has held this case, and who is asking for it
+// (custody-and-handover-of-a-case, rows 2.37 and 2.38).
+// @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+import CaseCustodyPanel from './components/case/CaseCustodyPanel.vue'
 import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
 // Follow a case you do not own, and see who else does (case-followers,
 // row 13.18), over OpenRegister's own subscription (`object-watchers`).
@@ -468,6 +472,20 @@ const registry = {
 	// `type: "custom"` with a `widget-case-archival` slot, and drew an empty
 	// panel with no warning: the same failure `case-timeline-pane` below
 	// records having shipped twice.
+	// --- Who has held this case, and who is asking for it (CaseDetail). ---
+	// Keyed by TYPE, like every other tab child: a tab panel resolves through
+	// `resolveRegistryRenderer`, which reads `cnRegistry[widget.type]` and
+	// nothing else. A page `slots` map never reaches a widget inside a tab, and
+	// a widget that shipped as `type: "custom"` would draw an empty panel with
+	// no warning at all.
+	// @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
+	'case-custody-pane': {
+		// @custom-widget-ratchet exclude the panel joins TWO surfaces that no declarative widget spans: the chain of holdings, whose rows are only meaningful as a JOIN between one holding's end and the next one's start, and the takeover requests beside it, whose answer is a POST carrying a required reason. A data widget builds its fields from one schema's properties and would draw each holding as a row of values with no way to show the join. Deleted the day the manifest vocabulary has a chain widget over a dated record
+		kind: 'widget',
+		component: CaseCustodyPanel,
+		_note: 'CaseDetail Custody tab: every period this case was held, with both ends of each holding, and the takeover requests beside them with accept and refuse. Fails CLOSED on a refusal: a reader who may not open the case is told so, never shown an empty chain, because "this case never changed hands" and "you may not see this" look identical from an empty list. The panel writes no holding: an accept answers a REQUEST and the move opens the holding server-side.',
+	},
+
 	'case-archival-pane': {
 		// @custom-widget-ratchet exclude `@self._retention` is metadata attached on the render path, not a stored property, so a data widget builds its fields from the schema's properties and renders every one of them blank; the nomination also carries a rule and a reason that are prose beside a value, and the recompute gesture is a POST carrying a required reason. Deleted the day the manifest vocabulary has a retention widget type
 		kind: 'widget',
