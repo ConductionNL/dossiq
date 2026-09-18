@@ -74,42 +74,53 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
   a reason-bearing exclusion on every scenario it does not cover, per gate 19.
 - [ ] 9.3 `openspec validate --strict` exits 0.
 
-## Rescue verdict, 2026-09-18: NOT LANDED, and why
+## Rescue, 2026-09-18: the six guards, one at a time
 
 `feat/parties-and-contact-moments-consume-pipelinq` had no pull request of any
-state. Its one merge conflict WAS resolvable and is resolved on
-`build-orseams/pipelinq-rescue`:
+state. The merge conflict is resolved and each of the six guards it failed is
+answered.
 
-- the branch added `CaseTimeline` and `ContactMomentBridge` to
-  `ContactMomentService`'s constructor. While it sat unopened, parity moved the
-  timeline write to `ContactMomentTimelineListener` — parity's own comment in
-  that file says so — and deleted `recordOnTimeline()`. Keeping the branch's
-  side would have written every contact moment onto the timeline twice and
-  called a method that no longer exists. The timeline half is dropped; the
-  bridge is kept, and made nullable-last so the seven tests parity already had
-  keep constructing the service with four arguments.
+**1. The data loss, first, whatever else happened to the branch.**
+`PartyKindConsumer::declareAcceptance()` called `saveObject()` with a uuid and
+a two-field payload. That REPLACES the stored object, so re-declaring a case
+type would have deleted every other field pipelinq holds on that acceptance
+row — silently, on another app's data. A first declaration is a create and
+still saves; a re-declaration now patches.
 
-**What stops it is not the merge. It is six of dossiq's own guards**, every one
-of them naming something this branch ships without wiring:
+**2. The pipelinq name behind the gateway.** `SeedContributedCaseTypes`'s
+docblock spelled `OCA\Pipelinq\Dossiq\CaseTypeContributionProvider`. The
+lookup it describes is duck-typed, so the day that name moves nothing errors
+and the contribution simply stops arriving. It is now
+`PipelinqGateway::CASE_TYPE_CONTRIBUTIONS`, and the comment points at the
+constant.
 
-1. `NoDarkCapabilityTest` — `CorrespondenceLanguageConsumer`, `PartyKindConsumer`,
-   `PartyRefusalReader` and `ProgrammeConsumer` are shipped and nothing calls them.
-2. `PipelinqGatewayTest` — `Repair/SeedContributedCaseTypes.php` names pipelinq
-   outside the gateway that is supposed to be the only place that does.
-3. `LeafIntegrationDeclarationsTest::testTheNewLeavesAreDeclared` — the `talk`
-   leaf is not declared.
-4. `LeafIntegrationDeclarationsTest::testEveryLinkedTypeResolves`.
-5. `SchemaVersionFloorTest` — `register.d/68-pipelinq-leaves.json::case` ships
-   with no recorded digest, so nothing gates it (`php tools/schema-version-digests.php`).
-6. `PartialSaveGuardTest` — a save hands OpenRegister a partial object with a
-   uuid, which REPLACES the stored object. That one is a data-loss bug, not
-   bookkeeping.
+**3 and 4. The leaf declarations.** The fragment declared
+`case.configuration.linkedTypes` as the two pipelinq ids ALONE, and the
+declaration is read last-one-wins — so it did not add two leaves, it removed
+`talk`, `deck`, `mail`, `calendar`, `forms`, `photos`, `maps`, `shares` and
+`decidesk-decisions` from the case page. It now carries the full list. The two
+pipelinq ids are declared in the guard's own `CROSS_APP_LEAVES`, beside
+`decidesk-decisions`, because they are registered by pipelinq rather than by
+the library.
 
-None of these is a conflict to resolve or a red to inherit: each is the repo
-saying the branch's own work is not finished. Six repairs, one of them a
-correctness fix on a write path, is the rest of this change rather than a
-rescue, and doing it here would be authoring somebody else's half while
-claiming to land it.
+**5. The digest.** `68-pipelinq-leaves.json::case` shipped ungated;
+`tools/schema-version-digests.php` recorded it.
 
-The merge and both resolutions are pushed on `build-orseams/pipelinq-rescue` so
-none of the work is lost and nobody has to redo the conflict.
+**6. The four uncalled classes — one wired, three declared blocked.**
+`PartyRefusalReader` is wired into `FileRequestService`, which already asked
+the question it answers: either refusal stops a file request, and pipelinq's
+label wins the sentence when both refuse. With pipelinq absent the reader
+answers on OpenRegister alone, which is exactly what that call site did before.
+
+The other three are blocked on surfaces this change never specified, and each
+is recorded in `DARK_TODAY` with what would unblock it rather than given an
+invented caller: `PartyKindConsumer` wants a per-case-type party picker
+(dossiq decides kinds once, schema-wide, in `CaseRoleVocabulary::sync()`, which
+has no case type to ask about); `CorrespondenceLanguageConsumer` wants a
+correspondence surface, since nothing in dossiq chooses a language today;
+`ProgrammeConsumer` wants a programme surface, of which dossiq has none — no
+tab, no route, no field.
+
+**Verified:** the full unit suite on the merge and on `parity/round2` fail the
+same 42 names, so this adds no red and fixes none. Every inherited failure is
+parity's own.

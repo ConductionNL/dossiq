@@ -5,6 +5,15 @@
       "case": {
         "configuration": {
           "linkedTypes": [
+            "mail",
+            "calendar",
+            "forms",
+            "photos",
+            "maps",
+            "shares",
+            "decidesk-decisions",
+            "talk",
+            "deck",
             "pipelinq-contact-moments",
             "pipelinq-party"
           ]

@@ -56,7 +56,7 @@ class LeafIntegrationDeclarationsTest extends TestCase {
 	 *
 	 * @var array<int, string>
 	 */
-	private const CROSS_APP_LEAVES = ['decidesk-decisions'];
+	private const CROSS_APP_LEAVES = ['decidesk-decisions', 'pipelinq-contact-moments', 'pipelinq-party'];
 
 	/**
 	 * Values in `linkedTypes` that are NOT leaf ids and must not be read as one.

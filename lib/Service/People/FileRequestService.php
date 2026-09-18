@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Service\People;
 use DateTime;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\Constants;
+use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
 use OCP\Share\IShare;
@@ -46,6 +47,7 @@ class FileRequestService {
 	 * @param PartyIndicatorReader $indicators What the party's indicators refuse.
 	 * @param IShareManager $shares Creates the share Nextcloud mails.
 	 * @param IUserSession $userSession The handler making the request.
+	 * @param PartyRefusalReader|null $refusals Joins pipelinq's refusal to this app's own.
 	 */
 	public function __construct(
 		private readonly PersonLinkReader $people,
@@ -53,6 +55,9 @@ class FileRequestService {
 		private readonly PartyIndicatorReader $indicators,
 		private readonly IShareManager $shares,
 		private readonly IUserSession $userSession,
+		// Nullable and last: pipelinq is optional, and every existing
+		// construction of this service keeps working unchanged.
+		private readonly ?PartyRefusalReader $refusals = null,
 	) {
 	}//end __construct()
 
@@ -87,10 +92,25 @@ class FileRequestService {
 		// The refusal is evaluated HERE, where the message goes out, and not
 		// only in the dialog that lists who can be asked. A check that lives
 		// in one caller is a check the next caller does not have.
-		$refusal = $this->indicators->sendRefusalFor(
-			partyUuid: $this->indicators->partyUuidOf(link: $person)
-		);
-		if ($refusal !== null) {
+		$partyUuid = $this->indicators->partyUuidOf(link: $person);
+
+		// EITHER REFUSAL STOPS IT. `PartyRefusalReader` joins pipelinq's
+		// blocking answer to the one this app already read out of OpenRegister,
+		// and pipelinq's label wins the sentence when both refuse because it
+		// carries the vocabulary an administrator maintains. With pipelinq
+		// absent the reader answers on OpenRegister alone, which is exactly
+		// what this call site did before.
+		$refusal = null;
+		if ($this->refusals !== null) {
+			$verdict = $this->refusals->maySendTo(partyUuid: $partyUuid);
+			if ($verdict['refused'] === true) {
+				$refusal = $verdict['indicator'];
+			}
+		} else {
+			$refusal = $this->indicators->sendRefusalFor(partyUuid: $partyUuid);
+		}
+
+		if ($refusal !== null && $refusal !== '') {
 			throw new RuntimeException(
 				'A file request to ' . $this->people->nameOf(link: $person)
 				. ' is refused by the indicator "' . $refusal . '" on this party',

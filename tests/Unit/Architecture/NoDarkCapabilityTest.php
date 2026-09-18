@@ -118,6 +118,16 @@ class NoDarkCapabilityTest extends TestCase {
 		// landed an instance can resolve an address id for free, with no
 		// Kadaster key. One field is the whole gap.
 		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. BLOCKED on the change `dossiq/case-location-surface`, which should add that field; it is the only thing missing.',
+
+		// THREE PIPELINQ CONSUMERS, each blocked on a SURFACE the change that
+		// introduced them never specified. Their sibling `PartyRefusalReader`
+		// is wired, into `FileRequestService`, because dossiq already had the
+		// question it answers. These three answer questions nothing in dossiq
+		// asks yet, and inventing a caller to satisfy the guard would ship the
+		// surface's decisions inside a service nobody designed.
+		'PartyKindConsumer' => 'REQ-PLQ-04: answers which party kinds a CASE TYPE accepts, preferring pipelinq over dossiq\'s three. dossiq decides kinds once, schema-wide, in `CaseRoleVocabulary::sync()`, which has no case type to ask about. BLOCKED on a per-case-type party picker; until one exists there is no call site whose question this is.',
+		'CorrespondenceLanguageConsumer' => 'REQ-PLQ-06: the language to write to a party in, with the reason it was chosen. Nothing in dossiq chooses a correspondence language today — the letter paths take the instance language. BLOCKED on the correspondence surface that would show the tag and its reason beside the recipient.',
+		'ProgrammeConsumer' => 'REQ-PLQ-08: hangs a case under a programme and renders the progress with its mode. dossiq has no programme surface at all: no tab, no route, no field on the case. BLOCKED on that surface; the consumer is complete and tested against pipelinq\'s contract.',
 	];
 
 	/**

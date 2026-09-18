@@ -88,6 +88,19 @@ class PipelinqGateway {
 	public const PROGRAMMES = 'OCA\\Pipelinq\\Service\\ProgrammePortfolioService';
 
 	/**
+	 * pipelinq's case-type contribution provider.
+	 *
+	 * Named HERE and nowhere else, like every other pipelinq class this app
+	 * knows about. A FQCN spelled out in a comment somewhere is the thing that
+	 * survives a rename and then tells the next reader a lie, and the lookup it
+	 * describes is duck-typed, so the day the name moves nothing errors — the
+	 * contribution simply stops arriving.
+	 *
+	 * @var string
+	 */
+	public const CASE_TYPE_CONTRIBUTIONS = 'OCA\\Pipelinq\\Dossiq\\CaseTypeContributionProvider';
+
+	/**
 	 * The app id, for the one log line an absent pipelinq produces.
 	 */
 	public const APP_ID = 'pipelinq';

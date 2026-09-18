@@ -15,6 +15,7 @@ namespace OCA\Dossiq\Service\Pipelinq;
 
 use OCA\Dossiq\Service\People\PartyVocabulary;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -35,6 +36,8 @@ use Throwable;
  * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
  */
 class PartyKindConsumer {
+	use SearchesObjects;
+
 
 	/**
 	 * How a dossiq case type is named to pipelinq.
@@ -162,12 +165,32 @@ class PartyKindConsumer {
 		}
 
 		try {
-			$objectService->saveObject(
-				object: ['recordType' => $target, 'kinds' => $ordered],
-				register: self::PIPELINQ_REGISTER,
-				schema: self::ACCEPTANCE_SCHEMA,
-				uuid: $this->existingAcceptanceId(objectService: $objectService, target: $target),
-			);
+			$existing = $this->existingAcceptanceId(objectService: $objectService, target: $target);
+
+			if ($existing === null) {
+				// A FIRST declaration is a create, and a create's payload IS
+				// the whole object, so a plain save is correct here.
+				$objectService->saveObject(
+					object: ['recordType' => $target, 'kinds' => $ordered],
+					register: self::PIPELINQ_REGISTER,
+					schema: self::ACCEPTANCE_SCHEMA,
+				);
+			} else {
+				// 🔴 A RE-DECLARATION IS A PATCH, NEVER A SAVE WITH A UUID.
+				// `saveObject()` with a uuid REPLACES the stored object, so
+				// handing it these two fields would delete every other field
+				// pipelinq holds on that row — silently, and on somebody
+				// else's data, which is why this is the first of the six
+				// repairs and not the last. The row belongs to pipelinq; we
+				// only ever change the part we declared.
+				$this->patchObjectAsArray(
+					objectService: $objectService,
+					register: self::PIPELINQ_REGISTER,
+					schema: self::ACCEPTANCE_SCHEMA,
+					id: $existing,
+					changes: ['recordType' => $target, 'kinds' => $ordered],
+				);
+			}
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq pipelinq: a case type could not declare which party kinds it accepts, so the '
