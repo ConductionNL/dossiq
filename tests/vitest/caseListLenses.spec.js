@@ -691,6 +691,11 @@ describe('what this change does NOT move', () => {
 			'Organisations',
 			'Map layers',
 			'Case types',
+			// The eighth later addition (attribute-catalogue-folders): the
+			// attribute catalogue, beside the case types it files for. It
+			// spends no top-level slot either, because it carries
+			// `section: "settings"` like `Case types` and `Flows` do.
+			'Attributes',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',

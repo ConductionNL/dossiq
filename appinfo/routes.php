@@ -148,6 +148,33 @@ $extra = [
     ['name' => 'caseVersion#deprecate',     'url' => '/api/case-types/{id}/deprecate',    'verb' => 'POST'],
     ['name' => 'caseVersion#options',       'url' => '/api/case/{caseId}/version-move',   'verb' => 'GET'],
     ['name' => 'caseVersion#moveToVersion', 'url' => '/api/case/{caseId}/version-move',   'verb' => 'POST'],
+        // Rebinding a running case to a DIFFERENT case type (case-type-rebind).
+        // Deliberately not folded into version-move: that act derives its
+        // landing status by name across two versions of one type, and across
+        // two types a name means nothing, so the mapping is asked for. The
+        // permission route carries no case id on purpose: the manifest's
+        // `visibleWhen` fetches a URL and compares one field, and the question
+        // it asks is about the caller's group rather than about a case.
+    ['name' => 'caseRebind#permission',     'url' => '/api/rebind/permission',            'verb' => 'GET'],
+    ['name' => 'caseRebind#options',        'url' => '/api/case/{caseId}/rebind',         'verb' => 'GET'],
+    ['name' => 'caseRebind#rebind',         'url' => '/api/case/{caseId}/rebind',         'verb' => 'POST'],
+
+        // ── The family plan and its grounds (the-social-domain-plan-and-its-grounds)
+        // Rows 5.18 and 14.1. The plan read answers the plan, its goals, its
+        // interventions and whether it is due for review in ONE call: four
+        // round trips would let the four halves of one screen come from four
+        // moments. The lookup's guard is not a role, it is that a GROUND has
+        // been chosen, and the service refuses without one before it reads
+        // anything; `grounds` exists so the dialog offers the server's own list
+        // rather than a second copy that can drift out of it.
+    ['name' => 'sociaalDomeinPlan#plan',             'url' => '/api/family-plans/{planId}',                    'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#saveGoal',         'url' => '/api/family-plans/{planId}/goals',              'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#saveIntervention', 'url' => '/api/family-plans/{planId}/interventions',      'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#recordReview',     'url' => '/api/family-plans/{planId}/reviews',            'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#closeGoal',        'url' => '/api/family-plan-goals/{goalId}/close',         'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
@@ -415,6 +442,9 @@ $extra = [
         // perform, with the sentence naming the role, because an act that is
         // simply absent teaches nobody why.
     ['name' => 'caseActs#acts',           'url' => '/api/case/{caseId}/acts',           'verb' => 'GET'],
+        // Decision outcomes on the case: start the decidiq walk a gated act
+        // waits for, and link its decision id to the case.
+    ['name' => 'caseApproval#raise',      'url' => '/api/case/{caseId}/approvals/{act}', 'verb' => 'POST'],
     ['name' => 'caseActs#finish',         'url' => '/api/case/{caseId}/finish',         'verb' => 'POST'],
     ['name' => 'caseActs#abort',          'url' => '/api/case/{caseId}/abort',          'verb' => 'POST'],
     ['name' => 'caseActs#archive',        'url' => '/api/case/{caseId}/archive',        'verb' => 'POST'],
@@ -719,6 +749,11 @@ $extra = [
     // controller body, because they read and write the triage queue.
     ['name' => 'intakeTriage#requirements', 'url' => '/api/intake/case-types/{caseTypeId}/requirements', 'verb' => 'GET'],
     ['name' => 'intakeTriage#refuse',       'url' => '/api/cases/{caseId}/refuse',                       'verb' => 'POST'],
+    // Decision outcomes on the case: intake ends with an ontvankelijkheid
+    // verdict on the case types that declare one. It goes through the same
+    // per-case guard `refuse` does, because it mutates a case and, on an
+    // inadmissible verdict, closes it.
+    ['name' => 'intakeTriage#judgeAdmissibility', 'url' => '/api/cases/{caseId}/admissibility',          'verb' => 'POST'],
     ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
     ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
     ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],
@@ -762,6 +797,16 @@ $extra = [
     ['name' => 'milestone#caseProgress', 'url' => '/api/cases/{caseId}/milestones/progress', 'verb' => 'GET'],
     ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
     ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
+
+    // What happens next on a case, and the gesture that moves it on
+    // (task-dependencies-and-the-next-planned-action, gap register row 3.28).
+    // READING the list of planned actions is not here: they are ordinary
+    // OpenRegister objects and the case page reads them as it reads every
+    // other collection, so a route for that would be the pass-through ADR-022
+    // refuses. `next` answers the ONE action a handler is asked about, and
+    // `complete` is the two writes that must not be three client calls.
+    ['name' => 'plannedAction#next',     'url' => '/api/cases/{caseId}/planned-actions/next', 'verb' => 'GET'],
+    ['name' => 'plannedAction#complete', 'url' => '/api/cases/{caseId}/planned-actions/{actionId}/complete', 'verb' => 'POST'],
 
         // ── Besluitvorming workflow ──────────────────────────────────────
     ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
@@ -978,6 +1023,9 @@ $extra = [
         // documents-live-on-the-case: the documents joined to this case whose file
         // lives in another case's folder, as the Files tab's linked rows.
     ['name' => 'linkedDocuments#index',            'url' => '/api/cases/{caseId}/dossier/linked',              'verb' => 'GET'],
+    // scan-verdict-on-the-row: what files_antivirus recorded for one file, for
+    // the Scan column and the document properties dialog. dossiq scans nothing.
+    ['name' => 'scanVerdict#show',                 'url' => '/api/files/{fileId}/scan',                        'verb' => 'GET'],
     // people-on-the-case: who can be asked for a file, and the asking.
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],

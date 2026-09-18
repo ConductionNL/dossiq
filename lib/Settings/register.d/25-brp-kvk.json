@@ -12,7 +12,7 @@
             "brpPerson": {
                 "slug": "brpPerson",
                 "icon": "AccountOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Person",
                 "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
                 "title": "BRP person (test register set)",
@@ -24,6 +24,13 @@
                 ],
                 "properties": {
                     "citizenServiceNumber": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "type": "string",
                         "pattern": "^[0-9]{9}$",
                         "format": "bsn",
