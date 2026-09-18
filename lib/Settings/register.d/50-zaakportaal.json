@@ -90,6 +90,33 @@
                 "title": "Portaal Verzoek",
                 "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Dossiq.",
                 "type": "object",
+                "configuration": {
+                    "x-openregister-dedup": {
+                        "blockingKeys": [
+                            "submitterRef",
+                            "kind"
+                        ],
+                        "matchRules": [
+                            {
+                                "field": "subject",
+                                "method": "normalized",
+                                "weight": 0.6
+                            },
+                            {
+                                "field": "subject",
+                                "method": "levenshtein",
+                                "weight": 0.2
+                            },
+                            {
+                                "field": "category",
+                                "method": "exact",
+                                "weight": 0.2
+                            }
+                        ],
+                        "threshold": 0.6,
+                        "onCreate": "warn"
+                    }
+                },
                 "required": [
                     "kind",
                     "submitterRef"

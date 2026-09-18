@@ -709,6 +709,13 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				),
 				'sequenceNumber' => '{{ order }}',
 				'isEindstatus' => '{{ isFinal }}',
+				// What the applicant reads, which ZTC has carried since 1.0 and
+				// this mapping did not. `default(name)` is the same fallback
+				// StatusPublicLabels applies in PHP and in the browser: a status
+				// that declares no public label publishes its name, so a
+				// consumer that has been reading `statustekst` sees the name
+				// appear rather than a field that used to be absent.
+				'statustekst' => '{{ publicLabel | default(name) }}',
 			],
 			'reverseMapping' => [
 				'name' => '{{ omschrijving }}',
@@ -716,6 +723,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
 				'order' => '{{ volgnummer }}',
 				'isFinal' => '{{ isEindstatus }}',
+				// Inbound the fallback must NOT run: a foreign catalogue whose
+				// statustekst equals its omschrijving would otherwise be stored
+				// as a public label somebody chose, and the two would then be
+				// impossible to tell apart when it is edited here.
+				'publicLabel' => '{{ statustekst }}',
 			],
 			'reverseCast' => [
 				'order' => 'int',

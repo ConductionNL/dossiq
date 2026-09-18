@@ -63,6 +63,8 @@ describe('emptyStatusTypeForm', () => {
 			'maximumDwell',
 			'name',
 			'order',
+			'publicDescription',
+			'publicLabel',
 			'role',
 			'waitingOn',
 		])
@@ -212,6 +214,8 @@ describe('formToStatusType', () => {
 			hiddenInLists: false,
 			waitingOn: 'applicant',
 			maximumDwell: 20,
+			publicLabel: 'We beoordelen uw aanvraag',
+			publicDescription: 'U hoort binnen twee weken van ons.',
 			checklist: [{ title: 'Check id', required: true }],
 			// Both of these are here because a property the mapping does not
 			// know is destroyed on the next save, in silence. `derivedWhen`
@@ -226,6 +230,35 @@ describe('formToStatusType', () => {
 		}
 
 		expect(formToStatusType(statusTypeToForm(stored))).toEqual(stored)
+	})
+
+	it('leaves the applicant fields empty on a status nobody has annotated', () => {
+		// The direction that matters. The form must not copy `name` into
+		// `publicLabel` to show the author what will be rendered: the copy
+		// would be stored on the next save, and from then on nobody could tell
+		// a label somebody chose from one the form guessed. The placeholder on
+		// the field does that job, in the browser, without writing anything.
+		const form = statusTypeToForm({ name: 'Ontvangen', order: 1 })
+
+		expect(form.publicLabel).toBe('')
+		expect(form.publicDescription).toBe('')
+		expect(formToStatusType(form).publicLabel).toBe('')
+		expect(formToStatusType(form).publicDescription).toBe('')
+	})
+
+	it('keeps a declared public label through a reorder', () => {
+		// Reordering writes the WHOLE row back through this same mapping, so a
+		// property missing from either direction is dropped off every row a
+		// drag moves. That is how the colour and the checklist nearly went.
+		const stored = {
+			name: 'Toets register B',
+			order: 3,
+			publicLabel: 'We beoordelen uw aanvraag',
+		}
+
+		expect(formToStatusType(statusTypeToForm(stored)).publicLabel).toBe(
+			'We beoordelen uw aanvraag',
+		)
 	})
 
 	it('opens a row that predates the declarations as undeclared, not as a guess', () => {

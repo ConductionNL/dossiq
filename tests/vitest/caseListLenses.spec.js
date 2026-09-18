@@ -119,6 +119,14 @@ const CASE_LENSES = [
 	// Unread because all three answer about YOU, not about the case: the star
 	// you set and the cases you last opened.
 	'Favourites',
+	// The third lens over per-user platform state, and the one that is not
+	// silent: a star is private, where a subscription produces notifications
+	// and its list is visible to the people who may edit the case
+	// (case-followers row 13.18, openregister `object-watchers`). It sits next
+	// to Favourites because both answer "which cases did I pick out", and
+	// before Recently opened because a case you chose outranks one you
+	// happened to open.
+	'Followed',
 	'Recently opened',
 	// Three lenses over a stored, facetable boolean on the case, each from a
 	// change that named the row it answers. `Waiting on the applicant`
@@ -163,6 +171,7 @@ const CASE_LENSES = [
 const CASES_ONLY = [
 	'Unread',
 	'Favourites',
+	'Followed',
 	'Recently opened',
 	'Waiting on the applicant',
 	'Needs attention',
@@ -175,7 +184,7 @@ const CASES_ONLY = [
 ]
 
 describe('Cases index lenses', () => {
-	it('declares the sixteen chips in order', () => {
+	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 

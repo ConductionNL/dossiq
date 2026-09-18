@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class CreateDocumentHandler implements ActionHandlerInterface {
+	use AddressesTheCase;
 	use HandlesTemplates;
 
 	/**
@@ -167,6 +168,9 @@ class CreateDocumentHandler implements ActionHandlerInterface {
 					'direction' => 'outgoing',
 					'auteur' => $this->currentAuthor(),
 					'format' => 'text/markdown',
+					// A document that leaves the case names who it went to,
+					// and it names a party rather than a line of text.
+					'recipients' => $this->addressedParties(caseId: $caseId),
 				]
 			);
 

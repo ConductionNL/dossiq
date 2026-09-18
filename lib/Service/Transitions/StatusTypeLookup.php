@@ -75,14 +75,15 @@ class StatusTypeLookup {
 	}//end nameFor()
 
 	/**
-	 * The words a status is announced to the applicant in, when it is announced.
+	 * The words a status is announced in, or '' when it is not announced.
 	 *
-	 * THE EMPTY STRING IS THE ANSWER THAT MATTERS. A status carries a
-	 * `publicLabel` only when the organisation decided the applicant may be
-	 * told about it, so the absence of one is a decision rather than a gap:
-	 * the status move stays inside. `name` is NOT the fallback here, exactly
-	 * because falling back would announce every internal status the moment a
-	 * case type forgot to fill one in.
+	 * NOT THE SAME QUESTION AS {@see StatusPublicLabels::publicLabelOf()}, and
+	 * the difference is the whole point. That one answers "what does the
+	 * applicant read for this status" and falls back to the administered name,
+	 * which is right for a page that has already decided to show the status.
+	 * This one answers "is this status announced at all", and a fallback would
+	 * make every status announced the moment a case type forgot to fill a
+	 * public label in. The empty string here is a decision, not a gap.
 	 *
 	 * @param string $statusTypeId StatusType UUID.
 	 *
@@ -90,11 +91,11 @@ class StatusTypeLookup {
 	 *
 	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
 	 */
-	public function publicLabelOf(string $statusTypeId): string {
+	public function announcedLabelOf(string $statusTypeId): string {
 		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
 
 		return trim((string)($statusType['publicLabel'] ?? ''));
-	}//end publicLabelOf()
+	}//end announcedLabelOf()
 
 	/**
 	 * The whole statusType row, for the callers that need more than its name.

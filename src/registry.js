@@ -33,6 +33,11 @@ import CaseAttentionPanel from './components/case/CaseAttentionPanel.vue'
 // The star on the case page (case-number-and-favourites, row 2.19).
 // @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
 import CaseFavouriteStrip from './components/case/CaseFavouriteStrip.vue'
+// Follow a case you do not own, and see who else does (case-followers,
+// row 13.18), over OpenRegister's own subscription (`object-watchers`).
+// @spec openspec/changes/case-followers/specs/case-management/spec.md
+import CaseFollowersPanel from './components/case/CaseFollowersPanel.vue'
+import CaseFollowStrip from './components/case/CaseFollowStrip.vue'
 // The inline task pane on the case page (task-on-the-case A06).
 // @spec openspec/specs/task-management/spec.md
 // The case's own locations on a map, on the Data tab.
@@ -103,7 +108,12 @@ import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // @spec openspec/specs/zaaktype-versioning/spec.md
 import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
 import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
+// The version chain: starting the next version, and moving one running case
+// along it (case-type-version-chain).
+// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
+import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -175,6 +185,9 @@ import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
+// Ask whether this case already exists, before it does.
+// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
 // overdue / stalled cases, my tasks, task reminders, deadline alerts) and the
@@ -347,6 +360,18 @@ const registry = {
 		component: CaseTypeDuplicateDialog,
 		_note: 'CaseTypeDetail Duplicate: posts the copy, reads the new id out of the answer and ROUTES there. An api-call refreshes the page you are already on, so a person who asked for a copy would be left looking at the original with no clue where the copy went.',
 	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseTypeNewVersionDialog: {
+		kind: 'modal',
+		component: CaseTypeNewVersionDialog,
+		_note: 'CaseTypeDetail New version: posts the next version and ROUTES to the draft, for the reason Duplicate is a dialog. The tasks called for a declarative api-call, and an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one: the gesture beside it is Duplicate, and a duplicate is a second case type while a version is this one later on.',
+	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseVersionMoveDialog: {
+		kind: 'modal',
+		component: CaseVersionMoveDialog,
+		_note: 'CaseDetail Actions menu: move this case to another version of its own case type. The PREVIEW is why it is a modal and not a confirm gate: a case is pinned to the version it was filed under because its status is a row only that version holds, so the person moving it is shown the landing status and the statuses and fields the other version adds and drops, including the dropped ones this case has answered. It derives NONE of that: canMove and every refusal sentence come from the server, so the dialog cannot disagree with the write.',
+	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	CaseHandoverDialog: {
 		kind: 'modal',
@@ -453,6 +478,14 @@ const registry = {
 		kind: 'modal',
 		component: CasePlanFollowUpDialog,
 		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once" or "three times". A Repeat picker turns it into a series (planned-case-series): the recurrence becomes the cron fields, the end becomes the sweep\'s stop rule, and the Related tab grows a series row with a Stop series action. The form lives here and not in the manifest: an `open-modal` header action carries a target and props only, and the five fields (case type, date, title, Repeat, Ends) are bound to each other, since the end fields appear only once a repeat is chosen and no `visibleWhen` on a header action can say that. What the manifest does decide is that the gesture is a modal rather than a `handler`, because a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. The manifest entry itself carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action, so the rationale belongs in this file.',
+	},
+
+	// --- The duplicate warning at intake (duplicate-warning-at-intake). ---
+	// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	caseCreateWithDuplicateCheck: {
+		kind: 'create-override',
+		handler: createCaseWithDuplicateCheck,
+		_note: "Named by `createOverride` on every `new-case` open-form action. It owns the persist, so it can ask OpenRegister whether a case like this one already exists BEFORE the case is written, and show the matches with a link to each. It is not the enforcement: DuplicatePolicy refuses a blocked create on the pre-persist event, so the mail intake, an import and any integration are refused the same way. A createOverride runs on the press rather than on the keystroke, which is the one part of REQ-FCF-10 this seam cannot give: disabling the library dialog's own Create button needs a `beforeConfirm` hook in @conduction/nextcloud-vue.",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
@@ -781,6 +814,28 @@ const registry = {
 		kind: 'widget',
 		component: CaseUnreadPanel,
 		_note: 'CaseDetail: what changed on this case since the handler last looked, named per panel so they know where to look rather than only that something moved. Opening the case marks the case read and empties the notifications that were about it, in one write; it deliberately does not stamp the panels, so a document that arrived is still counted until the documents are looked at. Silent on a case with nothing new, and silent rather than erroring on an instance whose OpenRegister does not carry the read state yet.',
+	},
+
+	// --- Following a case you do not own (case-followers, row 13.18). ---
+	//
+	// A LAYOUT grid item and a widget TYPE for the strip, and a TAB CHILD type
+	// for the panel. Both resolve from `cnRegistry[widget.type]`: CnDetailPage
+	// falls back to CnDetailWidgetHost for a grid item with no `widget-<id>`
+	// slot, and CnTabsWidget resolves a panel the same way and renders nothing
+	// at all, logging nothing, when no key answers.
+	// @spec openspec/changes/case-followers/specs/case-management/spec.md
+	'case-follow': {
+		// @custom-widget-ratchet exclude the gesture is TWO VERBS on one path, PUT to follow and DELETE to stop, and no declarative action writes both: `executeApiCall` maps every method that is not `PUT` to `post`, so an `api-call` declared `method: "DELETE"` would POST to a route that takes DELETE and there is nothing in the manifest to say it could never have worked. `CnActionButtons`' `toggle` type writes with one `method` for both directions, and a `handler` header action is handed `action.args` verbatim with no token resolved, so it would run with no case to act on. The state is not a field of the case either: `@self.watching` is attached per reader on the render path, so a data widget over a property would render nothing. Deleted the day the library takes a DELETE verb and a two-verb toggle, which is where this belongs for every app in the fleet
+		kind: 'widget',
+		component: CaseFollowStrip,
+		_note: 'CaseDetail: follow a case you do not own, beside the star and saying the opposite kind of thing. The star is private and silent; following subscribes you to the case\'s own notifications through OpenRegister\'s `{"watchers": true}` recipient block, and the people who may edit the case can see that you took it. The strip renders from `@self.watching`, which every object read already carries, so it makes no call until somebody presses it. The count beside the button is silent for a reader OpenRegister told no count, because an absent `@self.watcherCount` means "not your business" and never "nobody".',
+	},
+
+	'case-followers': {
+		// @custom-widget-ratchet exclude a subscription is not an OpenRegister OBJECT and every built-in list widget takes a register and a schema: the rows come from `/api/objects/{r}/{s}/{id}/watchers`, a sub-resource that takes no register-and-schema pair of its own, and there is no `integration` id that reaches it. The 403 a reader without `update` gets has to be drawn APART from an empty list, which a declarative list cannot do: both would render as no rows. Deleted the day nextcloud-vue ships a watchers widget type over that listing
+		kind: 'widget',
+		component: CaseFollowersPanel,
+		_note: 'CaseDetail People tab, the Followers section: who is watching this case, as against the Parties, Roles and Seats sections beside it, which say who the case is about. Reading the list needs `update` on the case, so a reader without it is told that rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else\'s subscription needs `manage`, and you stop following from the button on the case page, which acts on your own row only.',
 	},
 
 	// --- Who is on the case, and in which role (the party model, #3761). ---

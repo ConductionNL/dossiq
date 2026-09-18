@@ -485,6 +485,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -973,6 +974,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -1109,6 +1111,43 @@
 						}
 					},
 					{
+						"id": "followed-cases",
+						"type": "object-table",
+						"title": "Cases you follow",
+						"_note": "case-followers, row 13.18. The cases this reader subscribed to, over OpenRegister's `_watching` lens (object-watchers). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the subscription sits on the case row. No `isFinalStatus` filter, for the reason the chip carries none: you follow a case to hear how it ends. View all leads to the Followed chip on Cases, which is the same lens, so the tile and the list cannot show different sets. It lives on My Work rather than on the Dashboard because following is about what you are keeping an eye on today, which is the question this page answers.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_watching": true
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted"
+								},
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"_watching": "true"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "Follow a case to keep an eye on it here"
+						}
+					},
+					{
 						"id": "archival-reviews",
 						"type": "custom",
 						"title": "My archival reviews",
@@ -1150,6 +1189,15 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "5",
+						"widgetId": "followed-cases",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
 					}
@@ -1439,6 +1487,15 @@
 						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
 						"filter": {
 							"_favourite": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Followed",
+						"_note": "case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for.",
+						"filter": {
+							"_watching": true,
 							"statusHiddenInLists": false,
 							"isDraft": false
 						}
@@ -2016,7 +2073,7 @@
 						"title": "Files",
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
-						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files.",
+						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers.",
 						"props": {
 							"rowActions": [
 								{
@@ -2036,7 +2093,19 @@
 									"target": "FileRequestDialog"
 								}
 							],
-							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked"
+							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
+							"columns": [
+								{
+									"id": "sender",
+									"label": "Sender",
+									"property": "senderName"
+								},
+								{
+									"id": "recipients",
+									"label": "Recipients",
+									"property": "recipientNames"
+								}
+							]
 						}
 					},
 					{
@@ -2119,6 +2188,16 @@
 												}
 											}
 										}
+									}
+								},
+								{
+									"label": "Followers",
+									"widget": {
+										"id": "case-followers",
+										"type": "case-followers",
+										"title": "Followers",
+										"icon": "AccountMultipleOutline",
+										"_note": "case-followers, row 13.18. Who is watching this case, over OpenRegister's GET /api/objects/{register}/{schema}/{id}/watchers (object-watchers). It sits LAST on this tab because the three sections above it say who the case is about and this one says who is reading over their shoulder: a teamleider following a sensitive case holds no role on it and appears here and nowhere else. TYPE names the registry key rather than \"custom\": a tab child resolves from cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. Reading the list needs `update` on the case, so a reader without it is told that in words rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else's subscription needs `manage`, and you stop following from the strip on the case page, which acts on your own row only."
 									}
 								}
 							]
@@ -2425,6 +2504,13 @@
 						"_note": "case-number-and-favourites, row 2.19. The per-reader star, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/favourite (favourites-and-recent, openregister#3766). It sits directly under the identity tiles and above the unread strip because it is part of what identifies this case TO YOU, where every strip below it is about the case rather than about you. Starring writes NOTHING to the case: the star lives in OpenRegister's own table, so no version is cut, no audit entry is written and no colleague can see it. The widget renders from `@self.favourite`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT a header action because the gesture is two verbs on one path: CnActionButtons' `toggle` type writes with one `method`, and a `handler` action is handed action.args verbatim with no token resolved, so it would run with no case to act on."
 					},
 					{
+						"id": "case-follow",
+						"type": "case-follow",
+						"title": "Follow",
+						"icon": "BellPlusOutline",
+						"_note": "case-followers, row 13.18. Follow a case you do not own, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/watch (object-watchers). It shares the row with the star because both are per-reader state, and it says the opposite kind of thing: the star is private and silent, following subscribes you to the case's own notifications and the people who may edit the case can see that you took it. The subscription lives in OpenRegister's own table, so following cuts no version and writes no audit entry. The widget renders from `@self.watching`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT two header actions because `executeApiCall` maps every method that is not PUT to post, so an `api-call` declared `method: \"DELETE\"` would POST to a route that takes DELETE, with nothing in the manifest to say it could never have worked."
+					},
+					{
 						"id": "case-unread",
 						"type": "case-unread",
 						"title": "New since you last looked",
@@ -2488,7 +2574,16 @@
 						"widgetId": "case-favourite",
 						"gridX": 0,
 						"gridY": 2,
-						"gridWidth": 12,
+						"gridWidth": 6,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
+						"id": "follow-strip",
+						"widgetId": "case-follow",
+						"gridX": 6,
+						"gridY": 2,
+						"gridWidth": 6,
 						"gridHeight": 1,
 						"showTitle": false
 					},
@@ -2631,6 +2726,7 @@
 				},
 				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
 				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. NEITHER IS GATED ON THE ASSIGNEE, though the requirement is worded that way. A local `visibleWhen` compares a dot-path against a LITERAL with eq or neq: it has no empty operator, it does not resolve `@me` in `value`, and neither its endpoint nor its source mode can name this case (the endpoint URL is fetched verbatim, and OpenRegister's object list ignores an `id` filter). So the gate is the one thing the record says for certain, which is that a closed case is not picked up, and the SERVER refuses a claim on a case that already has a handler, or a release by anyone who is not that handler, with a 409 and a sentence. That is this page's own convention, the one `case-resume` follows: a gesture the case does not allow is refused in words rather than silently accepted. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
+				"_versionMoveNote": "case-version-move (case-type-version-chain): move this case to another version of its OWN case type, which nothing could do. A case filed the day before a correction was published had to be closed and refiled under a new number. It is a modal and not a confirm-gated api-call because the PREVIEW is the act's substance: the person moving the case is shown the status it lands in, the statuses and fields the other version adds and drops, and which of the dropped fields this case has already answered. Every one of those, and the refusal when the other version has no status by the name this case is sitting in, comes from the server, so the dialog cannot disagree with the write. Moving a case to a DIFFERENT case type is a rebind and is not this act: `case-type-rebind` owns that and declares this change as its dependency. Hidden on a closed case, like the other acts that rewrite what governs it.",
 				"headerActions": [
 					{
 						"id": "add-party",
@@ -2776,6 +2872,18 @@
 						"label": "Hand to another team",
 						"icon": "SwapHorizontal",
 						"target": "CaseHandoverDialog",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-version-move",
+						"type": "open-modal",
+						"label": "Move to another version",
+						"icon": "SourceBranch",
+						"target": "CaseVersionMoveDialog",
 						"visibleWhen": {
 							"field": "isFinalStatus",
 							"op": "neq",
@@ -5055,6 +5163,20 @@
 					"filterField": "category",
 					"allLabel": "All case types"
 				},
+				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. Current versions is the DEFAULT chip and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under both chips, which is right: a draft is the version you are about to publish.",
+				"quickFilters": [
+					{
+						"label": "Current versions",
+						"filter": {
+							"supersededBy": "IS NULL"
+						},
+						"default": true
+					},
+					{
+						"label": "All versions",
+						"filter": {}
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -5131,6 +5253,45 @@
 								"verwerkingsactiviteit"
 							],
 							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-chain",
+						"type": "object-list",
+						"title": "Version chain",
+						"icon": "SourceBranch",
+						"_note": "Every version of THIS case type, newest first, which the page could not show at all: the Versions widget below it lists the type's workflowTemplate rows, a different thing wearing the same word, so somebody looking for the version that replaced theirs found a list of workflow revisions instead. The filter is `identifier` and NOT a walk over `previousVersion`: two rows are versions of one zaaktype when they share ZGW's `identificatie`, and a walk answers a SHORTER list on a chain with a hole in it, where a version missing from the list reads as a version that does not exist. `@object.identifier` and not `@objectId`, because the filter compares the shared identifier rather than this row's own id. `rowRoute` points back at this same page, which is how you move between versions.",
+						"content": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"identifier": "@object.identifier"
+							},
+							"sort": {
+								"field": "version",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "version",
+									"label": "Version"
+								},
+								{
+									"key": "isDraft",
+									"label": "Draft"
+								},
+								{
+									"key": "validFrom",
+									"label": "Valid from"
+								},
+								{
+									"key": "validUntil",
+									"label": "Valid until"
+								}
+							],
+							"rowRoute": "CaseTypeDetail",
+							"emptyText": "This case type has only this version"
 						}
 					},
 					{
@@ -5220,15 +5381,24 @@
 					},
 					{
 						"id": "5",
-						"widgetId": "case-type-versions",
+						"widgetId": "case-type-chain",
 						"gridX": 0,
 						"gridY": 10,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
+					},
+					{
+						"id": "6",
+						"widgetId": "case-type-versions",
+						"gridX": 0,
+						"gridY": 14,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
 					}
 				],
-				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string.",
+				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string. case-type-version-chain adds two. NEW VERSION is a dialog and not the api-call its tasks named, for the reason Duplicate is one: an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one, because the gesture beside it is Duplicate: a duplicate is a second case type, a version is this one later on, same name, same identifier, and today's running cases stay where they are. DEPRECATE is an api-call to a dossiq endpoint and NOT the `object-op` the design named. An object-op merges its `values` into the row verbatim: `validUntil: \"@today\"` is not token-resolved for that action type, so the literal string `@today` would have been written into a date field and stored without complaint. The day comes from the server's clock instead, and the server also refuses to close a version nothing has replaced. Its `visibleWhen` is a SOURCE query rather than a local field test, because the local operator set is eq/neq/gt/gte/lt/lte with no is-set, and `supersededBy neq null` reads TRUE on an unset field, which is the opposite of what it means. Counting the published rows whose `previousVersion` is this one asks the same question and can answer it.",
 				"headerActions": [
 					{
 						"id": "case-type-export",
@@ -5257,6 +5427,41 @@
 						"label": "Duplicate",
 						"icon": "ContentDuplicate",
 						"target": "CaseTypeDuplicateDialog"
+					},
+					{
+						"id": "case-type-new-version",
+						"type": "open-modal",
+						"label": "New version",
+						"icon": "SourceBranch",
+						"target": "CaseTypeNewVersionDialog",
+						"visibleWhen": {
+							"field": "isDraft",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-type-deprecate",
+						"type": "api-call",
+						"label": "Deprecate",
+						"icon": "ArchiveOutline",
+						"url": "/apps/dossiq/api/case-types/@objectId/deprecate",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "This version is closed for new cases.",
+						"errorMessage": "This version was not closed.",
+						"visibleWhen": {
+							"source": {
+								"register": "dossiq",
+								"schema": "caseType",
+								"filter": {
+									"previousVersion": "@objectId",
+									"isDraft": false
+								}
+							},
+							"op": "gt",
+							"value": 0
+						}
 					},
 					{
 						"id": "case-type-publish",
@@ -5531,6 +5736,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"
@@ -5749,6 +5955,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"

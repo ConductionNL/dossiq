@@ -62,6 +62,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Portal;
 
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use Throwable;
 
 /**
@@ -99,6 +100,15 @@ class PortalContributionProvider {
 	 * bug. So the acknowledgement reads this constant through
 	 * {@see self::citizenCaseFields()} instead of keeping a second one.
 	 *
+	 * 🔑 `status` STAYS, AND IT IS NOT WHAT THE CITIZEN READS. It is the
+	 * statusType's uuid, which the portal needs to tell one status from another
+	 * and which says nothing to a person. The words come from
+	 * `statusPublicLabel`, the case schema's own calculation over the linked
+	 * statusType: its publicLabel, or its name when the status declares none
+	 * (citizen-status-labels, REQ-CT-25). Both are named from
+	 * {@see StatusPublicLabels} so the page and the portal cannot spell them
+	 * differently.
+	 *
 	 * @var array<int, string>
 	 */
 	public const CITIZEN_CASE_FIELDS = [
@@ -106,6 +116,8 @@ class PortalContributionProvider {
 		'title',
 		'caseType',
 		'status',
+		StatusPublicLabels::CASE_LABEL_FIELD,
+		StatusPublicLabels::CASE_DESCRIPTION_FIELD,
 		'result',
 		'startDate',
 		'endDate',
@@ -321,9 +333,30 @@ class PortalContributionProvider {
 	 * minTrust is `low` (Portaliq's password edge); raise to `substantial` once
 	 * the DigiD broker lands and cases carry Wdo-level assurance.
 	 *
+	 * 🔴 THE DUPLICATE RULES ARE NOT CONTRIBUTED HERE, AND THAT IS THE POINT.
+	 * `duplicate-warning-at-intake` asks the portal intake to carry the same
+	 * rules as the desk. A `dedup` key on one of these entries would read as
+	 * having done that, and nothing in Portaliq reads such a key: the manifest
+	 * normaliser passes unknown keys through untouched, so it would sit in the
+	 * contract for ever, look enforced, and enforce nothing.
+	 *
+	 * What actually carries the rules is the WRITE. `PortalObjectWriter` creates
+	 * through OpenRegister's `ObjectService::saveObject()`, which is the same
+	 * path the desk uses and the one `x-openregister-dedup` is evaluated on. So
+	 * `createKlacht` is already scored against the rules `portaalVerzoek`
+	 * declares in `register.d/50-zaakportaal.json`: the same applicant filing
+	 * the same kind of request with the same subject is one pair the sweep finds
+	 * and one the applicant can be warned about.
+	 *
+	 * What is still missing is the WARNING, not the rule. Showing a citizen the
+	 * matches before they submit is a Portaliq surface, and Portaliq has none
+	 * today. Until it does, a second complaint is filed and found rather than
+	 * refused, which is the `onCreate: warn` the schema declares.
+	 *
 	 * @return array<string, mixed> The citizen manifest.
 	 *
 	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
 		return [

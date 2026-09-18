@@ -176,7 +176,7 @@ class DerivedStatusTimelineListener implements IEventListener {
 		}
 
 		try {
-			return trim($this->statuses->publicLabelOf(statusTypeId: $statusTypeId));
+			return trim($this->statuses->announcedLabelOf(statusTypeId: $statusTypeId));
 		} catch (Throwable $e) {
 			return '';
 		}

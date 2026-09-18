@@ -47,6 +47,7 @@ use OCA\Dossiq\Service\Email\IntakePolicy;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
+use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
 use OCA\Dossiq\Service\Intake\TriageSleep;
@@ -54,11 +55,13 @@ use OCA\Dossiq\Service\Routing\RefusalOutcome;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -194,6 +197,11 @@ final class IntakeTriageControllerTest extends TestCase {
 			),
 			schemes: new ClassificationSchemes(appConfig: $appConfig),
 			narrowing: new AssigneeNarrowing(),
+			duplicates: new DuplicatePolicy(
+				container: $this->createMock(originalClassName: ContainerInterface::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class),
+				logger: new NullLogger()
+			),
 			refusal: $this->refusal,
 			sleep: $this->sleep,
 			fanOut: $this->fanOut,
@@ -216,14 +224,14 @@ final class IntakeTriageControllerTest extends TestCase {
 		$response = $this->controller()->requirements(caseTypeId: 'ct-1');
 		$body = $response->getData();
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 		$this->assertSame(
-			['communicationChannel', 'confidentiality'],
-			$body['intakeRequirements']['requiredBeforeCreation']
+			expected: ['communicationChannel', 'confidentiality'],
+			actual: $body['intakeRequirements']['requiredBeforeCreation']
 		);
 		$this->assertSame(
-			['requesterAddress'],
-			$body['intakeRequirements']['requiredBeforeComplete']
+			expected: ['requesterAddress'],
+			actual: $body['intakeRequirements']['requiredBeforeComplete']
 		);
 	}//end testTheRequirementsEndpointAnswersTheDeclaration()
 
@@ -238,10 +246,10 @@ final class IntakeTriageControllerTest extends TestCase {
 		$body = $this->controller()->requirements(caseTypeId: 'ct-1')->getData();
 
 		$this->assertSame(
-			['handhaving', 'juridische-zaken'],
-			$body['assigneeNarrowing']['allowedGroups']
+			expected: ['handhaving', 'juridische-zaken'],
+			actual: $body['assigneeNarrowing']['allowedGroups']
 		);
-		$this->assertFalse($body['narrowsNothing']);
+		$this->assertFalse(condition: $body['narrowsNothing']);
 	}//end testTheRequirementsEndpointCarriesTheNarrowing()
 
 	/**
@@ -259,8 +267,8 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$body = $this->controller()->requirements(caseTypeId: 'ct-1')->getData();
 
-		$this->assertFalse($body['schemeResolves']);
-		$this->assertSame([], $body['classificationValues']);
+		$this->assertFalse(condition: $body['schemeResolves']);
+		$this->assertSame(expected: [], actual: $body['classificationValues']);
 	}//end testTheRequirementsEndpointReportsAnUnresolvableScheme()
 
 	/**
@@ -278,7 +286,7 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->requirements(caseTypeId: 'ct-gone');
 
-		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_NOT_FOUND, actual: $response->getStatus());
 	}//end testAnUnknownCaseTypeAnswersNotFound()
 
 	/**
@@ -291,7 +299,7 @@ final class IntakeTriageControllerTest extends TestCase {
 	public function testTheDeclarationReadNeedsASession(): void {
 		$response = $this->controller(signedIn: false)->requirements(caseTypeId: 'ct-1');
 
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_UNAUTHORIZED, actual: $response->getStatus());
 	}//end testTheDeclarationReadNeedsASession()
 
 	/**
@@ -314,8 +322,8 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->refuse(caseId: 'case-1', reason: 'Niet voor ons.');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('Juridische Zaken', $response->getData()['department']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: 'Juridische Zaken', actual: $response->getData()['department']);
 	}//end testRefusingACaseAnswersTheRecord()
 
 	/**
@@ -336,8 +344,8 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->refuse(caseId: 'case-1', reason: 'Niet voor ons.');
 
-		$this->assertSame(RefusedException::STATUS_UNPROCESSABLE, $response->getStatus());
-		$this->assertSame(RefusalOutcome::RULE_NO_DESTINATION, $response->getData()['error']);
+		$this->assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $response->getStatus());
+		$this->assertSame(expected: RefusalOutcome::RULE_NO_DESTINATION, actual: $response->getData()['error']);
 		$this->assertStringContainsString(
 			'where a refused case goes',
 			$response->getData()['message']
@@ -357,7 +365,7 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$response = $this->controller()->refuse(caseId: 'case-1', reason: 'Niet voor ons.');
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
 	}//end testACallerWithoutCaseAccessCannotRefuse()
 
 	/**
@@ -379,8 +387,8 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$body = $this->controller()->queue()->getData();
 
-		$this->assertSame([['id' => 'e-quarantined']], $body['results']);
-		$this->assertSame(1, $body['sleeping']);
+		$this->assertSame(expected: [['id' => 'e-quarantined']], actual: $body['results']);
+		$this->assertSame(expected: 1, actual: $body['sleeping']);
 	}//end testTheQueueLeavesOutTheSleepingItems()
 
 	/**
@@ -406,8 +414,8 @@ final class IntakeTriageControllerTest extends TestCase {
 			reason: 'Wachten op het bestemmingsplan.'
 		);
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('2027-03-01', $response->getData()['sleepUntil']);
+		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
+		$this->assertSame(expected: '2027-03-01', actual: $response->getData()['sleepUntil']);
 	}//end testSleepingAnItemAnswersTheRecord()
 
 	/**
@@ -432,7 +440,7 @@ final class IntakeTriageControllerTest extends TestCase {
 			reason: 'Wachten.'
 		);
 
-		$this->assertSame(TriageSleep::RULE_ALREADY_A_CASE, $response->getData()['error']);
+		$this->assertSame(expected: TriageSleep::RULE_ALREADY_A_CASE, actual: $response->getData()['error']);
 	}//end testASleepOnAnAcceptedCaseCarriesItsRule()
 
 	/**
@@ -453,14 +461,14 @@ final class IntakeTriageControllerTest extends TestCase {
 
 		$controller = $this->controller();
 
-		$this->assertSame(Http::STATUS_FORBIDDEN, $controller->queue()->getStatus());
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $controller->queue()->getStatus());
 		$this->assertSame(
-			Http::STATUS_FORBIDDEN,
-			$controller->sleepItem(entryId: 'e-1', until: '2027-03-01', reason: 'x')->getStatus()
+			expected: Http::STATUS_FORBIDDEN,
+			actual: $controller->sleepItem(entryId: 'e-1', until: '2027-03-01', reason: 'x')->getStatus()
 		);
 		$this->assertSame(
-			Http::STATUS_FORBIDDEN,
-			$controller->fanOut(caseTypeId: 'ct-1')->getStatus()
+			expected: Http::STATUS_FORBIDDEN,
+			actual: $controller->fanOut(caseTypeId: 'ct-1')->getStatus()
 		);
 	}//end testTheTriageActsAreGatedOnTheIntakeRole()
 
@@ -485,8 +493,8 @@ final class IntakeTriageControllerTest extends TestCase {
 			submissionId: 'sub-1'
 		)->getData();
 
-		$this->assertCount(1, $body['created']);
-		$this->assertSame('Onderhoud', $body['failed'][0]['destination']);
-		$this->assertArrayNotHasKey('relationHasNoInverse', $body);
+		$this->assertCount(expectedCount: 1, haystack: $body['created']);
+		$this->assertSame(expected: 'Onderhoud', actual: $body['failed'][0]['destination']);
+		$this->assertArrayNotHasKey(key: 'relationHasNoInverse', array: $body);
 	}//end testTheFanOutReportsTheFailedDestinationBesideTheCreated()
 }//end class

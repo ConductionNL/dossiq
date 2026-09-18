@@ -49,6 +49,7 @@ use OCA\Dossiq\Service\Email\IntakePolicy;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
+use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeFanOut;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
 use OCA\Dossiq\Service\Intake\TriageSleep;
@@ -98,6 +99,7 @@ class IntakeTriageController extends Controller {
 	 * @param CaseClassification    $classification   The facets and the access rule.
 	 * @param ClassificationSchemes $schemes          The schemes this instance knows.
 	 * @param AssigneeNarrowing     $narrowing        Who may hold the case.
+	 * @param DuplicatePolicy       $duplicates       What this case type does about a case that already exists.
 	 * @param RefusalOutcome        $refusal          Refusal as an outcome of routing.
 	 * @param TriageSleep           $sleep            The triage sleep.
 	 * @param IntakeFanOut          $fanOut           One submission, several cases.
@@ -114,6 +116,7 @@ class IntakeTriageController extends Controller {
 		private readonly CaseClassification $classification,
 		private readonly ClassificationSchemes $schemes,
 		private readonly AssigneeNarrowing $narrowing,
+		private readonly DuplicatePolicy $duplicates,
 		private readonly RefusalOutcome $refusal,
 		private readonly TriageSleep $sleep,
 		private readonly IntakeFanOut $fanOut,
@@ -130,14 +133,22 @@ class IntakeTriageController extends Controller {
 	 * What one case type asks for before a case of it can exist.
 	 *
 	 * The create form draws itself from this: which fields it must ask for,
-	 * which facets it must offer and out of which values, and which teams and
-	 * people the assignee picker may list.
+	 * which facets it must offer and out of which values, which teams and
+	 * people the assignee picker may list, and what happens when the case being
+	 * filed looks like one that already exists.
+	 *
+	 * `duplicatePolicy` answers the second question the form has to ask before
+	 * it can draw the warning panel. The matches come from OpenRegister and say
+	 * what looks the same; only dossiq can say whether THIS account may file the
+	 * case anyway, because the override group is a group membership the browser
+	 * cannot read.
 	 *
 	 * @param string $caseTypeId The case type.
 	 *
 	 * @return JSONResponse The declaration, or 401 without a session.
 	 *
 	 * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	#[NoAdminRequired]
 	public function requirements(string $caseTypeId): JSONResponse {
@@ -164,6 +175,7 @@ class IntakeTriageController extends Controller {
 				'narrowsNothing' => $this->narrowing->narrowsNothing(caseType: $caseType),
 				'refusalDestination' => $this->refusal->destinationFor(caseType: $caseType),
 				'canRefuse' => $this->refusal->canRefuse(caseType: $caseType),
+				'duplicatePolicy' => $this->duplicates->declarationFor(caseType: $caseType, user: $user),
 			]
 		);
 	}//end requirements()

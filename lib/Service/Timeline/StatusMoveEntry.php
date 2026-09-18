@@ -97,7 +97,7 @@ class StatusMoveEntry {
 			return;
 		}
 
-		$publicLabel = $this->statuses->publicLabelOf(statusTypeId: $toStatus);
+		$publicLabel = $this->statuses->announcedLabelOf(statusTypeId: $toStatus);
 
 		$this->timeline->record(
 			caseId: $caseId,

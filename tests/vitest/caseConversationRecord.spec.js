@@ -96,8 +96,16 @@ describe('the record the case keeps of a conversation', () => {
 	it('notifies the responders declaratively rather than dispatching, per ADR-031', () => {
 		const rule = caseSchema['x-openregister-notifications'].caseDeclaredMajor
 		expect(rule).toBeDefined()
+		// The responders are still declared, and still FIRST. `case-followers`
+		// (row 13.18) added the case's watchers beside them, which is what
+		// somebody following a sensitive case is following it for. What this
+		// assertion has always been guarding is that dossiq names the
+		// recipients on the schema rather than dispatching to them in code, so
+		// it names the whole list rather than only the block it cares about: a
+		// `some()` here would let the responders be dropped in silence.
 		expect(rule.recipients).toEqual([
 			{ kind: 'field', field: 'majorResponders' },
+			{ watchers: true },
 		])
 		expect(rule.subject.nl).toBeTruthy()
 		expect(rule.subject.en).toBeTruthy()
