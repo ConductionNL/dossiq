@@ -120,6 +120,9 @@ import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
+// Remind a colleague about this case on a date (case-reminder-as-task).
+// @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+import RemindDialog from './dialogs/RemindDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -490,6 +493,14 @@ const registry = {
 		kind: 'modal',
 		component: CasePlanFollowUpDialog,
 		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once" or "three times". A Repeat picker turns it into a series (planned-case-series): the recurrence becomes the cron fields, the end becomes the sweep\'s stop rule, and the Related tab grows a series row with a Stop series action. The form lives here and not in the manifest: an `open-modal` header action carries a target and props only, and the five fields (case type, date, title, Repeat, Ends) are bound to each other, since the end fields appear only once a repeat is chosen and no `visibleWhen` on a header action can say that. What the manifest does decide is that the gesture is a modal rather than a `handler`, because a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. The manifest entry itself carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action, so the rationale belongs in this file.',
+	},
+
+	// --- Remind a colleague about this case (case-reminder-as-task, row 8.4). ---
+	// @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+	RemindDialog: {
+		kind: 'modal',
+		component: RemindDialog,
+		_note: "CaseDetail header action: who, when and what, creating an ENGINE task on the case with kind `reminder`. There is no reminder record and no dossiq job, and that is the design rather than an omission: the engine's due window already answers what is coming up and its assignment notification already tells the colleague, so a second clock in dossiq would disagree with the badge the engine decided the first time one of them was wrong. The kind is the only mark a reminder carries, it is an indexed column on openregister_tasks (openregister#3863), and the Tasks sidebar facets on it. Nothing else treats the value specially, which means a reminder written with the wrong spelling is still created, assigned and notified and is simply missing from the one lens that exists to find it; `REMINDER_KIND` in src/utils/reminderHelpers.js is the single spelling all three surfaces read. The form lives here and not in the manifest because an `open-modal` header action carries a target and props only, and it reads the case from the ROUTE because open-modal forwards props verbatim, so `@objectId` would arrive as that literal string. Who defaults to the signed-in user: most reminders are the one you set for yourself. The manifest entry carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action.",
 	},
 
 	// --- The duplicate warning at intake (duplicate-warning-at-intake). ---
