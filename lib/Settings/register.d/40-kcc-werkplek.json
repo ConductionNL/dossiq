@@ -16,7 +16,7 @@
             "contactmoment": {
                 "slug": "contactmoment",
                 "icon": "PhoneInTalk",
-                "version": "1.3.0",
+                "version": "1.4.0",
                 "configuration": {
                     "x-openregister-processing": {
                         "logReads": true,
@@ -51,6 +51,7 @@
                     "summary": {"type": "string", "title": "Summary", "description": "Summary of the contact"},
                     "accordingToIntent": {"type": "string", "title": "Intent Compliant", "description": "Detected dialogue intent"},
                     "firstTimeFix": {"type": "boolean", "title": "First Time Fix", "default": false, "description": "Whether the issue was resolved in one contact"},
+                    "visibleToApplicant": {"type": "boolean", "title": "Visible to the applicant", "default": false, "description": "Off by default. Tick it to put this contact on the timeline the applicant reads."},
                     "transcript": {"type": "string", "title": "Transcription", "description": "Optional voice-to-text transcription"},
                     "transferTo": {"type": "string", "title": "Transfer To", "description": "Specialist user id or wachtrij name if transferred"}
                 }

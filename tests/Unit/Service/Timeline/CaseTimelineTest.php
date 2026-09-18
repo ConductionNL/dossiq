@@ -137,6 +137,85 @@ class FakeTimelineWriter {
 }//end class
 
 /**
+ * A stand-in for the entity OpenRegister's reader answers with.
+ */
+class FakeTimelineRow {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param array<string, mixed> $row The fields.
+	 */
+	public function __construct(private readonly array $row) {
+	}//end __construct()
+
+	/**
+	 * The row as an array.
+	 *
+	 * @return array<string, mixed> The fields.
+	 */
+	public function jsonSerialize(): array {
+		return $this->row;
+	}//end jsonSerialize()
+}//end class
+
+/**
+ * A stand-in for OpenRegister's TimelineEntryService.
+ *
+ * It answers the entries it was seeded with, and RECORDS the visibility it was
+ * asked for, because the reader's contract is that it asks for the public ones
+ * and no caller can ask it for anything else.
+ */
+class FakeTimelineReader {
+
+	/**
+	 * The entries this stand-in hands back.
+	 *
+	 * @var array<int, mixed>
+	 */
+	public array $entries = [];
+
+	/**
+	 * Every visibility it was asked for.
+	 *
+	 * @var array<int, string|null>
+	 */
+	public array $asked = [];
+
+	/**
+	 * Set when the next read should blow up.
+	 *
+	 * @var boolean
+	 */
+	public bool $throws = false;
+
+	/**
+	 * One object's timeline.
+	 *
+	 * @param mixed       $object     The object.
+	 * @param string|null $visibility The filter.
+	 * @param integer     $limit      Page size.
+	 * @param integer     $offset     Page offset.
+	 *
+	 * @return array<int, mixed> The entries.
+	 */
+	public function listForObject(
+		mixed $object,
+		?string $visibility = null,
+		int $limit = 50,
+		int $offset = 0,
+	): array {
+		if ($this->throws === true) {
+			throw new RuntimeException('the reader is a release behind');
+		}
+
+		$this->asked[] = $visibility;
+
+		return $this->entries;
+	}//end listForObject()
+}//end class
+
+/**
  * A stand-in for OpenRegister's ObjectService, with the named parameters
  * the real one takes, because the caller uses named arguments.
  */
@@ -190,6 +269,13 @@ class CaseTimelineTest extends TestCase {
 	private FakeTimelineObjectService $objects;
 
 	/**
+	 * The stand-in reader the container hands out.
+	 *
+	 * @var FakeTimelineReader
+	 */
+	private FakeTimelineReader $reader;
+
+	/**
 	 * The mocked logger.
 	 *
 	 * @var LoggerInterface|MockObject
@@ -211,6 +297,7 @@ class CaseTimelineTest extends TestCase {
 	protected function setUp(): void {
 		$this->writer = new FakeTimelineWriter();
 		$this->objects = new FakeTimelineObjectService();
+		$this->reader = new FakeTimelineReader();
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->containerAnswersButCannotBuild = false;
 	}//end setUp()
@@ -252,6 +339,10 @@ class CaseTimelineTest extends TestCase {
 			function (string $name) use ($writerResolves): object {
 				if ($writerResolves === false) {
 					throw new RuntimeException('not found: ' . $name);
+				}
+
+				if ($name === CaseTimeline::READ_SERVICE) {
+					return $this->reader;
 				}
 
 				return $this->writer;
@@ -547,6 +638,128 @@ class CaseTimelineTest extends TestCase {
 	}//end testTheContactMomentKindDeclaresTheChannelsTheServiceAccepts()
 
 	/**
+	 * The public reader asks for the public entries, and cannot be asked for
+	 * anything else.
+	 *
+	 * THE ASSERTION ON `asked` IS THE WHOLE TEST. `publicEntries()` takes no
+	 * visibility argument, so the only way an internal entry reaches an
+	 * applicant is if this call stops naming the filter. A reader handed the
+	 * unfiltered feed would return exactly the same shape, pass every other
+	 * assertion in this file, and put internal notes on a citizen's screen.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testPublicEntriesAsksForThePublicOnes(): void {
+		$this->reader->entries = [
+			['uuid' => 'e1', 'kind' => 'statuswijziging', 'message' => 'Status: In behandeling'],
+		];
+
+		$entries = $this->timeline()->publicEntries(caseId: 'case-1');
+
+		$this->assertSame(['public'], $this->reader->asked);
+		$this->assertCount(1, $entries);
+		$this->assertSame('e1', $entries[0]['id']);
+		$this->assertSame('statuswijziging', $entries[0]['kind']);
+		$this->assertSame('Status: In behandeling', $entries[0]['message']);
+	}//end testPublicEntriesAsksForThePublicOnes()
+
+	/**
+	 * The projection drops the author, and keeps the moment.
+	 *
+	 * A handler's user id is not part of what happened on the case as far as
+	 * the applicant is concerned. The date is: "delivered on the 4th" is the
+	 * line, not "delivered".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testThePublicProjectionDropsTheAuthorAndKeepsTheMoment(): void {
+		$this->reader->entries = [
+			[
+				'uuid' => 'e1',
+				'kind' => TimelineKinds::DECISION_SENT,
+				'message' => 'Beschikking verzonden',
+				'author' => 'handler-42',
+				'fields' => ['channel' => 'berichtenbox'],
+				'created' => new \DateTimeImmutable('2026-05-04T09:12:00+02:00'),
+			],
+		];
+
+		$entry = $this->timeline()->publicEntries(caseId: 'case-1')[0];
+
+		$this->assertArrayNotHasKey('author', $entry);
+		$this->assertSame('berichtenbox', $entry['fields']['channel']);
+		$this->assertStringStartsWith('2026-05-04T09:12:00', $entry['occurredAt']);
+	}//end testThePublicProjectionDropsTheAuthorAndKeepsTheMoment()
+
+	/**
+	 * An entity that serialises itself is read the same way as a plain row.
+	 *
+	 * OpenRegister answers entities, not arrays, and a projection that only
+	 * understood arrays would answer a list of empty entries rather than fail.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAnEntityIsProjectedLikeARow(): void {
+		$this->reader->entries = [new FakeTimelineRow(['uuid' => 'e9', 'message' => 'Verzonden'])];
+
+		$entry = $this->timeline()->publicEntries(caseId: 'case-1')[0];
+
+		$this->assertSame('e9', $entry['id']);
+		$this->assertSame('Verzonden', $entry['message']);
+	}//end testAnEntityIsProjectedLikeARow()
+
+	/**
+	 * An absence the reader can ESTABLISH answers the empty list.
+	 *
+	 * Each of these is a fact the method works out for itself: nothing was
+	 * asked for, OpenRegister or its reader is not on this instance, the
+	 * register is unconfigured, or the case is not there. None of them is a
+	 * failure being hidden.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAnEstablishedAbsenceAnswersNothing(): void {
+		$this->assertSame([], $this->timeline()->publicEntries(caseId: ''));
+		$this->assertSame([], $this->timeline(openRegister: false)->publicEntries(caseId: 'case-1'));
+		$this->assertSame([], $this->timeline(writerResolves: false)->publicEntries(caseId: 'case-1'));
+		$this->assertSame([], $this->timeline(caseSchema: '')->publicEntries(caseId: 'case-1'));
+
+		$this->objects->unreadable = ['case-1'];
+		$this->assertSame([], $this->timeline()->publicEntries(caseId: 'case-1'));
+	}//end testAnEstablishedAbsenceAnswersNothing()
+
+	/**
+	 * A read that THROWS is logged and travels on, rather than reading as an
+	 * empty timeline.
+	 *
+	 * THIS IS THE ONE ASSERTION THAT SEPARATES THE TWO FACTS. "I could not
+	 * read" and "nothing here is public" have the same shape and opposite
+	 * meanings, and the wrong one on a citizen's screen says nothing has
+	 * happened on their case. The warning is asserted beside the throw,
+	 * because a rethrow nobody logged leaves the failure nameless.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAReadThatThrowsIsLoggedAndTravelsOn(): void {
+		$this->reader->throws = true;
+
+		$this->logger->expects($this->atLeastOnce())->method('warning');
+
+		$this->expectException(RuntimeException::class);
+		$this->timeline()->publicEntries(caseId: 'case-1');
+	}//end testAReadThatThrowsIsLoggedAndTravelsOn()
+
+	/**
 	 * Every kind a writer in this app names is actually declared, and every
 	 * declaration is well formed. A kind constant nothing declares is a 400
 	 * on the first write of it.
@@ -566,6 +779,7 @@ class CaseTimelineTest extends TestCase {
 			TimelineKinds::ACKNOWLEDGEMENT,
 			TimelineKinds::STATUS_CHANGE,
 			TimelineKinds::TERM_EVENT,
+			TimelineKinds::DECISION_SENT,
 			TimelineKinds::DATA_SUBJECT_REQUEST,
 		];
 
