@@ -62,6 +62,12 @@ A `_related` block openregister refuses SHALL be shown to the handler under
 the filter bar, naming the field, and the list SHALL NOT be rendered as
 empty.
 
+The notice SHALL be rendered by the filter bar and not by `CaseSearchRefusal`.
+That component reads `_search` and its position-in-term shape, and the bar is
+the one that knows which definition an id belongs to, which is what turns
+"pd-7 is not a valid filter" into a sentence a handler can act on. A refused
+`_search` SHALL NOT be reported as a refused field filter.
+
 An empty list and a refused query look the same on screen, and only one of
 them is an answer.
 
