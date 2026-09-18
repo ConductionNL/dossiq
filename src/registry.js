@@ -428,7 +428,7 @@ const registry = {
 	CaseMergeDialog: {
 		kind: 'modal',
 		component: CaseMergeDialog,
-		_note: 'Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server\'s and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out.',
+		_note: 'Merging two cases into one (REQ-CM-37). The survivor is searched for and picked, never defaulted, because the reversal window is seven days and a preselected survivor is one that gets confirmed. The refusals are the server\'s and are shown verbatim beside their code: a signed beschikking and an already merged case are two different answers with two different ways out. WHY THE ACTION IS HIDDEN ON A CLOSED CASE, moved here from the manifest entry: a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server\'s and arrive as a sentence in the dialog; hiding them in the header too would leave a handler wondering why an act they were told about is not there. The manifest entry carries no `_note` because `$defs/action` sets `additionalProperties: false`, which is the same reason CasePlanFollowUpDialog above records.',
 	},
 
 	// @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md

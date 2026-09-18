@@ -52,7 +52,7 @@
  * lines have to move with it, or they resolve to nothing the other way round:
  * dossiq#2057 left 119 citations doing exactly that.
  *
- * @spec openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md
+ * @spec openspec/changes/archive/2026-09-18-hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md
  */
 
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
@@ -484,7 +484,7 @@ if (!HUMANIQ_DECLARED) {
 			await purgeHoursCase(playwright, baseURL, caseId)
 		})
 
-		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-surface-is-absent-when-humaniq-is
+		// @e2e openspec/changes/archive/2026-09-18-hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-surface-is-absent-when-humaniq-is
 		test('the page renders its own widgets and no hours surface at all', async ({
 			page,
 		}) => {
@@ -531,7 +531,7 @@ if (!HUMANIQ_DECLARED) {
 			}
 		})
 
-		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#no-cross-app-register-query-survives
+		// @e2e openspec/changes/archive/2026-09-18-hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#no-cross-app-register-query-survives
 		test('the page asks humaniq for nothing', async ({ page }) => {
 			// This is the regression the change exists to prevent, and it is
 			// assertable exactly where humaniq is absent: a manifest query
@@ -597,7 +597,7 @@ if (!HUMANIQ_DECLARED) {
 			await purgeHoursCase(playwright, baseURL, caseId)
 		})
 
-		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#hours-render-on-a-case-with-humaniq-installed
+		// @e2e openspec/changes/archive/2026-09-18-hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#hours-render-on-a-case-with-humaniq-installed
 		test("the tile leads with the hours on the case and the caller's own beneath", async ({
 			page,
 		}) => {
@@ -699,7 +699,7 @@ if (!HUMANIQ_DECLARED) {
 			).toBeLessThan(Number(actionsBox?.x))
 		})
 
-		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
+		// @e2e openspec/changes/archive/2026-09-18-hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#the-leaf-reads-the-right-case
 		test('the leaf reads and books against this case, and the headline follows', async ({
 			page,
 		}) => {
@@ -827,7 +827,7 @@ if (!HUMANIQ_DECLARED) {
 				.toBeCloseTo(before + BOOKED_HOURS, 2)
 		})
 
-		// @e2e openspec/changes/hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#hours-render-on-a-case-with-humaniq-installed
+		// @e2e openspec/changes/archive/2026-09-18-hours-onto-humaniq-leaf/specs/case-hours-via-humaniq-leaf/spec.md#hours-render-on-a-case-with-humaniq-installed
 		test('a running timer survives a reload, and stopping it returns the figures', async ({
 			page,
 		}) => {

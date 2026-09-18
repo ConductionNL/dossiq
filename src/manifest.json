@@ -3120,7 +3120,6 @@
 							"caseId": "@objectId",
 							"open": true
 						},
-						"_note": "Two cases for one request become one (REQ-CM-37). Hidden on a closed case, because a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog: hiding them here would leave a handler wondering why an act they were told about is not there.",
 						"visibleWhen": {
 							"field": "isFinalStatus",
 							"op": "neq",

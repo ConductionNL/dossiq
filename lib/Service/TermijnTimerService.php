@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Term\ThresholdShares;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -121,6 +122,7 @@ class TermijnTimerService {
 		private readonly ?WorkingDayCalculator $fallbackCalendar = null,
 		private readonly ?TermCalendarGuard $calendarGuard = null,
 		private readonly ?ThresholdShares $thresholdShares = null,
+		private readonly ?WorkingDayRoll $roll = null,
 	) {
 		$this->shares = ($thresholdShares ?? new ThresholdShares());
 	}//end __construct()
@@ -158,7 +160,15 @@ class TermijnTimerService {
 			return null;
 		}
 
-		$slaDays = $this->slaDaysFor(instance: $instance, definitie: $definitie, start: $start);
+		// The mode the definition declares decides BOTH halves of the SLA. A
+		// value counted in calendar days under `unit: businessDays` would give
+		// a ten working day term fourteen working days, which is two weeks the
+		// case is not entitled to, so the unit never moves without the value.
+		$mode = TermijnService::countingModeOf(definitie: $definitie);
+		$slaUnit = ($mode === WorkingDayRoll::MODE_WORKING_DAYS
+			? WorkingDayRoll::UNIT_BUSINESS_DAYS
+			: WorkingDayRoll::UNIT_CALENDAR_DAYS);
+		$slaDays = $this->slaDaysFor(instance: $instance, definitie: $definitie, start: $start, mode: $mode);
 
 		$config = [
 			'subjectType' => 'object',
@@ -169,7 +179,7 @@ class TermijnTimerService {
 			'legalEffect' => 'wettelijk',
 			'sla' => [
 				'value' => $slaDays,
-				'unit' => 'calendarDays',
+				'unit' => $slaUnit,
 			],
 			'ladder' => self::LADDER_DEFAULT,
 			'extensionMax' => max(1, (int)($definitie['countExtensions'] ?? 1)),
@@ -545,6 +555,26 @@ class TermijnTimerService {
 	}//end rollEnabled()
 
 	/**
+	 * Whether an organisation calendar is answering at all.
+	 *
+	 * ASKED SO A SURFACE CAN SAY WHICH IT IS. A roll that was not needed and a
+	 * roll that could not be made produce the same plausible date, so a page
+	 * that shows the date and nothing else cannot tell an administrator that
+	 * the Awt rule is currently inert on this instance.
+	 *
+	 * Deliberately not inferred from a roll's result: the roll falls back
+	 * silently by design, because a term must still get a date.
+	 *
+	 * @return boolean True when both engine classes resolve.
+	 *
+	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function calendarAnswers(): bool {
+		return ($this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS) !== null
+			&& $this->settingsService->getOpenRegisterClass(self::SLA_CALCULATOR_CLASS) !== null);
+	}//end calendarAnswers()
+
+	/**
 	 * The roll as the engine computes it, falling back when it cannot answer.
 	 *
 	 * @param DateTimeImmutable $date The computed end date.
@@ -651,21 +681,50 @@ class TermijnTimerService {
 	 *
 	 * @return int Calendar days, at least 1 (the engine refuses 0).
 	 */
-	private function slaDaysFor(array $instance, array $definitie, DateTimeImmutable $start): int {
+	private function slaDaysFor(
+		array $instance,
+		array $definitie,
+		DateTimeImmutable $start,
+		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
+	): int {
 		$end = $this->dates->tryParse($instance['endDateCurrent'] ?? null);
 		if ($end !== null) {
 			// Both sides at day granularity in the administered zone. Reading
 			// one of them through the process zone is how a term lost a day
 			// between two servers.
 			$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');
-			$days = (int)$startDay->diff($end)->days;
-			if ($end >= $startDay && $days > 0) {
+			$days = $this->spanFor(from: $startDay, to: $end, mode: $mode);
+			if ($end >= $startDay && $days !== null && $days > 0) {
 				return $days;
 			}
 		}
 
 		return max(1, (int)($definitie['standardDurationDays'] ?? 1));
 	}//end slaDaysFor()
+
+	/**
+	 * The span between two dates in one counting mode, or null when working
+	 * days were asked for and the organisation calendar did not answer.
+	 *
+	 * Null rather than the calendar-day span, so the caller falls back to the
+	 * DECLARED duration instead of arming a working-day timer with a number
+	 * counted the other way.
+	 *
+	 * @param DateTimeImmutable $from The start.
+	 * @param DateTimeImmutable $to   The end.
+	 * @param string            $mode The declared mode.
+	 *
+	 * @return int|null The span.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function spanFor(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
+		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS) {
+			return (int)$from->diff($to)->days;
+		}
+
+		return $this->roll?->daysBetween(from: $from, to: $to, mode: $mode);
+	}//end spanFor()
 
 
 	/**

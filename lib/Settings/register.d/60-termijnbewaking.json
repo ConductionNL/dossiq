@@ -16,7 +16,7 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:DefinedTerm",
         "title": "Termijn Definitie",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
@@ -52,11 +52,22 @@
             "description": "Standard duration in weeks (alternative representation)",
             "minimum": 0
           },
+          "countingMode": {
+            "type": "string",
+            "enum": [
+              "calendarDays",
+              "workingDays"
+            ],
+            "default": "calendarDays",
+            "title": "Counting mode",
+            "description": "Whether this term counts every day or only the days the organisation works. An Awb beslistermijn counts calendar days, which is why that is the default and why shipping this property moves no date anybody is already counting on. A service norm, an internal handling term and a KCC callback count working days, and until now they could not. The working days are the organisation calendar's, not a list dossiq keeps, and the armed timer carries the same mode so the badge and the engine count down to one date.",
+            "facetable": true
+          },
           "rollToWorkingDay": {
             "type": "boolean",
             "title": "Roll to the next ordinary day",
-            "description": "When on, a term whose end date falls on a Saturday, Sunday or recognised holiday ends on the next ordinary day instead, as the Algemene termijnenwet requires. The days it moves over are the organisation calendar's, not a list dossiq keeps. Off by default, and that default is a legal question rather than a technical one: turning it on for Algemene termijnenwet terms waits on somebody qualified confirming the recognised-holiday list against Awt art. 3 for these case types.",
-            "default": false
+            "description": "When on, a term whose end date falls on a Saturday, Sunday or recognised holiday ends on the next ordinary day instead, as the Algemene termijnenwet requires. The days it moves over are the organisation calendar's, not a list dossiq keeps. On by default, because Awt art. 1 applies by law and not by configuration: the switch exists to turn the roll OFF for a term the Awt does not govern, which is the same reading TermijnTimerService::rollEnabled() has always had for a definition that carries no flag.",
+            "default": true
           },
           "extensionCapacity": {
             "type": "integer",

@@ -39,7 +39,6 @@ use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
-use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -73,7 +72,7 @@ class TermijnService {
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermEventEntry $termEntry = null,
-		private readonly ?WorkingDayRoll $roll = null,
+		private readonly ?CaseDateNormaliser $dates = null,
 	) {
 	}//end __construct()
 
@@ -124,22 +123,25 @@ class TermijnService {
 		}
 
 		$durationDays = (int)($definitie['standardDurationDays'] ?? 0);
-		$computed = $startDate->modify('+' . $durationDays . ' days');
+		$computed = $this->endDateFor(start: $startDate, days: $durationDays, definitie: $definitie);
 
-		// THE ALGEMENE TERMIJNENWET ROLL, WHEN THE DEFINITION ASKS FOR IT.
-		// `+N days` on its own lands a third of dossiq's terms on a Saturday,
-		// a Sunday or a recognised holiday, which Awt art. 1 says must move to
-		// the next ordinary day. Which days those are is the organisation
-		// calendar's answer and not a list here.
+		// THE ALGEMENE TERMIJNENWET ROLL. `+N days` on its own lands a third
+		// of dossiq's terms on a Saturday, a Sunday or a recognised holiday,
+		// which Awt art. 1 says must move to the next ordinary day.
 		//
-		// The armed timer inherits this without a second rule: it derives its
-		// SLA from `endDateCurrent` through
+		// 🔑 ONE ROLL FOR THE WHOLE APP, AND IT IS THE TIMER SERVICE'S.
+		// `rollTermEndFor()` is the call every other term site makes, it reads
+		// the declared flag itself, and it refuses when a term names a
+		// calendar the engine cannot resolve. A second roll here read the same
+		// flag with the OPPOSITE default for a few hours, which is how two
+		// implementations of one statutory rule start answering different
+		// dates for the same case.
+		//
+		// The armed timer inherits the rolled date without a third rule: it
+		// derives its SLA from `endDateCurrent` through
 		// {@see TermijnTimerService::slaDaysFor()}, so one computation decides
-		// both the stored date and the deadline the engine counts to. A second
-		// roll applied at arming time is how the two would come to disagree.
-		if ($this->roll !== null) {
-			$computed = $this->roll->roll(date: $computed, definition: $definitie);
-		}
+		// both the stored date and the deadline the engine counts to.
+		$computed = ($this->timerService?->rollTermEndFor(date: $computed, definitie: $definitie) ?? $computed);
 
 		$endDate = $computed->format('Y-m-d');
 
@@ -185,6 +187,69 @@ class TermijnService {
 
 		return ($this->armEngineTimer(instance: $saved, definitie: $definitie) ?? $saved);
 	}//end createTermijnInstance()
+
+	/**
+	 * The end date of a term, counted in the mode its definition declares.
+	 *
+	 * 🔴 A DEGRADED WORKING-DAY TERM IS LOGGED, NOT SILENTLY SHORTENED. When
+	 * the definition asks for working days and the organisation calendar does
+	 * not answer, the fallback counts calendar days, which gives the case a
+	 * SHORTER term than it is owed: ten working days is fourteen calendar
+	 * days, so the applicant loses four. That is the documented degradation
+	 * (D-2, the D-7 posture) and it is stated at warning naming the case type,
+	 * because a term nobody can see is short is the failure this whole change
+	 * exists to end.
+	 *
+	 * @param DateTimeImmutable    $start     The day the term starts.
+	 * @param int                  $days      The declared duration.
+	 * @param array<string, mixed> $definitie The definition.
+	 *
+	 * @return DateTimeImmutable The end date, before the Awt roll.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	private function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
+		$mode = self::countingModeOf(definitie: $definitie);
+		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS || $this->roll === null) {
+			return $start->modify('+' . $days . ' days');
+		}
+
+		$computed = $this->roll->endAfter(start: $start, days: $days, mode: $mode);
+		if ($computed !== null) {
+			return $computed;
+		}
+
+		$this->logger->warning(
+			'Dossiq termijn: a term declares working days and the organisation calendar did not answer, '
+			. 'so its end date was counted in calendar days and the term is SHORTER than it is owed',
+			['caseType' => (string)($definitie['caseType'] ?? ''), 'days' => $days]
+		);
+
+		return $start->modify('+' . $days . ' days');
+	}//end endDateFor()
+
+	/**
+	 * The counting mode a definition declares.
+	 *
+	 * Static, because the timer service asks the same question of the same row
+	 * and two readings of one declaration is how the badge and the engine come
+	 * to count down to different dates. An absent or unknown value reads as
+	 * calendar days: every definition written before this property existed
+	 * counts them, and an Awb beslistermijn counts them by law.
+	 *
+	 * @param array<string, mixed> $definitie The definition.
+	 *
+	 * @return string One of the two modes.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public static function countingModeOf(array $definitie): string {
+		$declared = trim((string)($definitie['countingMode'] ?? ''));
+
+		return ($declared === WorkingDayRoll::MODE_WORKING_DAYS
+			? WorkingDayRoll::MODE_WORKING_DAYS
+			: WorkingDayRoll::MODE_CALENDAR_DAYS);
+	}//end countingModeOf()
 
 	/**
 	 * Arm the engine timer for a freshly created instance and store its
@@ -805,16 +870,13 @@ class TermijnService {
 	 * @return DateTimeImmutable|null The start, or null when it carries none.
 	 */
 	private function startOf(array $instance): ?DateTimeImmutable {
-		$raw = trim((string)($instance['startDate'] ?? ''));
-		if ($raw === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($raw);
-		} catch (\Throwable $e) {
-			return null;
-		}
+		// THE ONE DATE PATH. `new DateTimeImmutable($raw)` here read the
+		// PROCESS zone, so the same stored string became a different day on
+		// two servers, and the swallowing catch meant nothing said so. The
+		// normaliser resolves the administered zone and answers null for a
+		// value it cannot read, which is the same contract without the second
+		// rule.
+		return $this->dates?->tryParse($instance['startDate'] ?? null);
 	}//end startOf()
 
 	/**
@@ -825,16 +887,11 @@ class TermijnService {
 	 * @return DateTimeImmutable|null The moment, or null for now.
 	 */
 	private function momentOf(array $event): ?DateTimeImmutable {
-		$raw = trim((string)($event['moment'] ?? ''));
-		if ($raw === '') {
-			return null;
-		}
-
-		try {
-			return new DateTimeImmutable($raw);
-		} catch (\Throwable $e) {
-			return null;
-		}
+		// Same rule as {@see self::startOf()}, and the reason
+		// `OneDateWritePathTest` names this method by name: a private method
+		// whose name reads like a date helper and whose body parses a string
+		// is a second definition of what a date is.
+		return $this->dates?->tryParse($event['moment'] ?? null);
 	}//end momentOf()
 
 	/**

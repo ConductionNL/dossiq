@@ -349,8 +349,42 @@ class CaseEmailService {
 		$caseData = $this->repository->loadCaseVariables(caseId: $caseId);
 
 		// Resolve template variables.
-		$subject = $this->resolveVariables(template: $template['subjectPattern'] ?? '', data: $caseData);
-		$body = $this->resolveVariables(template: $template['body'] ?? '', data: $caseData);
+		$subjectPattern = (string)($template['subjectPattern'] ?? '');
+		$bodyPattern = (string)($template['body'] ?? '');
+
+		// 🔴 REFUSED RATHER THAN SENT WITH A HOLE IN IT. `substituteVariables()`
+		// leaves a placeholder nothing answers exactly as it found it, which is
+		// the right call for a preview and the wrong one for a mail: the
+		// transport accepts it, the send reports success, and the only person
+		// who learns of the defect is the citizen reading `{{contactNaam}}` in
+		// their letter. dossiq#2950 found six shipped templates in that state
+		// and nobody had reported one in 35 days.
+		//
+		// `findUnresolvedVariables()` has been sitting beside this method since
+		// both were written, asked only by the preview endpoint. This is the
+		// send path asking it.
+		$unresolved = array_values(
+			array_unique(
+				array_merge(
+					$this->findUnresolvedVariables(template: $subjectPattern, data: $caseData),
+					$this->findUnresolvedVariables(template: $bodyPattern, data: $caseData)
+				)
+			)
+		);
+
+		if ($unresolved !== []) {
+			// A RuntimeException that is not the transport sentinel becomes a
+			// 400 carrying its message, which is what this is: caller-fixable,
+			// and the fix is to name a placeholder the case can answer.
+			throw new RuntimeException(
+				'Email not sent: the template names '
+				. implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $unresolved))
+				. ', which this case cannot fill.'
+			);
+		}
+
+		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
+		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
 
 		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
 	}//end sendFromTemplate()

@@ -64,6 +64,22 @@ use Throwable;
  * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
  */
 class WorkingDayRoll {
+	/*
+	 * 🔴 THIS CLASS DOES NOT READ `rollToWorkingDay`, AND THAT IS THE FIX.
+	 *
+	 * It briefly did, alongside `TermijnTimerService::rollEnabled()`, and the
+	 * two disagreed: an absent flag read here as OFF and there as ON, because
+	 * Awt art. 1 applies by law and not by configuration. One case could then
+	 * get two different end dates depending on which path reached it, and
+	 * both dates looked perfectly ordinary on the page.
+	 *
+	 * So the decision lives in ONE place, `rollEnabled()`, and the end-date
+	 * roll in one call, `rollTermEndFor()`. What is left here is the calendar
+	 * accessor the intake start uses: it answers whether a calendar is
+	 * answering at all, and what the first working moment at or after an
+	 * instant is. Neither of those is a policy.
+	 */
+
 	/**
 	 * The engine's calculator, resolved by name.
 	 *
@@ -89,6 +105,24 @@ class WorkingDayRoll {
 	 * @var string
 	 */
 	public const UNIT_BUSINESS_DAYS = 'businessDays';
+
+	/**
+	 * The engine's word for an ordinary day count.
+	 */
+	public const UNIT_CALENDAR_DAYS = 'calendarDays';
+
+	/**
+	 * The two modes a term can count in. The default is calendar days because
+	 * an Awb beslistermijn counts them, and shipping the property must move no
+	 * date anybody is already counting on.
+	 */
+	public const MODE_CALENDAR_DAYS = 'calendarDays';
+
+	/**
+	 * A service norm, an internal handling term or a KCC callback counts the
+	 * days the organisation actually works.
+	 */
+	public const MODE_WORKING_DAYS = 'workingDays';
 
 	/**
 	 * Whether the engine has been looked for yet.
@@ -125,27 +159,6 @@ class WorkingDayRoll {
 	}//end __construct()
 
 	/**
-	 * Whether a definition asks for the roll.
-	 *
-	 * Reads the declared flag and nothing else. An absent flag is false, which
-	 * is the same answer as an explicit false on purpose: a term that has not
-	 * been administered for the Awt must behave as it did yesterday, so
-	 * shipping this change moves no date anybody is already counting on.
-	 *
-	 * @param array<string, mixed> $definition The deadlineDefinition row.
-	 *
-	 * @return boolean True when the definition declares the roll.
-	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
-	 */
-	public function isAskedFor(array $definition): bool {
-		return filter_var(
-			($definition['rollToWorkingDay'] ?? false),
-			FILTER_VALIDATE_BOOLEAN
-		);
-	}//end isAskedFor()
-
-	/**
 	 * Whether the organisation calendar is answering.
 	 *
 	 * Asked before the roll rather than inferred from its result, because a
@@ -161,6 +174,101 @@ class WorkingDayRoll {
 
 		return ($this->calculator !== null && $this->calendar !== null);
 	}//end isAvailable()
+
+	/**
+	 * A date this many days after the one given, counted in one mode.
+	 *
+	 * The counting mode is the term's own (`counting-mode-per-term`, row
+	 * Q8.16): an Awb beslistermijn counts calendar days, and a service norm or
+	 * a KCC callback counts working days. Both answers come from here rather
+	 * than from two places, because the SLA the engine arms and the
+	 * `endDateCalculated` the case stores have to agree at day granularity or
+	 * the badge and the timer count down to different dates.
+	 *
+	 * Working days are the ENGINE'S, per ADR-022 and for the same reason the
+	 * roll below is. When the calendar does not answer, the caller is told so
+	 * rather than handed a calendar-day date that looks like a working-day
+	 * one: null is the answer, and `TermijnService` degrades and logs.
+	 *
+	 * @param DateTimeImmutable $start The day the term starts.
+	 * @param int               $days  How many days it runs.
+	 * @param string            $mode  `calendarDays` or `workingDays`.
+	 *
+	 * @return DateTimeImmutable|null The end date, or null when working days
+	 *                                were asked for and the calendar is absent.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function endAfter(DateTimeImmutable $start, int $days, string $mode): ?DateTimeImmutable {
+		if ($mode !== self::MODE_WORKING_DAYS) {
+			return $start->modify('+' . $days . ' days');
+		}
+
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return $this->calculator->add(
+				from: $start,
+				value: (float)$days,
+				unit: self::UNIT_BUSINESS_DAYS,
+				calendar: $this->calendar
+			);
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar refused a working-day end date',
+				['error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+	}//end endAfter()
+
+	/**
+	 * How many days lie between two dates, counted in one mode.
+	 *
+	 * The counterpart of {@see endAfter()}, and the reason the timer's SLA
+	 * VALUE moves with its unit: a ten working day term spans fourteen
+	 * calendar days, so arming `value: 14, unit: businessDays` would give the
+	 * case two weeks it is not entitled to.
+	 *
+	 * @param DateTimeImmutable $from The start.
+	 * @param DateTimeImmutable $to   The end.
+	 * @param string            $mode `calendarDays` or `workingDays`.
+	 *
+	 * @return int|null The span, or null when working days were asked for and
+	 *                  the calendar is absent.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function daysBetween(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
+		if ($mode !== self::MODE_WORKING_DAYS) {
+			return (int)$from->diff($to)->days;
+		}
+
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return (int)round(
+				$this->calculator->measure(
+					from: $from,
+					to: $to,
+					unit: self::UNIT_BUSINESS_DAYS,
+					calendar: $this->calendar
+				)
+			);
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar refused a working-day span',
+				['error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+	}//end daysBetween()
 
 	/**
 	 * The first working moment at or after this one, or null.
@@ -213,7 +321,7 @@ class WorkingDayRoll {
 			return null;
 		}
 
-		// FORWARD ONLY, for the reason roll() gives: a calendar answering
+		// FORWARD ONLY. A calendar answering
 		// earlier than the moment asked about would start a citizen's term
 		// before their request arrived.
 		if ($answered < $moment) {
@@ -227,75 +335,6 @@ class WorkingDayRoll {
 
 		return $answered;
 	}//end firstWorkingMomentAtOrAfter()
-
-	/**
-	 * The next ordinary day at or after this one, on the organisation calendar.
-	 *
-	 * Returns the date unchanged when the definition does not ask for the
-	 * roll, and when the calendar cannot be reached. THE SECOND CASE IS NOT A
-	 * SILENT PASS: it is logged at warning naming the date, because a term
-	 * that should have moved and did not is a statutory error, and the one
-	 * thing worse than not rolling is not rolling quietly.
-	 *
-	 * @param DateTimeImmutable    $date       The computed end date.
-	 * @param array<string, mixed> $definition The deadlineDefinition row.
-	 *
-	 * @return DateTimeImmutable The rolled date, at or after the one given.
-	 *
-	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
-	 */
-	public function roll(DateTimeImmutable $date, array $definition): DateTimeImmutable {
-		if ($this->isAskedFor(definition: $definition) === false) {
-			return $date;
-		}
-
-		if ($this->isAvailable() === false) {
-			$this->logger?->warning(
-				'Dossiq termijn: the roll to the next ordinary day was asked for and the organisation calendar did not answer; the end date stands as computed',
-				['date' => $date->format('Y-m-d'), 'definition' => (string)($definition['id'] ?? '')],
-			);
-
-			return $date;
-		}
-
-		try {
-			$rolled = $this->calculator->add(
-				from: $date,
-				value: 0.0,
-				unit: self::UNIT_BUSINESS_DAYS,
-				calendar: $this->calendar
-			);
-		} catch (Throwable $e) {
-			$this->logger?->warning(
-				'Dossiq termijn: the organisation calendar refused a roll; the end date stands as computed',
-				['date' => $date->format('Y-m-d'), 'error' => $e->getMessage()],
-			);
-
-			return $date;
-		}
-
-		// FORWARD ONLY. The Awt moves a deadline later and never earlier, and
-		// a calendar that answered something before the date given would take
-		// days off a citizen's right of reply. Refusing it here costs a roll;
-		// trusting it costs a term.
-		if ($rolled < $date) {
-			$this->logger?->warning(
-				'Dossiq termijn: the organisation calendar answered a date before the one asked about; the end date stands as computed',
-				['date' => $date->format('Y-m-d'), 'answered' => $rolled->format('Y-m-d')],
-			);
-
-			return $date;
-		}
-
-		// The roll lands on a DAY, not on the start of an office hour: a term
-		// ends at the end of its day, and reading the returned instant's time
-		// would end it at nine in the morning.
-		return $rolled->setTime(
-			(int)$date->format('H'),
-			(int)$date->format('i'),
-			(int)$date->format('s')
-		);
-	}//end roll()
 
 	/**
 	 * Look for the engine, once.
