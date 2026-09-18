@@ -712,7 +712,7 @@ describe('Archive and Restore on the case page', () => {
 		expect(iconsSource).toContain('\n\tArchiveOutline,\n')
 	})
 
-	it('hides the six write actions on an archived case and keeps the lifecycle menu', () => {
+	it('hides the seven write actions on an archived case and keeps the lifecycle menu', () => {
 		// REQ-CM-43. The marker is read off the case object the page already
 		// holds, so the gate costs no round trip, and `eq null` is exact: an
 		// absent marker is null and a present one is an object.
@@ -728,6 +728,10 @@ describe('Archive and Restore on the case page', () => {
 			'generate-document',
 			'case-acknowledgement-met',
 			'plan-follow-up',
+			// A reminder is work somebody is asked to do on the case, so it is
+			// gated with the other writes: a task due next week on a case that
+			// closed last month is a notification nobody can act on.
+			'case-remind',
 		])
 		for (const id of gated) {
 			expect(headerAction(id).visibleWhen).toEqual({

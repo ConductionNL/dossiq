@@ -183,7 +183,7 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "title": "Termijn Instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",

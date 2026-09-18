@@ -67,6 +67,21 @@ class CaseAccessGuard {
 	use SearchesObjects;
 
 	/**
+	 * How far up the deelzaak chain a read grant travels.
+	 *
+	 * The same number the `case` schema declares under
+	 * `x-openregister-hierarchy.maxDepth`, and it is a cap rather than a
+	 * budget. A deelzaak chain is a graph nobody validates on write, so an
+	 * import that files a case under its own descendant produces a cycle; the
+	 * `seen` set below refuses one, and this cap refuses a chain that is
+	 * merely absurd. Neither is a performance tuning knob: without them a
+	 * single malformed row makes an authorization question never return.
+	 *
+	 * @var int
+	 */
+	public const HIERARCHY_MAX_DEPTH = 10;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService The settings service (OR access).
@@ -113,11 +128,19 @@ class CaseAccessGuard {
 	/**
 	 * Whether the given user may mutate the given case.
 	 *
+	 * 🔴 THIS DOES NOT WALK THE PARENT CHAIN, and that is the requirement
+	 * rather than an omission (row Q13.23, D-3). A read on a parent reaches
+	 * its deelzaken; a right to see a case is not a right to change its
+	 * children. The absence of a call to
+	 * {@see self::readAccessSource()} here is what pins it, so anything added
+	 * to this method that resolves an ancestor is the regression.
+	 *
 	 * @param string $caseId The case UUID.
 	 * @param IUser $user The authenticated user.
 	 *
-	 * @return bool True when the user handles the case or is an admin.
+	 * @return bool True when the user handles the case itself or is an admin.
 	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function hasCaseMutationAccess(string $caseId, IUser $user): bool {
@@ -169,11 +192,19 @@ class CaseAccessGuard {
 	 * when the lookup throws. Those three fail-OPEN branches are acceptable for
 	 * the sharing UI it was written for and are not acceptable here.
 	 *
+	 * A READ REACHES A DEELZAAK FROM ITS PARENT (row Q13.23). Somebody who
+	 * works a case works its sub-cases, and before this the two were separate
+	 * grants that drifted: a deelzaak stayed open to a person taken off the
+	 * parent a year earlier. Mutation does NOT inherit, which is the measured
+	 * half of the competitor's behaviour and the property
+	 * {@see self::hasCaseMutationAccess()} pins by not calling this at all.
+	 *
 	 * @param string $caseId The case UUID.
 	 * @param IUser $user The authenticated user.
 	 *
-	 * @return bool True when the user works on the case or is an admin.
+	 * @return bool True when the user works on the case or an ancestor of it, or is an admin.
 	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function hasCaseReadAccess(string $caseId, IUser $user): bool {
@@ -193,11 +224,83 @@ class CaseAccessGuard {
 			);
 		}
 
-		$case = $this->loadCase(caseId: $caseId);
-		if ($case === null) {
-			return false;
+		return ($this->readAccessSource(caseId: $caseId, user: $user) !== null);
+	}//end hasCaseReadAccess()
+
+	/**
+	 * Which case granted this user their read, or null when none did.
+	 *
+	 * The provenance the case page shows. A handler looking at a colleague on
+	 * a deelzaak has to be able to tell where that came from, because the
+	 * grant is not on the case in front of them and cannot be removed there.
+	 *
+	 * The walk starts at the case itself, so a direct relationship answers
+	 * with the case's own id and an inherited one answers with the ancestor's.
+	 * It stops at the first case that answers: a nearer grant is the one a
+	 * handler acts on, and listing every ancestor that also happens to grant
+	 * it would bury it.
+	 *
+	 * ADMIN IS NOT RESOLVED HERE, deliberately. An administrator reads every
+	 * case because they are an administrator, not because a case granted it,
+	 * and answering with a case id would put a source on the page that is not
+	 * where the right came from.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param IUser $user The authenticated user.
+	 *
+	 * @return string|null The id of the case that granted the read, or null.
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function readAccessSource(string $caseId, IUser $user): ?string {
+		$uid = $user->getUID();
+		if ($uid === '' || $caseId === '') {
+			return null;
 		}
 
+		$seen = [];
+		$currentId = $caseId;
+
+		for ($depth = 0; $depth < self::HIERARCHY_MAX_DEPTH; $depth++) {
+			if ($currentId === '' || isset($seen[$currentId]) === true) {
+				// A case filed under its own descendant. Refusing is the only
+				// honest answer: the chain says nothing about who may read.
+				return null;
+			}
+
+			$seen[$currentId] = true;
+
+			$case = $this->loadCase(caseId: $currentId);
+			if ($case === null) {
+				// Unresolvable at any level denies, exactly as it does at the
+				// first: an ancestor nobody can read cannot grant anything.
+				return null;
+			}
+
+			if ($this->worksOnCase(case: $case, uid: $uid) === true) {
+				return $currentId;
+			}
+
+			$currentId = (string)($case['parentCase'] ?? '');
+		}
+
+		return null;
+	}//end readAccessSource()
+
+	/**
+	 * Whether this user works on this one case, ancestors aside.
+	 *
+	 * `assignees` is honoured beside `assignee` because a case is worked on by
+	 * more people than the one it is filed to.
+	 *
+	 * @param array<string, mixed> $case The case payload.
+	 * @param string $uid The user id.
+	 *
+	 * @return bool True when the user is named on the case.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function worksOnCase(array $case, string $uid): bool {
 		if ((string)($case['assignee'] ?? '') === $uid) {
 			return true;
 		}
@@ -205,7 +308,7 @@ class CaseAccessGuard {
 		$assignees = ($case['assignees'] ?? []);
 
 		return (is_array($assignees) === true && in_array($uid, $assignees, true) === true);
-	}//end hasCaseReadAccess()
+	}//end worksOnCase()
 
 	/**
 	 * Load a case through OpenRegister.

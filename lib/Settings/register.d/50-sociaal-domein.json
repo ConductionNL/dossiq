@@ -4,7 +4,7 @@
             "wmoZaak": {
                 "slug": "wmoZaak",
                 "icon": "HumanWheelchair",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "WMO Zaak",
                 "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
                 "type": "object",
@@ -23,6 +23,13 @@
                         "description": "Zaakidentifier in formaat zaak-{jaar}-wmo-{5-cijferig}"
                     },
                     "bsn": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "BSN",
                         "type": "string",
                         "description": "BSN van de aanvrager (bijzonder persoonsgegeven; gemaskeerd bij export zonder toestemming)"
@@ -50,11 +57,25 @@
                         "description": "Kanaal waarlangs de melding binnenkwam (telefonisch, balie, online, ...)"
                     },
                     "supportRequest": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Support Request",
                         "type": "string",
                         "description": "Inhoudelijke ondersteuningsvraag (alleen-wijkteam zichtbaar)"
                     },
                     "householdsComposition": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Household Composition",
                         "type": "string",
                         "description": "Optionele beschrijving van de huishoudenssamenstelling"
@@ -113,6 +134,13 @@
                         "description": "Gezet door de batch-job wanneer de onderzoekstermijn is overschreden"
                     },
                     "needsAssessmentId": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Indication ID",
                         "type": "string",
                         "description": "Referentie naar de bijbehorende Indicatiestelling"
@@ -181,7 +209,7 @@
             "indicatiestelling": {
                 "slug": "indicatiestelling",
                 "icon": "ClipboardPulseOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Indicatiestelling",
                 "description": "WMO-assessment record met geadviseerde ondersteuningsvorm, omvang en duur. OpenRegister-backed.",
                 "type": "object",
@@ -210,11 +238,25 @@
                         "description": "Vorm van het onderzoek"
                     },
                     "investigationMinutes": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Investigation Report",
                         "type": "string",
                         "description": "Optionele Nextcloud file-referentie naar het onderzoeksverslag"
                     },
                     "advisedSupport": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Recommended Support",
                         "type": "object",
                         "description": "Geadviseerde ondersteuning (soort, omvang, duur)",
@@ -262,7 +304,7 @@
             "jeugdwetZaak": {
                 "slug": "jeugdwetZaak",
                 "icon": "HumanMaleChild",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Jeugdwet Zaak",
                 "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
                 "type": "object",
@@ -286,6 +328,13 @@
                         "description": "Identifier van het gezinssysteem (gezinsgerichte eenheid)"
                     },
                     "jeugdigeBsn": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Youth BSN",
                         "type": "string",
                         "description": "BSN van de jeugdige (bijzonder persoonsgegeven)"
@@ -312,6 +361,13 @@
                         "description": "Verwijzende partij (huisarts, jeugdarts, gecertificeerde instelling, ...)"
                     },
                     "supportRequest": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Support Request",
                         "type": "string",
                         "description": "Inhoudelijke ondersteuningsvraag (alleen-jeugdteam zichtbaar)"
@@ -339,17 +395,38 @@
                         "description": "Gezinsgerichte status-lifecycle (ADR-031: declaratief)"
                     },
                     "gezinsplanId": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Family Plan ID",
                         "type": "string",
                         "description": "Referentie naar het actuele Gezinsplan"
                     },
                     "mdoConsultationIds": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "MDO Meeting IDs",
                         "type": "array",
                         "items": {"type": "string"},
                         "description": "Referenties naar MdoOverleg-records"
                     },
                     "supervisionOrderActive": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Supervision Order Active",
                         "type": "boolean",
                         "description": "Of een ondertoezichtstelling (OTS) actief is"
@@ -424,7 +501,7 @@
             "gezinsplan": {
                 "slug": "gezinsplan",
                 "icon": "FileTreeOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Gezinsplan",
                 "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
                 "type": "object",
@@ -447,6 +524,13 @@
                         "description": "Datum van opstellen"
                     },
                     "gezinsleden": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Family Members",
                         "type": "array",
                         "description": "Gezinsleden met akkoord-tracking",
@@ -510,13 +594,154 @@
                         "title": "Extension Of",
                         "type": "string",
                         "description": "Referentie naar het vorige gezinsplan bij verlenging"
+                    },
+                    "reviewDate": {
+                        "title": "Review Due",
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum waarop dit plan opnieuw bekeken moet worden. Het plan dat nooit herzien wordt is precies het plan dat schade doet (D-5), dus deze datum is wat staleness zichtbaar maakt."
+                    },
+                    "reviews": {
+                        "title": "Reviews",
+                        "type": "array",
+                        "description": "Elke herziening: wie, wanneer en wat er veranderde",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "reviewedBy": {"title": "Reviewer", "type": "string", "description": "Nextcloud user id van wie het plan herzag"},
+                                "reviewDate": {"title": "Review Date", "type": "string", "format": "date", "description": "Datum van de herziening"},
+                                "changes": {"title": "Changes", "type": "array", "items": {"type": "string"}, "description": "Wat er bij deze herziening veranderde, in zinnen"},
+                                "nextReviewDate": {"title": "Next Review Due", "type": "string", "format": "date", "description": "De nieuwe herzieningsdatum die bij deze herziening is gezet"}
+                            }
+                        }
+                    }
+                }
+            },
+            "casePlanGoal": {
+                "slug": "casePlanGoal",
+                "icon": "TargetVariant",
+                "version": "1.0.0",
+                "title": "Doel in het gezinsplan",
+                "description": "Een doel van het gezinsplan, dat benoemt wat als behaald telt. \"De thuissituatie verbeteren\" kan niemand afsluiten; het waarneembare ding benoemen geeft een evaluatie iets om over te beslissen en laat het gezin zelf meekijken of het gehaald is (REQ-CPN-01, D-3). OpenRegister-backed.",
+                "type": "object",
+                "required": ["plan", "title", "metWhen"],
+                "properties": {
+                    "plan": {
+                        "title": "Family Plan",
+                        "type": "string",
+                        "description": "Referentie naar het gezinsplan"
+                    },
+                    "title": {
+                        "title": "Goal",
+                        "type": "string",
+                        "description": "Het doel, in de woorden van het gezin waar dat kan"
+                    },
+                    "metWhen": {
+                        "title": "Met When",
+                        "type": "string",
+                        "description": "Wat waarneembaar het geval is als dit doel behaald is. Verplicht: een doel zonder dit veld kan niemand afsluiten."
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": ["open", "met", "not-met", "withdrawn"],
+                        "default": "open",
+                        "description": "Stand van het doel"
+                    },
+                    "closedObservation": {
+                        "title": "Closing Observation",
+                        "type": "string",
+                        "description": "Wat er is waargenomen toen het doel werd afgesloten, afgezet tegen metWhen"
+                    },
+                    "closedDate": {
+                        "title": "Closed On",
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum van afsluiten"
+                    },
+                    "migratedFrom": {
+                        "title": "Migrated From",
+                        "type": "string",
+                        "enum": ["", "gezinsplan.goals", "gezinsplan.deploymentTrajectories"],
+                        "description": "Gezet wanneer deze regel uit de oude string-array is overgenomen; leeg voor alles wat als doel of interventie is ingevoerd. REQ-CPN-02: de migratie verzint geen waarde voor een veld dat de oude vorm niet had, dus dit merk is hoe een lezer ziet waarom provider en streefdatum leeg zijn."
+                    }
+                }
+            },
+            "intervention": {
+                "slug": "intervention",
+                "icon": "HandHeartOutline",
+                "version": "1.0.0",
+                "title": "Interventie",
+                "description": "Een interventie in het gezinsplan: wat het is, welk doel het dient, wie het uitvoert, wanneer het begint en wanneer het klaar moet zijn. De interventie is de eenheid en niet het doel (D-1): een doel zonder interventie is een wens, een interventie zonder doel is bezigheid, en meerdere interventies kunnen \u00e9\u00e9n doel dienen. OpenRegister-backed.",
+                "type": "object",
+                "required": ["plan", "title", "provider"],
+                "properties": {
+                    "plan": {
+                        "title": "Family Plan",
+                        "type": "string",
+                        "description": "Referentie naar het gezinsplan"
+                    },
+                    "goal": {
+                        "title": "Goal",
+                        "type": "string",
+                        "description": "Referentie naar het doel dat deze interventie dient. Meerdere interventies mogen hetzelfde doel noemen."
+                    },
+                    "title": {
+                        "title": "Intervention",
+                        "type": "string",
+                        "description": "Wat er gebeurt"
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string",
+                        "description": "Toelichting op de interventie"
+                    },
+                    "provider": {
+                        "title": "Provider",
+                        "type": "string",
+                        "description": "De uitvoerder, als verwijzing in het contactmodel van het platform (contactUid). Geen vrije tekst: een string kun je niet bellen, niet op rapporteren en niet \u00e9\u00e9n keer corrigeren (D-2)."
+                    },
+                    "providerName": {
+                        "title": "Provider Name",
+                        "type": "string",
+                        "description": "De naam zoals die bij het opslaan bekend was, alleen om te tonen. De verwijzing blijft de bron."
+                    },
+                    "startDate": {
+                        "title": "Start Date",
+                        "type": "string",
+                        "format": "date",
+                        "description": "Startdatum"
+                    },
+                    "targetDate": {
+                        "title": "Target Date",
+                        "type": "string",
+                        "format": "date",
+                        "description": "Datum waarop deze interventie klaar moet zijn"
+                    },
+                    "state": {
+                        "title": "State",
+                        "type": "string",
+                        "enum": ["planned", "running", "complete", "stopped"],
+                        "default": "planned",
+                        "description": "Stand van de interventie"
+                    },
+                    "outcome": {
+                        "title": "Outcome",
+                        "type": "string",
+                        "description": "Wat de interventie heeft opgeleverd"
+                    },
+                    "migratedFrom": {
+                        "title": "Migrated From",
+                        "type": "string",
+                        "enum": ["", "gezinsplan.goals", "gezinsplan.deploymentTrajectories"],
+                        "description": "Gezet wanneer deze regel uit de oude string-array is overgenomen; leeg voor alles wat als doel of interventie is ingevoerd. REQ-CPN-02: de migratie verzint geen waarde voor een veld dat de oude vorm niet had, dus dit merk is hoe een lezer ziet waarom provider en streefdatum leeg zijn."
                     }
                 }
             },
             "mdoOverleg": {
                 "slug": "mdoOverleg",
                 "icon": "AccountGroupOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Multidisciplinair Overleg (MDO)",
                 "description": "Multidisciplinair overleg met expliciete toestemmingsregistratie per externe deelnemer; verslag wordt geanonimiseerd bij ontbrekende toestemming. OpenRegister-backed.",
                 "type": "object",
@@ -570,6 +795,13 @@
                         "description": "Agenda van het overleg"
                     },
                     "minutes": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Report",
                         "type": "string",
                         "description": "Verslag (geanonimiseerd indien toestemming ontbreekt)"
@@ -580,6 +812,13 @@
                         "description": "Of alle vereiste toestemmingen geregistreerd zijn"
                     },
                     "gedeeldeGegevens": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Shared Data",
                         "type": "string",
                         "enum": ["alle-gegevens", "alleen-anonimiseerde-summary"],
@@ -590,7 +829,7 @@
             "participatiewetZaak": {
                 "slug": "participatiewetZaak",
                 "icon": "BriefcaseAccountOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Participatiewet Zaak",
                 "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
                 "type": "object",
@@ -609,6 +848,13 @@
                         "description": "Zaakidentifier in formaat zaak-{jaar}-pw-{5-cijferig}"
                     },
                     "bsn": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "BSN",
                         "type": "string",
                         "description": "BSN van de aanvrager (bijzonder persoonsgegeven)"
@@ -637,11 +883,25 @@
                         "description": "Leeftijdsgroep van de aanvrager"
                     },
                     "householdsSituation": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Household Situation",
                         "type": "string",
                         "description": "Huishoudenssituatie (alleenstaand, alleenstaand-met-kinderen, gehuwd, ...)"
                     },
                     "equityAssessment": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Means Test",
                         "type": "object",
                         "description": "Vermogenstoets (art. 34)",
@@ -670,6 +930,13 @@
                         }
                     },
                     "incomeAssessment": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Income Test",
                         "type": "object",
                         "description": "Inkomenstoets (art. 31-33)",
@@ -903,7 +1170,7 @@
             "toestemming": {
                 "slug": "toestemming",
                 "icon": "HandshakeOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Toestemming",
                 "description": "Expliciete, herroepbare toestemming voor gegevensdeling met externe partijen (AVG art. 6/9). OpenRegister-backed; gedeeld door alle sociaal-domein zaaktypes.",
                 "type": "object",
@@ -915,6 +1182,13 @@
                         "description": "Referentie naar de betrokken zaak"
                     },
                     "grantedByBsn": {
+                        "authorization": {
+                            "read": [
+                                {
+                                    "group": "dossiq-sensitive"
+                                }
+                            ]
+                        },
                         "title": "Granted By BSN",
                         "type": "string",
                         "description": "BSN van de toestemming-verlenende burger/ouder"
@@ -1047,16 +1321,22 @@
             "sociaalDomeinAuditLog": {
                 "slug": "sociaalDomeinAuditLog",
                 "icon": "FileEyeOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "title": "Sociaal Domein Audit Log",
-                "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd.",
+                "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd. V1.1 additief: een raadpleging kan over een BURGER gaan in plaats van over een zaak, dus subjectId is toegevoegd en caseId is niet langer verplicht. Elke bestaande rij blijft geldig en elke bestaande schrijver blijft werken.",
                 "type": "object",
-                "required": ["caseId", "action", "moment"],
+                "required": ["action", "moment"],
                 "properties": {
                     "caseId": {
                         "title": "Case ID",
                         "type": "string",
-                        "description": "Referentie naar de geraadpleegde zaak"
+                        "description": "Referentie naar de geraadpleegde zaak. Leeg bij een raadpleging die over een burger gaat en geen enkele zaak oplevert, bijvoorbeeld een geweigerde lookup."
+                    },
+                    "subjectId": {
+                        "title": "Subject ID",
+                        "type": "string",
+                        "facetable": true,
+                        "description": "De burgerreferentie waarmee is geraadpleegd (BSN of burgerId). Dit is waarop een inzageverzoek zoekt: de vraag is wie er over MIJ heeft gekeken, niet wie er in een zaak heeft gekeken."
                     },
                     "employeeId": {
                         "title": "Employee ID",
@@ -1071,8 +1351,8 @@
                     "action": {
                         "title": "Action",
                         "type": "string",
-                        "enum": ["read", "export", "share", "delete"],
-                        "description": "Soort actie"
+                        "enum": ["read", "export", "share", "delete", "existence-lookup"],
+                        "description": "Soort actie. `existence-lookup` is de bestaansvraag over domeinen heen: een leesactie op een zaak en de vraag of er ergens \u00fcberhaupt een zaak is zijn niet hetzelfde, en een inzageverzoek moet ze uit elkaar kunnen houden."
                     },
                     "moment": {
                         "title": "Timestamp",
@@ -1094,7 +1374,17 @@
                     "authorisationGround": {
                         "title": "Authorization Basis",
                         "type": "string",
-                        "description": "Grond voor toegang (roltoewijzing, toestemming, fg-audit-override, openconnector-sharing, ...)"
+                        "description": "Grond voor toegang (roltoewijzing, toestemming, fg-audit-override, openconnector-sharing, ...). Voor een bestaansvraag wordt deze grond V\u00d3\u00d3R het antwoord gekozen en niet erna ingevuld (D-7), en zonder grond komt er geen antwoord."
+                    },
+                    "subjectBsn": {
+                        "title": "Subject BSN",
+                        "type": "string",
+                        "description": "De persoon over wie is opgezocht. Zonder dit veld kan het log de vraag \"wat is er over mij opgezocht\" niet beantwoorden (REQ-XDV-02): caseId noemt de zaak van de raadpleger en niet de betrokkene."
+                    },
+                    "returned": {
+                        "title": "What Was Returned",
+                        "type": "string",
+                        "description": "Wat de raadpleger terugkreeg, in precies het kleine antwoord dat de projectie geeft: de domeinen waarin een open zaak bestaat, of dat er niets bestaat. Nooit inhoud."
                     },
                     "result": {
                         "title": "Result",
@@ -1168,7 +1458,9 @@
                     "toestemming",
                     "gdprClassification",
                     "sociaalDomeinAuditLog",
-                    "avgIncident"
+                    "avgIncident",
+                    "casePlanGoal",
+                    "intervention"
                 ]
             }
         },

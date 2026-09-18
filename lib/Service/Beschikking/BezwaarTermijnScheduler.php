@@ -73,16 +73,30 @@ class BezwaarTermijnScheduler {
 	 * go through the calendar the organisation administers. The reminder rolls
 	 * too: one that falls on Tweede Kerstdag reaches nobody.
 	 *
+	 * The case type may declare its own term, and then that term is the one:
+	 * the clause printed on the decision and the date stored on it come from
+	 * one declaration, so a besluit cannot say forty-two days over a clock that
+	 * runs for six weeks. A case type that declares nothing keeps the six weeks
+	 * the Awb sets, which is what every case type did before the declaration
+	 * existed.
+	 *
 	 * @param string $bekendmaking The bekendmaking date (Y-m-d).
 	 * @param array<string, mixed> $definitie The term definition, when one is known;
 	 *        `rollToWorkingDay` false returns the raw dates.
+	 * @param integer $termDays The declared term in days, 0 for the statutory six weeks.
 	 *
 	 * @return array{endDate: string, herinnering: string} Both as `Y-m-d`.
 	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
 	 */
-	public function computeTermijn(string $bekendmaking, array $definitie = []): array {
-		$endDate = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
+	public function computeTermijn(string $bekendmaking, array $definitie = [], int $termDays = 0): array {
+		$span = new DateInterval('P6W');
+		if ($termDays > 0) {
+			$span = new DateInterval('P' . $termDays . 'D');
+		}
+
+		$endDate = (new DateTimeImmutable($bekendmaking))->add($span);
 		$herinnering = $endDate->sub(new DateInterval('P1W'));
 
 		return [

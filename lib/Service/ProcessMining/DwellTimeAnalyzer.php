@@ -59,8 +59,32 @@ class DwellTimeAnalyzer {
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?StatusDwellService $held = null,
+		private readonly ?WorkingClock $clock = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Which clock the working-hours numbers on this report are on.
+	 *
+	 * Answered so the page can label its columns, BEFORE any number is
+	 * computed: a report that had to compute first and disclaim afterwards
+	 * would have already shown the number.
+	 *
+	 * Built without a clock, this analyzer reports the wall clock in both
+	 * columns, and says exactly that. Naming it working hours would be the
+	 * failure the whole change is about.
+	 *
+	 * @return string One of {@see WorkingClock}'s CLOCK_* constants.
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function clock(): string {
+		if ($this->clock === null) {
+			return WorkingClock::CLOCK_WALL;
+		}
+
+		return $this->clock->clock();
+	}//end clock()
 
 	/**
 	 * The per-status totals the CASES themselves hold, in working days.
@@ -224,20 +248,52 @@ class DwellTimeAnalyzer {
 				$exitedAt = $enteredAt;
 			}
 
-			$hours = (($exitedAt->getTimestamp() - $enteredAt->getTimestamp()) / 3600.0);
-			if ($hours < 0.0) {
-				$hours = 0.0;
-			}
+			$measured = $this->measure(enteredAt: $enteredAt, exitedAt: $exitedAt);
 
 			$intervals[] = [
 				'caseId' => $caseId,
 				'statusId' => $statusId,
-				'hours' => $hours,
+				// `actor` is the statusRecord schema's own field, and the
+				// only one: a second spelling guessed at here would be
+				// dropped by OpenRegister in silence and read as nobody.
+				// Empty rather than absent when the record names no actor,
+				// because a by-handler table that quietly omitted
+				// unattributed time would show less work than was done.
+				'actor' => trim((string)($records[$i]['actor'] ?? '')),
+				'hours' => $measured['wallHours'],
+				'workingHours' => $measured['workingHours'],
 			];
 		}//end for
 
 		return $intervals;
 	}//end dwellIntervalsForCase()
+
+	/**
+	 * One interval's two numbers.
+	 *
+	 * A negative interval reads as zero on both clocks, which is what this
+	 * analyzer has always done: a status record out of order is bad data, not
+	 * a case that went backwards in time.
+	 *
+	 * @param DateTimeImmutable $enteredAt When the status was entered.
+	 * @param DateTimeImmutable $exitedAt  When it was left.
+	 *
+	 * @return array{workingHours: float, wallHours: float} The two numbers.
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function measure(DateTimeImmutable $enteredAt, DateTimeImmutable $exitedAt): array {
+		if ($this->clock !== null) {
+			return $this->clock->hoursBetween(from: $enteredAt, to: $exitedAt);
+		}
+
+		$wall = (($exitedAt->getTimestamp() - $enteredAt->getTimestamp()) / 3600.0);
+		if ($wall < 0.0) {
+			return ['workingHours' => 0.0, 'wallHours' => 0.0];
+		}
+
+		return ['workingHours' => $wall, 'wallHours' => $wall];
+	}//end measure()
 
 	/**
 	 * Aggregate dwell-time intervals per status into median/p90/mean stats.
@@ -254,27 +310,109 @@ class DwellTimeAnalyzer {
 		foreach ($intervals as $interval) {
 			$statusId = $interval['statusId'];
 			if (isset($byStatus[$statusId]) === false) {
-				$byStatus[$statusId] = [];
+				$byStatus[$statusId] = ['working' => [], 'wall' => []];
 			}
 
-			$byStatus[$statusId][] = $interval['hours'];
+			// Both lists, kept separate all the way to the percentile. A
+			// median of working hours is NOT the working-hours conversion of
+			// the median wall hour: the two orderings differ the moment one
+			// case sat over a weekend, and converting the wrong one is a
+			// number nobody can reproduce.
+			$byStatus[$statusId]['working'][] = ($interval['workingHours'] ?? $interval['hours']);
+			$byStatus[$statusId]['wall'][] = $interval['hours'];
 		}
 
 		$out = [];
-		foreach ($byStatus as $statusId => $hoursList) {
-			sort($hoursList);
-			$out[] = [
-				'statusId' => $statusId,
-				'statusName' => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
-				'visitCount' => count($hoursList),
-				'medianHours' => round(self::percentile(sorted: $hoursList, percentile: 50.0), 1),
-				'p90Hours' => round(self::percentile(sorted: $hoursList, percentile: 90.0), 1),
-				'meanHours' => round((array_sum($hoursList) / count($hoursList)), 1),
-			];
+		foreach ($byStatus as $statusId => $lists) {
+			$out[] = array_merge(
+				[
+					'statusId' => $statusId,
+					'statusName' => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
+				],
+				$this->summarise(workingHours: $lists['working'], wallHours: $lists['wall'])
+			);
 		}
 
 		return $out;
 	}//end aggregateDwellStats()
+
+	/**
+	 * The same intervals, grouped by the person who held them.
+	 *
+	 * SAME INTERVALS, SAME SUMMARY, DIFFERENT KEY. No new data and no second
+	 * reconstruction: a by-assignee table computed from its own walk of the
+	 * records would drift from the by-phase one, and the two sit on the same
+	 * page.
+	 *
+	 * Time no record attributed is reported under its own row rather than
+	 * dropped, because a table that quietly omits it shows less work than was
+	 * done and nothing on it says so.
+	 *
+	 * @param array<int, array<string, mixed>> $intervals Dwell intervals.
+	 *
+	 * @return array<int, array<string, mixed>> One row per actor, longest median first.
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function aggregateDwellStatsByActor(array $intervals): array {
+		$byActor = [];
+		foreach ($intervals as $interval) {
+			$actor = trim((string)($interval['actor'] ?? ''));
+			if (isset($byActor[$actor]) === false) {
+				$byActor[$actor] = ['working' => [], 'wall' => []];
+			}
+
+			$byActor[$actor]['working'][] = ($interval['workingHours'] ?? $interval['hours']);
+			$byActor[$actor]['wall'][] = $interval['hours'];
+		}
+
+		$out = [];
+		foreach ($byActor as $actor => $lists) {
+			$out[] = array_merge(
+				['actor' => (string)$actor],
+				$this->summarise(workingHours: $lists['working'], wallHours: $lists['wall'])
+			);
+		}
+
+		usort(
+			$out,
+			static fn (array $left, array $right): int => ($right['medianWorkingHours'] <=> $left['medianWorkingHours'])
+		);
+
+		return $out;
+	}//end aggregateDwellStatsByActor()
+
+	/**
+	 * Median, p90 and mean of one group, on both clocks.
+	 *
+	 * `medianHours` stays the wall-clock number under its old name, so every
+	 * existing reader keeps reading what it always read. The working-hours
+	 * numbers arrive under their own names, and the page decides which is the
+	 * headline. Renaming the old key would have silently changed the meaning
+	 * of every chart already drawn from it.
+	 *
+	 * @param array<int, float> $workingHours The working-hours values.
+	 * @param array<int, float> $wallHours    The wall-clock values.
+	 *
+	 * @return array<string, float|int> The summary.
+	 *
+	 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function summarise(array $workingHours, array $wallHours): array {
+		sort($workingHours);
+		sort($wallHours);
+		$count = count($wallHours);
+
+		return [
+			'visitCount' => $count,
+			'medianWorkingHours' => round(self::percentile(sorted: $workingHours, percentile: 50.0), 1),
+			'p90WorkingHours' => round(self::percentile(sorted: $workingHours, percentile: 90.0), 1),
+			'meanWorkingHours' => round((array_sum($workingHours) / $count), 1),
+			'medianHours' => round(self::percentile(sorted: $wallHours, percentile: 50.0), 1),
+			'p90Hours' => round(self::percentile(sorted: $wallHours, percentile: 90.0), 1),
+			'meanHours' => round((array_sum($wallHours) / $count), 1),
+		];
+	}//end summarise()
 
 	/**
 	 * Rank statuses by bottleneck severity: median dwell time x visit volume.

@@ -126,6 +126,16 @@
 				:label="t('dossiq', 'Description')"
 				:placeholder="t('dossiq', 'Optional description')" />
 
+			<dl
+				v-if="isEdit"
+				class="dossier-metadata-dialog__integrity"
+				data-testid="document-integrity">
+				<dt>{{ t('dossiq', 'Scan') }}</dt>
+				<dd data-testid="document-scan-verdict">{{ scanLabel }}</dd>
+				<dt>{{ t('dossiq', 'Checksum') }}</dt>
+				<dd data-testid="document-hash">{{ hashLabel }}</dd>
+			</dl>
+
 			<div class="dossier-metadata-dialog__actions">
 				<NcButton @click="$emit('close')">
 					{{ t('dossiq', 'Cancel') }}
@@ -162,6 +172,7 @@ import {
 	identifiersOf,
 	selectedOptions,
 } from '../services/documentCorrespondents.js'
+import { scanVerdictLabel } from '../services/scanVerdict.js'
 import {
 	classificationOptions as buildClassificationOptions,
 	DEFAULT_DIRECTION,
@@ -248,10 +259,43 @@ export default {
 			// Edit mode: the record the file already has, or null.
 			record: null,
 			recordMissing: false,
+			// What files_antivirus recorded for this file, or null until the
+			// read lands. Never defaulted to a clean verdict.
+			scanVerdict: null,
 		}
 	},
 
 	computed: {
+		/**
+		 * What the scanner recorded about this file, as a sentence.
+		 *
+		 * @return {string} The verdict.
+		 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+		 */
+		scanLabel() {
+			return scanVerdictLabel(this.scanVerdict)
+		},
+
+		/**
+		 * The checksum of the file content, or a sentence saying there is none.
+		 *
+		 * The hash sits beside the verdict because the two answer one
+		 * question together: whether this is the file it says it is, and
+		 * whether anyone has checked it.
+		 *
+		 * @return {string} The hash, with its algorithm, or a sentence.
+		 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+		 */
+		hashLabel() {
+			const integrity = this.record?.integrity || {}
+			const value = String(integrity.value || '')
+			if (value === '') {
+				return t('dossiq', 'Not recorded')
+			}
+			const algorithm = String(integrity.algorithm || 'sha256')
+			return `${algorithm}: ${value}`
+		},
+
 		/**
 		 * Dropdown options for the document type catalog.
 		 *
@@ -452,6 +496,7 @@ export default {
 		this.loadParties()
 		if (this.isEdit) {
 			this.loadRecord()
+			this.loadScanVerdict()
 		}
 	},
 
@@ -563,6 +608,33 @@ export default {
 				this.applyStoredCorrespondents()
 			} catch {
 				this.recordMissing = true
+			}
+		},
+
+		/**
+		 * Read what the virus scanner recorded for this file.
+		 *
+		 * A read that fails leaves the verdict null, and null reads Not
+		 * scanned. It never reads clean, because an unanswered question is
+		 * not a cleared file (company ADR-102).
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+		 */
+		async loadScanVerdict() {
+			this.scanVerdict = null
+			if (!this.fileId) {
+				return
+			}
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/files/${encodeURIComponent(this.fileId)}/scan`,
+				)
+				const { data } = await axios.get(url)
+				this.scanVerdict = data ?? null
+			} catch {
+				// No scanner, no permission, no answer. All three read the
+				// same, and none of them reads clean.
 			}
 		},
 
@@ -728,6 +800,20 @@ export default {
 	flex-direction: column;
 	gap: 4px;
 	padding: 4px 0;
+}
+
+.dossier-metadata-dialog__integrity {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: 4px 12px;
+	margin-top: 12px;
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
+}
+
+.dossier-metadata-dialog__integrity dd {
+	margin: 0;
+	overflow-wrap: anywhere;
 }
 
 .dossier-metadata-dialog__actions {

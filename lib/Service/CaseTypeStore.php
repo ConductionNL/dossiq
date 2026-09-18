@@ -135,6 +135,47 @@ class CaseTypeStore {
 	}//end versionsWithIdentifier()
 
 	/**
+	 * Every case type the register holds.
+	 *
+	 * The catalogue rather than one chain, for the one act that crosses case
+	 * types: a rebind picks a target from all of them, and asking per
+	 * identifier would need the list of identifiers first.
+	 *
+	 * The filter is EMPTY on purpose, which is not the same as `IS NULL`: the
+	 * bare-key grammar `search()` speaks narrows on what it is given, so giving
+	 * it nothing is the whole catalogue. Drafts are answered too and are
+	 * dropped by the caller, because "every case type" and "every case type you
+	 * may put a running case on" are different questions and this one is the
+	 * store's.
+	 *
+	 * @return array<int, array<string, mixed>> The case types, unordered.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	public function everyCaseType(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
+
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		try {
+			$found = $objectService->searchObjects(
+				[
+					'@self' => ['register' => $register, 'schema' => $schema],
+					'_limit' => 200,
+				]
+			);
+		} catch (Throwable $e) {
+			return [];
+		}
+
+		return $this->asRows(value: $found);
+	}//end everyCaseType()
+
+	/**
 	 * Rows of one schema that belong to no case type at all.
 	 *
 	 * @param string $schemaKey The settings key naming the schema.

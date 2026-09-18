@@ -304,3 +304,60 @@ export function publicationRefusal(indicators) {
 		) || null
 	)
 }
+
+/**
+ * The `role` rows of one case.
+ *
+ * The party listing above answers LINKS, and a link says which role somebody
+ * holds but not whom they hold it for. Whom a gemachtigde acts for is on the
+ * `role` row, in `representedParty`, so it takes this second read.
+ *
+ * @param {string} caseId The case uuid.
+ * @return {Promise<Array<object>|null>} The rows, or null when they could not be read.
+ * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
+ */
+export async function fetchCaseRoles(caseId) {
+	if (!caseId) {
+		return null
+	}
+	try {
+		const { data } = await axios.get(
+			generateUrl(`/apps/openregister/api/objects/${CASE_REGISTER}/role`),
+			{ params: { case: caseId, _limit: 200 } },
+		)
+		if (Array.isArray(data?.results)) {
+			return data.results
+		}
+		return Array.isArray(data) ? data : null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * Whom each participant acts for, read off the case's `role` rows.
+ *
+ * 🔴 IT IS `representedParty`, NOT `delegateFrom`. The change proposal named
+ * `delegateFrom`, and that property already means something else: it is the
+ * START OF A DELEGATION WINDOW and `RoleDelegationResolver` reads it as a date
+ * to decide whether to substitute a delegate. Writing a party uuid into it
+ * would have made the resolver compare a uuid against now, silently, on every
+ * routing decision.
+ *
+ * @param {Array<object>} rows The `role` rows of the case.
+ * @return {object} Participant reference to the represented party's uuid.
+ * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
+ */
+export function representedByMap(rows) {
+	const map = {}
+	for (const row of Array.isArray(rows) ? rows : []) {
+		const participant = String(row?.participant || '').trim()
+		const represented = String(
+			row?.representedParty?.id || row?.representedParty || '',
+		).trim()
+		if (participant !== '' && represented !== '') {
+			map[participant] = represented
+		}
+	}
+	return map
+}
