@@ -2463,7 +2463,8 @@
                                 "enum": "enumValues",
                                 "required": "isRequired",
                                 "default": "defaultValue",
-                                "calculation": "calculation"
+                                "calculation": "calculation",
+                                "conceptScheme": "conceptScheme"
                             },
                             "values": {
                                 "mode": "array",

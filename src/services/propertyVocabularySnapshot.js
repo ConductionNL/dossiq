@@ -18,6 +18,13 @@
  * hold. When OpenRegister widens the vocabulary, this snapshot goes stale in
  * the safe direction: it offers less than the instance accepts, never more.
  *
+ * `conceptScheme` was added on 2026-09-18, when openregister#3883 published it
+ * and this app began forwarding it. ONLY that key: the live vocabulary now
+ * holds 99 keys against this file's 90, so the rest of the drift is left where
+ * it is, in the safe direction, rather than refreshed wholesale in a change
+ * that is about one binding. A snapshot is refreshed by taking it again from
+ * the endpoint, not by hand, and that is its own piece of work.
+ *
  * @see openspec/changes/casetype-field-vocabulary/design.md
  */
 
@@ -845,6 +852,12 @@ export const VOCABULARY_SNAPSHOT = {
 			enforced: true,
 			description: 'The classes this property may point at.',
 		},
+		{
+			key: 'conceptScheme',
+			value: 'string',
+			enforced: true,
+			description: 'The SKOS concept scheme this field takes its choices from, by slug.',
+		},
 	],
 	passthrough: [
 		{
@@ -1038,14 +1051,15 @@ export const VOCABULARY_SNAPSHOT = {
 		'dependentRequired',
 		'contentMediaType',
 		'contentEncoding',
+		'conceptScheme',
 	],
 	vendorExtensionPrefix: 'x-',
 	counts: {
 		types: 19,
 		constraints: 33,
-		modifiers: 36,
+		modifiers: 37,
 		passthrough: 19,
 		formats: 33,
-		keys: 89,
+		keys: 90,
 	},
 }
