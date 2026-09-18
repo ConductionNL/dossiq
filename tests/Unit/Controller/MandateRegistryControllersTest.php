@@ -111,7 +111,17 @@ class MandateRegistryControllersTest extends TestCase {
 	 * @return TermijnDefinitieController The controller.
 	 */
 	private function termController(): TermijnDefinitieController {
-		return new TermijnDefinitieController('dossiq', $this->request, $this->generic, $this->logger);
+		// The two collaborators the calendar line needs. Real doubles rather
+		// than nullable constructor defaults: a null branch nothing exercises
+		// is a branch that breaks the day somebody removes the null check.
+		return new TermijnDefinitieController(
+			'dossiq',
+			$this->request,
+			$this->generic,
+			$this->logger,
+			$this->createMock(\OCA\Dossiq\Service\CaseDateNormaliser::class),
+			$this->createMock(\OCA\Dossiq\Service\Termijn\WorkingDayRoll::class)
+		);
 	}//end termijnController()
 
 	/**

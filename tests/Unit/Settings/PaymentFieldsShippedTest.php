@@ -12,9 +12,15 @@
  *
  * 🔴 THE FLOOR IS WRITTEN AGAINST WHERE THIS CHANGE LANDED, NOT WHERE IT CAME
  * FROM. A floor of `> 0.19.2`, the number this branch started at, is satisfied
- * by the very collision it is supposed to catch. `> 0.20.1` is the number the
- * fleet is actually on, so a second change taking 0.20.2 fails here rather
- * than shipping to nobody.
+ * by the very collision it is supposed to catch.
+ *
+ * 🔴 AND IT HAPPENED AGAIN WHILE THIS BRANCH WAITED. Three changes landed on
+ * parity/round2 at register 0.20.3 — #2923, #2937 and #2936 — each writing the
+ * identical line, which merges in silence. An instance that imported 0.20.3
+ * from the first of them skips the other two. The register is ONE document, so
+ * the next import above that number carries everything that accumulated under
+ * the collision, and this change's 0.20.6 is that import. The floor is 0.20.5
+ * because the two branches behind this one claim 0.20.4 and 0.20.5.
  *
  * @category Test
  * @package  OCA\Dossiq\Tests\Unit\Settings
@@ -42,7 +48,7 @@ class PaymentFieldsShippedTest extends TestCase {
 	 *
 	 * @var string
 	 */
-	private const FLOOR = '0.20.1';
+	private const FLOOR = '0.20.5';
 
 	/**
 	 * The shipped register.
@@ -104,7 +110,7 @@ class PaymentFieldsShippedTest extends TestCase {
 		$this->assertNotFalse($xml, 'info.xml could not be read');
 
 		$this->assertTrue(
-			version_compare((string)$xml->version, '0.4.29-unstable.20260918103842', '>'),
+			version_compare((string)$xml->version, '0.4.33-unstable.20260918123000', '>'),
 			'The app version must be strictly above the one on the integration branch, or nothing runs on upgrade.'
 		);
 	}//end testTheAppVersionMovedPastTheFleet()

@@ -333,6 +333,44 @@ class CaseRelationServiceTest extends TestCase {
 	}//end testEachSideReadsItsOwnHalfOfTheLabelPair()
 
 	/**
+	 * Scenario: Link a vergunning to the bezwaar it waits on.
+	 *
+	 * The pair is written once, on the case that declares it, and each side
+	 * reads its own half: the vergunning waits on the bezwaar, and the bezwaar
+	 * blocks the vergunning. That is what makes the moved-term offer possible,
+	 * because the offer is made from the blocking side.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dependent-term-follows-predecessor/specs/related-case-linking/spec.md#requirement-a-case-can-wait-on-another-case-req-rcl-10
+	 */
+	public function testACaseWaitsOnAnotherAndThatOtherBlocksIt(): void {
+		$store = [
+			'a' => ['id' => 'a', 'title' => 'Vergunning'],
+			'b' => ['id' => 'b', 'title' => 'Bezwaar'],
+		];
+		$service = $this->makeService($store);
+
+		$written = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'waitsOn');
+		$this->assertTrue($written['ok']);
+
+		$near = $service->listRelations(caseId: 'a');
+		$this->assertCount(1, $near);
+		$this->assertSame('b', $near[0]['caseId']);
+		$this->assertSame('waitsOn', $near[0]['aardRelatie']);
+		$this->assertSame('outgoing', $near[0]['direction']);
+
+		$far = $service->listRelations(caseId: 'b');
+		$this->assertCount(1, $far);
+		$this->assertSame('a', $far[0]['caseId']);
+		$this->assertSame('incoming', $far[0]['direction']);
+
+		// The link is stored in the property the pair declares, which is the
+		// one the offer reads back from the blocking side.
+		$this->assertSame(['b'], $store['a']['blockingCases'] ?? []);
+	}//end testACaseWaitsOnAnotherAndThatOtherBlocksIt()
+
+	/**
 	 * The same type declared from both cases is two contradictory statements,
 	 * so the second one is refused.
 	 *

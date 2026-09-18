@@ -20,6 +20,18 @@
 						})
 					}}
 				</p>
+				<p
+					v-if="mergedFrom"
+					class="public-status-page__ref"
+					data-testid="public-status-merged-from">
+					{{
+						t(
+							'dossiq',
+							'Your request {ref} is handled together with this one.',
+							{ ref: mergedFrom },
+						)
+					}}
+				</p>
 			</header>
 
 			<!-- Visual status indicator -->
@@ -132,6 +144,7 @@ export default {
 			error: '',
 			statusData: null,
 			timeline: [],
+			mergedFrom: '',
 		}
 	},
 
@@ -170,7 +183,24 @@ export default {
 				}
 
 				const data = await response.json()
-				const obj = data.object || {}
+				let obj = data.object || {}
+
+				// 🔴 A MERGED CASE IS NOT THE CASE THE APPLICANT IS WAITING
+				// ON. The token still resolves, and it resolves to a case
+				// nobody works on any more: its term was completed at the
+				// merge and its status stopped moving there. The survivor is
+				// the one whose status is the answer, and only the server can
+				// read it, because this page has no session.
+				if (obj.mergedInto) {
+					const survivor = await fetch(
+						`/apps/dossiq/api/public/case-tokens/${encodeURIComponent(this.token)}/survivor`,
+					)
+					if (survivor.ok) {
+						const merged = await survivor.json()
+						obj = merged.object || obj
+						this.mergedFrom = String(data.object?.identifier || '')
+					}
+				}
 				// The entries the server already decided are public. There is
 				// no client-side filter here on purpose: the projection has no
 				// visibility field to filter on, because the decision is the

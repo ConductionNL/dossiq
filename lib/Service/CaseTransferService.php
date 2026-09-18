@@ -27,6 +27,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Custody\CaseCustodyChain;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
@@ -50,6 +53,8 @@ class CaseTransferService {
 	 * @param LoggerInterface $logger The logger
 	 * @param TenantAuditTrailService $auditTrail Audit-trail emitter for custody-change actions
 	 * @param InternalHandover $internal The same act with a team in place of the target organisation
+	 * @param CaseCustodyChain $custody The dated chain of holdings every move writes into
+	 * @param CaseTransferConsentGate $consent Whether this case may leave the organisation at all
 	 *
 	 * @return void
 	 */
@@ -60,6 +65,8 @@ class CaseTransferService {
 		private LoggerInterface $logger,
 		private TenantAuditTrailService $auditTrail,
 		private InternalHandover $internal,
+		private CaseCustodyChain $custody,
+		private CaseTransferConsentGate $consent,
 	) {
 	}//end __construct()
 
@@ -100,6 +107,20 @@ class CaseTransferService {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
+		}
+
+		// 🔴 THE CONSENT IS A PRECONDITION, NOT A WARNING (D-5). It runs before
+		// the idempotency lookup on purpose: a refused hand-off must not leave
+		// a pending transfer behind that a later call would happily return as
+		// "already initiated".
+		$verdict = $this->consent->assess(
+			caseId: $caseId,
+			sourceOrganisation: $sourceOrganization,
+			receivingOrganisation: $targetOrganization,
+			at: $requestedDate,
+		);
+		if ($verdict['allowed'] === false) {
+			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
@@ -369,6 +390,24 @@ class CaseTransferService {
 			now: $now,
 		);
 
+		// RECORDED FIRST, THEN APPLIED, the same order InternalHandover uses.
+		// A chain written after the status would leave a hole whenever the
+		// chain write failed, and a chain with a hole reads as an answer. This
+		// way the failure is that the transfer stays pending, which is visible.
+		if ($targetStatus === 'accepted') {
+			try {
+				$this->custody->move(
+					caseId: $caseId,
+					organisationUnit: (string)($transferData['targetOrganization'] ?? ''),
+					handler: '',
+					reason: (string)($transferData['reason'] ?? ''),
+					movedBy: ($remoteCloudId ?? (string)($transferData['initiatedBy'] ?? '')),
+				);
+			} catch (RefusedException $e) {
+				return ['error' => $e->getSentence(), 'rule' => $e->getRule()];
+			}
+		}
+
 		$result = $objectService->saveObject(
 			object: $transferData,
 			register: (int)$register,
@@ -588,13 +627,26 @@ class CaseTransferService {
 		string $initiatedBy,
 		bool $doorzending = false,
 	): array {
-		return $this->internal->initiate(
+		$record = $this->internal->initiate(
 			caseId: $caseId,
 			targetTeam: $targetTeam,
 			reason: $reason,
 			initiatedBy: $initiatedBy,
 			doorzending: $doorzending,
 		);
+
+		// One door, one chain. The internal handover moves the case on
+		// initiate — the receiving team owns it before anybody accepts — so
+		// the holding opens here rather than on the answer.
+		$this->custody->move(
+			caseId: $caseId,
+			organisationUnit: $targetTeam,
+			handler: '',
+			reason: $reason,
+			movedBy: $initiatedBy,
+		);
+
+		return $record;
 	}//end handToTeam()
 
 	/**

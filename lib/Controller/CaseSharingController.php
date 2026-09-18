@@ -122,6 +122,18 @@ class CaseSharingController extends Controller {
 			);
 
 			if (isset($partnerShare['error']) === true) {
+				// A REFUSAL IS NOT AN UPSTREAM FAILURE. 502 says OpenRegister
+				// broke; a missing or lapsed consent is this instance deciding,
+				// correctly, that the case does not leave. The rule slug is
+				// carried so the caller can tell the two apart and say which of
+				// case, receiver or period was the one that did not match.
+				if (isset($partnerShare['rule']) === true && $partnerShare['rule'] !== '') {
+					return new JSONResponse(
+						['success' => false, 'error' => $partnerShare['error'], 'rule' => $partnerShare['rule']],
+						Http::STATUS_CONFLICT
+					);
+				}
+
 				return new JSONResponse(
 					['success' => false, 'error' => $partnerShare['error']],
 					Http::STATUS_BAD_GATEWAY
