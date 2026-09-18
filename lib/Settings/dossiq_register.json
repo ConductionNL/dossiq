@@ -722,6 +722,13 @@
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
                     },
+                    "capacity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0,
+                        "title": "Capacity",
+                        "description": "How many cases this status may hold at once. Leave it at zero and the status takes as many as arrive, which is how every status behaves today. Set a number and the case past it is refused, with the status, the limit and the count in the sentence. A final status is never capped: a case type that could not close its thirteenth case would be worse off than one with no limit at all."
+                    },
                     "phaseTermDays": {
                         "type": "integer",
                         "minimum": 1,
