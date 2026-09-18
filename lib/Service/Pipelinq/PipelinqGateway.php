@@ -143,16 +143,22 @@ class PipelinqGateway {
 	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-one-seam-names-pipelinq-and-an-absent-pipelinq-is-a-different-answer-from-an-empty-one-req-plq-01
 	 */
 	public function service(string $class, array $methods = []): ?object {
-		if (class_exists($class) === false) {
-			$this->reportOnce(class: $class, reason: 'pipelinq is not installed on this instance');
-
-			return null;
-		}
-
 		try {
+			// The container is asked FIRST and its failure is the answer. A
+			// `class_exists` early return reads better and is wrong here: the
+			// server container is what actually holds another app's services,
+			// it autoloads on the way, and short-circuiting on the class name
+			// makes this seam untestable without shipping pipelinq's classes
+			// into dossiq's test tree. The reason below still says which of
+			// the two happened.
 			$service = $this->container->get($class);
 		} catch (Throwable $e) {
-			$this->reportOnce(class: $class, reason: $e->getMessage());
+			$this->reportOnce(
+				class: $class,
+				reason: (class_exists($class) === false
+					? 'pipelinq is not installed on this instance'
+					: $e->getMessage()),
+			);
 
 			return null;
 		}
