@@ -102,8 +102,12 @@ class CasePlanStringMigrationTest extends TestCase {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
 
+		// The SAME settings double the store reads, so the step elevates over
+		// the very object service the store then writes through. Two doubles
+		// would let a step that elevated over nothing pass.
 		$this->migration = new MigrateCasePlanStrings(
 			store: new SociaalDomeinStore(settingsService: $settings, logger: new NullLogger()),
+			settingsService: $settings,
 			logger: new NullLogger(),
 		);
 	}//end setUp()

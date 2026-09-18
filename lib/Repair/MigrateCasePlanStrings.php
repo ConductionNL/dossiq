@@ -45,9 +45,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Repair;
 
+use OCA\Dossiq\Repair\Support\RunsUnderSystemIdentity;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanGoals;
 use OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions;
 use OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
@@ -61,6 +63,8 @@ use Throwable;
  * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
  */
 class MigrateCasePlanStrings implements IRepairStep {
+
+	use RunsUnderSystemIdentity;
 
 	/**
 	 * The mark a record carries when it came from `gezinsplan.goals`.
@@ -93,11 +97,13 @@ class MigrateCasePlanStrings implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param SociaalDomeinStore $store  The one reader and writer of these schemas.
-	 * @param LoggerInterface    $logger The logger.
+	 * @param SociaalDomeinStore $store           The one reader and writer of these schemas.
+	 * @param SettingsService    $settingsService The object service the elevation runs on.
+	 * @param LoggerInterface    $logger          The logger.
 	 */
 	public function __construct(
 		private readonly SociaalDomeinStore $store,
+		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -123,6 +129,30 @@ class MigrateCasePlanStrings implements IRepairStep {
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-the-existing-plan-text-is-migrated-not-discarded-req-cpn-02
 	 */
 	public function run(IOutput $output): void {
+		// UNDER A SYSTEM IDENTITY, and the READ is inside it too. An upgrade
+		// has no session, so OpenRegister resolves the actor as 'Anonymous' and
+		// refuses every create and update; it also refuses the READ on any
+		// schema with no explicit `public` grant, and `gezinsplan` has none. So
+		// an unelevated run does not half-migrate, it reads nothing, reports
+		// "migrated 0" and looks like an instance that had no plans.
+		$this->withSystemIdentity(
+			objectService: $this->settingsService->getObjectService(),
+			work: function () use ($output): void {
+				$this->migrate(output: $output);
+			}
+		);
+	}//end run()
+
+	/**
+	 * The migration itself, once an identity is in place.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	 */
+	private function migrate(IOutput $output): void {
 		try {
 			$plans = $this->store->rows(schema: 'gezinsplan');
 		} catch (Throwable $e) {
@@ -141,7 +171,7 @@ class MigrateCasePlanStrings implements IRepairStep {
 		}
 
 		$output->info('Dossiq: migrated ' . $migrated . ' family plan records into goals and interventions');
-	}//end run()
+	}//end migrate()
 
 	/**
 	 * Migrate one plan, or skip it when it has been done.
