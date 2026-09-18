@@ -2431,6 +2431,55 @@
 									}
 								},
 								{
+									"label": "Incidents",
+									"widget": {
+										"id": "case-incidents",
+										"type": "object-list",
+										"title": "Incidents",
+										"icon": "AlertOutline",
+										"_note": "splitting-a-case-and-its-incidents, gap register row 2.45. A case about an address holds the address and the history; the reports that arrive on it are incidents, each with its own date, its own reporter, its own owner and its own outcome. SORTED ON eventDate AND NOT ON the record's creation moment: a report written down three weeks late belongs where it happened, and a list ordered on when somebody typed it up reads the pattern backwards. Both moments are columns for the same reason, so the delay between them is visible on the row rather than being a number only the API carries. It sits on Work and not under Tasks because an incident is not work somebody was assigned; it is a thing that happened, and several of them are what the case is about. It is NOT a deelzaak and gets no page: a deelzaak has its own number, its own beslistermijn and its own decision, and an incident has none of the three.",
+										"content": {
+											"register": "dossiq",
+											"schema": "incident",
+											"filter": {
+												"case": "@objectId"
+											},
+											"sort": {
+												"field": "eventDate",
+												"dir": "asc"
+											},
+											"limit": 25,
+											"columns": [
+												{
+													"key": "eventDate",
+													"label": "Happened on"
+												},
+												{
+													"key": "recordedAt",
+													"label": "Recorded on"
+												},
+												{
+													"key": "reporter",
+													"label": "Reported by"
+												},
+												{
+													"key": "assignee",
+													"label": "Owner"
+												},
+												{
+													"key": "state",
+													"label": "State"
+												},
+												{
+													"key": "outcome",
+													"label": "Outcome"
+												}
+											],
+											"emptyText": "No reports have been recorded on this case"
+										}
+									}
+								},
+								{
 									"label": "What happens next",
 									"widget": {
 										"id": "case-planned-actions",
@@ -3035,6 +3084,22 @@
 						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
 						"target": "CaseLifecycleMenuDialog"
+					},
+					{
+						"id": "case-split",
+						"type": "open-modal",
+						"target": "CaseSplitDialog",
+						"label": "Split in two",
+						"icon": "CallSplit",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
 					},
 					{
 						"id": "case-merge",

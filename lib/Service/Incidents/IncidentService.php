@@ -297,6 +297,42 @@ class IncidentService {
 	}//end settle()
 
 	/**
+	 * The open incidents one person is working.
+	 *
+	 * Read by the work list. The filter is the ASSIGNEE and not the case's
+	 * owner, which is the whole point of REQ-INC-02: an inspector sees the one
+	 * report they were handed without the case it sits in moving to them.
+	 *
+	 * @param string $userId The person.
+	 *
+	 * @return array<int, array<string, mixed>> The incidents, oldest event first.
+	 *
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-hands-off-without-moving-the-case-req-inc-02
+	 */
+	public function ownedBy(string $userId): array {
+		$userId = trim($userId);
+		if ($userId === '') {
+			return [];
+		}
+
+		$mine = [];
+		foreach ($this->rows(filters: ['assignee' => $userId, '_limit' => self::PAGE_SIZE]) as $row) {
+			if (in_array((string)($row['state'] ?? ''), self::OPEN_STATES, true) === true) {
+				$mine[] = $row;
+			}
+		}
+
+		usort(
+			$mine,
+			static function (array $left, array $right): int {
+				return (((string)($left['eventDate'] ?? '')) <=> ((string)($right['eventDate'] ?? '')));
+			},
+		);
+
+		return $mine;
+	}//end ownedBy()
+
+	/**
 	 * How many open incidents each of these cases holds.
 	 *
 	 * Returns a count PER CASE rather than a total, because the work list has

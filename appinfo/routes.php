@@ -961,6 +961,17 @@ $extra = [
     ['name' => 'caseTakeover#on',          'url' => '/api/case/{caseId}/takeovers',                       'verb' => 'GET'],
     ['name' => 'caseTakeover#accept',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/accept',    'verb' => 'POST'],
     ['name' => 'caseTakeover#refuse',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/refuse',    'verb' => 'POST'],
+
+    // Dividing one case into two, and the dated reports inside one
+    // (splitting-a-case-and-its-incidents, rows 2.35 and 2.45). The split is
+    // the inverse of `/api/case/{caseId}/merge` and is deliberately its own
+    // endpoint: a merge ends a case and a split opens one, and they refuse for
+    // different reasons.
+    ['name' => 'caseSplit#split',          'url' => '/api/case/{caseId}/split',                           'verb' => 'POST'],
+    ['name' => 'caseIncident#index',       'url' => '/api/case/{caseId}/incidents',                       'verb' => 'GET'],
+    ['name' => 'caseIncident#record',      'url' => '/api/case/{caseId}/incidents',                       'verb' => 'POST'],
+    ['name' => 'caseIncident#assign',      'url' => '/api/case/{caseId}/incidents/{incidentId}/assign',   'verb' => 'POST'],
+    ['name' => 'caseIncident#settle',      'url' => '/api/case/{caseId}/incidents/{incidentId}/settle',   'verb' => 'POST'],
     ['name' => 'caseSeats#show',           'url' => '/api/case/{caseId}/seats',                           'verb' => 'GET'],
     ['name' => 'caseSeats#nameCoordinator', 'url' => '/api/case/{caseId}/seats/coordinator',              'verb' => 'PUT'],
     ['name' => 'leaverHandover#preview',   'url' => '/api/leaver-handover/preview',                       'verb' => 'POST'],

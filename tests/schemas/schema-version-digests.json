@@ -735,6 +735,10 @@
         "version": "1.2.0",
         "digest": "eb07f4e4dad1d9ac8e47633ff6234e4b866ba71445151a23c8c34c2221e0593e"
     },
+    "lib/Settings/dossiq_register.json::incident": {
+        "version": "1.0.0",
+        "digest": "6d74dc352b308c01f5c159c81f96076456bd48fae0bb193d6c6083d335b7e8dd"
+    },
     "lib/Settings/dossiq_register.json::inspectieChecklist": {
         "version": "1.1.0",
         "digest": "01c345b3465030f94e6fc850163d83d7d3ff100cbcd66ca2c188b26507352e79"
