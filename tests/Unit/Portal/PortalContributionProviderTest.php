@@ -98,7 +98,15 @@ class PortalContributionProviderTest extends TestCase {
 		$contribution = $this->provider->getContribution(['audience' => 'supplier']);
 		$this->assertIsArray($contribution);
 		$ids = array_column($contribution['collections'], 'id');
-		$this->assertSame(['tenders', 'contracts', 'invoices', 'messages'], $ids);
+		// `performance` joins them: supplierKpi shipped with the portal's
+		// schema foundation and no surface, so an instance computed a
+		// supplier's payment record and showed it to nobody, least of all the
+		// supplier it was about. The order is asserted because the portal
+		// renders the collections in it.
+		$this->assertSame(
+			['tenders', 'contracts', 'invoices', 'performance', 'messages'],
+			$ids
+		);
 		foreach ($contribution['collections'] as $collection) {
 			$this->assertSame('supplierRef', $collection['scopeField']);
 		}

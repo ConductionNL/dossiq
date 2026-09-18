@@ -93,6 +93,9 @@ describe.each([
 	['FieldEvidence', 'FieldEvidenceMenu', 'fieldEvidence'],
 	['OfflineSyncQueue', 'OfflineSyncQueueMenu', 'syncQueue'],
 	['OfflineSyncConflicts', 'OfflineSyncConflictsMenu', 'conflictRecord'],
+	['Indicatiestellingen', 'IndicatiestellingenMenu', 'indicatiestelling'],
+	['MdoOverleggen', 'MdoOverleggenMenu', 'mdoOverleg'],
+	['ReIntegratieTrajecten', 'ReIntegratieTrajectenMenu', 'reIntegratieTraject'],
 ])('%s', (pageId, menuId, slug) => {
 	it('is a page over the schema the register declares', () => {
 		const p = page(pageId)
@@ -202,5 +205,55 @@ describe('the settings menu keeps its entries in a stated order', () => {
 			.filter((entry) => entry.section === 'settings')
 			.map((entry) => entry.order)
 		expect(new Set(orders).size).toBe(orders.length)
+	})
+})
+
+describe('what the sociaal domein pages do not show', () => {
+	it('keeps the assessment content off the indicatiestelling list', () => {
+		// `advisedSupport` is what a named person is to receive and
+		// `investigationMinutes` points at the interview write-up. Both are
+		// the record; a list is scanned, not read.
+		const columns = page('Indicatiestellingen').config.columns
+		for (const hidden of ['advisedSupport', 'investigationMinutes']) {
+			expect(columns).not.toContain(hidden)
+			expect(schemas.indicatiestelling.properties[hidden]).toBeTruthy()
+		}
+	})
+
+	it('puts consent on the MDO list and the minutes in the record', () => {
+		// An MDO where consent was not registered for every participant is
+		// data shared about a household that nobody agreed to. That is the
+		// column somebody comes to this page for. The minutes are anonymised
+		// only WHEN consent is missing, so the unanonymised ones are exactly
+		// the sensitive case and must not be met in a list.
+		const columns = page('MdoOverleggen').config.columns
+		expect(columns).toContain('toestemmingenGeregistreerd')
+		expect(columns).not.toContain('minutes')
+		expect(columns).not.toContain('gedeeldeGegevens')
+	})
+
+	it('keeps the work exemption off the re-integration list', () => {
+		// Being excused from the work obligation is usually a health fact.
+		const columns = page('ReIntegratieTrajecten').config.columns
+		expect(columns).not.toContain('exemptionWorkObligation')
+		expect(schemas.reIntegratieTraject.properties.exemptionWorkObligation)
+			.toBeTruthy()
+	})
+})
+
+describe('the supplier reads their own performance figures', () => {
+	const provider = fs.readFileSync(
+		path.join(ROOT, 'lib', 'Portal', 'PortalContributionProvider.php'),
+		'utf8',
+	)
+
+	it('is a collection on the supplier contribution, scoped by supplierRef', () => {
+		// Scoped like every other collection there. An unscoped one would
+		// show a supplier somebody else's payment record.
+		const block = provider
+			.slice(provider.indexOf('supplierKpi'))
+			.split('],')[0]
+		expect(provider).toContain("'schema' => 'supplierKpi'")
+		expect(block).toContain("'scopeField' => 'supplierRef'")
 	})
 })

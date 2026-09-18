@@ -263,8 +263,9 @@ class PortalContributionProvider {
 	/**
 	 * Manifest for the `supplier` audience (unchanged from the v1 provider).
 	 *
-	 * The supplier's tenders, contracts, invoices and message inbox, all scoped
-	 * by the DEFAULT subjectRef == the record's `supplierRef`. Portaliq reads
+	 * The supplier's tenders, contracts, invoices, performance figures and
+	 * message inbox, all scoped by the DEFAULT subjectRef == the record's
+	 * `supplierRef`. Portaliq reads
 	 * them RBAC-scoped to the subject; Dossiq exposes no portal endpoints of
 	 * its own here.
 	 *
@@ -298,6 +299,21 @@ class PortalContributionProvider {
 					'schema' => 'caseSupplierInvoice',
 					'scopeField' => 'supplierRef',
 					'label' => 'Facturen',
+					'listable' => true,
+				],
+				[
+					// The supplier's own performance figures. `supplierKpi`
+					// shipped with the portal's schema foundation and no
+					// surface, so an instance computed a supplier's payment
+					// record and showed it to nobody, least of all the
+					// supplier it was about. Scoped by `supplierRef` like
+					// every collection here, so a supplier reads their own
+					// row and no one else's.
+					'id' => 'performance',
+					'register' => self::REGISTER,
+					'schema' => 'supplierKpi',
+					'scopeField' => 'supplierRef',
+					'label' => 'Prestaties',
 					'listable' => true,
 				],
 				[

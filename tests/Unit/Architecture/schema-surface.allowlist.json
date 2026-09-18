@@ -2,32 +2,12 @@
   "about": "Schemas dossiq registers that nothing shows. A registered schema is storage: the instance creates it, the descriptor promises the capability, and no page, controller or service ever touches it. An entry names the slug, the change that registered it, and what has to happen before it can go. An entry without an ownerChange or a readerApp is not an entry: SchemaHasSurfaceTest fails on it. The list also fails in the OTHER direction, on a slug that has since gained a surface, so the number can only go down deliberately.",
   "measured": "2026-09-18",
   "measuredBy": "SchemaSurfaceScanner over lib/Settings/dossiq_register.json plus register.d/*.json: 159 schemas declared, 16 with no surface when this list was written. Six came off within the day, as changes already in flight gave them readers. That is the list working as intended: it shrinks when somebody surfaces a schema, and it never grows without a build failing first.",
-  "triage": "The two that held personal data are off this list: `avgIncident` and `supplierUser` have pages, because a schema nobody can reach is a schema nobody can answer a data subject request from. The eight that remain hold no personal data of their own, or hold it only through a case that is itself reachable, so their fate is still surface and the order is a product decision rather than a privacy one. NOTHING IS RETIRED, and the reason is in every entry: each traces to a change that shipped its schema and its seeds and never shipped its page, so deleting the storage would destroy rows on any instance that has been filling it since June and would take the capability off the roadmap by accident. The retire column being empty is a finding, not a step that was skipped.",
+  "triage": "Fifteen of the sixteen have pages. The two holding personal data went first (#2958), then the offline three (#2959), then the sociaal-domein three and the supplier KPIs. NOTHING WAS RETIRED, and the reason held every time: each traced to a change that shipped its schema and its seeds and never shipped its page, so deleting the storage would destroy rows on any instance that has been filling it since June and take the capability off the roadmap by accident. The retire column being empty was a finding, not a step that was skipped.",
   "entries": [
     {
       "slug": "case-location",
       "ownerChange": "archive/2026-05-11-case-location",
-      "reason": "The geocoded addresses on a case. The map component and PdokLocatieserverService talk about it in prose and neither reads the slug; the CaseDetail page has no location widget. Named by openspec/specs/case-dashboard-view, so a surface is still promised."
-    },
-    {
-      "slug": "indicatiestelling",
-      "ownerChange": "archive/2026-06-13-beschikking-generatie",
-      "reason": "The assessment a beschikking rests on. Named by two live specs and shown by neither."
-    },
-    {
-      "slug": "mdoOverleg",
-      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
-      "reason": "The multidisciplinary meeting record. Decidiq owns meetings for the fleet, so the surface question is whether this is adopted there or shown here."
-    },
-    {
-      "slug": "reIntegratieTraject",
-      "ownerChange": "sensitive-fields-declared",
-      "reason": "A re-integration pathway. The open sensitive-fields change already names it, so its declaration is being worked on before its page."
-    },
-    {
-      "slug": "supplierKpi",
-      "ownerChange": "archive/2026-06-13-leverancier-zaakportaal-01-schema-foundation",
-      "reason": "Supplier performance figures for the supplier portal. The portal's own schema foundation landed; the dashboard that reads these did not."
+      "reason": "The geocoded addresses on a case. The last one, and the only one whose honest surface is NOT a settings page: it is a child collection of `case` and belongs on the case page, beside the other FK-scoped children the CaseDetail note already lists. That page builds its children inside a `tabs` widget rather than as plain object lists, so adding one is a change to that page's structure and belongs to whoever owns it. An admin index would technically clear this list and would put a case's addresses somewhere nobody working the case would look, which is passing the test rather than fixing the thing."
     }
   ]
 }
