@@ -90,7 +90,13 @@ class ZaakdossierController extends Controller {
 		}
 
 		try {
-			$file = $this->fileService->getDossierForCase(caseId: $caseId);
+			$file = $this->fileService->getDossierForCase(
+				caseId: $caseId,
+				// "Show me everything that went to this person." The value is
+				// a party of the case, never a name: two people called Jansen
+				// are two filters.
+				correspondent: (string)$this->request->getParam('correspondent', ''),
+			);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -267,6 +273,11 @@ class ZaakdossierController extends Controller {
 			// The Files tab's Document properties dialog edits these two as well.
 			'direction' => $this->request->getParam('direction'),
 			'keywords' => $this->request->getParam('keywords'),
+			// Who the document came from and who it went to. Both name a
+			// party OF THIS CASE; a value naming anything else is dropped by
+			// DocumentCorrespondents rather than stored as a typed name.
+			'sender' => $this->request->getParam('sender'),
+			'recipients' => $this->request->getParam('recipients'),
 		];
 		$metadata = array_filter($metadata, static fn ($value) => $value !== null);
 

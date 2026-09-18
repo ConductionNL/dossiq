@@ -139,6 +139,50 @@
 			</NcCheckboxRadioSwitch>
 		</div>
 
+		<div class="status-type-form__public">
+			<h5 class="status-type-form__public-heading">
+				{{ t('dossiq', 'What the applicant sees') }}
+			</h5>
+			<p class="status-type-form__hint">
+				{{
+					t(
+						'dossiq',
+						'The name above is written for you. Leave these empty and the applicant reads that name.',
+					)
+				}}
+			</p>
+
+			<div class="status-type-form__row">
+				<NcTextField
+					:modelValue="form.publicLabel"
+					:label="t('dossiq', 'Public label')"
+					:placeholder="form.name"
+					class="status-type-form__field"
+					data-testid="status-type-public-label"
+					@update:modelValue="(v) => update('publicLabel', v)" />
+			</div>
+
+			<div class="status-type-form__row">
+				<NcTextField
+					:modelValue="form.publicDescription"
+					:label="t('dossiq', 'Public description')"
+					:placeholder="
+						t('dossiq', 'What the applicant should know right now')
+					"
+					class="status-type-form__field"
+					data-testid="status-type-public-description"
+					@update:modelValue="(v) => update('publicDescription', v)" />
+				<p class="status-type-form__hint">
+					{{
+						t(
+							'dossiq',
+							'Empty shows no description. The description above is never shown to the applicant.',
+						)
+					}}
+				</p>
+			</div>
+		</div>
+
 		<div class="status-type-form__checklist">
 			<h5 class="status-type-form__checklist-heading">
 				{{ t('dossiq', 'Checklist') }}
@@ -835,6 +879,16 @@ export default {
 	height: 14px;
 	border-radius: 3px;
 	border: 1px solid var(--color-border);
+}
+
+.status-type-form__public {
+	border-top: 1px solid var(--color-border);
+	margin-top: 12px;
+	padding-top: 12px;
+}
+
+.status-type-form__public-heading {
+	margin: 0;
 }
 
 .status-type-form__checklist {

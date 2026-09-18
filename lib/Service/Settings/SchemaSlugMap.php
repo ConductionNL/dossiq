@@ -263,6 +263,16 @@ class SchemaSlugMap {
 		// does not declare x-openregister-archive", which reads as a broken
 		// feature rather than as a configuration that never arrived.
 		'x-openregister-archive',
+		// What counts as the same case, and who may file one anyway.
+		// OpenRegister's DuplicateDetectionService reads this block off
+		// `Schema::getConfiguration()` and nowhere else, so an instance that
+		// imported the case schema before the block existed answers the
+		// dedup-check endpoint with an empty match list. That reads exactly
+		// like "nothing looks like this case", which is the one answer a
+		// duplicate warning must never give by accident. Carried here for the
+		// same reason `x-openregister-read-state` is: an absent block is not
+		// an inert default, it is a different answer.
+		'x-openregister-dedup',
 	];
 
 	/**

@@ -485,6 +485,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -973,6 +974,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -1109,6 +1111,43 @@
 						}
 					},
 					{
+						"id": "followed-cases",
+						"type": "object-table",
+						"title": "Cases you follow",
+						"_note": "case-followers, row 13.18. The cases this reader subscribed to, over OpenRegister's `_watching` lens (object-watchers). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the subscription sits on the case row. No `isFinalStatus` filter, for the reason the chip carries none: you follow a case to hear how it ends. View all leads to the Followed chip on Cases, which is the same lens, so the tile and the list cannot show different sets. It lives on My Work rather than on the Dashboard because following is about what you are keeping an eye on today, which is the question this page answers.",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_watching": true
+								},
+								"limit": 5
+							},
+							"columns": [
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted"
+								},
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"_watching": "true"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "Follow a case to keep an eye on it here"
+						}
+					},
+					{
 						"id": "archival-reviews",
 						"type": "custom",
 						"title": "My archival reviews",
@@ -1150,6 +1189,15 @@
 						"gridX": 0,
 						"gridY": 4,
 						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "5",
+						"widgetId": "followed-cases",
+						"gridX": 0,
+						"gridY": 8,
+						"gridWidth": 4,
 						"gridHeight": 4,
 						"showTitle": true
 					}
@@ -1439,6 +1487,15 @@
 						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
 						"filter": {
 							"_favourite": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Followed",
+						"_note": "case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for.",
+						"filter": {
+							"_watching": true,
 							"statusHiddenInLists": false,
 							"isDraft": false
 						}
@@ -2023,7 +2080,7 @@
 						"title": "Files",
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
-						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files.",
+						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers.",
 						"props": {
 							"rowActions": [
 								{
@@ -2043,7 +2100,19 @@
 									"target": "FileRequestDialog"
 								}
 							],
-							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked"
+							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
+							"columns": [
+								{
+									"id": "sender",
+									"label": "Sender",
+									"property": "senderName"
+								},
+								{
+									"id": "recipients",
+									"label": "Recipients",
+									"property": "recipientNames"
+								}
+							]
 						}
 					},
 					{
@@ -2126,6 +2195,16 @@
 												}
 											}
 										}
+									}
+								},
+								{
+									"label": "Followers",
+									"widget": {
+										"id": "case-followers",
+										"type": "case-followers",
+										"title": "Followers",
+										"icon": "AccountMultipleOutline",
+										"_note": "case-followers, row 13.18. Who is watching this case, over OpenRegister's GET /api/objects/{register}/{schema}/{id}/watchers (object-watchers). It sits LAST on this tab because the three sections above it say who the case is about and this one says who is reading over their shoulder: a teamleider following a sensitive case holds no role on it and appears here and nowhere else. TYPE names the registry key rather than \"custom\": a tab child resolves from cnRegistry[widget.type] and renders nothing at all, logging nothing, when no key answers. Reading the list needs `update` on the case, so a reader without it is told that in words rather than shown an empty list, which would be a claim about the audience nobody made to them. No remove button: taking off somebody else's subscription needs `manage`, and you stop following from the strip on the case page, which acts on your own row only."
 									}
 								}
 							]
@@ -2439,6 +2518,13 @@
 						"_note": "archived-cases-leave-the-lenses REQ-CM-43. The sentence that says this case is in the archive, who filed it, on what day and with what reason. It is the FIRST strip, above the star and the unread badge, because it changes how everything under it should be read: the page is a record to consult, not work to do. It reads `@self.archived`, the same marker the Cases page, the queue, the tiles and the search exclude on, so the strip and every list agree about which cases are archived; reading `archiveStatus` here would make it disagree with all of them on a case imported over ZGW. Restore is NOT a button on this strip and that is deliberate: it is one entry in the Lifecycle menu beside every other act, because an act offered in two places is gated in two places and the second one is the one nobody remembers. Renders nothing at all on a case that is not archived, which is almost every case."
 					},
 					{
+						"id": "case-follow",
+						"type": "case-follow",
+						"title": "Follow",
+						"icon": "BellPlusOutline",
+						"_note": "case-followers, row 13.18. Follow a case you do not own, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/watch (object-watchers). It shares the row with the star because both are per-reader state, and it says the opposite kind of thing: the star is private and silent, following subscribes you to the case's own notifications and the people who may edit the case can see that you took it. The subscription lives in OpenRegister's own table, so following cuts no version and writes no audit entry. The widget renders from `@self.watching`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT two header actions because `executeApiCall` maps every method that is not PUT to post, so an `api-call` declared `method: \"DELETE\"` would POST to a route that takes DELETE, with nothing in the manifest to say it could never have worked."
+					},
+					{
 						"id": "case-unread",
 						"type": "case-unread",
 						"title": "New since you last looked",
@@ -2511,7 +2597,16 @@
 						"widgetId": "case-favourite",
 						"gridX": 0,
 						"gridY": 3,
-						"gridWidth": 12,
+						"gridWidth": 6,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
+						"id": "follow-strip",
+						"widgetId": "case-follow",
+						"gridX": 6,
+						"gridY": 3,
+						"gridWidth": 6,
 						"gridHeight": 1,
 						"showTitle": false
 					},
@@ -5584,6 +5679,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"
@@ -5802,6 +5898,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"

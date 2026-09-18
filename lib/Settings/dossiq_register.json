@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.13.0",
+                "version": "1.14.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -404,6 +404,16 @@
                         "description": "Whether a case of this type needs a coordinator named before its besluit is signed. The Awb answer is signed by the second seat, and a case type that leaves this off never asks for one: most cases have a handler and nobody else.",
                         "title": "Coordinator required before signing"
                     },
+                    "duplicatePolicy": {
+                        "type": "string",
+                        "enum": [
+                            "warn",
+                            "block"
+                        ],
+                        "default": "warn",
+                        "title": "Duplicate policy",
+                        "description": "What happens when a new case of this type looks like one that already exists. On warn, the handler sees the matches and decides. On block, only a coordinator may file it anyway, and they have to say why. The matching itself is not set here: the case schema declares the rules and OpenRegister scores them, so the same pair the nightly sweep finds is the pair the form shows."
+                    },
                     "defaultInformatieobjecttype": {
                         "type": "string",
                         "title": "Default document type",
@@ -647,11 +657,11 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.5.0",
+                "version": "1.6.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
                 "title": "Status Type",
-                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). V1.5 additive: a status declares which case fields it requires, hides and locks (fieldRules), published onto the case schema for OpenRegister to enforce. A status that declares none of the four behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, it has no maximum, and it asks nothing of any field. See openspec/changes/what-a-status-declares.",
+                "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). V1.5 additive: a status declares which case fields it requires, hides and locks (fieldRules), published onto the case schema for OpenRegister to enforce. V1.6 additive: a status may declare the words the applicant reads for it (publicLabel, publicDescription); declare neither and the applicant reads the name, as before. A status that declares none of the five behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, it has no maximum, it asks nothing of any field, and the applicant reads its name. See openspec/changes/what-a-status-declares and openspec/changes/citizen-status-labels.",
                 "type": "object",
                 "required": [
                     "name",
@@ -671,6 +681,21 @@
                         "description": "Description of this status phase",
                         "x-translatable": true,
                         "title": "Description"
+                    },
+                    "publicLabel": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "description": "What the applicant reads for this status. Leave it empty and they read the name.",
+                        "x-notes": "The name is written for the handler, and \"Toets register B\" says nothing to the person waiting. The empty fallback to `name` is the whole migration: a case type nobody has annotated keeps reading exactly as it did. ZGW calls this the statustekst, and the ZTC statustype mapping writes it there.",
+                        "x-translatable": true,
+                        "title": "Public label"
+                    },
+                    "publicDescription": {
+                        "type": "string",
+                        "description": "What the applicant is told this status means. Empty shows no description.",
+                        "x-notes": "It never falls back to `description`: that one is written for a colleague and can name an internal check, an internal register or a colleague by role. Showing nothing is the safe default; showing the handler's words to the applicant is a disclosure nobody chose.",
+                        "x-translatable": true,
+                        "title": "Public description"
                     },
                     "caseType": {
                         "type": "string",
@@ -1391,6 +1416,9 @@
                             {
                                 "kind": "field",
                                 "field": "majorResponders"
+                            },
+                            {
+                                "watchers": true
                             }
                         ],
                         "subject": {
@@ -1424,10 +1452,29 @@
                             "nl": "Nieuwe zaak \"{{title}}\" ontvangen via overdracht",
                             "en": "New case \"{{title}}\" received via handoff"
                         }
+                    },
+                    "caseMovedForItsFollowers": {
+                        "trigger": {
+                            "type": "transition"
+                        },
+                        "enabled": true,
+                        "channels": [
+                            "nc-notification"
+                        ],
+                        "recipients": [
+                            {
+                                "watchers": true
+                            }
+                        ],
+                        "subject": {
+                            "nl": "Zaak \"{{title}}\" is van status veranderd",
+                            "en": "Case \"{{title}}\" moved to another status"
+                        },
+                        "x-notes": "case-followers, row 13.18. What a follower actually hears. `{\"watchers\": true}` names a subscription list rather than a value to look up, which is why it carries no `kind`; NotificationRecipientResolver normalises it to the `watchers` kind and resolves the list at DISPATCH time, dropping anyone who has since lost read on the case. So this rule cannot leak a sensitive case to a colleague whose group changed, and dossiq dispatches nothing of its own. The trigger is `transition` and not `updated`: ObjectTransitionedEvent fires when the status engine moves the case, where `updated` fires on every save, and a follower who hears about every field edit stops reading the ones that matter. The recipients are the watchers ALONE. The handler and the team already hear through their own rules, and a second rule addressing them would arrive as a second notification about one move. The subject deliberately names no status: a case status reaches this template as the stored value rather than the label an administrator gave it, and a notification reading \"moved to 7f3a-...\" is worse than one that says to go and look."
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.23.0",
+                "version": "1.25.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1483,38 +1530,45 @@
                         "fair": 0.5
                     }
                 },
-                "x-openregister-dedup": {
-                    "blockingKeys": [
-                        "caseType"
-                    ],
-                    "matchRules": [
-                        {
-                            "field": "identifier",
-                            "method": "exact",
-                            "weight": 0.4
-                        },
-                        {
-                            "field": "permitApplicationRef",
-                            "method": "exact",
-                            "weight": 0.3
-                        },
-                        {
-                            "field": "title",
-                            "method": "normalized",
-                            "weight": 0.2
-                        },
-                        {
-                            "field": "title",
-                            "method": "levenshtein",
-                            "weight": 0.1
-                        }
-                    ],
-                    "threshold": 0.7
-                },
                 "title": "Case",
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-dedup": {
+                        "blockingKeys": [
+                            "caseType"
+                        ],
+                        "matchRules": [
+                            {
+                                "field": "requester",
+                                "method": "exact",
+                                "weight": 0.35
+                            },
+                            {
+                                "field": "permitApplicationRef",
+                                "method": "exact",
+                                "weight": 0.35
+                            },
+                            {
+                                "field": "title",
+                                "method": "normalized",
+                                "weight": 0.2
+                            },
+                            {
+                                "field": "title",
+                                "method": "levenshtein",
+                                "weight": 0.1
+                            }
+                        ],
+                        "threshold": 0.3,
+                        "onCreate": "warn",
+                        "overrideGroups": [
+                            "dossiq-coordinators"
+                        ],
+                        "dismissGroups": [
+                            "dossiq-coordinators"
+                        ]
+                    },
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": {
@@ -1653,6 +1707,29 @@
                                     },
                                     true
                                 ]
+                            }
+                        },
+                        "statusPublicLabel": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "What the applicant reads for the status this case sits in: the linked statusType's publicLabel, or its name when no public label is set. It lives on the case because that is the only row the applicant is handed. The public status page resolves a token to the case and nothing else, and the portal projects the case to a field whitelist, so neither can follow the status reference to the statusType. Materialised for the reason isFinalStatus is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener. After editing a statusType's public label, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "coalesce": [
+                                    {
+                                        "prop": "@ref.statusType.publicLabel"
+                                    },
+                                    {
+                                        "prop": "@ref.statusType.name"
+                                    }
+                                ]
+                            }
+                        },
+                        "statusPublicDescription": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "What the applicant is told the current status means, from the linked statusType's publicDescription. Empty when the status declares none, and it never falls back to the internal description: that one is written for a colleague. Materialised and rematerialised like statusPublicLabel.",
+                            "expression": {
+                                "prop": "@ref.statusType.publicDescription"
                             }
                         },
                         "waitingOn": {
@@ -2346,6 +2423,20 @@
                         "facetable": true,
                         "visible": false
                     },
+                    "statusPublicLabel": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "What the applicant reads for the status this case sits in.",
+                        "x-notes": "Computed declaratively from the linked statusType (x-openregister-calculations.statusPublicLabel): its publicLabel, or its name when it declares none. It lives on the CASE because that is the only row the applicant is ever handed. The public status page resolves a token to one case with `_extend: []`, and the portal projects the case to a field whitelist, so neither can follow `status` to the statusType. Materialised for the reason isFinalStatus is; after editing a statusType's public label, run occ openregister:rematerialise-calculations.",
+                        "title": "Status, as the applicant reads it"
+                    },
+                    "statusPublicDescription": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "What the applicant is told the current status means.",
+                        "x-notes": "Computed declaratively from the linked statusType's publicDescription (x-openregister-calculations.statusPublicDescription), empty when it declares none. Rematerialised like statusPublicLabel.",
+                        "title": "Status description, as the applicant reads it"
+                    },
                     "waitingOn": {
                         "type": "string",
                         "readOnly": true,
@@ -2759,6 +2850,25 @@
                         "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
                         "title": "Override reason",
                         "order": 24
+                    },
+                    "duplicateOverrideOf": {
+                        "type": "array",
+                        "readOnly": true,
+                        "title": "Filed over",
+                        "description": "The cases this one was filed over after the duplicate warning. Written once, when a coordinator files a case the case type would otherwise have blocked. Dossiq has no case-note store, so the reason lives on the case beside this list rather than in a note nobody can query.",
+                        "order": 25,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case"
+                        }
+                    },
+                    "duplicateOverrideReason": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Filed over a duplicate warning",
+                        "description": "Why this case was filed although one like it already existed. Typed by the coordinator who filed it, because the next handler reading two near-identical cases needs to know which of them was meant.",
+                        "order": 26
                     },
                     "parentCase": {
                         "type": "string",

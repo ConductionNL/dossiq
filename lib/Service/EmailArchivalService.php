@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service;
 
 use InvalidArgumentException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -52,10 +54,12 @@ class EmailArchivalService {
 	 *
 	 * @param SettingsService $settingsService Shared OR/settings resolver.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CorrespondentWriter $correspondents The party an inbound address belongs to.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CorrespondentWriter $correspondents,
 	) {
 	}//end __construct()
 
@@ -88,10 +92,22 @@ class EmailArchivalService {
 
 		$archivalId = uniqid(prefix: 'archival-', more_entropy: true);
 
+		// Who this message is FROM, as a party of the case rather than as
+		// the address in the header. The address stays on `from`; this is
+		// the party a handler can open. An address nobody on the case
+		// holds leaves it empty: the intake does not create a party per
+		// stranger who mails the case.
+		$sender = $this->correspondents->partyHolding(
+			caseId: $caseId,
+			address: (string)($metadata['from'] ?? ''),
+		);
+
 		$documentRecord = [
 			'archivalId' => $archivalId,
 			'case' => $caseId,
 			'source' => 'email',
+			'sender' => $sender,
+			'direction' => DocumentCorrespondents::DIRECTION_INCOMING,
 			'mailMessageId' => (string)($metadata['mailMessageId'] ?? ''),
 			'subject' => (string)($metadata['subject'] ?? ''),
 			'from' => (string)($metadata['from'] ?? ''),

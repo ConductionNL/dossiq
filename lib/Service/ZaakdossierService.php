@@ -35,6 +35,7 @@ use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
@@ -110,6 +111,7 @@ class ZaakdossierService {
 	 *                                                       schema.
 	 * @param LoggerInterface $logger Logger.
 	 * @param DocumentRecordStore $recordStore Records and joins, and the file on the case.
+	 * @param CorrespondentWriter $correspondents Who a document came from and went to.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -118,6 +120,7 @@ class ZaakdossierService {
 		private readonly InformatieobjectMetadataNormaliser $normaliser,
 		private readonly LoggerInterface $logger,
 		private readonly DocumentRecordStore $recordStore,
+		private readonly CorrespondentWriter $correspondents,
 	) {
 	}//end __construct()
 
@@ -165,30 +168,25 @@ class ZaakdossierService {
 
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 
-		$now = date('Y-m-d\TH:i:s');
-		$hash = hash('sha256', $content);
+		// Who the document came from and who it went to, resolved against the
+		// parties this case has. See CorrespondentWriter::resolveFor().
+		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
+		$correspondents = $this->correspondents->resolveFor(
+			caseId: $caseId,
+			sender: ($metadata['sender'] ?? null),
+			recipients: ($metadata['recipients'] ?? null),
+			direction: $direction,
+		);
 
-		$informatieobject = [
-			'title' => (string)($metadata['title'] ?? $fileName),
-			'fileName' => $fileName,
-			'bestandsomvang' => strlen($content),
-			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
-			'vertrouwelijkheidaanduiding' => $classification,
-			'auteur' => (string)($metadata['auteur'] ?? ''),
-			'status' => 'draft',
-			'informatieobjecttype' => $type,
-			'direction' => $this->normaliser->direction(value: ($metadata['direction'] ?? null)),
-			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
-			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
-			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
-			'taal' => (string)($metadata['taal'] ?? 'nld'),
-			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
-			'integrity' => [
-				'algorithm' => 'sha256',
-				'value' => $hash,
-				'date' => $now,
-			],
-		];
+		$informatieobject = $this->uploadedRecord(
+			fileName: $fileName,
+			content: $content,
+			metadata: $metadata,
+			type: $type,
+			classification: $classification,
+			direction: $direction,
+			correspondents: $correspondents,
+		);
 
 		// Documents live on the case: the file is stored on the CASE first, so
 		// the node listener may already have projected a record for it by the
@@ -216,6 +214,9 @@ class ZaakdossierService {
 		// Create the case <-> document join, unless the listener already did.
 		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
 
+		// One dispatch row per correspondent: the audit of the send itself.
+		$this->correspondents->recordDispatches(caseId: $caseId, documentId: $infoId, correspondents: $correspondents);
+
 		$this->logger->info(
 			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
 			['app' => Application::APP_ID],
@@ -229,10 +230,68 @@ class ZaakdossierService {
 			'vertrouwelijkheidaanduiding' => $classification,
 			'informatieobjecttype' => $type,
 			'direction' => $informatieobject['direction'],
+			'sender' => $informatieobject['sender'],
+			'recipients' => $informatieobject['recipients'],
 			'keywords' => $informatieobject['keywords'],
 			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadDocument()
+
+	/**
+	 * The record an uploaded document gets.
+	 *
+	 * The counterpart of {@see DocumentDefaults::forNewFile()}, which says the
+	 * same thing for a file somebody dropped in the case folder. Split out so
+	 * `uploadDocument()` reads as the steps of an upload rather than as one
+	 * long literal in the middle of them.
+	 *
+	 * @param string $fileName The file name.
+	 * @param string $content The bytes, for the size and the hash.
+	 * @param array<string, mixed> $metadata The submitted metadata.
+	 * @param string $type The document type uuid.
+	 * @param string $classification The confidentiality, already checked.
+	 * @param string $direction The direction, already coerced onto the enum.
+	 * @param array{sender: string, recipients: array<int, string>} $correspondents Who it is from and to.
+	 *
+	 * @return array<string, mixed> The record to store.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 */
+	private function uploadedRecord(
+		string $fileName,
+		string $content,
+		array $metadata,
+		string $type,
+		string $classification,
+		string $direction,
+		array $correspondents,
+	): array {
+		$now = date('Y-m-d\TH:i:s');
+
+		return [
+			'title' => (string)($metadata['title'] ?? $fileName),
+			'fileName' => $fileName,
+			'bestandsomvang' => strlen($content),
+			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
+			'vertrouwelijkheidaanduiding' => $classification,
+			'auteur' => (string)($metadata['auteur'] ?? ''),
+			'status' => 'draft',
+			'informatieobjecttype' => $type,
+			'direction' => $direction,
+			'sender' => $correspondents['sender'],
+			'recipients' => $correspondents['recipients'],
+			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
+			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
+			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
+			'taal' => (string)($metadata['taal'] ?? 'nld'),
+			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
+			'integrity' => [
+				'algorithm' => 'sha256',
+				'value' => hash('sha256', $content),
+				'date' => $now,
+			],
+		];
+	}//end uploadedRecord()
 
 	/**
 	 * Link an existing informatieobject to a case without duplicating the document.
@@ -349,14 +408,16 @@ class ZaakdossierService {
 	 * so the service stays testable without a user context.
 	 *
 	 * @param string $caseId The case (zaak) UUID.
+	 * @param string $correspondent Narrow to the documents naming this party, or '' for all.
 	 *
 	 * @return array<string, mixed> Structure with `total`, `groups` and `informatieobjecten`.
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
-	public function getDossierForCase(string $caseId): array {
+	public function getDossierForCase(string $caseId, string $correspondent = ''): array {
 		[$objectService, $register] = $this->requireRegister();
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
@@ -387,7 +448,17 @@ class ZaakdossierService {
 			}
 		}
 
-		return $this->groupByType(documents: $documents);
+		// Every row carries who the document was from and to, named. The
+		// parties are read once for the whole listing rather than once per
+		// document, which is the difference between one OpenRegister read and
+		// forty to draw one column.
+		return $this->groupByType(
+			documents: $this->correspondents->describeAll(
+				caseId: $caseId,
+				documents: $documents,
+				correspondent: $correspondent,
+			)
+		);
 	}//end getDossierForCase()
 
 	/**
@@ -495,6 +566,16 @@ class ZaakdossierService {
 			};
 		}
 
+		$updateData = array_merge(
+			$updateData,
+			$this->correspondents->applyEdit(
+				documentId: $infoObjectId,
+				current: $current,
+				metadata: $metadata,
+				direction: (string)($updateData['direction'] ?? ($current['direction'] ?? '')),
+			)
+		);
+
 		if (empty($updateData) === true) {
 			return ['id' => $infoObjectId, 'updated' => false];
 		}
@@ -512,6 +593,7 @@ class ZaakdossierService {
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()
+
 
 	/**
 	 * Fetch a single informatieobject as an array.

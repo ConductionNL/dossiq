@@ -12184,6 +12184,19 @@
             "x-translatable": true,
             "title": "Description"
           },
+          "publicLabel": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "What the applicant reads for this status. Leave it empty and they read the name.",
+            "x-translatable": true,
+            "title": "Public label"
+          },
+          "publicDescription": {
+            "type": "string",
+            "description": "What the applicant is told this status means. Empty shows no description.",
+            "x-translatable": true,
+            "title": "Public description"
+          },
           "caseType": {
             "type": "string",
             "format": "uuid",
@@ -18005,13 +18018,11 @@
           "id": "b3706ca7-e0df-469c-a7e4-af6dd0b28927"
         },
         "document": "https://example.invalid/resource/0",
-        "relationshipType": "Voorbeeld Relationshiptype 1",
+        "relationshipType": "geadresseerde",
         "involvedParty": "https://example.invalid/resource/0",
         "description": "Voorbeeld Description 1",
-        "receiveDate": "2026-03-01",
         "sendDate": "2026-03-01",
-        "contactPerson": "https://example.invalid/resource/0",
-        "contactPersonName": "Voorbeeld Contactpersonname 1"
+        "contactPerson": "https://example.invalid/resource/0"
       },
       {
         "@self": {
@@ -18021,13 +18032,11 @@
           "id": "84f3452c-bc13-41ad-ade5-27e8c76bdb07"
         },
         "document": "https://example.invalid/resource/1",
-        "relationshipType": "Voorbeeld Relationshiptype 2",
+        "relationshipType": "afzender",
         "involvedParty": "https://example.invalid/resource/1",
         "description": "Voorbeeld Description 2",
         "receiveDate": "2026-03-02",
-        "sendDate": "2026-03-02",
-        "contactPerson": "https://example.invalid/resource/1",
-        "contactPersonName": "Voorbeeld Contactpersonname 2"
+        "contactPerson": "https://example.invalid/resource/1"
       },
       {
         "@self": {
@@ -18037,13 +18046,11 @@
           "id": "f2a26f6d-4c5f-4583-8bb8-a25e5addd9e5"
         },
         "document": "https://example.invalid/resource/2",
-        "relationshipType": "Voorbeeld Relationshiptype 3",
+        "relationshipType": "geadresseerde",
         "involvedParty": "https://example.invalid/resource/2",
         "description": "Voorbeeld Description 3",
-        "receiveDate": "2026-03-03",
         "sendDate": "2026-03-03",
-        "contactPerson": "https://example.invalid/resource/2",
-        "contactPersonName": "Voorbeeld Contactpersonname 3"
+        "contactPerson": "https://example.invalid/resource/2"
       },
       {
         "@self": {
@@ -22118,6 +22125,8 @@
         "caseType": "474ae3aa-bd13-4d7c-9056-272eb118fc32",
         "order": 0,
         "description": "Voorbeeld Description 1",
+        "publicLabel": "We hebben uw aanvraag ontvangen",
+        "publicDescription": "U hoeft nu niets te doen. U hoort binnen twee weken van ons.",
         "isFinal": false
       },
       {
@@ -22131,6 +22140,7 @@
         "caseType": "809089ca-e08f-4ed1-a57e-7cd9ed06dbb9",
         "order": 0,
         "description": "Voorbeeld Description 2",
+        "publicLabel": "We beoordelen uw aanvraag",
         "isFinal": false
       },
       {
