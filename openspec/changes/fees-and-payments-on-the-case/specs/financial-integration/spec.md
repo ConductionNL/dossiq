@@ -56,6 +56,13 @@ filtering. dossiq SHALL NOT store an amount received, a ledger line or a
 payment date as a source of truth. A projection that cannot be refreshed
 SHALL read as stale and SHALL NOT read as paid.
 
+A request shillinq reports as one it could not price, and a request this app
+cannot parse, SHALL read as stale. Neither SHALL read as outstanding, as
+waived or as paid: an amount nobody could read is not an amount that is owed,
+not a fee anybody decided to let go, and not money that arrived. Where one
+request is unpaid and another unreadable, the case SHALL read outstanding,
+and the answer SHALL NOT depend on the order the requests were reported in.
+
 #### Scenario: a handler sees whether the leges were paid
 @e2e tests/e2e/fees-and-payments-on-the-case.spec.ts
 
@@ -76,6 +83,24 @@ SHALL read as stale and SHALL NOT read as paid.
 - **WHEN** a handler opens it
 - **THEN** the state SHALL read stale
 - **AND** it SHALL NOT read paid
+
+#### Scenario: a fee shillinq could not price is not a fee that is owed
+
+@e2e exclude backend/data: needs a shillinq request whose stored amount is unreadable, and shillinq's write paths refuse to create one; asserted in CasePaymentStateTest
+
+- **GIVEN** a case whose payment request shillinq reports as indeterminate
+- **WHEN** the projection is derived
+- **THEN** the state SHALL read stale
+- **AND** it SHALL NOT read outstanding
+
+#### Scenario: a request this app cannot parse is not a waiver
+
+@e2e exclude backend/data: a malformed leaf item cannot be produced through the browser; asserted in CasePaymentStateTest
+
+- **GIVEN** a case whose only payment request cannot be parsed
+- **WHEN** the projection is derived
+- **THEN** the state SHALL read stale
+- **AND** it SHALL NOT read waived, which would open the gate and claim somebody let the money go
 
 ### Requirement: A named role sets the payment state by hand (REQ-FEE-03)
 
@@ -112,7 +137,17 @@ A case type SHALL declare whether a case may be handled before its payment
 is settled. Where it may not, the acts that depend on payment SHALL be
 refused with a 4xx carrying `{message, error}` naming the rule. Where the
 payment state cannot be read and the case type requires payment first, the
-act SHALL be refused rather than allowed.
+act SHALL be refused rather than allowed. The refusal SHALL say the payment
+record could not be read, and SHALL NOT name the payment service as
+unreachable: shillinq answers that it could not price a request while it is
+perfectly reachable, and a handler sent to check the network for a malformed
+row loses an afternoon.
+
+Only an outstanding payment and an unreadable state SHALL refuse. A case that
+owes nothing, one that is paid and one whose fee was waived SHALL proceed:
+refusing a citizen because we cannot read our own record is a different act
+from refusing one who has not paid, and neither is a reason to hold a case
+that is settled.
 
 #### Scenario: an unpaid aanvraag waits
 @e2e tests/e2e/fees-and-payments-on-the-case.spec.ts
@@ -134,7 +169,7 @@ act SHALL be refused rather than allowed.
 - **GIVEN** a case type requiring payment, whose state cannot be read
 - **WHEN** a handler moves the case on
 - **THEN** it SHALL be refused
-- **AND** the refusal SHALL say the payment service is unavailable
+- **AND** the refusal SHALL say the payment record could not be read
 
 ### Requirement: A case names the contract it was raised under (REQ-FEE-05)
 
