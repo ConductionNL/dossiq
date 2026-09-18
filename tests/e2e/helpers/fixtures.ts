@@ -208,6 +208,10 @@ export const FIXTURE_SCHEMAS = [
 	// and the sweep then reports rows it cannot find.
 	'caseCustody',
 	'caseTakeover',
+	// The dated reports inside a case. Before `case` like every other child:
+	// `case` is on a CASCADE, so a case removed first takes its incidents with
+	// it and the sweep then reports rows it cannot find.
+	'incident',
 	// A consent is somebody's recorded permission to disclose their file, so a
 	// run that leaves one behind is worse than an orphan row: it is a standing
 	// authorisation nobody granted.
