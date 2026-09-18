@@ -11,7 +11,7 @@
  *
  * 🔴 AN UNREADABLE STATE CLOSES THE GATE, IT DOES NOT OPEN IT (ADR-102). Where
  * a case type requires payment and shillinq cannot be asked, the act is
- * refused and the refusal says the payment service could not be reached. The
+ * refused and the refusal says the payment record could not be read. The
  * opposite reading — let it through, shillinq was probably fine — is how an
  * unpaid case gets handled on the one afternoon the money app was down, and
  * nothing anywhere records that it happened.
@@ -110,12 +110,17 @@ class UnpaidCaseGate {
 		$state = (string)($case[self::CASE_STATE] ?? CasePaymentState::STALE);
 
 		if ($this->states->isKnown(state: $state) === false) {
-			// ADR-102: the config could not be read, so the act fails closed
-			// and the sentence says which service went quiet. A handler who
-			// reads "the payment could not be checked" phones the right team;
-			// one who reads "payment outstanding" argues with a citizen who
-			// has the receipt.
-			return 'This case type requires the payment to be settled first, and the payment service could not be reached to check it.';
+			// ADR-102: the record could not be read, so the act fails closed
+			// and the sentence says so. A handler who reads "the payment could
+			// not be checked" phones the right team; one who reads "payment
+			// outstanding" argues with a citizen who has the receipt.
+			//
+			// It no longer names the service as unreachable, because that is
+			// now only one of two ways to get here. shillinq also answers
+			// `indeterminate` when it is up and the amount on the request
+			// cannot be read (shillinq#1641), and a handler sent to check the
+			// network for a malformed row loses an afternoon.
+			return 'This case type requires the payment to be settled first, and the payment record could not be read to check it.';
 		}
 
 		if ($state === CasePaymentState::OUTSTANDING) {

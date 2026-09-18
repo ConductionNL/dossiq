@@ -160,7 +160,10 @@ class CasePaymentStateTest extends TestCase {
 	 *
 	 * @return void
 	 */
-	public function testTheDerivationNeverAnswersStale(): void {
+	public function testAReadableAnswerNeverReadsStale(): void {
+		// Narrower than it used to claim. `stale` IS an answer now, for the one
+		// case where shillinq says it could not do the sum. What it still may
+		// never be is the answer to a request this app could read.
 		foreach ([[], [$this->request('open')], [$this->request('paid')]] as $requests) {
 			$this->assertNotSame(CasePaymentState::STALE, $this->states->fromRequests($requests));
 		}
@@ -168,7 +171,7 @@ class CasePaymentStateTest extends TestCase {
 		$this->assertFalse($this->states->isKnown(CasePaymentState::STALE));
 		$this->assertTrue($this->states->isKnown(CasePaymentState::OUTSTANDING));
 		$this->assertFalse($this->states->isKnown(''));
-	}//end testTheDerivationNeverAnswersStale()
+	}//end testAReadableAnswerNeverReadsStale()
 
 	/**
 	 * The projection carries a state and a timestamp, and no money at all.
@@ -207,4 +210,82 @@ class CasePaymentStateTest extends TestCase {
 		$this->assertSame('geheel', $this->states->zgwIndication(CasePaymentState::PAID));
 		$this->assertNull($this->states->zgwIndication(CasePaymentState::STALE));
 	}//end testTheZgwIndicationIsDerivedAndSilentOnStale()
+
+	/**
+	 * shillinq answers `indeterminate` when a request's own amount cannot be
+	 * read as a number (shillinq#1641). That is not money owed. It read as
+	 * `outstanding`, which sends a handler to chase a payment that may already
+	 * have been made and tells a citizen with the receipt they still owe us.
+	 *
+	 * @return void
+	 */
+	public function testAnIndeterminateRequestReadsStaleAndNotOutstanding(): void {
+		$state = $this->states->fromRequests([$this->request('indeterminate')]);
+
+		$this->assertSame(CasePaymentState::STALE, $state);
+		$this->assertNotSame(CasePaymentState::OUTSTANDING, $state);
+	}//end testAnIndeterminateRequestReadsStaleAndNotOutstanding()
+
+	/**
+	 * And it is not readable either, so the gate refuses rather than allows.
+	 * `stale` has to stay outside `isKnown()` for that to hold.
+	 *
+	 * @return void
+	 */
+	public function testAnIndeterminateRequestIsNotAKnownState(): void {
+		$this->assertFalse(
+			$this->states->isKnown($this->states->fromRequests([$this->request('indeterminate')]))
+		);
+	}//end testAnIndeterminateRequestIsNotAKnownState()
+
+	/**
+	 * A request this app cannot parse at all was SKIPPED, so a case whose only
+	 * request was malformed fell through to the waiver branch and read
+	 * `waived`. That opens the gate and says a person decided to let the money
+	 * go. Nobody decided anything.
+	 *
+	 * @return void
+	 */
+	public function testAnUnparseableRequestDoesNotReadAsAWaiver(): void {
+		$state = $this->states->fromRequests(['not-an-array']);
+
+		$this->assertSame(CasePaymentState::STALE, $state);
+		$this->assertNotSame(CasePaymentState::WAIVED, $state);
+	}//end testAnUnparseableRequestDoesNotReadAsAWaiver()
+
+	/**
+	 * A request nobody has paid is a fact that holds whatever the row beside it
+	 * says, and it is the one a handler can act on. So outstanding outranks
+	 * unreadable, in either order: the answer must not depend on the order the
+	 * leaf happened to send.
+	 *
+	 * @return void
+	 */
+	public function testAnOutstandingRequestOutranksAnUnreadableOneInEitherOrder(): void {
+		$this->assertSame(
+			CasePaymentState::OUTSTANDING,
+			$this->states->fromRequests([$this->request('indeterminate'), $this->request('open')])
+		);
+		$this->assertSame(
+			CasePaymentState::OUTSTANDING,
+			$this->states->fromRequests([$this->request('open'), $this->request('indeterminate')])
+		);
+	}//end testAnOutstandingRequestOutranksAnUnreadableOneInEitherOrder()
+
+	/**
+	 * A case is not paid while part of its record is unreadable, in either
+	 * order. Calling it paid is the answer that ends the chase.
+	 *
+	 * @return void
+	 */
+	public function testAnUnreadableRequestBesideAPaidOneIsNotPaid(): void {
+		$this->assertSame(
+			CasePaymentState::STALE,
+			$this->states->fromRequests([$this->request('paid'), $this->request('indeterminate')])
+		);
+		$this->assertSame(
+			CasePaymentState::STALE,
+			$this->states->fromRequests([$this->request('indeterminate'), $this->request('paid')])
+		);
+	}//end testAnUnreadableRequestBesideAPaidOneIsNotPaid()
 }//end class

@@ -180,7 +180,7 @@ class UnpaidCaseGuardTest extends TestCase {
 		$actions = $provider->availableActions(object: self::CASE_PAYLOAD, userId: 'alice');
 
 		$this->assertTrue($actions[0]['blocked']);
-		$this->assertStringContainsString('could not be reached', (string)$actions[0]['description']);
+		$this->assertStringContainsString('could not be read', (string)$actions[0]['description']);
 	}//end testAnUnreadableStateRefusesRatherThanAllows()
 
 	/**
