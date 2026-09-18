@@ -68,12 +68,25 @@ with the route the first time somebody approves from decidiq's own page.
 
 ### Requirement: REQ-BVL-006 The route is the ground for making a document definitief, never the act
 
-A document whose approval route completed approved SHALL offer the
-`definitief` transition, and the offer SHALL name the route as its ground.
-dossiq SHALL NOT make that transition on its own.
+A document whose approval route completed approved SHALL offer the final
+transition, and the offer SHALL name the route as its ground. dossiq SHALL NOT
+make that transition on its own.
 
-A document with an open route SHALL NOT be moved to `definitief`. The
-refusal SHALL name the route and the step it is on.
+A document with an open route SHALL NOT be moved to final. The refusal SHALL
+name the route and the step it is on.
+
+The status is `final`, and this is not a translation note. `definitief` is
+what a ZGW reader calls it; `InformatieobjectStatusLifecycle::VALID_STATUSES`
+stores `draft`, `final` and `archived`, so a guard written against the Dutch
+spelling would never fire because no document's status is ever `definitief`.
+
+A document with NO route SHALL be unaffected, and so SHALL an instance without
+decidiq. Most documents have never been near an approval route, and refusing
+them would break the forward-only lifecycle for everybody to serve a feature
+almost nobody uses. "No route", "no decidiq" and "a route that cleared" all
+permit the transition, and only the third is an approval: they SHALL remain
+distinguishable, because the Files-tab marker is the difference between a
+document nobody reviewed and one three people agreed to.
 
 Making a document `definitief` locks it and stamps `lockedOn`. The person who
 has to defend the lock is the handler on the case, not the last approver in a
@@ -86,13 +99,13 @@ widget, so the act stays theirs.
 
 - **GIVEN** a concept document whose three-step route completed approved
 - **WHEN** the handler opens it
-- **THEN** the `definitief` transition SHALL be offered, naming the route
-- **AND** the document SHALL still be `concept` until the handler makes the transition
+- **THEN** the final transition SHALL be offered, naming the route
+- **AND** the document SHALL still be `draft` until the handler makes the transition
 
 #### Scenario: An open route refuses the lock
 @e2e tests/e2e/approval-chain-on-the-document.spec.ts
 
 - **GIVEN** a concept document in a route at step one of three
-- **WHEN** somebody tries to make it `definitief`
+- **WHEN** somebody tries to make it final
 - **THEN** the transition SHALL be refused
 - **AND** the refusal SHALL name the route and the step it is waiting on

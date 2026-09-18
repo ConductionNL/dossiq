@@ -136,6 +136,26 @@
 				<dd data-testid="document-hash">{{ hashLabel }}</dd>
 			</dl>
 
+			<section
+				v-if="isEdit && recordId"
+				class="dossier-metadata-dialog__approval"
+				data-testid="document-approval-chain">
+				<h3>{{ t('dossiq', 'Approval chain') }}</h3>
+				<!--
+				  approval-chain-on-the-document REQ-BVL-004. decidiq holds the
+				  route; dossiq shows its leaf here, on the DOCUMENT record,
+				  because the leaf takes a register, a schema and an object id
+				  and a file is not an object. The section is beside the
+				  metadata the same person maintains, which is why it is here
+				  rather than on a tab of its own.
+				-->
+				<ApprovalChainLeafTab
+					register="dossiq"
+					schema="informatieobject"
+					:objectId="recordId"
+					:title="title" />
+			</section>
+
 			<div class="dossier-metadata-dialog__actions">
 				<NcButton @click="$emit('close')">
 					{{ t('dossiq', 'Cancel') }}
@@ -165,6 +185,7 @@ import {
 	NcTextArea,
 	NcTextField,
 } from '@nextcloud/vue'
+import ApprovalChainLeafTab from '../components/tabs/ApprovalChainLeafTab.vue'
 import { fetchCaseParties } from '../services/caseParties.js'
 import {
 	allowedFor,
@@ -200,6 +221,7 @@ import {
 export default {
 	name: 'DocumentMetadataDialog',
 	components: {
+		ApprovalChainLeafTab,
 		NcButton,
 		NcModal,
 		NcProgressBar,
@@ -266,6 +288,23 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The informatieobject this dialog is editing, by id.
+		 *
+		 * Empty while the record is still being resolved, and for a file that
+		 * has no informatieobject behind it at all. The approval section is
+		 * hidden in both cases rather than rendered against an empty id, which
+		 * the leaf would answer with a timeline of nothing: an empty timeline
+		 * reads as "nobody has approved anything", and that is a claim about
+		 * the document that nobody made.
+		 *
+		 * @return {string} The record id, or an empty string.
+		 * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 */
+		recordId() {
+			return String(this.record?.id || this.record?.['@self']?.id || '')
+		},
+
 		/**
 		 * What the scanner recorded about this file, as a sentence.
 		 *

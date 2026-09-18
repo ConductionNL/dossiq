@@ -1121,6 +1121,12 @@ $extra = [
     ['name' => 'caseDocumentGeneration#generateDocument', 'url' => '/api/cases/{caseId}/dossier/generate',        'verb' => 'POST'],
     ['name' => 'zaakdossier#linkExisting',         'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'POST'],
     ['name' => 'zaakdossier#unlinkDocument',       'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'DELETE'],
+    // approval-chain-on-the-document REQ-BVL-005. Which documents are in a
+    // route and at which step, asked for the whole Files tab in one call. It
+    // is a READ of decidiq's route state and never a stored copy on the
+    // document: a copy is written once and disagrees with the route the first
+    // time somebody approves from decidiq's own page.
+    ['name' => 'zaakdossier#approvalMarkers',      'url' => '/api/informatieobjecten/approval-markers',       'verb' => 'GET'],
     ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],
     ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',          'verb' => 'POST'],
     ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status',   'verb' => 'PATCH'],
