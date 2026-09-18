@@ -62,7 +62,9 @@
         "6 weeks": "6 weken",
         "8 weeks": "8 weken",
         "> 90 dagen": "> 90 dagen",
-        "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": [
+        "An administrator decides this one, so it is not yours to change.": "Een beheerder bepaalt deze, dus die is niet van u om te wijzigen.",
+    "That setting was not saved.": "Die instelling is niet opgeslagen.",
+    "_You moved the case, but {count} automatic action did not run. Its status record shows which._::_You moved the case, but {count} automatic actions did not run. Its status record shows which._": [
             "U hebt de zaak verplaatst, maar {count} automatische actie is niet uitgevoerd. De statusregistratie laat zien welke.",
             "U hebt de zaak verplaatst, maar {count} automatische acties zijn niet uitgevoerd. De statusregistratie laat zien welke."
         ],
