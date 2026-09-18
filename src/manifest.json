@@ -2814,6 +2814,7 @@
 							"name",
 							"roleType",
 							"participant",
+							"representedParty",
 							"delegate",
 							"delegateUntil",
 							"description"
@@ -2821,6 +2822,14 @@
 						"fieldOverrides": {
 							"description": {
 								"widget": "textarea"
+							},
+							"roleType": {
+								"widget": "RoleTypePicker",
+								"label": "Role"
+							},
+							"representedParty": {
+								"widget": "InitiatorPicker",
+								"label": "Represented by"
 							}
 						},
 						"successMessage": "Party added to the case.",
