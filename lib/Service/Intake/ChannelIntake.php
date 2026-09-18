@@ -3,7 +3,7 @@
 /**
  * What dossiq does with a message integriq routed at a case.
  *
- * integriq receives on a channel, matches a routing rule and dispatches
+ * Integriq receives on a channel, matches a routing rule and dispatches
  * `IntakeMessageRoutedEvent`, then reads its result slot back. An empty slot
  * makes integriq hold the message with "No app opened a case for this
  * message". That sentence was honest while nothing listened. The moment
@@ -345,7 +345,11 @@ class ChannelIntake {
 			return '';
 		}
 
-		return ($this->caseType(caseTypeId: $caseTypeId) === null) ? '' : $caseTypeId;
+		if ($this->caseType(caseTypeId: $caseTypeId) === null) {
+			return '';
+		}
+
+		return $caseTypeId;
 	}//end caseTypeIdIn()
 
 	/**
@@ -445,7 +449,11 @@ class ChannelIntake {
 
 		$firstLine = trim((string)(preg_split('/\R/', $text)[0] ?? ''));
 
-		return ($firstLine === '') ? self::UNTITLED : mb_substr($firstLine, 0, 120);
+		if ($firstLine === '') {
+			return self::UNTITLED;
+		}
+
+		return mb_substr($firstLine, 0, 120);
 	}//end titleFor()
 
 	/**

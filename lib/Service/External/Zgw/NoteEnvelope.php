@@ -174,7 +174,11 @@ class NoteEnvelope {
 
 		$actorId = trim((string)($note['actorId'] ?? ''));
 
-		return ($actorId === '') ? 'onbekend' : $actorId;
+		if ($actorId === '') {
+			return 'onbekend';
+		}
+
+		return $actorId;
 	}//end authorOf()
 
 	/**
