@@ -1474,7 +1474,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.25.0",
+                "version": "1.26.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1534,6 +1534,10 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-merge": {
+                        "entityType": "case",
+                        "reversalWindowDays": 7
+                    },
                     "x-openregister-dedup": {
                         "blockingKeys": [
                             "caseType"
@@ -2500,7 +2504,8 @@
                             "finish",
                             "abort",
                             "archive",
-                            "autoClose"
+                            "autoClose",
+                            "merged"
                         ],
                         "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
                         "title": "Ending act",
@@ -2850,6 +2855,15 @@
                         "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
                         "title": "Override reason",
                         "order": 24
+                    },
+                    "mergedInto": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "readOnly": true,
+                        "title": "Merged into",
+                        "description": "The case this one was merged into. Written by CaseMergedListener when OpenRegister reports the merge, and cleared when the merge is reversed inside its window. The old case number keeps working: mail matching and the public status page follow this reference until they reach a case that carries none.",
+                        "order": 27
                     },
                     "duplicateOverrideOf": {
                         "type": "array",
