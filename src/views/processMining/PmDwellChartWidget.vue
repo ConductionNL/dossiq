@@ -28,7 +28,11 @@ import { CnChartWidget } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { pmWidgetMixin } from './pmWidgetMixin.js'
-import { buildDwellCategories, buildDwellSeries } from './processMiningShaping.js'
+import {
+	buildDwellCategories,
+	buildDwellSeries,
+	workingHoursLabel,
+} from './processMiningShaping.js'
 
 export default {
 	name: 'PmDwellChartWidget',
@@ -42,9 +46,25 @@ export default {
 		series() {
 			return buildDwellSeries(
 				this.pmPrimaryCaseType?.dwellTime,
-				t('dossiq', 'Median hours'),
+				this.headlineLabel,
 			)
 		},
+
+		/**
+		 * The name of the clock the bars are on.
+		 *
+		 * THE ONLY PLACE THE PAGE CAN SAY WHAT IT MEASURED. Working hours
+		 * counted on the organisation calendar and working hours counted as
+		 * working days times eight draw the identical chart, so the axis
+		 * title is the whole disclosure.
+		 *
+		 * @return {string} The series and axis label.
+		 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+		 */
+		headlineLabel() {
+			return workingHoursLabel(this.pmStore.clock, (s) => t('dossiq', s))
+		},
+
 
 		/**
 		 * @return {Array<string>} Status names along the x-axis.
@@ -62,7 +82,7 @@ export default {
 			return {
 				plotOptions: { bar: { borderRadius: 4, columnWidth: '60%' } },
 				xaxis: { title: { text: t('dossiq', 'Status') } },
-				yaxis: { title: { text: t('dossiq', 'Median hours') } },
+				yaxis: { title: { text: this.headlineLabel } },
 				colors: ['var(--color-warning)'],
 			}
 		},
