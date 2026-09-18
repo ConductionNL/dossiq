@@ -8,6 +8,21 @@ engine calendar. It SHALL record `receivedOutsideWorkingHours` as true
 when the two differ. All three SHALL be written at creation and SHALL NOT
 be recomputed on read.
 
+When the engine calendar does not answer, `termStartsAt` and the flag SHALL be
+left unset and `receivedAt` SHALL still be stamped. dossiq keeps no calendar of
+its own, so a start it cannot get from the engine is left unsaid rather than
+guessed from a weekday rule: a guessed start is quoted back by an applicant
+months later and there is no defence for it.
+
+A case that already carries `receivedAt` SHALL NOT be stamped again, including
+one imported carrying another system's `receivedAt`. The request arrived when it
+arrived, whatever day dossiq first saw the record.
+
+The two moments SHALL be compared as instants and not as formatted strings: the
+same moment written in another timezone formats differently and means the same
+thing, and a string comparison would flag a Tuesday morning filing as out of
+hours.
+
 #### Scenario: a Sunday filing starts on Monday
 @e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
 
@@ -26,6 +41,7 @@ be recomputed on read.
 - **AND** `receivedOutsideWorkingHours` SHALL be false
 
 #### Scenario: the stamp does not move afterwards
+@e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
 
 - **GIVEN** a case filed on a day the calendar later declares a holiday
 - **WHEN** the case is read again
@@ -36,9 +52,19 @@ be recomputed on read.
 The confirmation shown after a submission, and the ontvangstbevestiging
 sent for it, SHALL each name the case reference, the moment the request
 was received, the moment the term starts and the deadline. When
-`receivedOutsideWorkingHours` is true, both SHALL add one sentence saying
-the term starts on the first working day. Both SHALL ship in Dutch and
-English.
+`receivedOutsideWorkingHours` is true AND a `termStartsAt` is stored, both SHALL
+add one sentence saying the term starts on the first working day. Both SHALL
+ship in Dutch and English.
+
+The sentence SHALL NOT appear when no `termStartsAt` is stored, even with the
+flag true: a sentence promising a start the confirmation does not name is worse
+than no sentence.
+
+Both surfaces SHALL read the STORED moments and recompute nothing, and SHALL
+take them from one producer. A confirmation that disagreed with the mail sent
+ten seconds later would be worse than either alone.
+
+The confirmation endpoint SHALL refuse a caller who may not read the case.
 
 #### Scenario: the citizen is told on screen
 @e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
@@ -49,7 +75,7 @@ English.
 - **AND** it SHALL carry the sentence about the first working day
 
 #### Scenario: the mail says the same thing
-@e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
+@e2e exclude no mail is sent on the e2e rig, and the template's rendering is the library's; the shared producer is asserted in `tests/Unit/Service/IntakeTermStartTest.php::testThePlaceholdersMatchTheScreen`, which holds the mail placeholders to the screen's own values
 
 - **GIVEN** the same request
 - **WHEN** the ontvangstbevestiging is sent

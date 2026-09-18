@@ -232,6 +232,70 @@ class WorkingDayRoll {
 	}//end roll()
 
 	/**
+	 * The first working moment at or after this one, on the same calendar.
+	 *
+	 * 🔴 THIS IS NOT `roll()` WITH A DIFFERENT NAME, AND THE DIFFERENCE IS THE
+	 * TIME. `roll()` moves a term's END and keeps the clock time it was given,
+	 * because a term ends at the end of its day; asking it for an intake start
+	 * would answer nine in the evening on Monday for a Sunday-evening filing.
+	 * This one keeps the instant the calendar returns, which is the START of
+	 * the next working day, because that is when the clock actually begins.
+	 *
+	 * It also asks no definition. A term rolls only when it has been
+	 * administered for the Awt; when the clock starts is not a per-term
+	 * choice, it is the calendar's plain answer.
+	 *
+	 * Returns NULL when the calendar cannot answer, and never a guess. The
+	 * caller stores nothing rather than stamping a start that no calendar
+	 * stands behind: a wrong `termStartsAt` is quoted back by a citizen months
+	 * later, and "we could not reach the calendar" is not a defence.
+	 *
+	 * @param DateTimeImmutable $moment When the submission arrived.
+	 *
+	 * @return DateTimeImmutable|null The first working moment, or null when unknown.
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+	 */
+	public function firstWorkingMomentAtOrAfter(DateTimeImmutable $moment): ?DateTimeImmutable {
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		try {
+			$start = $this->calculator->add(
+				from: $moment,
+				value: 0.0,
+				unit: self::UNIT_BUSINESS_DAYS,
+				calendar: $this->calendar
+			);
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq intake: the organisation calendar refused to say when the term starts',
+				['moment' => $moment->format(DateTimeImmutable::ATOM), 'error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+
+		// FORWARD ONLY, for the reason `roll()` gives: a clock that started
+		// before the request arrived would hand the citizen a deadline earlier
+		// than the one they have.
+		if ($start < $moment) {
+			$this->logger?->warning(
+				'Dossiq intake: the organisation calendar answered a moment before the request arrived',
+				[
+					'moment' => $moment->format(DateTimeImmutable::ATOM),
+					'answered' => $start->format(DateTimeImmutable::ATOM),
+				],
+			);
+
+			return $moment;
+		}
+
+		return $start;
+	}//end firstWorkingMomentAtOrAfter()
+
+	/**
 	 * Look for the engine, once.
 	 *
 	 * @return void

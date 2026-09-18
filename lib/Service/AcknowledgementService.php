@@ -131,6 +131,7 @@ class AcknowledgementService {
 	 * @param CaseFieldWriter             $writer            Partial writes to the stored case.
 	 * @param LoggerInterface             $logger            The logger.
 	 * @param CaseTimeline                $timeline          The one seam that writes a timeline entry.
+	 * @param IntakeConfirmation $confirmation What the applicant is told about the clock.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Eleven collaborators, each
 	 * injected rather than reached for, which is what makes the acknowledgement
@@ -149,6 +150,7 @@ class AcknowledgementService {
 		private readonly CaseFieldWriter $writer,
 		private readonly LoggerInterface $logger,
 		private readonly CaseTimeline $timeline,
+		private readonly IntakeConfirmation $confirmation,
 	) {
 	}//end __construct()
 
@@ -398,6 +400,29 @@ class AcknowledgementService {
 
 		return $this->dutyOn(case: $case);
 	}//end dutyFor()
+
+	/**
+	 * What the applicant is told about this case's clock.
+	 *
+	 * Lives beside the receipt duty because it is the same moment of the same
+	 * conversation: the receipt says we have it, this says when the term on it
+	 * runs from. An unreadable case answers an empty array, which the surface
+	 * renders as nothing rather than as three blank dates.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed> The confirmation, or [] when unreadable.
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+	 */
+	public function intakeConfirmationFor(string $caseId): array {
+		$case = $this->readCase(caseId: $caseId);
+		if ($case === null) {
+			return [];
+		}
+
+		return $this->confirmation->forCase(case: $case);
+	}//end intakeConfirmationFor()
 
 	/**
 	 * The address this acknowledgement goes to.

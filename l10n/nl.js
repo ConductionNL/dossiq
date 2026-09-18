@@ -5412,6 +5412,7 @@ OC.L10N.register(
         "your own rights": "je eigen rechten",
         "Your own stage": "Je eigen fase",
         "Your queue": "Jouw wachtrij",
+        "Your request arrived outside our working hours, so the term starts on the first working day.": "Uw aanvraag is buiten onze openingstijden binnengekomen, daarom start de termijn op de eerste werkdag.",
         "Your team set this, for this part of your work only. You can decide for yourself.": "Je team heeft dit gezet, alleen voor dit deel van je werk. Je kunt zelf kiezen.",
         "Your team set this. You can decide for yourself.": "Je team heeft dit gezet. Je kunt zelf kiezen.",
         "Your work lives here. Open My Work to see the tasks and cases assigned to you.": "Hier staat jouw werk. Open Mijn werk om de taken en zaken te zien die aan jou zijn toegewezen.",

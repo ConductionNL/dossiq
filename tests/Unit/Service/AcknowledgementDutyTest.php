@@ -34,6 +34,10 @@ use OCA\Dossiq\Service\AcknowledgementService;
 use OCA\Dossiq\Service\BerichtenboxRoutingService;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Service\IntakeConfirmation;
+use OCA\Dossiq\Service\IntakeTermStart;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCP\IL10N;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
@@ -198,6 +202,10 @@ class AcknowledgementDutyTest extends TestCase {
 			writer: new CaseFieldWriter(),
 			logger: $logger,
 			timeline: $this->timeline,
+			confirmation: new IntakeConfirmation(
+				new IntakeTermStart($this->createMock(originalClassName: WorkingDayRoll::class)),
+				$this->createMock(originalClassName: IL10N::class)
+			),
 		);
 	}//end service()
 

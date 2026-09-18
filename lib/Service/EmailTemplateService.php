@@ -54,8 +54,17 @@ class EmailTemplateService {
 			'slug' => 'ontvangstbevestiging',
 			'name' => 'Ontvangstbevestiging',
 			'subject' => 'Bevestiging ontvangst zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDatum}}.'
-				. '\n\nMet vriendelijke groet,\n{{behandelaar}}',
+			// Row Q8.21: the four the applicant is owed. `{{startDatum}}` and
+			// `{{behandelaar}}` were in this body and in NO variable map, so
+			// both rendered as their own braces in every mail this template
+			// ever sent. They are replaced by names the map answers to.
+			// `{{buitenKantoortijden}}` is the one conditional sentence: a
+			// template is a flat string with no `if`, so the branch lives in
+			// the value and resolves to nothing when no explanation is due.
+			'body' => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{ontvangenOp}}.'
+				. '\n\nDe behandeltermijn start op {{termijnStartOp}} en loopt tot {{deadline}}.'
+				. '\n{{buitenKantoortijden}}'
+				. '\n\nMet vriendelijke groet,\n{{handler}}',
 		],
 		[
 			'slug' => 'informatieverzoek',
@@ -79,11 +88,13 @@ class EmailTemplateService {
 	 * @param EmailTemplateRepository $repository OpenRegister persistence for templates and cases.
 	 * @param LoggerInterface $logger Logger.
 	 * @param IntegrationStatusService $integrationStatus Records what a mailbox test found.
+	 * @param IntakeConfirmation $confirmation What the applicant is told at receipt.
 	 */
 	public function __construct(
 		private readonly EmailTemplateRepository $repository,
 		private readonly LoggerInterface $logger,
 		private readonly IntegrationStatusService $integrationStatus,
+		private readonly IntakeConfirmation $confirmation,
 	) {
 	}//end __construct()
 
@@ -212,6 +223,11 @@ class EmailTemplateService {
 				'deadline',
 				'status',
 				'handler',
+				// When the request arrived, when its clock starts, and the one
+				// sentence that explains a gap between them.
+				'ontvangenOp',
+				'termijnStartOp',
+				'buitenKantoortijden',
 			],
 			'contact' => [
 				'contactNaam',
@@ -377,7 +393,7 @@ class EmailTemplateService {
 	 * @return array<string, string>
 	 */
 	private function buildVariableMap(array $case): array {
-		return [
+		$map = [
 			'zaakNummer' => (string)($case['identifier'] ?? ''),
 			'titel' => (string)($case['title'] ?? ''),
 			'startDate' => (string)($case['startDate'] ?? ''),
@@ -391,5 +407,11 @@ class EmailTemplateService {
 			'zaaktypeNaam' => (string)($case['caseTypeTitle'] ?? ''),
 			'zaaktypeOmschrijving' => (string)($case['caseTypeDescription'] ?? ''),
 		];
+
+		// The intake confirmation's own three, from the one producer the
+		// on-screen confirmation also reads. A second rendering here would
+		// eventually disagree with the screen, and the applicant would be
+		// holding two answers.
+		return array_merge($map, $this->confirmation->placeholdersFor(case: $case));
 	}//end buildVariableMap()
 }//end class

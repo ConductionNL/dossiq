@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.26.0",
+        "version": "1.27.0",
         "digest": "82e06d43dd43df90aa513e61ef69cbdaf1b7c94de86856795f2d78fe1000592a"
     },
     "lib/Settings/dossiq_register.json::case-location": {

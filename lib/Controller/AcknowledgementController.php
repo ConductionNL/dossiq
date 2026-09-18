@@ -128,6 +128,47 @@ class AcknowledgementController extends Controller {
 	}//end duty()
 
 	/**
+	 * What this case's applicant was told about when the clock starts.
+	 *
+	 * Read by the confirmation the moment after a request is submitted, which
+	 * is the moment somebody is actually paying attention. The mail repeats it
+	 * for the record, from the same producer.
+	 *
+	 * 🔴 GUARDED LIKE THE DUTY BESIDE IT. The four values name a reference, two
+	 * moments and a deadline, all of which say something about a case; an
+	 * ungated read would hand them to anyone who can guess a uuid.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse `{confirmation: object}`.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
+	 */
+	#[NoAdminRequired]
+	public function intakeConfirmation(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['error' => $this->l10n->t('You are not signed in.')],
+				Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['error' => $this->l10n->t('You cannot read this case.')],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		return new JSONResponse(
+			['confirmation' => $this->acknowledgement->intakeConfirmationFor(caseId: $caseId)]
+		);
+	}//end intakeConfirmation()
+
+	/**
 	 * Record that receipt was confirmed another way.
 	 *
 	 * @param string $caseId The case UUID.

@@ -1501,7 +1501,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.26.0",
+                "version": "1.27.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2614,6 +2614,28 @@
                         "description": "Date the case was started",
                         "title": "Start date",
                         "order": 9
+                    },
+                    "receivedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Received at",
+                        "description": "The moment the request actually arrived, stamped when the case was created and never recomputed. A handler answering a complaint months later has to be able to say what the applicant was told on the day."
+                    },
+                    "termStartsAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "Term starts at",
+                        "description": "The first working moment on or after the request arrived, on the same organisation calendar the term counts on. Empty when that calendar could not answer: dossiq keeps no second calendar of its own, and an unanswered start is left unsaid rather than guessed."
+                    },
+                    "receivedOutsideWorkingHours": {
+                        "type": "boolean",
+                        "default": false,
+                        "readOnly": true,
+                        "facetable": true,
+                        "title": "Received outside working hours",
+                        "description": "Whether the request arrived when the organisation was closed, so its term starts later than it was filed. Stored rather than derived because it is what a report filters on and what the confirmation branches on."
                     },
                     "endDate": {
                         "type": "string",

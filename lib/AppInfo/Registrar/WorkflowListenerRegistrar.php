@@ -30,6 +30,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
+use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
@@ -141,6 +142,16 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: CaseNumberListener::class
+		);
+
+		// Awb-adjacent, and the gap register's row Q8.21: someone files on
+		// Sunday evening and counts eight weeks from Sunday evening, while the
+		// municipality counts from Monday. Both moments are stamped here, on
+		// the create event, because a case reaches dossiq from six intake
+		// paths and only two of them run a dossiq service.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: IntakeTermStartListener::class
 		);
 
 		// Awb 4:3a: a case created from an electronic submission owes its

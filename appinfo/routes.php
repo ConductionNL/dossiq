@@ -484,6 +484,10 @@ $extra = [
         // them.
     ['name' => 'acknowledgement#duty',      'url' => '/api/case/{caseId}/acknowledgement',     'verb' => 'GET'],
     ['name' => 'acknowledgement#recordMet', 'url' => '/api/case/{caseId}/acknowledgement/met', 'verb' => 'POST'],
+    // intake-says-when-the-term-starts: the four the applicant is told the
+    // moment they press send, from the same producer the ontvangstbevestiging
+    // reads, so the screen and the mail cannot say different things.
+    ['name' => 'acknowledgement#intakeConfirmation', 'url' => '/api/case/{caseId}/intake-confirmation', 'verb' => 'GET'],
 
         // The attention flag a person raises and clears
         // (markers-and-assessments-on-the-case, row 2.36). Both writes go
