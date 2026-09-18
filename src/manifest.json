@@ -650,6 +650,8 @@
 					},
 					{
 						"id": "kpi-sla-compliance",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The share of cases met within their term is a figure about the team's performance, and it is the one tile on this page that is. The rest of the page is the reader's own work and the counts the lists already show them, so this tile is declared and the others are allowlisted with that reason in WidgetDeclaresRolesTest. `slaCompliance` leaves the payload entirely for a reader without the role: a tile hidden with a `v-if` still puts its number in the network tab (ADR-004).",
 						"type": "stat",
 						"title": "SLA Compliance",
 						"_note": "openspec/specs/dashboard/spec.md DASH-001e. Reads the share of this month's closed cases whose endDate met their deadline, computed server-side by KpiAggregationService. Clicking opens the doorlooptijd dashboard, as the scenario requires.",
@@ -4005,26 +4007,36 @@
 				"widgets": [
 					{
 						"id": "dt-kpis",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "dt-charts",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Compliance",
 						"type": "custom"
 					},
 					{
 						"id": "dt-woo",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Woo statutory deadlines",
 						"type": "custom"
 					},
 					{
 						"id": "dt-atrisk",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Cases at risk",
 						"type": "custom"
 					},
 					{
 						"id": "dt-breakdown",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Performance by case type",
 						"type": "custom"
 					}
@@ -4118,26 +4130,36 @@
 				"widgets": [
 					{
 						"id": "pm-kpis",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "pm-dwell",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Dwell time by status",
 						"type": "custom"
 					},
 					{
 						"id": "pm-throughput",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Throughput (cases closed per week)",
 						"type": "custom"
 					},
 					{
 						"id": "pm-bottlenecks",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Bottleneck ranking",
 						"type": "custom"
 					},
 					{
 						"id": "pm-dwell-by-assignee",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell time PER HANDLER: the one tile on this dashboard that names people, and the reason the rest of the page is declared for the team lead group rather than left open. It arrived on the integration branch while this change was in flight and the structural test caught it on the merge, which is exactly what that test is for.",
 						"title": "Dwell time by handler",
 						"type": "custom"
 					}
@@ -5444,16 +5466,22 @@
 				"widgets": [
 					{
 						"id": "td-kpis",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "td-quarterly",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Quarterly report",
 						"type": "custom"
 					},
 					{
 						"id": "td-annual",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Annual dwangsom audit",
 						"type": "custom"
 					}
