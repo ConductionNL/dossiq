@@ -39,32 +39,55 @@
  *
  * ⚠️ BOTH TESTS NOW MOVE A CARD, AND READ THE MOVE BACK FROM STORAGE
  * -----------------------------------------------------------------
- * They used to stop short. The keyboard test opened the "Move to…" menu,
- * saw the target offered, and pressed Escape; the drag test read
- * `draggable="true"` off the card. Neither could fail when the move itself
- * broke: a menu item whose handler did nothing, or a drop handler that
- * ignored the card, left both green. Each test now owns its own card (one
- * move would otherwise change the column the other starts from), completes
- * the move, and asserts the case's STORED `status` is the target statusType
- * id, which is what both scenarios require.
+ * They used to stop short. The keyboard test opened the move menu, saw the
+ * target offered, and pressed Escape; the drag test read `draggable="true"`
+ * off the card. Neither could fail when the move itself broke: a menu item
+ * whose handler did nothing, or a drop handler that ignored the card, left
+ * both green. Each test now owns its own card (one move would otherwise
+ * change the column the other starts from), completes the move, and asserts
+ * the case's STORED `status` is the target statusType id, which is what both
+ * scenarios require.
+ *
+ * ⚠️ THE KEYBOARD PATH IS NOW THE M KEY, NOT A TABBABLE MENU
+ * ---------------------------------------------------------
+ * The card used to carry an NcActions listing every board column, and that is
+ * what this test tabbed to. A column exists per status NAME across every case
+ * type on the instance, so on a populated register the menu offered two
+ * hundred statuses, nearly all of them out of workflows the case has nothing
+ * to do with — which is why the old version of this test had to ArrowDown up
+ * to sixty times to reach its target.
+ *
+ * The control is gone. Moving is asked for by right-clicking the card or
+ * pressing M on it, and answered by a dialog listing what
+ * `/api/case/{id}/available-transitions` offers for THAT case. The keyboard
+ * path this file exists to protect is preserved, and it is now shorter than
+ * it was; the test asserts the old control's ABSENCE first, so a leftover
+ * cannot quietly coexist with it.
  *
  * MUTATION POINTS, NOT YET RUN. The mutation runs for this file were refused
  * by the permission system on 2026-09-11, so each point below is where the
  * check goes, with the assertion that should redden. Both are client-side.
  *
- *  - Keyboard (006f): in `src/views/workflow-board/CaseCard.vue`, make the
- *    "Move to…" item a no-op (`@click="$emit('move', caseItem.id, col.id)"`
- *    becomes `@click="() => {}"`). Expected red: `selecting "In behandeling"
- *    with Enter must write the "In behandeling" statusType id to the stored
- *    case`. Dropping `@keydown.enter` from the card root instead should
- *    redden `Enter on the card body must still open the case detail`.
- *  - Drag (006g): in the same file, `onDragStart` writes the id under
- *    `text/plain`; write it under any other type and `BoardColumn.onDrop`
- *    reads nothing. Expected red: `dropping the card on "In behandeling" must
- *    write the "In behandeling" statusType id to the stored case`. That exact
- *    assertion was seen red on 2026-09-11 when the drop did not fire (the
- *    `dragTo()` attempt this file replaced), which shows it binds to an
- *    unpersisted move; it is not a substitute for the mutation.
+ *  - Keyboard (006f): in `src/views/workflow-board/CaseCard.vue`, drop the
+ *    `@keydown.m` binding. Expected red: `selecting "In behandeling" with
+ *    Enter must write the "In behandeling" statusType id to the stored case`,
+ *    because the dialog never opens. Making `WorkflowBoard.onMoveConfirmed` a
+ *    no-op reddens the same assertion one step later. Dropping
+ *    `@keydown.enter` from the card root instead should redden `Enter on the
+ *    card body must still open the case detail`.
+ *  - Drag (006g): in `src/views/workflow-board/BoardColumn.vue`, drop the
+ *    `@add="onAdd"` binding on the list; Sortable then moves the card between
+ *    the lists and nobody posts the transition. Expected red: `dropping the
+ *    card on "In behandeling" must write the "In behandeling" statusType id
+ *    to the stored case`. Dropping `@move="onMove"` instead should leave the
+ *    move green, since the offer is only what refuses a column early.
+ *
+ * THE DRAG TEST IS REWRITTEN FOR SORTABLE AND NOT YET RUN. The card's drag is
+ * Sortable's (vue-draggable-plus, fallback mode) since the board stopped using
+ * the browser's HTML5 drag: it listens to pointer events, so the DataTransfer
+ * dispatch this test used to make reaches nothing. The pointer drag below is
+ * verified by reading only; it needs the Playwright browsers and the seeded
+ * fixtures.
  */
 
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
@@ -121,9 +144,10 @@ test.describe('Workflow Board keyboard status transition', () => {
 		token = await getRequestToken(api)
 		// caseType + Ontvangen/In behandeling (non-final) + Afgehandeld (final)
 		// + an active workflowTemplate whose `t1` runs Ontvangen -> In
-		// behandeling with no guard. Two non-final statusTypes is the minimum
-		// the move control needs: CaseCard renders its NcActions only when
-		// `otherColumns.length > 0`, i.e. when a card has somewhere to go.
+		// behandeling with no guard. That unguarded transition is what the
+		// move dialog has to offer: it lists what the ENGINE offers, so a
+		// fixture with statuses but no workflow template would render an
+		// empty dialog and the test would fail for the wrong reason.
 		sm = await seedStateMachine(api, token)
 		keyboardCaseId = objectId(
 			await seedCase(api, token, {
@@ -252,49 +276,48 @@ test.describe('Workflow Board keyboard status transition', () => {
 	}) => {
 		const card = await openBoardAndFindSeededCard(page, KEYBOARD_TITLE)
 
-		// TAB to the control, as the scenario's keyboard-only user does. The
-		// card body takes focus first; the move trigger is a separate focusable
-		// NcActions control a few tab stops further on (the selection checkbox
-		// sits between them).
-		const moveTrigger = card.locator('.case-card__move-actions button').first()
-		await expect(moveTrigger).toBeVisible()
-		await card.focus()
-		let reached = false
-		for (let stop = 0; stop < 6 && !reached; stop++) {
-			await page.keyboard.press('Tab')
-			reached = await moveTrigger.evaluate(
-				(button) => document.activeElement === button,
-			)
-		}
-		expect(reached, 'Tab must reach the card\'s "Move to…" control').toBe(true)
+		// THE CARD CARRIES NO MOVE CONTROL ANY MORE, and asserting its absence
+		// is half of what this test is for: the tabbable NcActions it used to
+		// hold listed every board column — one per status NAME across every
+		// case type on the instance — so on a populated register it offered
+		// two hundred statuses, nearly none of them reachable. A leftover
+		// would mean two ways to move a card that disagree about what is on
+		// offer.
+		await expect(card.locator('.case-card__move-actions')).toHaveCount(0)
 
-		await page.keyboard.press('Enter')
-		const target = page.getByRole('menuitem', {
-			name: new RegExp(`Move to ${IN_PROGRESS}`),
+		// The keyboard path is now M on the focused card, which opens the move
+		// dialog directly. It is announced in the card's accessible name,
+		// because there is nothing on screen to find it by.
+		await expect(card).toHaveAttribute('aria-label', /M to move/)
+		await card.focus()
+		await page.keyboard.press('m')
+
+		const dialog = page.locator('[data-testid="move-case-dialog"]')
+		await expect(dialog).toBeVisible({ timeout: 15000 })
+
+		// The dropdown offers what the ENGINE offers for this case, so the
+		// seeded target is there and the statuses of other workflows are not.
+		const select = dialog.locator('[data-testid="move-case-select"]')
+		await expect(select).toBeVisible()
+		await select.click()
+		const target = page.getByRole('option', {
+			name: new RegExp(IN_PROGRESS),
 		})
 		await expect(target).toBeVisible({ timeout: 5000 })
 
-		// Arrow to the target item rather than clicking it: no mouse event may
-		// take part in this move. The menu lists every other board column, so
-		// on a populated instance the target can sit several items down.
-		let focused = false
-		for (let step = 0; step < 60 && !focused; step++) {
-			focused = await target.evaluate(
-				(item) =>
-					document.activeElement === item
-					|| item.contains(document.activeElement),
-			)
-			if (!focused) {
-				await page.keyboard.press('ArrowDown')
-			}
-		}
-		expect(focused, 'ArrowDown must reach the "In behandeling" menu item').toBe(
-			true,
-		)
+		// Typed and chosen with the keyboard alone: no mouse event may take
+		// part in the move itself. Typing is what the dropdown buys over the
+		// list it replaced — the handler narrows instead of scrolling.
+		await page.keyboard.type(IN_PROGRESS)
 		await page.keyboard.press('Enter')
 
-		// The move control stops propagation, so activating it must not also
-		// fire the card's own open-detail handler.
+		const confirm = dialog.locator('[data-testid="move-case-confirm"]')
+		await expect(confirm).toBeEnabled()
+		await confirm.focus()
+		await page.keyboard.press('Enter')
+
+		// Opening the dialog must not also fire the card's own open-detail
+		// handler: M is a keydown on the same element Enter opens the case on.
 		await expect(page).toHaveURL(/\/workflow-board/)
 
 		await expectStoredStatus(
@@ -331,27 +354,26 @@ test.describe('Workflow Board keyboard status transition', () => {
 	}) => {
 		const card = await openBoardAndFindSeededCard(page, DRAG_TITLE)
 
-		// The drag the scenario says must not regress, through the same
-		// handlers a mouse user fires: the card's `dragstart` stashes its id on
-		// the DataTransfer, the target column's `drop` reads it back and asks
-		// the board to move the case. `draggable="true"` alone was what this
-		// used to assert, and a card with a broken dragstart or a column with a
-		// broken drop handler carries that attribute too.
-		//
-		// Dispatched rather than `dragTo()`. The board scrolls horizontally, one
-		// column per non-final status on the instance, and a synthesised mouse
-		// drag across that scroller dropped nothing when measured on 2026-09-11
-		// while the keyboard move beside it went through. One DataTransfer is
-		// shared across the events, as the browser shares it during a
-		// real drag, so the id `dragstart` wrote is the id `drop` reads. No
-		// `dragend` follows: by then the card has left the column `card` is
-		// scoped to, and the board does nothing on it.
-		await expect(card).toHaveAttribute('draggable', 'true')
+		// A pointer drag in steps, which is what a person does: press, move
+		// past Sortable's fallback tolerance so the drag starts and the ghost
+		// appears, cross to the target column, let go. Sortable finds the
+		// column under the pointer with elementFromPoint, so the target has to
+		// be on screen first: the board scrolls horizontally, one column per
+		// non-final status on the instance.
 		const target = column(page, IN_PROGRESS)
-		const dataTransfer = await page.evaluateHandle(() => new DataTransfer())
-		await card.dispatchEvent('dragstart', { dataTransfer })
-		await target.dispatchEvent('dragover', { dataTransfer })
-		await target.dispatchEvent('drop', { dataTransfer })
+		await target.scrollIntoViewIfNeeded()
+		const from = await card.boundingBox()
+		const to = await target.boundingBox()
+		if (!from || !to) {
+			throw new Error('the card or the target column is not on screen')
+		}
+		const grabX = from.x + from.width / 2
+		const grabY = from.y + from.height / 2
+		await page.mouse.move(grabX, grabY)
+		await page.mouse.down()
+		await page.mouse.move(grabX + 12, grabY + 12, { steps: 4 })
+		await page.mouse.move(to.x + to.width / 2, to.y + 80, { steps: 12 })
+		await page.mouse.up()
 
 		await expectStoredStatus(
 			dragCaseId,

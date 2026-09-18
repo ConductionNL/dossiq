@@ -35,7 +35,8 @@ const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const declaration = readJson('lib', 'Settings', 'connections.json')
 const iconsSource = read('src', 'icons.js')
 const adminRoot = read('src', 'views', 'settings', 'AdminRoot.vue')
-const customComponentsSource = read('src', 'customComponents.js')
+const registrySource = read('src', 'registry.js')
+const integriqSource = read('src', 'utils', 'integriqConnections.js')
 const en = readJson('l10n', 'en.json').translations
 const nl = readJson('l10n', 'nl.json').translations
 
@@ -115,11 +116,13 @@ describe('the Integrations page', () => {
 		expect(add).toBeDefined()
 		expect(add.label).toBe('Add integration')
 		expect(add.handler).toBe('openIntegriqConnections')
-		// Defined AND in the default export, or the renderer cannot resolve it.
-		expect(customComponentsSource).toContain('function openIntegriqConnections(')
-		expect(customComponentsSource).toMatch(/^\topenIntegriqConnections,$/m)
-		expect(customComponentsSource).toContain(
+		// Defined AND registered as a handler, or the renderer cannot resolve it.
+		expect(integriqSource).toContain('export function openIntegriqConnections(')
+		expect(integriqSource).toContain(
 			"'/apps/integriq/connections?app=dossiq&link=1'",
+		)
+		expect(registrySource).toMatch(
+			/\n\topenIntegriqConnections: \{\n\t\tkind: 'handler',\n\t\thandler: openIntegriqConnections,\n/,
 		)
 		expect(iconsSource).toContain(`\n\t${add.icon},`)
 	})

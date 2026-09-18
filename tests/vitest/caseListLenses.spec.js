@@ -44,10 +44,11 @@ const CELL_WIDGETS_PATH = path.join(ROOT, 'src', 'services', 'cellWidgets.js')
 const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
 const cellWidgetsSource = fs.readFileSync(CELL_WIDGETS_PATH, 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const customComponentsSource = fs.readFileSync(
-	path.join(ROOT, 'src', 'customComponents.js'),
+const bulkActionsSource = fs.readFileSync(
+	path.join(ROOT, 'src', 'utils', 'caseBulkActions.js'),
 	'utf8',
 )
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
 /**
  * One page as the manifest declares it.
@@ -111,33 +112,37 @@ const DRAFTS_LENS = 'My drafts'
  * insertions reads as arithmetic rather than as an order anybody chose. Its
  * key and its filter are asserted in `handingACaseOver.spec.js`.
  */
+/** How many of the chips below render in the strip; the rest sit behind the '⋯' chip. */
+const VISIBLE_LENS_COUNT = 4
+
 const CASE_LENSES = [
+	// The first VISIBLE_LENS_COUNT are the pills; everything after them sits
+	// behind the '⋯' chip, so the order of this array is what the reader sees.
 	'All',
 	'Unread',
-	// Two lenses over per-user platform state rather than a field of the case
-	// (case-number-and-favourites row 2.19, openregister#3766). They sit with
-	// Unread because all three answer about YOU, not about the case: the star
-	// you set and the cases you last opened.
-	'Favourites',
-	// The third lens over per-user platform state, and the one that is not
-	// silent: a star is private, where a subscription produces notifications
-	// and its list is visible to the people who may edit the case
-	// (case-followers row 13.18, openregister `object-watchers`). It sits next
-	// to Favourites because both answer "which cases did I pick out", and
-	// before Recently opened because a case you chose outranks one you
-	// happened to open.
-	'Followed',
-	'Recently opened',
-	// Three lenses over a stored, facetable boolean on the case, each from a
-	// change that named the row it answers. `Waiting on the applicant`
-	// (aanvullingsverzoek-as-a-record row 1.17, #2858) is what the APPLICANT
-	// still owes; `Needs attention` and `Assessed high risk`
-	// (markers-and-assessments-on-the-case rows 2.36 and 2.40, #2837) are the
-	// flag a named person raised and the risk this organisation assessed.
-	// They sit before Mine because all three are about the CASE, and Mine
-	// onwards are about who is holding it.
+	// Two lenses over a stored, facetable boolean on the case. `Waiting on the
+	// applicant` (aanvullingsverzoek-as-a-record row 1.17, #2858) is what the
+	// APPLICANT still owes; `Needs attention`
+	// (markers-and-assessments-on-the-case row 2.36, #2837) is the flag a named
+	// person raised. They are the everyday two, which is why they are pills.
 	'Waiting on the applicant',
 	'Needs attention',
+	// Three lenses over per-user platform state rather than a field of the case
+	// (case-number-and-favourites row 2.19, openregister#3766; case-followers
+	// row 13.18, openregister `object-watchers`). They answer about YOU, not
+	// about the case: the star you set, the cases you subscribed to and the
+	// ones you last opened. Followed sits next to Favourites because both
+	// answer "which cases did I pick out", and before Recently opened because
+	// a case you chose outranks one you happened to open. All three are behind
+	// the '⋯' chip rather than in the strip: the cap keeps the pills for the
+	// lenses a handler reaches for every morning.
+	'Favourites',
+	'Followed',
+	'Recently opened',
+	// The risk this organisation assessed
+	// (markers-and-assessments-on-the-case row 2.40, #2837). It sits before
+	// Mine because it is about the CASE, and Mine onwards are about who is
+	// holding it.
 	'Assessed high risk',
 	'Mine',
 	'Unclaimed',
@@ -149,9 +154,10 @@ const CASE_LENSES = [
 	// excludes the archive from, which is why not one of them spells the
 	// exclusion out.
 	'Archived',
-	// The closed cases that ended without a result (b210638, the search change
-	// that made the no-result closures a lens of their own). It sits after
-	// Closed because it narrows that set.
+	// case-search-declares-its-fields REQ-CSD-04: closed, with nobody having
+	// recorded what the outcome was. It sits after Closed because it narrows
+	// that set, and is deliberately not folded into it: Closed is finished
+	// work.
 	'Closed with no result',
 	DRAFTS_LENS,
 	'Overdue',
@@ -172,7 +178,10 @@ const CASE_LENSES = [
  * case nobody has accepted yet, and a task belongs to a case that already
  * exists. Stuck reads `statusDwellBreached`, written when a case sits in a
  * STATUS longer than that status allows, and a task has neither a status type
- * nor a maximum dwell.
+ * nor a maximum dwell. Closed with no result narrows on `result_isnull`, and a
+ * result is the OUTCOME of a case: a task carries none, so the Tasks lens
+ * vocabulary (`scope`, `isTerminal`, `overdue`, `dueAfter`) has nothing to say
+ * it with.
  */
 const CASES_ONLY = [
 	'Unread',
@@ -196,6 +205,20 @@ const CASES_ONLY = [
 describe('Cases index lenses', () => {
 	it('declares the seventeen chips in order', () => {
 		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
+	})
+
+	it('shows four chips and hands the rest to the overflow chip', () => {
+		const cases = page('Cases').config
+		expect(cases.quickFilterMaxVisible).toBe(VISIBLE_LENS_COUNT)
+		// Seventeen pills wrap the actions bar and squeeze the count beside them.
+		// The cap makes the ORDER above load-bearing, so the four are named
+		// here: moving a lens up or down moves it in or out of the strip.
+		expect(cases.quickFilters.slice(0, VISIBLE_LENS_COUNT).map((entry) => entry.label)).toEqual([
+			'All',
+			'Unread',
+			'Waiting on the applicant',
+			'Needs attention',
+		])
 	})
 
 	it('marks All as the default chip and nothing else', () => {
@@ -584,15 +607,17 @@ describe('bulk actions on the Cases index', () => {
 		])
 	})
 
-	it('names a handler that customComponents.js defines AND exports', () => {
+	it('names a handler that caseBulkActions.js exports AND the registry registers', () => {
 		// Both halves matter and neither errors on its own: a handler name
 		// with no function is a bulk action that does nothing when clicked,
-		// and a function that is not in the default export is invisible to
-		// the manifest renderer, which resolves the name through that map.
+		// and a function the registry does not carry is invisible to the
+		// manifest renderer, which resolves the name through that map.
 		for (const action of actions()) {
-			expect(customComponentsSource).toContain(`function ${action.handler}(`)
-			expect(customComponentsSource).toMatch(
-				new RegExp(`^\\t${action.handler},$`, 'm'),
+			expect(bulkActionsSource).toMatch(
+				new RegExp(`export (?:async )?function ${action.handler}\\(`),
+			)
+			expect(registrySource).toMatch(
+				new RegExp(`\\n\\t${action.handler}: \\{\\n\\t\\tkind: 'handler',\\n\\t\\thandler: ${action.handler},\\n`),
 			)
 		}
 	})

@@ -222,17 +222,67 @@ export const CnDataTable = {
 }
 
 /**
- * `buildManifestRoutes` and its helpers — RE-EXPORTED FROM THE REAL PACKAGE,
- * not stubbed.
+ * Stand-in for `CnContextMenu`.
+ *
+ * Reproduces the contract a host depends on and nothing else: it renders only
+ * while `open`, draws one button per entry of `actions`, and invokes that
+ * entry's `handler` with `targetItem`. The real component's cursor
+ * positioning, floating-vue popper and panel slots are the library's own and
+ * are not a consumer suite's to check.
+ *
+ * The button carries the action's label, so a spec picks the entry the way a
+ * reader does rather than by index.
+ */
+export const CnContextMenu = {
+	name: 'CnContextMenu',
+	props: {
+		open: { type: Boolean, default: false },
+		actions: { type: Array, default: () => [] },
+		targetItem: { type: [Object, String, Number], default: null },
+	},
+	emits: ['action', 'close', 'update:open'],
+	render() {
+		if (this.open !== true) {
+			return null
+		}
+		return h(
+			'div',
+			{ 'data-testid': 'cn-context-menu' },
+			this.actions.map((action) =>
+				h(
+					'button',
+					{
+						key: action.label,
+						'data-context-action': action.label,
+						onClick: () => {
+							if (typeof action.handler === 'function') {
+								action.handler(this.targetItem)
+							}
+							this.$emit('action', { action: action.label, row: this.targetItem })
+						},
+					},
+					String(action.label ?? ''),
+				),
+			),
+		)
+	},
+}
+
+/**
+ * `useContextMenu` and `buildManifestRoutes` — RE-EXPORTED FROM THE REAL
+ * PACKAGE, not stubbed.
  *
  * Everything above this line stands in for a Vue component the suite cannot
- * mount. This one is different: it is pure JavaScript over a plain object,
- * and it is the thing `src/utils/manifestRoutes.js` is tested FOR. A stub of
- * it would make `routePermissions.spec.js` assert that our own fake emits the
- * split route, which is a test that cannot fail. The subpath import is not
- * aliased back here — the alias in `vitest.config.js` matches the bare
- * package name exactly — so this reaches the installed library.
+ * mount. These are different: they are pure JavaScript (the composable over
+ * refs and a couple of CSS custom properties on `<html>`, which jsdom
+ * provides), and `buildManifestRoutes` is the thing
+ * `src/utils/manifestRoutes.js` is tested FOR. A stub of it would make
+ * `routePermissions.spec.js` assert that our own fake emits the split route,
+ * which is a test that cannot fail. The subpath import is not aliased back
+ * here — the alias in `vitest.config.js` matches the bare package name
+ * exactly — so these reach the installed library.
  */
+export { useContextMenu } from '@conduction/nextcloud-vue/src/composables/useContextMenu.js'
 export {
 	buildManifestRoutes,
 	pageHasSplitView,

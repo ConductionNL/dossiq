@@ -1,5 +1,5 @@
 {
-    "ceiling": 236,
+    "ceiling": 235,
     "measured": "2026-09-17",
     "window": 3,
     "about": [
@@ -178,13 +178,6 @@
             "occurrence": 1,
             "class": "degradation",
             "reason": "`resolveTmloService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-        },
-        {
-            "file": "lib/Service/Besluitvorming/TemplateBundleSeeder.php",
-            "method": "findByIdentifier",
-            "occurrence": 1,
-            "class": "read-miss",
-            "reason": "`findByIdentifier()` answers `return null` when the read fails; the catch logs at debug (\"Dossiq: besluitvorming idempotency lookup failed\"), so a failed read and an absent record are the same answer."
         },
         {
             "file": "lib/Service/Besluitvorming/TemplateBundleSeeder.php",

@@ -1,9 +1,9 @@
 /**
  * Marking a case read or unread from a list row.
  *
- * Kept out of `customComponents.js` for the reason `caseClaim.js` gives: that
- * file imports every surviving custom page and tab, so importing it in a unit
- * test pulls the whole component tree in behind one function. The registry
+ * Kept out of `registry.js` for the reason `caseClaim.js` gives: that file
+ * imports every surviving custom page and tab, so importing it in a unit test
+ * pulls the whole component tree in behind one function. The `kind: 'handler'`
  * entries are still declared there, which is what the manifest resolves
  * against.
  *

@@ -236,10 +236,16 @@ class VthSeedDataRepairStep implements IRepairStep {
 			return $summary;
 		}
 
-		$summary['ids'] = $this->caseTypeIdsBySlug(
+		$ids = $this->caseTypeIdsBySlug(
 			objectService: $objectService,
 			register: $register
 		);
+		if ($ids === null) {
+			// An unreadable list is not an empty one; nothing is seeded on a failed read.
+			$output->warning('VTH seed: the case-type list could not be read; nothing seeded this run.');
+			return $summary;
+		}
+		$summary['ids'] = $ids;
 
 		foreach ($caseTypes as $caseType) {
 			if (is_array($caseType) === false) {
@@ -428,6 +434,11 @@ class VthSeedDataRepairStep implements IRepairStep {
 			register: $register,
 			schema: $schema
 		);
+		if ($existing === null) {
+			// Same rule as the case types: an unreadable list seeds nothing.
+			$output->warning('VTH seed: the checklist list could not be read; no checklists seeded this run.');
+			return ['seeded' => 0, 'skipped' => 0];
+		}
 
 		$seeded = 0;
 		$skipped = 0;
@@ -536,9 +547,9 @@ class VthSeedDataRepairStep implements IRepairStep {
 	 * @param object $objectService OpenRegister ObjectService.
 	 * @param string $register Register slug.
 	 *
-	 * @return array<string, string> Case-type uuid keyed by slug.
+	 * @return array<string, string>|null Case-type uuid keyed by slug, or null when the list could not be read.
 	 */
-	private function caseTypeIdsBySlug(object $objectService, string $register): array {
+	private function caseTypeIdsBySlug(object $objectService, string $register): ?array {
 		$schema = (string)$this->settingsService->getConfigValue('case_type_schema');
 		if ($schema === '') {
 			return [];
@@ -548,10 +559,11 @@ class VthSeedDataRepairStep implements IRepairStep {
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $schema
+				schema: $schema,
+				unscoped: true
 			);
 		} catch (Throwable) {
-			return [];
+			return null;
 		}
 
 		$ids = [];
@@ -574,21 +586,22 @@ class VthSeedDataRepairStep implements IRepairStep {
 	 * @param string $register Register slug.
 	 * @param string $schema Schema slug.
 	 *
-	 * @return array<int, string>
+	 * @return array<int, string>|null The slugs, or null when the list could not be read.
 	 */
 	private function existingSlugs(
 		object $objectService,
 		string $register,
 		string $schema,
-	): array {
+	): ?array {
 		try {
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $schema
+				schema: $schema,
+				unscoped: true
 			);
 		} catch (Throwable) {
-			return [];
+			return null;
 		}
 
 		$slugs = [];

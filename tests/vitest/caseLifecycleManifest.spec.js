@@ -166,14 +166,6 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// with it. The star reads FIRST because it is part of what identifies
 		// this case to the reader, where the three strips under it are about
 		// the case rather than about you.
-		//
-		// THE UNIT IS THE ROW, NOT THE CELL, since `case-followers` gave the
-		// first of these rows a second widget: the star and the Follow strip
-		// share row 2 at six columns each, because both are per-reader state
-		// and neither fills twelve columns with anything. Asserting the CELLS
-		// in order would have read that as a fifth row and the gutter check
-		// under it would have wanted a row that is not there. Grouping by
-		// `gridY` keeps both assertions about what the reader actually sees.
 		const layout = caseDetail().config.layout
 		const tiles = layout.filter((c) => c.gridY === 0)
 		const panels = cells('case-panels')[0]
@@ -184,36 +176,17 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		const between = layout.filter(
 			(c) => c.gridY >= tileRows && c.gridY < panels.gridY,
 		)
-		const rows = [...new Set(between.map((c) => c.gridY))].sort(
-			(a, b) => a - b,
-		)
 		expect(
-			rows.map((y) =>
-				between
-					.filter((c) => c.gridY === y)
-					.sort((a, b) => a.gridX - b.gridX)
-					.map((c) => c.widgetId),
-			),
+			between.map((c) => c.widgetId),
 			'every row between the tiles and the panels must carry a widget',
 		).toEqual([
-			['case-favourite', 'case-follow'],
-			['case-unread'],
-			['case-status-declaration'],
-			['case-attention'],
+			// ONE row, not four. Three of the four strips are a root v-if, so four
+			// rows reserved three empty ones on an ordinary case; CaseBannerStack
+			// holds all four and the row carries `sizeToContent`.
+			'case-banner-stack',
 		])
-		// No gutter row: the panels start where the last strip ends.
 		expect(panels.gridY).toBe(
-			tileRows
-				+ rows.reduce(
-					(total, y) =>
-						total
-						+ Math.max(
-							...between
-								.filter((c) => c.gridY === y)
-								.map((c) => c.gridHeight),
-						),
-					0,
-				),
+			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
 		)
 	})
 

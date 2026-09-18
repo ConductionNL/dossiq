@@ -2,11 +2,11 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Taking a case from a list row, kept out of `customComponents.js` so it can
- * be tested without mounting the app: that file imports every surviving custom
- * page and tab, so importing it in a unit test pulls the whole component tree
- * (and every `@nextcloud/vue` module-eval side effect) in behind one function.
- * The registry entry is still declared there, which is what the manifest
+ * Taking a case from a list row, kept out of `registry.js` so it can be tested
+ * without mounting the app: that file imports every surviving custom page and
+ * tab, so importing it in a unit test pulls the whole component tree (and every
+ * `@nextcloud/vue` module-eval side effect) in behind one function. The
+ * `kind: 'handler'` entry is still declared there, which is what the manifest
  * resolves against.
  *
  * @spec openspec/changes/case-claim-action/specs/case-management/spec.md

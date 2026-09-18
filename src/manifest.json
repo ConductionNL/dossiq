@@ -11,7 +11,14 @@
 				"id": "welcome",
 				"type": "info",
 				"title": "Welcome to Dossiq",
-				"body": "Dossiq handles cases from intake to archive. Load the demo data to see it work. Then initialise the register and schemas."
+				"body": "Dossiq handles cases from intake to archive. First initialise the register and schemas. Then load the demo data to see it work."
+			},
+			{
+				"id": "register-check",
+				"type": "run-action",
+				"title": "Initialise the register and schemas",
+				"action": "init-register",
+				"required": true
 			},
 			{
 				"id": "demo-data",
@@ -30,13 +37,6 @@
 				"title": "Load the example data",
 				"required": false,
 				"body": "Loads what you picked. The data is obviously sample data, it is safe to run more than once, and you can delete it afterwards."
-			},
-			{
-				"id": "register-check",
-				"type": "run-action",
-				"title": "Initialise the register and schemas",
-				"action": "init-register",
-				"required": true
 			},
 			{
 				"id": "dwangsom-secret",
@@ -164,26 +164,25 @@
 						"sinceVersion": "0.2.17",
 						"placement": "right",
 						"body": "Your work lives here: today's tasks, deadlines and open cases in one place.",
-						"task": "Open My work in the menu",
+						"task": "This is your My work section",
 						"target": {
 							"kind": "nav-item",
-							"ref": "WorkGroup"
+							"ref": "MyWorkHome"
 						},
 						"advanceOn": {
-							"type": "route-match",
-							"route": "MyWorkHome"
+							"type": "manual"
 						}
 					},
 					{
 						"id": "done",
 						"sinceVersion": "0.2.17",
-						"placement": "center",
+						"placement": "top",
 						"title": "Your first case is on the board",
 						"body": "The Dashboard tracks progress as cases move through it. The documentation covers the rest.",
-						"task": "Open the documentation to keep going",
+						"task": "Open the documentation",
 						"target": {
-							"kind": "nav-item",
-							"ref": "Documentation"
+							"kind": "selector",
+							"selector": "[data-testid=\"cn-nav-entry-Documentation\"]"
 						},
 						"advanceOn": {
 							"type": "manual"
@@ -1244,9 +1243,20 @@
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
+				"_formNote": "The one case create form, mirrored from the Dashboard `new-case` header action (friendly-case-create-form) so filing a case asks the same questions wherever it starts. src/utils/caseCreateForm.js carries the same shape for the surfaces configured from JS; keep the two in step.",
+				"includeFields": ["caseType", "title", "requester", "description", "assignee", "impact", "urgency", "confidentiality", "intakeChannel", "startDate", "plannedEndDate"],
+				"fieldOverrides": {
+					"description": { "widget": "textarea" },
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+				},
+				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
+				"createSuccessRoute": "CaseDetail",
+				"createSuccessMessage": "Case created.",
+				"formSize": "large",
+				"formColumns": 2,
 				"viewModes": ["table", "cards"],
 				"showViewAction": false,
-				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of customComponents.js, because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
+				"_claimNote": "The Claim row action (case-claim-action, row 2.4) takes the case without opening it. It is a FUNCTION handler out of registry.js (a `kind: 'handler'` entry), because an index row action can only be `navigate`, `open-page` or a handler name: `api-call` is not in the row dispatcher's vocabulary at all, and `object-op` writes `action.values` VERBATIM, so a declared assignee of `@me` would store that literal string on the case. The handler posts the same endpoint the case page's Claim button does, so one rule refuses a claim on a case that is already somebody's, whichever surface the gesture came from.",
 				"actions": [
 					{
 						"id": "view",
@@ -1338,7 +1348,9 @@
 			"component": "MyWorkView",
 			"_note": "Case index scoped to the current user (assignee = current uid) in card view. A thin CnIndexPage wrapper because the stock index base-filter does not resolve the @me current-user token; the wrapper injects the resolved uid.",
 			"config": {
-				"register": "dossiq"
+				"_note": "BOTH halves of the pair, not `register` alone: CnPageRenderer auto-registers a custom page's object type from `register` + `schema` and skips it with a warning when only one is declared, so a lone register was a page that named its data and registered nothing. `dossiq` is the OpenRegister register SLUG rather than this app's id (see MyWorkCards.vue), and `case` is what the wrapper's CnIndexPage mounts with.",
+				"register": "dossiq",
+				"schema": "case"
 			}
 		},
 		{
@@ -1358,7 +1370,7 @@
 			},
 			"_note": "`excludeFields: [status]` keeps the status picker OFF this page's form dialog, and the reason is not cosmetic. On CREATE the picker listed every case type's statuses. CnFormDialog loads a reference field's options once, at open time, and `status` carries `x-relation-filter: { caseType: \"@object.caseType\" }`: a token that resolves to nothing while the form is still empty, so the fetch goes out unfiltered and never goes out again. Half those options are named `Received` or `In progress`, belong to a different case type, and are therefore both indistinguishable and wrong. A case is born with its own case type's `initialStatus` through `x-openregister-prefill`, so there is no status a person should be picking here at all. On EDIT the token does resolve and the picker is correctly scoped, but a raw dropdown writes the field straight through: no statusRecord, no guard evaluation, none of the transition's `automaticActions`. A status is the OUTPUT of a transition, not a field. CaseDetail's `lifecycleActions.field: status` is where one changes.",
 			"config": {
-				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/customComponents.js, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
+				"_bulkActionsNote": "bulk-actions-report-progress. Every entry here hands its act to OpenRegister's bulk job and none of them loops. dossiq declares what happens to ONE case (lib/BulkAction/), the job walks the selection, records what it did to each case and reports it, and the dialog renders that: the progress, the per-row outcome, the skip list, the report and the stop button. A handler reads what was skipped and why BEFORE committing, because the job is rehearsed first and nothing is written until the commit. WHAT THIS REPLACES, since the shape is the point. The five entries used to call dossiq endpoints that looped server-side. Closing the tab mid-run left the selection in a state nobody could read afterwards, and the only record of what was skipped was a summary that vanished with the dialog. THE REASON IS REQUIRED on Reassign, Suspend, Resume and Extend term. The first is a case policy (reassigning four hundred statutory cases with nothing recorded about why is an audit finding waiting to happen); the other three are statutory acts under Awb 4:5 and 4:14 somebody accounts for later. The bulk action declares the requirement, the hand-off enforces it, and the disabled button says so before the click. The handlers are FUNCTIONS in src/utils/caseBulkActions.js, registered in src/registry.js as `kind: 'handler'` entries, not the declarative `handler: \"open-modal\"` path: that path emits an `open-modal` event nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked. They are async now, because each one reads the list's current filters and asks OpenRegister how many cases the search matches, which is what lets the dialog say whether you have this page or the whole result. Every icon here is registered in src/icons.js (hydra gate-60); a name that is not renders no icon at all rather than a fallback glyph.",
 				"bulkActions": [
 					{
 						"id": "reassign",
@@ -1399,26 +1411,41 @@
 				},
 				"allowSavedViews": true,
 				"excludeFields": ["status", "priority", "priorityOverride", "priorityOverrideReason"],
+				"_formNote": "Same create form as the Queue page; see its `_formNote`.",
+				"includeFields": ["caseType", "title", "requester", "description", "assignee", "impact", "urgency", "confidentiality", "intakeChannel", "startDate", "plannedEndDate"],
+				"fieldOverrides": {
+					"description": { "widget": "textarea" },
+					"requester": { "widget": "InitiatorPicker", "label": "Requester" }
+				},
+				"createDefaults": { "assignee": "@me", "confidentiality": "vertrouwelijk" },
+				"createSuccessRoute": "CaseDetail",
+				"createSuccessMessage": "Case created.",
+				"formSize": "large",
+				"formColumns": 2,
 				"viewModes": ["table", "cards", "map"],
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
 					"center": [52.1326, 5.2913],
+					"_basemapNote": "EVERY ENTRY CARRIES `options.referrerPolicy` AND MUST KEEP IT. Nextcloud sends `Referrer-Policy: no-referrer` on every page (server/lib/OC.php), Leaflet draws a tile as a plain `<img>`, and OpenStreetMap's CDN answers a refererless tile request with an \"App is not following the tile usage policy\" image carrying `x-blocked: Access denied` — a grey map rather than an error, which is why it reads as working-but-empty. An `<img>`-level policy overrides the document's, and `strict-origin-when-cross-origin` sends the instance origin but never the path, which is where a case id would be. nextcloud-vue's CnMapWidget defaults the same value, so this is belt-and-braces for as long as dossiq resolves a library release that predates that default. THE `{s}` SUBDOMAIN FORM IS ALSO LOAD-BEARING: MapCspRegistrar allowlists `https://*.tile.openstreetmap.org`, and a CSP wildcard does NOT match the bare host, so rewriting these to OSM's modern `tile.openstreetmap.org` would trade a policy block for a CSP block.",
 					"basemaps": [
 						{
 							"name": "Standard",
 							"url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors"
+							"attribution": "© OpenStreetMap contributors",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
 						},
 						{
 							"name": "Humanitarian",
 							"url": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors, tiles by HOT"
+							"attribution": "© OpenStreetMap contributors, tiles by HOT",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
 						},
 						{
 							"name": "Terrain",
 							"url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
-							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap"
+							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap",
+							"options": { "referrerPolicy": "strict-origin-when-cross-origin" }
 						}
 					]
 				},
@@ -1483,31 +1510,6 @@
 						}
 					},
 					{
-						"label": "Favourites",
-						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
-						"filter": {
-							"_favourite": true,
-							"statusHiddenInLists": false,
-							"isDraft": false
-						}
-					},
-					{
-						"label": "Followed",
-						"_note": "case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for.",
-						"filter": {
-							"_watching": true,
-							"statusHiddenInLists": false,
-							"isDraft": false
-						}
-					},
-					{
-						"label": "Recently opened",
-						"_note": "case-number-and-favourites, row 2.19. `_recent` is the second OpenRegister lens, over the per-user view history the platform writes when you open an object's detail, ordered by last view descending and kept to the last hundred. Deliberately no `_order` of its own: the lens already carries its order, and a sort key declared here would override the one thing the lens is for. No `isDraft` or `statusHiddenInLists` either: this list answers 'what was I just looking at', and a case you opened five minutes ago dropping out of it because an administrator hid its status is a list that lies about your own morning.",
-						"filter": {
-							"_recent": true
-						}
-					},
-					{
 						"label": "Waiting on the applicant",
 						"_note": "aanvullingsverzoek-as-a-record, row 1.17. `waitingOnApplicant` is a derived boolean the ask writes and the answer clears, so the chip is a query rather than a reading of timers. It is a READ CONVENIENCE and not a second truth: the COUNT comes from the aanvullingsverzoek rows themselves, which is why the case page shows the days from the request and not from this field. Deliberately not `isIncomplete`, which is a different fact: that one is about required fields a handler knowingly left empty at intake, this one is about something the APPLICANT still owes.",
 						"filter": {
@@ -1525,6 +1527,31 @@
 							"statusHiddenInLists": false,
 							"isDraft": false,
 							"isFinalStatus": false
+						}
+					},
+					{
+						"label": "Favourites",
+						"_note": "case-number-and-favourites, row 2.19. `_favourite` is OpenRegister's own lens (favourites-and-recent, openregister#3766), resolved INSIDE the query the way `_unread` is, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the star lives in openregister_favourites keyed by (user, object), so nothing about it is on the case row and no colleague can see yours. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: a case you starred and then closed is exactly the one you want to find again.",
+						"filter": {
+							"_favourite": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Followed",
+						"_note": "case-followers, row 13.18. `_watching` is OpenRegister's own lens (object-watchers), resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree. It is per reader and it is not a field of the case: the subscription lives in openregister_watchers keyed by (user, object), so nothing about it is on the case row. It is a LENS and not a filter: it narrows the id set to this reader's subscriptions and lets every other filter, the RBAC gate and the paging run over what is left, so a reader who follows nothing gets an honest empty page rather than the whole register. It carries `statusHiddenInLists` and `isDraft` for the reason every working lens does, and NOT `isFinalStatus`: you follow a case to hear how it ends, so the one that just closed is exactly the one you were waiting for. It sits beside Favourites, behind the '⋯' chip rather than in the strip: the four pills are the lenses a handler reaches for every morning, and this one answers which cases you chose to keep an eye on.",
+						"filter": {
+							"_watching": true,
+							"statusHiddenInLists": false,
+							"isDraft": false
+						}
+					},
+					{
+						"label": "Recently opened",
+						"_note": "case-number-and-favourites, row 2.19. `_recent` is the second OpenRegister lens, over the per-user view history the platform writes when you open an object's detail, ordered by last view descending and kept to the last hundred. Deliberately no `_order` of its own: the lens already carries its order, and a sort key declared here would override the one thing the lens is for. No `isDraft` or `statusHiddenInLists` either: this list answers 'what was I just looking at', and a case you opened five minutes ago dropping out of it because an administrator hid its status is a list that lies about your own morning.",
+						"filter": {
+							"_recent": true
 						}
 					},
 					{
@@ -1623,6 +1650,8 @@
 						"_note": "what-a-status-declares, task 3.2. A lens of its own, deliberately NOT folded into Overdue: a case can breach its status maximum while its statutory term is comfortable, and merging the two would bury exactly the case this lens exists to surface. It narrows on `statusDwellBreached`, which the engine writes on the case, so the page, the total and the facets are resolved by one query rather than by a post-filter over a page of twenty-five. A case in a status that declares no maximum can never carry the flag, so on a fleet that has annotated nothing this lens is simply empty."
 					}
 				],
+				"_quickFilterMaxVisibleNote": "Seventeen pills wrap the actions bar onto a second line and squeeze the 'Showing X of Y' count onto two, so only the first four render and the rest sit behind one more CHIP at the end of the row — a '⋯' pill, not a toolbar button, because what it opens is a filter like the ones beside it. The four are the everyday ones and the cap is the reason the ORDER of quickFilters is now load-bearing: moving a lens up or down moves it in or out of the strip. A lens picked from the panel is applied exactly as a pill is, and the chip then wears its label and its fill, so a narrowed list never presents itself as All.",
+				"quickFilterMaxVisible": 4,
 				"columns": [
 					{
 						"key": "@self.unread",
@@ -2497,39 +2526,11 @@
 						}
 					},
 					{
-						"id": "case-status-declaration",
-						"type": "case-status-declaration",
-						"title": "What this status asks for",
-						"icon": "ListStatus",
-						"_note": "what-a-status-declares, tasks 1.3, 2.1 and 3.1. A status the case type DERIVES is not a move a handler can pick, so when it has not fired there is nothing on the page to press and nothing to read: the case sits where it is for a reason nobody can see. This strip names the missing document, which turns that into an errand. Beside it, who the case is waiting on and how long it has been here, both read in the same round trip because a handler asks all three at the same moment. It asks /available-transitions rather than an endpoint of its own: the engine publishes the three declarations beside the moves, so a second endpoint would be a second round trip for one strip and a second place for the derivation verdict to be computed. Renders nothing at all on a case that is ours to move, inside its maximum, with no derivation pending."
-					},
-					{
-						"id": "case-favourite",
-						"type": "case-favourite",
-						"title": "Favourite",
-						"icon": "StarOutline",
-						"_note": "case-number-and-favourites, row 2.19. The per-reader star, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/favourite (favourites-and-recent, openregister#3766). It sits directly under the identity tiles and above the unread strip because it is part of what identifies this case TO YOU, where every strip below it is about the case rather than about you. Starring writes NOTHING to the case: the star lives in OpenRegister's own table, so no version is cut, no audit entry is written and no colleague can see it. The widget renders from `@self.favourite`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT a header action because the gesture is two verbs on one path: CnActionButtons' `toggle` type writes with one `method`, and a `handler` action is handed action.args verbatim with no token resolved, so it would run with no case to act on."
-					},
-					{
-						"id": "case-archived",
-						"type": "case-archived",
-						"title": "Archived",
-						"icon": "ArchiveOutline",
-						"_note": "archived-cases-leave-the-lenses REQ-CM-43. The sentence that says this case is in the archive, who filed it, on what day and with what reason. It is the FIRST strip, above the star and the unread badge, because it changes how everything under it should be read: the page is a record to consult, not work to do. It reads `@self.archived`, the same marker the Cases page, the queue, the tiles and the search exclude on, so the strip and every list agree about which cases are archived; reading `archiveStatus` here would make it disagree with all of them on a case imported over ZGW. Restore is NOT a button on this strip and that is deliberate: it is one entry in the Lifecycle menu beside every other act, because an act offered in two places is gated in two places and the second one is the one nobody remembers. Renders nothing at all on a case that is not archived, which is almost every case."
-					},
-					{
-						"id": "case-follow",
-						"type": "case-follow",
-						"title": "Follow",
-						"icon": "BellPlusOutline",
-						"_note": "case-followers, row 13.18. Follow a case you do not own, over OpenRegister's PUT|DELETE /api/objects/{register}/{schema}/{id}/watch (object-watchers). It shares the row with the star because both are per-reader state, and it says the opposite kind of thing: the star is private and silent, following subscribes you to the case's own notifications and the people who may edit the case can see that you took it. The subscription lives in OpenRegister's own table, so following cuts no version and writes no audit entry. The widget renders from `@self.watching`, which rides every object read, so it makes no call until somebody presses it. A widget and NOT two header actions because `executeApiCall` maps every method that is not PUT to post, so an `api-call` declared `method: \"DELETE\"` would POST to a route that takes DELETE, with nothing in the manifest to say it could never have worked."
-					},
-					{
-						"id": "case-unread",
-						"type": "case-unread",
-						"title": "New since you last looked",
-						"icon": "BellBadgeOutline",
-						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
+						"id": "case-banner-stack",
+						"type": "case-banner-stack",
+						"title": "Case banners",
+						"icon": "FlagOutline",
+						"_note": "Archived, Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
 					},
 					{
 						"id": "case-archival-panel",
@@ -2537,13 +2538,6 @@
 						"title": "Archiving",
 						"icon": "ArchiveOutline",
 						"_note": "What happens to this case when its business use ends, as openregister decided it (registry type case-archival-pane -> CaseArchivalPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, so the type custom this shipped as drew an empty Archiving tab and logged nothing. Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
-					},
-					{
-						"id": "case-attention",
-						"type": "case-attention",
-						"title": "Attention",
-						"icon": "FlagOutline",
-						"_note": "markers-and-assessments-on-the-case, rows 2.36, 2.40 and 2.44. Three facts on one strip, kept apart on purpose: the flag a person raised with a written reason and cleared with another, both kept; the risk this organisation assessed, behind a permission declared on the property rather than checked in dossiq code; and the markers the system raised against a named panel. It sits UNDER the unread strip because it says the opposite kind of thing. The unread badge is per reader and clears because somebody looked. A marker is about the world, is not per user, and clears when the work behind it is done. Running the two together into one attention count is how a handler loses the ability to tell a colleague's judgement from a failed virus scan, so each gets its own row and its own lead sentence."
 					}
 				],
 				"layout": [
@@ -2584,64 +2578,20 @@
 						"showTitle": false
 					},
 					{
-						"id": "archived-strip",
-						"widgetId": "case-archived",
+						"id": "case-banners",
+						"widgetId": "case-banner-stack",
 						"gridX": 0,
 						"gridY": 2,
 						"gridWidth": 12,
 						"gridHeight": 1,
-						"showTitle": false
-					},
-					{
-						"id": "favourite-strip",
-						"widgetId": "case-favourite",
-						"gridX": 0,
-						"gridY": 3,
-						"gridWidth": 6,
-						"gridHeight": 1,
-						"showTitle": false
-					},
-					{
-						"id": "follow-strip",
-						"widgetId": "case-follow",
-						"gridX": 6,
-						"gridY": 3,
-						"gridWidth": 6,
-						"gridHeight": 1,
-						"showTitle": false
-					},
-					{
-						"id": "unread-strip",
-						"widgetId": "case-unread",
-						"gridX": 0,
-						"gridY": 4,
-						"gridWidth": 12,
-						"gridHeight": 1,
-						"showTitle": false
-					},
-					{
-						"id": "status-declaration-strip",
-						"widgetId": "case-status-declaration",
-						"gridX": 0,
-						"gridY": 5,
-						"gridWidth": 12,
-						"gridHeight": 1,
-						"showTitle": false
-					},
-					{
-						"id": "attention-strip",
-						"widgetId": "case-attention",
-						"gridX": 0,
-						"gridY": 6,
-						"gridWidth": 12,
-						"gridHeight": 1,
+						"sizeToContent": true,
 						"showTitle": false
 					},
 					{
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 3,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2650,7 +2600,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 7,
+						"gridY": 3,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2659,7 +2609,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 11,
+						"gridY": 7,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2667,7 +2617,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 16,
+						"gridY": 12,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2676,7 +2626,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 16,
+						"gridY": 12,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true

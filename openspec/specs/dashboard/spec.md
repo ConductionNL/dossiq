@@ -702,6 +702,10 @@ advance a case's status.
 - WHEN the user drags the card to the "In behandeling" column and drops it
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID
 - AND the card MUST move to the "In behandeling" column
+- AND while the card is in the air the board MUST show it moving: a ghost under the pointer and a
+  placeholder in the column it is held over
+- AND a column the case cannot reach MUST refuse the card while it is in the air, faded, and when a
+  guard is what holds the case the column MUST show the guard's reason under its header
 - AND if the update fails (e.g., permission denied), the card MUST return to its original column
 
 #### Scenario DASH-V1-006d: Click on case card navigates to detail
@@ -719,21 +723,45 @@ advance a case's status.
 
 - GIVEN case "2026-0042" is in the "Ontvangen" column and the user is navigating with only a
   keyboard (no mouse/touch)
-- WHEN the user tabs to the case card's "Move to…" control and selects "In behandeling" via
-  Enter/Space
+- WHEN the user focuses the case card and presses `M`, then picks "In behandeling" from the move
+  dialog
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID via the
-  same persistence path as the drag-and-drop scenario (optimistic move, `saveObject('case', …)`,
-  revert-and-toast on failure)
+  same persistence path as the drag-and-drop scenario (optimistic move, the offered transition
+  posted to the status-transition engine, revert-and-toast on failure)
 - AND the card MUST move to the "In behandeling" column
 - AND the card's existing "open case detail" keyboard activation (Enter/Space on the card body)
-  MUST remain unaffected by the new control
+  MUST remain unaffected by the move gesture
+- AND the card MUST announce the `M` gesture in its accessible name, because the gesture has no
+  visible control to discover
 
-#### Scenario DASH-V1-006g: Drag path unchanged (NEW)
+> Superseded the tabbable "Move to…" menu this scenario originally specified. That menu listed
+> every board column, and columns are merged by status NAME across every case type on the
+> instance — two hundred entries on a real register, nearly all of them statuses the case cannot
+> reach. The keyboard path is preserved as the `M` key; the list is now the engine's offer for
+> that one case.
+
+#### Scenario DASH-V1-006h: The move dialog offers only what the case can reach (NEW)
+
+- GIVEN a case whose workflow offers two transitions, one of them held by a failing guard
+- WHEN the user opens the move dialog, by right-clicking the card or pressing `M` on it
+- THEN the dialog MUST list exactly the statuses `/api/case/{id}/available-transitions` offers,
+  never the board's columns
+- AND a transition whose guards failed MUST be listed, unselectable, showing the guard's reason
+- AND a failure to read the offer MUST be reported as a failure, never as an empty list
+
+#### Scenario DASH-V1-006g: Drag path shares the move (NEW)
 
 - GIVEN a mouse/touch user
 - WHEN they drag a card between columns as in Scenario DASH-V1-006c
-- THEN the behaviour MUST be identical to before this change — no regression to the existing drag
-  gesture
+- THEN the drop MUST go through the same transition path as the keyboard move of Scenario
+  DASH-V1-006f: the engine's offer for that case, the same POST, revert-and-toast on refusal
+- AND the card's click (Scenario DASH-V1-006d) and its selection checkbox MUST keep working: a
+  press without movement is a click, and the checkbox is never a drag handle
+
+> Reworded when the drag moved from the browser's HTML5 drag events to Sortable (vue-draggable-plus).
+> The native drag showed a grab cursor and nothing else until the drop; this scenario used to ask
+> for that behaviour to stay identical, which is not what anybody wanted kept. What is kept is the
+> write path.
 
 ### Requirement: REQ-DASH-FIX-001 Application.php Widget Registration [FIX]
 

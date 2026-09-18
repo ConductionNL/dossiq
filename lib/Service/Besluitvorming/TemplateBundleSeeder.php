@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Besluitvorming;
 
 use OCA\Dossiq\Service\Support\JsonEncodedStringProperties;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Writes a decoded besluitvorming bundle into OpenRegister.
@@ -167,11 +168,14 @@ class TemplateBundleSeeder {
 		string $identifier,
 	): ?array {
 		try {
+			// Unscoped: the seed runs with no user to scope the read to.
 			$results = $objectService->findAll(
 				[
 					'filters' => ['register' => $register, 'schema' => $schema, 'identifier' => $identifier],
 					'limit' => 1,
 				],
+				_rbac: false,
+				_multitenancy: false,
 			);
 
 			if (is_array($results) === true && isset($results['results']) === true) {
@@ -184,11 +188,8 @@ class TemplateBundleSeeder {
 
 			return null;
 		} catch (\Throwable $e) {
-			$this->logger->debug(
-				'Dossiq: besluitvorming idempotency lookup failed',
-				['exception' => $e->getMessage()],
-			);
-			return null;
+			// A failed lookup is not an absent case type.
+			throw new RuntimeException('besluitvorming idempotency lookup failed: ' . $e->getMessage(), 0, $e);
 		}//end try
 	}//end findByIdentifier()
 

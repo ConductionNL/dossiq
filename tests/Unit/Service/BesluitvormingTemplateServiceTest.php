@@ -52,11 +52,13 @@ interface BvwTemplateObjectServiceStub {
 	/**
 	 * Find objects.
 	 *
-	 * @param array $params The query params.
+	 * @param array   $params         The query params.
+	 * @param boolean $_rbac          Whether RBAC narrows the read.
+	 * @param boolean $_multitenancy  Whether tenancy narrows the read.
 	 *
 	 * @return array
 	 */
-	public function findAll(array $params = []): array;
+	public function findAll(array $params = [], bool $_rbac = true, bool $_multitenancy = true): array;
 }//end interface
 
 /**
@@ -147,6 +149,51 @@ class BesluitvormingTemplateServiceTest extends TestCase {
 		$result = $this->service->activate('college-besluit');
 		$this->assertTrue($result['skipped']);
 	}//end testActivateIsIdempotent()
+
+	/**
+	 * A failed lookup refuses the seed.
+	 *
+	 * @return void
+	 */
+	public function testAFailedLookupCreatesNothing(): void {
+		$objectService = $this->createMock(originalClassName: BvwTemplateObjectServiceStub::class);
+		$objectService->method('findAll')->willThrowException(exception: new \RuntimeException('store unavailable'));
+		$objectService->expects($this->never())->method('saveObject');
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'reg',
+				default => 'schema-' . $key,
+			},
+		);
+
+		$this->expectException(exception: \RuntimeException::class);
+		$this->service->activate(slug: 'college-besluit');
+	}//end testAFailedLookupCreatesNothing()
+
+
+	/**
+	 * The existence lookup reads the register unscoped by the caller's tenancy.
+	 *
+	 * @return void
+	 */
+	public function testTheLookupIsUnscoped(): void {
+		$objectService = $this->createMock(originalClassName: BvwTemplateObjectServiceStub::class);
+		$objectService->expects($this->once())->method('findAll')
+			->with($this->anything(), false, false)
+			->willReturn(['results' => [['id' => 'existing-uuid', 'identifier' => 'bvw-college-besluit']]]);
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => 'reg',
+				default => 'schema-' . $key,
+			},
+		);
+
+		$result = $this->service->activate(slug: 'college-besluit');
+		$this->assertTrue(condition: $result['skipped']);
+	}//end testTheLookupIsUnscoped()
+
 
 	/**
 	 * A fresh activation seeds the full College-besluit bundle.

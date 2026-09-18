@@ -19,10 +19,14 @@ run with no case to act on.
 
 That is three walls and the star hit all three first
 (`case-number-and-favourites`, `CaseFavouriteStrip.vue`). So this ships the
-same way: a registry widget on the detail grid, sharing the row with the
-star at six columns each. Both go the day the library takes a DELETE verb
-and a two-verb toggle, which is where this belongs for every app in the
-fleet. That is the one platform ask this change leaves behind.
+same way: a registry widget, mounted directly after the star inside
+`CaseBannerStack.vue`, which is the ONE grid row the case page's strips
+share. A row of its own was the first shape and it was wrong for the reason
+that container records — a strip that renders conditionally still reserves
+its row, so the page showed a gap where it was. Both go the day the library
+takes a DELETE verb and a two-verb toggle, which is where this belongs for
+every app in the fleet. That is the one platform ask this change leaves
+behind.
 
 The state is still declared rather than fetched. `@self.watching` rides
 every object read, so the strip paints from what the page already holds and

@@ -247,6 +247,7 @@ class VthSeedLookup {
 				register: $register,
 				schema: $schema,
 				filters: $filters,
+				unscoped: true,
 			);
 		} catch (\Throwable $e) {
 			$this->logger->log(
