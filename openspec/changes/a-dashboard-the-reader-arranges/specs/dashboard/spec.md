@@ -43,18 +43,28 @@ puts it back with nothing on screen to say why.
 
 The Dashboard page SHALL declare `config.userWidgets` carrying the case
 lists a handler would ask for and cannot configure: the cases they follow,
-and their team's cases.
+and their team's shared queue.
 
 A preset SHALL carry its own register, schema and filter. A user has neither
 a register nor a schema in front of them, so a widget type that asks for one
 is a widget they cannot finish, and the failure arrives as a blank card
 rather than a refusal.
 
+The second list is the SHARED QUEUE and not the reader's `assignedGroup`.
+Measured 2026-09-18, nothing can express "assigned to my team": the library's
+`resolveFilterTokens` resolves `@me`, `@now`, `@today`, `@today±Nd`,
+`@monthStart`, `@quarterStart` and `@yearStart` and no group token, the
+manifest schema's `sentinelFilterToken` pattern enumerates exactly those, and
+OpenRegister reserves no group lens. A preset filtering on an unresolved token
+sends the literal string, matches nothing, and arrives as a permanently empty
+card, which is the failure this requirement was written to prevent. The
+group-scoped variant waits on a `@myGroups` token in nextcloud-vue.
+
 #### Scenario: A handler adds a list they did not have to configure
 
 - **GIVEN** a handler on the Dashboard
 - **WHEN** they open the add-widget modal
-- **THEN** they SHALL be offered "Cases you follow" and "Your team's cases"
+- **THEN** they SHALL be offered "Cases you follow" and "Your team's queue"
 - **AND** adding one SHALL render the list without asking for a register or
   a schema
 
