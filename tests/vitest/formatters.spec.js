@@ -48,9 +48,8 @@ const { default: formatters } = await import('../../src/services/formatters.js')
 // in @nextcloud/auth and its dependencies, and a cold transform of that graph
 // took over five seconds when the whole suite ran in parallel, which failed
 // the test on its own timeout while the assertion itself never ran.
-const { BUILT_IN_FORMATTERS } = await import(
-	'@conduction/nextcloud-vue/src/utils/builtInFormatters.js'
-)
+const { BUILT_IN_FORMATTERS } =
+	await import('@conduction/nextcloud-vue/src/utils/builtInFormatters.js')
 
 describe('the caseTitle formatter', () => {
 	beforeEach(() => {
