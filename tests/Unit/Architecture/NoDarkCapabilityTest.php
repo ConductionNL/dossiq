@@ -110,7 +110,6 @@ class NoDarkCapabilityTest extends TestCase {
 		// in a docblock somewhere and constructed nowhere, which is why the
 		// first pass of this sweep reported them as called. They are the
 		// clearest evidence that prose about a class is not a caller.
-		'ContactBetrokkeneMapper' => 'pre-parity (2026-06-24), StUF-ZKN outbound gateway. Named in a docblock and constructed nowhere. Debt sweep.',
 	];
 
 	/**
