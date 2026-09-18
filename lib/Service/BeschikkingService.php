@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
@@ -85,6 +86,7 @@ class BeschikkingService {
 	 * @param BezwaarTermijnScheduler $bezwaarScheduler Awb 6:7 bezwaartermijn scheduling.
 	 * @param CoordinatorRequirement $coordinator The second seat a case type may insist on before signing.
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
+	 * @param CaseRemedy $remedy The remedy this case's decisions carry, and the clock they start.
 	 *
 	 * @return void
 	 */
@@ -100,6 +102,7 @@ class BeschikkingService {
 		private readonly BezwaarTermijnScheduler $bezwaarScheduler,
 		private readonly CoordinatorRequirement $coordinator,
 		private readonly CaseTimeline $timeline,
+		private readonly CaseRemedy $remedy,
 	) {
 	}//end __construct()
 
@@ -146,6 +149,15 @@ class BeschikkingService {
 			'addressee' => (array)($overrides['addressee'] ?? []),
 			'decision' => (array)($overrides['decision'] ?? []),
 			'rationale' => ($overrides['rationale'] ?? null),
+			// 🔴 THE CLAUSE COMES FROM THE CASE TYPE, NOT FROM THE TEMPLATE
+			// (REQ-DEC-03). Two case types sharing one template print
+			// different terms, and a change in the law is one configuration
+			// change rather than forty template edits with a guess about
+			// which were missed. A case type that declares no remedy prints
+			// nothing here and is warned about at publication; a default
+			// clause would put a term nobody chose onto a decision somebody
+			// has to act on.
+			'legalRemediesClause' => $this->remedy->clauseFor(caseId: $caseId),
 		];
 
 		$saved = $this->repository->save(decision: $decision);
@@ -302,10 +314,20 @@ class BeschikkingService {
 			throw new RuntimeException('invalid_transition');
 		}
 
+		// The term the CASE TYPE declares, when it declares one, read BEFORE
+		// the besluit is dispatched: a read that fails after the letter went
+		// out would leave a sent decision with no stored term. Falling back to
+		// the scheduler's six weeks keeps every case type that declares nothing
+		// behaving exactly as it did.
+		$declaredDays = $this->remedy->termDaysFor(caseId: (string)($decision['caseId'] ?? ''));
+
 		$dispatch = $this->berichtenbox->routeToBerichtenbox($decision);
 
 		$bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
-		$term = $this->bezwaarScheduler->computeTermijn(bekendmaking: $bekendmaking);
+		$term = $this->bezwaarScheduler->computeTermijn(
+			bekendmaking: $bekendmaking,
+			termDays: $declaredDays,
+		);
 
 		$decision['dispatch'] = $dispatch;
 		$decision['announcementDate'] = $bekendmaking;
@@ -320,6 +342,16 @@ class BeschikkingService {
 			bekendmaking: $bekendmaking,
 			endDate: $term['endDate'],
 			herinnering: $term['herinnering'],
+		);
+
+		// The clock, beside the trigger. The trigger is the scheduling record
+		// that fires a reminder; the term instance is what the CASE answers
+		// "is this decision still open to bezwaar" from, without anybody doing
+		// arithmetic against a date on a document (REQ-DEC-04).
+		$this->remedy->bindTerm(
+			caseId: (string)($decision['caseId'] ?? ''),
+			decisionId: $decisionId,
+			sentOn: new DateTimeImmutable($bekendmaking),
 		);
 
 		$this->stateMachine->logTransition(

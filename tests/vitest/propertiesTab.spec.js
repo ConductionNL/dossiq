@@ -272,4 +272,72 @@ describe('PropertiesTab', () => {
 		expect(hint.text()).toContain('string')
 		expect(hint.text()).toContain('date')
 	})
+
+	/**
+	 * attribute-catalogue-folders, gap register row 11.23.
+	 *
+	 * @spec openspec/changes/attribute-catalogue-folders/specs/property-definition-management/spec.md
+	 */
+	describe('the picker groups the attributes by category', () => {
+		const catalogue = () => [
+			{ id: 'pd-1', name: 'Postcode', category: 'Address' },
+			{ id: 'pd-2', name: 'Amount', category: 'Finance' },
+			{ id: 'pd-3', name: 'House number', category: 'Address' },
+			{ id: 'pd-4', name: 'Remark' },
+		]
+
+		it('heads each group with its category', async () => {
+			const wrapper = await mountTab(catalogue())
+			const headings = wrapper
+				.findAll('.properties-tab__group')
+				.map((node) => node.text())
+			expect(headings).toEqual(['Address', 'Finance', 'Uncategorised'])
+		})
+
+		it('files an attribute with no category under Uncategorised', async () => {
+			const wrapper = await mountTab(catalogue())
+			const groups = wrapper.vm.groupedPropertyDefs
+			const last = groups[groups.length - 1]
+			expect(last.category).toBe('Uncategorised')
+			expect(last.properties.map((pd) => pd.name)).toEqual(['Remark'])
+		})
+
+		it('folds the stored default into the same group as a missing one', async () => {
+			// The schema default writes the English literal, so a row saved
+			// today and a row authored before this change must not read as two
+			// folders holding the same kind of nothing.
+			const wrapper = await mountTab([
+				{ id: 'pd-1', name: 'Remark' },
+				{ id: 'pd-2', name: 'Note', category: 'Uncategorised' },
+			])
+			expect(wrapper.vm.groupedPropertyDefs).toHaveLength(1)
+			expect(
+				wrapper.vm.groupedPropertyDefs[0].properties.map((pd) => pd.name),
+			).toEqual(['Remark', 'Note'])
+		})
+
+		it('lists every attribute exactly once, in its own group', async () => {
+			const wrapper = await mountTab(catalogue())
+			const groups = wrapper.vm.groupedPropertyDefs
+			expect(groups.map((group) => group.category)).toEqual([
+				'Address',
+				'Finance',
+				'Uncategorised',
+			])
+			expect(groups[0].properties.map((pd) => pd.name)).toEqual([
+				'Postcode',
+				'House number',
+			])
+			expect(groups.flatMap((group) => group.properties)).toHaveLength(4)
+		})
+
+		it('saves the category an author types', async () => {
+			const wrapper = await mountTab([])
+			wrapper.vm.applyNew({ name: 'Postcode', category: 'Address' })
+			saveObject.mockResolvedValue({ id: 'pd-9', name: 'Postcode' })
+			await wrapper.vm.addProperty()
+			const saved = saveObject.mock.calls[0][1]
+			expect(saved.category).toBe('Address')
+		})
+	})
 })

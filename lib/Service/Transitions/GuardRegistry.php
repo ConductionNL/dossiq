@@ -45,6 +45,14 @@ class GuardRegistry {
 	public const STATUS_CHECKLIST = 'statusChecklist';
 
 	/**
+	 * The guard type every transition is checked against for a walked approval.
+	 *
+	 * The case type decides which acts it gates, so a transition that never
+	 * names it is still subject to it: see ApprovalGuard.
+	 */
+	public const APPROVAL_GATE = 'approvalGate';
+
+	/**
 	 * Registered evaluators keyed by guard type.
 	 *
 	 * @var array<string, GuardEvaluatorInterface>
@@ -61,6 +69,8 @@ class GuardRegistry {
 	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
 	 * @param StatusChecklistGuard $statusChecklist Required-items-of-the-current-status evaluator
 	 * @param LoggerInterface $logger Logger for unknown guard types
+	 * @param ApprovalGuard|null $approvalGuard The walked-approval evaluator. Optional, so a
+	 *                                          registry built before it existed builds as it did.
 	 */
 	public function __construct(
 		ChecklistGuard $checklist,
@@ -70,6 +80,7 @@ class GuardRegistry {
 		MandaatGuard $mandateGuard,
 		StatusChecklistGuard $statusChecklist,
 		private readonly LoggerInterface $logger,
+		?ApprovalGuard $approvalGuard = null,
 	) {
 		$this->evaluators = [
 			'checklist' => $checklist,
@@ -81,7 +92,28 @@ class GuardRegistry {
 			// engine appends it to every transition's guard list itself.
 			self::STATUS_CHECKLIST => $statusChecklist,
 		];
+
+		if ($approvalGuard !== null) {
+			$this->evaluators[self::APPROVAL_GATE] = $approvalGuard;
+		}
 	}//end __construct()
+
+	/**
+	 * Whether an evaluator answers for a guard type.
+	 *
+	 * The engine asks before it appends an implicit guard. An implicit guard
+	 * with no evaluator would be answered "Onbekende guard" and refuse every
+	 * transition of every case, which is a broken engine, not a closed gate.
+	 *
+	 * @param string $type Guard type identifier
+	 *
+	 * @return bool True when the type is registered
+	 *
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 */
+	public function knows(string $type): bool {
+		return isset($this->evaluators[$type]);
+	}//end knows()
 
 	/**
 	 * Register an additional evaluator (DI extension point).

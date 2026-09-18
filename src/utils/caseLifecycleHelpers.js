@@ -287,6 +287,18 @@ export function refusalMessage(body, translate) {
 			return t('This case could not be found.')
 		case 'reason_required':
 			return t('Give a reason first.')
+		// The three approval refusals (REQ-DEC-01). The sentence naming the
+		// approval and the people it waits on rides on the blocked act itself,
+		// where there is room for it; these are what a handler sees when they
+		// posted the act anyway and the write path refused it.
+		case 'approval_outstanding':
+			return t('This act waits for an approval that is still open.')
+		case 'approval_rejected':
+			return t('The approval for this act was refused.')
+		case 'approval_unreadable':
+			return t(
+				'We could not reach the approval service, so this act stays closed.',
+			)
 		default:
 			// `message` before `error`: since refusals-carry-a-status, `error`
 			// is a kebab-case rule slug meant for code, and `message` is the
