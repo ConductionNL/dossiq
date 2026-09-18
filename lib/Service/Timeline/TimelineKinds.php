@@ -119,6 +119,13 @@ final class TimelineKinds {
 	public const TERM_EVENT = 'termijngebeurtenis';
 
 	/**
+	 * A signed beschikking that left the counter.
+	 *
+	 * @var string
+	 */
+	public const DECISION_SENT = 'beschikking-verzonden';
+
+	/**
 	 * An act on a data subject request: a preview taken, an erasure run, an export asked for.
 	 *
 	 * One kind rather than three, because a handler reading the case wants the
@@ -234,6 +241,20 @@ final class TimelineKinds {
 				'termijnId' => ['type' => 'string'],
 			],
 			'required' => ['event'],
+			'followUp' => false,
+		],
+		[
+			'slug' => self::DECISION_SENT,
+			'title' => 'Beschikking verzonden',
+			'description' => 'A signed beschikking that left the counter, with the day it went and the way it went.',
+			'properties' => [
+				'channel' => ['type' => 'string'],
+				'sentOn' => ['type' => 'string'],
+				'decisionType' => ['type' => 'string'],
+				'reference' => ['type' => 'string'],
+				'beschikkingId' => ['type' => 'string'],
+			],
+			'required' => ['channel'],
 			'followUp' => false,
 		],
 		[

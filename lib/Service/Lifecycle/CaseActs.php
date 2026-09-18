@@ -73,6 +73,10 @@ class CaseActs {
 	 *                                                  the half builds the facade as it did.
 	 * @param IUserSession|null $userSession Names the caller the always-available acts are
 	 *                                       decided for.
+	 * @param CaseArchiveState|null $archiveState Reads the platform's archive marker, so the
+	 *                                            menu can offer Restore instead of Archive.
+	 *                                            Optional for the same reason
+	 *                                            `alwaysAvailable` is.
 	 * @param ApprovalGate|null $approvals What the case is waiting for, and on whom. Optional
 	 *                                     for the same reason the two above it are.
 	 */
@@ -86,6 +90,7 @@ class CaseActs {
 		private readonly CaseStatusStore $store,
 		private readonly ?AlwaysAvailableActs $alwaysAvailable = null,
 		private readonly ?IUserSession $userSession = null,
+		private readonly ?CaseArchiveState $archiveState = null,
 		private readonly ?ApprovalGate $approvals = null,
 	) {
 	}//end __construct()
@@ -166,8 +171,19 @@ class CaseActs {
 
 		$missing = $this->incompleteness->missingOn(case: $case);
 
+		// The archive marker, read off the case the overview already loaded.
+		// The menu needs it to offer Restore in the place Archive stood: two
+		// entries both enabled would let a handler archive a case that is
+		// already archived, and the platform answers that with a shrug rather
+		// than a refusal, so nothing on screen would say what happened.
+		$marker = ($this->archiveState?->markerOn(case: $case) ?? []);
+
 		return [
 			'caseId' => $caseId,
+			'archived' => ($marker !== []),
+			'archivedAt' => (string)($marker['at'] ?? ''),
+			'archivedBy' => (string)($marker['by'] ?? ''),
+			'archivedReason' => (string)($marker['reason'] ?? ''),
 			'held' => $this->holds->isHeld(case: $case),
 			'heldUntil' => (string)($case[CaseHoldActs::UNTIL_FIELD] ?? ''),
 			'draft' => $this->drafts->isDraft(case: $case),
@@ -257,6 +273,20 @@ class CaseActs {
 	public function archive(string $caseId, string $reason): array {
 		return $this->endings->archive(caseId: $caseId, reason: $reason);
 	}//end archive()
+
+	/**
+	 * Take the case back out of the archive.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $reason Why it is coming back.
+	 *
+	 * @return array<string, mixed> The archive status it carries afterwards.
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	public function unarchive(string $caseId, string $reason): array {
+		return $this->endings->unarchive(caseId: $caseId, reason: $reason);
+	}//end unarchive()
 
 	/**
 	 * Hold the case until a date.

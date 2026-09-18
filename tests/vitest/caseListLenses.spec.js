@@ -143,6 +143,12 @@ const CASE_LENSES = [
 	'Unclaimed',
 	'Handed on',
 	'Closed',
+	// The one lens that ASKS for archived cases (archived-cases-leave-the-lenses
+	// REQ-CM-42). It sits after Closed because a case is closed before it is
+	// filed, and every lens above it is the working set the platform already
+	// excludes the archive from, which is why not one of them spells the
+	// exclusion out.
+	'Archived',
 	// The closed cases that ended without a result (b210638, the search change
 	// that made the no-result closures a lens of their own). It sits after
 	// Closed because it narrows that set.
@@ -177,6 +183,10 @@ const CASES_ONLY = [
 	'Needs attention',
 	'Assessed high risk',
 	'Handed on',
+	// A task is not archived through the case's marker: the Tasks index reads
+	// OpenRegister's task engine through a named entity source, not the `case`
+	// schema, so `_archived` on that list would narrow nothing.
+	'Archived',
 	// A case closes with or without a result; a task completes and has none.
 	'Closed with no result',
 	DRAFTS_LENS,
@@ -226,6 +236,57 @@ describe('Cases index lenses', () => {
 		expect(chip('Cases', 'Unclaimed').filter).toEqual(
 			page('Queue').config.filter,
 		)
+	})
+
+	it('offers exactly one lens that asks for archived cases', () => {
+		// REQ-CM-42. One lens rather than a toggle on every page (D-3), and a
+		// chip rather than a menu entry (ADR-097).
+		const asking = chips('Cases').filter(
+			(entry) => entry.filter && '_archived' in entry.filter,
+		)
+		expect(asking).toHaveLength(1)
+		expect(asking[0].label).toBe('Archived')
+		expect(asking[0].filter).toEqual({ _archived: true })
+	})
+
+	it('is not the default lens, so the archive is never the first paint', () => {
+		expect(chip('Cases', 'Archived').default).toBeUndefined()
+	})
+
+	it('adds no navigation entry for the archive', () => {
+		// REQ-CM-42, ADR-097. The Archived lens is reachable from the Cases
+		// page and nowhere else. A menu entry would make the archive look like
+		// a second place cases live, which is exactly what an archive is not.
+		const archiveEntries = (manifest.menu ?? []).filter((entry) =>
+			JSON.stringify(entry).toLowerCase().includes('archived'),
+		)
+		expect(archiveEntries).toEqual([])
+	})
+
+	it('leaves every working lens free of an archive filter', () => {
+		// 🔴 THE EXCLUSION IS THE PLATFORM'S, NOT THIS PAGE'S. OpenRegister's
+		// object list, aggregation endpoint and search providers all exclude
+		// archived objects unless a query asks for them, so a working lens
+		// that spelled `_archived: false` would be a second copy of a rule
+		// that already holds. Two spellings of one rule is how a list and the
+		// tile beside it come to disagree.
+		const spelled = chips('Cases').filter(
+			(entry) =>
+				entry.label !== 'Archived'
+				&& entry.filter
+				&& '_archived' in entry.filter,
+		)
+		expect(spelled).toEqual([])
+	})
+
+	it('keeps the archive out of the Queue by the same default', () => {
+		// The Queue's base filter carries no archive condition either, and it
+		// does not need one twice over: the platform excludes archived objects
+		// from every list, and a case can only be archived after it has ended,
+		// which `isFinalStatus: false` already keeps out.
+		const queue = page('Queue').config.filter
+		expect('_archived' in queue).toBe(false)
+		expect(queue.isFinalStatus).toBe(false)
 	})
 
 	it('spells the Overdue operator as a flat bracket key', () => {
@@ -344,6 +405,29 @@ describe('Tasks index lenses', () => {
 		// here would be a divergent one, which is what this change removes.
 		expect(page('Tasks').config.columns).toBeUndefined()
 		expect(page('Tasks').config.entitySource).toBe('tasks')
+	})
+
+	/**
+	 * task-search-fields: a lens answers one of six fixed questions, a field
+	 * lets you ask your own. Both reach the server and they compose.
+	 *
+	 * The sidebar only offers a filter for a property marked `facetable`, so
+	 * a sidebar switched on with no declaration is a search box and nothing
+	 * else. That is what this page shipped before, and it looks identical to
+	 * a sidebar whose filters happen to match everything.
+	 *
+	 * Whether each declared field reaches a real inbox argument is asserted
+	 * in `tests/vitest/taskSearchFields.spec.js`, under "every declared field
+	 * maps to an inbox argument".
+	 */
+	it('declares four search fields beside the six lenses', () => {
+		const config = page('Tasks').config
+		expect(config.sidebar.enabled).toBe(true)
+
+		const filters = Object.entries(config.sidebar.fields)
+			.filter(([, prop]) => prop.facetable === true)
+			.map(([key]) => key)
+		expect(filters).toEqual(['objectUuid', 'state', 'priority', 'dueAt'])
 	})
 })
 
