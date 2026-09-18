@@ -1,12 +1,16 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <!--
-	Workflow-board case card — a single draggable Kanban card. Shows the case
-	identifier, truncated title, case-type chip, assignee and a deadline
-	indicator. Emits `dragstart` (with the case id), `click` (open detail),
-	`contextMenu` (caseId, event) on right-click, `requestMove` (caseId) on the
-	M key, and `toggle-select` (caseId) from its selection checkbox, used by the
-	column-scoped bulk-selection UI (case-bulk-status-transition).
+	Workflow-board case card — a single Kanban card. Shows the case identifier,
+	truncated title, case-type chip, assignee and a deadline indicator. Emits
+	`click` (open detail), `contextMenu` (caseId, event) on right-click,
+	`requestMove` (caseId) on the M key, and `toggle-select` (caseId) from its
+	selection checkbox, used by the column-scoped bulk-selection UI
+	(case-bulk-status-transition).
+
+	Dragging is Sortable's, set up by BoardColumn's list: the card only carries
+	its id in `data-case-id` for the column to read off the dragged element,
+	and the three drag classes styled at the bottom of this file.
 
 	THE CARD CARRIES NO MOVE CONTROL OF ITS OWN ANY MORE, and the M key is why
 	it is still keyboard-operable. It used to hold an NcActions listing every
@@ -34,11 +38,10 @@
 			'case-card--selection-mode': selectionMode,
 			'case-card--selected': selected,
 		}"
-		draggable="true"
 		role="button"
 		tabindex="0"
+		:data-case-id="caseItem.id"
 		:aria-label="ariaLabel"
-		@dragstart="onDragStart"
 		@click="$emit('click', caseItem.id)"
 		@contextmenu.prevent="$emit('contextMenu', caseItem.id, $event)"
 		@keydown.enter="$emit('click', caseItem.id)"
@@ -106,7 +109,7 @@ export default {
 		selectionMode: { type: Boolean, default: false },
 	},
 
-	emits: ['click', 'contextMenu', 'dragstart', 'requestMove', 'toggle-select'],
+	emits: ['click', 'contextMenu', 'requestMove', 'toggle-select'],
 	computed: {
 		/**
 		 * What the card announces, including how to move it.
@@ -180,23 +183,6 @@ export default {
 				: ''
 		},
 	},
-
-	methods: {
-		/**
-		 * Stash the dragged case id on the dataTransfer payload and notify the
-		 * parent board so it can track the in-flight card.
-		 *
-		 * @param {DragEvent} event The native dragstart event
-		 * @return {void}
-		 */
-		onDragStart(event) {
-			if (event.dataTransfer) {
-				event.dataTransfer.effectAllowed = 'move'
-				event.dataTransfer.setData('text/plain', String(this.caseItem.id))
-			}
-			this.$emit('dragstart', this.caseItem.id)
-		},
-	},
 }
 </script>
 
@@ -210,6 +196,8 @@ export default {
 	padding: 10px 12px;
 	margin-bottom: 8px;
 	cursor: grab;
+	/* A button, and Sortable's pointer drag would otherwise select its text. */
+	user-select: none;
 	transition:
 		box-shadow 0.15s ease,
 		background 0.15s ease;
@@ -319,10 +307,35 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
+/* Sortable's three drag classes, named in BoardColumn's list options. */
+.case-card--chosen {
+	cursor: grabbing;
+}
+
+/* The placeholder left where the card would land. */
+.case-card--ghost {
+	opacity: 0.35;
+	border-style: dashed;
+	background: var(--color-background-hover);
+	box-shadow: none;
+}
+
+/* The clone under the pointer. */
+.case-card--dragging {
+	opacity: 0.95;
+	transform: rotate(1.5deg) scale(1.02);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+	cursor: grabbing;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.case-card,
 	.case-card__select {
 		transition: none;
+	}
+
+	.case-card--dragging {
+		transform: none;
 	}
 }
 </style>

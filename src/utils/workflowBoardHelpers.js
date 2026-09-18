@@ -8,6 +8,7 @@
  */
 
 import {
+	findTransitionToStatus,
 	transitionBlockReason,
 	transitionIsBlocked,
 } from './caseLifecycleHelpers.js'
@@ -77,4 +78,53 @@ export function moveTargetsFromTransitions(transitions, statusById) {
 	}
 
 	return targets
+}
+
+/**
+ * Whether the card in the air may land in a column, decided while it is still
+ * in the air.
+ *
+ * A column the case cannot reach refuses the ghost, so the card is never
+ * taken and handed back with a toast. `allowed` is null while the engine's
+ * offer is still on its way: every column accepts, and the drop path checks
+ * again after the fact, exactly as it did before the drag could ask.
+ *
+ * @param {object} drag The drag in progress.
+ * @param {string} drag.fromColumn The column the card came from.
+ * @param {string} drag.toColumn The column it is held over.
+ * @param {string} drag.caseType The case's case type id.
+ * @param {Array<object>|null} drag.offered The `/available-transitions` answer, or null while pending.
+ * @param {Object<string, string>} drag.statusIdByTypeAndName `${caseType}::${statusName}` → status id.
+ * @return {{allowed: boolean|null, blocked: boolean, reason: string}} The verdict.
+ * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+ */
+export function dropVerdict({
+	fromColumn,
+	toColumn,
+	caseType,
+	offered,
+	statusIdByTypeAndName,
+}) {
+	if (String(fromColumn) === String(toColumn)) {
+		return { allowed: true, blocked: false, reason: '' }
+	}
+	const targetStatusId = (statusIdByTypeAndName || {})[`${caseType}::${toColumn}`]
+	if (!targetStatusId) {
+		return { allowed: false, blocked: false, reason: '' }
+	}
+	if (!Array.isArray(offered)) {
+		return { allowed: null, blocked: false, reason: '' }
+	}
+	const transition = findTransitionToStatus(offered, targetStatusId)
+	if (transition === null) {
+		return { allowed: false, blocked: false, reason: '' }
+	}
+	if (transitionIsBlocked(transition)) {
+		return {
+			allowed: false,
+			blocked: true,
+			reason: transitionBlockReason(transition),
+		}
+	}
+	return { allowed: true, blocked: false, reason: '' }
 }

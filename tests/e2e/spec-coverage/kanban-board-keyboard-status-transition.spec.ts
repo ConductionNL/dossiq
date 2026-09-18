@@ -75,13 +75,19 @@
  *    no-op reddens the same assertion one step later. Dropping
  *    `@keydown.enter` from the card root instead should redden `Enter on the
  *    card body must still open the case detail`.
- *  - Drag (006g): in the same file, `onDragStart` writes the id under
- *    `text/plain`; write it under any other type and `BoardColumn.onDrop`
- *    reads nothing. Expected red: `dropping the card on "In behandeling" must
- *    write the "In behandeling" statusType id to the stored case`. That exact
- *    assertion was seen red on 2026-09-11 when the drop did not fire (the
- *    `dragTo()` attempt this file replaced), which shows it binds to an
- *    unpersisted move; it is not a substitute for the mutation.
+ *  - Drag (006g): in `src/views/workflow-board/BoardColumn.vue`, drop the
+ *    `@add="onAdd"` binding on the list; Sortable then moves the card between
+ *    the lists and nobody posts the transition. Expected red: `dropping the
+ *    card on "In behandeling" must write the "In behandeling" statusType id
+ *    to the stored case`. Dropping `@move="onMove"` instead should leave the
+ *    move green, since the offer is only what refuses a column early.
+ *
+ * THE DRAG TEST IS REWRITTEN FOR SORTABLE AND NOT YET RUN. The card's drag is
+ * Sortable's (vue-draggable-plus, fallback mode) since the board stopped using
+ * the browser's HTML5 drag: it listens to pointer events, so the DataTransfer
+ * dispatch this test used to make reaches nothing. The pointer drag below is
+ * verified by reading only; it needs the Playwright browsers and the seeded
+ * fixtures.
  */
 
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
@@ -348,27 +354,26 @@ test.describe('Workflow Board keyboard status transition', () => {
 	}) => {
 		const card = await openBoardAndFindSeededCard(page, DRAG_TITLE)
 
-		// The drag the scenario says must not regress, through the same
-		// handlers a mouse user fires: the card's `dragstart` stashes its id on
-		// the DataTransfer, the target column's `drop` reads it back and asks
-		// the board to move the case. `draggable="true"` alone was what this
-		// used to assert, and a card with a broken dragstart or a column with a
-		// broken drop handler carries that attribute too.
-		//
-		// Dispatched rather than `dragTo()`. The board scrolls horizontally, one
-		// column per non-final status on the instance, and a synthesised mouse
-		// drag across that scroller dropped nothing when measured on 2026-09-11
-		// while the keyboard move beside it went through. One DataTransfer is
-		// shared across the events, as the browser shares it during a
-		// real drag, so the id `dragstart` wrote is the id `drop` reads. No
-		// `dragend` follows: by then the card has left the column `card` is
-		// scoped to, and the board does nothing on it.
-		await expect(card).toHaveAttribute('draggable', 'true')
+		// A pointer drag in steps, which is what a person does: press, move
+		// past Sortable's fallback tolerance so the drag starts and the ghost
+		// appears, cross to the target column, let go. Sortable finds the
+		// column under the pointer with elementFromPoint, so the target has to
+		// be on screen first: the board scrolls horizontally, one column per
+		// non-final status on the instance.
 		const target = column(page, IN_PROGRESS)
-		const dataTransfer = await page.evaluateHandle(() => new DataTransfer())
-		await card.dispatchEvent('dragstart', { dataTransfer })
-		await target.dispatchEvent('dragover', { dataTransfer })
-		await target.dispatchEvent('drop', { dataTransfer })
+		await target.scrollIntoViewIfNeeded()
+		const from = await card.boundingBox()
+		const to = await target.boundingBox()
+		if (!from || !to) {
+			throw new Error('the card or the target column is not on screen')
+		}
+		const grabX = from.x + from.width / 2
+		const grabY = from.y + from.height / 2
+		await page.mouse.move(grabX, grabY)
+		await page.mouse.down()
+		await page.mouse.move(grabX + 12, grabY + 12, { steps: 4 })
+		await page.mouse.move(to.x + to.width / 2, to.y + 80, { steps: 12 })
+		await page.mouse.up()
 
 		await expectStoredStatus(
 			dragCaseId,

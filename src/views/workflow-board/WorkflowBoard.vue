@@ -30,7 +30,9 @@
 	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
 -->
 <template>
-	<div class="workflow-board">
+	<div
+		class="workflow-board"
+		:class="{ 'workflow-board--dragging': drag !== null }">
 		<div class="workflow-board__header">
 			<div>
 				<h2>{{ t('dossiq', 'Workflow Board') }}</h2>
@@ -71,6 +73,14 @@
 									t(
 										'dossiq',
 										'Both open a dialog offering only the statuses that case can reach.',
+									)
+								}}
+							</li>
+							<li>
+								{{
+									t(
+										'dossiq',
+										'While you drag, the statuses this case cannot reach fade out.',
 									)
 								}}
 							</li>
@@ -128,6 +138,7 @@
 			</div>
 
 			<div
+				v-drag-to-scroll
 				class="workflow-board__columns"
 				tabindex="0"
 				role="region"
@@ -141,11 +152,15 @@
 					:loading="false"
 					:selectedCaseIds="selection.caseIds.map((id) => String(id))"
 					:selectionColumnId="selection.columnId"
-					@drop="onDrop"
+					:dropState="dropStateFor(col.id)"
+					:canDrop="canDropInto"
+					@update:cases="(list) => (casesByStatus[col.id] = list)"
+					@cardDropped="onCardDropped"
 					@clickCase="goToCase"
 					@contextMenu="onCardContextMenu"
 					@requestMove="openMoveDialog"
 					@dragstart="onDragStart"
+					@dragend="onDragEnd"
 					@toggleSelect="onToggleSelect" />
 			</div>
 		</template>
@@ -200,12 +215,17 @@ import {
 	transitionBlockReason,
 	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
+import { dragToScroll } from '../../utils/dragToScroll.js'
 import { mergeColumnColour } from '../../utils/statusColour.js'
 import { failedActionsWarning } from '../../utils/transitionOutcome.js'
-import { moveTargetsFromTransitions } from '../../utils/workflowBoardHelpers.js'
+import {
+	dropVerdict,
+	moveTargetsFromTransitions,
+} from '../../utils/workflowBoardHelpers.js'
 
 export default {
 	name: 'WorkflowBoard',
+	directives: { dragToScroll },
 	components: {
 		BoardColumn,
 		BulkTransitionDialog,
@@ -247,6 +267,11 @@ export default {
 			statusIdByTypeAndName: {},
 			/** Id of the case currently being dragged. */
 			draggedCaseId: null,
+			/**
+			 * The card in the air: `{ caseId, caseType, fromColumn, offered }`.
+			 * `offered` is the engine's answer once it lands, null until then.
+			 */
+			drag: null,
 			/**
 			 * Column-scoped bulk-selection state: `{ columnId, caseIds }`.
 			 * Selecting a case in a different column resets the selection
@@ -550,13 +575,155 @@ export default {
 		},
 
 		/**
-		 * Track the in-flight card id.
+		 * A card left its column: remember which, and ask the engine what it
+		 * may reach, so a column it cannot reach can refuse it while it is in
+		 * the air. Until the answer lands every column accepts and the drop
+		 * path decides after the fact, as it did before the drag could ask.
 		 *
 		 * @param {string} caseId The dragged case id
+		 * @return {Promise<void>}
+		 */
+		async onDragStart(caseId) {
+			this.draggedCaseId = caseId
+			const caseObj = this.cardById(caseId)
+			this.drag = {
+				caseId: String(caseId),
+				caseType: caseObj?.caseType ?? '',
+				fromColumn: this.columnOf(caseId),
+				offered: null,
+			}
+			try {
+				const offered = await this.offeredTransitions(caseId)
+				// A later drag may have started while this answer travelled.
+				if (
+					this.drag?.caseId === String(caseId)
+					&& this.drag.offered === null
+				) {
+					this.drag.offered = offered
+				}
+			} catch {
+				// Unknown stays unknown: the drop path reports a failed read.
+			}
+		},
+
+		/**
+		 * The card was let go, wherever it landed.
+		 *
 		 * @return {void}
 		 */
-		onDragStart(caseId) {
-			this.draggedCaseId = caseId
+		onDragEnd() {
+			this.drag = null
+			this.draggedCaseId = null
+		},
+
+		/**
+		 * Sortable asks, on every hover, whether the card may enter a column.
+		 *
+		 * @param {string} toColumn The hovered column's name
+		 * @return {boolean} False refuses the hover
+		 */
+		canDropInto(toColumn) {
+			if (!this.drag) {
+				return true
+			}
+			return this.verdictFor(toColumn).allowed !== false
+		},
+
+		/**
+		 * What a column shows about the card in the air. Null for the column
+		 * it came from, and when nothing is being dragged.
+		 *
+		 * @param {string} columnId The column's name
+		 * @return {object|null} A `dropVerdict`, or null
+		 */
+		dropStateFor(columnId) {
+			if (!this.drag || String(columnId) === String(this.drag.fromColumn)) {
+				return null
+			}
+			return this.verdictFor(columnId)
+		},
+
+		/**
+		 * @param {string} toColumn The column's name
+		 * @return {{allowed: boolean|null, blocked: boolean, reason: string}} The verdict
+		 */
+		verdictFor(toColumn) {
+			return dropVerdict({
+				fromColumn: this.drag.fromColumn,
+				toColumn,
+				caseType: this.drag.caseType,
+				offered: this.drag.offered,
+				statusIdByTypeAndName: this.statusIdByTypeAndName,
+			})
+		},
+
+		/**
+		 * The column a card currently sits in.
+		 *
+		 * @param {string} caseId The case id
+		 * @return {string|null} The column name, or null when the board does not hold it
+		 */
+		columnOf(caseId) {
+			for (const [colName, list] of Object.entries(this.casesByStatus)) {
+				if (list.some((c) => String(c.id) === String(caseId))) {
+					return colName
+				}
+			}
+			return null
+		},
+
+		/**
+		 * A card was dropped in another column. Sortable's wrapper has already
+		 * moved it between the two lists, so this is the optimistic half of
+		 * `onDrop` done for us; what is left is making the move real.
+		 *
+		 * @param {object} drop The drop
+		 * @param {string} drop.caseId The dropped case id
+		 * @param {string} drop.fromColumn The column it came from
+		 * @param {string} drop.toColumn The column it landed in
+		 * @return {Promise<void>}
+		 */
+		async onCardDropped({ caseId, fromColumn, toColumn }) {
+			// Read the offer before `end` clears the drag; the list updates land
+			// target first, source second, so wait for both before reading them.
+			const offered = this.drag?.offered ?? null
+			await this.$nextTick()
+
+			const caseObj = this.cardById(caseId)
+			if (!caseObj || !fromColumn || String(fromColumn) === String(toColumn)) {
+				return
+			}
+
+			const targetStatusId =
+				this.statusIdByTypeAndName[`${caseObj.caseType}::${toColumn}`]
+			if (!targetStatusId) {
+				this.refuseMove(caseId, caseObj, fromColumn, toColumn)
+				showError(
+					this.t(
+						'dossiq',
+						"That status is not part of this case's workflow.",
+					),
+				)
+				return
+			}
+
+			// The card sits in its new column with its old status; give it the
+			// one a successful move writes, as `onDrop`'s optimistic card has.
+			this.casesByStatus[toColumn] = (this.casesByStatus[toColumn] || []).map(
+				(c) =>
+					String(c.id) === String(caseId)
+						? { ...c, status: targetStatusId }
+						: c,
+			)
+
+			await this.moveCase(
+				caseId,
+				caseObj,
+				fromColumn,
+				toColumn,
+				targetStatusId,
+				offered,
+			)
 		},
 
 		/**
@@ -637,8 +804,39 @@ export default {
 				movedCase,
 			]
 
+			await this.moveCase(
+				caseId,
+				caseObj,
+				fromColumn,
+				newColumn,
+				targetStatusId,
+			)
+		},
+
+		/**
+		 * Make a move the board has already drawn real: ask the engine for the
+		 * transition ending on the dropped column and post it, or put the card
+		 * back and say why. One write path for the drag and the dialog.
+		 *
+		 * @param {string} caseId The case id
+		 * @param {object} caseObj The card as it stood before the move
+		 * @param {string} fromColumn The column it came from
+		 * @param {string} newColumn The column it was drawn in
+		 * @param {string} targetStatusId The status id that column means in the case's own workflow
+		 * @param {Array<object>|null} offeredAlready The offer read at drag start, or null to read it now
+		 * @return {Promise<void>}
+		 */
+		async moveCase(
+			caseId,
+			caseObj,
+			fromColumn,
+			newColumn,
+			targetStatusId,
+			offeredAlready = null,
+		) {
 			try {
-				const offered = await this.offeredTransitions(caseId)
+				const offered =
+					offeredAlready ?? (await this.offeredTransitions(caseId))
 				const transition = findTransitionToStatus(offered, targetStatusId)
 
 				// Nothing on offer ends here. Either the workflow has no such
@@ -918,11 +1116,23 @@ export default {
 
 <style scoped>
 .workflow-board {
+	/* The page is the board: fill NcAppContent (height 100% of the body) and
+	   hand every row under the header to the columns. */
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	box-sizing: border-box;
 	padding: 16px;
+}
+
+/* The pointer crosses headers and counts on its way; none of it is a selection. */
+.workflow-board--dragging {
+	user-select: none;
 }
 
 .workflow-board__header {
 	display: flex;
+	flex: 0 0 auto;
 	justify-content: space-between;
 	align-items: flex-start;
 	margin-bottom: 16px;
@@ -956,14 +1166,26 @@ export default {
 
 .workflow-board__columns {
 	display: flex;
+	flex: 1;
+	/* Without this a flex item refuses to shrink below its content, and the
+	   columns would grow the page instead of scrolling inside it. */
+	min-height: 0;
 	gap: 12px;
 	overflow-x: auto;
-	align-items: flex-start;
+	align-items: stretch;
 	padding-bottom: 8px;
+	/* Empty space can be grabbed to pan the row (v-drag-to-scroll). */
+	cursor: grab;
+}
+
+.workflow-board__columns.is-panning {
+	cursor: grabbing;
+	user-select: none;
 }
 
 .workflow-board__bulk-bar {
 	display: flex;
+	flex: 0 0 auto;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;

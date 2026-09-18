@@ -16,7 +16,10 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { moveTargetsFromTransitions } from '../../src/utils/workflowBoardHelpers.js'
+import {
+	dropVerdict,
+	moveTargetsFromTransitions,
+} from '../../src/utils/workflowBoardHelpers.js'
 
 const statusById = {
 	's-1': { name: 'Ontvangen' },
@@ -146,5 +149,88 @@ describe('moveTargetsFromTransitions', () => {
 		expect(
 			moveTargetsFromTransitions([null, 'x', offer('s-2')], statusById),
 		).toHaveLength(1)
+	})
+})
+
+describe('dropVerdict', () => {
+	const MAP = {
+		'ct-1::Ontvangen': 'st-received',
+		'ct-1::In behandeling': 'st-progress',
+	}
+	const OFFERED = {
+		id: 't1',
+		toStatus: 'st-progress',
+		guardsPassed: true,
+		failedGuards: [],
+	}
+	/**
+	 * @param {object} overrides The drag fields to change.
+	 * @return {object} The verdict.
+	 */
+	function verdict(overrides = {}) {
+		return dropVerdict({
+			fromColumn: 'Ontvangen',
+			toColumn: 'In behandeling',
+			caseType: 'ct-1',
+			offered: [OFFERED],
+			statusIdByTypeAndName: MAP,
+			...overrides,
+		})
+	}
+
+	it('always lets the card come home', () => {
+		expect(verdict({ toColumn: 'Ontvangen', offered: null })).toEqual({
+			allowed: true,
+			blocked: false,
+			reason: '',
+		})
+	})
+
+	it("refuses a column the case's own workflow has no status for", () => {
+		// Known without the engine: the map is built when the board loads.
+		expect(verdict({ toColumn: 'Besluitvorming', offered: null })).toEqual({
+			allowed: false,
+			blocked: false,
+			reason: '',
+		})
+	})
+
+	it('is undecided while the offer is still on its way', () => {
+		expect(verdict({ offered: null }).allowed).toBeNull()
+	})
+
+	it('refuses a column the engine does not offer', () => {
+		expect(verdict({ offered: [] })).toEqual({
+			allowed: false,
+			blocked: false,
+			reason: '',
+		})
+	})
+
+	it("refuses a guarded column with the guard's own words", () => {
+		expect(
+			verdict({
+				offered: [
+					{
+						...OFFERED,
+						guardsPassed: false,
+						failedGuards: [
+							{
+								type: 'requiredDocument',
+								failureMessage: 'Upload the decision first.',
+							},
+						],
+					},
+				],
+			}),
+		).toEqual({
+			allowed: false,
+			blocked: true,
+			reason: 'Upload the decision first.',
+		})
+	})
+
+	it('allows an offered, unguarded column', () => {
+		expect(verdict()).toEqual({ allowed: true, blocked: false, reason: '' })
 	})
 })
