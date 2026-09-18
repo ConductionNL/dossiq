@@ -75,10 +75,18 @@ it is. This change is about the channels that are not mail.
 
 ## Impact
 
-- **PHP**: `lib/Listener/IntakeMessageRoutedListener.php`, the registration
-  in `lib/AppInfo/Registrar/CrossAppListenerRegistrar.php`, and a service
-  that reuses the intake conventions rather than restating them.
-- **Schemas**: none.
-- **Frontend**: none. A case opened this way is a case.
+- **PHP**: `lib/Listener/IntakeMessageRoutedListener.php`,
+  `lib/Service/Intake/ChannelIntake.php`, two methods on
+  `lib/Service/Email/IntakeLog.php`, and the registration in
+  `lib/AppInfo/Registrar/CrossAppListenerRegistrar.php`.
+- **Schemas**: two properties on `mailIntakeEntry`, `channel` and
+  `channelMessageId`, in a `register.d` fragment per ADR-037. The proposal
+  first said none, and that was written before the intake log turned out to
+  be both the surface a refusal has to reach and the ledger the duplicate
+  check reads. The schema keeps its mail name: the surface, its role gate and
+  its three acts already exist, and a second intake log under a better name
+  would be two places a handler has to look.
+- **Frontend**: none. A case opened this way is a case, and the log page
+  renders an entry it is given.
 - **Backwards compatible**: an instance without integriq registers nothing,
   and an instance with integriq and no routing rules sees no change.

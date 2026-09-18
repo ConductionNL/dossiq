@@ -238,6 +238,131 @@ class IntakeLog {
 	}//end record()
 
 	/**
+	 * Record a message that arrived on a channel rather than in the mailbox.
+	 *
+	 * 🔴 THIS IS THE SURFACE, AND IT IS ALSO THE DUPLICATE CHECK. integriq's
+	 * channel adapters hand a message over as `IntakeMessageRoutedEvent`, and
+	 * whatever dossiq decides has to be readable by the intake worker who
+	 * already reads this page. Writing only to `nextcloud.log` would put the
+	 * answer where the person who has to give it cannot reach, which is the
+	 * failure this log was built to end. {@see ChannelIntake} then reads its
+	 * own entries back to recognise a second delivery.
+	 *
+	 * 🔴 NO TIMELINE ENTRY, DELIBERATELY. {@see self::recordOnTimeline()}
+	 * writes `TimelineKinds::MAIL_IN`, and a Teams message is not an incoming
+	 * e-mail. The kinds are DECLARED with their required properties and
+	 * provisioned once, so a channel kind is a declaration and a migration
+	 * rather than a constant, and it is a change of its own. Until it lands
+	 * the case carries `intakeChannel` and the message lives here.
+	 *
+	 * The mail-shaped columns stay empty on purpose: an entry with no
+	 * `mailMessageId` and a `channel` is how a reader tells the two kinds of
+	 * entry apart without a second schema.
+	 *
+	 * @param string $channel          The channel id, as integriq's adapter names it.
+	 * @param string $channelMessageId The channel's own id for the message.
+	 * @param string $sender           The correspondent, as the channel gave it.
+	 * @param string $subject          A one-line description of the message.
+	 * @param string $outcome          What became of it, one of the OUTCOME_ values.
+	 * @param string $reason           Why, in a sentence a handler can read.
+	 * @param string $caseId           The case it became, or ''.
+	 *
+	 * @return string The entry id, or '' when nothing was stored.
+	 *
+	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 */
+	public function recordChannelMessage(
+		string $channel,
+		string $channelMessageId,
+		string $sender,
+		string $subject,
+		string $outcome,
+		string $reason,
+		string $caseId = '',
+	): string {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue(self::SCHEMA_KEY);
+		if ($objectService === null || $register === '' || $schema === '') {
+			$this->logger->warning(
+				'Dossiq: the intake log is not provisioned, so a channel message was not recorded',
+				['channel' => $channel, 'message' => $channelMessageId, 'outcome' => $outcome]
+			);
+			return '';
+		}
+
+		$payload = [
+			'channel' => mb_substr($channel, 0, 255),
+			'channelMessageId' => mb_substr($channelMessageId, 0, 255),
+			'sender' => mb_substr($sender, 0, 255),
+			'subject' => mb_substr($subject, 0, 255),
+			'receivedAt' => $this->time->getDateTime()->format(DATE_ATOM),
+			'outcome' => $outcome,
+			'reason' => $reason,
+			'case' => $caseId,
+		];
+
+		try {
+			$stored = $this->saveObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				object: $payload
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: writing a channel intake log entry failed',
+				['channel' => $channel, 'message' => $channelMessageId, 'error' => $e->getMessage()]
+			);
+			return '';
+		}
+
+		if ($stored === null) {
+			return '';
+		}
+
+		return (string)($stored['@self']['id'] ?? ($stored['id'] ?? ''));
+	}//end recordChannelMessage()
+
+	/**
+	 * The entry this channel already holds for this message, when there is one.
+	 *
+	 * 🔴 BARE KEYS, NOT `filter[channel]`. OpenRegister's objects endpoint
+	 * reads a bare property name and answers the EMPTY SET for a `filter[...]`
+	 * one, with no error either way (openregister#3611). An empty set here
+	 * reads as "this message is new", so the wrong spelling would open a
+	 * second case on every duplicate and report success both times.
+	 *
+	 * @param string $channel          The channel id.
+	 * @param string $channelMessageId The channel's own id for the message.
+	 *
+	 * @return array<string, mixed>|null The entry, or null when this message is new.
+	 *
+	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 */
+	public function findChannelEntry(string $channel, string $channelMessageId): ?array {
+		if (trim($channel) === '' || trim($channelMessageId) === '') {
+			return null;
+		}
+
+		$rows = $this->search(
+			filters: [
+				'channel' => $channel,
+				'channelMessageId' => $channelMessageId,
+				'_limit' => 1,
+			]
+		);
+
+		foreach ($rows as $row) {
+			if (is_array($row) === true) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end findChannelEntry()
+
+	/**
 	 * Put a message that reached a case on that case's timeline.
 	 *
 	 * Only a message that BECAME a case gets a line. A message the filters

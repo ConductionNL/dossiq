@@ -95,5 +95,24 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\FormSubmittedListener::class
 			);
 		}
+
+		// an-intake-message-opens-a-case: integriq receives on a channel,
+		// matches a routing rule and asks whoever owns the target to open one.
+		// Nothing answered, so every form submission, messaging message and
+		// public space report it routed was held with "No app opened a case
+		// for this message". An FQN string for the reason the delivery seam
+		// above uses one: integriq is optional, and a cross-app event class
+		// name is a runtime lookup this app can only follow.
+		//
+		// It fails towards doing nothing. A wrong name makes `class_exists`
+		// answer false, nothing registers, and integriq holds its messages
+		// exactly as it does today, which for a path whose only act is
+		// CREATING work is the right direction to fail in.
+		if (class_exists(\OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT,
+				\OCA\Dossiq\Listener\IntakeMessageRoutedListener::class
+			);
+		}
 	}//end register()
 }//end class

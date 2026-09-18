@@ -92,6 +92,35 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	}//end testTheDeliverySeamIsRegisteredWhereIntegriqIsPresent()
 
 	/**
+	 * The integriq channel intake is answered when integriq is installed.
+	 *
+	 * integriq dispatches this and reads the result slot back. Registered by
+	 * nobody, every channel message it routes is held with "No app opened a
+	 * case for this message", which is what this seam ends.
+	 *
+	 * @return void
+	 */
+	public function testTheChannelIntakeSeamIsRegisteredWhereIntegriqIsPresent(): void {
+		$event = \OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT;
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		if (class_exists($event) === false) {
+			$this->assertArrayNotHasKey(
+				key: $event,
+				array: $registered,
+				message: 'without integriq the registrar must register nothing, not fail',
+			);
+			return;
+		}
+
+		$this->assertContains(
+			needle: \OCA\Dossiq\Listener\IntakeMessageRoutedListener::class,
+			haystack: ($registered[$event] ?? []),
+			message: 'without this every channel message integriq routes at a case is held unanswered',
+		);
+	}//end testTheChannelIntakeSeamIsRegisteredWhereIntegriqIsPresent()
+
+	/**
 	 * The composite still delegates to the cross-app registrar.
 	 *
 	 * This is the assertion that catches the move itself, and it reads the
@@ -147,6 +176,8 @@ class CrossAppListenerRegistrarTest extends TestCase {
 			['OCA\Dossiq\Flow\DossiqFlowNodeListener'],
 			['OCA\\\\Integriq\\\\Event\\\\DeliveryConcludedEvent'],
 			['OCA\Dossiq\Listener\DeliveryConcludedListener'],
+			['OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT'],
+			['OCA\Dossiq\Listener\IntakeMessageRoutedListener::class'],
 		];
 	}//end crossAppSpellings()
 
