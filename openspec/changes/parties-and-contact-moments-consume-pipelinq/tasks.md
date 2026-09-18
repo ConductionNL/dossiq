@@ -73,3 +73,43 @@ Part of `competitor-parity-2026-09`: it closes the dossiq side of ledger rows
 - [ ] 9.2 `tests/e2e/parties-and-contact-moments-consume-pipelinq.spec.ts`, with
   a reason-bearing exclusion on every scenario it does not cover, per gate 19.
 - [ ] 9.3 `openspec validate --strict` exits 0.
+
+## Rescue verdict, 2026-09-18: NOT LANDED, and why
+
+`feat/parties-and-contact-moments-consume-pipelinq` had no pull request of any
+state. Its one merge conflict WAS resolvable and is resolved on
+`build-orseams/pipelinq-rescue`:
+
+- the branch added `CaseTimeline` and `ContactMomentBridge` to
+  `ContactMomentService`'s constructor. While it sat unopened, parity moved the
+  timeline write to `ContactMomentTimelineListener` — parity's own comment in
+  that file says so — and deleted `recordOnTimeline()`. Keeping the branch's
+  side would have written every contact moment onto the timeline twice and
+  called a method that no longer exists. The timeline half is dropped; the
+  bridge is kept, and made nullable-last so the seven tests parity already had
+  keep constructing the service with four arguments.
+
+**What stops it is not the merge. It is six of dossiq's own guards**, every one
+of them naming something this branch ships without wiring:
+
+1. `NoDarkCapabilityTest` — `CorrespondenceLanguageConsumer`, `PartyKindConsumer`,
+   `PartyRefusalReader` and `ProgrammeConsumer` are shipped and nothing calls them.
+2. `PipelinqGatewayTest` — `Repair/SeedContributedCaseTypes.php` names pipelinq
+   outside the gateway that is supposed to be the only place that does.
+3. `LeafIntegrationDeclarationsTest::testTheNewLeavesAreDeclared` — the `talk`
+   leaf is not declared.
+4. `LeafIntegrationDeclarationsTest::testEveryLinkedTypeResolves`.
+5. `SchemaVersionFloorTest` — `register.d/68-pipelinq-leaves.json::case` ships
+   with no recorded digest, so nothing gates it (`php tools/schema-version-digests.php`).
+6. `PartialSaveGuardTest` — a save hands OpenRegister a partial object with a
+   uuid, which REPLACES the stored object. That one is a data-loss bug, not
+   bookkeeping.
+
+None of these is a conflict to resolve or a red to inherit: each is the repo
+saying the branch's own work is not finished. Six repairs, one of them a
+correctness fix on a write path, is the rest of this change rather than a
+rescue, and doing it here would be authoring somebody else's half while
+claiming to land it.
+
+The merge and both resolutions are pushed on `build-orseams/pipelinq-rescue` so
+none of the work is lost and nobody has to redo the conflict.
