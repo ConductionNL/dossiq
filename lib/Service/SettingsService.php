@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
+use OCA\Dossiq\Service\Settings\RegisterStorageDeclaration;
 use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
 use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
 use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
@@ -117,6 +118,13 @@ class SettingsService {
 	private RegisterFragmentMerger $fragments;
 
 	/**
+	 * Declares magic-table storage for every schema of the register.
+	 *
+	 * @var RegisterStorageDeclaration
+	 */
+	private RegisterStorageDeclaration $storage;
+
+	/**
 	 * Reconciles `*_schema` appconfig keys against live OpenRegister schema ids.
 	 *
 	 * @var SchemaKeyReconciler
@@ -174,6 +182,7 @@ class SettingsService {
 		private LoggerInterface $logger,
 	) {
 		$this->fragments = new RegisterFragmentMerger();
+		$this->storage   = new RegisterStorageDeclaration();
 
 		// One resolver, shared by both reconcilers. They must agree on which
 		// schema a slug means: when they disagreed, the config keys pointed at
@@ -505,6 +514,9 @@ class SettingsService {
 			base: $configData,
 			fragmentDir: __DIR__ . '/../Settings/register.d'
 		);
+		// Every schema of the register is stored in a magic table; the
+		// register has to say so, or OpenRegister cannot name its objects.
+		$configData = $this->storage->declare(config: $configData);
 
 		return ['data' => $configData];
 	}//end readEffectiveConfiguration()
