@@ -93,6 +93,7 @@ import { toggleCaseFavourite } from './utils/caseFavourite.js'
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
 import { openCaseOfDocument } from './utils/contactDocuments.js'
+import { readFileAsMessage } from './utils/savedMail.js'
 import { readLocationFilters } from './utils/selectionScope.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
@@ -351,6 +352,14 @@ export default {
 	// own id, which would navigate to a case page for a uuid no case has, and
 	// that looks exactly like a deleted case rather than like a bug.
 	openCaseOfDocument,
+	// The case Files tab's `read-as-message` row action
+	// (inbound-messages-consume-integriq). A FUNCTION handler because
+	// CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and
+	// has no `api-call`, so a declared POST would render a menu item that does
+	// nothing when clicked; and because the browser has NO per-row condition,
+	// so the check that this row is a mail file at all lives in the handler
+	// and answers with a sentence rather than by being absent.
+	readFileAsMessage,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// Features & roadmap. Wraps the lib's CnFeaturesAndRoadmapPage (which has
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds

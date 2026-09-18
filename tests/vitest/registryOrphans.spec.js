@@ -170,13 +170,6 @@ describe('registry modals reach a surface', () => {
  * What is left is listed below, with what would remove it from the list.
  */
 const KNOWN_UNIMPORTED = {
-	'src/dialogs/BerichtenboxComposeDialog.vue':
-		'ROUTE, NOT YET. Its transport is MockAdapter, which simulates a delivery '
-		+ 'without making one. Registering it today gives a handler a button that '
-		+ 'hands a citizen letter to nothing, which is worse than no button. '
-		+ 'openspec/changes/digital-post-consumes-integriq tasks 3.1 and 3.2 '
-		+ 'register it and add the CaseDetail header action, after the integriq '
-		+ 'seam in digital-post-reaches-integriq lands.',
 	'src/dialogs/CaseTransitionConfirmDialog.vue':
 		'RETIRE, and the cost is why it is still here. A case transition is '
 		+ 'already served by two surfaces a person reaches on CaseDetail: the '

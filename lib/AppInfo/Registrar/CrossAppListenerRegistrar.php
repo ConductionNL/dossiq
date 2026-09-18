@@ -131,5 +131,28 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::class
 			);
 		}
+
+		// inbound-messages-consume-integriq: integriq offers every received
+		// message to whichever app owns cases, with a result slot the listener
+		// answers linked, created or declined. Nothing listened for it, so
+		// every offer went unanswered and landed in integriq's `unassigned`.
+		// That is correct behaviour on integriq's part, and the app that had
+		// gone quiet was this one. FQN string and a `class_exists` guard, the
+		// same as the four above and for the same reason.
+		//
+		// It fails towards doing nothing: a wrong name registers nothing and
+		// integriq holds its messages exactly as it does today, which for a
+		// path whose act is CREATING work is the right direction to fail in.
+		//
+		// It is a DIFFERENT event from IntakeMessageRoutedEvent above, and the
+		// two listeners are not duplicates. That one answers a routing rule
+		// that already decided a message belongs to a case schema; this one is
+		// offered a message and its detected reference and has to decide.
+		if (class_exists(\OCA\Dossiq\Listener\MessageReceivedListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\MessageReceivedListener::EVENT,
+				\OCA\Dossiq\Listener\MessageReceivedListener::class
+			);
+		}
 	}//end register()
 }//end class

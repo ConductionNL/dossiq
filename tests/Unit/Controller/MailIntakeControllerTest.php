@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use DateTime;
 use OCA\Dossiq\Controller\MailIntakeController;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\BounceAction;
 use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
 use OCA\Dossiq\Service\Email\InboundMailIntake;
@@ -92,12 +93,28 @@ final class MailIntakeControllerTest extends TestCase {
 	private array $amended = [];
 
 	/**
+	 * Whether this caller may read the case they picked.
+	 *
+	 * @var CaseAccessGuard&MockObject
+	 */
+	private CaseAccessGuard $caseAccessGuard;
+
+	/**
 	 * Build collaborators for a caller who holds the intake role.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
 		$this->amended = [];
+
+		// The per-case guard the `file-on-case` act needs
+		// (inbound-messages-consume-integriq). Permissive by default so the
+		// four older acts, which never ask it anything, keep passing unchanged.
+		$this->caseAccessGuard = $this->getMockBuilder(CaseAccessGuard::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['hasCaseReadAccess'])
+			->getMock();
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
 		$this->log = $this->createMock(IntakeLog::class);
 		$this->log->method('search')->willReturn([['sender' => 'aanvrager@voorbeeld.nl']]);
@@ -151,6 +168,7 @@ final class MailIntakeControllerTest extends TestCase {
 			$this->intake,
 			$session,
 			$time,
+			$this->caseAccessGuard,
 		);
 	}//end controller()
 
@@ -198,6 +216,11 @@ final class MailIntakeControllerTest extends TestCase {
 			'junk' => $controller->junk(entryId: 'entry-1', junk: false),
 			'bounce' => $controller->bounce(entryId: 'entry-1', address: 'info@elders.nl'),
 			'move' => $controller->move(entryId: 'entry-1', target: 'Archief'),
+			'fileOnCase' => $controller->fileOnCase(
+				entryId: 'entry-1',
+				caseId: 'case-114',
+				reason: 'Hoort hier.'
+			),
 		];
 
 		foreach ($responses as $name => $response) {
@@ -321,4 +344,92 @@ final class MailIntakeControllerTest extends TestCase {
 		self::assertSame(IntakeLog::OUTCOME_QUARANTINED, $this->amended['outcome']);
 		self::assertStringContainsString('intaker', (string)$this->amended['junkRule'], 'The rule names the hand.');
 	}//end testMarkingAMessageJunkHoldsItAndNamesTheHand()
+	/**
+	 * A caller without the intake role cannot file a message on a case.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseRefusesACallerWithoutTheIntakeRole(): void {
+		// A FRESH mock, not a second stub on the permissive one from setUp:
+		// PHPUnit keeps the first `willReturn` for a method, so re-stubbing it
+		// here would have left the caller allowed and the assertion would have
+		// been about a 404 from a log that answers nothing.
+		$this->policy = $this->createMock(IntakePolicy::class);
+		$this->policy->method('mayRunIntake')->willReturn(false);
+		$this->intake->expects($this->never())->method('fileOnCase');
+
+		$response = $this->controller()->fileOnCase('entry-1', 'case-114', 'Verkeerd gematcht.');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testFileOnCaseRefusesACallerWithoutTheIntakeRole()
+
+	/**
+	 * A case this caller may not read is refused, and named.
+	 *
+	 * THE SECOND GUARD, and the one the intake role does not give. Without it
+	 * anyone holding the intake role could file a message onto any case id
+	 * they cared to guess, and the case would then show a citizen's message to
+	 * a handler who may not read it.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseRefusesACaseTheCallerMayNotRead(): void {
+		$guard = $this->getMockBuilder(CaseAccessGuard::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['hasCaseReadAccess'])
+			->getMock();
+		$guard->method('hasCaseReadAccess')->willReturn(false);
+		$this->caseAccessGuard = $guard;
+
+		$this->intake->expects($this->never())->method('fileOnCase');
+
+		$response = $this->controller()->fileOnCase('entry-1', 'case-200', 'Hoort hier.');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame('case-200', $response->getData()['case']);
+	}//end testFileOnCaseRefusesACaseTheCallerMayNotRead()
+
+	/**
+	 * A reason is required, because this act overrides the matcher.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseRequiresAReason(): void {
+		$this->intake->expects($this->never())->method('fileOnCase');
+
+		$response = $this->controller()->fileOnCase('entry-1', 'case-114', '   ');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('reason_required', $response->getData()['message']);
+	}//end testFileOnCaseRequiresAReason()
+
+	/**
+	 * A handler with both guards satisfied moves the message, and the entry
+	 * names who did it, why, and where it was before.
+	 *
+	 * Without this arm a controller that refused everything would satisfy the
+	 * three above.
+	 *
+	 * @return void
+	 */
+	public function testFileOnCaseMovesTheMessageAndRecordsTheOverride(): void {
+		$this->log->method('find')->willReturn(
+			$this->entry(['case' => 'case-090', 'outcome' => IntakeLog::OUTCOME_CASE])
+		);
+		$this->intake->expects($this->once())
+			->method('fileOnCase')
+			->willReturn('case-114');
+
+		$response = $this->controller()->fileOnCase('entry-1', 'case-114', 'Hoort bij de dakkapel.');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('case-114', $response->getData()['case']);
+		// WHERE IT WAS BEFORE is recorded too: a correction nobody can trace
+		// back is a correction nobody can review.
+		$this->assertSame('case-090', $response->getData()['previousCase']);
+		$this->assertSame('case-114', $this->amended['case']);
+		$this->assertSame('case-090', $this->amended['previousCase']);
+		$this->assertSame('Hoort bij de dakkapel.', $this->amended['reason']);
+		$this->assertSame('intaker', $this->amended['filedBy']);
+	}//end testFileOnCaseMovesTheMessageAndRecordsTheOverride()
 }//end class

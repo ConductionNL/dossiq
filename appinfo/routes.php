@@ -778,6 +778,13 @@ $extra = [
     ['name' => 'mailIntake#junk',    'url' => '/api/mail-intake/log/{entryId}/junk',     'verb' => 'POST'],
     ['name' => 'mailIntake#bounce',  'url' => '/api/mail-intake/log/{entryId}/bounce',   'verb' => 'POST'],
     ['name' => 'mailIntake#move',    'url' => '/api/mail-intake/log/{entryId}/move',     'verb' => 'POST'],
+        // inbound-messages-consume-integriq: the fifth act on a log entry.
+        // The other four release, junk, bounce and move a message; none of
+        // them let a handler who KNOWS which case a message belongs on say so,
+        // and `release` files it on the case the matcher already chose. Behind
+        // the same intake role, plus a per-case read guard on the case the
+        // handler picked.
+    ['name' => 'mailIntake#fileOnCase', 'url' => '/api/mail-intake/log/{entryId}/file-on-case', 'verb' => 'POST'],
 
     // Intake-triage-and-refusal: what a case type asks for before a case of it
     // exists, and the three acts an intake worker performs. `requirements` is
@@ -1110,6 +1117,11 @@ $extra = [
     // scan-verdict-on-the-row: what files_antivirus recorded for one file, for
     // the Scan column and the document properties dialog. dossiq scans nothing.
     ['name' => 'scanVerdict#show',                 'url' => '/api/files/{fileId}/scan',                        'verb' => 'GET'],
+        // inbound-messages-consume-integriq: reading a saved `.eml` or `.msg`
+        // on a case as the message it is. dossiq parses nothing: the bytes go
+        // to integriq's MessageParser and the parsed message is filed on the
+        // case beside the original, which is never moved or deleted.
+    ['name' => 'savedMail#read',                   'url' => '/api/cases/{caseId}/files/{fileId}/read-as-message', 'verb' => 'POST'],
     // people-on-the-case: who can be asked for a file, and the asking.
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
