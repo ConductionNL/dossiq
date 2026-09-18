@@ -38,9 +38,44 @@
 					{{
 						t(
 							'dossiq',
-							'Drag a case between statuses to advance its workflow. Right-click a card, or press M with it focused, to pick from the statuses it can reach.',
+							'Drag a case between statuses to advance its workflow.',
 						)
 					}}
+					<!-- The two gestures without a visible control, behind one
+						short affordance rather than a second sentence. -->
+					<NcPopover popupRole="dialog">
+						<template #trigger>
+							<NcButton
+								variant="tertiary"
+								class="workflow-board__help-trigger"
+								data-testid="workflow-board-help">
+								<template #icon>
+									<HelpCircleOutline :size="16" />
+								</template>
+								{{ t('dossiq', 'Other ways to move a case') }}
+							</NcButton>
+						</template>
+						<ul
+							class="workflow-board__help"
+							data-testid="workflow-board-help-list">
+							<li>
+								{{
+									t('dossiq', 'Right-click a card and pick Move….')
+								}}
+							</li>
+							<li>
+								{{ t('dossiq', 'Or focus a card and press M.') }}
+							</li>
+							<li>
+								{{
+									t(
+										'dossiq',
+										'Both open a dialog offering only the statuses that case can reach.',
+									)
+								}}
+							</li>
+						</ul>
+					</NcPopover>
 				</p>
 			</div>
 			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
@@ -145,8 +180,9 @@ import { CnContextMenu, useContextMenu } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showError, showWarning } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcPopover } from '@nextcloud/vue'
 import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
+import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
 import BoardColumn from './BoardColumn.vue'
 import MoveCaseDialog from './MoveCaseDialog.vue'
@@ -171,12 +207,14 @@ import { moveTargetsFromTransitions } from '../../utils/workflowBoardHelpers.js'
 export default {
 	name: 'WorkflowBoard',
 	components: {
-		CnContextMenu,
-		NcButton,
-		NcLoadingIcon,
 		BoardColumn,
 		BulkTransitionDialog,
+		CnContextMenu,
+		HelpCircleOutline,
 		MoveCaseDialog,
+		NcButton,
+		NcLoadingIcon,
+		NcPopover,
 	},
 
 	setup() {
@@ -896,9 +934,24 @@ export default {
 }
 
 .workflow-board__subtitle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0 8px;
 	margin: 4px 0 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
+}
+
+.workflow-board__help {
+	margin: 0;
+	padding: 8px 12px 8px 28px;
+	max-width: 320px;
+	list-style: disc;
+}
+
+.workflow-board__help li + li {
+	margin-top: 4px;
 }
 
 .workflow-board__columns {

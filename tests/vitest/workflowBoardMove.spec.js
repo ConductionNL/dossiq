@@ -48,6 +48,17 @@ vi.mock('@nextcloud/dialogs', () => ({ showError, showWarning }))
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: { name: 'NcButton', render: () => h('button') },
 	NcLoadingIcon: { name: 'NcLoadingIcon', render: () => h('span') },
+	// The help affordance beside the subtitle. Renders its trigger and its
+	// body inline, so the gestures it names are in the page text.
+	NcPopover: {
+		name: 'NcPopover',
+		render() {
+			return h('div', [
+				this.$slots.trigger ? this.$slots.trigger() : null,
+				this.$slots.default ? this.$slots.default() : null,
+			])
+		},
+	},
 	NcCheckboxRadioSwitch: {
 		name: 'NcCheckboxRadioSwitch',
 		render: () => h('input'),

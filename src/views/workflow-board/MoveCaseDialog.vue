@@ -42,6 +42,7 @@
 			<NcSelect
 				v-else
 				v-model="picked"
+				class="move-case-dialog__select"
 				data-testid="move-case-select"
 				:options="targets"
 				:selectable="(target) => !target.disabled"
@@ -149,8 +150,15 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
+/* vue-select keeps an option on one line; a guard's sentence has to wrap. */
 .move-case-dialog__reason {
 	display: block;
+	white-space: normal;
 	color: var(--color-text-maxcontrast);
+}
+
+/* The library's select stops at its min-width; fill the dialog instead. */
+.move-case-dialog__select {
+	width: 100%;
 }
 </style>

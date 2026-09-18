@@ -55,6 +55,17 @@ vi.mock('@nextcloud/vue', () => ({
 		},
 	},
 	NcLoadingIcon: { name: 'NcLoadingIcon', render: () => h('span') },
+	// The help affordance beside the subtitle. Renders its trigger and its
+	// body inline, so the gestures it names are in the page text.
+	NcPopover: {
+		name: 'NcPopover',
+		render() {
+			return h('div', [
+				this.$slots.trigger ? this.$slots.trigger() : null,
+				this.$slots.default ? this.$slots.default() : null,
+			])
+		},
+	},
 	NcCheckboxRadioSwitch: {
 		name: 'NcCheckboxRadioSwitch',
 		render: () => h('input'),
@@ -299,9 +310,7 @@ describe('what the dialog offers', () => {
 		await flushPromises()
 
 		expect(wrapper.vm.moveTargetsError).toContain('Network Error')
-		expect(wrapper.find('[data-testid="move-case-select"]').exists()).toBe(
-			false,
-		)
+		expect(wrapper.find('[data-testid="move-case-select"]').exists()).toBe(false)
 	})
 
 	it('says when a case has nowhere to go', async () => {
