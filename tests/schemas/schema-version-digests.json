@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.29.0",
-        "digest": "683e2852d33207c0d3da73d98165b8aaa84ecb1f2fba969e21a240cf699cd413"
+        "version": "1.30.0",
+        "digest": "f199b156a7daf367b37050961a9d4fe537b7b4ecb4a3ccb98d18e486ddb1a36f"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",

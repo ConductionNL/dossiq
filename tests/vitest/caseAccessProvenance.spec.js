@@ -63,9 +63,17 @@ const guardSource = fs.readFileSync(
 const caseSchema = register.components.schemas.case
 
 describe('the case declares which edge a grant travels down', () => {
-	it('names parentCase as the hierarchy edge', () => {
+	it('names parentCase as the hierarchy edge, in both spellings', () => {
 		const hierarchy = caseSchema.configuration['x-openregister-hierarchy']
 		expect(hierarchy).toBeDefined()
+		// `parent` is openregister's canonical key (openregister#3873) and
+		// wins where both are present. `parentField` is the spelling dossiq
+		// shipped first and STAYS beside it: an instance still running a
+		// pre-#3873 openregister reads only that one, and dropping it would
+		// take the edge away from exactly the instances that have no
+		// inheritance to fall back on — and take it away silently, because an
+		// unknown configuration key is discarded without a word.
+		expect(hierarchy.parent).toBe('parentCase')
 		expect(hierarchy.parentField).toBe('parentCase')
 	})
 
