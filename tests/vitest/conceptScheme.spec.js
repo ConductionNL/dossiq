@@ -53,13 +53,32 @@ describe('the binding is declared on the definition', () => {
 		expect(propertyDefinition.version).toBe('1.4.0')
 	})
 
-	it('is not forwarded to the case form, because nobody published the key', () => {
-		const pending = PENDING_PLATFORM_KEYS.conceptScheme
-		expect(pending.key).toBe('x-openregister-concept-scheme')
-		expect(pending.owner).toBe('openregister')
-		expect(pending.reason.length).toBeGreaterThan(20)
-		expect(Object.values(map)).not.toContain('conceptScheme')
-		expect(VOCABULARY_SNAPSHOT.keys).not.toContain(pending.key)
+	/**
+	 * 🔑 THIS TEST USED TO ASSERT THE OPPOSITE, AND THAT IS THE POINT OF IT.
+	 * It read "is not forwarded to the case form, because nobody published the
+	 * key", and it was the reminder `PENDING_PLATFORM_KEYS` exists to leave:
+	 * fail the moment the platform publishes, so the binding stops being stored
+	 * and ignored. openregister#3883 published it on 2026-09-18 and this is the
+	 * other side of that reminder.
+	 *
+	 * The published spelling is BARE. This file waited for
+	 * `x-openregister-concept-scheme`, and the platform publishes
+	 * `conceptScheme`, because an `x-` key is skipped by OpenRegister's own key
+	 * check rather than validated: the prefixed spelling would have been a key
+	 * in the vocabulary that the vocabulary's enforcer refuses to look at.
+	 */
+	it('is forwarded to the case form, now that the platform publishes it', () => {
+		expect(PENDING_PLATFORM_KEYS.conceptScheme).toBeUndefined()
+		expect(VOCABULARY_SNAPSHOT.keys).toContain('conceptScheme')
+		expect(map.conceptScheme).toBe('conceptScheme')
+	})
+
+	it('still waits on the keys that are still pending', () => {
+		// The mechanism has to keep working for the entry that is left, or the
+		// next published key goes unnoticed.
+		expect(PENDING_PLATFORM_KEYS.propertySource.key).toBe('x-openregister-property-source')
+		expect(VOCABULARY_SNAPSHOT.keys).not.toContain('x-openregister-property-source')
+		expect(Object.values(map)).not.toContain('propertySource')
 	})
 })
 
