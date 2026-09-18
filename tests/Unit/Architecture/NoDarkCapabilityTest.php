@@ -114,7 +114,6 @@ class NoDarkCapabilityTest extends TestCase {
 		// first pass of this sweep reported them as called. They are the
 		// clearest evidence that prose about a class is not a caller.
 		'ContactBetrokkeneMapper' => 'pre-parity (2026-06-24), StUF-ZKN outbound gateway. Named in a docblock and constructed nowhere. Debt sweep.',
-		'PdokBagService' => 'pre-parity (2026-05-19), PDOK. NOT a duplicate of BagApiAdapter, and the earlier note here saying so was wrong: `BagAdapterInterface` and `BagRegistrar` both say the two are DELIBERATELY distinct, the adapter being the paid Kadaster Bevragingen v2 and this the free BAG WFS mirror. Wiring it means a third `BagAdapterInterface` implementation and an `integration.bag.mode` value for it, so an instance with no Kadaster key gets real lookups instead of the dormant log. Not a retirement.',
 	];
 
 	/**
