@@ -1799,10 +1799,11 @@
 						"title": "Flow runs",
 						"icon": "Sitemap",
 						"_note": "case-flow-human-steps 6.1, the case half: this case's own flow run and the step it sits on, with its finished runs underneath (nextcloud-vue CnFlowRunsWidget in subject mode). `subject: '@objectId'` binds the current case, so OpenRegister filters the active and completed reads to it server-side. `rowRoute` and not `runRoute` on purpose: dossiq has no run detail page, and FlowDetail (/flows/:id) resolves a FLOW id, so a click opens the flow. Pointing runRoute at FlowDetail would push a run uuid into a flow route and open nothing. The row click also carries the clicked run as `?run=`, so FlowDetail opens with that run inspected and the canvas showing the graph version the run actually executed, rather than the flow's current graph with no run selected. Nothing here declares that: the widget adds the query, and CnPageRenderer forwards `run` to a flow page because that page type declares it reads it.",
+						"_pollNote": "⚠️ `pollSeconds: 0` AND NOT THE KEY DELETED, which is the difference between removing a poll and appearing to. CnFlowRunsWidget's `pollMs()` reads `content.pollSeconds` and falls back to 15 when it is undefined or null, so deleting the line leaves the page polling every fifteen seconds while the manifest says nothing about it. `0` is the widget's own documented opt-out and the only spelling that actually stops the timer. WHAT THAT COSTS, stated rather than discovered: a flow run is NOT an OpenRegister object (the engine keeps its runs in its own table behind /apps/openregister/api/flow-runs), so notify_push emits nothing for one and the case's live subscription cannot cover this list. A run advancing usually writes the CASE as well, and that the subscription does catch, so the header and the panels follow it; the runs list itself now refreshes when the widget mounts. Making it live is openregister emitting for a run plus nextcloud-vue refetching on the hint, and a fifteen-second timer on one page was never that.",
 						"content": {
 							"subject": "@objectId",
 							"limit": 5,
-							"pollSeconds": 15,
+							"pollSeconds": 0,
 							"rowRoute": "FlowDetail",
 							"emptyText": "No flow is running for this case"
 						}

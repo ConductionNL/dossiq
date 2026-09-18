@@ -30,9 +30,11 @@ import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
+import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
 import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { useObjectStore } from './store/modules/object.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { currentPermissions } from './utils/permissions.js'
 import { routerBase } from './utils/routerBase.js'
@@ -226,6 +228,14 @@ const router = createRouter({
 // `utils/manifestRoutes.js#permissionGuard` for what it enforces, why it
 // redirects rather than errors, and what it deliberately does NOT close.
 router.beforeEach(permissionGuard)
+
+// The case page subscribes to the case it is showing (gap register row 2.20).
+// It is wired here rather than in a component because `#CaseDetail` is rendered
+// by the library's CnPageRenderer and has no dossiq component in its tree; the
+// route is also the only thing whose lifetime actually matches "this case is on
+// screen". See src/services/caseLiveUpdates.js for what an event does, and for
+// the one thing it deliberately does not cover.
+installCaseLiveUpdates(router, () => useObjectStore())
 
 tryLoadTranslations()
 
