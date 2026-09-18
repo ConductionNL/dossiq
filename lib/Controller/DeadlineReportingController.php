@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -53,6 +54,7 @@ class DeadlineReportingController extends Controller {
 	 * @param DeadlineReportingService $service Reporting service.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
+	 * @param ReportingAudience $audience Who may read a figure about every case.
 	 */
 	public function __construct(
 		string $appName,
@@ -60,23 +62,43 @@ class DeadlineReportingController extends Controller {
 		private readonly DeadlineReportingService $service,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ReportingAudience $audience,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
-	 * Per-object authorization guard.
+	 * Refuse a caller who may not read a figure about every case.
 	 *
-	 * @return JSONResponse|null
+	 * 🔴 THIS USED TO ASK ONLY WHETHER THERE WAS A SESSION, AND THE DOCBLOCK
+	 * CALLED IT A "per-object authorization guard" WHEN THERE IS NO OBJECT.
+	 * Measured 2026-09-18 by deriving the reporting endpoints from
+	 * `appinfo/routes.php` rather than from anyone's list: all three methods
+	 * below carried `@NoAdminRequired` and no group check, so
+	 * `GET /api/termijn/reports/jaarrekening` -- the ANNUAL DWANGSOM STATEMENT,
+	 * what the organisation paid out for missing its own deadlines -- answered
+	 * every authenticated account on the instance.
+	 *
+	 * These three answer AGGREGATES over cases the caller was never granted, so
+	 * OpenRegister's per-object refusal never gets a chance to speak. That is
+	 * what separates them from an ordinary endpoint and what earns them a gate.
+	 *
+	 * @return JSONResponse|null The refusal, or null to proceed.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
 	 */
-	private function ensureAuthenticated(): ?JSONResponse {
+	private function ensureMayReadReports(): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
 		}
 
+		if ($this->audience->mayRead(user: $user) === false) {
+			return new JSONResponse(['message' => ReportingAudience::REFUSAL], Http::STATUS_FORBIDDEN);
+		}
+
 		return null;
-	}//end ensureAuthenticated()
+	}//end ensureMayReadReports()
 
 	/**
 	 * Dashboard KPI snapshot.
@@ -88,7 +110,7 @@ class DeadlineReportingController extends Controller {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function dashboard(): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->ensureMayReadReports();
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -115,7 +137,7 @@ class DeadlineReportingController extends Controller {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function quarterlyReport(string $period = '', ?string $department = null): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->ensureMayReadReports();
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -148,7 +170,7 @@ class DeadlineReportingController extends Controller {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
 	 */
 	public function annualStatement(int $year = 0): JSONResponse {
-		$denied = $this->ensureAuthenticated();
+		$denied = $this->ensureMayReadReports();
 		if ($denied !== null) {
 			return $denied;
 		}

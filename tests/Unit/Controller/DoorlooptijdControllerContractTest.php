@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\DoorlooptijdService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
+use OCA\Dossiq\Service\Reporting\ReportingAudience;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -69,6 +70,13 @@ class DoorlooptijdControllerContractTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * Who may read a figure about every case.
+	 *
+	 * @var ReportingAudience
+	 */
+	private ReportingAudience $audience;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var DoorlooptijdController
@@ -86,11 +94,16 @@ class DoorlooptijdControllerContractTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->leadTimeService = $this->createMock(DoorlooptijdService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+		$this->audience = $this->createMock(ReportingAudience::class);
+		$this->audience->method('mayRead')->willReturn(true);
 
 		$this->controller = new DoorlooptijdController(
 			request: $this->request,
 			leadTimeService: $this->leadTimeService,
 			userSession: $this->userSession,
+			// A double that SAYS YES keeps this file measuring the metrics
+			// contract rather than the gate; the gate has its own test.
+			audience: $this->audience,
 		);
 	}//end setUp()
 
