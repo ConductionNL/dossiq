@@ -115,7 +115,7 @@
             "type": "string",
             "title": "Motivation",
             "description": "Reasoning underpinning the decision",
-            "x-translatable": false
+            "translatable": false
           },
           "legalRemediesClause": {
             "type": "string",

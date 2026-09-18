@@ -5,6 +5,22 @@
     {
       "slug": "omgevingsvergunning-bouwactiviteit",
       "title": "Omgevingsvergunning Bouwactiviteit",
+      "x-index": {
+        "columns": [
+          "identifier",
+          "title",
+          "status",
+          "procedureType",
+          "besluitdatum",
+          "deadline"
+        ],
+        "defaultSort": [
+          {
+            "key": "deadline",
+            "order": "asc"
+          }
+        ]
+      },
       "description": "Omgevingsvergunning voor bouwactiviteiten onder de Omgevingswet. Reguliere procedure (8 weken) of uitgebreide procedure (26 weken).",
       "processingDeadline": "P56D",
       "suspensionAllowed": true,
@@ -78,6 +94,22 @@
     {
       "slug": "toezichtzaak-bouw",
       "title": "Toezichtzaak Bouw",
+      "x-index": {
+        "columns": [
+          "identifier",
+          "title",
+          "status",
+          "riskLevel",
+          "assignee",
+          "deadline"
+        ],
+        "defaultSort": [
+          {
+            "key": "deadline",
+            "order": "asc"
+          }
+        ]
+      },
       "description": "Toezichtzaak voor bouwactiviteiten met meerdere inspectiefases (fundering, ruwbouw, oplevering).",
       "confidentiality": "intern",
       "origin": "ambtshalve",
@@ -133,6 +165,22 @@
     {
       "slug": "handhavingszaak",
       "title": "Handhavingszaak",
+      "x-index": {
+        "columns": [
+          "identifier",
+          "title",
+          "status",
+          "riskLevel",
+          "besluitdatum",
+          "deadline"
+        ],
+        "defaultSort": [
+          {
+            "key": "besluitdatum",
+            "order": "desc"
+          }
+        ]
+      },
       "description": "Handhavingszaak met LHS-classificatie (Landelijke Handhavingsstrategie). Omvat vooraankondiging, zienswijze, handhavingsbesluit, begunstigingstermijn en hercontrole.",
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",

@@ -158,7 +158,7 @@ class StatusTypeLookup {
 	 * WHY A ROLE AND NOT A NAME. A shipped flow cannot carry a statusType uuid,
 	 * so it named the status instead — and a name is not an identifier either:
 	 *
-	 * - `statusType.name` is declared `x-translatable`, so the same status is
+	 * - `statusType.name` is declared `translatable`, so the same status is
 	 *   "In behandeling" on one instance and "In progress" on another. A flow
 	 *   matching a literal is broken by translation alone.
 	 * - Every case type spells its working phase differently and all of them are

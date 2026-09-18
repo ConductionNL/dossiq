@@ -25,6 +25,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\NotesController;
+use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\External\Zgw\NotePush;
 use OCA\Dossiq\Service\MentionNotificationService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -61,6 +63,16 @@ class NotesControllerTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
+	 * @var NotePush|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private NotePush $notePush;
+
+	/**
+	 * @var CaseAccessGuard|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseAccessGuard $caseAccessGuard;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var NotesController
@@ -78,11 +90,26 @@ class NotesControllerTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		// The two collaborators the note PUSH needs
+		// (a-case-note-reaches-the-neighbouring-register). Doubled here rather
+		// than left out: the constructor takes them, and the mention arms in
+		// this file must keep passing without knowing anything about the push.
+		$this->notePush = $this->getMockBuilder(NotePush::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['push'])
+			->getMock();
+		$this->caseAccessGuard = $this->getMockBuilder(CaseAccessGuard::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['hasCaseMutationAccess'])
+			->getMock();
+
 		$this->controller = new NotesController(
 			request: $this->request,
 			mentionSvc: $this->service,
 			userSession: $this->userSession,
 			logger: $this->logger,
+			notePush: $this->notePush,
+			caseAccessGuard: $this->caseAccessGuard,
 		);
 	}//end setUp()
 
@@ -206,4 +233,50 @@ class NotesControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 		$this->assertArrayHasKey('error', $response->getData());
 	}//end testMentionServiceExceptionMapsTo500()
+	/**
+	 * A caller with no mutation access to the case cannot send its notes.
+	 *
+	 * Sending a note to another organisation is externally visible and not
+	 * undoable, so the guard is mutation access rather than read, and it runs
+	 * before the note is even looked at.
+	 *
+	 * @return void
+	 */
+	public function testACallerWithoutMutationAccessCannotPushANote(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser('outsider', 'Outsider'));
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(false);
+		$this->notePush->expects($this->never())->method('push');
+
+		$response = $this->controller->push('someone-elses-case');
+
+		$this->assertSame(403, $response->getStatus());
+	}//end testACallerWithoutMutationAccessCannotPushANote()
+
+	/**
+	 * A caller who may change the case gets the push outcome back verbatim.
+	 *
+	 * Without this arm a controller that refused everything would satisfy the
+	 * arm above.
+	 *
+	 * @return void
+	 */
+	public function testACallerWithMutationAccessGetsTheOutcome(): void {
+		$this->userSession->method('getUser')->willReturn($this->mockUser('handler', 'Handler'));
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->request->method('getParams')->willReturn(
+			['note' => ['id' => 1, 'message' => 'Kort', 'visibility' => 'public']]
+		);
+		$this->notePush->method('push')->willReturn(
+			['outcome' => 'failed', 'reason' => 'the register said no', 'receiverUrl' => '']
+		);
+
+		$response = $this->controller->push('my-own-case');
+
+		// 200 for a FAILED push, on purpose: the caller asked what happened and
+		// every answer here is a real answer. A 500 for a refused push would be
+		// this app reporting its own failure rather than the note's.
+		$this->assertSame(200, $response->getStatus());
+		$this->assertSame('failed', $response->getData()['outcome']);
+		$this->assertSame('the register said no', $response->getData()['reason']);
+	}//end testACallerWithMutationAccessGetsTheOutcome()
 }//end class

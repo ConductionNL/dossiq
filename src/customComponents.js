@@ -92,6 +92,7 @@ import { toggleCaseFavourite } from './utils/caseFavourite.js'
 // Mark a case read or unread from a list row (unread-state-on-the-case).
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
+import { openCaseOfDocument } from './utils/contactDocuments.js'
 import { readLocationFilters } from './utils/selectionScope.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
@@ -344,6 +345,12 @@ export default {
 	// The Integrations page's Add integration header action. A FUNCTION
 	// handler because it leaves the app for integriq's Connections overview.
 	openIntegriqConnections,
+	// The contact and organisation Documents panels' `open-case` row action
+	// (the-contact-360-shows-documents). A FUNCTION handler because the row is
+	// a `dispatch` and the destination is its CASE: `rowRoute` pushes the row's
+	// own id, which would navigate to a case page for a uuid no case has, and
+	// that looks exactly like a deleted case rather than like a bug.
+	openCaseOfDocument,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// Features & roadmap. Wraps the lib's CnFeaturesAndRoadmapPage (which has
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds

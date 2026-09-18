@@ -92,6 +92,7 @@ import RequesterProjection from './components/initiator/RequesterProjection.vue'
 // A search openregister refused, said where the term was typed.
 // @spec openspec/changes/case-search-declares-its-fields/specs/case-search-via-or-unified-search/spec.md
 import CaseSearchRefusal from './components/search/CaseSearchRefusal.vue'
+import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
@@ -100,6 +101,9 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
+// Send digital post — the CaseDetail header action's compose surface.
+// @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
@@ -108,7 +112,6 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 // @spec openspec/specs/case-management/spec.md
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
-import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
@@ -142,6 +145,7 @@ import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // @spec openspec/specs/document-zaakdossier/spec.md
 // @spec openspec/specs/document-zaakdossier/spec.md
 import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
+import DossierExportPanel from './modals/DossierExportPanel.vue'
 import FileRequestDialog from './modals/FileRequestDialog.vue'
 import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
@@ -272,6 +276,14 @@ const registry = {
 		kind: 'page',
 		component: CaseSearchRefusal,
 		_note: "Cases-page below-header slot. OpenRegister refuses a malformed _search term with 400 {error, position, term} rather than running it as a literal, precisely because a literal returns zero rows and reads as an honest empty result. useObjectStore.fetchCollection() then records the refusal on errors['dossiq-case'] and returns [] anyway, so CnIndexPage draws its empty state over it and the reader retypes a word that was never the problem. Mounted through pages[].slots because the search box is CnIndexPage's; deleted the day the library renders the store's own error above the list.",
+	},
+
+	// --- The filters a case type's own fields offer. ---
+	// @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+	CaseTypeFieldFilters: {
+		kind: 'page',
+		component: CaseTypeFieldFilters,
+		_note: "Cases-page after-search slot. The values a handler wants to narrow by are NOT on the case: dossiq stores each declared field as a caseProperty row pointing back at it, so the query is openregister's `_related[caseProperty][case][…]` (query-related-schema-rows, #3909/#3916/#3921/#3923). It sits in after-search rather than below-header for two reasons: that slot is the actions bar's own place for inline refinement controls, which is what a filter bar is, and below-header already holds CaseSearchRefusal — a slot takes one component. It therefore carries its OWN refusal notice, because a refused `_related` leaves CnIndexPage drawing its empty state and 'no cases match' is not what happened.",
 	},
 
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
@@ -412,16 +424,11 @@ const registry = {
 	},
 
 	// @spec openspec/specs/status-transition-engine/spec.md
-	CaseLifecycleActionDialog: {
-		kind: 'modal',
-		component: CaseLifecycleActionDialog,
-		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen; the manifest header actions open it with `props.action`. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
-	},
 	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	CaseLifecycleMenuDialog: {
 		kind: 'modal',
 		component: CaseLifecycleMenuDialog,
-		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume, which is the one gesture a suspended case needs in front of the handler rather than behind a menu.',
+		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. THAT IS NOW THE ONLY LIFECYCLE SURFACE. This note used to end "CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume", and it did not: the stages widget is the library `stages` widget, which cannot resolve a dossiq registry name, and no manifest action named that dialog either. It is retired in retire-the-dead-dialogs. Every gesture it offered, Suspend, Resume, Extend term and Reopen, is here, with the same reason prompt, an empty reason refused, and the same /lifecycle read before the post.',
 	},
 
 	// @spec openspec/changes/case-merge/specs/case-management/spec.md
@@ -593,6 +600,14 @@ const registry = {
 	// WorkflowTab mounts WorkflowEditor. A registry entry no manifest names
 	// resolves for nobody and is dead configuration.
 
+	// --- Send digital post, the CaseDetail header action (digital-post-consumes-integriq). ---
+	// @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+	BerichtenboxComposeDialog: {
+		kind: 'modal',
+		component: BerichtenboxComposeDialog,
+		_note: "Composes one letter to a citizen's digital post and posts it to BerichtenboxController#send, which hands it to IntegriqAdapter and integriq's typed send command. UNTIL 2026-09-18 THIS FILE WAS REFERENCED NOWHERE IN DOSSIQ: not here, not by src/manifest.json, not by another component, and the only occurrence of its name in the repository was its own `name:` line. The CaseDetail `send-digital-post` header action opens it now, and tests/vitest/registryOrphans.spec.js fails on a registered modal that no manifest action names, so it cannot go dark again quietly. It takes `open` beside its older `show` because `open` is what every other registry modal on this page is opened with and an action declaring the wrong one of the two would mount a dialog that renders nothing; `caseId` arrives as the unresolved `@objectId` token, as it does for BeschikkingComposerDialog, and the route answers instead. The recipient is read off the case's `initiatorSourceId` and only for an `initiatorType` of person, because a KvK number is not an address a letter can go to. A REFUSAL DOES NOT CLOSE IT: `sent` is emitted only for a send carrying a tracked message, and the provider's own sentence is shown, because a handler told which credential is missing can ask for it and a handler told \"sending failed\" cannot.",
+	},
+
 	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
 	// @spec openspec/specs/beschikking-generatie/spec.md
 	BeschikkingComposerDialog: {
@@ -622,12 +637,17 @@ const registry = {
 	BulkDocumentActionDialog: {
 		kind: 'modal',
 		component: BulkDocumentActionDialog,
-		_note: 'Mark final / Change confidentiality / Download ZIP on a Documents-tab selection, one dialog in three `mode`s (mirrors BulkTransitionDialog). Opened by the object-list `bulkActions` entries as `type: open-modal`; CnObjectListWidget merges `props.selectedIds` onto the declared props the same way a drop merges `props.files`.',
+		_note: "Mark final / Change confidentiality / Download ZIP, one dialog in three `mode`s (mirrors BulkTransitionDialog). ITS PARENT IS GONE: the Documents tab whose object-list `bulkActions` opened it was retired on 2026-09-13 and replaced by the `case-files` leaf, and this note went on naming it for five days while no manifest action named this dialog at all. tests/vitest/registryOrphans.spec.js fails on that now. Opened today by the `case-files` `rowActions` entries Mark as final and Change confidentiality, as `type: open-modal`; CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto the declared props, so the dialog resolves ONE informatieobject through the case's dossier listing rather than a selection of join ids. The `selectedIds` path stays for a widget object-list that still hands a selection over, and takes precedence when it is non-empty. `zip` mode has no caller here on purpose: the whole case file as one download is the CaseDetail `export-dossier` header action, and two buttons for one zip is a worse answer than one.",
+	},
+	DossierExportPanel: {
+		kind: 'modal',
+		component: DossierExportPanel,
+		_note: "The Awb-ordered dossier a griffier submits to the bestuursrechter, read-only, opened by the Dossier for the court header action on BeroepDetail and BezwaarDetail. NOT the same thing as CaseDetail's Export dossier: that one is the whole case file as a zip over ZaakdossierDownloadController, and this one is GET /api/dossier/{caseId}/export, which answers a JSON PLAN from BeroepDossierExport with every document of the bezwaar and beroep chain renamed 01-primair-besluit.pdf and so on. That route had answered since the bezwaar-beroep work shipped and no line of src/ had ever called it, so the order a court reads first was one nobody could check. The panel tells a 403 apart from an empty dossier, because both render as nothing and only one of them means the case has no documents.",
 	},
 	VersionHistoryPanel: {
 		kind: 'modal',
 		component: VersionHistoryPanel,
-		_note: 'Version history for one dossier document, over the Nextcloud Files versions WebDAV API. Opened by the object-list `rowActions` Versions entry as `type: open-modal`; CnObjectListWidget merges `props.row` (the clicked zaakinformatieobject row, `informatieobject` inlined by `content.extend`) onto the declared props (nextcloud-vue#1117) -- an open-modal row action otherwise carries no per-click information at all. Self-sufficient: reads the informatieobject off `row.informatieobject` and the signed-in user via `getCurrentUser()`, since there is no parent DossierTab any more to pass either down.',
+		_note: "Version history for one dossier document, over the Nextcloud Files versions WebDAV API. ITS PARENT IS GONE, the same way BulkDocumentActionDialog's is: the object-list `rowActions` Versions entry that opened it belonged to the Documents tab retired on 2026-09-13, and nothing has named this dialog since. Opened today by the `case-files` `rowActions` Versions entry, where CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto the declared props; the older `props.row` path (the zaakinformatieobject row with `informatieobject` inlined by `content.extend`, nextcloud-vue#1117) is still read, second, for a widget object-list that passes one. Handed neither, the panel names the file it could not find and offers Show in Files rather than rendering an empty version list. Self-sufficient: the signed-in user comes from `getCurrentUser()`, since there is no parent DossierTab any more to pass it down.",
 	},
 
 	// --- The inline task pane on the case page (task-on-the-case A06). ---

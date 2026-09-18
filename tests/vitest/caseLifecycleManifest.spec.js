@@ -290,17 +290,30 @@ describe('CaseDetail: one menu holds every lifecycle act', () => {
 		expect(action('case-lifecycle-menu').visibleWhen).toBeUndefined()
 	})
 
-	it('registers both dialogs as modals, which open-modal requires', () => {
+	it('registers the menu as a modal, which open-modal requires', () => {
 		// dispatchAction refuses a target whose registry kind is not "modal",
 		// with a console warning and no dialog: a dead menu entry.
 		expect(registrySource).toMatch(
 			/CaseLifecycleMenuDialog: \{\s*\n\s*kind: 'modal',/,
 		)
-		// The per-gesture dialog stays registered: the stages widget opens it
-		// directly for Resume, which is the one gesture a suspended case needs
-		// in front of the handler rather than behind a menu.
-		expect(registrySource).toMatch(
-			/CaseLifecycleActionDialog: \{\s*\n\s*kind: 'modal',/,
+	})
+
+	it('no longer registers the per-gesture dialog', () => {
+		// This assertion used to require CaseLifecycleActionDialog to be
+		// registered, on the stated ground that the stages widget opened it
+		// for Resume. It did not: `case-stages` is the library `stages`
+		// widget, which cannot resolve a dossiq registry name, and no manifest
+		// action named it either. So the test asserted the presence of a
+		// component no user could open, which is the shape registryOrphans
+		// exists to catch. It is retired; the menu serves all four gestures.
+		// Asserted on the ENTRY, not on the name. The name still appears, in
+		// the menu's own note recording what was retired and why, and a
+		// substring test would have called that a registration.
+		expect(registrySource).not.toMatch(
+			/\n\tCaseLifecycleActionDialog: \{/,
+		)
+		expect(registrySource).not.toContain(
+			"import CaseLifecycleActionDialog from",
 		)
 	})
 })
