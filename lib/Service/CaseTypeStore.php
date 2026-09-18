@@ -98,7 +98,7 @@ class CaseTypeStore {
 			return [];
 		}
 
-		return $this->search(schemaKey: $schemaKey, caseTypeFilter: $caseTypeId);
+		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: $caseTypeId);
 	}//end rowsOfType()
 
 	/**
@@ -127,27 +127,11 @@ class CaseTypeStore {
 			return [];
 		}
 
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			$found = $objectService->searchObjects(
-				[
-					'@self' => ['register' => $register, 'schema' => $schema],
-					'identifier' => $identifier,
-					'_limit' => 200,
-				]
-			);
-		} catch (Throwable $e) {
-			return [];
-		}
-
-		return $this->asRows(value: $found);
+		return $this->search(
+			schemaKey: 'case_type_schema',
+			filterKey: 'identifier',
+			filterValue: $identifier
+		);
 	}//end versionsWithIdentifier()
 
 	/**
@@ -160,7 +144,7 @@ class CaseTypeStore {
 	 * @spec openspec/specs/property-definition-management/spec.md
 	 */
 	public function sharedRows(string $schemaKey): array {
-		return $this->search(schemaKey: $schemaKey, caseTypeFilter: 'IS NULL');
+		return $this->search(schemaKey: $schemaKey, filterKey: 'caseType', filterValue: 'IS NULL');
 	}//end sharedRows()
 
 	/**
@@ -203,18 +187,30 @@ class CaseTypeStore {
 	}//end referenceId()
 
 	/**
-	 * Search one configured schema, narrowed on the caseType back-reference.
+	 * Search one configured schema, narrowed on one bare filter key.
 	 *
 	 * Filtered SERVER-side. Fetching everything and filtering here would drop
 	 * whatever the first page did not contain, which is a case type quietly
 	 * missing the statuses that happened to sort last.
 	 *
-	 * @param string $schemaKey      The settings key naming the schema.
-	 * @param string $caseTypeFilter The caseType id, or `IS NULL` for shared rows.
+	 * 🔑 THE FILTER KEY IS A PARAMETER SO THIS CLASS KEEPS ONE CATCH. Every
+	 * read here answers the empty list when the store cannot be reached, and a
+	 * second copy of that catch beside it is a second place for the classing to
+	 * drift. `versionsWithIdentifier()` needed `identifier` rather than the
+	 * `caseType` back-reference, and generalising the key was cheaper than
+	 * another swallowing catch, which the architecture ratchet refuses anyway.
+	 *
+	 * The key is BARE. OpenRegister's objects search reads `identifier` as a
+	 * filter and would read `filter[identifier]` as the empty set, which
+	 * presents as a case type with no versions rather than as an error.
+	 *
+	 * @param string $schemaKey   The settings key naming the schema.
+	 * @param string $filterKey   The property to narrow on.
+	 * @param string $filterValue The value, or `IS NULL` for rows carrying none.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	private function search(string $schemaKey, string $caseTypeFilter): array {
+	private function search(string $schemaKey, string $filterKey, string $filterValue): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: $schemaKey);
@@ -227,7 +223,7 @@ class CaseTypeStore {
 			$found = $objectService->searchObjects(
 				[
 					'@self' => ['register' => $register, 'schema' => $schema],
-					'caseType' => $caseTypeFilter,
+					$filterKey => $filterValue,
 					'_limit' => 200,
 				]
 			);
