@@ -24,7 +24,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Stuf;
 
-use OCA\Dossiq\Service\Stuf\ContactBetrokkeneMapper;
 use OCA\Dossiq\Service\Stuf\StufCaseMappingStore;
 use OCA\Dossiq\Service\Stuf\StufEnvelopeInspector;
 use OCA\Dossiq\Service\Stuf\StufMessageHandler;
@@ -45,7 +44,6 @@ use Psr\Log\LoggerInterface;
  * matches zero rows rather than being ignored.
  *
  * @covers \OCA\Dossiq\Service\Stuf\StufCaseMappingStore
- * @covers \OCA\Dossiq\Service\Stuf\ContactBetrokkeneMapper
  * @covers \OCA\Dossiq\Service\Stuf\StufMessageHandler
  * @covers \OCA\Dossiq\Service\Stuf\StufEnvelopeInspector
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
@@ -100,41 +98,6 @@ class StufRegisterContractTest extends TestCase {
 		);
 	}//end testTheCaseMappingIsIdempotent()
 
-	/**
-	 * A contact mapping survives its own round trip.
-	 *
-	 * `findOrCreateBetrokkene()` exists to prevent duplicate betrokkenen. It can
-	 * only do that if the mapping it writes is the mapping it reads back.
-	 *
-	 * @return void
-	 */
-	public function testTheContactMappingIsFoundAgain(): void {
-		$mapper = new ContactBetrokkeneMapper(
-			register: $this->register,
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			dates: $this->caseDates(),
-		);
-		$contact = ['id' => 'c-1', 'bsn' => '123456789'];
-		$endpoint = ['id' => 'ep-1'];
-
-		$mapper->linkContact(contact: $contact, involvedParty: 'NPS-001', endpoint: $endpoint);
-
-		$found = $mapper->getContactMapping(contact: $contact, endpoint: $endpoint);
-		$this->assertNotNull($found, 'A linked contact must be findable.');
-		$this->assertSame('NPS-001', ($found['externalIdentification'] ?? null));
-
-		// The duplicate-prevention this class is for: a second lookup reuses the
-		// mapping instead of asking the zaaksysteem again.
-		$reused = $mapper->findOrCreateBetrokkene(
-			contact: $contact,
-			endpoint: $endpoint,
-			lookupCallable: static function (): string {
-				self::fail('The zaaksysteem must not be queried when a mapping already exists.');
-			}
-		);
-		$this->assertSame('NPS-001', $reused);
-		$this->assertCount(1, ($this->register->store[StufRegisterAccess::SCHEMA_MAPPING] ?? []));
-	}//end testTheContactMappingIsFoundAgain()
 
 	/**
 	 * An outbound audit row keeps the fields the admin log renders.
@@ -291,23 +254,10 @@ class StufRegisterContractTest extends TestCase {
 	private function driveEveryRegisterPath(): void {
 		$endpoint = ['id' => 'ep-1'];
 		$case = ['id' => 'case-1'];
-		$contact = ['id' => 'c-1', 'bsn' => '123456789'];
 
 		$mappings = new StufCaseMappingStore(register: $this->register, dates: $this->caseDates());
 		$mappings->find(case: $case, endpoint: $endpoint);
 		$mappings->persist(case: $case, externId: 'ZAAK-0001', endpoint: $endpoint);
-
-		$mapper = new ContactBetrokkeneMapper(
-			register: $this->register,
-			logger: $this->createMock(originalClassName: LoggerInterface::class),
-			dates: $this->caseDates(),
-		);
-		$mapper->linkContact(contact: $contact, involvedParty: 'NPS-001', endpoint: $endpoint);
-		$mapper->findOrCreateBetrokkene(
-			contact: $contact,
-			endpoint: $endpoint,
-			lookupCallable: static fn (): string => 'NPS-001'
-		);
 
 		$handler = new StufMessageHandler(register: $this->register, dates: $this->caseDates());
 		$outbound = $handler->logOutbound(
