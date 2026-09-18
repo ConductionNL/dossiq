@@ -2376,6 +2376,12 @@
 									"label": "Scan",
 									"property": "scanVerdict",
 									"formatter": "scanVerdict"
+								},
+								{
+									"id": "approval-chain",
+									"label": "Approval",
+									"property": "approvalMarker",
+									"formatter": "approvalChain"
 								}
 							]
 						}
