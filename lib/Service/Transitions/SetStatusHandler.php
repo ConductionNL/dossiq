@@ -19,7 +19,7 @@
  * type in the whole app carried all six. Measured on the shipped demo caseload,
  * 8 of 18 runs died at `status_not_found_on_case_type` — a subsidy is under
  * `Beoordeling` and a complaint under `Onderzoek`, and both are right. On top of
- * that `statusType.name` is declared `x-translatable`, so a literal is broken by
+ * that `statusType.name` is declared `translatable`, so a literal is broken by
  * a language change alone.
  *
  * A step therefore says what the status MEANS — `role: in-progress` — and the

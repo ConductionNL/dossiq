@@ -3,10 +3,17 @@
 ### Requirement: The contact view lists the documents this contact sent and received
 
 A contact detail page and an organisation detail page SHALL each carry a
-documents panel over `informatieobject`, holding every document whose
-`sender` or whose `recipients` name this contact. Each row SHALL show the
-direction, so a letter sent out and a letter received are told apart at a
-glance, and SHALL deep link to the case the document is on.
+documents panel holding every document this contact sent and every document
+sent to them. Each row SHALL show the direction, so a letter sent out and a
+letter received are told apart at a glance, and SHALL offer the case the
+document is on.
+
+The panel reads the `dispatch` join rather than `informatieobject` itself.
+A document names its correspondents in two fields, `sender` and
+`recipients`, and a list filter is a map in which every entry narrows, so
+there is no way to ask for a row matching either one. A dispatch is one
+document, one party and one role, carrying the case, so a single equality
+filter is the whole question and the role is the direction.
 
 #### Scenario: A citizen who received a decision sees it on their contact page
 
@@ -23,20 +30,26 @@ glance, and SHALL deep link to the case the document is on.
 - **THEN** the documents panel SHALL NOT list it
 - **AND** the case itself SHALL still be listed in the cases panel
 
-### Requirement: A document the reader may not open is counted and never named
+### Requirement: The documents panel never presents a partial list as the whole answer
 
-The documents panel SHALL count a document the reader may not read, and
-SHALL NOT name it. A panel that dropped it would tell the reader this
-contact has two documents when the truth is five, which is worse than
-telling them less.
+The panel SHALL declare a row cap, so a contact with more documents than
+fit shows the list is capped rather than reading as complete. dossiq SHALL
+add no filtering of its own on top of what the objects endpoint answers:
+whether that endpoint counts a document the reader may not read or drops it
+in silence is OpenRegister's behaviour, and a second filter here would make
+the answer wrong in a second place.
 
-#### Scenario: A confidential document raises the count and shows no title
-@e2e exclude an authorization branch over the objects endpoint; covered by the panel unit test against a listing carrying one unreadable row
+Whether the endpoint counts or drops is UNMEASURED as of 2026-09-18. If it
+drops, the count is wrong on every page in the fleet that reads it, and the
+fix belongs to OpenRegister rather than to this panel.
 
-- **GIVEN** a contact with three documents, one of them unreadable by this reader
-- **WHEN** the panel renders
-- **THEN** it SHALL show two rows
-- **AND** it SHALL say that one more document exists that this reader may not open
+#### Scenario: A contact with more documents than the cap shows the cap
+@e2e exclude a declaration compared between two source files; covered by the panel manifest unit test
+
+- **GIVEN** a documents panel on a contact page
+- **WHEN** its declaration is read
+- **THEN** it SHALL carry a row cap
+- **AND** it SHALL carry no client-side filter of its own
 
 ### Requirement: An empty documents panel says so in a sentence
 

@@ -1,6 +1,6 @@
 ---
 kind: config
-depends_on: [adopt-connection-registry]
+depends_on: [adopt-connection-registry, digital-post-reaches-integriq]
 ---
 
 # Proposal: digital-post-consumes-integriq
@@ -8,6 +8,16 @@ depends_on: [adopt-connection-registry]
 Competitor gap scan of 2026-09-18, pack b, row 6.6 "Digital post to
 citizens (Digital Post, Berichtenbox, Postex)". Scored partial. Owner
 dossiq. Size M.
+
+## Where this sits
+
+Two changes, one row each, built in this order. `digital-post-reaches-integriq`
+(row 12.9) is the seam: the adapter that dispatches integriq's send event and
+refuses when the seam is unavailable, `kind: code`. This change (row 6.6) is
+the citizen-facing use on top of it, `kind: config`. Neither replaces the
+other, and `depends_on` above records which comes first. The compose dialog
+stays unregistered until the seam lands, because a button that hands a letter
+to `MockAdapter` is worse than no button.
 
 ## Why
 

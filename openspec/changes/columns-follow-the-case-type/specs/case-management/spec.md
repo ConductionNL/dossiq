@@ -8,6 +8,21 @@ You pick a case type in the sidebar and the list shows what that type needs.
 scope that declares no `columns` SHALL inherit the page's columns, and the
 All types folder SHALL always show the page's columns.
 
+The declaration SHALL live on the case type RECORD, in its `x-index` block,
+and not in `src/manifest.json`. dossiq's folder sidebar is
+`source: "register"` over `caseType`, so it has no manifest folder entries to
+declare on; for a register-derived folder list the library reads the same
+three keys off each row. `x-index` SHALL therefore be a declared property of
+the `caseType` schema, because OpenRegister's magic mapper is a whitelist by
+omission: an undeclared key is answered 200 and stored nowhere, which reads
+on screen as a case type that simply has no columns of its own.
+
+A scope SHALL only select from the columns the page declares. The page
+decides which columns exist; the scope decides which of them it shows and in
+what order. A column a scope names that the page does not carry is dropped by
+the library rather than rendered empty, so the page SHALL declare every
+column any case type asks for.
+
 #### Scenario: A permit shows its expiry date
 @e2e tests/e2e/columns-follow-the-case-type.spec.ts
 
@@ -33,17 +48,20 @@ All types folder SHALL always show the page's columns.
 
 ### Requirement: A scope may order and search on its own fields (REQ-CM-71)
 
-A `caseType` scope MAY declare `sort` and `searchFields` beside its
+A `caseType` scope MAY declare `defaultSort` and `searchFields` beside its
 `columns`. While that scope is selected the list SHALL order by the scope's
-`sort` and SHALL search the scope's `searchFields`. Both SHALL fall back to
-the page's when the scope is silent.
+`defaultSort` and SHALL search the scope's `searchFields`. Both SHALL fall
+back to the page's when the scope is silent. The key is `defaultSort`, which
+is what `resolveScopeLayout` reads; a scope spelling it `sort` is a scope
+that declares no order, silently.
 
-#### Scenario: A bezwaar orders by its hearing date
+#### Scenario: A handhavingszaak orders by its decision date
 @e2e tests/e2e/columns-follow-the-case-type.spec.ts
 
-- **GIVEN** a bezwaar scope declaring `sort` on the hearing date, descending
+- **GIVEN** a handhaving scope declaring `defaultSort` on `besluitdatum`,
+  descending
 - **WHEN** you pick it
-- **THEN** the first row SHALL be the case with the latest hearing date
+- **THEN** the first row SHALL be the case decided most recently
 
 ### Requirement: A column names a property the case type carries (REQ-CM-72)
 

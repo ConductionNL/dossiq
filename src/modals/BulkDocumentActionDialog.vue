@@ -7,25 +7,13 @@
 	picks the fields, the request and the copy; the confirm/cancel shell and
 	the busy/result handling are shared.
 
-	TWO WAYS IN, BECAUSE THE FIRST ONE WAS RETIRED. It was written for the
-	Documents tab's object-list, opened as a `bulkActions` entry that handed
-	`props.selectedIds` (see CnObjectListWidget.mappedBulkActions). That tab
-	went away with documents-live-on-the-case on 2026-09-13 and the dialog
-	went dark with it, named by no manifest for five days.
-
-	Its replacement, the `case-files` leaf, has no bulk surface to move to:
-	CnFilesBrowser declares `rowActions` and `newActions` and no
-	`bulkActions`, and its own header records why, the Files app's selection
-	bar is bound to the Files router and cannot be mounted outside that page.
-	So the two mutating gestures come back as ROW actions, one document at a
-	time, and the dialog takes a `fileId` as well as a selection.
-
-	Download ZIP has no row-action meaning and is not offered there. It keeps
-	its `zip` mode for a caller that hands a selection.
-
-	There is no parent `DossierTab`/`BulkActionsBar` to own the request or the
-	result reporting, so this dialog makes the call itself, the same shape
-	`runBulk()` used to.
+	Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
+	swap): opened as a manifest `open-modal` `bulkActions` entry, which the
+	widget hands `props.selectedIds` — see
+	CnObjectListWidget.mappedBulkActions in @conduction/nextcloud-vue. There
+	is no parent `DossierTab`/`BulkActionsBar` any more to own the request or
+	the result reporting, so this dialog makes the call itself, the same
+	shape `runBulk()` used to.
 
 	Spec: openspec/specs/document-zaakdossier/spec.md
 -->
@@ -133,34 +121,32 @@ export default {
 				['mark-final', 'confidentiality', 'zip'].includes(value),
 		},
 
-		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		// Used by `zip`, which downloads scoped to one case, and by the
-		// fileId path below, which reads that case's dossier listing.
-		caseId: {
+		/**
+		 * The clicked node's Nextcloud file id, merged onto an `open-modal`
+		 * row action's props by CnFilesBrowser.
+		 *
+		 * The `case-files` leaf is the surface this dialog has now, and it
+		 * names ONE file rather than a selection: CnFilesBrowser carries no
+		 * selection bar, because the Files app's list, its selection bar and
+		 * its inline rename are bound to the Files router and cannot be
+		 * mounted off the Files page. A `bulkActions` prop declared on that
+		 * widget would be read by nothing, which is the same darkness that
+		 * left this dialog with no caller at all from 2026-09-13.
+		 */
+		fileId: {
+			type: [String, Number],
+			default: '',
+		},
+
+		/** The clicked node's name, for the dialog's own sentence. */
+		fileName: {
 			type: String,
 			default: '',
 		},
 
-		/**
-		 * The Nextcloud file id, as the Files tab's row actions hand it.
-		 *
-		 * FOUR-UNREACHABLE-SURFACES: this dialog was written for the Documents
-		 * tab's object-list, which selected `zaakinformatieobject` rows and
-		 * dispatched `bulkActions`. That tab was retired on 2026-09-13 and its
-		 * replacement, the `case-files` leaf, has no bulk surface at all:
-		 * `CnFilesBrowser` declares `rowActions` and `newActions` and no
-		 * `bulkActions`, and its own header says the Files app's selection bar
-		 * cannot be mounted outside the Files page. So the two mutating acts
-		 * come back one document at a time, as row actions, and a row action
-		 * carries a `fileId`. One file is a selection of one.
-		 */
-		fileId: {
-			type: [Number, String],
-			default: 0,
-		},
-
-		/** The file's name, shown while the dialog names what it will act on. */
-		fileName: {
+		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
+		// Only used by `zip`, which downloads scoped to one case.
+		caseId: {
 			type: String,
 			default: '',
 		},
@@ -211,16 +197,10 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		title() {
-			const base =
-				this.mode === 'confidentiality'
-					? this.t('dossiq', 'Change confidentiality')
-					: this.mode === 'zip'
-						? this.t('dossiq', 'Download ZIP')
-						: this.t('dossiq', 'Mark as final')
-			// Opened on one file row: say which file, because a dialog headed
-			// "Mark as final" over a folder of twenty files must not leave the
-			// reader guessing which one it means.
-			return this.fileName === '' ? base : `${base}: ${this.fileName}`
+			if (this.mode === 'confidentiality')
+				return this.t('dossiq', 'Change confidentiality')
+			if (this.mode === 'zip') return this.t('dossiq', 'Download ZIP')
+			return this.t('dossiq', 'Mark as final')
 		},
 
 		/**
@@ -290,10 +270,7 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveDocumentIds() {
-			// The Files-tab path: one file id, resolved through the case's
-			// dossier listing, which is the one endpoint carrying every record
-			// with its `fileId`. Same read as DocumentMetadataDialog makes.
-			if (this.selectedIds.length === 0 && Number(this.fileId) > 0) {
+			if (this.selectedIds.length === 0) {
 				return this.resolveFromFileId()
 			}
 
@@ -324,37 +301,33 @@ export default {
 		},
 
 		/**
-		 * The informatieobject id behind one Nextcloud file.
+		 * The informatieobject id behind a clicked file node.
 		 *
-		 * Returns an empty list when the record cannot be found, so the caller
-		 * reports "changed nothing" rather than posting an id the endpoint
-		 * would not recognise. A file dropped a moment ago may have no record
-		 * yet: the projection listener writes it, and until it has, there is
-		 * nothing to mark final.
+		 * The case's dossier listing is the one endpoint that carries every
+		 * record together with its `fileId`, which is how DocumentMetadataDialog
+		 * finds the record for the same node. A file with no record yet (the
+		 * projection listener may not have run) resolves to nothing, and the
+		 * act reports that it changed nothing rather than posting an empty id
+		 * an endpoint would answer as a miss.
 		 *
-		 * @return {Promise<Array<string>>} The document id, or an empty list.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 * @return {Promise<Array<string>>} The one document id, or an empty list.
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
 		 */
 		async resolveFromFileId() {
-			if (this.resolvedCaseId === '') {
+			const fileId = Number(this.fileId)
+			if (!Number.isFinite(fileId) || fileId <= 0 || this.resolvedCaseId === '') {
 				return []
 			}
-			try {
-				const url = generateUrl(
-					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
-				)
-				const { data } = await axios.get(url)
-				const rows = Array.isArray(data?.informatieobjecten)
-					? data.informatieobjecten
-					: []
-				const record = rows.find(
-					(row) => Number(row.fileId) === Number(this.fileId),
-				)
-				const id = record ? String(record.id || '') : ''
-				return id === '' ? [] : [id]
-			} catch {
-				return []
-			}
+			const url = generateUrl(
+				`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
+			)
+			const { data } = await axios.get(url)
+			const rows = Array.isArray(data?.informatieobjecten)
+				? data.informatieobjecten
+				: []
+			const record = rows.find((row) => Number(row.fileId) === fileId) || null
+			const id = record === null ? '' : String(record.id || '')
+			return id === '' ? [] : [id]
 		},
 
 		/**
@@ -371,6 +344,29 @@ export default {
 			this.error = ''
 			try {
 				const ids = await this.resolveDocumentIds()
+
+				// 🔴 AN EMPTY ID LIST IS A REFUSAL, NOT A RUN. Both endpoints
+				// answer 200 with an empty per-item list for an empty request,
+				// which rendered as "0 of 0 document(s) updated" -- a success
+				// sentence over an act that never had a document to act on.
+				// It happens for real: a file dropped a moment ago has no
+				// informatieobject record until the projection listener runs.
+				if (ids.length === 0) {
+					this.error =
+						this.fileName === ''
+							? this.t(
+									'dossiq',
+									'No document record was found, so nothing was changed',
+								)
+							: this.t(
+									'dossiq',
+									'No document record was found for {name}, so nothing was changed',
+									{ name: this.fileName },
+								)
+					showError(this.error)
+					return
+				}
+
 				const { data } = await axios.post(generateUrl(path), {
 					ids,
 					...extra,

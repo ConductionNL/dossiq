@@ -45,13 +45,13 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Title"
                     },
                     "description": {
                         "type": "string",
                         "description": "Detailed description of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Description"
                     },
                     "identifier": {
@@ -69,19 +69,19 @@
                     "purpose": {
                         "type": "string",
                         "description": "The purpose or goal of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Purpose"
                     },
                     "trigger": {
                         "type": "string",
                         "description": "What triggers the creation of a case of this type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Trigger"
                     },
                     "subject": {
                         "type": "string",
                         "description": "The subject matter of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Subject"
                     },
                     "processingDeadline": {
@@ -520,7 +520,7 @@
                                 "title": {
                                     "type": "string",
                                     "maxLength": 255,
-                                    "x-translatable": true,
+                                    "translatable": true,
                                     "title": "Title",
                                     "description": "What the handler is told is outstanding. Write it as the thing itself, not as the rule: \"the fire safety inspection\" rather than \"inspection obligation open\"."
                                 },
@@ -716,13 +716,13 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this status (e.g. Ontvangen, In behandeling)",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this status phase",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Description"
                     },
                     "publicLabel": {
@@ -730,14 +730,14 @@
                         "maxLength": 255,
                         "description": "What the applicant reads for this status. Leave it empty and they read the name.",
                         "x-notes": "The name is written for the handler, and \"Toets register B\" says nothing to the person waiting. The empty fallback to `name` is the whole migration: a case type nobody has annotated keeps reading exactly as it did. ZGW calls this the statustekst, and the ZTC statustype mapping writes it there.",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Public label"
                     },
                     "publicDescription": {
                         "type": "string",
                         "description": "What the applicant is told this status means. Empty shows no description.",
                         "x-notes": "It never falls back to `description`: that one is written for a colleague and can name an internal check, an internal register or a colleague by role. Showing nothing is the safe default; showing the handler's words to the applicant is a disclosure nobody chose.",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Public description"
                     },
                     "caseType": {
@@ -887,7 +887,7 @@
                                     "type": "string",
                                     "maxLength": 255,
                                     "description": "What the handler is told is missing while this condition is unmet. Write it as the thing itself, not as the rule: \"the signed consent form\" rather than \"documentPresent failed\".",
-                                    "x-translatable": true,
+                                    "translatable": true,
                                     "title": "Label"
                                 }
                             }
@@ -985,7 +985,7 @@
                                     "type": "string",
                                     "maxLength": 255,
                                     "description": "What the handler reads when the save is refused. Write the thing itself, not the rule: \"a motivation is needed before this decision can be taken\" rather than \"required field missing\". Left empty, OpenRegister writes a plain sentence naming the field and the status.",
-                                    "x-translatable": true,
+                                    "translatable": true,
                                     "title": "Message"
                                 }
                             }
@@ -1011,13 +1011,13 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this result type (e.g. Vergunning verleend)",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description/toelichting of this result type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Description"
                     },
                     "genericDescription": {
@@ -1077,13 +1077,13 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this role type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Description"
                     },
                     "caseType": {
@@ -1293,13 +1293,13 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this document type (e.g. Situatietekening)",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this document type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Description"
                     },
                     "caseType": {
@@ -1382,13 +1382,13 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this decision type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this decision type",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Description"
                     },
                     "caseType": {
@@ -6533,7 +6533,7 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "What is being asked for, in the words the handler reads where the transition would have been. Write it as the thing itself: \"the fire safety inspection\" rather than \"obligation of kind inspection\".",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Title"
                     },
                     "placedOn": {
@@ -9329,7 +9329,7 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Short subject of the complaint",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Subject"
                     },
                     "description": {
@@ -9721,13 +9721,13 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Category name",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this category",
-                        "x-translatable": true,
+                        "translatable": true,
                         "title": "Description"
                     },
                     "defaultHandler": {

@@ -1338,7 +1338,7 @@
             "type": "string",
             "title": "Motivation",
             "description": "Reasoning underpinning the decision",
-            "x-translatable": false
+            "translatable": false
           },
           "legalRemediesClause": {
             "type": "string",
@@ -4015,13 +4015,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Title"
           },
           "description": {
             "type": "string",
             "description": "Detailed description of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "identifier": {
@@ -4032,19 +4032,19 @@
           "purpose": {
             "type": "string",
             "description": "The purpose or goal of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Purpose"
           },
           "trigger": {
             "type": "string",
             "description": "What triggers the creation of a case of this type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Trigger"
           },
           "subject": {
             "type": "string",
             "description": "The subject matter of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Subject"
           },
           "processingDeadline": {
@@ -4455,7 +4455,7 @@
             "type": "string",
             "maxLength": 255,
             "description": "Short subject of the complaint",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Subject"
           },
           "description": {
@@ -4666,13 +4666,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Category name",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this category",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "defaultHandler": {
@@ -5789,13 +5789,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this decision type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this decision type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "caseType": {
@@ -6136,13 +6136,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this document type (e.g. Situatietekening)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this document type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "caseType": {
@@ -11731,13 +11731,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this result type (e.g. Vergunning verleend)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description/toelichting of this result type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "genericDescription": {
@@ -11881,13 +11881,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this role type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "caseType": {
@@ -12344,26 +12344,26 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this status (e.g. Ontvangen, In behandeling)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this status phase",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "publicLabel": {
             "type": "string",
             "maxLength": 255,
             "description": "What the applicant reads for this status. Leave it empty and they read the name.",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Public label"
           },
           "publicDescription": {
             "type": "string",
             "description": "What the applicant is told this status means. Empty shows no description.",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Public description"
           },
           "caseType": {

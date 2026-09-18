@@ -7,19 +7,30 @@
 				{{ t('dossiq', 'Version history') }}
 			</h4>
 
-			<p v-if="documentName !== ''" class="dossier-version-panel__document">
-				{{ documentName }}
-			</p>
+			<NcEmptyContent
+				v-if="hasNoFile"
+				class="dossier-version-panel__refusal"
+				:name="t('dossiq', 'No file to read versions of')"
+				:description="refusalDescription">
+				<template #icon>
+					<History :size="20" />
+				</template>
+				<template #action>
+					<NcButton variant="secondary" @click="showInFiles">
+						{{ t('dossiq', 'Show in Files') }}
+					</NcButton>
+				</template>
+			</NcEmptyContent>
 
 			<NcEmptyContent
-				v-if="!loading && versions.length === 0"
+				v-if="!hasNoFile && !loading && versions.length === 0"
 				:name="t('dossiq', 'No previous versions')">
 				<template #icon>
 					<History :size="20" />
 				</template>
 			</NcEmptyContent>
 
-			<NcLoadingIcon v-if="loading" :size="24" />
+			<NcLoadingIcon v-if="loading && !hasNoFile" :size="24" />
 
 			<ul v-if="versions.length > 0" class="dossier-version-panel__list">
 				<li
@@ -77,25 +88,24 @@ import History from 'vue-material-design-icons/History.vue'
  * disabled when the informatieobject status is definitief (mirroring the
  * server-side immutability rule).
  *
- * TWO HOSTS, BECAUSE THE FIRST ONE WAS RETIRED. It was written for the
- * Documents tab's object-list, which handed it `props.row`: the raw
- * `zaakinformatieobject` row with `informatieobject` inlined by
- * `content.extend`. That tab went away with documents-live-on-the-case on
- * 2026-09-13 and nothing replaced the entry point, so the panel sat in the
- * registry, named by no manifest, for five days.
+ * Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
+ * swap): opened as a manifest `open-modal` row action, which
+ * CnObjectListWidget hands `props.row` — the RAW `zaakinformatieobject` row,
+ * `informatieobject` inlined by `content.extend` — rather than the plain
+ * `document` object a parent DossierTab used to pass down directly, and no
+ * `userId` prop either, since there is no parent to read `getCurrentUser()`
+ * for it any more.
  *
- * Its host now is the Files tab (`case-files`), whose row actions hand a
- * `fileId` and a `fileName` and nothing else. So the panel takes either
- * shape: a `row` when one is given, a `fileId` otherwise. With only a
- * `fileId` it reads the case's dossier listing to find the record, the same
- * one endpoint DocumentMetadataDialog reads for the same reason.
- *
- * WHY RESTORE FAILS CLOSED. Restore is disabled on a document whose status is
- * `final`, mirroring the server-side immutability rule. When the panel is
- * opened from a file whose record it could not read, it does not know the
- * status, and it disables restore rather than offering it. An unknown status
- * that reads as "not final" would let a handler overwrite a definitive
- * document, which is the one outcome this rule exists to prevent.
+ * TWO CALLERS, ONE FILE (document-acts-reach-a-surface REQ-ZAK-020). This
+ * panel was registered and named by no manifest action at all between
+ * 2026-09-13, when the Documents tab that opened it was retired, and this
+ * change. The `case-files` leaf opens it now, and CnFilesBrowser merges the
+ * clicked node's `fileId`, `fileName` and `path` onto the action's props
+ * rather than a row, so `fileId` is read first and `row.informatieobject`
+ * second. Handed NEITHER, it says which file it could not find and offers
+ * Show in Files; it does NOT render the empty-versions state, because a file
+ * with no history and no file at all are two different sentences and only one
+ * of them is about the document.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
@@ -123,22 +133,22 @@ export default {
 		},
 
 		/**
-		 * The Nextcloud file id, as the Files tab's row actions hand it.
-		 * Used when no `row` is given.
+		 * The Nextcloud file id of the clicked node, merged onto an
+		 * `open-modal` row action's props by CnFilesBrowser.
+		 *
+		 * This is the path the `case-files` leaf uses and the only one that
+		 * still has a caller: the Documents tab that handed `row` down was
+		 * retired on 2026-09-13. `row` is kept because a widget row action on
+		 * an object-list still passes it, and losing that would swap one dark
+		 * caller for another.
 		 */
 		fileId: {
-			type: [Number, String],
-			default: 0,
-		},
-
-		/** The file's name, shown while the record is still being read. */
-		fileName: {
-			type: String,
+			type: [String, Number],
 			default: '',
 		},
 
-		/** May arrive as the unresolved `@objectId` token; see resolvedCaseId. */
-		caseId: {
+		/** The clicked node's name, for the refusal sentence. */
+		fileName: {
 			type: String,
 			default: '',
 		},
@@ -149,10 +159,6 @@ export default {
 		return {
 			versions: [],
 			loading: false,
-			/** The informatieobject read from the dossier listing, or null. */
-			record: null,
-			/** Whether the record read has finished, successfully or not. */
-			recordRead: false,
 		}
 	},
 
@@ -165,42 +171,43 @@ export default {
 		 */
 		document() {
 			const informatieobject = this.row && this.row.informatieobject
-			if (informatieobject && typeof informatieobject === 'object') {
-				return informatieobject
-			}
-			// Opened from the Files tab: the record read from the dossier
-			// listing, or just the file id until that read lands.
-			if (this.record !== null) {
-				return this.record
-			}
-			return Number(this.fileId) > 0 ? { fileId: this.fileId } : {}
+			return informatieobject && typeof informatieobject === 'object'
+				? informatieobject
+				: {}
 		},
 
 		/**
-		 * The document's name, so a panel opened from a file row says which
-		 * file it is showing the history of.
+		 * The Nextcloud file id whose versions this panel reads.
 		 *
-		 * @return {string} The name, or an empty string.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
-		 */
-		documentName() {
-			return String(
-				this.document.title || this.document.name || this.fileName || '',
-			)
-		},
-
-		/**
-		 * The case this panel is reading a document of.
+		 * The `fileId` prop wins over the row, because a row action on the
+		 * files browser names the node that was clicked while `row` is empty
+		 * there.
 		 *
-		 * @return {string} The case id, or an empty string.
-		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 * @return {number} The file id, or 0 when neither prop carries one.
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
 		 */
-		resolvedCaseId() {
-			const fromProp = this.caseId || ''
-			if (fromProp !== '' && !fromProp.startsWith('@')) {
+		resolvedFileId() {
+			const fromProp = Number(this.fileId)
+			if (Number.isFinite(fromProp) && fromProp > 0) {
 				return fromProp
 			}
-			return (this.$route && this.$route.params && this.$route.params.id) || ''
+			const fromRow = Number(this.document.fileId)
+			return Number.isFinite(fromRow) && fromRow > 0 ? fromRow : 0
+		},
+
+		/**
+		 * Whether the panel was handed no file at all.
+		 *
+		 * A panel with no file must SAY so. Rendering the empty-versions state
+		 * instead reads as "this file has no previous versions", which is a
+		 * different sentence and the wrong one: no versions and no file look
+		 * identical to a reader.
+		 *
+		 * @return {boolean} True when neither prop named a file.
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 */
+		hasNoFile() {
+			return this.resolvedFileId === 0
 		},
 
 		/**
@@ -221,16 +228,27 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		restoreDisabled() {
-			if (this.document.status === 'final') {
-				return true
+			return this.document.status === 'final'
+		},
+
+		/**
+		 * The sentence the refusal shows, naming the file when one was named.
+		 *
+		 * @return {string} The description.
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 */
+		refusalDescription() {
+			if (this.fileName !== '') {
+				return this.t(
+					'dossiq',
+					'{name} could not be resolved to a file on this server, so its versions cannot be read here.',
+					{ name: this.fileName },
+				)
 			}
-			// Opened on a file whose record could not be read: the status is
-			// unknown, so restore is refused rather than offered. See the
-			// header.
-			if (this.row && this.row.informatieobject) {
-				return false
-			}
-			return this.record === null
+			return this.t(
+				'dossiq',
+				'This panel was opened without a file, so there is nothing to read versions of.',
+			)
 		},
 	},
 
@@ -243,12 +261,10 @@ export default {
 			 * @param {boolean} isOpen Whether the modal is showing.
 			 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 			 */
-			async handler(isOpen) {
-				if (isOpen === false) {
-					return
+			handler(isOpen) {
+				if (isOpen) {
+					this.fetchVersions()
 				}
-				await this.loadRecord()
-				await this.fetchVersions()
 			},
 		},
 	},
@@ -260,44 +276,8 @@ export default {
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
-		async loadRecord() {
-			this.record = null
-			this.recordRead = false
-			// A row carries the record already; nothing to read.
-			if (this.row && this.row.informatieobject) {
-				this.recordRead = true
-				return
-			}
-			if (Number(this.fileId) <= 0 || this.resolvedCaseId === '') {
-				this.recordRead = true
-				return
-			}
-			try {
-				const url = generateUrl(
-					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
-				)
-				const { data } = await axios.get(url)
-				const rows = Array.isArray(data?.informatieobjecten)
-					? data.informatieobjecten
-					: []
-				this.record =
-					rows.find((row) => Number(row.fileId) === Number(this.fileId)) || null
-			} catch {
-				// Leaves `record` null, which disables restore. See the header.
-				this.record = null
-			} finally {
-				this.recordRead = true
-			}
-		},
-
-		/**
-		 * Fetch the document's versions from the Nextcloud versions API.
-		 *
-		 * @return {Promise<void>}
-		 * @spec openspec/specs/document-zaakdossier/spec.md
-		 */
 		async fetchVersions() {
-			if (!this.document.fileId || !this.userId) {
+			if (this.resolvedFileId === 0 || !this.userId) {
 				this.versions = []
 				return
 			}
@@ -311,7 +291,7 @@ export default {
 				// said "No previous versions" on every such instance — including the
 				// `php -S` instance this app's own E2E job runs on.
 				const url = generateRemoteUrl(
-					`dav/versions/${this.userId}/versions/${this.document.fileId}`,
+					`dav/versions/${this.userId}/versions/${this.resolvedFileId}`,
 				)
 				const { data } = await axios.request({
 					method: 'PROPFIND',
@@ -352,7 +332,7 @@ export default {
 				if (
 					!href
 					|| href.textContent.endsWith(
-						'/versions/' + this.document.fileId + '/',
+						'/versions/' + this.resolvedFileId + '/',
 					)
 				) {
 					return
@@ -403,6 +383,23 @@ export default {
 		},
 
 		/**
+		 * Open the Files app when this panel has no file of its own to read.
+		 *
+		 * The panel refuses rather than showing an empty list, and a refusal
+		 * that offers nothing to do next is a dead end; the Files app is where
+		 * the versions of any node can still be reached.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 */
+		showInFiles() {
+			if (typeof window === 'undefined') {
+				return
+			}
+			window.open(generateUrl('/apps/files'), '_blank', 'noopener')
+		},
+
+		/**
 		 * Restore the open document to one of its previous versions.
 		 *
 		 * Nextcloud restores a version by MOVEing its DAV node onto the
@@ -445,12 +442,6 @@ export default {
 <style scoped>
 .dossier-version-panel {
 	padding: 12px;
-}
-
-.dossier-version-panel__document {
-	margin: 0 0 12px;
-	color: var(--color-text-maxcontrast);
-	word-break: break-all;
 }
 
 .dossier-version-panel__list {

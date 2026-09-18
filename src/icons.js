@@ -133,6 +133,7 @@ import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutli
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FolderPlusOutline from 'vue-material-design-icons/FolderPlusOutline.vue'
 import FolderTextOutline from 'vue-material-design-icons/FolderTextOutline.vue'
+import FolderZipOutline from 'vue-material-design-icons/FolderZipOutline.vue'
 import FormatListBulletedType from 'vue-material-design-icons/FormatListBulletedType.vue'
 import FormatListChecks from 'vue-material-design-icons/FormatListChecks.vue'
 import Forum from 'vue-material-design-icons/Forum.vue'
@@ -340,6 +341,7 @@ export default {
 	FolderOutline,
 	FolderPlusOutline,
 	FolderTextOutline,
+	FolderZipOutline,
 	FormatListBulletedType,
 	FormatListChecks,
 	Forum,
