@@ -108,7 +108,6 @@ import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
 // @spec openspec/specs/case-management/spec.md
 import CaseCopyDialog from './dialogs/CaseCopyDialog.vue'
 import CaseHandoverDialog from './dialogs/CaseHandoverDialog.vue'
-import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
@@ -413,17 +412,11 @@ const registry = {
 	},
 
 	// @spec openspec/specs/status-transition-engine/spec.md
-	CaseLifecycleActionDialog: {
-		kind: 'modal',
-		component: CaseLifecycleActionDialog,
-		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
-		_orphanReason: "NO MANIFEST ACTION OPENS THIS, and its own note claimed four did until tests/vitest/registryOrphans.spec.js asked. The CaseDetail header carries `case-lifecycle-menu` onto CaseLifecycleMenuDialog, which offers the same four gestures and POSTs them itself, so this dialog has had no caller since that menu landed. It is named here rather than deleted because the deletion is a decision about which of the two surfaces is the one: this one reads GET /api/case/{id}/lifecycle before it posts and the menu does its own checks, and moving the gestures between them is its own change. What this entry buys in the meantime is that the debt is written down where the next reader of the registry will see it, instead of being a component nobody can find a route to.",
-	},
 	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	CaseLifecycleMenuDialog: {
 		kind: 'modal',
 		component: CaseLifecycleMenuDialog,
-		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume, which is the one gesture a suspended case needs in front of the handler rather than behind a menu.',
+		_note: 'One menu holding every lifecycle act on the case (REQ-LIFE-10). The acts used to sit in three places, each gated differently, so a handler found out what they could do by trying. It merges /available-transitions, /lifecycle and /acts into one list and DERIVES NOTHING: every disabled and every reason is copied from a server answer. An act the handler may not perform is SHOWN disabled with the reason, never hidden, because the reason is what tells them who to ask. THAT IS NOW THE ONLY LIFECYCLE SURFACE. This note used to end "CaseLifecycleActionDialog stays: the stages widget opens it directly for Resume", and it did not: the stages widget is the library `stages` widget, which cannot resolve a dossiq registry name, and no manifest action named that dialog either. It is retired in retire-the-dead-dialogs. Every gesture it offered, Suspend, Resume, Extend term and Reopen, is here, with the same reason prompt, an empty reason refused, and the same /lifecycle read before the post.',
 	},
 
 	// @spec openspec/changes/case-merge/specs/case-management/spec.md
