@@ -108,6 +108,9 @@ import CaseLifecycleActionDialog from './dialogs/CaseLifecycleActionDialog.vue'
 import CaseLifecycleMenuDialog from './dialogs/CaseLifecycleMenuDialog.vue'
 import CaseMergeDialog from './dialogs/CaseMergeDialog.vue'
 import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
+// The case as OpenRegister stored it, behind the admin-only Inspect action.
+// @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
 import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
@@ -429,6 +432,14 @@ const registry = {
 		kind: 'modal',
 		component: CaseCopyDialog,
 		_note: "CaseDetail Actions menu: what the copy is called, and whether the source's documents come along. NOT CnCopyDialog, which the design named: the library's 2.41.0 copy dialog offers three naming PATTERNS over a fixed name and carries no slots at all, so there is nowhere to put the Include documents checkbox and no way to type a title that is not one of the three. It reads the case from the ROUTE, because an open-modal action forwards its props verbatim and `@objectId` would arrive as that literal string. Deleted the day nextcloud-vue ships a `copy` header-action type taking a field list and an endpoint (tasks 1.4).",
+	},
+
+	// --- The case as Open Register stored it (admin-inspect-entry, row 2.22). ---
+	// @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
+	CaseRawDataDialog: {
+		kind: 'modal',
+		component: CaseRawDataDialog,
+		_note: "The Raw data entry of the CaseDetail Inspect action. NOT CnObjectMetadataModal, which the design named: that component takes a REQUIRED `objectData` object and an open-modal action forwards its props verbatim, so the manifest has no way to hand it the case, and what it renders is the `@self` block rather than the record, so it would answer who owns the case and never show a stored property. Deleted the day nextcloud-vue ships a metadata modal that resolves its own object from the page context. It reads the case from the ROUTE, for the reason CaseCopyDialog does. Hiding it from a handler is an affordance and not a control: the fetch goes to OpenRegister, which refuses on its own, and the dialog prints the refusal rather than opening empty.",
 	},
 
 	// --- Start a sub-process for the case (case-actions-menu, row A25). ---
