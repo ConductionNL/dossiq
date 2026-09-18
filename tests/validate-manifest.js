@@ -18,11 +18,18 @@
 // node_modules copy, and the published @conduction/nextcloud-vue v2 schema can
 // lag the canonical hydra one — e.g. the metric `cacheTtl` property).
 //
-// Schema lookup order (first hit wins):
+// Schema lookup order (first hit wins). CORRECTED 2026-09-18: this list had the
+// vendored copy second and the installed package third, which is the order the
+// code STOPPED using when somebody fixed the drift machine described below. A
+// comment that contradicts the code beside it is worse than no comment, and this
+// one had the two authorities the wrong way round.
 //   1. Env var APP_MANIFEST_SCHEMA — explicit absolute path to a schema JSON
-//   2. tests/schemas/app-manifest-v2.schema.json (vendored canonical v2)
-//   3. node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest-v2.schema.json
+//   2. node_modules/@conduction/nextcloud-vue/src/schemas/app-manifest-v2.schema.json
+//   3. tests/schemas/app-manifest-v2.schema.json (vendored, newer, also the
+//      reference this file uses to tell a library lag from a real defect)
 //   4. ../nextcloud-vue/src/schemas/app-manifest-v2.schema.json (sibling worktree)
+//
+// The manifest under test is src/manifest.json, overridable with APP_MANIFEST.
 
 'use strict'
 
@@ -31,7 +38,12 @@ const path = require('path')
 
 const REPO_ROOT = path.resolve(__dirname, '..')
 
-const MANIFEST_PATH = path.join(REPO_ROOT, 'src', 'manifest.json')
+// `APP_MANIFEST` overrides the file under test, the way `APP_MANIFEST_SCHEMA`
+// already overrides the schema. Added so `validateManifestLag.spec.js` can put
+// a deliberate defect in front of the classifier without editing the shipped
+// manifest, which is the only way to assert that a real error still fails.
+const MANIFEST_PATH = process.env.APP_MANIFEST
+	|| path.join(REPO_ROOT, 'src', 'manifest.json')
 
 // THE INSTALLED SCHEMA WINS OVER THE VENDORED COPY.
 //
@@ -85,6 +97,93 @@ function findSchemaPath() {
 function loadJson(file) {
 	const raw = fs.readFileSync(file, 'utf8')
 	return JSON.parse(raw)
+}
+
+/**
+ * The newer schema this repo vendors, used ONLY to tell a library lag from a
+ * defect in this manifest. It never validates anything: the installed schema
+ * stays the authority, for the reason the SCHEMA_CANDIDATES comment gives.
+ *
+ * @return {object|null} The vendored schema, or null when there is none.
+ */
+function newerSchema() {
+	if (newerSchema.cached !== undefined) {
+		return newerSchema.cached
+	}
+	const vendored = path.join(REPO_ROOT, 'tests', 'schemas', 'app-manifest-v2.schema.json')
+	try {
+		newerSchema.cached = fs.existsSync(vendored) ? loadJson(vendored) : null
+	} catch (_) {
+		newerSchema.cached = null
+	}
+	return newerSchema.cached
+}
+
+/**
+ * A schema's declared version, for saying which one is which out loud.
+ *
+ * @param {object|null} schema The schema.
+ * @return {string} Its version, or 'unknown'.
+ */
+function schemaVersion(schema) {
+	return (schema && schema.version) || 'unknown'
+}
+
+/**
+ * The version of the vendored newer schema.
+ *
+ * @return {string} Its version.
+ */
+function newerSchemaVersion() {
+	return schemaVersion(newerSchema())
+}
+
+/**
+ * Whether the vendored newer schema declares `property` at `instancePath`.
+ *
+ * 🔑 IT RESOLVES THE PATH RATHER THAN SEARCHING FOR THE NAME. `_note` is
+ * declared on a dozen shapes in this schema and refused on `$defs/action`, so a
+ * name search would call the one real error a lag and wave it through. The path
+ * is walked against the manifest and the matching definition is looked up, so
+ * the question asked is the one that matters: may THIS shape carry it.
+ *
+ * @param {string} instancePath The failing instance path, e.g. `/pages/3`.
+ * @param {string} property     The rejected property name.
+ * @return {boolean} True when the newer schema accepts it there.
+ */
+function newerSchemaAccepts(instancePath, property) {
+	const schema = newerSchema()
+	if (!schema || !schema.$defs) {
+		return false
+	}
+
+	const segments = String(instancePath || '').split('/').filter(Boolean)
+	// The two shapes an unknown property can be rejected on today. Both are
+	// resolved from the PATH, so a new one fails closed: unknown shape, not a
+	// lag, and the error keeps failing the build until somebody teaches this.
+	let def = null
+	if (segments.length === 2 && segments[0] === 'pages') {
+		def = schema.$defs.page
+	} else if (
+		segments.length === 4
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+	) {
+		def = null
+	} else if (
+		segments.length === 5
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& ['headerActions', 'actions', 'bulkActions', 'newActions'].includes(segments[3])
+	) {
+		def = schema.$defs.action
+	}
+
+	if (!def || !def.properties) {
+		return false
+	}
+
+	return Object.hasOwn(def.properties, property)
 }
 
 function loadAjv() {
@@ -239,8 +338,61 @@ function main() {
 		console.log('[validate-manifest] Ajv validation: PASS (0 errors)')
 		process.exit(0)
 	}
-	console.error('[validate-manifest] Ajv validation: FAIL')
+	// EVERY ERROR IS ONE OF TWO THINGS, AND THEY NEED DIFFERENT PEOPLE.
+	//
+	// Either the manifest is wrong, which an app author fixes, or the INSTALLED
+	// library is older than the schema this manifest targets, which only a
+	// library release fixes and which no app author can do anything about.
+	// Reported as one undifferentiated list they are indistinguishable, and
+	// measured on 2026-09-18 that cost every lane on the integration branch a
+	// red `check:manifest` and a paragraph in every PR body: three errors, two
+	// of them a lag on `savedViewPlaces` (schema 2.34.0, shipped in no release
+	// yet) and one of them a real `_note` on a header action that had been
+	// hiding behind them since it landed.
+	//
+	// The classification is DERIVED, never written down: an unknown-property
+	// error is a lag only when the newer schema this repo vendors actually
+	// declares that property. So it cannot become a blanket excuse, and it
+	// stops being a lag by itself the day the release lands.
+	const lagged = []
+	const real = []
 	for (const err of validate.errors || []) {
+		const property = err.params && err.params.additionalProperty
+		if (
+			err.keyword === 'additionalProperties'
+			&& property
+			&& newerSchemaAccepts(err.instancePath, property)
+		) {
+			lagged.push({ err, property })
+			continue
+		}
+		real.push(err)
+	}
+
+	if (lagged.length > 0) {
+		console.warn(
+			`[validate-manifest] ${lagged.length} error(s) are the INSTALLED library lagging this manifest, not a defect here:`,
+		)
+		for (const { err, property } of lagged) {
+			console.warn(
+				`  ~ ${err.instancePath || '(root)'} uses "${property}", which schema ${newerSchemaVersion()} declares and the installed ${schemaVersion(schema)} does not`,
+			)
+		}
+		console.warn(
+			'[validate-manifest] Nothing in this app fixes those. They go when @conduction/nextcloud-vue '
+			+ `releases a version carrying schema ${newerSchemaVersion()}.`,
+		)
+	}
+
+	if (real.length === 0) {
+		console.log(
+			`[validate-manifest] Ajv validation: PASS (0 errors of this app's own, ${lagged.length} pending a library release)`,
+		)
+		process.exit(0)
+	}
+
+	console.error('[validate-manifest] Ajv validation: FAIL')
+	for (const err of real) {
 		console.error(
 			`  - ${err.instancePath || '(root)'} ${err.message} (keyword=${err.keyword})`,
 		)
