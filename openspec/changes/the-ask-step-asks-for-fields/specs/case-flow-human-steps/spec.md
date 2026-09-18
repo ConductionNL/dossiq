@@ -4,15 +4,25 @@
 
 ### Requirement: An ask may ask for fields, and the engine resolves them
 
-A `dossiq.askPerson` step SHALL accept an optional `form` block in the shape
-OpenRegister's task form contract declares, the same shape
-`OCA\Dossiq\Service\Task\TaskDeclaration` already reads for a task raised by a
-status transition:
+A `dossiq.askPerson` step SHALL accept an optional form declaration in the
+shape OpenRegister's FLOW NODE contract declares, which is the six flat keys
+`TaskFormReader::fromConfig()` reads:
 
-- `kind: "fields"`, naming the subject `schema` and an ordered `fields` list of
-  `{field, required}` entries; or
-- `kind: "external"`, naming a Nextcloud Forms form bound through the engine's
-  form link.
+- `formKind: "fields"`, naming the subject `formSchema` and an ordered
+  `formFields` list of `{field, required}` entries, or a `formAction` to
+  inherit the fields from; or
+- `formKind: "external"`, naming a `formId` bound through the engine's form
+  link.
+
+The keys SHALL be flat, and this is not a style choice. The nested `form`
+block `OCA\Dossiq\Service\Task\TaskDeclaration` reads belongs to the
+TRANSITION path, where it is written to the task's `metadata.form` and read by
+`TaskFormReader::fromRecord()`. A flow node's task carries no such block: the
+engine resolves its form from the run's pinned graph through
+`TaskFormResolver::declarationOf()`, which reads `node['config']` through
+`fromConfig()`. A nested block on an ask step would leave `formKind` absent,
+resolve to a declaration with no form, and hand the assignee a task with no
+fields and no error anywhere.
 
 The step SHALL NOT carry a second form vocabulary, and dossiq SHALL NOT copy
 the declaration onto the task. An ask task already carries the node that
@@ -29,7 +39,7 @@ fill in.
 #### Scenario: A declared field reaches the person who has to answer it
 @e2e tests/e2e/ask-step-form.spec.ts
 
-- **GIVEN** a flow whose ask step declares `kind: "fields"` over the case schema with `verslag` required
+- **GIVEN** a flow whose ask step declares `formKind: "fields"` over the case schema with `verslag` required
 - **WHEN** the assignee opens the task the run created
 - **THEN** the task SHALL show the `verslag` field
 - **AND** completing the task without filling it SHALL be refused naming that field
@@ -44,7 +54,7 @@ fill in.
 #### Scenario: A step with no form is unchanged
 @e2e tests/e2e/ask-step-form.spec.ts
 
-- **GIVEN** a flow whose ask step declares no `form`
+- **GIVEN** a flow whose ask step declares no form key
 - **WHEN** the assignee opens the task
 - **THEN** the task SHALL show the question and no fields
 - **AND** completing it SHALL be accepted with no payload
@@ -55,11 +65,17 @@ fill in.
 cannot render, and the refusal SHALL name the schema, the field and the
 reason. It SHALL refuse:
 
-- a `kind` that is neither `fields` nor `external`;
+- a `formKind` that is neither `fields` nor `external`;
 - a `fields` declaration naming no schema, or an empty field list;
+- a form key orphaned from any `formKind`, which is the shape an author lands
+  in by copying the transition path's nested block;
 - a field that is not a property of the named schema;
 - a field the schema marks read only, or marks invisible;
 - an `external` declaration naming no form.
+
+The refusals SHALL be OpenRegister's own, forwarded unchanged. dossiq SHALL
+NOT paraphrase them: an author who reads one wording here and another in
+openregister can search for neither.
 
 The refusal SHALL reach the author at save time. A declaration that only
 fails when the task opens lands on the performer, who can neither fill the
