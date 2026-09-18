@@ -6,10 +6,18 @@ You move a case type between instances and it arrives whole.
 `CaseDefinitionExportService::exportComponent()` SHALL read each requested
 component from OpenRegister and SHALL NOT return a fixed empty shape. The
 `schema` component carries the case type object and its property definitions,
-`statuses` its status types and transitions, `permissions` its role types and
-their group bindings, `documents` its document types and templates,
-`metadata` its result types and decision types, and `workflows` the workflow
-templates bound to it.
+`statuses` its status types and the transitions its workflow templates
+declare, `permissions` its role types and their group bindings, `documents`
+its document types, `metadata` its result types and the decision types the
+case type references, and `workflows` the workflow templates bound to it.
+
+The transitions SHALL come from the workflow templates and not from the
+status types, because `statusType` declares none: a `transitions` list read
+off the status types would be empty beside a populated `statusTypes`, which
+reads as a case type whose statuses connect to nothing. The decision types
+SHALL come from the case type's own reference list for the same reason: they
+carry no `caseType` back-reference, so read as rows they answer the empty set
+on every instance.
 
 #### Scenario: A seeded case type exports its statuses
 @e2e exclude Backend export service, covered by PHPUnit.
@@ -48,6 +56,14 @@ importer can refuse a package whose references it cannot resolve.
 OpenRegister objects of its component under the caller's `conflictResolution`
 mode, and SHALL return the ids it created and the ids it replaced. A
 component that writes nothing SHALL NOT report `status: 'success'`.
+
+The import SHALL keep the ids the package carries. Every child row carries a
+`caseType` back-reference by id, so minting a new id for the case type would
+leave every status type, role type and document type pointing at nothing. A
+CONFLICT SHALL be this instance already holding that id, which is a different
+question from the package carrying one. A component whose rows were all
+skipped under `skip` SHALL report `skipped` rather than `success`: leaving
+what is already here alone is not a write.
 `importWorkflows()` SHALL deploy each workflow entry through the existing
 workflow path, or SHALL return `status: 'error'` naming the entry it could
 not deploy. Counting files SHALL NOT be reported as an import.
