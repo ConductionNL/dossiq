@@ -3981,7 +3981,7 @@
 					},
 					{
 						"id": "pm-dwell",
-						"title": "Dwell time by status (median hours)",
+						"title": "Dwell time by status",
 						"type": "custom"
 					},
 					{
@@ -3992,6 +3992,11 @@
 					{
 						"id": "pm-bottlenecks",
 						"title": "Bottleneck ranking",
+						"type": "custom"
+					},
+					{
+						"id": "pm-dwell-by-assignee",
+						"title": "Dwell time by handler",
 						"type": "custom"
 					}
 				],
@@ -4027,6 +4032,14 @@
 						"gridY": 9,
 						"gridWidth": 12,
 						"gridHeight": 6
+					},
+					{
+						"id": 5,
+						"widgetId": "pm-dwell-by-assignee",
+						"gridX": 0,
+						"gridY": 15,
+						"gridWidth": 12,
+						"gridHeight": 6
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"
@@ -4036,7 +4049,8 @@
 				"widget-pm-kpis": "PmKpiWidget",
 				"widget-pm-dwell": "PmDwellChartWidget",
 				"widget-pm-throughput": "PmThroughputChartWidget",
-				"widget-pm-bottlenecks": "PmBottleneckTableWidget"
+				"widget-pm-bottlenecks": "PmBottleneckTableWidget",
+				"widget-pm-dwell-by-assignee": "PmDwellByAssigneeWidget"
 			}
 		},
 		{

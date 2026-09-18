@@ -60,6 +60,7 @@ import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
+import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
 import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
 import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
@@ -377,6 +378,7 @@ export default {
 	PmDwellChartWidget, // dwell time by status (CnChartWidget bar)
 	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
 	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
+	PmDwellByAssigneeWidget, // the same dwell intervals keyed by who held them (dwell-time-on-the-working-calendar)
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,
