@@ -365,5 +365,7 @@ class ConfigKeys {
 		'reusable_step_schema',
 		'content_template_schema',
 		'case_type_group_schema',
+		'field_inspection_schema',
+		'field_evidence_schema',
 	];
 }//end class

@@ -24291,7 +24291,12 @@
           "timestamp": "2026-06-02T10:02:00+02:00"
         },
         "transcription": "Spantvoet zuidzijde staat 40 millimeter uit het hart. Uitvoerder haalt de berekening op bij de constructeur.",
-        "transcriptionStatus": "synced",
+        "transcriptionStatus": "done",
+        "durationSeconds": 38,
+        "language": "nl",
+        "transcriptionQueuedAt": "2026-06-02T10:02:10+02:00",
+        "transcriptionCompletedAt": "2026-06-02T10:03:41+02:00",
+        "transcriptionAttempts": 1,
         "tags": [
           "dakconstructie",
           "afwijking"

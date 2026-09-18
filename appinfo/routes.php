@@ -696,6 +696,11 @@ $extra = [
         // Per-case inspection result submission and retrieval.
     ['name' => 'inspectionChecklist#submitResult', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
     ['name' => 'inspectionChecklist#getResults',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+        // What an inspector captured at the site. The metadata validator and
+        // the transcription queue both shipped with mobiel-inspectie-offline
+        // and had no door, so a photo or a voice memo reached nobody and the
+        // fieldEvidence page read a schema nothing wrote.
+    ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
         // Per-case advice request creation.
     ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
     ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],

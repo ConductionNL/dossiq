@@ -171,7 +171,7 @@
       "fieldEvidence": {
         "slug": "fieldEvidence",
         "icon": "CameraOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:MediaObject",
         "title": "Field Evidence",
         "description": "A piece of evidence (photo, voice memo, document, or sketch) captured offline during a field inspection.",
@@ -232,15 +232,56 @@
           "transcriptionStatus": {
             "type": "string",
             "enum": [
+              "not_applicable",
               "pending",
-              "syncing",
-              "synced",
-              "failed",
-              "not_applicable"
+              "queued",
+              "running",
+              "done",
+              "manual",
+              "failed"
             ],
             "default": "not_applicable",
             "title": "Transcription Status",
-            "description": "Current status of the transcription process"
+            "description": "Where the transcription of a voice memo has got to; not_applicable for every other kind of evidence. These are the values TranscriptionService actually writes. The list used to read pending/syncing/synced/failed, which is verbatim the syncQueue status vocabulary: it answers whether a row reached the server, not whether anybody has transcribed the memo."
+          },
+          "durationSeconds": {
+            "type": "integer",
+            "title": "Duration (seconds)",
+            "description": "How long a voice memo runs. TranscriptionService reads it to refuse a memo over the five-minute limit, so a record that does not carry it cannot be refused for length."
+          },
+          "language": {
+            "type": "string",
+            "default": "nl",
+            "title": "Language",
+            "description": "The language spoken in a voice memo, passed to the transcriber."
+          },
+          "transcriptionQueuedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Transcription Queued At",
+            "description": "When the memo was queued for transcription."
+          },
+          "transcriptionCompletedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Transcription Completed At",
+            "description": "When the transcription finished, by machine or by hand."
+          },
+          "transcriptionAttempts": {
+            "type": "integer",
+            "default": 0,
+            "title": "Transcription Attempts",
+            "description": "How many times transcription has been tried. Undeclared, this count was dropped on every write and read back as zero, so a memo that could not be transcribed would have been retried for ever and never reached the manual fallback."
+          },
+          "transcriptionNote": {
+            "type": "string",
+            "title": "Transcription Note",
+            "description": "Why this memo needs transcribing by hand, when it does."
+          },
+          "transcriptionLastError": {
+            "type": "string",
+            "title": "Transcription Last Error",
+            "description": "What the transcriber said the last time it failed."
           },
           "tags": {
             "type": "array",
