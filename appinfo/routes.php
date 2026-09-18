@@ -484,6 +484,15 @@ $extra = [
         // them.
     ['name' => 'acknowledgement#duty',      'url' => '/api/case/{caseId}/acknowledgement',     'verb' => 'GET'],
     ['name' => 'acknowledgement#recordMet', 'url' => '/api/case/{caseId}/acknowledgement/met', 'verb' => 'POST'],
+    // splitting-a-case-and-its-incidents. The split DIVIDES: the chosen rows
+    // leave the first case, which is what separates it from the copy action.
+    // The second case is opened by the caller, so a split cannot drift from
+    // CaseCopyService on what a new case gets.
+    ['name' => 'caseSplit#divisible',        'url' => '/api/case/{caseId}/split/divisible',            'verb' => 'GET'],
+    ['name' => 'caseSplit#split',            'url' => '/api/case/{caseId}/split',                      'verb' => 'POST'],
+    ['name' => 'caseSplit#incidents',        'url' => '/api/case/{caseId}/incidents',                  'verb' => 'GET'],
+    ['name' => 'caseSplit#recordIncident',   'url' => '/api/case/{caseId}/incidents',                  'verb' => 'POST'],
+    ['name' => 'caseSplit#handOverIncident', 'url' => '/api/case/{caseId}/incidents/{incidentId}/hand-over', 'verb' => 'POST'],
 
         // The attention flag a person raises and clears
         // (markers-and-assessments-on-the-case, row 2.36). Both writes go
