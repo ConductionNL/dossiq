@@ -42,6 +42,41 @@ namespace OCA\Dossiq\Service\Transitions;
  */
 class TransitionSpecReader {
 	/**
+	 * Every guard a transition is subject to: its own, then the implicit ones.
+	 *
+	 * ONE LIST, READ BY BOTH SIDES OF THE ENGINE. The offer and the move each
+	 * built the implicit half for themselves, and an implicit guard added to one
+	 * copy and not the other is a button enabled over a write that refuses, or
+	 * the reverse.
+	 *
+	 * The status checklist is appended to every transition: the list it
+	 * enforces is authored on the status. The walked approval follows
+	 * (REQ-DEC-01), because the case type, not the template, says which acts
+	 * wait for decidiq. It is appended only when its evaluator is wired: an
+	 * implicit guard nobody answers for is refused as unknown on every
+	 * transition of every case, which is a broken engine and not a closed gate.
+	 *
+	 * @param array<string, mixed> $transition     The transition.
+	 * @param bool                 $approvalsWired Whether the registry answers for the approval gate.
+	 *
+	 * @return array<int, array<string, mixed>> The guards to evaluate, in order.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 */
+	public function guardsWithImplicit(array $transition, bool $approvalsWired): array {
+		$guards = $this->extractGuards(transition: $transition);
+		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
+
+		$act = trim((string)($transition['id'] ?? ''));
+		if ($approvalsWired === true && $act !== '') {
+			$guards[] = ['type' => GuardRegistry::APPROVAL_GATE, 'act' => $act];
+		}
+
+		return $guards;
+	}//end guardsWithImplicit()
+
+	/**
 	 * Extract the guards list from a transition definition (supports both
 	 * `guards: []` and a single `guard: {...}` shape).
 	 *

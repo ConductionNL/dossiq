@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\IntakePolicy;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
@@ -101,6 +102,7 @@ class IntakeTriageController extends Controller {
 	 * @param AssigneeNarrowing     $narrowing        Who may hold the case.
 	 * @param DuplicatePolicy       $duplicates       What this case type does about a case that already exists.
 	 * @param RefusalOutcome        $refusal          Refusal as an outcome of routing.
+	 * @param AdmissibilityJudgement $admissibility   The ontvankelijkheid verdict at intake.
 	 * @param TriageSleep           $sleep            The triage sleep.
 	 * @param IntakeFanOut          $fanOut           One submission, several cases.
 	 * @param IntakeLog             $log              The triage queue.
@@ -118,6 +120,7 @@ class IntakeTriageController extends Controller {
 		private readonly AssigneeNarrowing $narrowing,
 		private readonly DuplicatePolicy $duplicates,
 		private readonly RefusalOutcome $refusal,
+		private readonly AdmissibilityJudgement $admissibility,
 		private readonly TriageSleep $sleep,
 		private readonly IntakeFanOut $fanOut,
 		private readonly IntakeLog $log,
@@ -223,6 +226,58 @@ class IntakeTriageController extends Controller {
 
 		return new JSONResponse($record);
 	}//end refuse()
+
+	/**
+	 * Record the admissibility verdict at intake (REQ-DEC-02).
+	 *
+	 * An inadmissible verdict closes the case through the ordinary close act
+	 * with the result its case type names, records who judged it, and tells the
+	 * applicant through the declared moment. An admissible one is recorded and
+	 * the case moves on through the transition its phase already offers: moving
+	 * it here would be a second mover of the same case.
+	 *
+	 * @param string $caseId  The case.
+	 * @param string $verdict `admissible` or `inadmissible`.
+	 * @param string $reason  Why. The applicant may object to the verdict.
+	 *
+	 * @return JSONResponse What was recorded, or the refusal.
+	 *
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 */
+	#[NoAdminRequired]
+	public function judgeAdmissibility(string $caseId, string $verdict = '', string $reason = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$forbidden = $this->refuseUnauthorized(caseId: $caseId, user: $user);
+		if ($forbidden !== null) {
+			return $forbidden;
+		}
+
+		try {
+			$recorded = $this->admissibility->judge(
+				caseId: $caseId,
+				verdict: $verdict,
+				reason: $reason,
+				judgedBy: $user->getUID(),
+			);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'judge admissibility of case ' . $caseId, e: $e);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Dossiq: judging admissibility of case ' . $caseId . ' failed: ' . $e->getMessage()
+			);
+
+			return new JSONResponse(
+				['message' => 'The verdict was not recorded.', 'error' => 'admissibility-failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}//end try
+
+		return new JSONResponse($recorded);
+	}//end judgeAdmissibility()
 
 	/**
 	 * The triage queue, with its sleeping items taken out.

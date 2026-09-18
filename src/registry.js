@@ -61,6 +61,7 @@ import CasePlannedWidget from './components/case/CasePlannedWidget.vue'
 // dossiq's own CMMN runtime (retire-cmmn-caseplanstate, group 1).
 // @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md
 import CasePlanPanel from './components/case/CasePlanPanel.vue'
+import CasePlanSociaalDomeinPanel from './components/case/CasePlanSociaalDomeinPanel.vue'
 // What is new on this case since the handler last looked, and where.
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationPanel.vue'
@@ -71,6 +72,7 @@ import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
+import RoleTypePicker from './components/case/RoleTypePicker.vue'
 // The case type's effective blueprint: what it offers, and what it inherited.
 // @spec openspec/specs/case-types/spec.md
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
@@ -108,6 +110,7 @@ import CasePlanFollowUpDialog from './dialogs/CasePlanFollowUpDialog.vue'
 // The case as OpenRegister stored it, behind the admin-only Inspect action.
 // @spec openspec/changes/admin-inspect-entry/specs/case-management/spec.md
 import CaseRawDataDialog from './dialogs/CaseRawDataDialog.vue'
+import CaseRebindDialog from './dialogs/CaseRebindDialog.vue'
 import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // The three case-type gestures a declarative action cannot carry: a file, a
 // change note, and a route to the copy (case-type-authoring-extras D5).
@@ -121,6 +124,10 @@ import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
 import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
 import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
+import CrossDomainLookupDialog from './dialogs/CrossDomainLookupDialog.vue'
+// Remind a colleague about this case on a date (case-reminder-as-task).
+// @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+import RemindDialog from './dialogs/RemindDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -379,6 +386,18 @@ const registry = {
 		component: CaseVersionMoveDialog,
 		_note: 'CaseDetail Actions menu: move this case to another version of its own case type. The PREVIEW is why it is a modal and not a confirm gate: a case is pinned to the version it was filed under because its status is a row only that version holds, so the person moving it is shown the landing status and the statuses and fields the other version adds and drops, including the dropped ones this case has answered. It derives NONE of that: canMove and every refusal sentence come from the server, so the dialog cannot disagree with the write.',
 	},
+	// @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md
+	CrossDomainLookupDialog: {
+		kind: 'modal',
+		component: CrossDomainLookupDialog,
+		_note: 'Is this household already known to another domain. A modal and not an api-call because the GROUND is the act: it is chosen before the answer rather than filled in afterwards, which is what makes the lookup deliberate and what makes the log mean something when the person asks what was looked up about them. The answer is three facts, that an open case exists, in which domain and who to call, and there is no show-more and never will be: purpose limitation between Wmo, Jeugdwet and Participatiewet does not allow the 360 view that gap row 5.4 asks for. The grounds come from the server, because a second copy here would drift and a ground on screen the service does not know is a choice a consulent makes and is then refused for.',
+	},
+	// @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	CaseRebindDialog: {
+		kind: 'modal',
+		component: CaseRebindDialog,
+		_note: 'CaseDetail Actions menu: move this case to a DIFFERENT case type, which the version move beside it cannot do. It is a modal and not a confirm gate because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for rather than derived, and so is every property the target requires in that status and the case does not carry. The dialog derives no verdict: canRebind, the missing names and every refusal come from the server, and the group check lives in the service rather than in this button.',
+	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	CaseHandoverDialog: {
 		kind: 'modal',
@@ -495,6 +514,14 @@ const registry = {
 		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once" or "three times". A Repeat picker turns it into a series (planned-case-series): the recurrence becomes the cron fields, the end becomes the sweep\'s stop rule, and the Related tab grows a series row with a Stop series action. The form lives here and not in the manifest: an `open-modal` header action carries a target and props only, and the five fields (case type, date, title, Repeat, Ends) are bound to each other, since the end fields appear only once a repeat is chosen and no `visibleWhen` on a header action can say that. What the manifest does decide is that the gesture is a modal rather than a `handler`, because a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. The manifest entry itself carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action, so the rationale belongs in this file.',
 	},
 
+	// --- Remind a colleague about this case (case-reminder-as-task, row 8.4). ---
+	// @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+	RemindDialog: {
+		kind: 'modal',
+		component: RemindDialog,
+		_note: "CaseDetail header action: who, when and what, creating an ENGINE task on the case with kind `reminder`. There is no reminder record and no dossiq job, and that is the design rather than an omission: the engine's due window already answers what is coming up and its assignment notification already tells the colleague, so a second clock in dossiq would disagree with the badge the engine decided the first time one of them was wrong. The kind is the only mark a reminder carries, it is an indexed column on openregister_tasks (openregister#3863), and the Tasks sidebar facets on it. Nothing else treats the value specially, which means a reminder written with the wrong spelling is still created, assigned and notified and is simply missing from the one lens that exists to find it; `REMINDER_KIND` in src/utils/reminderHelpers.js is the single spelling all three surfaces read. The form lives here and not in the manifest because an `open-modal` header action carries a target and props only, and it reads the case from the ROUTE because open-modal forwards props verbatim, so `@objectId` would arrive as that literal string. Who defaults to the signed-in user: most reminders are the one you set for yourself. The manifest entry carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action.",
+	},
+
 	// --- The duplicate warning at intake (duplicate-warning-at-intake). ---
 	// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	caseCreateWithDuplicateCheck: {
@@ -508,8 +535,17 @@ const registry = {
 	InitiatorPicker: {
 		kind: 'form-field',
 		component: InitiatorPicker,
-		appliesTo: ['case.requester', 'contactmoment.contact'],
+		appliesTo: ['case.requester', 'contactmoment.contact', 'role.representedParty'],
 		_note: 'Cross-source initiator picker (Person=brpPerson / Company=kvkCompany register sets via the object store, Contact=core contactsmenu with graceful empty state). Bound to case.requester through fieldOverrides on the Dashboard new-case action and the CaseDetail case-core overrides. Also used inline by InitiatorPickerModal in the StartCaseWidget create flow. NOTE: a form-field entry is validated by CnAppRoot but not yet MOUNTED into CnFormDialog by @conduction/nextcloud-vue 2.41.0 — the manifest binding is the declaration, and until the library mounts it the resolved ns#Requester provider renders the field as its own object picker.',
+	},
+
+	// --- Which role a party takes on the case (gemachtigde-role-on-every-case-type). ---
+	// @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md
+	RoleTypePicker: {
+		kind: 'form-field',
+		component: RoleTypePicker,
+		appliesTo: ['role.roleType'],
+		_note: "The Add party form's Role field. The $ref on role.roleType makes the library offer EVERY roleType row this instance holds, including the seats of case types this case is not, and it cannot skip the generic Gemachtigde a type declares itself. This narrows the list to the case type's own rows followed by the generic ones, and drops a generic row whose key the type already claims. The ordering and the deduplication live in src/services/roleTypeOptions.js so they are testable without mounting anything. Same standing limitation as InitiatorPicker above: @conduction/nextcloud-vue 3.2.0 validates a form-field entry (CnAppRoot requires `appliesTo`) but does not yet mount one into the form dialog, so until it does the field falls back to the library's own object picker and this is the declaration of what it should be.",
 	},
 
 	// TaskWaitingCaseSection is NOT a registry entry any more, and neither is
@@ -836,6 +872,14 @@ const registry = {
 		kind: 'widget',
 		component: CaseArchivedStrip,
 		_note: 'CaseDetail: the sentence that says this case is in the archive, who filed it, on what day and with what reason. It sits directly above the unread strip because it changes how everything under it should be read: the page is a record to consult rather than work to do. Restore is deliberately NOT a button here, it is one entry in the Lifecycle menu beside every other act, because an act offered in two places is gated in two places. Silent on a case that is not archived, which is almost every case.',
+	},
+
+	// @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
+	'family-plan': {
+		// @custom-widget-ratchet exclude the plan is three schemas read together, `gezinsplan` with its `casePlanGoal` rows and the `intervention` rows under those, with `overdue` and `dueForReview` computed on the server against today. No declarative widget joins three schemas, and a `data` widget over `gezinsplan` would render the plan's own fields and none of its goals. Deleted the day a widget type can render a two-level child collection with a server-computed flag per row
+		kind: 'widget',
+		component: CasePlanSociaalDomeinPanel,
+		_note: 'CaseDetail, Jeugdwet: the family plan, its goals and the interventions under them. NOT the adaptive case plan beside it: CasePlanPanel renders OpenRegister\'s case layer, the stages and milestones of any case, and this is what this household agreed to work on, who is doing what about it and by when. Two things called a plan. Every line carries something a review can decide about: a goal says what would count as met, an intervention says who carries it out and by when, so it can be late. The register held both as plain strings until the-social-domain-plan-and-its-grounds, which is why this panel exists at all. It derives no verdict: overdue and dueForReview come from the server, so the panel and the plan endpoint cannot disagree about which household is being worked to a stale plan. Interventions that name no goal are shown separately rather than hidden, because activity nobody can connect to a goal is what a reviewer should be looking at.',
 	},
 
 	'case-unread': {

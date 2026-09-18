@@ -16,7 +16,7 @@
             "contactmoment": {
                 "slug": "contactmoment",
                 "icon": "PhoneInTalk",
-                "version": "1.4.0",
+                "version": "1.5.0",
                 "configuration": {
                     "x-openregister-processing": {
                         "logReads": true,
@@ -38,8 +38,8 @@
                     "startTime": {"type": "string", "title": "Start Time", "format": "date-time", "description": "Start time of the contact"},
                     "endTime": {"type": "string", "title": "End Time", "format": "date-time", "description": "End time of the contact"},
                     "durationSeconds": {"type": "integer", "title": "Duration Seconds", "description": "Calculated duration in seconds"},
-                    "callerIdentification": {"type": "string", "title": "Caller Identification", "description": "Phone number, email or social handle of the caller"},
-                    "geidentificeerdeBurgerId": {"type": "string", "title": "Identified Citizen ID", "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"},
+                    "callerIdentification": {"authorization": {"read": [{"group": "dossiq-sensitive"}]}, "type": "string", "title": "Caller Identification", "description": "Phone number, email or social handle of the caller"},
+                    "geidentificeerdeBurgerId": {"authorization": {"read": [{"group": "dossiq-sensitive"}]}, "type": "string", "title": "Identified Citizen ID", "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"},
                     "contact": {"type": "string", "format": "uuid", "referenceSemanticType": "https://openregister.app/ns#Requester", "title": "Contact", "facetable": true, "description": "The person or organisation this moment is about, as a row in the brpPerson or kvkCompany register set. Same shape and same semantic type as case.requester, so one picker serves both."},
                     "identificationMethod": {"type": "string", "title": "Identification Method", "enum": ["digid", "bsn_verificatie", "identificatievragen", "non_geidentificeerd"], "description": "How the caller was identified"},
                     "identificationScore": {"type": "number", "title": "Identification Score", "description": "Identification confidence score (0.0-1.0)"},
@@ -48,11 +48,11 @@
                     "relatedCases": {"type": "array", "title": "Related Cases", "items": {"type": "string"}, "description": "Case ids this contact relates to"},
                     "newCaseIds": {"type": "array", "title": "New Case IDs", "items": {"type": "string"}, "description": "Case ids created during this contact"},
                     "nature": {"type": "string", "title": "Nature", "enum": ["informatieverzoek", "statusverzoek", "complaint", "report", "new_request", "doorverbinding"], "description": "Nature of the contact"},
-                    "summary": {"type": "string", "title": "Summary", "description": "Summary of the contact"},
+                    "summary": {"authorization": {"read": [{"group": "dossiq-sensitive"}]}, "type": "string", "title": "Summary", "description": "Summary of the contact"},
                     "accordingToIntent": {"type": "string", "title": "Intent Compliant", "description": "Detected dialogue intent"},
                     "firstTimeFix": {"type": "boolean", "title": "First Time Fix", "default": false, "description": "Whether the issue was resolved in one contact"},
                     "visibleToApplicant": {"type": "boolean", "title": "Visible to the applicant", "default": false, "description": "Off by default. Tick it to put this contact on the timeline the applicant reads."},
-                    "transcript": {"type": "string", "title": "Transcription", "description": "Optional voice-to-text transcription"},
+                    "transcript": {"authorization": {"read": [{"group": "dossiq-sensitive"}]}, "type": "string", "title": "Transcription", "description": "Optional voice-to-text transcription"},
                     "transferTo": {"type": "string", "title": "Transfer To", "description": "Specialist user id or wachtrij name if transferred"}
                 }
             },
