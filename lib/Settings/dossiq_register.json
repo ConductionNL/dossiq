@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.19.2"
+        "version": "0.20.2"
     },
     "x-openregister": {
         "type": "application",
@@ -662,6 +662,12 @@
                         "minimum": 1,
                         "title": "Takeover answer period, in days",
                         "description": "How long the holder has to accept or refuse a takeover request before it goes to the unit holding the case. Empty means the fleet default of three days."
+                    },
+                    "intakeFormRef": {
+                        "type": "string",
+                        "title": "Intake form",
+                        "description": "The hash of the Nextcloud Forms form that opens a case of this type. Leave it empty and nothing listens. A submission of a bound form starts the case with this type’s first status and the clock running from the day it came in.",
+                        "visible": true
                     }
                 }
             },
@@ -726,6 +732,13 @@
                         "default": false,
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0,
+                        "title": "Capacity",
+                        "description": "How many cases this status may hold at once. Leave it at zero and the status takes as many as arrive, which is how every status behaves today. Set a number and the case past it is refused, with the status, the limit and the count in the sentence. A final status is never capped: a case type that could not close its thirteenth case would be worse off than one with no limit at all."
                     },
                     "phaseTermDays": {
                         "type": "integer",
@@ -1640,7 +1653,9 @@
                         "photos",
                         "maps",
                         "shares",
-                        "decidesk-decisions"
+                        "decidesk-decisions",
+                        "talk",
+                        "deck"
                     ],
                     "x-openregister-processing": {
                         "logReads": true,
@@ -2297,7 +2312,14 @@
                             },
                             "symmetric": true
                         }
-                    ]
+                    ],
+                    "mailObjectTemplate": {
+                        "title": "{{subject}}",
+                        "description": "{{preview}}",
+                        "intakeChannel": "email",
+                        "startDate": "{{date}}",
+                        "initiatorDisplayName": "{{senderName}}"
+                    }
                 },
                 "required": [
                     "title",
@@ -7582,7 +7604,8 @@
                 "configuration": {
                     "linkedTypes": [
                         "forms",
-                        "photos"
+                        "photos",
+                        "maps"
                     ]
                 },
                 "required": [
@@ -9135,6 +9158,15 @@
                                 "description": "The complainant withdraws the complaint."
                             }
                         }
+                    },
+                    "linkedTypes": [
+                        "mail"
+                    ],
+                    "mailObjectTemplate": {
+                        "subject": "{{subject}}",
+                        "description": "{{preview}}",
+                        "receiptChannel": "email",
+                        "receiptDate": "{{date}}"
                     }
                 }
             },
@@ -11002,6 +11034,8 @@
                     "caseFederatedShare",
                     "caseShare",
                     "casetransfer",
+                    "caseCustody",
+                    "caseTakeover",
                     "checklistItem",
                     "consultation",
                     "obligation",

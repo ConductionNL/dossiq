@@ -68,6 +68,24 @@ class TransitionSpecReader {
 		$guards = $this->extractGuards(transition: $transition);
 		$guards[] = ['type' => GuardRegistry::STATUS_CHECKLIST];
 
+		// The capacity of the status being ENTERED, which is the one value the
+		// capacity guard cannot read off the case: the case still carries the
+		// status it is leaving. Implicit for the same reason the checklist is,
+		// because a limit authored on a status must bind every road into it,
+		// including a transition written before the limit existed.
+		//
+		// It lives HERE, in the one list the offer and the move both read,
+		// rather than being appended at each call site. `status-capacity-limit`
+		// and `approval-gate` were built in parallel and collided exactly here:
+		// one appended the capacity guard in OfferedTransitions and in
+		// StatusTransitionService, the other moved the implicit guards into this
+		// method. Two lists that must agree is how the board offers a move the
+		// engine then refuses.
+		$guards[] = [
+			'type' => GuardRegistry::STATUS_CAPACITY,
+			'toStatus' => (string)($transition['toStatus'] ?? ''),
+		];
+
 		$act = trim((string)($transition['id'] ?? ''));
 		if ($approvalsWired === true && $act !== '') {
 			$guards[] = ['type' => GuardRegistry::APPROVAL_GATE, 'act' => $act];

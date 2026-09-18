@@ -4993,7 +4993,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.3.0",
+        "version": "1.4.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -5057,11 +5057,25 @@
             "description": "Calculated duration in seconds"
           },
           "callerIdentification": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Caller Identification",
             "description": "Phone number, email or social handle of the caller"
           },
           "geidentificeerdeBurgerId": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Identified Citizen ID",
             "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"
@@ -5125,6 +5139,13 @@
             "description": "Nature of the contact"
           },
           "summary": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Summary",
             "description": "Summary of the contact"
@@ -5141,6 +5162,13 @@
             "description": "Whether the issue was resolved in one contact"
           },
           "transcript": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Transcription",
             "description": "Optional voice-to-text transcription"
@@ -11968,12 +11996,11 @@
       "sociaalDomeinAuditLog": {
         "slug": "sociaalDomeinAuditLog",
         "icon": "FileEyeOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Sociaal Domein Audit Log",
-        "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd.",
+        "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd. V1.1 additief: een raadpleging kan over een BURGER gaan in plaats van over een zaak, dus subjectId is toegevoegd en caseId is niet langer verplicht. Elke bestaande rij blijft geldig en elke bestaande schrijver blijft werken.",
         "type": "object",
         "required": [
-          "caseId",
           "action",
           "moment"
         ],
@@ -11981,7 +12008,13 @@
           "caseId": {
             "title": "Case ID",
             "type": "string",
-            "description": "Referentie naar de geraadpleegde zaak"
+            "description": "Referentie naar de geraadpleegde zaak. Leeg bij een raadpleging die over een burger gaat en geen enkele zaak oplevert, bijvoorbeeld een geweigerde lookup."
+          },
+          "subjectId": {
+            "title": "Subject ID",
+            "type": "string",
+            "facetable": true,
+            "description": "De burgerreferentie waarmee is geraadpleegd (BSN of burgerId). Dit is waarop een inzageverzoek zoekt: de vraag is wie er over MIJ heeft gekeken, niet wie er in een zaak heeft gekeken."
           },
           "employeeId": {
             "title": "Employee ID",

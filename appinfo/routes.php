@@ -158,6 +158,23 @@ $extra = [
     ['name' => 'caseRebind#permission',     'url' => '/api/rebind/permission',            'verb' => 'GET'],
     ['name' => 'caseRebind#options',        'url' => '/api/case/{caseId}/rebind',         'verb' => 'GET'],
     ['name' => 'caseRebind#rebind',         'url' => '/api/case/{caseId}/rebind',         'verb' => 'POST'],
+
+        // ── The family plan and its grounds (the-social-domain-plan-and-its-grounds)
+        // Rows 5.18 and 14.1. The plan read answers the plan, its goals, its
+        // interventions and whether it is due for review in ONE call: four
+        // round trips would let the four halves of one screen come from four
+        // moments. The lookup's guard is not a role, it is that a GROUND has
+        // been chosen, and the service refuses without one before it reads
+        // anything; `grounds` exists so the dialog offers the server's own list
+        // rather than a second copy that can drift out of it.
+    ['name' => 'sociaalDomeinPlan#plan',             'url' => '/api/family-plans/{planId}',                    'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#saveGoal',         'url' => '/api/family-plans/{planId}/goals',              'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#saveIntervention', 'url' => '/api/family-plans/{planId}/interventions',      'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#recordReview',     'url' => '/api/family-plans/{planId}/reviews',            'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#closeGoal',        'url' => '/api/family-plan-goals/{goalId}/close',         'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
@@ -510,6 +527,10 @@ $extra = [
         // are NOT a route of their own: they ride on `caseActs#acts` above,
         // so "what may I do right now" is one endpoint feeding one menu.
     ['name' => 'caseTask#capabilities', 'url' => '/api/case-tasks/capabilities',         'verb' => 'GET'],
+    // admin-inspect-entry: the Inspect action's visibleWhen predicate. The
+    // manifest action vocabulary has no adminOnly, and only the endpoint mode
+    // of visibleWhen can ask about the READER rather than the record.
+    ['name' => 'inspect#availability', 'url' => '/api/inspect/availability', 'verb' => 'GET'],
     ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
     ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
     ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
@@ -774,6 +795,16 @@ $extra = [
     ['name' => 'milestone#caseProgress', 'url' => '/api/cases/{caseId}/milestones/progress', 'verb' => 'GET'],
     ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
     ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
+
+    // What happens next on a case, and the gesture that moves it on
+    // (task-dependencies-and-the-next-planned-action, gap register row 3.28).
+    // READING the list of planned actions is not here: they are ordinary
+    // OpenRegister objects and the case page reads them as it reads every
+    // other collection, so a route for that would be the pass-through ADR-022
+    // refuses. `next` answers the ONE action a handler is asked about, and
+    // `complete` is the two writes that must not be three client calls.
+    ['name' => 'plannedAction#next',     'url' => '/api/cases/{caseId}/planned-actions/next', 'verb' => 'GET'],
+    ['name' => 'plannedAction#complete', 'url' => '/api/cases/{caseId}/planned-actions/{actionId}/complete', 'verb' => 'POST'],
 
         // ── Besluitvorming workflow ──────────────────────────────────────
     ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],

@@ -186,6 +186,20 @@ export const FIXTURE_SCHEMAS = [
 	'informatieobjecttype',
 	'consultation',
 	'objectionProceeding',
+	// The family plan, child-first: an intervention names its goal AND its
+	// plan, a goal names its plan, and the plan names its Jeugdwet case
+	// (the-social-domain-plan-and-its-grounds).
+	//
+	// 🔴 `sociaalDomeinAuditLog` IS DELIBERATELY ABSENT. The schema says in as
+	// many words that it is append-only and never mutated: it is what a
+	// subject access request reads, and a suite that deletes from it teaches
+	// everyone that entries can be removed. The rows an e2e run leaves there
+	// name a documented test BSN and no real person, which is the whole reason
+	// the fixture uses one.
+	'intervention',
+	'casePlanGoal',
+	'gezinsplan',
+	'jeugdwetZaak',
 	// A role points at a case AND at a role type, so it goes before both.
 	'role',
 	// The chain of holdings, the takeover request and the consent all name the

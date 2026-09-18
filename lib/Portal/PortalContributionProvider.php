@@ -322,13 +322,27 @@ class PortalContributionProvider {
 	 *  - `verzoeken` (`portaalVerzoek`, scope `submitterRef`) — the citizen's own
 	 *    requests/complaints/objections and their lifecycle status.
 	 *
-	 * One safe create ships: `createKlacht` (a standalone complaint) stamps
-	 * `submitterRef` == subjectRef; it whitelists only the citizen's own content
-	 * (no case cross-reference), so it can never grant access to another party's
-	 * case. The bezwaar (objection) create is DEFERRED — it needs a client
-	 * `tegenZaakId` cross-reference + AWB deadline validation the flat writer
-	 * cannot verify (write-IDOR, portaliq#16); so is the message reply (needs a
-	 * verified case/thread linkage). See design.md "Deferred creates".
+	 * Three creates ship. `createKlacht` (a standalone complaint) stamps
+	 * `submitterRef` == subjectRef and whitelists only the citizen's own
+	 * content, so it can never name another party's case at all.
+	 *
+	 * `createBezwaar` and `replyToMessage` DO name a case, and both declare it
+	 * as a `crossRefs` reference to the citizen's own cases. Portaliq resolves
+	 * that reference through the same scoped read it uses to show the citizen
+	 * one of their cases, before anything is written, and refuses the whole
+	 * write with 403 `cross_ref_refused` when it does not resolve. That guard
+	 * is what these two were deferred on; without it a uuid in the body was
+	 * accepted as typed.
+	 *
+	 * Neither lets the sender choose what the write IS. The `kind` of a bezwaar
+	 * and the `direction` of a reply come from `defaults`, stamped server-side
+	 * over the whitelisted body: a bezwaar and a klacht run different statutory
+	 * clocks, and a form that let the sender pick would let one arrive dressed
+	 * as the other.
+	 *
+	 * `againstDecisionId` stays OUT of the bezwaar's whitelist. A decision
+	 * carries no portal scope of its own, so no reference to one can be guarded
+	 * yet; the case it belongs to can be, and is.
 	 *
 	 * minTrust is `low` (Portaliq's password edge); raise to `substantial` once
 	 * the DigiD broker lands and cases carry Wdo-level assurance.
@@ -439,6 +453,65 @@ class PortalContributionProvider {
 						'attachments',
 					],
 				],
+				[
+					'id' => 'createBezwaar',
+					'type' => 'create',
+					'label' => 'Bezwaar maken',
+					'register' => self::REGISTER,
+					'schema' => 'portaalVerzoek',
+					'scopeField' => 'submitterRef',
+					'minTrust' => 'low',
+					'fields' => [
+						'subject',
+						'rationale',
+						'attachments',
+						'againstCaseId',
+					],
+					// The kind is not the citizen's to choose. A bezwaar and a
+					// klacht run different statutory clocks, and a form that
+					// let the sender pick would let one arrive dressed as the
+					// other.
+					'defaults' => ['kind' => 'bezwaarschrift'],
+					'crossRefs' => [
+						'againstCaseId' => [
+							'register' => self::REGISTER,
+							'schema' => 'case',
+							'scopeField' => 'portalSubject',
+							'required' => true,
+						],
+					],
+				],
+				[
+					'id' => 'replyToMessage',
+					'type' => 'create',
+					'label' => 'Antwoorden',
+					'register' => self::REGISTER,
+					'schema' => 'portaalBericht',
+					// The citizen is the SENDER of a reply, so the reply is
+					// scoped by who sent it. The inbox above is scoped by who
+					// received it, which is the same person seen from the
+					// other end.
+					'scopeField' => 'senderRef',
+					'minTrust' => 'low',
+					'fields' => [
+						'subject',
+						'content',
+						'attachments',
+						'caseId',
+					],
+					'defaults' => [
+						'direction' => 'citizen_to_handler',
+						'senderType' => 'burger',
+					],
+					'crossRefs' => [
+						'caseId' => [
+							'register' => self::REGISTER,
+							'schema' => 'case',
+							'scopeField' => 'portalSubject',
+							'required' => true,
+						],
+					],
+				],
 			],
 			'notifications' => [],
 		];
@@ -461,10 +534,13 @@ class PortalContributionProvider {
 	 *  - `checklistRuns` (`inspectionChecklistRun`, scope `assignedInspectorRef`)
 	 *    — their checklist runs and lifecycle/result state.
 	 *
-	 * No create action: submitting a run needs client `case`/`template`
-	 * cross-references the flat writer cannot verify against the inspector's
-	 * assignment (write-IDOR, portaliq#16), so the submit is DEFERRED — it
-	 * re-adds once Portaliq validates create-body cross-refs. See design.md.
+	 * One write ships: `submitChecklistRun`. It is an UPDATE on a run the
+	 * inspector is already assigned, not a create, and that is what removes the
+	 * write-IDOR the submit was deferred over rather than guarding it. The old
+	 * shape had the client send `case` and `template`, which the flat writer
+	 * could not verify against the assignment; this one accepts neither. What
+	 * arrives is the inspector's own answers, and the status is stamped by the
+	 * server through `set`, so a run cannot be submitted as anything else.
 	 *
 	 * minTrust is `low` (Portaliq's password edge) pending an inspector identity
 	 * broker.
@@ -518,7 +594,29 @@ class PortalContributionProvider {
 					],
 				],
 			],
-			'actions' => [],
+			'actions' => [
+				[
+					'id' => 'submitChecklistRun',
+					'type' => 'update',
+					'label' => 'Checklist indienen',
+					'register' => self::REGISTER,
+					'schema' => 'inspectionChecklistRun',
+					'scopeField' => 'assignedInspectorRef',
+					'minTrust' => 'low',
+					'fields' => [
+						'responses',
+						'overallResult',
+						'followUpType',
+						'photos',
+						'completedAt',
+						'status',
+					],
+					// The transition is the server's. `status` is whitelisted only
+					// so this may write it; the value comes from here and never from
+					// the request.
+					'set' => ['status' => 'submitted'],
+				],
+			],
 			'notifications' => [],
 		];
 

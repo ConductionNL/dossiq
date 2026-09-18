@@ -903,8 +903,9 @@ class StatusTransitionService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	private function evaluateGuards(array $transition): array {
-		// The implicit guards (the status checklist and the walked approval)
-		// come from the one list the offer and the move both read.
+		// The implicit guards (the status checklist, the status capacity and
+		// the walked approval) come from the one list the offer and the move
+		// both read.
 		return $this->specReader->guardsWithImplicit(
 			transition: $transition,
 			approvalsWired: $this->guardRegistry->knows(type: GuardRegistry::APPROVAL_GATE),

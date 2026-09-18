@@ -1,0 +1,58 @@
+{
+  "about": "Schemas dossiq registers that nothing shows. A registered schema is storage: the instance creates it, the descriptor promises the capability, and no page, controller or service ever touches it. An entry names the slug, the change that registered it, and what has to happen before it can go. An entry without an ownerChange or a readerApp is not an entry: SchemaHasSurfaceTest fails on it. The list also fails in the OTHER direction, on a slug that has since gained a surface, so the number can only go down deliberately.",
+  "measured": "2026-09-18",
+  "measuredBy": "SchemaSurfaceScanner over lib/Settings/dossiq_register.json plus register.d/*.json: 159 schemas declared, 10 with no page, no deepLink, no quoted reference under lib/ or src/ outside lib/Settings, and no parent with a surface. Re-measured after the sociaal-domein lanes landed: six of the sixteen (wmoZaak, jeugdwetZaak, participatiewetZaak, gezinsplan, toestemming and sociaalDomeinAuditLog) gained a reader under lib/ and came off the list, which is the direction this file is allowed to move in.",
+  "triage": "NOTHING IS RETIRED IN THIS CHANGE, and the reason is in every entry below rather than in a decision nobody recorded. Each of the 16 traces to an archived change that shipped its schema and its seeds and did not ship its page. Deleting the storage would destroy rows on any instance that has been filling it since June and would take the capability off the roadmap by accident; the honest fate for all 16 is surface, not retire. So the retire column of the task-1.2 table is empty, which is a finding rather than a step that was skipped. What this change does deliver is the instrument: the 17th schema without a surface fails the build.",
+  "entries": [
+    {
+      "slug": "avgIncident",
+      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
+      "reason": "A datalek register for the sociaal domein. Storage and seeds shipped; no page reports an incident and no service writes one. Holds personal data by definition, so retiring it is a data decision and not a cleanup."
+    },
+    {
+      "slug": "case-location",
+      "ownerChange": "archive/2026-05-11-case-location",
+      "reason": "The geocoded addresses on a case. The map component and PdokLocatieserverService talk about it in prose and neither reads the slug; the CaseDetail page has no location widget. Named by openspec/specs/case-dashboard-view, so a surface is still promised."
+    },
+    {
+      "slug": "conflictRecord",
+      "ownerChange": "archive/2026-06-13-mobiel-inspectie-offline",
+      "reason": "One half of offline sync: what to show an inspector when the server and the device disagree. Without the sync surface there is nothing to resolve, so it goes or stays with syncQueue."
+    },
+    {
+      "slug": "fieldEvidence",
+      "ownerChange": "archive/2026-06-13-mobiel-inspectie-offline",
+      "reason": "Photos and notes captured in the field. EvidenceMetadataService builds the payload in prose and never names the slug, so the capture path stops short of the store."
+    },
+    {
+      "slug": "indicatiestelling",
+      "ownerChange": "archive/2026-06-13-beschikking-generatie",
+      "reason": "The assessment a beschikking rests on. Named by two live specs and shown by neither."
+    },
+    {
+      "slug": "mdoOverleg",
+      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
+      "reason": "The multidisciplinary meeting record. Decidiq owns meetings for the fleet, so the surface question is whether this is adopted there or shown here."
+    },
+    {
+      "slug": "reIntegratieTraject",
+      "ownerChange": "sensitive-fields-declared",
+      "reason": "A re-integration pathway. The open sensitive-fields change already names it, so its declaration is being worked on before its page."
+    },
+    {
+      "slug": "supplierKpi",
+      "ownerChange": "archive/2026-06-13-leverancier-zaakportaal-01-schema-foundation",
+      "reason": "Supplier performance figures for the supplier portal. The portal's own schema foundation landed; the dashboard that reads these did not."
+    },
+    {
+      "slug": "supplierUser",
+      "ownerChange": "archive/2026-06-13-leverancier-zaakportaal-01-schema-foundation",
+      "reason": "Accounts on the supplier portal, with an activation token and an eHerkenning level. Holds personal data and credentials-adjacent values, so it is the entry on this list that most needs a decision rather than a sweep."
+    },
+    {
+      "slug": "syncQueue",
+      "ownerChange": "archive/2026-06-13-mobiel-inspectie-offline",
+      "reason": "The offline device's outbox. Nothing in dossiq enqueues or drains it, so the offline story currently ends at the schema."
+    }
+  ]
+}

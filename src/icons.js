@@ -51,6 +51,7 @@ import BriefcaseOutline from 'vue-material-design-icons/BriefcaseOutline.vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import Calculator from 'vue-material-design-icons/Calculator.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
+import CalendarArrowRight from 'vue-material-design-icons/CalendarArrowRight.vue'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CalendarClockOutline from 'vue-material-design-icons/CalendarClockOutline.vue'
 import CalendarPlus from 'vue-material-design-icons/CalendarPlus.vue'
@@ -81,6 +82,7 @@ import ClockAlertOutline from 'vue-material-design-icons/ClockAlertOutline.vue'
 import ClockPlusOutline from 'vue-material-design-icons/ClockPlusOutline.vue'
 import Close from 'vue-material-design-icons/Close.vue'
 import CloudUploadOutline from 'vue-material-design-icons/CloudUploadOutline.vue'
+import CodeJson from 'vue-material-design-icons/CodeJson.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
 import CogOutline from 'vue-material-design-icons/CogOutline.vue'
 import CommentOutline from 'vue-material-design-icons/CommentOutline.vue'
@@ -148,6 +150,7 @@ import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
 import ListBoxOutline from 'vue-material-design-icons/ListBoxOutline.vue'
 import ListStatus from 'vue-material-design-icons/ListStatus.vue'
 import LockOpenVariantOutline from 'vue-material-design-icons/LockOpenVariantOutline.vue'
+import MagnifyScan from 'vue-material-design-icons/MagnifyScan.vue'
 import MapMarker from 'vue-material-design-icons/MapMarker.vue'
 import MapMarkerOutline from 'vue-material-design-icons/MapMarkerOutline.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
@@ -253,6 +256,7 @@ export default {
 	BriefcaseVariantOutline,
 	Calculator,
 	Calendar,
+	CalendarArrowRight,
 	CalendarClock,
 	CalendarClockOutline,
 	CalendarPlus,
@@ -283,6 +287,7 @@ export default {
 	ClockPlusOutline,
 	Close,
 	CloudUploadOutline,
+	CodeJson,
 	Cog,
 	CogOutline,
 	CommentOutline,
@@ -350,6 +355,7 @@ export default {
 	ListBoxOutline,
 	ListStatus,
 	LockOpenVariantOutline,
+	MagnifyScan,
 	MapMarker,
 	MapMarkerOutline,
 	MapMarkerPath,

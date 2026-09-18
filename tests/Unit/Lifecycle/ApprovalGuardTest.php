@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\Cases\ApprovalGate;
 use OCA\Dossiq\Service\ContractDecisionDelegationService;
 use OCA\Dossiq\Service\Transitions\ApprovalGuard;
 use OCA\Dossiq\Service\Transitions\ChecklistGuard;
+use OCA\Dossiq\Service\Transitions\CapacityGuard;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
 use OCA\Dossiq\Service\Transitions\GuardResult;
 use OCA\Dossiq\Service\Transitions\MandaatGuard;
@@ -315,6 +316,9 @@ class ApprovalGuardTest extends TestCase {
 		$checklist = $this->createMock(originalClassName: StatusChecklistGuard::class);
 		$checklist->method('evaluate')->willReturn(new GuardResult(passed: true));
 
+		$capacity = $this->createMock(originalClassName: CapacityGuard::class);
+		$capacity->method('evaluate')->willReturn(new GuardResult(passed: true));
+
 		return new GuardRegistry(
 			checklist: $this->createMock(originalClassName: ChecklistGuard::class),
 			requiredField: $this->createMock(originalClassName: RequiredFieldGuard::class),
@@ -322,6 +326,12 @@ class ApprovalGuardTest extends TestCase {
 			roleGuard: $this->createMock(originalClassName: RoleGuard::class),
 			mandateGuard: $this->createMock(originalClassName: MandaatGuard::class),
 			statusChecklist: $checklist,
+			// `status-capacity-limit` (#2932) landed beside this change and made
+			// the capacity guard a constructor argument. A double that PASSES
+			// keeps this file measuring the approval gate rather than a limit no
+			// status here declares. `GuardResult` is final, so the return value
+			// has to be a real one rather than an auto-generated double.
+			capacity: $capacity,
 			logger: new NullLogger(),
 			approvalGuard: $approvals,
 		);
@@ -349,13 +359,27 @@ class ApprovalGuardTest extends TestCase {
 		);
 		$eval = $registry->evaluateAll(guards: $guards, case: $this->caseWaiting(), userId: 'behandelaar');
 
+		// `statusCapacity` sits between the two since #2932. The approval gate is
+		// still LAST, which is the ordering this test is about: a role guard and
+		// a checklist hide a transition before the gate has anything to say.
 		self::assertSame(
-			expected: ['statusChecklist', 'approvalGate'],
+			expected: ['statusChecklist', 'statusCapacity', 'approvalGate'],
 			actual: array_column($eval, 'type'),
 		);
+
+		// Indexed by TYPE rather than by position from here on. The position was
+		// 1 and is now 2, and the next implicit guard moves it again; what the
+		// assertions are about is the approval gate's own answer.
+		$byType = array_column($eval, null, 'type');
 		self::assertFalse(condition: $registry->allPassed(results: $eval));
-		self::assertStringContainsString(needle: 'Approval by the teamleider', haystack: (string)$eval[1]['failureMessage']);
-		self::assertSame(expected: ApprovalGate::RULE_OUTSTANDING, actual: $eval[1]['details']['rule']);
+		self::assertStringContainsString(
+			needle: 'Approval by the teamleider',
+			haystack: (string)$byType['approvalGate']['failureMessage'],
+		);
+		self::assertSame(
+			expected: ApprovalGate::RULE_OUTSTANDING,
+			actual: $byType['approvalGate']['details']['rule'],
+		);
 	}//end testAnUndeclaredTransitionIsStillGatedThroughTheEngine()
 
 	/**
@@ -392,8 +416,17 @@ class ApprovalGuardTest extends TestCase {
 		$registry = $this->registryWith(approvals: null);
 
 		self::assertFalse(condition: $registry->knows(type: GuardRegistry::APPROVAL_GATE));
+		// The capacity guard is unconditional and is listed here for that
+		// reason: it arrived with `status-capacity-limit` (#2932) and, unlike the
+		// approval gate, it is not wired behind a registry entry. The assertion
+		// stays an identity rather than a `contains`, because what it is about
+		// is the approval guard being ABSENT, and a containment check cannot
+		// tell an absence from a list that grew.
 		self::assertSame(
-			expected: [['type' => GuardRegistry::STATUS_CHECKLIST]],
+			expected: [
+				['type' => GuardRegistry::STATUS_CHECKLIST],
+				['type' => GuardRegistry::STATUS_CAPACITY, 'toStatus' => ''],
+			],
 			actual: (new TransitionSpecReader())->guardsWithImplicit(
 				transition: ['id' => self::ACT],
 				approvalsWired: false,
