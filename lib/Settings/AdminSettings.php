@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Settings;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Prerequisites;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -73,6 +74,13 @@ class AdminSettings implements IDelegatedSettings {
 		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
 
 		$this->initialState->provideInitialState('version', $version);
+		// What this instance actually has, read at page load and never cached.
+		// A cached answer is exactly the wrong thing to show somebody who has
+		// just installed the extension the block told them about.
+		$this->initialState->provideInitialState(
+			'prerequisites',
+			(new Prerequisites())->check($this->appManager)
+		);
 		$this->initialState->provideInitialState(
 			'consultationSettings',
 			$this->consultationSettings()

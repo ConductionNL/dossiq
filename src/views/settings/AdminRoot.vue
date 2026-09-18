@@ -16,6 +16,18 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-prerequisites"
+			:name="t('dossiq', 'Prerequisites')"
+			:description="
+				t(
+					'dossiq',
+					'What dossiq needs to run, and what this instance has. Read live, every time you open this page.',
+				)
+			">
+			<PrerequisitesTab />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'Case Type Management')"
 			:description="t('dossiq', 'Manage case types and their configurations')"
 			:loading="!storesReady">
@@ -268,6 +280,7 @@ import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
 import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
@@ -279,6 +292,7 @@ export default {
 	name: 'AdminRoot',
 	components: {
 		FirstRunTab,
+		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnSettingsSection,
