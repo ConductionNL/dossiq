@@ -1,0 +1,334 @@
+<?php
+
+/**
+ * A service class nothing calls is a capability that does not exist.
+ *
+ * dossiq#2945 shipped `CaseSplitPolicy`, `CaseSplitPlan` and `IncidentRecord`.
+ * All three were correct, all three had their own suites, all three were green,
+ * and nothing anywhere called any of them: no controller, no listener, no job,
+ * no component. The change was merged, the tasks were ticked, and the
+ * capability was dark. dossiq#2957 supplied the callers a fortnight later.
+ *
+ * The same sweep found `AreaRouting` in exactly that state from dossiq#2936,
+ * and `CaseAreaResolver`, `QueueItemLifecycle` and
+ * `CaseTypeContributionRegistry` behind it.
+ *
+ * 🔴 A UNIT TEST OF THE CLASS CANNOT SEE THIS. A pure class answers the same
+ * whether anybody asks it or not, so its own suite is green throughout, which
+ * is why the shape survived four merges. Only a sweep over the whole tree can
+ * tell a capability from a correct class nobody uses.
+ *
+ * WHAT IS SWEPT, AND WHAT IS NOT. Controllers resolve from a route name,
+ * listeners and jobs from a registration, repair steps from `info.xml`: each is
+ * reachable without its class name ever appearing beside a caller, so a
+ * name-based sweep would report every one of them. The sweep is therefore over
+ * the DECIDING layer only, the directories where a class is reached by being
+ * constructed and asked. A controller that no route names is
+ * `RouteReachabilityTest`'s job and it already does it.
+ *
+ * THE ALLOWLIST ONLY SHRINKS. An entry whose class has since acquired a caller
+ * fails here, the same way the no-surface allowlist does, so the number cannot
+ * quietly stay where it is.
+ *
+ * @category Tests
+ * @package  OCA\Dossiq\Tests\Unit\Architecture
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * @link https://conduction.nl
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @coversNothing
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Dossiq\Tests\Unit\Architecture;
+
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Every deciding class is asked by something.
+ */
+class NoDarkCapabilityTest extends TestCase {
+
+	/**
+	 * The repository root.
+	 *
+	 * @var string
+	 */
+	private const ROOT = __DIR__ . '/../../..';
+
+	/**
+	 * The directories whose classes are reached by being constructed and asked.
+	 *
+	 * Deliberately NOT `lib/Controller`, `lib/Listener`, `lib/BackgroundJob`,
+	 * `lib/Command`, `lib/Migration`, `lib/Repair`, `lib/Settings` or
+	 * `lib/Dashboard`: each of those is reached by a registration rather than
+	 * by a call, so a name-based sweep reports all of them and means nothing.
+	 *
+	 * @var array<int, string>
+	 */
+	private const SWEPT = [
+		'lib/Service',
+		'lib/Portal',
+		'lib/Contribution',
+	];
+
+	/**
+	 * Where a caller could be.
+	 *
+	 * @var array<int, string>
+	 */
+	private const CALLERS = ['lib', 'src', 'appinfo', 'templates'];
+
+	/**
+	 * Classes with no caller today, and why each is still here.
+	 *
+	 * Every entry is a capability that was shipped and never wired. The reason
+	 * says what it would take, so the next person picks one up rather than
+	 * rediscovering it.
+	 *
+	 * @var array<string, string>
+	 */
+	private const DARK_TODAY = [
+		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. Needs the address seam decided first.',
+		'QueueItemLifecycle' => 'one-personal-queue (dossiq#2842): answers whether a queue item still stands, given the subject AS ITS MECHANISM ANSWERS IT NOW. QueueSource returns QueueItems and no subjects, so feeding it means widening the source contract. Its `onRemoveRequested` also expects a remove gesture the queue has no endpoint for.',
+		'CaseTypeContributionRegistry' => 'case-types under My work (2026-09-02): gathers work surfaces other apps contribute. Nothing reads it and no app contributes yet, so the caller is the contribution endpoint that has not been specified.',
+		'BezwaarCreationHook' => 'pre-parity (2026-06-03), bezwaar/beroep code extensions. Listed rather than fixed: it predates the parity round and belongs to the debt sweep.',
+		'CofinancieringValidator' => 'pre-parity (2026-06-04), subsidieverlening-keten. Debt sweep.',
+		'StaatssteunClassifier' => 'pre-parity (2026-06-04), subsidieverlening-keten. Debt sweep.',
+		'DsoLvAuthService' => 'pre-parity (2026-06-06), DSO Omgevingsloket. Debt sweep.',
+		'EvidenceMetadataService' => 'pre-parity (2026-06-03), mobiel-inspectie-offline. Debt sweep.',
+		'MapTileService' => 'pre-parity (2026-06-11), mobiel-inspectie-offline. Debt sweep.',
+		'TranscriptionService' => 'pre-parity (2026-06-11), mobiel-inspectie-offline. Debt sweep.',
+		'TenantLifecycleControlService' => 'pre-parity (2026-06-11), saas billing and suspension. Debt sweep.',
+		// FOUND ONLY ONCE COMMENTS WERE STRIPPED. Each of these three is named
+		// in a docblock somewhere and constructed nowhere, which is why the
+		// first pass of this sweep reported them as called. They are the
+		// clearest evidence that prose about a class is not a caller.
+		'ContactBetrokkeneMapper' => 'pre-parity (2026-06-24), StUF-ZKN outbound gateway. Named in a docblock and constructed nowhere. Debt sweep.',
+		'DecisionService' => 'pre-parity (2026-05-19), bezwaar. Named in a docblock and constructed nowhere; `BezwaarDecisionService` is the one in use. Likely a retire rather than a wire. Debt sweep.',
+		'PdokBagService' => 'pre-parity (2026-05-19), PDOK. Named in a docblock and constructed nowhere; `BagApiAdapter` is the live path. Likely a retire rather than a wire. Debt sweep.',
+	];
+
+	/**
+	 * Nothing deciding is unreachable and unexplained.
+	 *
+	 * @return void
+	 */
+	public function testEveryDecidingClassIsCalledOrExplained(): void {
+		$dark = $this->darkClasses();
+		$unexplained = array_values(array_diff($dark, array_keys(self::DARK_TODAY)));
+
+		$this->assertSame(
+			[],
+			$unexplained,
+			"These classes are shipped and nothing calls them, so the capability does not exist:\n  "
+				. implode("\n  ", $unexplained)
+				. "\nGive each one a caller, or add it to DARK_TODAY with what wiring it would take. "
+				. 'A merged change whose classes nobody asks is the shape dossiq#2945 shipped and #2957 repaired.'
+		);
+	}
+
+	/**
+	 * The list only shrinks.
+	 *
+	 * @return void
+	 */
+	public function testTheListHoldsNothingThatNowHasACaller(): void {
+		$dark = $this->darkClasses();
+		$stale = array_values(array_diff(array_keys(self::DARK_TODAY), $dark));
+
+		$this->assertSame(
+			[],
+			$stale,
+			"These are on the dark list and now have a caller; take them off:\n  " . implode("\n  ", $stale)
+		);
+	}
+
+	/**
+	 * The sweep read something, so an empty answer is an answer.
+	 *
+	 * Without this a broken path would report no dark classes and pass, which
+	 * is the failure mode of every sweep that greps.
+	 *
+	 * @return void
+	 */
+	public function testTheSweepActuallyRead(): void {
+		$this->assertGreaterThan(
+			200,
+			count($this->declaredClasses()),
+			'The sweep found almost no classes, so it cannot have checked any.'
+		);
+	}
+
+	/**
+	 * The declared classes with no reference outside their own file.
+	 *
+	 * @return array<int, string> The class names.
+	 */
+	private function darkClasses(): array {
+		$dark = [];
+		foreach ($this->declaredClasses() as $name => $path) {
+			if ($this->hasCaller(name: $name, ownPath: $path) === false) {
+				$dark[] = $name;
+			}
+		}
+
+		sort($dark);
+
+		return $dark;
+	}
+
+	/**
+	 * Every class declared in the swept directories, by name.
+	 *
+	 * @return array<string, string> Name to path.
+	 */
+	private function declaredClasses(): array {
+		$classes = [];
+		foreach (self::SWEPT as $dir) {
+			$base = self::ROOT . '/' . $dir;
+			if (is_dir($base) === false) {
+				continue;
+			}
+
+			$walker = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base));
+			foreach ($walker as $file) {
+				if ($file->isFile() === false || $file->getExtension() !== 'php') {
+					continue;
+				}
+
+				$source = (string)file_get_contents($file->getPathname());
+				if (preg_match('/^(?:final\s+|abstract\s+)?class\s+(\w+)/m', $source, $m) === 1) {
+					$classes[$m[1]] = $file->getPathname();
+				}
+			}
+		}
+
+		return $classes;
+	}
+
+	/**
+	 * Every file a caller could be in, read once.
+	 *
+	 * READ ONCE, not once per class. Walking the tree per class turned a
+	 * three-second sweep into thirty, and a slow guard is a guard somebody
+	 * eventually moves out of the unit suite.
+	 *
+	 * @var array<string, string>|null
+	 */
+	private static ?array $haystack = null;
+
+	/**
+	 * Whether anything outside the class's own file names it.
+	 *
+	 * A whole-word match over the shipped tree, which is deliberately generous:
+	 * a constructor type hint, a `::class`, a static call and a manifest string
+	 * all count. The question is not how it is reached but whether ANYTHING
+	 * reaches it, and a generous match keeps the false positives down to the
+	 * conventions listed on {@see self::SWEPT}.
+	 *
+	 * @param string $name    The class name.
+	 * @param string $ownPath Its own file.
+	 *
+	 * @return bool TRUE when something else names it.
+	 */
+	private function hasCaller(string $name, string $ownPath): bool {
+		$own = (string)realpath($ownPath);
+		$pattern = '/\b' . preg_quote($name, '/') . '\b/';
+
+		foreach ($this->haystack() as $path => $source) {
+			if ($path === $own) {
+				continue;
+			}
+
+			if (preg_match($pattern, $source) === 1) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * One PHP file with its comments removed.
+	 *
+	 * 🔴 A CLASS NAMED ONLY IN PROSE IS NOT CALLED, and this is the line that
+	 * says so. Without it, the docblock sentence explaining why a class exists
+	 * counts as its caller, which is precisely the shape being guarded against:
+	 * every one of dossiq#2945's three classes was written about at length and
+	 * constructed by nobody. Proved by removing this file's own caller for
+	 * `AreaRouting` and watching the sweep stay green on the leftover comment.
+	 *
+	 * @param string $source The file.
+	 * @param bool   $isPhp  Whether it can be tokenised.
+	 *
+	 * @return string The source a name may be looked for in.
+	 */
+	private function withoutComments(string $source, bool $isPhp): string {
+		if ($isPhp === false) {
+			return $source;
+		}
+
+		$kept = '';
+		foreach (token_get_all($source) as $token) {
+			if (is_array($token) === true) {
+				if ($token[0] === T_COMMENT || $token[0] === T_DOC_COMMENT) {
+					continue;
+				}
+
+				$kept .= $token[1];
+				continue;
+			}
+
+			$kept .= $token;
+		}
+
+		return $kept;
+	}
+
+	/**
+	 * Every file a caller could be in, keyed by its real path.
+	 *
+	 * @return array<string, string> Path to contents.
+	 */
+	private function haystack(): array {
+		if (self::$haystack !== null) {
+			return self::$haystack;
+		}
+
+		$files = [];
+		foreach (self::CALLERS as $dir) {
+			$base = self::ROOT . '/' . $dir;
+			if (is_dir($base) === false) {
+				continue;
+			}
+
+			$walker = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($base));
+			foreach ($walker as $file) {
+				if ($file->isFile() === false) {
+					continue;
+				}
+
+				if (in_array($file->getExtension(), ['php', 'js', 'vue', 'ts', 'json', 'xml'], true) === false) {
+					continue;
+				}
+
+				$files[(string)realpath($file->getPathname())] = $this->withoutComments(
+					source: (string)file_get_contents($file->getPathname()),
+					isPhp: ($file->getExtension() === 'php'),
+				);
+			}
+		}
+
+		self::$haystack = $files;
+
+		return $files;
+	}
+}
