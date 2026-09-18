@@ -984,6 +984,11 @@ $extra = [
         // TermijnDefinitiesTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.
     ['name' => 'termijnDefinitie#index',  'url' => '/api/termijn/definities',      'verb' => 'GET'],
+    // What every term on this instance is counted against: the zone, and
+    // whether an organisation calendar answers the Awt roll. The admin page
+    // says which, because a roll that could not be made and a roll that was
+    // not needed produce the same plausible date.
+    ['name' => 'termijnDefinitie#calendar', 'url' => '/api/termijn/calendar',      'verb' => 'GET'],
     ['name' => 'termijnDefinitie#create', 'url' => '/api/termijn/definities',      'verb' => 'POST'],
     ['name' => 'termijnDefinitie#update', 'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
         // Notice-of-default registration.

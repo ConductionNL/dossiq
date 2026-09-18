@@ -1,7 +1,7 @@
 {
   "about": "Schemas dossiq registers that nothing shows. A registered schema is storage: the instance creates it, the descriptor promises the capability, and no page, controller or service ever touches it. An entry names the slug, the change that registered it, and what has to happen before it can go. An entry without an ownerChange or a readerApp is not an entry: SchemaHasSurfaceTest fails on it. The list also fails in the OTHER direction, on a slug that has since gained a surface, so the number can only go down deliberately.",
   "measured": "2026-09-18",
-  "measuredBy": "SchemaSurfaceScanner over lib/Settings/dossiq_register.json plus register.d/*.json: 159 schemas declared, 16 with no page, no deepLink, no quoted reference under lib/ or src/ outside lib/Settings, and no parent with a surface.",
+  "measuredBy": "SchemaSurfaceScanner over lib/Settings/dossiq_register.json plus register.d/*.json: 159 schemas declared, 16 with no surface when this list was written. Six came off within the day, as changes already in flight gave them readers. That is the list working as intended: it shrinks when somebody surfaces a schema, and it never grows without a build failing first.",
   "triage": "NOTHING IS RETIRED IN THIS CHANGE, and the reason is in every entry below rather than in a decision nobody recorded. Each of the 16 traces to an archived change that shipped its schema and its seeds and did not ship its page. Deleting the storage would destroy rows on any instance that has been filling it since June and would take the capability off the roadmap by accident; the honest fate for all 16 is surface, not retire. So the retire column of the task-1.2 table is empty, which is a finding rather than a step that was skipped. What this change does deliver is the instrument: the 17th schema without a surface fails the build.",
   "entries": [
     {
@@ -25,19 +25,9 @@
       "reason": "Photos and notes captured in the field. EvidenceMetadataService builds the payload in prose and never names the slug, so the capture path stops short of the store."
     },
     {
-      "slug": "gezinsplan",
-      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
-      "reason": "The family plan a sociaal-domein case is worked from. Promised by openspec/specs/dossiq-sociaal-domein-jeugdwet and by the AVG consent spec; no page."
-    },
-    {
       "slug": "indicatiestelling",
       "ownerChange": "archive/2026-06-13-beschikking-generatie",
       "reason": "The assessment a beschikking rests on. Named by two live specs and shown by neither."
-    },
-    {
-      "slug": "jeugdwetZaak",
-      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
-      "reason": "A Jeugdwet case type. Registered as its own schema rather than as a case type of the unified case, which is why nothing renders it: the case page reads `case`."
     },
     {
       "slug": "mdoOverleg",
@@ -45,19 +35,9 @@
       "reason": "The multidisciplinary meeting record. Decidiq owns meetings for the fleet, so the surface question is whether this is adopted there or shown here."
     },
     {
-      "slug": "participatiewetZaak",
-      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
-      "reason": "Same shape as jeugdwetZaak, same reason nothing shows it."
-    },
-    {
       "slug": "reIntegratieTraject",
       "ownerChange": "sensitive-fields-declared",
       "reason": "A re-integration pathway. The open sensitive-fields change already names it, so its declaration is being worked on before its page."
-    },
-    {
-      "slug": "sociaalDomeinAuditLog",
-      "ownerChange": "sensitive-fields-declared",
-      "reason": "A second audit trail beside OpenRegister's. The surface question is whether it should exist at all, which is why it is not retired here on a grep."
     },
     {
       "slug": "supplierKpi",
@@ -73,16 +53,6 @@
       "slug": "syncQueue",
       "ownerChange": "archive/2026-06-13-mobiel-inspectie-offline",
       "reason": "The offline device's outbox. Nothing in dossiq enqueues or drains it, so the offline story currently ends at the schema."
-    },
-    {
-      "slug": "toestemming",
-      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
-      "reason": "Consent under the AVG. The word appears all over lib/ as ordinary Dutch in refusal messages, which is exactly why a grep by name cannot answer this question and this test matches quoted slugs instead."
-    },
-    {
-      "slug": "wmoZaak",
-      "ownerChange": "archive/2026-06-13-sociaal-domein-zaaktypes",
-      "reason": "Same shape as jeugdwetZaak, same reason nothing shows it."
     }
   ]
 }
