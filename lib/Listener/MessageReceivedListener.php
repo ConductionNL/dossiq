@@ -3,7 +3,7 @@
 /**
  * dossiq answers when integriq offers it a message.
  *
- * integriq offers every new message to the owning app through
+ * Integriq offers every new message to the owning app through
  * `MessageReceivedEvent`, with a result slot the listener answers `linked`,
  * `created` or `declined`. dossiq bound one integriq event,
  * `DeliveryConcludedEvent`, and nothing listened for messages, so every offer
@@ -342,7 +342,11 @@ class MessageReceivedListener implements IEventListener {
 
 		$value = $event->$method();
 
-		return (is_array($value) === true) ? $value : [];
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return [];
 	}//end arrayFrom()
 
 	/**
@@ -360,6 +364,10 @@ class MessageReceivedListener implements IEventListener {
 
 		$value = $event->$method();
 
-		return (is_scalar($value) === true) ? trim((string)$value) : '';
+		if (is_scalar($value) === true) {
+			return trim((string)$value);
+		}
+
+		return '';
 	}//end stringFrom()
 }//end class

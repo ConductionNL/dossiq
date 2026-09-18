@@ -132,7 +132,7 @@ class CrossAppListenerRegistrar {
 			);
 		}
 
-		// inbound-messages-consume-integriq: integriq offers every received
+		// REQ: inbound-messages-consume-integriq. Integriq offers every received
 		// message to whichever app owns cases, with a result slot the listener
 		// answers linked, created or declined. Nothing listened for it, so
 		// every offer went unanswered and landed in integriq's `unassigned`.

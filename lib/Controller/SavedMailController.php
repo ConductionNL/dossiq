@@ -175,6 +175,10 @@ class SavedMailController extends Controller {
 			return null;
 		}
 
-		return ($node instanceof File) ? $node : null;
+		if ($node instanceof File) {
+			return $node;
+		}
+
+		return null;
 	}//end nodeFor()
 }//end class

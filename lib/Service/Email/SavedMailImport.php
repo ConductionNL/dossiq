@@ -151,13 +151,22 @@ class SavedMailImport {
 		}
 
 		$subject = $this->stringFrom(parsed: $parsed, method: 'getSubject');
+		$title = $subject;
+		if ($title === '') {
+			// A saved message with no subject reads as the file it came from,
+			// which is the only name the handler who dragged it in would
+			// recognise. An empty title on the timeline reads as a message
+			// nobody wrote.
+			$title = $fileName;
+		}
+
 		$from = $this->stringFrom(parsed: $parsed, method: 'getFrom');
 
 		$this->cases->recordReceivedEmail(
 			caseId: $caseId,
 			from: $from,
 			recipient: $this->firstRecipient(parsed: $parsed),
-			subject: ($subject === '' ? $fileName : $subject),
+			subject: $title,
 			body: $this->stringFrom(parsed: $parsed, method: 'getBodyText'),
 			inReplyTo: ''
 		);
@@ -169,7 +178,7 @@ class SavedMailImport {
 		return [
 			'outcome' => self::OUTCOME_IMPORTED,
 			'reason' => '',
-			'subject' => ($subject === '' ? $fileName : $subject),
+			'subject' => $title,
 			'from' => $from,
 			'receivedAt' => $this->stringFrom(parsed: $parsed, method: 'getReceivedAt'),
 		];
@@ -238,6 +247,10 @@ class SavedMailImport {
 
 		$value = $parsed->$method();
 
-		return (is_scalar($value) === true) ? trim((string)$value) : '';
+		if (is_scalar($value) === true) {
+			return trim((string)$value);
+		}
+
+		return '';
 	}//end stringFrom()
 }//end class
