@@ -74,7 +74,11 @@ class ContactMomentService {
 		// below says so. Keeping both would write every contact moment onto
 		// the case timeline twice, and the branch's `recordOnTimeline()` no
 		// longer exists in this file to call.
-		private readonly ContactMomentBridge $pipelinqBridge,
+		//    NULLABLE AND LAST, so every existing construction of this service —
+		//    production wiring and the tests parity already has — keeps working
+		//    unchanged. The bridge is best-effort bookkeeping beside the write,
+		//    not something the write depends on.
+		private readonly ?ContactMomentBridge $pipelinqBridge = null,
 	) {
 	}//end __construct()
 
@@ -153,10 +157,15 @@ class ContactMomentService {
 		// AFTER the dossiq write on purpose: a handler logging a call they
 		// have just taken must not lose it because another app said no. The
 		// refusal travels back on the record so the surface can show it.
-		$bridged = $this->pipelinqBridge->append(
-			caseId: (string)($data['case'] ?? ''),
-			moment: $record,
-		);
+		// No bridge wired means no bridge attempt, and no refusal to report —
+		// not a silent failure and not a refusal invented on its behalf.
+		$bridged = ['appended' => false, 'reason' => '', 'indicators' => []];
+		if ($this->pipelinqBridge !== null) {
+			$bridged = $this->pipelinqBridge->append(
+				caseId: (string)($data['case'] ?? ''),
+				moment: $record,
+			);
+		}
 
 		if ($bridged['appended'] === false && $bridged['reason'] !== '') {
 			$record['pipelinqRefusal'] = $bridged['reason'];
