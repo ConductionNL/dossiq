@@ -2689,6 +2689,14 @@
 						"content": {}
 					},
 					{
+						"id": "case-presence",
+						"type": "presence",
+						"title": "Who else is here",
+						"icon": "AccountMultipleOutline",
+						"_note": "object-presence (openregister#3875, nextcloud-vue#1204 and #1205). Who else has this case open, so two handlers find each other BEFORE they overwrite each other rather than afterwards. It is the softer half of the edit lock beside it: the lock refuses a save, and this makes the refusal unnecessary by making the other person visible while there is still time to talk. \ud83d\udd34 TYPE IS THE LIBRARY'S OWN WIDGET TYPE AND NOT A REGISTRY KEY, which is why this app ships no component for it. The widget takes its register, schema and object from the SURFACE, so a manifest cannot point presence at a different record from the one on screen, and a bug in it is fixed by one library release rather than by one in each of the twenty-one apps. Silent when nobody else is there, which is almost always, so it costs no vertical space until it has something to say. \u26a0\ufe0f INERT UNTIL THE LIBRARY SHIPS: `presence` is registered in @conduction/nextcloud-vue on parity/round2 and not in the 3.2.0 this app has installed, so CnDetailWidgetHost resolves it to nothing and renders nothing at all, which is what it does for any unknown type. No error and no empty box; it starts working on the version bump.",
+						"content": {}
+					},
+					{
 						"id": "case-archived",
 						"type": "case-archived",
 						"title": "Archived",
@@ -2772,16 +2780,25 @@
 						"id": "family-plan-panel",
 						"widgetId": "family-plan",
 						"gridX": 0,
-						"gridY": 22,
+						"gridY": 27,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
 					},
 					{
+						"id": "presence-strip",
+						"widgetId": "case-presence",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 12,
+						"gridHeight": 1,
+						"showTitle": false
+					},
+					{
 						"id": "archived-strip",
 						"widgetId": "case-archived",
 						"gridX": 0,
-						"gridY": 2,
+						"gridY": 3,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2791,7 +2808,7 @@
 						"id": "favourite-strip",
 						"widgetId": "case-favourite",
 						"gridX": 0,
-						"gridY": 3,
+						"gridY": 4,
 						"gridWidth": 6,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2800,7 +2817,7 @@
 						"id": "follow-strip",
 						"widgetId": "case-follow",
 						"gridX": 6,
-						"gridY": 3,
+						"gridY": 4,
 						"gridWidth": 6,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2809,7 +2826,7 @@
 						"id": "unread-strip",
 						"widgetId": "case-unread",
 						"gridX": 0,
-						"gridY": 4,
+						"gridY": 5,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2818,7 +2835,7 @@
 						"id": "status-declaration-strip",
 						"widgetId": "case-status-declaration",
 						"gridX": 0,
-						"gridY": 5,
+						"gridY": 6,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2827,7 +2844,7 @@
 						"id": "attention-strip",
 						"widgetId": "case-attention",
 						"gridX": 0,
-						"gridY": 6,
+						"gridY": 7,
 						"gridWidth": 12,
 						"gridHeight": 1,
 						"showTitle": false
@@ -2836,7 +2853,7 @@
 						"id": "5",
 						"widgetId": "case-panels",
 						"gridX": 0,
-						"gridY": 7,
+						"gridY": 8,
 						"gridWidth": 9,
 						"gridHeight": 9,
 						"showTitle": false
@@ -2845,7 +2862,7 @@
 						"id": "3",
 						"widgetId": "case-stages",
 						"gridX": 9,
-						"gridY": 7,
+						"gridY": 8,
 						"gridWidth": 3,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2854,7 +2871,7 @@
 						"id": "7",
 						"widgetId": "case-flow-runs",
 						"gridX": 9,
-						"gridY": 11,
+						"gridY": 12,
 						"gridWidth": 3,
 						"gridHeight": 5
 					},
@@ -2862,7 +2879,7 @@
 						"id": "11",
 						"widgetId": "case-terms",
 						"gridX": 0,
-						"gridY": 16,
+						"gridY": 17,
 						"gridWidth": 4,
 						"gridHeight": 3,
 						"showTitle": true
@@ -2871,7 +2888,7 @@
 						"id": "12",
 						"widgetId": "cmmn-case-plan",
 						"gridX": 4,
-						"gridY": 16,
+						"gridY": 17,
 						"gridWidth": 8,
 						"gridHeight": 6,
 						"showTitle": true
@@ -2880,7 +2897,7 @@
 						"id": "money-payments",
 						"widgetId": "case-payment-requests",
 						"gridX": 0,
-						"gridY": 22,
+						"gridY": 23,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"showTitle": true
@@ -2889,7 +2906,7 @@
 						"id": "money-contract",
 						"widgetId": "case-contract",
 						"gridX": 6,
-						"gridY": 22,
+						"gridY": 23,
 						"gridWidth": 6,
 						"gridHeight": 4,
 						"showTitle": true
