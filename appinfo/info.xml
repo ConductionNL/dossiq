@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.29-unstable.20260918103842</version>
+    <version>0.4.30-unstable.20260918105432</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -549,6 +549,17 @@ Vrij en open source onder de EUPL-1.2-licentie.
             -->
             <step>OCA\Dossiq\Repair\BackfillAdviceRequestObjection</step>
             <!--
+                The chain of custody starts the day it ships, so every case that
+                already exists would have a chain with a hole at the front, and
+                a chain with a hole reads as an answer. This opens one holding
+                per case, dated from the CASE's own start rather than from the
+                moment the upgrade ran: dating it from the run is the same hole
+                with a confident timestamp on it. Idempotent (a case that
+                already has an open holding is skipped) and non-fatal.
+                POST-MIGRATION only: a fresh install has no cases to date.
+            -->
+            <step>OCA\Dossiq\Repair\BackfillCaseCustody</step>
+            <!--
                 One clock: arms an OpenRegister FlowTimer for every in-flight
                 TermijnInstance that does not carry one yet (engineTimerId),
                 suspending the timer for paused rows. Idempotent, skips
@@ -642,6 +653,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
+              BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made

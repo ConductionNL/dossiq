@@ -81,6 +81,12 @@ class RepairStepRegistrationTest extends TestCase {
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
 		'BackfillInformatieobjectMetadata' => 'backfill over existing documents',
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
+		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
+		// INHERITED from the family-plan lane, which shipped this step with no
+		// entry on either side. Named here rather than left red: it rewrites
+		// the goal and trajectory text of EXISTING gezinsplan rows, and a
+		// fresh install has none.
+		'MigrateCasePlanStrings' => 'carries the text of existing gezinsplan rows onto goals and interventions; a fresh install has none',
 		'LinkInFlightContractDecisionsRepair' => 'links in-flight contract decisions; none exist yet',
 		'LinkInFlightRemainingDecisionsRepair' => 'links in-flight decisions; none exist yet',
 		'RepairDemoDataSchemaFork' => 'retires a schema fork only an already-enabled app could have made',
