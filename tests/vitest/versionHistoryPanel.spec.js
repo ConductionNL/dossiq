@@ -3,11 +3,18 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * VersionHistoryPanel: self-sufficient version-history modal opened by the
- * Documents-tab object-list's Versions row action. It reads the document off
- * `row.informatieobject` (the extended reference), not a `document` prop a
- * parent DossierTab used to pass down directly — CnObjectListWidget merges
- * `props.row` for an open-modal row action (nextcloud-vue#1117).
+ * VersionHistoryPanel: self-sufficient version-history modal.
+ *
+ * TWO CALLERS NOW (document-acts-reach-a-surface REQ-ZAK-020). The
+ * `case-files` leaf opens it as an `open-modal` row action and CnFilesBrowser
+ * merges the clicked node's `fileId` and `fileName` onto the props; the older
+ * `props.row` path (the zaakinformatieobject row with `informatieobject`
+ * inlined, merged by CnObjectListWidget, nextcloud-vue#1117) is still read,
+ * second. The Documents tab that used the second path was retired on
+ * 2026-09-13 and the panel had NO caller at all between then and this change.
+ *
+ * Handed neither prop, it refuses by name rather than rendering the empty
+ * version list, because "no versions" and "no file" are different sentences.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
@@ -22,7 +29,10 @@ const mockRequest = vi.fn()
 vi.mock('@nextcloud/axios', () => ({
 	default: { request: (...a) => mockRequest(...a) },
 }))
-vi.mock('@nextcloud/router', () => ({ generateRemoteUrl: (u) => u }))
+vi.mock('@nextcloud/router', () => ({
+	generateRemoteUrl: (u) => u,
+	generateUrl: (u) => u,
+}))
 vi.mock('@nextcloud/dialogs', () => ({ showSuccess: vi.fn(), showError: vi.fn() }))
 const mockEmit = vi.fn()
 vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockEmit(...a) }))
@@ -31,14 +41,19 @@ vi.mock('@nextcloud/auth', () => ({ getCurrentUser: () => ({ uid: 'admin' }) }))
 function control(name) {
 	return defineComponent({
 		name,
-		props: ['size', 'disabled', 'title', 'type', 'name'],
+		props: ['size', 'disabled', 'title', 'type', 'name', 'description'],
 		emits: ['close'],
 		render() {
-			return h(
-				'div',
-				{ class: name },
-				this.$slots.default?.() ?? this.$slots.icon?.() ?? [],
-			)
+			// `name` and `description` are RENDERED, because the refusal this
+			// panel shows lives entirely in those two props: a stub that drops
+			// them makes "it says which file it could not find" unassertable.
+			return h('div', { class: name }, [
+				this.name ? h('span', { class: 'stub-name' }, this.name) : null,
+				this.description
+					? h('span', { class: 'stub-description' }, this.description)
+					: null,
+				...(this.$slots.default?.() ?? this.$slots.icon?.() ?? []),
+			])
 		},
 	})
 }
@@ -146,5 +161,62 @@ describe('VersionHistoryPanel', () => {
 			},
 		})
 		expect(wrapper.find('.NcModal').exists()).toBe(false)
+	})
+})
+
+describe('VersionHistoryPanel handed a file id', () => {
+	it('reads the versions of the fileId the files browser clicked', async () => {
+		// The fixture is keyed on 77 so the live-node exclusion still fires:
+		// against the 42 fixture the count would read 3 and hide which file
+		// the panel actually asked for.
+		mockRequest.mockResolvedValue({
+			data: PROPFIND_XML.replace(/versions\/42/g, 'versions/77'),
+		})
+		const wrapper = mount(VersionHistoryPanel, {
+			props: { open: true, fileId: 77, fileName: 'besluit.pdf' },
+		})
+		await flushPromises()
+
+		expect(mockRequest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				method: 'PROPFIND',
+				url: expect.stringContaining('/versions/77'),
+			}),
+		)
+		expect(wrapper.vm.versions).toHaveLength(2)
+	})
+
+	it('prefers the fileId prop over a row that names another file', async () => {
+		// Both callers can be present on an instance mid-migration. The node
+		// the reader clicked is the one they meant, so the prop wins.
+		const wrapper = mount(VersionHistoryPanel, {
+			props: {
+				open: true,
+				fileId: 77,
+				row: { informatieobject: { fileId: 42, status: 'draft' } },
+			},
+		})
+		await flushPromises()
+
+		expect(wrapper.vm.resolvedFileId).toBe(77)
+	})
+
+	it('refuses by name when it is handed neither a file id nor a row', async () => {
+		const wrapper = mount(VersionHistoryPanel, {
+			props: { open: true, fileName: 'besluit.pdf' },
+		})
+		await flushPromises()
+
+		// The REFUSAL, not the empty list: no PROPFIND went out at all, the
+		// panel says which file it could not find, and the "No previous
+		// versions" sentence is NOT what the reader is shown.
+		// The RENDERED sentence is asserted first and the computed second, so a
+		// mutation that keeps the flag and drops the sentence still reddens
+		// here rather than passing on a boolean nobody reads.
+		expect(wrapper.text()).toContain('No file to read versions of')
+		expect(wrapper.text()).toContain('besluit.pdf')
+		expect(wrapper.text()).not.toContain('No previous versions')
+		expect(mockRequest).not.toHaveBeenCalled()
+		expect(wrapper.vm.hasNoFile).toBe(true)
 	})
 })
