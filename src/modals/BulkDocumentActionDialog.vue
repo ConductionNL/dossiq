@@ -7,13 +7,25 @@
 	picks the fields, the request and the copy; the confirm/cancel shell and
 	the busy/result handling are shared.
 
-	Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
-	swap): opened as a manifest `open-modal` `bulkActions` entry, which the
-	widget hands `props.selectedIds` — see
-	CnObjectListWidget.mappedBulkActions in @conduction/nextcloud-vue. There
-	is no parent `DossierTab`/`BulkActionsBar` any more to own the request or
-	the result reporting, so this dialog makes the call itself, the same
-	shape `runBulk()` used to.
+	TWO WAYS IN, BECAUSE THE FIRST ONE WAS RETIRED. It was written for the
+	Documents tab's object-list, opened as a `bulkActions` entry that handed
+	`props.selectedIds` (see CnObjectListWidget.mappedBulkActions). That tab
+	went away with documents-live-on-the-case on 2026-09-13 and the dialog
+	went dark with it, named by no manifest for five days.
+
+	Its replacement, the `case-files` leaf, has no bulk surface to move to:
+	CnFilesBrowser declares `rowActions` and `newActions` and no
+	`bulkActions`, and its own header records why, the Files app's selection
+	bar is bound to the Files router and cannot be mounted outside that page.
+	So the two mutating gestures come back as ROW actions, one document at a
+	time, and the dialog takes a `fileId` as well as a selection.
+
+	Download ZIP has no row-action meaning and is not offered there. It keeps
+	its `zip` mode for a caller that hands a selection.
+
+	There is no parent `DossierTab`/`BulkActionsBar` to own the request or the
+	result reporting, so this dialog makes the call itself, the same shape
+	`runBulk()` used to.
 
 	Spec: openspec/specs/document-zaakdossier/spec.md
 -->
@@ -122,8 +134,33 @@ export default {
 		},
 
 		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
-		// Only used by `zip`, which downloads scoped to one case.
+		// Used by `zip`, which downloads scoped to one case, and by the
+		// fileId path below, which reads that case's dossier listing.
 		caseId: {
+			type: String,
+			default: '',
+		},
+
+		/**
+		 * The Nextcloud file id, as the Files tab's row actions hand it.
+		 *
+		 * FOUR-UNREACHABLE-SURFACES: this dialog was written for the Documents
+		 * tab's object-list, which selected `zaakinformatieobject` rows and
+		 * dispatched `bulkActions`. That tab was retired on 2026-09-13 and its
+		 * replacement, the `case-files` leaf, has no bulk surface at all:
+		 * `CnFilesBrowser` declares `rowActions` and `newActions` and no
+		 * `bulkActions`, and its own header says the Files app's selection bar
+		 * cannot be mounted outside the Files page. So the two mutating acts
+		 * come back one document at a time, as row actions, and a row action
+		 * carries a `fileId`. One file is a selection of one.
+		 */
+		fileId: {
+			type: [Number, String],
+			default: 0,
+		},
+
+		/** The file's name, shown while the dialog names what it will act on. */
+		fileName: {
 			type: String,
 			default: '',
 		},
@@ -174,10 +211,16 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		title() {
-			if (this.mode === 'confidentiality')
-				return this.t('dossiq', 'Change confidentiality')
-			if (this.mode === 'zip') return this.t('dossiq', 'Download ZIP')
-			return this.t('dossiq', 'Mark as final')
+			const base =
+				this.mode === 'confidentiality'
+					? this.t('dossiq', 'Change confidentiality')
+					: this.mode === 'zip'
+						? this.t('dossiq', 'Download ZIP')
+						: this.t('dossiq', 'Mark as final')
+			// Opened on one file row: say which file, because a dialog headed
+			// "Mark as final" over a folder of twenty files must not leave the
+			// reader guessing which one it means.
+			return this.fileName === '' ? base : `${base}: ${this.fileName}`
 		},
 
 		/**
@@ -247,6 +290,13 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveDocumentIds() {
+			// The Files-tab path: one file id, resolved through the case's
+			// dossier listing, which is the one endpoint carrying every record
+			// with its `fileId`. Same read as DocumentMetadataDialog makes.
+			if (this.selectedIds.length === 0 && Number(this.fileId) > 0) {
+				return this.resolveFromFileId()
+			}
+
 			const resolved = []
 
 			for (const joinId of this.selectedIds) {
@@ -271,6 +321,40 @@ export default {
 			}
 
 			return resolved
+		},
+
+		/**
+		 * The informatieobject id behind one Nextcloud file.
+		 *
+		 * Returns an empty list when the record cannot be found, so the caller
+		 * reports "changed nothing" rather than posting an id the endpoint
+		 * would not recognise. A file dropped a moment ago may have no record
+		 * yet: the projection listener writes it, and until it has, there is
+		 * nothing to mark final.
+		 *
+		 * @return {Promise<Array<string>>} The document id, or an empty list.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async resolveFromFileId() {
+			if (this.resolvedCaseId === '') {
+				return []
+			}
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
+				)
+				const { data } = await axios.get(url)
+				const rows = Array.isArray(data?.informatieobjecten)
+					? data.informatieobjecten
+					: []
+				const record = rows.find(
+					(row) => Number(row.fileId) === Number(this.fileId),
+				)
+				const id = record ? String(record.id || '') : ''
+				return id === '' ? [] : [id]
+			} catch {
+				return []
+			}
 		},
 
 		/**

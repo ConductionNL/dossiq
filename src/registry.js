@@ -142,6 +142,7 @@ import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // @spec openspec/specs/document-zaakdossier/spec.md
 // @spec openspec/specs/document-zaakdossier/spec.md
 import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
+import DossierExportPanel from './modals/DossierExportPanel.vue'
 import FileRequestDialog from './modals/FileRequestDialog.vue'
 import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
@@ -620,10 +621,15 @@ const registry = {
 		component: BulkDocumentActionDialog,
 		_note: 'Mark final / Change confidentiality / Download ZIP on a Documents-tab selection, one dialog in three `mode`s (mirrors BulkTransitionDialog). Opened by the object-list `bulkActions` entries as `type: open-modal`; CnObjectListWidget merges `props.selectedIds` onto the declared props the same way a drop merges `props.files`.',
 	},
+	DossierExportPanel: {
+		kind: 'modal',
+		component: DossierExportPanel,
+		_note: 'The Awb-ordered dossier a griffier submits to the bestuursrechter, read-only. Opened by the BeroepDetail and BezwaarDetail header action Dossier for the court as `type: open-modal`. It reads `GET /api/dossier/{caseId}/export`, which has answered since the bezwaar-beroep work shipped and which no line in src/ had ever called: the plan existed and nobody could see it. The panel tells a 403 apart from an empty dossier, because both render as nothing and only one of them means the case has no documents.',
+	},
 	VersionHistoryPanel: {
 		kind: 'modal',
 		component: VersionHistoryPanel,
-		_note: 'Version history for one dossier document, over the Nextcloud Files versions WebDAV API. Opened by the object-list `rowActions` Versions entry as `type: open-modal`; CnObjectListWidget merges `props.row` (the clicked zaakinformatieobject row, `informatieobject` inlined by `content.extend`) onto the declared props (nextcloud-vue#1117) -- an open-modal row action otherwise carries no per-click information at all. Self-sufficient: reads the informatieobject off `row.informatieobject` and the signed-in user via `getCurrentUser()`, since there is no parent DossierTab any more to pass either down.',
+		_note: 'Version history for one dossier document, over the Nextcloud Files versions WebDAV API. Opened by the Files tab `rowActions` Version history entry as `type: open-modal`, which hands a `fileId` and a `fileName`; the panel reads the case dossier listing to find the record behind the file, the same one endpoint DocumentMetadataDialog reads. It still accepts the older `row` shape (the zaakinformatieobject row with `informatieobject` inlined by `content.extend`) that the retired Documents object-list handed it. Restore fails closed: a file whose record could not be read has an unknown status, and an unknown status is treated as final rather than as not-final.',
 	},
 
 	// --- The inline task pane on the case page (task-on-the-case A06). ---

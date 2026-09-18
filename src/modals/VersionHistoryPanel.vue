@@ -7,6 +7,10 @@
 				{{ t('dossiq', 'Version history') }}
 			</h4>
 
+			<p v-if="documentName !== ''" class="dossier-version-panel__document">
+				{{ documentName }}
+			</p>
+
 			<NcEmptyContent
 				v-if="!loading && versions.length === 0"
 				:name="t('dossiq', 'No previous versions')">
@@ -63,7 +67,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
-import { generateRemoteUrl } from '@nextcloud/router'
+import { generateRemoteUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
@@ -73,13 +77,25 @@ import History from 'vue-material-design-icons/History.vue'
  * disabled when the informatieobject status is definitief (mirroring the
  * server-side immutability rule).
  *
- * Self-sufficient (documents-on-the-case task 2.2, the CnObjectListWidget
- * swap): opened as a manifest `open-modal` row action, which
- * CnObjectListWidget hands `props.row` — the RAW `zaakinformatieobject` row,
- * `informatieobject` inlined by `content.extend` — rather than the plain
- * `document` object a parent DossierTab used to pass down directly, and no
- * `userId` prop either, since there is no parent to read `getCurrentUser()`
- * for it any more.
+ * TWO HOSTS, BECAUSE THE FIRST ONE WAS RETIRED. It was written for the
+ * Documents tab's object-list, which handed it `props.row`: the raw
+ * `zaakinformatieobject` row with `informatieobject` inlined by
+ * `content.extend`. That tab went away with documents-live-on-the-case on
+ * 2026-09-13 and nothing replaced the entry point, so the panel sat in the
+ * registry, named by no manifest, for five days.
+ *
+ * Its host now is the Files tab (`case-files`), whose row actions hand a
+ * `fileId` and a `fileName` and nothing else. So the panel takes either
+ * shape: a `row` when one is given, a `fileId` otherwise. With only a
+ * `fileId` it reads the case's dossier listing to find the record, the same
+ * one endpoint DocumentMetadataDialog reads for the same reason.
+ *
+ * WHY RESTORE FAILS CLOSED. Restore is disabled on a document whose status is
+ * `final`, mirroring the server-side immutability rule. When the panel is
+ * opened from a file whose record it could not read, it does not know the
+ * status, and it disables restore rather than offering it. An unknown status
+ * that reads as "not final" would let a handler overwrite a definitive
+ * document, which is the one outcome this rule exists to prevent.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
@@ -105,6 +121,27 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
+		/**
+		 * The Nextcloud file id, as the Files tab's row actions hand it.
+		 * Used when no `row` is given.
+		 */
+		fileId: {
+			type: [Number, String],
+			default: 0,
+		},
+
+		/** The file's name, shown while the record is still being read. */
+		fileName: {
+			type: String,
+			default: '',
+		},
+
+		/** May arrive as the unresolved `@objectId` token; see resolvedCaseId. */
+		caseId: {
+			type: String,
+			default: '',
+		},
 	},
 
 	emits: ['close'],
@@ -112,6 +149,10 @@ export default {
 		return {
 			versions: [],
 			loading: false,
+			/** The informatieobject read from the dossier listing, or null. */
+			record: null,
+			/** Whether the record read has finished, successfully or not. */
+			recordRead: false,
 		}
 	},
 
@@ -124,9 +165,42 @@ export default {
 		 */
 		document() {
 			const informatieobject = this.row && this.row.informatieobject
-			return informatieobject && typeof informatieobject === 'object'
-				? informatieobject
-				: {}
+			if (informatieobject && typeof informatieobject === 'object') {
+				return informatieobject
+			}
+			// Opened from the Files tab: the record read from the dossier
+			// listing, or just the file id until that read lands.
+			if (this.record !== null) {
+				return this.record
+			}
+			return Number(this.fileId) > 0 ? { fileId: this.fileId } : {}
+		},
+
+		/**
+		 * The document's name, so a panel opened from a file row says which
+		 * file it is showing the history of.
+		 *
+		 * @return {string} The name, or an empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		documentName() {
+			return String(
+				this.document.title || this.document.name || this.fileName || '',
+			)
+		},
+
+		/**
+		 * The case this panel is reading a document of.
+		 *
+		 * @return {string} The case id, or an empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		resolvedCaseId() {
+			const fromProp = this.caseId || ''
+			if (fromProp !== '' && !fromProp.startsWith('@')) {
+				return fromProp
+			}
+			return (this.$route && this.$route.params && this.$route.params.id) || ''
 		},
 
 		/**
@@ -147,7 +221,16 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		restoreDisabled() {
-			return this.document.status === 'final'
+			if (this.document.status === 'final') {
+				return true
+			}
+			// Opened on a file whose record could not be read: the status is
+			// unknown, so restore is refused rather than offered. See the
+			// header.
+			if (this.row && this.row.informatieobject) {
+				return false
+			}
+			return this.record === null
 		},
 	},
 
@@ -160,10 +243,12 @@ export default {
 			 * @param {boolean} isOpen Whether the modal is showing.
 			 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 			 */
-			handler(isOpen) {
-				if (isOpen) {
-					this.fetchVersions()
+			async handler(isOpen) {
+				if (isOpen === false) {
+					return
 				}
+				await this.loadRecord()
+				await this.fetchVersions()
 			},
 		},
 	},
@@ -174,6 +259,42 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
+		 */
+		async loadRecord() {
+			this.record = null
+			this.recordRead = false
+			// A row carries the record already; nothing to read.
+			if (this.row && this.row.informatieobject) {
+				this.recordRead = true
+				return
+			}
+			if (Number(this.fileId) <= 0 || this.resolvedCaseId === '') {
+				this.recordRead = true
+				return
+			}
+			try {
+				const url = generateUrl(
+					`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
+				)
+				const { data } = await axios.get(url)
+				const rows = Array.isArray(data?.informatieobjecten)
+					? data.informatieobjecten
+					: []
+				this.record =
+					rows.find((row) => Number(row.fileId) === Number(this.fileId)) || null
+			} catch {
+				// Leaves `record` null, which disables restore. See the header.
+				this.record = null
+			} finally {
+				this.recordRead = true
+			}
+		},
+
+		/**
+		 * Fetch the document's versions from the Nextcloud versions API.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async fetchVersions() {
 			if (!this.document.fileId || !this.userId) {
@@ -324,6 +445,12 @@ export default {
 <style scoped>
 .dossier-version-panel {
 	padding: 12px;
+}
+
+.dossier-version-panel__document {
+	margin: 0 0 12px;
+	color: var(--color-text-maxcontrast);
+	word-break: break-all;
 }
 
 .dossier-version-panel__list {
