@@ -512,6 +512,16 @@ class AcknowledgementService {
 			'contentWithheld' => $withheld,
 			'notificationChannel' => $channel,
 			'contact' => (string)($caseType['responsible'] ?? ''),
+			// The two moments a term is explained by, read off the case rather
+			// than recomputed here: the case was stamped at creation on the
+			// calendar the term is counted on, and a second computation would
+			// drift the day a holiday is administered
+			// (intake-says-when-the-term-starts REQ-TERM-041). A case with no
+			// stamp passes empty strings, and the renderer then says nothing
+			// about a start it does not have.
+			'receivedAt' => (string)($case['receivedAt'] ?? ''),
+			'termStartsAt' => (string)($case['termStartsAt'] ?? ''),
+			'receivedOutsideWorkingHours' => (($case['receivedOutsideWorkingHours'] ?? false) === true),
 			'addressee' => ['type' => 'burger'],
 		];
 	}//end contextFor()

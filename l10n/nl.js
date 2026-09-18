@@ -5490,7 +5490,9 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Term starts at": "Termijn start op",
+        "Received outside working hours": "Buiten werktijd ontvangen"
     },
     "nplurals=2; plural=(n != 1);"
 )

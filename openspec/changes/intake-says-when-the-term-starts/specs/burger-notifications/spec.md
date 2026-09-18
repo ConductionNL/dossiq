@@ -33,20 +33,27 @@ be recomputed on read.
 
 ### Requirement: The intake confirmation says when the clock starts (REQ-TERM-041)
 
-The confirmation shown after a submission, and the ontvangstbevestiging
-sent for it, SHALL each name the case reference, the moment the request
-was received, the moment the term starts and the deadline. When
+The ontvangstbevestiging, and the case's own terms panel, SHALL each name
+the case reference, the moment the request was received, the moment the
+term starts and the deadline.
+
+> Amended while building. The proposal named the confirmation shown
+> immediately after submitting. A citizen submits in the PORTAL, which is
+> portaliq's surface, and dossiq's own success message is a pre-translated
+> toast with no token interpolation in the manifest schema, so the four
+> facts cannot go in it without inventing a grammar nextcloud-vue does not
+> have. dossiq's half is the stamp, the mail and the case surface; the
+> portal confirmation reads the same two fields off the case. When
 `receivedOutsideWorkingHours` is true, both SHALL add one sentence saying
 the term starts on the first working day. Both SHALL ship in Dutch and
 English.
 
-#### Scenario: the citizen is told on screen
+#### Scenario: the handler can see what the citizen was told
 @e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
 
 - **GIVEN** a request filed on Sunday evening
-- **WHEN** the confirmation appears
-- **THEN** it SHALL name the case reference, the Sunday it was received, the Monday the term starts and the deadline
-- **AND** it SHALL carry the sentence about the first working day
+- **WHEN** a handler opens the case
+- **THEN** the terms panel SHALL name the Sunday it was received, the Monday the term starts and the deadline
 
 #### Scenario: the mail says the same thing
 @e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
@@ -60,6 +67,6 @@ English.
 @e2e tests/e2e/intake-says-when-the-term-starts.spec.ts
 
 - **GIVEN** a request filed on Tuesday at ten
-- **WHEN** the confirmation appears
+- **WHEN** the ontvangstbevestiging is rendered
 - **THEN** it SHALL name the reference, the received moment, the start and the deadline
 - **AND** it SHALL NOT carry the sentence about the first working day

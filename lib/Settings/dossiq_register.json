@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.1"
+        "version": "0.20.4"
     },
     "x-openregister": {
         "type": "application",
@@ -3046,6 +3046,27 @@
                         "format": "date",
                         "description": "Date of the last payment",
                         "title": "Last payment date"
+                    },
+                    "receivedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the submission arrived, as the moment the citizen would recognise: the one they pressed send at. Stored beside `termStartsAt` rather than instead of it, because the two are different facts and a handler answering a complaint months later has to be able to say both.",
+                        "title": "Received at",
+                        "readOnly": true
+                    },
+                    "termStartsAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "The first working moment the statutory term counts from, resolved on the SAME calendar the term is counted on when the case was created. Never recomputed on read: a case filed on a day the calendar has since declared a holiday keeps the start the citizen was told, because a recomputed answer is today's answer and not the one they were given.",
+                        "title": "Term starts at",
+                        "readOnly": true
+                    },
+                    "receivedOutsideWorkingHours": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the request arrived outside the working window, which is true exactly when `receivedAt` and `termStartsAt` differ. Derivable, and stored anyway: it is what a report filters on and what the confirmation branches on, and Frappe's measured behaviour is a stamp at create rather than a computation at read.",
+                        "title": "Received outside working hours",
+                        "readOnly": true
                     },
                     "communicationChannel": {
                         "type": "string",

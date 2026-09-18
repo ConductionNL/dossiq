@@ -415,6 +415,7 @@ class TermijnNotificationService {
 				hasTerm: $hasTerm,
 				subjectOf: $subjectOf,
 				contact: $contact,
+				context: $context,
 			);
 		}
 
@@ -439,6 +440,7 @@ class TermijnNotificationService {
 			'body' => "Beste aanvrager,\n\n"
 				. 'Wij hebben uw aanvraag' . $waarover
 				. ' ontvangen en geregistreerd onder kenmerk ' . $case . ".\n"
+				. $this->whenItStarted(context: $context, english: false)
 				. $termijn
 				. "U volgt deze zaak via het burgerportaal.\n"
 				. $waar
@@ -560,12 +562,63 @@ class TermijnNotificationService {
 	 *
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */
+	/**
+	 * The two moments, and the one sentence that is only sometimes needed.
+	 *
+	 * 🔴 THE SENTENCE APPEARS ONLY WHEN IT IS NEEDED (D-4). A request filed on
+	 * Tuesday at ten reads: received, starts, deadline, and no explanation,
+	 * because there is nothing to explain. An explanation on every
+	 * confirmation teaches people to stop reading them, and the one place it
+	 * matters is the Sunday filing where the citizen is otherwise counting
+	 * from the wrong day.
+	 *
+	 * 🔴 THE START IS READ FROM THE CASE, NOT RECOMPUTED HERE. The case was
+	 * stamped at creation on the calendar the term is counted on; a second
+	 * computation in the mail renderer is the second source D-3 refuses, and
+	 * it would drift the moment a holiday is administered.
+	 *
+	 * @param array<string, mixed> $context The notification context.
+	 * @param bool $english Whether the mail is in English.
+	 *
+	 * @return string The lines, or '' when the case carries no start.
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 */
+	private function whenItStarted(array $context, bool $english): string {
+		$received = trim((string)($context['receivedAt'] ?? ''));
+		$starts = trim((string)($context['termStartsAt'] ?? ''));
+		if ($received === '' || $starts === '') {
+			// A case with no stamp says nothing about a start it does not
+			// have, rather than printing a dash where a date belongs.
+			return '';
+		}
+
+		$outside = (($context['receivedOutsideWorkingHours'] ?? false) === true);
+
+		if ($english === true) {
+			$lines = 'We received it on ' . $received . ' and the period starts on ' . $starts . ".\n";
+			if ($outside === true) {
+				$lines .= "Your application arrived outside working hours, so the period starts on the first working day.\n";
+			}
+
+			return $lines;
+		}
+
+		$lines = 'Wij hebben deze ontvangen op ' . $received . ' en de termijn start op ' . $starts . ".\n";
+		if ($outside === true) {
+			$lines .= "Uw aanvraag kwam buiten werktijd binnen, daarom start de termijn op de eerste werkdag.\n";
+		}
+
+		return $lines;
+	}//end whenItStarted()
+
 	private function acknowledgementInEnglish(
 		string $case,
 		string $end,
 		bool $hasTerm,
 		string $subjectOf,
 		string $contact,
+		array $context = [],
 	): array {
 		$term = "No statutory decision period applies to this application.\n";
 		if ($hasTerm === true) {
@@ -588,6 +641,7 @@ class TermijnNotificationService {
 			'body' => "Dear applicant,\n\n"
 				. 'We have received your application' . $about
 				. ' and registered it under reference ' . $case . ".\n"
+				. $this->whenItStarted(context: $context, english: true)
 				. $term
 				. "You can follow this case in the citizen portal.\n"
 				. $where

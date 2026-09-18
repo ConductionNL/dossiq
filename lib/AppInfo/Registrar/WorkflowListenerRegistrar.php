@@ -30,6 +30,7 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
+use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
@@ -141,6 +142,18 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: CaseNumberListener::class
+		);
+
+		// The two moments a term is explained by: when the request arrived, and
+		// the first working moment it counts from. Stamped at creation and
+		// never recomputed, because what a citizen was told in January is a
+		// fact about January and a recomputed answer is today's
+		// (intake-says-when-the-term-starts REQ-TERM-040). It runs BEFORE the
+		// acknowledgement listener below, so the confirmation that goes out
+		// can name the start the case now carries.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: IntakeTermStartListener::class
 		);
 
 		// Awb 4:3a: a case created from an electronic submission owes its
