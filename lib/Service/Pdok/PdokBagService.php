@@ -15,6 +15,10 @@
  *
  * Cache strategy: 24 h on every method, keyed on the BAG identifier.
  *
+ * An empty array means PDOK answered and holds no such object. A failure to
+ * reach PDOK THROWS, because the two are different answers and a caller that
+ * cannot tell them apart rejects real addresses whenever the service blinks.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service\Pdok
  *
@@ -93,7 +97,9 @@ class PdokBagService {
 	 *
 	 * @param string $id BAG nummeraanduiding identificatie (16 digits).
 	 *
-	 * @return array Normalised Dossiq-internal shape.
+	 * @return array Normalised Dossiq-internal shape, or [] when PDOK holds no such object.
+	 *
+	 * @throws RuntimeException When PDOK could not be reached, which is a different answer from [].
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -110,7 +116,9 @@ class PdokBagService {
 	 *
 	 * @param string $id BAG verblijfsobject identificatie.
 	 *
-	 * @return array Normalised Dossiq-internal shape.
+	 * @return array Normalised Dossiq-internal shape, or [] when PDOK holds no such object.
+	 *
+	 * @throws RuntimeException When PDOK could not be reached, which is a different answer from [].
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -127,7 +135,9 @@ class PdokBagService {
 	 *
 	 * @param string $id BAG pand identificatie.
 	 *
-	 * @return array Normalised Dossiq-internal shape.
+	 * @return array Normalised Dossiq-internal shape, or [] when PDOK holds no such object.
+	 *
+	 * @throws RuntimeException When PDOK could not be reached, which is a different answer from [].
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -202,7 +212,16 @@ class PdokBagService {
 					'status' => $e->getCode(),
 				]
 			);
-			return [];
+
+			// 🔴 THE TWO OUTCOMES ARE NOT THE SAME ANSWER, AND THIS USED TO
+			// RETURN [] FOR BOTH. "PDOK has no such address" and "PDOK did not
+			// answer" are told apart three lines below, where a genuine empty
+			// result is CACHED for a day and this one is not, and then the
+			// distinction was thrown away at the return. A caller that
+			// validates an address against this service would have rejected
+			// every address a handler typed for as long as PDOK was down, and
+			// told them the building does not exist.
+			throw $e;
 		}//end try
 
 		$decoded = json_decode(json: $body, associative: true);
