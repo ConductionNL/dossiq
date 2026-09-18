@@ -104,15 +104,22 @@ describe('the case declares which edge a grant travels down', () => {
 		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1026)
 	})
 
-	it('agrees with the depth the guard enforces', () => {
-		// Two numbers describing one chain drift, and the drift is invisible:
-		// the guard would refuse at a depth the schema says is fine.
+	it('enforces no depth of its own, so there is no second number to drift', () => {
+		// This used to assert that the guard's own `HIERARCHY_MAX_DEPTH`
+		// matched the schema's `maxDepth`, because two numbers describing one
+		// chain drift and the drift is invisible. The right fix for that was
+		// not to keep them in step: it was to stop having two. dossiq deleted
+		// its walk when openregister#3873 shipped, so the only reader of
+		// `maxDepth` is now the platform that owns the edge.
+		//
+		// Asserted as an ABSENCE, and the schema is read beside it so this
+		// cannot pass by the declaration having quietly gone away too.
 		const hierarchy = caseSchema.configuration['x-openregister-hierarchy']
-		const declared = guardSource.match(
-			/HIERARCHY_MAX_DEPTH\s*=\s*(\d+)/,
+		expect(hierarchy.maxDepth, 'the schema still declares the cap').toBeGreaterThan(0)
+		expect(guardSource).not.toContain('HIERARCHY_MAX_DEPTH')
+		expect(guardSource, 'and no walk was left behind under another name').not.toContain(
+			'readAccessSource',
 		)
-		expect(declared).not.toBeNull()
-		expect(Number(declared[1])).toBe(hierarchy.maxDepth)
 	})
 })
 
@@ -210,14 +217,24 @@ describe('the Sharing tab warns before the share, not after', () => {
 })
 
 describe('the write does not widen on the way down', () => {
-	it('keeps the ancestor walk out of the mutation answer', () => {
-		// The property is the ABSENCE of a call, so it is asserted as one: the
-		// mutation method must not resolve a source.
+	it('keeps the platform grant out of the mutation answer', () => {
+		// The property is the ABSENCE of a call, so it is asserted as one.
+		//
+		// 🔴 IT NAMES WHAT IS THERE NOW, not what used to be. This assertion
+		// read `not.toContain('readAccessSource(')` until dossiq deleted its
+		// own walk in favour of openregister#3873, at which point it passed
+		// because the method no longer exists anywhere — a test that cannot
+		// fail, guarding a rule that can still be broken. Inheritance now
+		// arrives through `holdsPlatformGrant()`, so that is the call the
+		// mutation path must not make.
 		const mutation = guardSource.slice(
 			guardSource.indexOf('public function hasCaseMutationAccess'),
 			guardSource.indexOf('public function hasCaseReadAccess'),
 		)
-		expect(mutation).not.toContain('readAccessSource(')
+		expect(guardSource, 'the call this asserts the absence of must exist').toContain(
+			'holdsPlatformGrant(',
+		)
+		expect(mutation).not.toContain('holdsPlatformGrant(')
 		expect(mutation).not.toContain('parentCase')
 	})
 })
