@@ -3095,6 +3095,22 @@
 						"target": "CaseLifecycleMenuDialog"
 					},
 					{
+						"id": "case-split",
+						"type": "open-modal",
+						"target": "CaseSplitDialog",
+						"label": "Split in two",
+						"icon": "CallSplit",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
 						"id": "case-merge",
 						"type": "open-modal",
 						"target": "CaseMergeDialog",

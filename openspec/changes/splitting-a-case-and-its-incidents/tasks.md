@@ -72,3 +72,36 @@ tasks, offers only the parts the case type allows, and posts the selection.
 (register row 2.26) is where the inverse becomes the platform's; when it
 lands, the second write goes and the nature name here is the one to point it
 at.
+
+## What dossiq#2945 shipped, and what this change adds
+
+#2945 shipped the DECIDING half: `CaseSplitPolicy` answers what a case type
+allows, `CaseSplitPlan` answers which rows move and what each leaves behind,
+and `IncidentRecord` orders, counts and shapes a hand-off. All three are pure,
+all three have their own suites, and all three shipped with NO CALLER: a
+`git grep` outside their tests found nothing that asked any of them anything.
+So a handler could not split a case, could not record a report, and nothing
+anywhere said why.
+
+This change is the doors, and it re-decides none of it:
+
+- `lib/Service/Cases/CaseSplitExecutor.php` carries out the plan. It hands the
+  plan the rows' STORED `case` values rather than the client's ids, which is
+  the only way the plan's own IDOR guard can fire, and it raises
+  `CaseSplitPolicy::whyRefused()`'s sentence verbatim rather than writing a
+  second one.
+- `lib/Service/Cases/IncidentStore.php` writes and reads, and asks the record
+  for every judgement, including what "open" means. It has NO case writer at
+  all, which is how "a hand-off does not move the case" is guaranteed rather
+  than remembered.
+- `CaseSplitController` and `CaseIncidentController`, with five routes.
+- `src/dialogs/CaseSplitDialog.vue` and a header action beside the merge.
+- `lib/Service/Queue/Source/OpenIncidentSource.php`, so an open report reaches
+  the inspector's own work list. Task 3.1, which #2945 left unticked.
+- `case.splitFrom`, `case.splitInto`, `case.splitMovedItems` and
+  `case.splitNote`. `CaseSplitPlan::forSelection()` produces references and
+  `noteFor()` produces a sentence, and the schema had nowhere to store either.
+
+The suites here do not re-test the three shipped classes. They watch the thing
+those classes could not: whether anything was written. A plan naming two
+documents and an executor that writes nothing produce exactly the same plan.

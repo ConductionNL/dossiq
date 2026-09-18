@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.8"
+        "version": "0.20.9"
     },
     "x-openregister": {
         "type": "application",
@@ -3316,6 +3316,54 @@
                         "title": "Portal subject reference",
                         "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner.",
                         "visible": false
+                    },
+                    "splitFrom": {
+                        "type": "string",
+                        "title": "Split from",
+                        "description": "The case this one was split off. Written on the new case beside the typed relation, because a relation answers `relatedCases` and a filter over the case list needs a plain field.",
+                        "facetable": true
+                    },
+                    "splitInto": {
+                        "type": "string",
+                        "title": "Split into",
+                        "description": "The case this one was split into. A split MOVES material rather than copying it, so without this the original file reads as though the missing documents were never there.",
+                        "facetable": true
+                    },
+                    "splitMovedItems": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "part": {
+                                    "type": "string",
+                                    "title": "Part"
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Id"
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "title": "Label"
+                                },
+                                "movedTo": {
+                                    "type": "string",
+                                    "title": "Moved to"
+                                },
+                                "movedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "title": "Moved at"
+                                }
+                            }
+                        },
+                        "title": "Moved out by a split",
+                        "description": "One row per item a split moved off this case: what it was, where it went and when. `CaseSplitPlan::forSelection()` produces these and until now the schema had nowhere to store them. Written rather than derived, because the item itself no longer names this case once it has moved, so nothing could reconstruct what left."
+                    },
+                    "splitNote": {
+                        "type": "string",
+                        "title": "Split note",
+                        "description": "The one line `CaseSplitPlan::noteFor()` writes about a split: what went where, in a sentence. One note and not one per item, because twenty lines would bury the act that produced them."
                     },
                     "decisions": {
                         "type": "array",
