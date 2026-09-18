@@ -10,7 +10,7 @@
  * capability was dark. dossiq#2957 supplied the callers a fortnight later.
  *
  * The same sweep found `AreaRouting` in exactly that state from dossiq#2936,
- * and `CaseAreaResolver` and `CaseTypeContributionRegistry` behind it.
+ * and `CaseAreaResolver` behind it.
  * `QueueItemLifecycle` was on that list too, and left it when
  * `PersonalQueueService` started asking it.
  *
@@ -104,12 +104,20 @@ class NoDarkCapabilityTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const DARK_TODAY = [
-		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. Needs the address seam decided first.',
-		'CaseTypeContributionRegistry' => 'case-types under My work (2026-09-02): gathers work surfaces other apps contribute. Nothing reads it and no app contributes yet, so the caller is the contribution endpoint that has not been specified.',
-		// FOUND ONLY ONCE COMMENTS WERE STRIPPED. Each of these three is named
-		// in a docblock somewhere and constructed nowhere, which is why the
-		// first pass of this sweep reported them as called. They are the
-		// clearest evidence that prose about a class is not a caller.
+		// THE LAST ONE, AND THE ONLY ONE THAT IS BLOCKED RATHER THAN UNDECIDED.
+		// Everything else on this list has been wired or retired; see the
+		// docblock above for where each went.
+		//
+		// WHAT WOULD UNBLOCK IT, NAMED: the change `dossiq/case-location-surface`,
+		// which is the one that should put a BAG address id on the case. Without
+		// that field the listener has nothing to pass, and guessing an address
+		// from a case's free-text location would route a case to the wrong wijk
+		// silently, which is worse than not routing it. Nothing else is missing:
+		// the resolver itself is correct and tested, `AreaRouting` is wired and
+		// consulted by `RoleResolverService`, and since the PDOK BAG adapter
+		// landed an instance can resolve an address id for free, with no
+		// Kadaster key. One field is the whole gap.
+		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. BLOCKED on the change `dossiq/case-location-surface`, which should add that field; it is the only thing missing.',
 	];
 
 	/**

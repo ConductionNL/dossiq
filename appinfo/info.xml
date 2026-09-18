@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.42-unstable.20260918153634</version>
+    <version>0.4.42-unstable.20260918175946</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -634,6 +634,34 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 imported yet at install time.
             -->
             <step>OCA\Dossiq\Repair\MigrateCasePlanStrings</step>
+            <!--
+                The case types other installed apps contribute.
+                CaseTypeContributionRegistry has duck-typed a provider at the
+                convention FQCN since case-types shipped and nothing called it,
+                while pipelinq ships one: OCA\Pipelinq\Dossiq\CaseTypeContributionProvider
+                declares `pipelinq-ticket`. So a ticket has been a declared
+                dossiq case type for as long as both apps have been installed,
+                and the case-type list has never shown it.
+
+                MATERIALISED RATHER THAN MERGED AT READ TIME, because the
+                case-type list is a declarative index over one schema: a
+                contributed type written into `caseType` is then an ordinary
+                case type on the list, on the detail page and in every facet,
+                with no second surface that can disagree with the first.
+
+                WRITTEN ONCE PER IDENTIFIER AND NEVER UPDATED. An administrator
+                who renames a contributed type, files it under a category or
+                sets a deadline on it has said something this app must not
+                overwrite on the next upgrade, so an identifier that already
+                exists is left exactly as it is. Nothing is ever deleted either:
+                a case type whose contributing app has been removed is still the
+                type of every case already filed under it.
+
+                In BOTH blocks: an app may be installed before dossiq or after
+                it, and neither order should decide whether its case types
+                exist.
+            -->
+            <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -819,6 +847,34 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 writes nothing.
             -->
             <step>OCA\Dossiq\Repair\DeclareNotificationTemplates</step>
+            <!--
+                The case types other installed apps contribute.
+                CaseTypeContributionRegistry has duck-typed a provider at the
+                convention FQCN since case-types shipped and nothing called it,
+                while pipelinq ships one: OCA\Pipelinq\Dossiq\CaseTypeContributionProvider
+                declares `pipelinq-ticket`. So a ticket has been a declared
+                dossiq case type for as long as both apps have been installed,
+                and the case-type list has never shown it.
+
+                MATERIALISED RATHER THAN MERGED AT READ TIME, because the
+                case-type list is a declarative index over one schema: a
+                contributed type written into `caseType` is then an ordinary
+                case type on the list, on the detail page and in every facet,
+                with no second surface that can disagree with the first.
+
+                WRITTEN ONCE PER IDENTIFIER AND NEVER UPDATED. An administrator
+                who renames a contributed type, files it under a category or
+                sets a deadline on it has said something this app must not
+                overwrite on the next upgrade, so an identifier that already
+                exists is left exactly as it is. Nothing is ever deleted either:
+                a case type whose contributing app has been removed is still the
+                type of every case already filed under it.
+
+                In BOTH blocks: an app may be installed before dossiq or after
+                it, and neither order should decide whether its case types
+                exist.
+            -->
+            <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
         </install>
     </repair-steps>
 
