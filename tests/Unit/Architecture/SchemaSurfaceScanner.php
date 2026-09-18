@@ -255,6 +255,21 @@ class SchemaSurfaceScanner {
 	/**
 	 * The slugs named as a string literal anywhere in the scanned sources.
 	 *
+	 * TWO SHAPES COUNT, AND THE SECOND ONE COST A FALSE POSITIVE. A slug is
+	 * named either on its own (`'caseTask'`) or as the last segment of an
+	 * OpenRegister object URL (`'/apps/openregister/api/objects/dossiq/case-location'`).
+	 * Reading only the first reported `case-location` as having no reader for
+	 * a day, while `CaseLocationMap` had been fetching it, scoped to the case,
+	 * from the Locations section of the case page all along. A scanner that
+	 * reports a working surface as dark is worse than no scanner: it sends
+	 * somebody to build the thing a second time.
+	 *
+	 * 🔴 THE URL MATCH IS ANCHORED AT BOTH ENDS. `case` is a slug and
+	 * `case-location` is a URL that contains it, so an unanchored match would
+	 * call `case` referenced by the very line that references its neighbour,
+	 * and every short slug would come out reachable for free. The segment must
+	 * END at the quote, a query string or another slash.
+	 *
 	 * @return array<int, string> The slugs, without duplicates.
 	 */
 	private function referencedSlugs(): array {
@@ -272,11 +287,31 @@ class SchemaSurfaceScanner {
 			// how `case` would look referenced by every file in the app.
 			if (str_contains($haystack, "'".$slug."'") === true || str_contains($haystack, '"'.$slug.'"') === true) {
 				$found[] = $slug;
+				continue;
+			}
+
+			if ($this->namedInAnObjectUrl(haystack: $haystack, slug: $slug) === true) {
+				$found[] = $slug;
 			}
 		}
 
 		return $found;
 	}//end referencedSlugs()
+
+	/**
+	 * Whether a slug is the schema segment of an OpenRegister object URL.
+	 *
+	 * @param string $haystack Every scanned source, concatenated.
+	 * @param string $slug     The slug under test.
+	 *
+	 * @return boolean True when some source fetches that schema by URL.
+	 */
+	private function namedInAnObjectUrl(string $haystack, string $slug): bool {
+		return (preg_match(
+			'#/'.preg_quote($slug, '#').'(?=[\'"?/]|$)#',
+			$haystack
+		) === 1);
+	}//end namedInAnObjectUrl()
 
 	/**
 	 * Every PHP, Vue, JS and TS file under a directory, minus the exclusions.
