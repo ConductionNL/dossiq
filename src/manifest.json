@@ -428,6 +428,33 @@
 			"permission": "admin"
 		},
 		{
+			"id": "IndicatiestellingenMenu",
+			"label": "Needs assessments",
+			"icon": "ClipboardTextOutline",
+			"route": "Indicatiestellingen",
+			"section": "settings",
+			"order": 106,
+			"permission": "admin"
+		},
+		{
+			"id": "MdoOverleggenMenu",
+			"label": "Multidisciplinary consultations",
+			"icon": "AccountGroupOutline",
+			"route": "MdoOverleggen",
+			"section": "settings",
+			"order": 107,
+			"permission": "admin"
+		},
+		{
+			"id": "ReIntegratieTrajectenMenu",
+			"label": "Re-integration pathways",
+			"icon": "BriefcaseAccountOutline",
+			"route": "ReIntegratieTrajecten",
+			"section": "settings",
+			"order": 108,
+			"permission": "admin"
+		},
+		{
 			"id": "SupplierUsersMenu",
 			"label": "Supplier portal accounts",
 			"icon": "AccountOutline",
@@ -5255,6 +5282,83 @@
 					"resolvedAt"
 				],
 				"showViewAction": true,
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "Indicatiestellingen",
+			"route": "/settings/indicatiestellingen",
+			"type": "index",
+			"title": "Needs assessments",
+			"permission": "admin",
+			"_note": "The Wmo assessment a consulent writes, and the support it advises. It shipped with sociaal-domein-zaaktypes and nothing ever read it, so an assessment about a named citizen could be recorded and reached by nobody. THE COLUMNS ARE THE FACTS OF THE PROCESS, NOT ITS CONTENT. `advisedSupport` is what somebody is to receive and `investigationMinutes` points at the interview write-up; both are the record and belong in the sidebar, not in a list that is scanned. `dateInvestigation` leads because the Wmo gives six weeks from the application and this is the page that shows whether that was met. Admin-only for now, and the note the other sociaal-domein pages carry applies here too: the right reader is the consulent on the case, and the case page has no panel for this yet.",
+			"config": {
+				"register": "dossiq",
+				"schema": "indicatiestelling",
+				"columns": [
+					"caseId",
+					"indicationAuthor",
+					"dateInvestigation",
+					"form",
+					"evaluationDate"
+				],
+				"showViewAction": true,
+				"defaultSort": "-dateInvestigation",
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "MdoOverleggen",
+			"route": "/settings/mdo-overleggen",
+			"type": "index",
+			"title": "Multidisciplinary consultations",
+			"permission": "admin",
+			"_note": "The multidisciplinary meeting several cases are discussed in. `toestemmingenGeregistreerd` is a column and the first thing to look at: an MDO where consent was not registered for every participant is data shared about a household that nobody agreed to, and until this page existed there was no way to find one. `minutes` and `gedeeldeGegevens` are deliberately not columns, for the reason the schema itself gives: the minutes are anonymised only WHEN consent is missing, so the unanonymised ones are the sensitive case and a list is the wrong place to meet them. Decidiq owns meetings for the fleet, so whether this record should live here at all is a question this page makes askable rather than answers.",
+			"config": {
+				"register": "dossiq",
+				"schema": "mdoOverleg",
+				"columns": [
+					"consultationDate",
+					"toestemmingenGeregistreerd",
+					"participants",
+					"caseIds"
+				],
+				"showViewAction": true,
+				"defaultSort": "-consultationDate",
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "ReIntegratieTrajecten",
+			"route": "/settings/re-integratietrajecten",
+			"type": "index",
+			"title": "Re-integration pathways",
+			"permission": "admin",
+			"_note": "The Participatiewet pathway a klantmanager runs with somebody. `distanceToLabourMarket` is an assessment OF a person and `exemptionWorkObligation` records that somebody was excused from working, often on health grounds; the first is a column because it is what the caseload is steered on, the second is not, because it is the most sensitive field on the record and it opens with the record. `instrumenten` and `collaboratingParties` are lists that would print as arrays in a cell.",
+			"config": {
+				"register": "dossiq",
+				"schema": "reIntegratieTraject",
+				"columns": [
+					"caseId",
+					"caseManagerId",
+					"trajectKind",
+					"startDate",
+					"distanceToLabourMarket"
+				],
+				"showViewAction": true,
+				"defaultSort": "-startDate",
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
