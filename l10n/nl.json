@@ -5385,6 +5385,18 @@
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "First response": "Eerste reactie",
+        "First response overrun": "Overschrijding eerste reactie",
+        "First response sent": "Eerste reactie verzonden",
+        "Runs in statuses": "Loopt in statussen",
+        "Escalation ladder": "Escalatieladder",
+        "Days before the end": "Dagen voor het einde",
+        "Share of the term elapsed": "Deel van de termijn verstreken",
+        "Resolved from": "Afgeleid van",
+        "Resolution snapshot": "Momentopname van de afleiding",
+        "Clock stopped by status": "Klok stilgezet door status",
+        "Duration in days": "Duur in dagen",
+        "Resolved on": "Afgeleid op"
     }
 }

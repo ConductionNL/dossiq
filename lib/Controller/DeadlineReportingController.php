@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\DeadlineReportingService;
+use OCA\Dossiq\Service\Term\FirstResponseOutcome;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -60,9 +61,54 @@ class DeadlineReportingController extends Controller {
 		private readonly DeadlineReportingService $service,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?FirstResponseOutcome $firstResponse = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
+
+	/**
+	 * How the first response is doing, per case type or per organisation.
+	 *
+	 * The count and the average come out of the numbers stored on the cases,
+	 * not out of dates recomputed now: a case decided a year ago was late by
+	 * what it was late by, whatever the configuration says today.
+	 *
+	 * @param string $caseType     Optional case type filter.
+	 * @param string $organisation Optional organisation filter.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse The report.
+	 *
+	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 */
+	public function firstResponseReport(string $caseType = '', string $organisation = ''): JSONResponse {
+		$denied = $this->ensureAuthenticated();
+		if ($denied !== null) {
+			return $denied;
+		}
+
+		if ($this->firstResponse === null) {
+			return new JSONResponse(['message' => 'Not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
+
+		$filters = [];
+		if ($caseType !== '') {
+			$filters['caseType'] = $caseType;
+		}
+
+		if ($organisation !== '') {
+			$filters['competentAuthority'] = $organisation;
+		}
+
+		try {
+			return new JSONResponse($this->firstResponse->report(filters: $filters));
+		} catch (Throwable $e) {
+			$this->logger->error('First-response report failed', ['error' => $e->getMessage()]);
+
+			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end firstResponseReport()
 
 	/**
 	 * Per-object authorization guard.

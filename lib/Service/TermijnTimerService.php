@@ -38,6 +38,7 @@ namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Term\ThresholdShares;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -119,8 +120,19 @@ class TermijnTimerService {
 		private readonly CaseDateNormaliser $dates,
 		private readonly ?WorkingDayCalculator $fallbackCalendar = null,
 		private readonly ?TermCalendarGuard $calendarGuard = null,
+		private readonly ?ThresholdShares $thresholdShares = null,
 	) {
+		$this->shares = ($thresholdShares ?? new ThresholdShares());
 	}//end __construct()
+
+	/**
+	 * Resolves a declared ladder's rungs to offsets. Built here when it was
+	 * not injected: it computes and reads nothing, so an instance that did not
+	 * wire it must not thereby ignore the ladders a case type declares.
+	 *
+	 * @var ThresholdShares
+	 */
+	private readonly ThresholdShares $shares;
 
 	/**
 	 * Arm the beslistermijn timer for a TermijnInstance.
@@ -172,6 +184,21 @@ class TermijnTimerService {
 				'basis' => (string)($definitie['legalBasis'] ?? 'AWB 4:13'),
 			],
 		];
+
+		// A declared ladder REPLACES the seeded one rather than sitting beside
+		// it. Two ladders on one timer is two escalations for one term, and
+		// the whole reason a share is resolved here, at the one moment the
+		// length of the term is known, is that the engine's ladder stays the
+		// ladder. An extension re-arms this timer, so the shares are resolved
+		// again from the new length.
+		$rules = $this->shares->rulesFor(
+			ladder: (array)($definitie['escalationLadder'] ?? []),
+			slaDays: $slaDays
+		);
+		if ($rules !== []) {
+			unset($config['ladder']);
+			$config['escalationRules'] = $rules;
+		}
 
 		return $this->arm(config: $config, context: 'beslistermijn', instanceId: $instanceId);
 	}//end armBeslistermijn()

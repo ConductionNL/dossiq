@@ -1474,7 +1474,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.25.0",
+                "version": "1.28.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -2850,6 +2850,36 @@
                         "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
                         "title": "Override reason",
                         "order": 24
+                    },
+                    "firstResponseStatus": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "met",
+                            "missed"
+                        ],
+                        "readOnly": true,
+                        "facetable": true,
+                        "title": "First response",
+                        "description": "Whether the promise that you hear from us within so many days was kept. Recorded either way: storing only the misses makes the denominator a second query with different filters, and the two then disagree.",
+                        "order": 28
+                    },
+                    "firstResponseOverrunDays": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "readOnly": true,
+                        "facetable": true,
+                        "title": "First response overrun",
+                        "description": "How far the first response missed its term, in the term's own counting mode. A number rather than a flag: a service manager improving a process needs to know whether we miss by a day or by three weeks, and those are different problems with different fixes.",
+                        "order": 29
+                    },
+                    "firstResponseAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "First response sent",
+                        "description": "When the first response actually went out. Written once, by the act that sent it.",
+                        "order": 30
                     },
                     "duplicateOverrideOf": {
                         "type": "array",

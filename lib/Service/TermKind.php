@@ -73,6 +73,19 @@ final class TermKind {
 	public const PHASE = 'phase';
 
 	/**
+	 * The promise that you hear from us within so many days.
+	 *
+	 * A first response is a term like any other, which is exactly why it is a
+	 * kind here rather than a second mechanism beside the four. It used to
+	 * exist for complaints alone, computed from a private constant in
+	 * `ComplaintService`, so the promise every service desk makes was kept for
+	 * one case type and measured for none.
+	 *
+	 * @var string
+	 */
+	public const FIRST_RESPONSE = 'firstResponse';
+
+	/**
 	 * Every kind, in the order a case page reads them.
 	 *
 	 * @var array<int, string>
@@ -82,6 +95,7 @@ final class TermKind {
 		self::PLANNED,
 		self::INTERNAL,
 		self::PHASE,
+		self::FIRST_RESPONSE,
 	];
 
 	/**
