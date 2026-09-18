@@ -104,6 +104,17 @@ class SchemaSlugMap {
 		'partnerOrganization' => 'partner_organization_schema',
 		'sharePermissionLevel' => 'share_permission_level_schema',
 		'casetransfer' => 'case_transfer_schema',
+		// The dated chain of holdings, and the pull that asks for one. Both are
+		// custody-and-handover-of-a-case: the chain answers who held the case
+		// in March, which the transfer record cannot, and the takeover is the
+		// request the holder answers.
+		'caseCustody' => 'case_custody_schema',
+		'caseTakeover' => 'case_takeover_schema',
+		// The sociaal-domein consent. Declared in `register.d/50-sociaal-domein.json`
+		// since that fragment shipped and never mapped, so no service could
+		// resolve it and the hand-off gate had nothing to read. Mapping it is
+		// what turns a declared record into an enforced precondition (D-5).
+		'toestemming' => 'consent_schema',
 		'caseFederatedShare' => 'case_federated_share_schema',
 		'caseFederatedActivity' => 'case_federated_activity_schema',
 		'automaticAction' => 'automatic_action_schema',

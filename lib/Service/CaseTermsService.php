@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Termijn\TermMoveHistory;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -71,6 +72,7 @@ class CaseTermsService {
 		private readonly TermDeclarationReader $declarations,
 		private readonly TermijnTimerService $timers,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermMoveHistory $moves = null,
 	) {
 	}//end __construct()
 
@@ -300,6 +302,12 @@ class CaseTermsService {
 				'pauseReason' => (string)($row['pauseReason'] ?? ''),
 				'pauseWaitingOn' => (string)($row['pauseWaitingOn'] ?? ''),
 				'chasesSent' => max(0, (int)($row['chasesSent'] ?? 0)),
+				// WHY THIS DATE IS NOT THE DATE IT WAS. A deadline that
+				// quietly became another deadline is the thing a handler
+				// cannot see and an applicant will argue about, so every move
+				// the engine recorded travels with the term rather than
+				// waiting for somebody to go and look for it.
+				'moves' => ($this->moves?->movesFor(instance: $row) ?? []),
 			];
 		}//end foreach
 
