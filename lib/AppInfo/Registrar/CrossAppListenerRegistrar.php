@@ -77,7 +77,7 @@ class CrossAppListenerRegistrar {
 			);
 		}
 
-		// leaf-integrations REQ-LEAF-103: a submission of a form a case type
+		// REQ-LEAF-103 (leaf-integrations): a submission of a form a case type
 		// bound opens a case with the statutory clock already running. `forms`
 		// is optional, and the guard is what keeps an instance without it
 		// booting: the event name is an FQN STRING on the listener, never an
@@ -96,7 +96,7 @@ class CrossAppListenerRegistrar {
 			);
 		}
 
-		// an-intake-message-opens-a-case: integriq receives on a channel,
+		// REQ: an-intake-message-opens-a-case. Integriq receives on a channel,
 		// matches a routing rule and asks whoever owns the target to open one.
 		// Nothing answered, so every form submission, messaging message and
 		// public space report it routed was held with "No app opened a case
@@ -115,7 +115,7 @@ class CrossAppListenerRegistrar {
 			);
 		}
 
-		// digital-post-reaches-integriq: what became of a letter. integriq
+		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
 		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
 		// tracked message, `failed` and `read` included, so this is how a case
 		// learns that a letter did not arrive rather than going on showing the

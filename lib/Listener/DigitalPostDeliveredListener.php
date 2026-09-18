@@ -3,7 +3,7 @@
 /**
  * What became of a letter, written on the case that sent it.
  *
- * integriq dispatches `DigitalPostDeliveredEvent` on EVERY status change of a
+ * Integriq dispatches `DigitalPostDeliveredEvent` on EVERY status change of a
  * tracked digital post message. The name says delivered because that is the
  * status anyone waits for, and integriq's own class docblock says plainly
  * that it fires on `failed` too. This listener writes whatever it is told, so
@@ -127,7 +127,11 @@ class DigitalPostDeliveredListener implements IEventListener {
 
 		$value = $event->$method();
 
-		return (is_scalar($value) === true) ? trim((string)$value) : '';
+		if (is_scalar($value) === true) {
+			return trim((string)$value);
+		}
+
+		return '';
 	}//end stringFrom()
 
 	/**

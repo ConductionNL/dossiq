@@ -86,14 +86,24 @@ class ThresholdShares {
 				continue;
 			}
 
+			$priority = (string)($rung['priority'] ?? '');
+			if ($priority === '') {
+				$priority = 'normal';
+			}
+
+			$message = (string)($rung['message'] ?? '');
+			if ($message === '') {
+				$message = 'termijn-drempel';
+			}
+
 			$rules[] = [
 				'trigger' => self::TRIGGER,
 				'offset' => $offset,
 				'offsetUnit' => self::UNIT,
 				'notifyRole' => ['handler'],
 				'escalateToRole' => [],
-				'priority' => (string)(($rung['priority'] ?? '') ?: 'normal'),
-				'message' => (string)(($rung['message'] ?? '') ?: 'termijn-drempel'),
+				'priority' => $priority,
+				'message' => $message,
 				'openIncident' => false,
 			];
 		}//end foreach
@@ -117,7 +127,11 @@ class ThresholdShares {
 		if (array_key_exists('days', $rung) === true && is_numeric($rung['days']) === true) {
 			$days = (int)$rung['days'];
 
-			return (($days < 0 || $days > $slaDays) ? null : $days);
+			if ($days < 0 || $days > $slaDays) {
+				return null;
+			}
+
+			return $days;
 		}
 
 		if (array_key_exists('share', $rung) === false || is_numeric($rung['share']) === false) {

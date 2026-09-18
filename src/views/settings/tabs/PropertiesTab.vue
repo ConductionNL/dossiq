@@ -16,15 +16,21 @@
 
 			<template v-else>
 				<div v-if="propertyDefs.length > 0" class="properties-tab__list">
-					<template v-for="group in groupedPropertyDefs" :key="group.category">
-						<h5 class="properties-tab__group" :data-category="group.category">
+					<template
+						v-for="group in groupedPropertyDefs"
+						:key="group.category">
+						<h5
+							class="properties-tab__group"
+							:data-category="group.category">
 							{{ group.category }}
 						</h5>
 						<div
 							v-for="pd in group.properties"
 							:key="pd.id"
 							class="property-row"
-							:class="{ 'property-row--editing': editingId === pd.id }">
+							:class="{
+								'property-row--editing': editingId === pd.id,
+							}">
 							<template v-if="editingId !== pd.id">
 								<span class="property-row__name">{{ pd.name }}</span>
 								<span class="property-row__format">{{
@@ -91,7 +97,9 @@
 											@click="saveEdit">
 											{{ t('dossiq', 'Save') }}
 										</NcButton>
-										<NcButton variant="tertiary" @click="cancelEdit">
+										<NcButton
+											variant="tertiary"
+											@click="cancelEdit">
 											{{ t('dossiq', 'Cancel') }}
 										</NcButton>
 									</div>
@@ -141,10 +149,7 @@ import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import PropertyDefinitionFields from '../../../components/PropertyDefinitionFields.vue'
-import {
-	hasCompetingSources,
-	schemeOf,
-} from '../../../services/conceptScheme.js'
+import { hasCompetingSources, schemeOf } from '../../../services/conceptScheme.js'
 import {
 	fetchPropertyVocabulary,
 	resolveStoredType,
@@ -264,8 +269,8 @@ export default {
 			const groups = new Map()
 			this.propertyDefs.forEach((pd) => {
 				const stored = String(pd.category || '').trim()
-				const category
-					= stored === '' || stored === 'Uncategorised'
+				const category =
+					stored === '' || stored === 'Uncategorised'
 						? uncategorised
 						: stored
 				if (!groups.has(category)) {

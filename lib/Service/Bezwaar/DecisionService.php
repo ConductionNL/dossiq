@@ -233,7 +233,11 @@ class DecisionService {
 
 		$caseId = trim((string)($objection['case'] ?? ''));
 
-		return ($caseId === '' ? null : $caseId);
+		if ($caseId === '') {
+			return null;
+		}
+
+		return $caseId;
 	}//end caseIdForObjection()
 
 	/**

@@ -218,9 +218,8 @@ export default {
 		 */
 		selectedCountingMode() {
 			return (
-				this.countingModeOptions.find(
-					(o) => o.id === this.form.countingMode,
-				) || this.countingModeOptions[0]
+				this.countingModeOptions.find((o) => o.id === this.form.countingMode)
+				|| this.countingModeOptions[0]
 			)
 		},
 

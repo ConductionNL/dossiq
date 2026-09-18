@@ -171,6 +171,10 @@ describe('the Add party action', () => {
 			'name',
 			'roleType',
 			'participant',
+			// gemachtigde-role-on-every-case-type (#2918): a Gemachtigde acts
+			// FOR somebody, so the form asks whom, and a role that represents
+			// nobody is the one case the picker has to be able to express.
+			'representedParty',
 			'delegate',
 			'delegateUntil',
 			'description',

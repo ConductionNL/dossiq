@@ -138,7 +138,8 @@ test.describe('Merge two cases into one', () => {
 		await expect
 			.poll(async () => await partiesOn(api, cases.survivor), {
 				timeout: 30_000,
-				message: 'The merge did not move the duplicate’s party onto the survivor',
+				message:
+					'The merge did not move the duplicate’s party onto the survivor',
 			})
 			.toEqual([
 				`${RUN_PREFIX} Aanvrager duplicaat`,
@@ -174,10 +175,11 @@ test.describe('Merge two cases into one', () => {
 			},
 		})
 		expect(minted.ok()).toBeTruthy()
-		const anchor = String((await minted.json())?.url ?? '')
-			.split('/')
-			.filter((part: string) => part !== '')
-			.pop() ?? ''
+		const anchor =
+			String((await minted.json())?.url ?? '')
+				.split('/')
+				.filter((part: string) => part !== '')
+				.pop() ?? ''
 		expect(anchor).not.toBe('')
 		await api.dispose()
 

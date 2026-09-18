@@ -28,7 +28,10 @@ import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
 const register = JSON.parse(
-	fs.readFileSync(path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'), 'utf8'),
+	fs.readFileSync(
+		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
+		'utf8',
+	),
 )
 const routes = fs.readFileSync(path.join(ROOT, 'appinfo', 'routes.php'), 'utf8')
 const controller = fs.readFileSync(
@@ -53,7 +56,10 @@ describe('The waits on and blocks pair', () => {
 	it('is carried by a property OpenRegister reads back from the far side', () => {
 		const property = caseSchema.properties.blockingCases
 
-		expect(property, 'blockingCases is missing from the case schema').toBeTruthy()
+		expect(
+			property,
+			'blockingCases is missing from the case schema',
+		).toBeTruthy()
 		expect(property.type).toBe('array')
 		expect(property.items.$ref).toBe('case')
 		expect(property.items['x-openregister-relation'].type).toBe('waitsOn')
@@ -73,8 +79,12 @@ describe('Accepting or declining a followed move', () => {
 	})
 
 	it('takes no number of days from the caller', () => {
-		expect(controller).toContain('public function accept(string $caseId, string $taskId)')
-		expect(controller).toContain('public function decline(string $caseId, string $taskId)')
+		expect(controller).toContain(
+			'public function accept(string $caseId, string $taskId)',
+		)
+		expect(controller).toContain(
+			'public function decline(string $caseId, string $taskId)',
+		)
 		expect(controller).not.toContain('$days')
 	})
 })

@@ -76,9 +76,8 @@ export default {
 		 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
 		 */
 		rows() {
-			return buildAssigneeRows(
-				this.pmPrimaryCaseType?.dwellByAssignee,
-				(s) => t('dossiq', s),
+			return buildAssigneeRows(this.pmPrimaryCaseType?.dwellByAssignee, (s) =>
+				t('dossiq', s),
 			)
 		},
 

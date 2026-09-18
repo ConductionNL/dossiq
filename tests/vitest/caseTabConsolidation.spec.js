@@ -311,6 +311,13 @@ describe('the container type this change depends on', () => {
 			// widget inside a tab panel, so the tab drew nothing while this
 			// test stayed green. It is keyed by TYPE now, like the five above.
 			'case-archival-panel': 'case-archival-pane',
+			// Custody arrived with #2940: who has held this case, and who is
+			// asking for it. Keyed by TYPE for the same reason as the six
+			// above, and a custom pane rather than a data widget because a
+			// holding is only meaningful as a JOIN between the moment one
+			// ended and the moment the next began; a row of values per
+			// holding would look complete on a chain with a gap in it.
+			'case-custody-panel': 'case-custody-pane',
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 

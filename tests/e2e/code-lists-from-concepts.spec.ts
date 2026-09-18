@@ -148,17 +148,16 @@ test.describe('code lists from concepts', () => {
 		expect(stored.conceptScheme ?? '').toBe('')
 
 		const row = tab.locator('.property-row', { hasText: name })
-		await expect(
-			row.locator('[data-testid="property-scheme"]'),
-		).toHaveCount(0)
+		await expect(row.locator('[data-testid="property-scheme"]')).toHaveCount(0)
 	})
 
 	// @e2e openspec/changes/code-lists-from-concepts/specs/property-definition-management/spec.md#options-come-from-the-scheme
 	test('a field carrying both is told which one wins', async ({ page }) => {
 		const tab = await openProperties(page)
-		await tab.locator('.pd-fields .NcTextField').first().fill(
-			`${RUN_PREFIX} Reden`,
-		)
+		await tab
+			.locator('.pd-fields .NcTextField')
+			.first()
+			.fill(`${RUN_PREFIX} Reden`)
 		await tab.getByText('Limit answers to a list').click()
 		await tab.locator('#pd-add-enum').fill('Te laat')
 		await tab.locator('#pd-add-concept-scheme').fill('redenen')

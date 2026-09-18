@@ -114,6 +114,11 @@ class TermijnTimerService {
 	 *        nullable so a test that builds this service by hand and never names a
 	 *        calendar keeps working, which is every such test written before
 	 *        REQ-TERM-060.
+	 * @param ThresholdShares|null $thresholdShares The rungs a term notifies on, as
+	 *        shares of its own length. Defaulted rather than required for the same
+	 *        reason as the two above it.
+	 * @param WorkingDayRoll|null $roll Counts a term in working days when its
+	 *        definition asks for them, and answers null when the calendar is absent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -165,9 +170,11 @@ class TermijnTimerService {
 		// a ten working day term fourteen working days, which is two weeks the
 		// case is not entitled to, so the unit never moves without the value.
 		$mode = TermijnService::countingModeOf(definitie: $definitie);
-		$slaUnit = ($mode === WorkingDayRoll::MODE_WORKING_DAYS
-			? WorkingDayRoll::UNIT_BUSINESS_DAYS
-			: WorkingDayRoll::UNIT_CALENDAR_DAYS);
+		$slaUnit = WorkingDayRoll::UNIT_CALENDAR_DAYS;
+		if ($mode === WorkingDayRoll::MODE_WORKING_DAYS) {
+			$slaUnit = WorkingDayRoll::UNIT_BUSINESS_DAYS;
+		}
+
 		$slaDays = $this->slaDaysFor(instance: $instance, definitie: $definitie, start: $start, mode: $mode);
 
 		$config = [
@@ -678,6 +685,7 @@ class TermijnTimerService {
 	 * @param array<string, mixed> $instance The TermijnInstance row.
 	 * @param array<string, mixed> $definitie The TermijnDefinitie row.
 	 * @param DateTimeImmutable $start The term's start.
+	 * @param string $mode Which days the term counts, calendar or working.
 	 *
 	 * @return int Calendar days, at least 1 (the engine refuses 0).
 	 */

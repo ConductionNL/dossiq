@@ -196,7 +196,9 @@ class DashboardWidgetScope {
 			return [];
 		}
 
-		return array_values($this->groups->getUserGroupIds($user));
+		// No array_values: `getUserGroupIds()` already answers a list, and
+		// re-indexing one is a call psalm reports rather than a safeguard.
+		return $this->groups->getUserGroupIds($user);
 	}//end heldBy()
 
 	/**
@@ -224,7 +226,11 @@ class DashboardWidgetScope {
 		}
 
 		$path = ($this->appRoot . self::MANIFEST_PATH);
-		$raw = (file_exists($path) === true ? file_get_contents($path) : false);
+		$raw = false;
+		if (file_exists($path) === true) {
+			$raw = file_get_contents($path);
+		}
+
 		if ($raw === false) {
 			$this->logger->warning('Dossiq dashboard: the manifest could not be read, so no widget scoping is applied', ['path' => $path]);
 			$this->manifest = [];
@@ -233,7 +239,10 @@ class DashboardWidgetScope {
 		}
 
 		$decoded = json_decode($raw, true);
-		$this->manifest = (is_array($decoded) === true ? $decoded : []);
+		$this->manifest = [];
+		if (is_array($decoded) === true) {
+			$this->manifest = $decoded;
+		}
 
 		return $this->manifest;
 	}//end manifest()

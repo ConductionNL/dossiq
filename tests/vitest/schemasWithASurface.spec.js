@@ -140,9 +140,7 @@ describe('what the supplier accounts page does not show', () => {
 		// it, and a list is the wrong place: an admin screenshotting the page
 		// would be handing out account access. The sidebar still has it for
 		// anyone who genuinely needs it.
-		expect(page('SupplierUsers').config.columns).not.toContain(
-			'activationToken',
-		)
+		expect(page('SupplierUsers').config.columns).not.toContain('activationToken')
 		expect(schemas.supplierUser.properties.activationToken).toBeTruthy()
 	})
 })
@@ -236,8 +234,9 @@ describe('what the sociaal domein pages do not show', () => {
 		// Being excused from the work obligation is usually a health fact.
 		const columns = page('ReIntegratieTrajecten').config.columns
 		expect(columns).not.toContain('exemptionWorkObligation')
-		expect(schemas.reIntegratieTraject.properties.exemptionWorkObligation)
-			.toBeTruthy()
+		expect(
+			schemas.reIntegratieTraject.properties.exemptionWorkObligation,
+		).toBeTruthy()
 	})
 })
 
@@ -250,9 +249,7 @@ describe('the supplier reads their own performance figures', () => {
 	it('is a collection on the supplier contribution, scoped by supplierRef', () => {
 		// Scoped like every other collection there. An unscoped one would
 		// show a supplier somebody else's payment record.
-		const block = provider
-			.slice(provider.indexOf('supplierKpi'))
-			.split('],')[0]
+		const block = provider.slice(provider.indexOf('supplierKpi')).split('],')[0]
 		expect(provider).toContain("'schema' => 'supplierKpi'")
 		expect(block).toContain("'scopeField' => 'supplierRef'")
 	})

@@ -347,7 +347,7 @@ class HermiqAiFeatureClient {
 
 		if ($statusCode < 200 || $statusCode >= 300) {
 			$errorCode = null;
-			// hermiq's pre-call gates name the step that refused: model-policy,
+			// Hermiq's pre-call gates name the step that refused: model-policy,
 			// residency or redaction. That name is the difference between a
 			// handler reading a reason and reading a failure, so it is carried
 			// through rather than flattened.

@@ -65,7 +65,6 @@ export default {
 			return workingHoursLabel(this.pmStore.clock, (s) => t('dossiq', s))
 		},
 
-
 		/**
 		 * @return {Array<string>} Status names along the x-axis.
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md

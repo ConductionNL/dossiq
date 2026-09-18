@@ -198,6 +198,11 @@ class WorkingDayRoll {
 	 *                                were asked for and the calendar is absent.
 	 *
 	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 *
+	 * @psalm-suppress FalsableReturnStatement `modify()` is falsable in the
+	 * stub because its argument is an arbitrary string. Here the string is
+	 * built from an int, so the only value that could make it unparseable does
+	 * not exist; PHP 8.3 throws rather than returning false in any case.
 	 */
 	public function endAfter(DateTimeImmutable $start, int $days, string $mode): ?DateTimeImmutable {
 		if ($mode !== self::MODE_WORKING_DAYS) {

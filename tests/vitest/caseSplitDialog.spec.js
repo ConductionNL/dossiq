@@ -35,10 +35,7 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const register = JSON.parse(
 	fs.readFileSync(
 		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
@@ -62,6 +59,19 @@ vi.mock('@nextcloud/event-bus', () => ({ emit: vi.fn() }))
 async function mountDialog() {
 	const axios = (await import('@nextcloud/axios')).default
 	axios.get.mockImplementation((url) => {
+		// THE POLICY CALL COMES FIRST AND IS NOT OPTIONAL.
+		// `split-picker-asks-the-policy` made the dialog ask what this case
+		// type allows before drawing anything, and a mock that does not answer
+		// it leaves `allowed` empty, so every section is `v-if`'d away and the
+		// three assertions below find an empty wrapper. It reads exactly like
+		// a dialog that renders nothing, which is why it is answered here by
+		// name rather than by the catch-all underneath.
+		if (String(url).endsWith('/split')) {
+			return Promise.resolve({
+				data: { allowed: ['documents', 'parties', 'tasks'] },
+			})
+		}
+
 		if (String(url).includes('caseDocument')) {
 			return Promise.resolve({
 				data: {
@@ -74,7 +84,11 @@ async function mountDialog() {
 		}
 
 		return Promise.resolve({
-			data: { results: [{ id: 'role-1', roleType: 'belanghebbende', name: 'Buurman' }] },
+			data: {
+				results: [
+					{ id: 'role-1', roleType: 'belanghebbende', name: 'Buurman' },
+				],
+			},
 		})
 	})
 	axios.post.mockResolvedValue({ data: {} })
@@ -100,7 +114,8 @@ async function mountDialog() {
 					// falls through with `$attrs`, and emitting as well fires it
 					// twice, which would count two posts for one press.
 					props: { disabled: { type: Boolean, default: false } },
-					template: '<button v-bind="$attrs" :disabled="disabled"><slot /></button>',
+					template:
+						'<button v-bind="$attrs" :disabled="disabled"><slot /></button>',
 				},
 			},
 		},
@@ -128,20 +143,30 @@ describe('the Split dialog', () => {
 			'A default selection is a judgement that gets confirmed rather than made.',
 		).toHaveLength(0)
 		expect(
-			wrapper.find('[data-testid="case-split-confirm"]').attributes('disabled'),
+			wrapper
+				.find('[data-testid="case-split-confirm"]')
+				.attributes('disabled'),
 		).toBeDefined()
 	})
 
 	it('refuses a party ticked as moving and as on both halves', async () => {
 		const wrapper = await mountDialog()
 
-		await wrapper.find('[data-testid="case-split-title"]').setValue('De tweede klacht')
-		await wrapper.find('[data-testid="case-split-party-role-1"]').trigger('click')
-		await wrapper.find('[data-testid="case-split-party-both-role-1"]').trigger('click')
+		await wrapper
+			.find('[data-testid="case-split-title"]')
+			.setValue('De tweede klacht')
+		await wrapper
+			.find('[data-testid="case-split-party-role-1"]')
+			.trigger('click')
+		await wrapper
+			.find('[data-testid="case-split-party-both-role-1"]')
+			.trigger('click')
 		await wrapper.vm.$nextTick()
 
 		expect(
-			wrapper.find('[data-testid="case-split-confirm"]').attributes('disabled'),
+			wrapper
+				.find('[data-testid="case-split-confirm"]')
+				.attributes('disabled'),
 			'Two contradictory instructions, so the button refuses rather than the server picking one.',
 		).toBeDefined()
 	})
@@ -150,8 +175,12 @@ describe('the Split dialog', () => {
 		const axios = (await import('@nextcloud/axios')).default
 		const wrapper = await mountDialog()
 
-		await wrapper.find('[data-testid="case-split-title"]').setValue('De tweede klacht')
-		await wrapper.find('[data-testid="case-split-document-doc-1"]').trigger('click')
+		await wrapper
+			.find('[data-testid="case-split-title"]')
+			.setValue('De tweede klacht')
+		await wrapper
+			.find('[data-testid="case-split-document-doc-1"]')
+			.trigger('click')
 		await wrapper.vm.$nextTick()
 		await wrapper.find('[data-testid="case-split-confirm"]').trigger('click')
 		await new Promise((resolve) => setTimeout(resolve, 0))
@@ -169,7 +198,7 @@ describe('the Split dialog', () => {
 		})
 	})
 
-	it('shows the server\'s own refusal rather than one of its own', async () => {
+	it("shows the server's own refusal rather than one of its own", async () => {
 		const axios = (await import('@nextcloud/axios')).default
 		const wrapper = await mountDialog()
 		axios.post.mockRejectedValue({
@@ -181,8 +210,12 @@ describe('the Split dialog', () => {
 			},
 		})
 
-		await wrapper.find('[data-testid="case-split-title"]').setValue('De tweede klacht')
-		await wrapper.find('[data-testid="case-split-document-doc-1"]').trigger('click')
+		await wrapper
+			.find('[data-testid="case-split-title"]')
+			.setValue('De tweede klacht')
+		await wrapper
+			.find('[data-testid="case-split-document-doc-1"]')
+			.trigger('click')
 		await wrapper.vm.$nextTick()
 		await wrapper.find('[data-testid="case-split-confirm"]').trigger('click')
 		await new Promise((resolve) => setTimeout(resolve, 0))
@@ -197,7 +230,9 @@ describe('the Split dialog', () => {
 
 describe('the way the dialog is reached', () => {
 	it('is a header action on the case, hidden once the case is closed', () => {
-		const action = caseDetail.config.headerActions.find((a) => a.id === 'case-split')
+		const action = caseDetail.config.headerActions.find(
+			(a) => a.id === 'case-split',
+		)
 
 		expect(
 			action,

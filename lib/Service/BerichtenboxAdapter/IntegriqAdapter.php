@@ -226,7 +226,11 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 			);
 		}
 
-		$refusal = (method_exists($event, 'getRefusal') === true) ? $event->getRefusal() : null;
+		$refusal = null;
+		if (method_exists($event, 'getRefusal') === true) {
+			$refusal = $event->getRefusal();
+		}
+
 		if (is_array($refusal) === true && $refusal !== []) {
 			return $this->refusal(
 				code: (string)($refusal['code'] ?? self::STATUS_REFUSED),
@@ -234,7 +238,11 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 			);
 		}
 
-		$messageId = (method_exists($event, 'getMessageId') === true) ? $event->getMessageId() : null;
+		$messageId = null;
+		if (method_exists($event, 'getMessageId') === true) {
+			$messageId = $event->getMessageId();
+		}
+
 		if (is_string($messageId) === false || trim($messageId) === '') {
 			// A handled event with neither an id nor a refusal. integriq's own
 			// contract says this cannot happen; treating it as a send anyway
@@ -297,7 +305,11 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	private function requestedBy(): string {
 		$user = $this->userSession->getUser();
 
-		return ($user === null) ? 'system' : $user->getUID();
+		if ($user === null) {
+			return 'system';
+		}
+
+		return $user->getUID();
 	}//end requestedBy()
 
 	/**

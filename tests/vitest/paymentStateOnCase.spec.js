@@ -31,8 +31,15 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
-const register = JSON.parse(fs.readFileSync(path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'), 'utf8'))
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+)
+const register = JSON.parse(
+	fs.readFileSync(
+		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
+		'utf8',
+	),
+)
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const caseDetail = page('CaseDetail')
@@ -42,7 +49,7 @@ const widgetById = (id) => widgets.find((w) => w.id === id)
 const caseProps = register.components.schemas.case.properties
 const caseTypeProps = register.components.schemas.caseType.properties
 
-describe('the money is shillinq\'s, and the case page places its leaves', () => {
+describe("the money is shillinq's, and the case page places its leaves", () => {
 	it.each([
 		['case-payment-requests', 'shillinq-payment-requests'],
 		['case-contract', 'shillinq-contracts'],
@@ -58,9 +65,15 @@ describe('the money is shillinq\'s, and the case page places its leaves', () => 
 		expect(widget.schema).toBeUndefined()
 	})
 
-	it.each(['case-payment-requests', 'case-contract'])('%s has a cell on the page', (widgetId) => {
-		expect(layout.some((cell) => cell.widgetId === widgetId), `${widgetId} is declared but placed nowhere`).toBe(true)
-	})
+	it.each(['case-payment-requests', 'case-contract'])(
+		'%s has a cell on the page',
+		(widgetId) => {
+			expect(
+				layout.some((cell) => cell.widgetId === widgetId),
+				`${widgetId} is declared but placed nowhere`,
+			).toBe(true)
+		},
+	)
 
 	it('gates neither on requiredApp, so an absent shillinq hides the surface rather than emptying it', () => {
 		for (const widgetId of ['case-payment-requests', 'case-contract']) {
@@ -71,13 +84,21 @@ describe('the money is shillinq\'s, and the case page places its leaves', () => 
 
 describe('the case carries a word about the money and nothing more', () => {
 	it('declares the five states, with stale among them', () => {
-		expect(caseProps.paymentState.enum).toEqual(['notRequired', 'outstanding', 'paid', 'waived', 'stale'])
+		expect(caseProps.paymentState.enum).toEqual([
+			'notRequired',
+			'outstanding',
+			'paid',
+			'waived',
+			'stale',
+		])
 	})
 
 	it('holds no amount, no ledger line and no payment date of its own', () => {
 		// `lastPaymentDate` is ZGW's `laatsteBetaaldatum` and predates this
 		// change; what this change must not do is add a SECOND money field.
-		const money = Object.keys(caseProps).filter((key) => /amountReceived|ledger|paidAmount|feeAmount/i.test(key))
+		const money = Object.keys(caseProps).filter((key) =>
+			/amountReceived|ledger|paidAmount|feeAmount/i.test(key),
+		)
 		expect(money).toEqual([])
 	})
 
@@ -92,7 +113,9 @@ describe('the case carries a word about the money and nothing more', () => {
 
 	it('references the contract without copying its term, cost or renewal date', () => {
 		expect(caseProps.contract.type).toBe('string')
-		const copied = Object.keys(caseProps).filter((key) => /contract(Term|Cost|Value|End|Renewal|Counterparty)/i.test(key))
+		const copied = Object.keys(caseProps).filter((key) =>
+			/contract(Term|Cost|Value|End|Renewal|Counterparty)/i.test(key),
+		)
 		expect(copied).toEqual([])
 	})
 })
@@ -115,7 +138,9 @@ describe('the case list can be filtered on the money', () => {
 	})
 
 	it('offers an Awaiting payment lens that narrows on outstanding alone', () => {
-		const chip = cases.config.quickFilters.find((q) => q.label === 'Awaiting payment')
+		const chip = cases.config.quickFilters.find(
+			(q) => q.label === 'Awaiting payment',
+		)
 		expect(chip).toBeTruthy()
 		// Deliberately NOT stale: a case whose state could not be read does
 		// not owe money, and folding the two would put the whole instance in
@@ -123,8 +148,10 @@ describe('the case list can be filtered on the money', () => {
 		expect(chip.filter.paymentState).toBe('outstanding')
 	})
 
-	it('leaves the lens off by default, so nobody\'s first paint is narrowed to the money', () => {
-		const chip = cases.config.quickFilters.find((q) => q.label === 'Awaiting payment')
+	it("leaves the lens off by default, so nobody's first paint is narrowed to the money", () => {
+		const chip = cases.config.quickFilters.find(
+			(q) => q.label === 'Awaiting payment',
+		)
 		expect(chip.default).toBeUndefined()
 	})
 })

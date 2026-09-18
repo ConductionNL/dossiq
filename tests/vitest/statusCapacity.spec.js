@@ -23,14 +23,10 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 import { h } from 'vue'
-import {
-	capacityRefusal,
-	countInStatus,
-} from '../../src/utils/statusCapacity.js'
+import { capacityRefusal, countInStatus } from '../../src/utils/statusCapacity.js'
 
-const BoardColumn = (
-	await import('../../src/views/workflow-board/BoardColumn.vue')
-).default
+const BoardColumn = (await import('../../src/views/workflow-board/BoardColumn.vue'))
+	.default
 
 /** Stubs for the library and child components the column mounts. */
 const stubs = {
@@ -90,7 +86,12 @@ describe('The board column header', () => {
 		// null when a second status type merges into the column, because one
 		// number over two different limits is wrong in both directions.
 		const wrapper = open(
-			{ id: 'In behandeling', name: 'In behandeling', capacity: null, merged: true },
+			{
+				id: 'In behandeling',
+				name: 'In behandeling',
+				capacity: null,
+				merged: true,
+			},
 			9,
 		)
 
@@ -149,7 +150,11 @@ describe('The drop refusal', () => {
 
 	it('refuses a card onto a status that is at its limit', () => {
 		const status = { id: 'in-behandeling', name: 'In behandeling', capacity: 3 }
-		const refusal = capacityRefusal(status, sitting('in-behandeling', 3), translate)
+		const refusal = capacityRefusal(
+			status,
+			sitting('in-behandeling', 3),
+			translate,
+		)
 
 		expect(refusal).toContain('In behandeling')
 		expect(refusal).toContain('3')
@@ -158,7 +163,9 @@ describe('The drop refusal', () => {
 	it('lets the card through while there is room', () => {
 		const status = { id: 'in-behandeling', name: 'In behandeling', capacity: 3 }
 
-		expect(capacityRefusal(status, sitting('in-behandeling', 2), translate)).toBe('')
+		expect(
+			capacityRefusal(status, sitting('in-behandeling', 2), translate),
+		).toBe('')
 	})
 
 	it('counts only the cases in the concrete target status', () => {
@@ -202,7 +209,12 @@ describe('The drop refusal', () => {
 		// off than one with no limit at all.
 		expect(
 			capacityRefusal(
-				{ id: 'afgehandeld', name: 'Afgehandeld', capacity: 1, isFinal: true },
+				{
+					id: 'afgehandeld',
+					name: 'Afgehandeld',
+					capacity: 1,
+					isFinal: true,
+				},
 				sitting('afgehandeld', 9),
 				translate,
 			),

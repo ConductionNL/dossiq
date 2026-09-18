@@ -629,6 +629,8 @@ class TermijnNotificationService {
 	 * @param boolean $hasTerm   Whether a statutory term applies at all.
 	 * @param string  $subjectOf What the application is about, when it is known.
 	 * @param string  $contact   Who to contact, when the case type names somebody.
+	 * @param string  $start     When the term started counting, named only when it is
+	 *                           not the moment the application arrived.
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *

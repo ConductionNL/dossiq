@@ -158,8 +158,8 @@ final class Prerequisites {
 			],
 			'extensions' => $extensions,
 			'apps' => [
-				'required' => self::readApps($appManager, self::APPS_REQUIRED),
-				'optional' => self::readApps($appManager, self::APPS_OPTIONAL),
+				'required' => self::readApps(appManager: $appManager, declared: self::APPS_REQUIRED),
+				'optional' => self::readApps(appManager: $appManager, declared: self::APPS_OPTIONAL),
 			],
 		];
 	}//end check()
@@ -199,7 +199,7 @@ final class Prerequisites {
 				// 🔴 A MISSING APP IS REPORTED, NEVER GUESSED AT. isInstalled()
 				// can throw on a broken app directory, and a throw here would
 				// take down the whole settings page over an optional sibling.
-				'present' => self::isInstalled($appManager, $appId),
+				'present' => self::isInstalled(appManager: $appManager, appId: $appId),
 			];
 		}
 

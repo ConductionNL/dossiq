@@ -72,7 +72,11 @@ describe('the public status page timeline', () => {
 
 	it('renders each public entry with its date, in the order it arrived', async () => {
 		resolvesWith({
-			object: { title: 'Kapvergunning', identifier: 'Z-2026-1', status: 'In behandeling' },
+			object: {
+				title: 'Kapvergunning',
+				identifier: 'Z-2026-1',
+				status: 'In behandeling',
+			},
 			timeline: [
 				{
 					id: 'e1',
@@ -90,7 +94,9 @@ describe('the public status page timeline', () => {
 		})
 
 		const wrapper = await page()
-		const entries = wrapper.findAll('[data-testid="public-status-timeline-entry"]')
+		const entries = wrapper.findAll(
+			'[data-testid="public-status-timeline-entry"]',
+		)
 
 		expect(entries).toHaveLength(2)
 		expect(entries[0].text()).toContain('Beschikking verzonden')
@@ -106,18 +112,31 @@ describe('the public status page timeline', () => {
 
 		const wrapper = await page()
 
-		expect(wrapper.find('[data-testid="public-status-timeline"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="public-status-timeline"]').exists()).toBe(
+			false,
+		)
 	})
 
 	it('drops a timeline that is not a list, and still shows the status', async () => {
+		// `statusPublicLabel` and NOT `status`: the endpoint renders the case
+		// with `_extend: []`, so `status` is the statusType's uuid and the
+		// page would print 32 hex characters at a citizen. The label is the
+		// case schema's own calculation over the linked statusType, resolved
+		// server-side, which is why it is the field this page reads.
 		resolvesWith({
-			object: { title: 'Kapvergunning', identifier: 'Z-2026-1', status: 'In behandeling' },
+			object: {
+				title: 'Kapvergunning',
+				identifier: 'Z-2026-1',
+				statusPublicLabel: 'In behandeling',
+			},
 			timeline: 'nope',
 		})
 
 		const wrapper = await page()
 
-		expect(wrapper.find('[data-testid="public-status-timeline"]').exists()).toBe(false)
+		expect(wrapper.find('[data-testid="public-status-timeline"]').exists()).toBe(
+			false,
+		)
 		expect(wrapper.text()).toContain('In behandeling')
 	})
 })

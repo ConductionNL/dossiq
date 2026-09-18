@@ -63,6 +63,11 @@ class NoBulkLoopOverCasesTest extends TestCase {
 			'Reads each selected case type so the refusal can name both versions. '
 			. 'It happens BEFORE any job exists, which is the point of the refusal, '
 			. 'so there is no job to do it inside.',
+		'lib/Service/Cases/IncidentStore.php::openCountsFor' =>
+			'Counts the open incidents on each case of a list so the list can '
+			. 'draw a badge. It writes nothing and changes nothing, and the '
+			. 'loop is over rows already read in ONE search rather than one '
+			. 'search per case, which is the cost a job would exist to avoid.',
 	];
 
 	/**

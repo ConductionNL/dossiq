@@ -109,7 +109,7 @@ class DeadlineReportingControllerContractTest extends TestCase {
 		$this->service = $this->createMock(DeadlineReportingService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->audience = $this->createMock(ReportingAudience::class);
-		$this->audience->method('mayRead')->willReturn(true);
+		$this->audience->method('isInAudience')->willReturn(true);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
 		$this->controller = new DeadlineReportingController(

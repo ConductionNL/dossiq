@@ -73,6 +73,12 @@ class ReportingEndpointIsGuardedTest extends TestCase {
 		'isInGroup',
 		'isAdmin',
 		'mayRead',
+		// `ReportingAudience` was renamed off `mayRead` so it stops reading as
+		// a second effective-permission evaluator (NoSecondPermissionEvaluatorTest):
+		// it decides on GROUP MEMBERSHIP for a fleet-wide report, which has no
+		// object whose grants could answer. It is the same gate under a truer
+		// name, so the marker moves with it.
+		'isInAudience',
 		'maySee',
 		'Guard',
 	];

@@ -202,6 +202,10 @@ class PlannedActionService {
 	): ?array {
 		$on = ($completedOn ?? new DateTimeImmutable('today'));
 		$actionId = (string)($action['id'] ?? ($action['uuid'] ?? ''));
+		$uuid = null;
+		if ($actionId !== '') {
+			$uuid = $actionId;
+		}
 
 		$this->write(
 			object: array_merge(
@@ -212,7 +216,7 @@ class PlannedActionService {
 					'completedBy' => $completedBy,
 				]
 			),
-			uuid: ($actionId === '' ? null : $actionId)
+			uuid: $uuid
 		);
 
 		$next = $this->chain->next(

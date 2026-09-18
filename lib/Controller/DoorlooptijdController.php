@@ -79,7 +79,7 @@ class DoorlooptijdController extends Controller {
 		// cases at risk and its performance per case type. It is an AGGREGATE
 		// over cases the caller was never granted, so OpenRegister's per-object
 		// refusal never gets a chance to speak.
-		if ($this->audience->mayRead(user: $user) === false) {
+		if ($this->audience->isInAudience(user: $user) === false) {
 			return new JSONResponse(['message' => ReportingAudience::REFUSAL], Http::STATUS_FORBIDDEN);
 		}
 

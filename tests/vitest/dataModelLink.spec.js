@@ -70,8 +70,12 @@ const page = (id) => manifest.pages.find((p) => p.id === id)
  * @return {object|undefined} The section, `{ label, widget }`.
  */
 function caseObjectTypesSection() {
-	const related = page('CaseDetail').config.widgets.find((w) => w.id === 'case-related-panel')
-	return related?.content?.sections?.find((sec) => sec.widget?.id === 'case-object-types-link')
+	const related = page('CaseDetail').config.widgets.find(
+		(w) => w.id === 'case-related-panel',
+	)
+	return related?.content?.sections?.find(
+		(sec) => sec.widget?.id === 'case-object-types-link',
+	)
 }
 
 /**
@@ -87,9 +91,12 @@ function caseObjectTypesSection() {
  * @return {object|undefined} The card entry.
  */
 function objectTypesCard(pageId) {
-	const entries = pageId === 'CaseDetail'
-		? caseObjectTypesSection()?.widget?.content?.entries
-		: (page(pageId).widgets ?? []).find((w) => w.widgetKey === 'nav-card-grid')?.props?.entries
+	const entries =
+		pageId === 'CaseDetail'
+			? caseObjectTypesSection()?.widget?.content?.entries
+			: (page(pageId).widgets ?? []).find(
+					(w) => w.widgetKey === 'nav-card-grid',
+				)?.props?.entries
 	return entries?.find((e) => e.id === 'manage-object-types')
 }
 
@@ -153,7 +160,10 @@ describe('the Data model entry', () => {
 		const visibleTo = (permissions) =>
 			lifted
 				.filter((item) => item.section === 'integrations')
-				.filter((item) => !item.permission || permissions.includes(item.permission))
+				.filter(
+					(item) =>
+						!item.permission || permissions.includes(item.permission),
+				)
 				.map((item) => item.id)
 
 		expect(visibleTo(['user', 'admin'])).toContain('DataModelLink')
@@ -201,17 +211,23 @@ describe('Manage object types', () => {
 		// `widgetsBySlot.has('body')` makes CnPageRenderer render the grid
 		// INSTEAD of the typed page component. A nav card in the body slot
 		// would silently replace the objects list with one link.
-		const grid = page('CaseObjects').widgets.find((w) => w.widgetKey === 'nav-card-grid')
+		const grid = page('CaseObjects').widgets.find(
+			(w) => w.widgetKey === 'nav-card-grid',
+		)
 
 		expect(grid.slot).toBe('footer')
 		expect(grid.gridX + grid.gridWidth).toBeLessThanOrEqual(12)
 	})
 
 	it('sits right after the Objects section on the case page', () => {
-		const related = page('CaseDetail').config.widgets.find((w) => w.id === 'case-related-panel')
+		const related = page('CaseDetail').config.widgets.find(
+			(w) => w.id === 'case-related-panel',
+		)
 		const ids = related.content.sections.map((sec) => sec.widget.id)
 
-		expect(ids.indexOf('case-object-types-link')).toBe(ids.indexOf('case-objects') + 1)
+		expect(ids.indexOf('case-object-types-link')).toBe(
+			ids.indexOf('case-objects') + 1,
+		)
 		// gate-55: a detail page carries config.widgets OR page widgets, never both.
 		expect(page('CaseDetail').widgets).toBeUndefined()
 	})

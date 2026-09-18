@@ -77,7 +77,15 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// the attribute catalogue. It is a page rather than a lens because an
 		// attribute with no case type is shared across every one of them, so
 		// there is no existing index it could be a filter over.
-		expect(manifest.pages).toHaveLength(54)
+		// 54 -> 62: eight registers that shipped with stored data and no page
+		// to read it on. `the-two-schemas-holding-personal-data` (#2958) adds
+		// SupplierUsers and AvgIncidents, `the-offline-inspection-schemas`
+		// (#2959) adds FieldEvidence, OfflineSyncQueue and
+		// OfflineSyncConflicts, and `the-last-sociaal-domein-schemas` (#2961)
+		// adds Indicatiestellingen, MdoOverleggen and ReIntegratieTrajecten.
+		// Each is a page and not a lens for the same reason the four above
+		// are: there is no existing index any of them could be a filter over.
+		expect(manifest.pages).toHaveLength(62)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)

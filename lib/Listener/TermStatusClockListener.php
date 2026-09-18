@@ -78,7 +78,11 @@ class TermStatusClockListener implements IEventListener {
 				return;
 			}
 
-			$caseId = (string)(($case['id'] ?? '') ?: ($case['@self']['id'] ?? ''));
+			$caseId = (string)($case['id'] ?? '');
+			if ($caseId === '') {
+				$caseId = (string)($case['@self']['id'] ?? '');
+			}
+
 			if ($caseId === '') {
 				return;
 			}

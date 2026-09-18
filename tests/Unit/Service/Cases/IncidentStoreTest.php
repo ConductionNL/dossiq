@@ -45,6 +45,7 @@ use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * Recording, listing, handing on, settling and counting.
@@ -56,6 +57,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
  */
 class IncidentStoreTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The store the service reads and writes.
@@ -103,7 +106,7 @@ class IncidentStoreTest extends TestCase {
 		// this asserts is only that the store PASSES IT THROUGH, so a caller
 		// holding the store does not have to hold the record as well.
 		self::assertSame(
-			(new IncidentRecord())->recordingDelayDays(incident: $listed[0]),
+			(new IncidentRecord(dates: $this->caseDates()))->recordingDelayDays(incident: $listed[0]),
 			$incidents->recordingDelayDays(incident: $listed[0]),
 		);
 	}//end testTheReportsReadInEventOrder()
@@ -312,7 +315,7 @@ class IncidentStoreTest extends TestCase {
 
 		return new IncidentStore(
 			settingsService: $settings,
-			record: new IncidentRecord(),
+			record: new IncidentRecord(dates: $this->caseDates()),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end incidents()

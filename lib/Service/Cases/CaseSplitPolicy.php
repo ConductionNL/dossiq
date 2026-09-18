@@ -118,9 +118,10 @@ class CaseSplitPolicy {
 
 		// The sentence names what may still be divided, because a handler told
 		// only what they may not do has to guess at the rest.
-		$remaining = ($allowed === []
-			? 'This case type allows no part of a case to be divided.'
-			: sprintf('It allows %s to be divided.', implode(' and ', $allowed)));
+		$remaining = 'This case type allows no part of a case to be divided.';
+		if ($allowed !== []) {
+			$remaining = sprintf('It allows %s to be divided.', implode(' and ', $allowed));
+		}
 
 		return sprintf(
 			'This case type does not allow %s to be divided. %s',

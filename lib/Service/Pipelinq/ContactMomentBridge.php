@@ -249,16 +249,37 @@ class ContactMomentBridge {
 		}
 
 		if ($hidden === 0) {
-			return "Also on {$total} other case" . ($total === 1 ? '' : 's');
+			return "Also on {$total} other case" . self::plural(count: $total);
 		}
 
 		if ($named === 0) {
-			return "Also on {$hidden} case" . ($hidden === 1 ? '' : 's') . ' you may not see';
+			return "Also on {$hidden} case" . self::plural(count: $hidden) . ' you may not see';
 		}
 
-		return "Also on {$named} other case" . ($named === 1 ? '' : 's')
+		return "Also on {$named} other case" . self::plural(count: $named)
 			. " and {$hidden} you may not see";
 	}//end sharedLabel()
+
+	/**
+	 * The plural 's' a count takes, or '' when it takes none.
+	 *
+	 * Written out rather than inlined because the ruleset forbids an inline
+	 * if, and three call sites in one sentence would otherwise be three
+	 * hoisted variables that say the same thing.
+	 *
+	 * @param int $count How many there are.
+	 *
+	 * @return string 's', or '' for exactly one.
+	 *
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-shows-every-contact-moment-it-is-a-member-of-and-says-when-one-is-shared-req-plq-03
+	 */
+	private static function plural(int $count): string {
+		if ($count === 1) {
+			return '';
+		}
+
+		return 's';
+	}//end plural()
 
 	/**
 	 * The payload pipelinq's leaf takes, from a dossiq contact moment.
@@ -285,7 +306,7 @@ class ContactMomentBridge {
 	/**
 	 * A subject for the appended moment.
 	 *
-	 * dossiq's contact moment has a summary and a nature but no subject, and
+	 * Dossiq's contact moment has a summary and a nature but no subject, and
 	 * pipelinq requires one. The nature is the closest thing to a subject that
 	 * is not a copy of the body.
 	 *
@@ -301,7 +322,11 @@ class ContactMomentBridge {
 
 		$summary = trim((string)($moment['summary'] ?? ''));
 
-		return ($summary === '' ? 'Contactmoment' : mb_substr($summary, 0, 120));
+		if ($summary === '') {
+			return 'Contactmoment';
+		}
+
+		return mb_substr($summary, 0, 120);
 	}//end titleFor()
 
 	/**

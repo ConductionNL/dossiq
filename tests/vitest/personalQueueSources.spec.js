@@ -82,6 +82,12 @@ describe('every mechanism reaches the queue by declaring itself', () => {
 			// what happened next and the person who had to do it found out by
 			// opening the case.
 			'PlannedActionSource',
+			// the-doors-onto-the-split-and-the-incidents, #2957. An incident
+			// raised on a case is a report handed to a named inspector, and
+			// until it was declared here it reached nobody's queue: the
+			// record existed and the person who had to act on it found out by
+			// opening the case.
+			'OpenIncidentSource',
 		])
 	})
 

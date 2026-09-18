@@ -95,7 +95,7 @@ class DoorlooptijdControllerContractTest extends TestCase {
 		$this->leadTimeService = $this->createMock(DoorlooptijdService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->audience = $this->createMock(ReportingAudience::class);
-		$this->audience->method('mayRead')->willReturn(true);
+		$this->audience->method('isInAudience')->willReturn(true);
 
 		$this->controller = new DoorlooptijdController(
 			request: $this->request,

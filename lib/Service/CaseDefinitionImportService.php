@@ -383,11 +383,16 @@ class CaseDefinitionImportService {
 						continue;
 					}
 
+					$rowUuid = null;
+					if ($packageId !== '') {
+						$rowUuid = $packageId;
+					}
+
 					$stored = $objectService->saveObject(
 						$this->withoutMetadata(row: $row),
 						register: $register,
 						schema: $schema,
-						uuid: ($packageId !== '' ? $packageId : null)
+						uuid: $rowUuid
 					);
 
 					$id = $this->storedId(stored: $stored);
@@ -679,11 +684,16 @@ class CaseDefinitionImportService {
 			}
 
 			try {
+				$templateUuid = null;
+				if ($packageId !== '') {
+					$templateUuid = $packageId;
+				}
+
 				$stored = $objectService->saveObject(
 					$this->withoutMetadata(row: $template),
 					register: $register,
 					schema: $schema,
-					uuid: ($packageId !== '' ? $packageId : null)
+					uuid: $templateUuid
 				);
 			} catch (\Throwable $e) {
 				$this->rollBack(objectService: $objectService, register: $register, ids: $created);

@@ -87,7 +87,7 @@ class PartyRefusalReader {
 		$pipelinq = $this->pipelinqRefusal(partyId: $partyUuid, act: self::ACT_SEND);
 		if ($pipelinq !== '') {
 			$sources[] = 'pipelinq';
-			// pipelinq's label wins the sentence when both refuse: it carries
+			// Pipelinq's label wins the sentence when both refuse: it carries
 			// the severity and the vocabulary an administrator maintains.
 			$indicator = $pipelinq;
 		}

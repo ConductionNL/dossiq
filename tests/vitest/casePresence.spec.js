@@ -34,20 +34,17 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
 /** The case page. */
-const caseDetail = manifest.pages.find(page => page.id === 'CaseDetail')
+const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 
 /** The widget this change declares. */
 const WIDGET = 'case-presence'
 
 describe('the case page shows who else has it open', () => {
 	it('declares the widget with the LIBRARY type, not a registry key', () => {
-		const widget = caseDetail.config.widgets.find(entry => entry.id === WIDGET)
+		const widget = caseDetail.config.widgets.find((entry) => entry.id === WIDGET)
 
 		expect(widget, 'the widget is declared').toBeTruthy()
 		expect(widget.type).toBe('presence')
@@ -64,7 +61,7 @@ describe('the case page shows who else has it open', () => {
 
 	it('🔴 is PLACED in the layout, so it is not dark', () => {
 		const placed = caseDetail.config.layout.filter(
-			entry => entry.widgetId === WIDGET,
+			(entry) => entry.widgetId === WIDGET,
 		)
 
 		expect(placed).toHaveLength(1)
@@ -73,8 +70,9 @@ describe('the case page shows who else has it open', () => {
 	})
 
 	it('sits above the strips it belongs with, not at the bottom of the page', () => {
-		const at = widgetId => caseDetail.config.layout
-			.find(entry => entry.widgetId === widgetId)?.gridY
+		const at = (widgetId) =>
+			caseDetail.config.layout.find((entry) => entry.widgetId === widgetId)
+				?.gridY
 
 		// Who else is here is only useful BEFORE you start typing, so it reads
 		// with the other strips rather than below nine rows of panels.
@@ -90,10 +88,13 @@ describe('the case page shows who else has it open', () => {
 			for (let y = entry.gridY; y < entry.gridY + entry.gridHeight; y++) {
 				const row = occupied.get(y) ?? []
 				for (const other of row) {
-					const overlaps = entry.gridX < other.gridX + other.gridWidth
+					const overlaps =
+						entry.gridX < other.gridX + other.gridWidth
 						&& other.gridX < entry.gridX + entry.gridWidth
 					if (overlaps) {
-						clashes.push(`${entry.widgetId} over ${other.widgetId} at row ${y}`)
+						clashes.push(
+							`${entry.widgetId} over ${other.widgetId} at row ${y}`,
+						)
 					}
 				}
 				row.push(entry)

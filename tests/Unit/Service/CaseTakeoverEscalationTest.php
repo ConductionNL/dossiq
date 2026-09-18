@@ -39,6 +39,7 @@ use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * Escalating an unanswered request to the holding unit.
@@ -49,6 +50,8 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */
 class CaseTakeoverEscalationTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The store every service under test reads and writes.
@@ -196,6 +199,7 @@ class CaseTakeoverEscalationTest extends TestCase {
 			custody: new CaseCustodyChain(
 				settingsService: $this->settings(),
 				logger: $this->createMock(originalClassName: LoggerInterface::class),
+				dates: $this->caseDates(),
 			),
 			tasks: $engine,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),

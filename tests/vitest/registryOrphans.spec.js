@@ -16,9 +16,10 @@
  *
  * A third one fell out of writing this: CaseLifecycleActionDialog, whose note
  * claimed four header actions opened it while CaseLifecycleMenuDialog had
- * taken the gestures over. It carries an `_orphanReason` now, which is the
- * escape hatch: a dialog may be registered with no manifest caller when the
- * reason is written down beside it.
+ * taken the gestures over. It carried an `_orphanReason` for one change and
+ * is now retired, which is what the escape hatch is for: a dialog may be
+ * registered with no caller while somebody decides, and the decision is then
+ * taken rather than deferred forever.
  *
  * THE COUNT IS ASSERTED. A loop that matched nothing passes every assertion
  * inside it, so the number of entries examined is checked too: a regex that
@@ -144,11 +145,29 @@ describe('registry modals reach a surface', () => {
 		expect(targets.has('BulkDocumentActionDialog')).toBe(true)
 	})
 
-	it('accepts a written reason in place of a caller', () => {
-		const withReason = modalEntries().filter((entry) => entry.hasReason)
-		expect(withReason.map((entry) => entry.name)).toContain(
-			'CaseLifecycleActionDialog',
-		)
+	it('has no entry parked behind a written reason', () => {
+		// `_orphanReason` is the escape hatch, and this asserts it is empty.
+		// It held CaseLifecycleActionDialog, now retired: the menu on
+		// CaseDetail serves all four of its gestures, collects the same reason
+		// and refuses an empty one, and reads the same /lifecycle before it
+		// posts. No requirement named that dialog's client-side pre-refusal,
+		// and REQ-LIFE-10 argues against one: the menu copies every verdict
+		// from a server answer, because a second derivation eventually offers
+		// a move the write refuses.
+		//
+		// An entry here is not wrong. It is a debt with a sentence attached,
+		// and this names it so it is read rather than accumulated.
+		const withReason = modalEntries()
+			.filter((entry) => entry.hasReason)
+			.map((entry) => entry.name)
+
+		expect(
+			withReason,
+			'These modals are registered with an `_orphanReason` instead of a '
+			+ 'caller. Read each reason: if what it waits on has landed, route '
+			+ 'the modal and drop the reason; if the reason has stopped being '
+			+ 'true, retire the modal. Update this list either way.',
+		).toEqual([])
 	})
 })
 
@@ -171,24 +190,17 @@ describe('registry modals reach a surface', () => {
  */
 const KNOWN_UNIMPORTED = {
 	'src/dialogs/CaseTransitionConfirmDialog.vue':
-		'RETIRE, and the cost is why it is still here. A case transition is '
-		+ 'already served by two surfaces a person reaches on CaseDetail: the '
-		+ 'stages widget and CaseLifecycleMenuDialog, which reads '
-		+ '/available-transitions, /lifecycle and /acts and posts the move '
-		+ 'itself. So the rule says retire. What retiring takes with it is three '
-		+ 'test files that mount this component and assert on it: '
-		+ 'caseTransitionOutcome, workflowBoardMove and resultTemplateOnClose. '
-		+ 'They assert about a component nothing renders, so they cover nothing '
-		+ 'that runs, but deleting 400 lines of assertions is a coverage decision '
-		+ 'and not a routing one. It does no network work on mount.',
-	'src/dialogs/DsoCaseDetail.vue':
-		'RETIRE. It posts to /apps/dossiq/api/dso/cases/, and no page, route or '
-		+ 'schema in the manifest resolves a DSO case: the only DSO surface is '
-		+ 'DSOIntakeController, which is a machine-to-machine intake endpoint '
-		+ 'with no reader. Held back with the one above because '
-		+ 'dialogTemplateBindings mounts it, and that file also covers dialogs '
-		+ 'that are alive, so it is an edit rather than a deletion. No network '
-		+ 'work on mount.',
+		'KEPT, AND THE REASON CHANGED. It was recorded as retire, on the ground '
+		+ 'that a transition is already served by the stages widget and '
+		+ 'CaseLifecycleMenuDialog. That is still true of the MOVE. It is not '
+		+ 'true of the close form: this is the only component that mounts '
+		+ 'TemplatePicker, and starter-content-and-templates REQ-TPL-02 carries '
+		+ 'a live scenario, "a result template presets the outcome text", which '
+		+ 'no other surface implements. The menu picks a result TYPE and presets '
+		+ 'no text. So retiring this drops a spec-named feature rather than '
+		+ 'clutter, and the scenario is unsatisfiable while the dialog is '
+		+ 'unreachable. Routing it means giving the menu the picker, which is a '
+		+ 'change, not a repair. Flagged for Ruben 2026-09-19.',
 }
 
 /**

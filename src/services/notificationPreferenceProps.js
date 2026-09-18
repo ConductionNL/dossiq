@@ -62,7 +62,10 @@ export function keyFor(entry) {
  *
  * @return {Array<object>} `{ id, label, configured, unconfiguredReason }`.
  */
-export function channelsFrom({ channels = [], singleChannelLabel = 'Notifications' } = {}) {
+export function channelsFrom({
+	channels = [],
+	singleChannelLabel = 'Notifications',
+} = {}) {
 	if (Array.isArray(channels) === true && channels.length > 0) {
 		return channels.map((channel) => ({
 			id: String(channel?.id ?? ''),
@@ -72,12 +75,14 @@ export function channelsFrom({ channels = [], singleChannelLabel = 'Notification
 		}))
 	}
 
-	return [{
-		id: SINGLE_CHANNEL_ID,
-		label: singleChannelLabel,
-		configured: true,
-		unconfiguredReason: '',
-	}]
+	return [
+		{
+			id: SINGLE_CHANNEL_ID,
+			label: singleChannelLabel,
+			configured: true,
+			unconfiguredReason: '',
+		},
+	]
 }
 
 /**
@@ -181,7 +186,12 @@ export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {})
  *
  * @return {object} The component's props.
  */
-export function propsFor({ entries = [], channels = [], label, singleChannelLabel } = {}) {
+export function propsFor({
+	entries = [],
+	channels = [],
+	label,
+	singleChannelLabel,
+} = {}) {
 	const columns = channelsFrom({ channels, singleChannelLabel })
 
 	return {

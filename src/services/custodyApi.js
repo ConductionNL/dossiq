@@ -57,7 +57,9 @@ export async function readChain(caseId) {
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
  */
 export async function readHolderOn(caseId, on) {
-	const { data } = await axios.get(caseUrl(caseId, 'custody/holder'), { params: { on } })
+	const { data } = await axios.get(caseUrl(caseId, 'custody/holder'), {
+		params: { on },
+	})
 
 	return data?.holding ?? null
 }

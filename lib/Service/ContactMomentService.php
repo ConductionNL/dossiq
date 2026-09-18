@@ -62,6 +62,9 @@ class ContactMomentService {
 	 * @param IUserSession $userSession The session, for the handling employee default.
 	 * @param LoggerInterface $logger The logger.
 	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param ContactMomentBridge|null $pipelinqBridge Appends the moment to pipelinq
+	 *        when that app is installed. Nullable and last, so every existing
+	 *        construction of this service keeps working.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,

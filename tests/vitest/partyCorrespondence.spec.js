@@ -149,9 +149,9 @@ describe("a party's documents on the People tab", () => {
 		await new Promise((resolve) => setTimeout(resolve, 0))
 		await wrapper.vm.$nextTick()
 
-		expect(wrapper.findAll('[data-testid="case-parties-documents"]')).toHaveLength(
-			0,
-		)
+		expect(
+			wrapper.findAll('[data-testid="case-parties-documents"]'),
+		).toHaveLength(0)
 	})
 })
 

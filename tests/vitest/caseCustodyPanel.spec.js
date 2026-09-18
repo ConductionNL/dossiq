@@ -42,10 +42,7 @@ const register = JSON.parse(
 		'utf8',
 	),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
 const caseDetail = manifest.pages.find((p) => p.id === 'CaseDetail')
 
@@ -84,8 +81,12 @@ const PENDING = {
 const stubs = {
 	NcLoadingIcon: { template: '<span class="loading" />' },
 	NcEmptyContent: {
-		props: { name: { type: String, default: '' }, description: { type: String, default: '' } },
-		template: '<div class="empty"><span class="empty__name">{{ name }}</span><span class="empty__description">{{ description }}</span></div>',
+		props: {
+			name: { type: String, default: '' },
+			description: { type: String, default: '' },
+		},
+		template:
+			'<div class="empty"><span class="empty__name">{{ name }}</span><span class="empty__description">{{ description }}</span></div>',
 	},
 	NcButton: {
 		// NO EXPLICIT `$emit('click')`. The parent's `@click` already falls
@@ -99,8 +100,12 @@ const stubs = {
 		// `v-model` rather than the deprecated `.sync`. A stub that listened on
 		// the old pair would leave the reason empty and the refuse button
 		// disabled forever, which is a green test over a dead field.
-		props: { modelValue: { type: String, default: '' }, label: { type: String, default: '' } },
-		template: '<input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
+		props: {
+			modelValue: { type: String, default: '' },
+			label: { type: String, default: '' },
+		},
+		template:
+			'<input v-bind="$attrs" :value="modelValue" @input="$emit(\'update:modelValue\', $event.target.value)">',
 	},
 }
 
@@ -133,7 +138,9 @@ describe('the Custody tab', () => {
 				return Promise.resolve({ data: { requests: [PENDING] } })
 			}
 
-			return Promise.resolve({ data: { holdings: HOLDINGS, open: HOLDINGS[1], total: 2 } })
+			return Promise.resolve({
+				data: { holdings: HOLDINGS, open: HOLDINGS[1], total: 2 },
+			})
 		})
 		axios.post.mockResolvedValue({ data: { ...PENDING, status: 'refused' } })
 	})
@@ -207,7 +214,9 @@ describe('the Custody tab', () => {
 		await new Promise((resolve) => setTimeout(resolve, 0))
 
 		expect(String(axios.post.mock.calls[0][0])).toContain('/refuse')
-		expect(axios.post.mock.calls[0][1]).toEqual({ reason: 'Ik ben er al mee bezig' })
+		expect(axios.post.mock.calls[0][1]).toEqual({
+			reason: 'Ik ben er al mee bezig',
+		})
 	})
 
 	it('re-reads the case after an answer, rather than rewriting the row', async () => {
@@ -230,7 +239,9 @@ describe('the Custody tab', () => {
 		axios.get.mockImplementation((url) => {
 			if (String(url).endsWith('/takeovers')) {
 				return Promise.resolve({
-					data: { requests: [{ ...PENDING, id: 't-2', status: 'escalated' }] },
+					data: {
+						requests: [{ ...PENDING, id: 't-2', status: 'escalated' }],
+					},
 				})
 			}
 
@@ -245,7 +256,9 @@ describe('the Custody tab', () => {
 			request.text(),
 			'Escalated is the ABSENCE of an answer, so it still offers accept and refuse.',
 		).toContain('Nobody answered')
-		expect(wrapper.find('[data-testid="case-custody-accept"]').exists()).toBe(true)
+		expect(wrapper.find('[data-testid="case-custody-accept"]').exists()).toBe(
+			true,
+		)
 	})
 })
 

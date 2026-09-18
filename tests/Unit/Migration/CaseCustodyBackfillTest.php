@@ -40,6 +40,7 @@ use OCP\IAppConfig;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 
 /**
  * A store that can list every case, as the repair step walks them.
@@ -80,6 +81,8 @@ final class CcbCaseStore extends InMemoryRegister {
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */
 class CaseCustodyBackfillTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The store the step reads and writes.
@@ -261,6 +264,7 @@ class CaseCustodyBackfillTest extends TestCase {
 		return new CaseCustodyChain(
 			settingsService: $this->settings(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
 		);
 	}//end chain()
 

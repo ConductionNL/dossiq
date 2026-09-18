@@ -85,7 +85,10 @@ class CasePlanReview {
 			return false;
 		}
 
-		$today = (($today !== '') ? $today : (new DateTimeImmutable())->format('Y-m-d'));
+		if ($today === '') {
+			$today = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
 
 		return ($due < $today);
 	}//end isDue()
@@ -112,6 +115,10 @@ class CasePlanReview {
 		string $nextReviewDate = '',
 		string $on = '',
 	): array {
+		if ($on === '') {
+			$on = (new DateTimeImmutable())->format('Y-m-d');
+		}
+
 		$plan = $this->store->read(schema: self::SCHEMA, id: $planId);
 		if ($plan === null) {
 			throw new RefusedException(
@@ -149,7 +156,7 @@ class CasePlanReview {
 		$reviews = $this->reviewsOf(plan: $plan);
 		$reviews[] = [
 			'reviewedBy' => trim($reviewedBy),
-			'reviewDate' => (($on !== '') ? $on : (new DateTimeImmutable())->format('Y-m-d')),
+			'reviewDate' => $on,
 			'changes' => $written,
 			'nextReviewDate' => $nextReviewDate,
 		];
@@ -173,7 +180,10 @@ class CasePlanReview {
 		$raw = ($plan['reviews'] ?? []);
 		if (is_string($raw) === true && trim($raw) !== '') {
 			$decoded = json_decode($raw, true);
-			$raw = ((is_array($decoded) === true) ? $decoded : []);
+			$raw = [];
+			if (is_array($decoded) === true) {
+				$raw = $decoded;
+			}
 		}
 
 		if (is_array($raw) === false) {

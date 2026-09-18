@@ -91,7 +91,7 @@ class CaseCustodyController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function chain(string $caseId): JSONResponse {
-		if ($this->mayRead(caseId: $caseId) === false) {
+		if ($this->readerHoldsTheCase(caseId: $caseId) === false) {
 			return $this->notYours();
 		}
 
@@ -118,7 +118,7 @@ class CaseCustodyController extends Controller {
 	 */
 	#[NoAdminRequired]
 	public function holder(string $caseId): JSONResponse {
-		if ($this->mayRead(caseId: $caseId) === false) {
+		if ($this->readerHoldsTheCase(caseId: $caseId) === false) {
 			return $this->notYours();
 		}
 
@@ -185,18 +185,23 @@ class CaseCustodyController extends Controller {
 	/**
 	 * Whether the caller may read this case at all.
 	 *
+	 * It ASKS `CaseAccessGuard` and decides nothing itself. Named for what it
+	 * does rather than `mayRead`, because a method with an evaluator's name
+	 * reads as a second answer to "who may open this case", and a second
+	 * answer is a disclosure the first time the two disagree.
+	 *
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return bool True when they may.
 	 */
-	private function mayRead(string $caseId): bool {
+	private function readerHoldsTheCase(string $caseId): bool {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return false;
 		}
 
 		return $this->accessGuard->hasCaseReadAccess(caseId: $caseId, user: $user);
-	}//end mayRead()
+	}//end readerHoldsTheCase()
 
 	/**
 	 * One answer for "this case is not yours", so none of the three differ.

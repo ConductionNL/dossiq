@@ -390,6 +390,7 @@ OC.L10N.register(
         "Always available": "Always available",
         "Always required": "Always required",
         "Amendment": "Amendment",
+        "An administrator decides this one, so it is not yours to change.": "An administrator decides this one, so it is not yours to change.",
         "An advice request is still open": "An advice request is still open",
         "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.",
         "An intrekking. There is a result, and it is not a besluit.": "An intrekking. There is a result, and it is not a besluit.",
@@ -4285,6 +4286,7 @@ OC.L10N.register(
         "That link opens nothing any more": "That link opens nothing any more",
         "That mail account is not yours.": "That mail account is not yours.",
         "That note could not be saved.": "That note could not be saved.",
+        "That setting was not saved.": "That setting was not saved.",
         "That status is not part of this case's workflow.": "That status is not part of this case's workflow.",
         "The act could not be started.": "The act could not be started.",
         "The act could not be stopped.": "The act could not be stopped.",
@@ -4696,6 +4698,7 @@ OC.L10N.register(
         "This case has one sub-case. Sharing this case lets the holder read it too.": "This case has one sub-case. Sharing this case lets the holder read it too.",
         "This case has {count} linked tasks. Are you sure you want to delete it?": "This case has {count} linked tasks. Are you sure you want to delete it?",
         "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?": "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?",
+        "This case holds nothing of the kinds a split may divide here.": "This case holds nothing of the kinds a split may divide here.",
         "This case is already flagged as needing attention.": "This case is already flagged as needing attention.",
         "This case is already suspended.": "This case is already suspended.",
         "This case is archived. You can read it, and changes are refused.": "This case is archived. You can read it, and changes are refused.",
@@ -5309,6 +5312,7 @@ OC.L10N.register(
         "Which seat was emptied.": "Which seat was emptied.",
         "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.": "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.",
         "Who completed it.": "Who completed it.",
+        "Who else is here": "Who else is here",
         "Who has held this case": "Who has held this case",
         "Who held a right on a date": "Who held a right on a date",
         "Who holds which right": "Who holds which right",
@@ -5602,8 +5606,7 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years",
-        "This case holds nothing of the kinds a split may divide here.": "This case holds nothing of the kinds a split may divide here."
+        "{years} years": "{years} years"
     },
     "nplurals=2; plural=(n != 1);"
 )

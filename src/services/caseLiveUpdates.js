@@ -79,7 +79,6 @@ export function caseIdOfRoute(route) {
  * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
  */
 export class CaseLiveSubscription {
-
 	/**
 	 * @param {object} store The object store (createObjectStore instance).
 	 */
@@ -120,7 +119,10 @@ export class CaseLiveSubscription {
 			return
 		}
 
-		if ((this.handle !== null && this.key === caseId) || this.pendingKey === caseId) {
+		if (
+			(this.handle !== null && this.key === caseId)
+			|| this.pendingKey === caseId
+		) {
 			return
 		}
 
@@ -173,7 +175,6 @@ export class CaseLiveSubscription {
 			this.handle = null
 		}
 	}
-
 }
 
 /**

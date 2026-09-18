@@ -109,8 +109,15 @@ class CaseTransferConsentGate {
 	 * @param string $receivingOrganisation The organisation receiving it.
 	 * @param string $at                    The moment of the hand-off in ISO 8601, or empty for now.
 	 *
-	 * @return array{allowed: bool, rule: string, sentence: string, consent: array<string, mixed>|null, scope: array<int, string>, until: string, crossesOrganisation: bool}
-	 *         The verdict, and the scope when there is one.
+	 * @return array{
+	 *     allowed: bool,
+	 *     rule: string,
+	 *     sentence: string,
+	 *     consent: array<string, mixed>|null,
+	 *     scope: array<int, string>,
+	 *     until: string,
+	 *     crossesOrganisation: bool
+	 * } The verdict, and the scope when there is one.
 	 *
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
 	 */
@@ -361,7 +368,15 @@ class CaseTransferConsentGate {
 	 * @param array<string, mixed>|null $consent  The covering consent, when there is one.
 	 * @param bool                      $crosses  Whether the boundary was crossed.
 	 *
-	 * @return array{allowed: bool, rule: string, sentence: string, consent: array<string, mixed>|null, scope: array<int, string>, until: string, crossesOrganisation: bool} The verdict.
+	 * @return array{
+	 *     allowed: bool,
+	 *     rule: string,
+	 *     sentence: string,
+	 *     consent: array<string, mixed>|null,
+	 *     scope: array<int, string>,
+	 *     until: string,
+	 *     crossesOrganisation: bool
+	 * } The verdict.
 	 */
 	private function verdict(bool $allowed, string $rule, string $sentence, ?array $consent, bool $crosses): array {
 		return [

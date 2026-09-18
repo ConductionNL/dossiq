@@ -244,14 +244,22 @@ class SociaalDomeinPlanController extends Controller {
 	#[NoAdminRequired]
 	public function recordReview(string $planId): JSONResponse {
 		$user = $this->userSession->getUser();
+		$reviewedBy = '';
+		if ($user !== null) {
+			$reviewedBy = $user->getUID();
+		}
+
 		$changes = $this->request->getParam('changes', []);
+		if (is_array($changes) === false) {
+			$changes = [];
+		}
 
 		try {
 			return new JSONResponse(
 				$this->review->record(
 					planId: $planId,
-					reviewedBy: (($user === null) ? '' : $user->getUID()),
-					changes: ((is_array($changes) === true) ? $changes : []),
+					reviewedBy: $reviewedBy,
+					changes: $changes,
 					nextReviewDate: (string)$this->request->getParam('nextReviewDate', ''),
 				)
 			);

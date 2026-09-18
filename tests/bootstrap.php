@@ -626,6 +626,14 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
 }
 
+// case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
+// `::class`, which does not autoload, so the registration is silent at runtime
+// without openregister and reads to the analysers as a class that does not
+// exist. Declaration-only, shared with psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
+}
+
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {

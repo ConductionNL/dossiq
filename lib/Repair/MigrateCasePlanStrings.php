@@ -262,7 +262,10 @@ class MigrateCasePlanStrings implements IRepairStep {
 		$raw = ($plan[$key] ?? []);
 		if (is_string($raw) === true && trim($raw) !== '') {
 			$decoded = json_decode($raw, true);
-			$raw = ((is_array($decoded) === true) ? $decoded : []);
+			$raw = [];
+			if (is_array($decoded) === true) {
+				$raw = $decoded;
+			}
 		}
 
 		if (is_array($raw) === false) {

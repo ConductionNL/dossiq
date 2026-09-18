@@ -32,10 +32,7 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const routes = fs.readFileSync(path.join(ROOT, 'appinfo', 'routes.php'), 'utf8')
 const dialog = fs.readFileSync(
@@ -95,7 +92,9 @@ describe('Merge into, on the case page', () => {
 	})
 
 	it('confirms against a url a route answers', () => {
-		expect(dialog).toContain('/api/case/${encodeURIComponent(this.targetCaseId)}/merge')
+		expect(dialog).toContain(
+			'/api/case/${encodeURIComponent(this.targetCaseId)}/merge',
+		)
 		expect(routes).toContain("'url' => '/api/case/{caseId}/merge'")
 		expect(routes).toContain("'name' => 'caseMerge#merge'")
 	})

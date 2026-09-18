@@ -147,7 +147,12 @@ test.describe('a figure about every case is not for everyone', () => {
 		await provisioning.dispose()
 		await adminApi.dispose()
 
-		controllerApi = await signIn(browser, String(baseURL), CONTROLLER, playwright)
+		controllerApi = await signIn(
+			browser,
+			String(baseURL),
+			CONTROLLER,
+			playwright,
+		)
 		handlerApi = await signIn(browser, String(baseURL), HANDLER, playwright)
 	})
 

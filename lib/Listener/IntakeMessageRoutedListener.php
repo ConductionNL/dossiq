@@ -3,7 +3,7 @@
 /**
  * A message integriq routed at a case, answered.
  *
- * integriq's `IntakeRoutingService::route()` dispatches
+ * Integriq's `IntakeRoutingService::route()` dispatches
  * `IntakeMessageRoutedEvent` and then reads its result slot. An empty slot
  * holds the message with "No app opened a case for this message". Until this
  * listener existed that sentence was true; now it would be a lie, so this
@@ -145,7 +145,11 @@ class IntakeMessageRoutedListener implements IEventListener {
 
 		$value = $event->$method();
 
-		return (is_array($value) === true) ? $value : [];
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return [];
 	}//end arrayFrom()
 
 	/**
@@ -163,6 +167,10 @@ class IntakeMessageRoutedListener implements IEventListener {
 
 		$value = $event->$method();
 
-		return (is_scalar($value) === true) ? trim((string)$value) : '';
+		if (is_scalar($value) === true) {
+			return trim((string)$value);
+		}
+
+		return '';
 	}//end stringFrom()
 }//end class

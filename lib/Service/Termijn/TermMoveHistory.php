@@ -120,8 +120,12 @@ class TermMoveHistory {
 			return [];
 		}
 
+		if (is_iterable($events) === false) {
+			$events = [];
+		}
+
 		$moves = [];
-		foreach ((is_iterable($events) === true ? $events : []) as $event) {
+		foreach ($events as $event) {
 			$row = $this->asRow(event: $event);
 			if ($row !== null) {
 				$moves[] = $row;

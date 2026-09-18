@@ -33,11 +33,20 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
-const schema = JSON.parse(fs.readFileSync(path.join(ROOT, 'tests', 'schemas', 'app-manifest-v2.schema.json'), 'utf8'))
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+)
+const schema = JSON.parse(
+	fs.readFileSync(
+		path.join(ROOT, 'tests', 'schemas', 'app-manifest-v2.schema.json'),
+		'utf8',
+	),
+)
 
 const pageById = (id) => manifest.pages.find((page) => page.id === id)
-const declaringPages = manifest.pages.filter((page) => page.savedViewPlaces !== undefined)
+const declaringPages = manifest.pages.filter(
+	(page) => page.savedViewPlaces !== undefined,
+)
 
 describe('the working lists declare that their saved views are places', () => {
 	it.each(['Cases', 'Queue'])('%s declares places, under its own route', (id) => {
@@ -50,7 +59,10 @@ describe('the working lists declare that their saved views are places', () => {
 	})
 
 	it('declares places on those two pages and nowhere else', () => {
-		expect(declaringPages.map((page) => page.id).sort()).toEqual(['Cases', 'Queue'])
+		expect(declaringPages.map((page) => page.id).sort()).toEqual([
+			'Cases',
+			'Queue',
+		])
 	})
 
 	it('leaves Tasks out, because its list is the engine inbox and has no saved views', () => {
@@ -82,14 +94,20 @@ describe('a fresh install has the navigation it had yesterday', () => {
 		// A pinned view is an entry pointing at a view route. The app seeds
 		// none: pinning is the user's act, and a seeded pin spends the
 		// ADR-097 budget on behalf of somebody who never asked for it.
-		const viewEntries = entries.filter((item) => typeof item.route === 'string' && item.route.endsWith('__view'))
+		const viewEntries = entries.filter(
+			(item) =>
+				typeof item.route === 'string' && item.route.endsWith('__view'),
+		)
 		expect(viewEntries).toEqual([])
 	})
 
 	it('keeps both page entries top level, with no children added', () => {
 		for (const id of ['Cases', 'Queue']) {
 			const entry = manifest.menu.find((item) => item.route === id)
-			expect(entry, `${id} has no menu entry to hang pinned views under`).toBeTruthy()
+			expect(
+				entry,
+				`${id} has no menu entry to hang pinned views under`,
+			).toBeTruthy()
 			expect(entry.children ?? []).toEqual([])
 		}
 	})
@@ -105,6 +123,8 @@ describe('the schema the manifest gate reads knows the key', () => {
 		// this change and it clears with the bump, not with a manifest edit.
 		expect(schema.version).toBe('2.34.0')
 		expect(schema.$defs.page.properties.savedViewPlaces).toBeTruthy()
-		expect(schema.$defs.savedViewPlaces.properties.routeBase.pattern).toBe('^[a-z0-9][a-z0-9-]*$')
+		expect(schema.$defs.savedViewPlaces.properties.routeBase.pattern).toBe(
+			'^[a-z0-9][a-z0-9-]*$',
+		)
 	})
 })

@@ -49,7 +49,7 @@
 				data-testid="cross-domain-ground"
 				:inputLabel="t('dossiq', 'Ground for this lookup')"
 				:options="grounds"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label" />
 
 			<p class="cross-domain__notice">
@@ -73,10 +73,14 @@
 					:key="entry.domain"
 					data-testid="cross-domain-hit">
 					{{
-						t('dossiq', 'An open case exists in {domain}. Contact: {contact}.', {
-							domain: entry.domain,
-							contact: entry.contact,
-						})
+						t(
+							'dossiq',
+							'An open case exists in {domain}. Contact: {contact}.',
+							{
+								domain: entry.domain,
+								contact: entry.contact,
+							},
+						)
 					}}
 				</p>
 			</div>
@@ -194,7 +198,10 @@ export default {
 				// a picker whose grounds could not be read look identical, and
 				// the second is an outage a consulent should be told about
 				// rather than left staring at an empty dropdown.
-				this.error = t('dossiq', 'The grounds could not be read, so no lookup can be made.')
+				this.error = t(
+					'dossiq',
+					'The grounds could not be read, so no lookup can be made.',
+				)
 			}
 		},
 
@@ -227,9 +234,9 @@ export default {
 				// The server's own sentence, which names the rule it refused
 				// on. Replacing it here is how "choose the ground you are
 				// looking this person up on" becomes "request failed".
-				this.error
-					= e?.response?.data?.message
-						|| t('dossiq', 'The lookup was not made.')
+				this.error =
+					e?.response?.data?.message
+					|| t('dossiq', 'The lookup was not made.')
 			} finally {
 				this.busy = false
 			}

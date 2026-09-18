@@ -126,22 +126,29 @@ class PlannedActionSource implements QueueSource {
 				$label = trim((string)($action['actionType'] ?? ''));
 			}
 
+			$plannedFor = (string)($action['plannedFor'] ?? '');
+			$dueAt = null;
+			if ($plannedFor !== '') {
+				$dueAt = substr($plannedFor, 0, 10);
+			}
+
+			$route = ['name' => 'PersonalQueue'];
+			if ($caseId !== '') {
+				$route = ['name' => 'CaseDetail', 'params' => ['id' => $caseId]];
+			}
+
 			$items[] = new QueueItem(
 				source: $this->name(),
 				subjectType: 'plannedAction',
 				subjectId: (string)($action['id'] ?? ($action['uuid'] ?? '')),
 				title: $label,
 				priority: '',
-				dueAt: (((string)($action['plannedFor'] ?? '')) !== ''
-					? substr((string)$action['plannedFor'], 0, 10)
-					: null),
+				dueAt: $dueAt,
 				coveredFor: null,
 				// The route goes to the CASE and not to the action. There is no
 				// planned-action page, and the thing a person needs in order to
 				// do the action is the case it is on.
-				route: ($caseId === ''
-					? ['name' => 'PersonalQueue']
-					: ['name' => 'CaseDetail', 'params' => ['id' => $caseId]])
+				route: $route
 			);
 		}
 

@@ -101,7 +101,12 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 		// The cursor is keyed by the TEAM as well, because two rules over one
 		// roleType in two teams are two rotations; one cursor between them
 		// would make each rule skip the other's turn.
-		$key = sprintf('routing.rr.%s.%s%s', $caseType, $target, ($team === '' ? '' : '.' . $team));
+		$suffix = '';
+		if ($team !== '') {
+			$suffix = ('.' . $team);
+		}
+
+		$key = sprintf('routing.rr.%s.%s%s', $caseType, $target, $suffix);
 		$cursor = (int)$this->appConfig->getValueInt(
 			Application::APP_ID,
 			$key,

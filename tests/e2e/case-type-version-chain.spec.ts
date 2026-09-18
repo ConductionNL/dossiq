@@ -174,13 +174,19 @@ test.describe('A case type carries its versions, and a case can move along them'
 
 		const response = await api.post(
 			`/index.php/apps/dossiq/api/case-types/${versionTwo}/publish`,
-			{ headers: { requesttoken: token }, data: { changeNote: 'Tweede versie' } },
+			{
+				headers: { requesttoken: token },
+				data: { changeNote: 'Tweede versie' },
+			},
 		)
 		expect(response.ok(), await response.text()).toBeTruthy()
 
 		const closed = await showObject(api, 'caseType', versionOne)
 		expect(closed.supersededBy).toBe(versionTwo)
-		expect(closed.validUntil, 'the old version is closed by date too').toBeTruthy()
+		expect(
+			closed.validUntil,
+			'the old version is closed by date too',
+		).toBeTruthy()
 		expect(closed.isDraft, 'its running cases still resolve through it').toBe(
 			false,
 		)

@@ -382,7 +382,12 @@ class CaseDefinitionExportService {
 
 		foreach (['decisionTypes', 'relatedCaseTypes', 'subCaseTypes', 'parentCaseType', 'defaultInformatieobjecttype'] as $key) {
 			$value = ($caseType[$key] ?? null);
-			foreach ((is_array($value) === true ? $value : [$value]) as $entry) {
+			$entries = [$value];
+			if (is_array($value) === true) {
+				$entries = $value;
+			}
+
+			foreach ($entries as $entry) {
 				if (is_string($entry) === true && trim($entry) !== '') {
 					$refs[] = trim($entry);
 				}

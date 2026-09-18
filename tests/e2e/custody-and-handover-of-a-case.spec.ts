@@ -122,7 +122,10 @@ test.describe('@spec REQ-CUS-01 the chain of custody', () => {
 		).toBe('Dit is handhaving, geen vergunning')
 
 		const open = chain.holdings.filter((h: { open: boolean }) => h.open)
-		expect(open.length, 'A case is held by exactly one unit, never two and never none.').toBe(1)
+		expect(
+			open.length,
+			'A case is held by exactly one unit, never two and never none.',
+		).toBe(1)
 	})
 
 	test('who held the case on a date is a single answer', async () => {
@@ -137,7 +140,9 @@ test.describe('@spec REQ-CUS-01 the chain of custody', () => {
 		const chain = await read.json()
 		const openedAt = chain.holdings[1].from
 
-		const holder = await api.get(`${caseApi(caseId, 'custody/holder')}?on=${encodeURIComponent(openedAt)}`)
+		const holder = await api.get(
+			`${caseApi(caseId, 'custody/holder')}?on=${encodeURIComponent(openedAt)}`,
+		)
 		expect(holder.ok()).toBeTruthy()
 		const answer = await holder.json()
 
@@ -156,14 +161,22 @@ test.describe('@spec REQ-CUS-02 asking the holder for a case', () => {
 			headers: { requesttoken: token },
 			data: { reason: 'Dit dossier hoort bij mijn wijk' },
 		})
-		expect(asked.ok(), `takeover -> ${asked.status()} ${await asked.text()}`).toBeTruthy()
+		expect(
+			asked.ok(),
+			`takeover -> ${asked.status()} ${await asked.text()}`,
+		).toBeTruthy()
 		const request = await asked.json()
 		expect(request.status).toBe('pending')
 
-		const refused = await api.post(caseApi(caseId, `takeover/${objectId(request)}/refuse`), {
-			headers: { requesttoken: token },
-			data: { reason: 'Ik ben er al mee bezig, de hoorzitting is volgende week' },
-		})
+		const refused = await api.post(
+			caseApi(caseId, `takeover/${objectId(request)}/refuse`),
+			{
+				headers: { requesttoken: token },
+				data: {
+					reason: 'Ik ben er al mee bezig, de hoorzitting is volgende week',
+				},
+			},
+		)
 		expect(refused.ok()).toBeTruthy()
 		const answered = await refused.json()
 
@@ -181,7 +194,10 @@ test.describe('@spec REQ-CUS-02 asking the holder for a case', () => {
 		).toContain('refused')
 
 		const custody = await (await api.get(caseApi(caseId, 'custody'))).json()
-		expect(custody.holdings.length, 'A refusal writes no holding, because nothing moved.').toBe(1)
+		expect(
+			custody.holdings.length,
+			'A refusal writes no holding, because nothing moved.',
+		).toBe(1)
 	})
 
 	test('a refusal without a reason is not an answer', async () => {
@@ -193,12 +209,18 @@ test.describe('@spec REQ-CUS-02 asking the holder for a case', () => {
 		})
 		const request = await asked.json()
 
-		const refused = await api.post(caseApi(caseId, `takeover/${objectId(request)}/refuse`), {
-			headers: { requesttoken: token },
-			data: { reason: '   ' },
-		})
+		const refused = await api.post(
+			caseApi(caseId, `takeover/${objectId(request)}/refuse`),
+			{
+				headers: { requesttoken: token },
+				data: { reason: '   ' },
+			},
+		)
 
-		expect(refused.status(), 'An empty reason is refused, not recorded as a silent no.').toBe(400)
+		expect(
+			refused.status(),
+			'An empty reason is refused, not recorded as a silent no.',
+		).toBe(400)
 	})
 })
 
@@ -255,7 +277,10 @@ test.describe('@spec REQ-CST-01 the consent a case needs to leave', () => {
 				permissionLevel: 'read',
 			},
 		})
-		expect(shared.ok(), `partner share -> ${shared.status()} ${await shared.text()}`).toBeTruthy()
+		expect(
+			shared.ok(),
+			`partner share -> ${shared.status()} ${await shared.text()}`,
+		).toBeTruthy()
 		const { share } = await shared.json()
 
 		expect(

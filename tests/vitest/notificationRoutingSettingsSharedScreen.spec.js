@@ -22,7 +22,14 @@ import { defineComponent, h } from 'vue'
 
 const SharedScreenStub = defineComponent({
 	name: 'CnNotificationMatrix',
-	props: ['events', 'channels', 'groupValues', 'personalValues', 'forcedValues', 'refusals'],
+	props: [
+		'events',
+		'channels',
+		'groupValues',
+		'personalValues',
+		'forcedValues',
+		'refusals',
+	],
 	emits: ['change'],
 	render() {
 		return h('div', { class: 'shared-screen' }, 'shared screen')
@@ -44,9 +51,8 @@ vi.mock('../../src/services/notificationRoutingApi.js', () => ({
 	clearPreference: vi.fn(),
 }))
 
-const { default: NotificationRoutingSettings } = await import(
-	'../../src/views/settings/NotificationRoutingSettings.vue'
-)
+const { default: NotificationRoutingSettings } =
+	await import('../../src/views/settings/NotificationRoutingSettings.vue')
 
 const ENTRIES = [
 	{
@@ -112,8 +118,10 @@ describe('the shared screen is what renders', () => {
 		const wrapper = await mountSettings()
 
 		const events = wrapper.findComponent(SharedScreenStub).props('events')
-		expect(events.map((event) => event.id))
-			.toEqual(['case-caseAssigned', 'workDigest-workDigestReady'])
+		expect(events.map((event) => event.id)).toEqual([
+			'case-caseAssigned',
+			'workDigest-workDigestReady',
+		])
 		expect(events[0].groupLabel).toBe('Cases')
 	})
 
@@ -135,15 +143,21 @@ describe('the shared screen is what renders', () => {
 		// above and lock the whole screen.
 		const wrapper = await mountSettings()
 
-		expect(wrapper.findComponent(SharedScreenStub).props('forcedValues')['workDigest-workDigestReady'])
-			.toBeUndefined()
+		expect(
+			wrapper.findComponent(SharedScreenStub).props('forcedValues')[
+				'workDigest-workDigestReady'
+			],
+		).toBeUndefined()
 	})
 
-	it('puts an overridden value on the person\'s own layer', async () => {
+	it("puts an overridden value on the person's own layer", async () => {
 		const wrapper = await mountSettings()
 
-		expect(wrapper.findComponent(SharedScreenStub).props('personalValues')['case-caseAssigned'])
-			.toEqual({ notification: true })
+		expect(
+			wrapper.findComponent(SharedScreenStub).props('personalValues')[
+				'case-caseAssigned'
+			],
+		).toEqual({ notification: true })
 	})
 
 	it('says nothing is routed rather than rendering an empty table', async () => {
@@ -174,7 +188,7 @@ describe('a change goes back to the platform', () => {
 		})
 	})
 
-	it('re-reads afterwards, so the layer that decided is the platform\'s answer', async () => {
+	it("re-reads afterwards, so the layer that decided is the platform's answer", async () => {
 		// A screen that kept the click's value would show a setting the
 		// platform may have overruled a moment later.
 		const wrapper = await mountSettings()
@@ -201,8 +215,9 @@ describe('a change goes back to the platform', () => {
 		})
 		await flushPromises()
 
-		expect(wrapper.find('[data-testid="notification-routing-message"]').text())
-			.toBe('An administrator decides this one, so it is not yours to change.')
+		expect(
+			wrapper.find('[data-testid="notification-routing-message"]').text(),
+		).toBe('An administrator decides this one, so it is not yours to change.')
 	})
 
 	it('says nothing when the write worked, which is the control', async () => {
@@ -215,7 +230,9 @@ describe('a change goes back to the platform', () => {
 		})
 		await flushPromises()
 
-		expect(wrapper.find('[data-testid="notification-routing-message"]').exists()).toBe(false)
+		expect(
+			wrapper.find('[data-testid="notification-routing-message"]').exists(),
+		).toBe(false)
 	})
 
 	it('writes nothing for an id it did not make', async () => {

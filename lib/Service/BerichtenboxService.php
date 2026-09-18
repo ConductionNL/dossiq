@@ -155,18 +155,23 @@ class BerichtenboxService {
 		// the message; the identifier they were addressed by is not part of
 		// what happened on the case, and a public entry is the last place to
 		// put one.
+		$sentence = $subject;
+		$visibility = CaseTimeline::PUBLIC_ENTRY;
+		if ($refused === true) {
+			$sentence = ($subject . ' -- not sent: ' . (string)($result['error'] ?? ''));
+			$visibility = CaseTimeline::INTERNAL;
+		}
+
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: ($refused === true)
-				? ($subject . ' -- not sent: ' . (string)($result['error'] ?? ''))
-				: $subject,
+			message: $sentence,
 			fields: [
 				'subject' => $subject,
 				'messageId' => (string)($result['messageId'] ?? ''),
 				'status' => (string)($messageData['status']),
 			],
-			visibility: ($refused === true) ? CaseTimeline::INTERNAL : CaseTimeline::PUBLIC_ENTRY,
+			visibility: $visibility,
 		);
 
 		if ($refused === true) {
@@ -243,7 +248,7 @@ class BerichtenboxService {
 		);
 
 		if ($matches === []) {
-			// integriq tracks messages for every app on the instance. One we
+			// Integriq tracks messages for every app on the instance. One we
 			// did not send is not ours to record, and it is not an error.
 			return false;
 		}
@@ -302,7 +307,11 @@ class BerichtenboxService {
 	 */
 	private function statusSentence(string $subject, string $status, string $lastError): string {
 		if ($status === 'failed') {
-			$reason = ($lastError === '') ? 'the provider gave no reason' : $lastError;
+			$reason = $lastError;
+			if ($reason === '') {
+				$reason = 'the provider gave no reason';
+			}
+
 
 			return $subject . ' -- not delivered: ' . $reason;
 		}

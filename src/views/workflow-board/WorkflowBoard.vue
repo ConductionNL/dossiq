@@ -413,7 +413,8 @@ export default {
 							name,
 							order,
 							colour: mergeColumnColour(null, st.colour),
-							capacity: Number(st.capacity) > 0 ? Number(st.capacity) : null,
+							capacity:
+								Number(st.capacity) > 0 ? Number(st.capacity) : null,
 							merged: false,
 						})
 					}

@@ -32,10 +32,7 @@ const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const storeSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'store', 'modules', 'engineTask.js'),
 	'utf8',
@@ -62,9 +59,7 @@ function page(id) {
  * @return {object|undefined} The action.
  */
 function headerAction(id) {
-	return page('CaseDetail').config.headerActions.find(
-		(action) => action.id === id,
-	)
+	return page('CaseDetail').config.headerActions.find((action) => action.id === id)
 }
 
 describe('the Remind action', () => {

@@ -247,9 +247,9 @@ export function moveLines(term, t) {
 				return reason
 					? t('Moved from {from} to {to}: {reason}', { from, to, reason })
 					: t('Moved from {from} to {to}, with no reason recorded', {
-						from,
-						to,
-					})
+							from,
+							to,
+						})
 			}
 
 			return reason

@@ -43,7 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
-use DateTimeZone;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use Throwable;
 
 /**
@@ -68,6 +68,18 @@ class IncidentRecord {
 	 * @var array<int, string>
 	 */
 	public const OPEN_STATES = ['open', 'in-behandeling'];
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseDateNormaliser $dates The one class that may resolve a time
+	 *        zone. A delay in days is a difference between two CALENDAR days,
+	 *        so it has to be counted in the zone the organisation administers;
+	 *        counting it in a zone this class named itself is the zone nobody
+	 *        chose (openspec/changes/one-date-write-path).
+	 */
+	public function __construct(private readonly CaseDateNormaliser $dates) {
+	}//end __construct()
 
 	/**
 	 * The incidents of one case, oldest event first.
@@ -119,14 +131,18 @@ class IncidentRecord {
 		// server zone) and whose recording carries +02:00 is otherwise 22
 		// hours short of a whole day, and the delay comes out one day low with
 		// nothing to show why.
-		$zone = new DateTimeZone('UTC');
+		$zone = $this->dates->timeZone();
 		$days = (int)$event->setTimezone($zone)->setTime(0, 0)
 			->diff($recorded->setTimezone($zone)->setTime(0, 0))->days;
 
 		// A recording BEFORE the event is a typo in the event date, not a
 		// negative delay. Reported as no delay rather than as a number that
 		// reads like a prediction.
-		return ($recorded < $event ? 0 : $days);
+		if ($recorded < $event) {
+			return 0;
+		}
+
+		return $days;
 	}//end recordingDelayDays()
 
 	/**
@@ -195,7 +211,11 @@ class IncidentRecord {
 
 		// An unreadable date sorts LAST rather than first: an incident nobody
 		// dated must not silently head the sequence the case is about.
-		return ($moment === null ? PHP_INT_MAX : $moment->getTimestamp());
+		if ($moment === null) {
+			return PHP_INT_MAX;
+		}
+
+		return $moment->getTimestamp();
 	}//end momentOf()
 
 	/**

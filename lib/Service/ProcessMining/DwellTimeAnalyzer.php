@@ -55,6 +55,10 @@ class DwellTimeAnalyzer {
 	 *                                      {@see self::heldTotalsByStatus()}
 	 *                                      answers nothing without it rather
 	 *                                      than answering something wrong.
+	 * @param WorkingClock|null       $clock Which clock the working-hours column
+	 *                                      is on. Optional for the same reason:
+	 *                                      a caller that wants wall hours only
+	 *                                      builds the analyzer unchanged.
 	 */
 	public function __construct(
 		private readonly CaseDateNormaliser $dates,
@@ -298,7 +302,7 @@ class DwellTimeAnalyzer {
 	/**
 	 * Aggregate dwell-time intervals per status into median/p90/mean stats.
 	 *
-	 * @param array<int, array{caseId: string, statusId: string, hours: float}> $intervals Dwell intervals.
+	 * @param array<int, array{caseId: string, statusId: string, hours: float, workingHours?: float}> $intervals Dwell intervals.
 	 * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
 	 *
 	 * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, p90Hours: float, meanHours: float}>

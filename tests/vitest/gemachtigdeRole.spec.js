@@ -31,9 +31,7 @@ vi.mock('@nextcloud/l10n', () => ({
 	translatePlural: (app, text) => text,
 }))
 
-const { offeredRoleTypes } = await import(
-	'../../src/services/roleTypeOptions.js'
-)
+const { offeredRoleTypes } = await import('../../src/services/roleTypeOptions.js')
 const { representedByMap } = await import('../../src/services/caseParties.js')
 
 const rows = [
@@ -50,14 +48,11 @@ describe('the roles a case type offers', () => {
 	it('offers Gemachtigde on a type that declares none, after its own roles', () => {
 		const offered = offeredRoleTypes(rows, 'ct-vergunning')
 
-		expect(offered.map((option) => option.id)).toEqual([
-			'rt-handler',
-			'rt-gem',
-		])
+		expect(offered.map((option) => option.id)).toEqual(['rt-handler', 'rt-gem'])
 		expect(offered[1].scope).toBe('generic')
 	})
 
-	it('leaves another case type\'s roles off the list', () => {
+	it("leaves another case type's roles off the list", () => {
 		const offered = offeredRoleTypes(rows, 'ct-vergunning')
 
 		expect(offered.map((option) => option.id)).not.toContain('rt-other')

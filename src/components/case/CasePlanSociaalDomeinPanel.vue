@@ -83,7 +83,11 @@
 					{{ goal.title }}
 				</h4>
 				<p class="family-plan__met-when" data-testid="family-plan-met-when">
-					{{ t('dossiq', 'Met when: {observation}', { observation: goal.metWhen }) }}
+					{{
+						t('dossiq', 'Met when: {observation}', {
+							observation: goal.metWhen,
+						})
+					}}
 				</p>
 				<p
 					v-if="goal.closedObservation"
@@ -102,13 +106,19 @@
 						v-for="item in interventionsFor(goal.id)"
 						:key="item.id"
 						class="family-plan__intervention"
-						:class="{ 'family-plan__intervention--overdue': item.overdue }"
+						:class="{
+							'family-plan__intervention--overdue': item.overdue,
+						}"
 						data-testid="family-plan-intervention">
-						<span class="family-plan__intervention-title">{{ item.title }}</span>
+						<span class="family-plan__intervention-title">{{
+							item.title
+						}}</span>
 						<span class="family-plan__intervention-provider">
 							{{ providerOf(item) }}
 						</span>
-						<span v-if="item.targetDate" class="family-plan__intervention-date">
+						<span
+							v-if="item.targetDate"
+							class="family-plan__intervention-date">
 							{{ t('dossiq', 'By {date}', { date: item.targetDate }) }}
 						</span>
 						<span
@@ -133,9 +143,13 @@
 						v-for="item in looseInterventions"
 						:key="item.id"
 						class="family-plan__intervention"
-						:class="{ 'family-plan__intervention--overdue': item.overdue }"
+						:class="{
+							'family-plan__intervention--overdue': item.overdue,
+						}"
 						data-testid="family-plan-intervention">
-						<span class="family-plan__intervention-title">{{ item.title }}</span>
+						<span class="family-plan__intervention-title">{{
+							item.title
+						}}</span>
 						<span class="family-plan__intervention-provider">
 							{{ providerOf(item) }}
 						</span>
@@ -228,7 +242,7 @@ export default {
 		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 		 */
 		looseInterventions() {
-			return this.interventions.filter(item => !item.goal)
+			return this.interventions.filter((item) => !item.goal)
 		},
 	},
 
@@ -274,9 +288,9 @@ export default {
 				// plan look identical as an empty panel, and only one of them
 				// is safe to act on: a consulent who reads an outage as an
 				// empty plan writes a second plan over the one already there.
-				this.error
-					= e?.response?.data?.message
-						|| t('dossiq', 'The family plan could not be read.')
+				this.error =
+					e?.response?.data?.message
+					|| t('dossiq', 'The family plan could not be read.')
 			} finally {
 				this.loading = false
 			}
@@ -291,7 +305,7 @@ export default {
 		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 		 */
 		interventionsFor(goalId) {
-			return this.interventions.filter(item => item.goal === goalId)
+			return this.interventions.filter((item) => item.goal === goalId)
 		},
 
 		/**
@@ -307,8 +321,7 @@ export default {
 		 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
 		 */
 		providerOf(item) {
-			const name
-				= item?.providerParty?.displayName || item?.providerName || ''
+			const name = item?.providerParty?.displayName || item?.providerName || ''
 			if (!name) {
 				return t('dossiq', 'No provider recorded')
 			}

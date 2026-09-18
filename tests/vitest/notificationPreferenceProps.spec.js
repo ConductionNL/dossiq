@@ -52,22 +52,40 @@ describe('the id of a row', () => {
 		// The same key can exist on two schemas. A collision would merge two
 		// notifications into one switch, and half of them would stop being
 		// settable at all.
-		expect(keyFor({ schema: 'case', notification: 'caseAssigned' })).toBe('case-caseAssigned')
-		expect(keyFor({ schema: 'substitution', notification: 'caseAssigned' }))
-			.not.toBe(keyFor({ schema: 'case', notification: 'caseAssigned' }))
+		expect(keyFor({ schema: 'case', notification: 'caseAssigned' })).toBe(
+			'case-caseAssigned',
+		)
+		expect(
+			keyFor({ schema: 'substitution', notification: 'caseAssigned' }),
+		).not.toBe(keyFor({ schema: 'case', notification: 'caseAssigned' }))
 	})
 })
 
 describe('the columns', () => {
-	it('uses the platform\'s channels when it has them', () => {
-		expect(channelsFrom({ channels: [{ id: 'mail', label: 'Mail' }] }))
-			.toEqual([{ id: 'mail', label: 'Mail', configured: true, unconfiguredReason: '' }])
+	it("uses the platform's channels when it has them", () => {
+		expect(channelsFrom({ channels: [{ id: 'mail', label: 'Mail' }] })).toEqual([
+			{ id: 'mail', label: 'Mail', configured: true, unconfiguredReason: '' },
+		])
 	})
 
 	it('carries a channel the instance has not configured, with the reason', () => {
-		expect(channelsFrom({
-			channels: [{ id: 'sms', label: 'SMS', configured: false, unconfiguredReason: 'No gateway' }],
-		})[0]).toEqual({ id: 'sms', label: 'SMS', configured: false, unconfiguredReason: 'No gateway' })
+		expect(
+			channelsFrom({
+				channels: [
+					{
+						id: 'sms',
+						label: 'SMS',
+						configured: false,
+						unconfiguredReason: 'No gateway',
+					},
+				],
+			})[0],
+		).toEqual({
+			id: 'sms',
+			label: 'SMS',
+			configured: false,
+			unconfiguredReason: 'No gateway',
+		})
 	})
 
 	it('renders one column, named, when the platform has no channel axis', () => {
@@ -89,7 +107,10 @@ describe('the columns', () => {
 
 describe('the rows', () => {
 	it('groups them by the schema they belong to', () => {
-		const events = eventsFrom({ entries: ENTRIES, label: (entry) => entry.notification })
+		const events = eventsFrom({
+			entries: ENTRIES,
+			label: (entry) => entry.notification,
+		})
 
 		expect(events[0]).toEqual({
 			id: 'case-caseAssigned',
@@ -104,7 +125,10 @@ describe('the rows', () => {
 	it('takes the shipped default from the effective value when nothing overrode it', () => {
 		const events = eventsFrom({ entries: ENTRIES })
 
-		expect(events.find((event) => event.id === 'workDigest-workDigestReady').appDefault).toBe(true)
+		expect(
+			events.find((event) => event.id === 'workDigest-workDigestReady')
+				.appDefault,
+		).toBe(true)
 	})
 
 	it('does not guess a shipped default that was overridden', () => {
@@ -114,14 +138,24 @@ describe('the rows', () => {
 		// a layer the screen displays.
 		const events = eventsFrom({ entries: ENTRIES })
 
-		expect(events.find((event) => event.id === 'case-caseAssigned').appDefault).toBe(false)
+		expect(
+			events.find((event) => event.id === 'case-caseAssigned').appDefault,
+		).toBe(false)
 	})
 
 	it('takes the shipped default from the platform when it says so, which is the control', () => {
 		// Without this, "never guess" could be implemented as "always false"
 		// and nobody would notice.
 		const events = eventsFrom({
-			entries: [{ schema: 'case', notification: 'x', enabled: false, source: 'user-override', appDefault: true }],
+			entries: [
+				{
+					schema: 'case',
+					notification: 'x',
+					enabled: false,
+					source: 'user-override',
+					appDefault: true,
+				},
+			],
 		})
 
 		expect(events[0].appDefault).toBe(true)
@@ -129,16 +163,20 @@ describe('the rows', () => {
 })
 
 describe('the layers', () => {
-	it('puts an overridden value on the person\'s own layer', () => {
+	it("puts an overridden value on the person's own layer", () => {
 		const { personalValues } = valuesFrom({ entries: ENTRIES })
 
-		expect(personalValues['case-caseAssigned']).toEqual({ [SINGLE_CHANNEL_ID]: true })
+		expect(personalValues['case-caseAssigned']).toEqual({
+			[SINGLE_CHANNEL_ID]: true,
+		})
 	})
 
-	it('puts a team default on the group layer, and not on the person\'s', () => {
+	it("puts a team default on the group layer, and not on the person's", () => {
 		const { groupValues, personalValues } = valuesFrom({ entries: ENTRIES })
 
-		expect(groupValues['case-caseHandoffIntake']).toEqual({ [SINGLE_CHANNEL_ID]: false })
+		expect(groupValues['case-caseHandoffIntake']).toEqual({
+			[SINGLE_CHANNEL_ID]: false,
+		})
 		expect(personalValues['case-caseHandoffIntake']).toBeUndefined()
 	})
 
@@ -154,48 +192,68 @@ describe('the layers', () => {
 
 	it('carries a forced row with who forced it and why', () => {
 		const { forcedValues } = valuesFrom({
-			entries: [{
-				schema: 'case',
-				notification: 'caseAssigned',
-				enabled: true,
-				source: 'user-override',
-				forced: { value: true, by: 'Team leads', reason: 'Assignments must reach the handler' },
-			}],
+			entries: [
+				{
+					schema: 'case',
+					notification: 'caseAssigned',
+					enabled: true,
+					source: 'user-override',
+					forced: {
+						value: true,
+						by: 'Team leads',
+						reason: 'Assignments must reach the handler',
+					},
+				},
+			],
 		})
 
-		expect(forcedValues['case-caseAssigned'][SINGLE_CHANNEL_ID])
-			.toEqual({ value: true, by: 'Team leads', reason: 'Assignments must reach the handler' })
+		expect(forcedValues['case-caseAssigned'][SINGLE_CHANNEL_ID]).toEqual({
+			value: true,
+			by: 'Team leads',
+			reason: 'Assignments must reach the handler',
+		})
 	})
 
 	it('carries a channel forced OFF as off', () => {
 		// The detail that would cause a real incident: reading a forced row as
 		// "always on" switches on a channel an administrator forbade.
 		const { forcedValues } = valuesFrom({
-			entries: [{
-				schema: 'case',
-				notification: 'caseAssigned',
-				enabled: true,
-				source: 'user-override',
-				forced: { value: false, by: 'Security', reason: 'This kind never leaves the organisation' },
-			}],
+			entries: [
+				{
+					schema: 'case',
+					notification: 'caseAssigned',
+					enabled: true,
+					source: 'user-override',
+					forced: {
+						value: false,
+						by: 'Security',
+						reason: 'This kind never leaves the organisation',
+					},
+				},
+			],
 		})
 
-		expect(forcedValues['case-caseAssigned'][SINGLE_CHANNEL_ID].value).toBe(false)
+		expect(forcedValues['case-caseAssigned'][SINGLE_CHANNEL_ID].value).toBe(
+			false,
+		)
 	})
 
 	it('carries a refusal with its reason, separately from an absence', () => {
 		// A refusal is a rule working. Rendering it as "not available" would
 		// read as a configuration gap somebody should go and fix.
 		const { refusals } = valuesFrom({
-			entries: [{
-				schema: 'case',
-				notification: 'caseAssigned',
-				refused: { reason: 'This kind never leaves the organisation' },
-			}],
+			entries: [
+				{
+					schema: 'case',
+					notification: 'caseAssigned',
+					refused: { reason: 'This kind never leaves the organisation' },
+				},
+			],
 		})
 
-		expect(refusals['case-caseAssigned'][SINGLE_CHANNEL_ID])
-			.toEqual({ reason: 'This kind never leaves the organisation' })
+		expect(refusals['case-caseAssigned'][SINGLE_CHANNEL_ID]).toEqual({
+			reason: 'This kind never leaves the organisation',
+		})
 	})
 
 	it('forces and refuses nothing when the platform said nothing, which is the control', () => {
@@ -210,7 +268,10 @@ describe('everything from one read', () => {
 	it('keys the values in the column it actually rendered', () => {
 		// A mismatch here renders every cell as unset while the values sit in
 		// the object under a key no column has.
-		const props = propsFor({ entries: ENTRIES, channels: [{ id: 'mail', label: 'Mail' }] })
+		const props = propsFor({
+			entries: ENTRIES,
+			channels: [{ id: 'mail', label: 'Mail' }],
+		})
 
 		expect(props.channels[0].id).toBe('mail')
 		expect(props.personalValues['case-caseAssigned']).toEqual({ mail: true })
@@ -219,24 +280,36 @@ describe('everything from one read', () => {
 
 describe('the write behind a change', () => {
 	it('splits the id back into the schema and the key', () => {
-		expect(writeFor({ eventId: 'case-caseAssigned', value: true }))
-			.toEqual({ schema: 'case', notification: 'caseAssigned', enabled: true })
+		expect(writeFor({ eventId: 'case-caseAssigned', value: true })).toEqual({
+			schema: 'case',
+			notification: 'caseAssigned',
+			enabled: true,
+		})
 	})
 
 	it('keeps a key that contains a dash intact', () => {
 		// Splitting on the LAST dash would move half the key into the schema
 		// and write to a notification nobody has.
-		expect(writeFor({ eventId: 'case-case-handoff-intake', value: false }))
-			.toEqual({ schema: 'case', notification: 'case-handoff-intake', enabled: false })
+		expect(
+			writeFor({ eventId: 'case-case-handoff-intake', value: false }),
+		).toEqual({
+			schema: 'case',
+			notification: 'case-handoff-intake',
+			enabled: false,
+		})
 	})
 
 	it('pins the write to the domain being shown', () => {
-		expect(writeFor({ eventId: 'case-caseAssigned', scope: 'zaken', value: true }).scope)
-			.toBe('domain:zaken')
+		expect(
+			writeFor({ eventId: 'case-caseAssigned', scope: 'zaken', value: true })
+				.scope,
+		).toBe('domain:zaken')
 	})
 
 	it('writes nothing global as scoped, which is the control', () => {
-		expect(writeFor({ eventId: 'case-caseAssigned', value: true }).scope).toBeUndefined()
+		expect(
+			writeFor({ eventId: 'case-caseAssigned', value: true }).scope,
+		).toBeUndefined()
 	})
 
 	it('refuses an id it did not make', () => {

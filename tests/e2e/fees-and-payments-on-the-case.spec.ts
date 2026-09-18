@@ -32,7 +32,13 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { cleanupRunObjects, getRequestToken, REGISTER, RUN_PREFIX, seedCase } from './helpers/fixtures.ts'
+import {
+	cleanupRunObjects,
+	getRequestToken,
+	REGISTER,
+	RUN_PREFIX,
+	seedCase,
+} from './helpers/fixtures.ts'
 import { dismissSupportDialog, PAGE_LOAD, trackDossiqErrors } from './helpers/nav.ts'
 
 const APP_URL = `/apps/${REGISTER}/`
@@ -57,7 +63,12 @@ const cases: Record<string, string> = {}
 async function raiseLeges(caseId: string, intakeChannel: string) {
 	return await api.post(LEGES_API, {
 		headers: { requesttoken: token },
-		data: { register: 'dossiq', schema: 'case', objectId: caseId, intakeChannel },
+		data: {
+			register: 'dossiq',
+			schema: 'case',
+			objectId: caseId,
+			intakeChannel,
+		},
 	})
 }
 
@@ -73,8 +84,14 @@ test.afterAll(async () => {
 
 test.describe('a case type declares its fee, per intake channel', () => {
 	test('the balie and the portal raise their own amounts', async () => {
-		cases.desk = await seedCase(api, token, { title: `${RUN_PREFIX} Balie aanvraag`, intakeChannel: 'balie' })
-		cases.web = await seedCase(api, token, { title: `${RUN_PREFIX} Portaal aanvraag`, intakeChannel: 'website' })
+		cases.desk = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Balie aanvraag`,
+			intakeChannel: 'balie',
+		})
+		cases.web = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Portaal aanvraag`,
+			intakeChannel: 'website',
+		})
 
 		const desk = await raiseLeges(cases.desk, 'desk')
 		const web = await raiseLeges(cases.web, 'web')
@@ -90,7 +107,10 @@ test.describe('a case type declares its fee, per intake channel', () => {
 	})
 
 	test('a case type with no published fee raises nothing at all', async () => {
-		const free = await seedCase(api, token, { title: `${RUN_PREFIX} Melding`, intakeChannel: 'website' })
+		const free = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Melding`,
+			intakeChannel: 'website',
+		})
 		const answer = await raiseLeges(free, 'web')
 
 		// 404, and the body says there is no published fee: a silent success
@@ -99,7 +119,9 @@ test.describe('a case type declares its fee, per intake channel', () => {
 		expect(await answer.text()).toContain('no published fee')
 	})
 
-	test('the article of the legesverordening is named on the case', async ({ page }) => {
+	test('the article of the legesverordening is named on the case', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		await page.goto(`${APP_URL}cases/${cases.desk}`, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
@@ -107,14 +129,18 @@ test.describe('a case type declares its fee, per intake channel', () => {
 		// Read from shillinq's panel, which is where the citation lives. A
 		// citizen may ask why they are being charged, and "because the
 		// configuration says so" is not an answer a gemeente may give.
-		const panel = page.getByRole('region', { name: /Fees and payments|Leges en betalingen/ })
+		const panel = page.getByRole('region', {
+			name: /Fees and payments|Leges en betalingen/,
+		})
 		await expect(panel).toBeVisible()
 		await expect(panel).toContainText(/artikel|article/i)
 	})
 })
 
 test.describe('the payment state is on the case and in the list', () => {
-	test('an outstanding fee shows on the case and on the Cases list', async ({ page }) => {
+	test('an outstanding fee shows on the case and on the Cases list', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 
 		await page.goto(`${APP_URL}cases/${cases.desk}`, { waitUntil: PAGE_LOAD })
@@ -123,14 +149,25 @@ test.describe('the payment state is on the case and in the list', () => {
 
 		await page.goto(CASES_URL, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
-		await page.getByRole('tab', { name: /^(Awaiting payment|Wacht op betaling)$/ }).click()
-		await expect(page.getByRole('row').filter({ hasText: `${RUN_PREFIX} Balie aanvraag` })).toBeVisible()
+		await page
+			.getByRole('tab', { name: /^(Awaiting payment|Wacht op betaling)$/ })
+			.click()
+		await expect(
+			page
+				.getByRole('row')
+				.filter({ hasText: `${RUN_PREFIX} Balie aanvraag` }),
+		).toBeVisible()
 	})
 
 	test('the case record carries the state and no amount received', async () => {
-		const row = await (await api.get(`/index.php/apps/openregister/api/objects/dossiq/case/${cases.desk}`, {
-			headers: { requesttoken: token },
-		})).json()
+		const row = await (
+			await api.get(
+				`/index.php/apps/openregister/api/objects/dossiq/case/${cases.desk}`,
+				{
+					headers: { requesttoken: token },
+				},
+			)
+		).json()
 
 		expect(row.paymentState).toBe('outstanding')
 		// The projection is a word and a timestamp. Anything that looks like
@@ -139,13 +176,17 @@ test.describe('the payment state is on the case and in the list', () => {
 		expect(row.paymentStateCheckedAt).toBeTruthy()
 	})
 
-	test('a state that cannot be refreshed reads stale and never paid', async ({ page }) => {
+	test('a state that cannot be refreshed reads stale and never paid', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		// The projection is only ever written from a successful read, so a
 		// case whose payment leaf answers an error keeps its last state and
 		// the gate reads stale. Simulated at the boundary dossiq owns: the
 		// leaf request fails while the page is open.
-		await page.route('**/leaves/shillinq-payment-requests**', (route) => route.fulfill({ status: 503, body: '{}' }))
+		await page.route('**/leaves/shillinq-payment-requests**', (route) =>
+			route.fulfill({ status: 503, body: '{}' }),
+		)
 		await page.goto(`${APP_URL}cases/${cases.desk}`, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
 
@@ -158,10 +199,13 @@ test.describe('the case type decides whether an unpaid case proceeds', () => {
 		// The write path, not the menu: a greyed button is a suggestion until
 		// posting the move meets the same answer. Probed as an ordinary
 		// handler, the least privileged principal who could try it.
-		const answer = await api.post(`/index.php/apps/${REGISTER}/api/case/${cases.desk}/transition`, {
-			headers: { requesttoken: token },
-			data: { transitionId: 'in-behandeling' },
-		})
+		const answer = await api.post(
+			`/index.php/apps/${REGISTER}/api/case/${cases.desk}/transition`,
+			{
+				headers: { requesttoken: token },
+				data: { transitionId: 'in-behandeling' },
+			},
+		)
 
 		expect(answer.status()).toBeGreaterThanOrEqual(400)
 		expect(answer.status()).toBeLessThan(500)
@@ -169,11 +213,16 @@ test.describe('the case type decides whether an unpaid case proceeds', () => {
 	})
 
 	test('a melding does not wait for money', async () => {
-		const melding = await seedCase(api, token, { title: `${RUN_PREFIX} Melding openbare ruimte` })
-		const answer = await api.post(`/index.php/apps/${REGISTER}/api/case/${melding}/transition`, {
-			headers: { requesttoken: token },
-			data: { transitionId: 'in-behandeling' },
+		const melding = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Melding openbare ruimte`,
 		})
+		const answer = await api.post(
+			`/index.php/apps/${REGISTER}/api/case/${melding}/transition`,
+			{
+				headers: { requesttoken: token },
+				data: { transitionId: 'in-behandeling' },
+			},
+		)
 
 		// Whatever else it says, it does not say the money is in the way.
 		expect(await answer.text()).not.toMatch(/settled first/)
@@ -181,7 +230,9 @@ test.describe('the case type decides whether an unpaid case proceeds', () => {
 })
 
 test.describe('a case names the contract it was raised under', () => {
-	test('the case shows the contract and copies none of its terms', async ({ page }) => {
+	test('the case shows the contract and copies none of its terms', async ({
+		page,
+	}) => {
 		trackDossiqErrors(page)
 		await page.goto(`${APP_URL}cases/${cases.web}`, { waitUntil: PAGE_LOAD })
 		await dismissSupportDialog(page)
@@ -189,9 +240,14 @@ test.describe('a case names the contract it was raised under', () => {
 		const panel = page.getByRole('region', { name: /Contract/ })
 		await expect(panel).toBeVisible()
 
-		const row = await (await api.get(`/index.php/apps/openregister/api/objects/dossiq/case/${cases.web}`, {
-			headers: { requesttoken: token },
-		})).json()
+		const row = await (
+			await api.get(
+				`/index.php/apps/openregister/api/objects/dossiq/case/${cases.web}`,
+				{
+					headers: { requesttoken: token },
+				},
+			)
+		).json()
 		// The reference, and nothing of the contract itself: a copied term
 		// goes stale and then alerts on the wrong date.
 		expect(row.contractEndDate).toBeUndefined()

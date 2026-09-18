@@ -390,6 +390,7 @@ OC.L10N.register(
         "Always available": "Altijd mogelijk",
         "Always required": "Altijd verplicht",
         "Amendment": "Wijziging",
+        "An administrator decides this one, so it is not yours to change.": "Een beheerder bepaalt deze, dus die is niet van u om te wijzigen.",
         "An advice request is still open": "Er staat nog een adviesaanvraag open",
         "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "Een Awb-beslistermijn telt kalenderdagen. Een servicenorm of een terugbelafspraak telt alleen de dagen waarop de organisatie werkt, op de organisatiekalender.",
         "An intrekking. There is a result, and it is not a besluit.": "Een intrekking. Er is een resultaat, en dat is geen besluit.",
@@ -4285,6 +4286,7 @@ OC.L10N.register(
         "That link opens nothing any more": "Die link opent niets meer",
         "That mail account is not yours.": "Dat mailaccount is niet van u.",
         "That note could not be saved.": "Die notitie kon niet worden opgeslagen.",
+        "That setting was not saved.": "Die instelling is niet opgeslagen.",
         "That status is not part of this case's workflow.": "Die status maakt geen deel uit van de workflow van deze zaak.",
         "The act could not be started.": "De actie kon niet gestart worden.",
         "The act could not be stopped.": "De actie kon niet gestopt worden.",
@@ -4696,6 +4698,7 @@ OC.L10N.register(
         "This case has one sub-case. Sharing this case lets the holder read it too.": "Deze zaak heeft één deelzaak. Wie deze zaak gedeeld krijgt, kan die ook lezen.",
         "This case has {count} linked tasks. Are you sure you want to delete it?": "Deze zaak heeft {count} gekoppelde taken. Weet u zeker dat u deze wilt verwijderen?",
         "This case has {count} sub-cases. Deleting it will unlink the sub-cases from their parent. Do you want to continue?": "Deze zaak heeft {count} deelzaken. Door te verwijderen worden de deelzaken losgekoppeld van hun hoofdzaak. Wilt u doorgaan?",
+        "This case holds nothing of the kinds a split may divide here.": "Deze zaak bevat niets van wat hier gesplitst mag worden.",
         "This case is already flagged as needing attention.": "Deze zaak is al gemarkeerd als aandacht nodig.",
         "This case is already suspended.": "Deze zaak is al opgeschort.",
         "This case is archived. You can read it, and changes are refused.": "Deze zaak is gearchiveerd. U kunt de zaak lezen; wijzigingen worden geweigerd.",
@@ -5309,6 +5312,7 @@ OC.L10N.register(
         "Which seat was emptied.": "Welke stoel is leeggemaakt.",
         "Which version of this case type you are looking at. A case type is never edited once cases run on it: you make a new version, and the new version is a new object carrying its own statuses, results and properties. Version 1 is a case type nobody has versioned yet.": "Welke versie van dit zaaktype je voor je hebt. Een zaaktype pas je niet meer aan zodra er zaken op lopen: je maakt een nieuwe versie, en die nieuwe versie is een nieuw object met zijn eigen statussen, resultaten en eigenschappen. Versie 1 is een zaaktype dat nog nooit is geversioneerd.",
         "Who completed it.": "Wie het heeft afgerond.",
+        "Who else is here": "Wie er nog meer is",
         "Who has held this case": "Wie deze zaak heeft gehad",
         "Who held a right on a date": "Wie een recht had op een datum",
         "Who holds which right": "Wie welk recht heeft",
@@ -5602,8 +5606,7 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar",
-        "This case holds nothing of the kinds a split may divide here.": "Deze zaak bevat niets van wat hier gesplitst mag worden."
+        "{years} years": "{years} jaar"
     },
     "nplurals=2; plural=(n != 1);"
 )

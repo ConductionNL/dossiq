@@ -856,7 +856,8 @@ export const VOCABULARY_SNAPSHOT = {
 			key: 'conceptScheme',
 			value: 'string',
 			enforced: true,
-			description: 'The SKOS concept scheme this field takes its choices from, by slug.',
+			description:
+				'The SKOS concept scheme this field takes its choices from, by slug.',
 		},
 	],
 	passthrough: [
