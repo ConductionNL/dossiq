@@ -108,7 +108,12 @@ import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // @spec openspec/specs/zaaktype-versioning/spec.md
 import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
 import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
+// The version chain: starting the next version, and moving one running case
+// along it (case-type-version-chain).
+// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
+import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -354,6 +359,18 @@ const registry = {
 		kind: 'modal',
 		component: CaseTypeDuplicateDialog,
 		_note: 'CaseTypeDetail Duplicate: posts the copy, reads the new id out of the answer and ROUTES there. An api-call refreshes the page you are already on, so a person who asked for a copy would be left looking at the original with no clue where the copy went.',
+	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseTypeNewVersionDialog: {
+		kind: 'modal',
+		component: CaseTypeNewVersionDialog,
+		_note: 'CaseTypeDetail New version: posts the next version and ROUTES to the draft, for the reason Duplicate is a dialog. The tasks called for a declarative api-call, and an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one: the gesture beside it is Duplicate, and a duplicate is a second case type while a version is this one later on.',
+	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseVersionMoveDialog: {
+		kind: 'modal',
+		component: CaseVersionMoveDialog,
+		_note: 'CaseDetail Actions menu: move this case to another version of its own case type. The PREVIEW is why it is a modal and not a confirm gate: a case is pinned to the version it was filed under because its status is a row only that version holds, so the person moving it is shown the landing status and the statuses and fields the other version adds and drops, including the dropped ones this case has answered. It derives NONE of that: canMove and every refusal sentence come from the server, so the dialog cannot disagree with the write.',
 	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	CaseHandoverDialog: {

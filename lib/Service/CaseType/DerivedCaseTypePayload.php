@@ -93,17 +93,28 @@ class DerivedCaseTypePayload {
 	 * draft flag, the version number, the link back, and the forward link,
 	 * which stays empty until something replaces THIS version in turn.
 	 *
-	 * `workflowDefinition` is dropped for the reason a duplicate drops it: it
-	 * names a workflow template that belongs to the previous version, and a type
-	 * claiming a default route its own Workflow tab cannot show is worse than a
-	 * type claiming none.
+	 * 🔴 `workflowDefinition` IS CARRIED, AND THAT IS A CHANGE. It used to be
+	 * cleared here for the reason a duplicate clears it: it named a workflow
+	 * template belonging to the previous version, and a type claiming a default
+	 * route its own Workflow tab cannot show is worse than a type claiming
+	 * none. That reasoning was sound and the conclusion was wrong, because the
+	 * premise was a gap rather than a law. A new version did not copy the
+	 * previous version's workflow templates AT ALL, so clearing the pin was the
+	 * only honest thing to do, and the result was that every new version of a
+	 * case type lost its process and an author rebuilt it by hand.
+	 * {@see \OCA\Dossiq\Service\CaseTypeCopyService} now copies the templates
+	 * along with the statuses and repoints this pin at the new version's OWN
+	 * copy, exactly as it repoints `initialStatus`. The value left here is the
+	 * PREVIOUS version's template id, which is what the repoint maps FROM; when
+	 * there is nothing to map it to, the copy clears it, so the case the old
+	 * docblock feared still cannot happen.
 	 *
 	 * @param array<string, mixed> $source   The version being succeeded.
 	 * @param string               $sourceId Its id.
 	 *
 	 * @return array<string, mixed> The payload to save as a new object.
 	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
 	 */
 	public function nextVersion(array $source, string $sourceId): array {
 		$payload = $this->stripIdentity(data: $source);
@@ -112,7 +123,14 @@ class DerivedCaseTypePayload {
 		$payload['version'] = ($this->versionOf(caseType: $source) + 1);
 		$payload['previousVersion'] = $sourceId;
 		$payload['supersededBy'] = null;
-		$payload['workflowDefinition'] = null;
+
+		// A draft version is not valid for anything yet. Carrying the previous
+		// version's dates would make a brand-new draft read as the version in
+		// force since a date that belongs to its predecessor, and would make
+		// the closing write at publish time a no-op.
+		$payload['validFrom'] = null;
+		$payload['validUntil'] = null;
+		$payload['versionDate'] = null;
 
 		return $payload;
 	}//end nextVersion()

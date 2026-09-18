@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Service\Bulk;
 
 use InvalidArgumentException;
 use OCA\Dossiq\BulkAction\LifecycleCasesAction;
+use OCA\Dossiq\BulkAction\MoveCaseTypeVersionAction;
 use OCA\Dossiq\BulkAction\ReassignCasesAction;
 use OCA\Dossiq\BulkAction\SetCaseAttributeAction;
 use OCA\Dossiq\BulkAction\TransitionCasesAction;
@@ -70,7 +71,7 @@ class BulkJobHandoff {
 	/**
 	 * The actions dossiq offers over cases, and whether each needs a reason.
 	 *
-	 * Read by the catalogue endpoint so a caller sees dossiq's four without
+	 * Read by the catalogue endpoint so a caller sees dossiq's own without
 	 * having to know OpenRegister's whole registry.
 	 *
 	 * @var array<int, string>
@@ -82,6 +83,7 @@ class BulkJobHandoff {
 		LifecycleCasesAction::ID,
 		ReassignCasesAction::ID,
 		SetCaseAttributeAction::ID,
+		MoveCaseTypeVersionAction::ID,
 	];
 
 	/**
@@ -189,10 +191,14 @@ class BulkJobHandoff {
 	 * Run dossiq's own refusals over the selection, before anything is
 	 * rehearsed.
 	 *
-	 * Only the attribute write is guarded: a transition, a lifecycle gesture
+	 * Two acts are guarded and three are not. A transition, a lifecycle gesture
 	 * and a redistribution all mean the same thing on every version of a case
 	 * type, so refusing them would refuse a selection there is no reason to
-	 * refuse.
+	 * refuse. The attribute write means two different things across two
+	 * versions. The version move takes ONE target version, so a selection
+	 * spanning two would move half the cases and tell the other half they are
+	 * already there; the target is chosen from one version's chain, and a case
+	 * from another chain is not on it at all.
 	 *
 	 * A selection given as a QUERY is not resolved here. OpenRegister's own
 	 * `homogeneity` guard still refuses it at creation, before a single object
@@ -209,7 +215,8 @@ class BulkJobHandoff {
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function guardSelection(string $actionId, array $selection): void {
-		if ($actionId !== SetCaseAttributeAction::ID) {
+		$guarded = [SetCaseAttributeAction::ID, MoveCaseTypeVersionAction::ID];
+		if (in_array($actionId, $guarded, true) === false) {
 			return;
 		}
 
