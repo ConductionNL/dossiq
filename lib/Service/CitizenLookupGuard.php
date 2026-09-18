@@ -35,6 +35,21 @@
  * attested elsewhere in this app, `kcc` and `klantcontact` are assumptions
  * made by the author of this class, and this guard denies until they exist.
  *
+ * 🔴 WHAT THIS CLASS DOES NOT DO, NAMED HERE BECAUSE AN EARLIER VERSION OF THIS
+ * COMMENT IMPLIED IT DID. It decides whether the ENDPOINT answers. It does not
+ * limit how often, and it did not, until `citizen-lookup-is-guarded-and-
+ * recorded`, keep a single field back from a caller who passed it. Two other
+ * things now hold those halves, and a reader who needs them should go there:
+ *
+ *   - HOW OFTEN: `#[UserRateLimit]` on each lookup method of
+ *     `ContactMomentController`. Nextcloud's own middleware answers 429 before
+ *     the controller runs, so it is not a decision this class can get wrong.
+ *   - WHICH FIELDS: {@see self::redactForCaller()} below, over
+ *     {@see self::SENSITIVE_CONTACT_FIELDS}, mirroring the declaration on the
+ *     `contactmoment` schema.
+ *   - WHETHER IT IS RECORDED:
+ *     {@see \OCA\Dossiq\Service\Kcc\CitizenLookupRecorder}, on both branches.
+ *
  * @category Service
  * @package  OCA\Dossiq\Service
  *
@@ -103,6 +118,40 @@ class CitizenLookupGuard {
 	private const ALLOWED_GROUPS = ['kcc', 'klantcontact', 'beheerders', 'admin'];
 
 	/**
+	 * The group that may read a contact moment's sensitive fields.
+	 *
+	 * The same group `sensitive-fields-declared` put the BSN behind, and the
+	 * same group named in the `contactmoment` schema's own declaration. One
+	 * group, two places, because one of the two is the rule OpenRegister
+	 * enforces on the object and the other is the payload this app composed.
+	 */
+	public const SENSITIVE_GROUP = 'dossiq-sensitive';
+
+	/**
+	 * The fields of a contact moment only the sensitive group may read.
+	 *
+	 * These four are exactly what the class comment above says this guard
+	 * protects: the caller's number, the citizen's identifier, the free-text
+	 * summary of the call and its transcript. Each one also carries
+	 * `authorization.read` on the `contactmoment` schema, so a direct
+	 * OpenRegister read is refused for the same caller by the same group.
+	 *
+	 * 🔴 THIS LIST IS THE ONLY RULE, AND IT CAN ONLY REMOVE. It is not a second
+	 * evaluator of the declaration: it holds no conditions, reads no schema and
+	 * can never GRANT a field the declaration withholds. A field that belongs
+	 * here and is missing is protected by the declaration on the object and
+	 * unprotected in this payload, which is the direction to fail in.
+	 *
+	 * @var array<int, string>
+	 */
+	public const SENSITIVE_CONTACT_FIELDS = [
+		'callerIdentification',
+		'geidentificeerdeBurgerId',
+		'summary',
+		'transcript',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IGroupManager $groupManager The group manager.
@@ -140,4 +189,86 @@ class CitizenLookupGuard {
 			return false;
 		}
 	}//end isCitizenLookupAllowed()
+
+	/**
+	 * Whether this caller may read a contact moment's sensitive fields.
+	 *
+	 * Membership only. A Nextcloud administrator is NOT waved through here,
+	 * unlike the endpoint decision above: the four fields are personal data
+	 * about a citizen, and being able to administer the instance is not a
+	 * reason to read the transcript of their call.
+	 *
+	 * @param IUser $user The authenticated user.
+	 *
+	 * @return bool True when the caller holds the sensitive group.
+	 *
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
+	 */
+	public function maySeeSensitiveFields(IUser $user): bool {
+		$uid = $user->getUID();
+		if ($uid === '') {
+			return false;
+		}
+
+		try {
+			return $this->groupManager->isInGroup($uid, self::SENSITIVE_GROUP);
+		} catch (Throwable $e) {
+			// An unresolvable group check is not an authorization.
+			return false;
+		}
+	}//end maySeeSensitiveFields()
+
+	/**
+	 * Take the sensitive fields out of a lookup payload the caller may not read.
+	 *
+	 * Handles the two shapes the lookup endpoints answer: a list of contact
+	 * moments, and the voorblad, whose `recenteContactmomenten` is such a list.
+	 * Anything else is returned untouched, because removing keys from a shape
+	 * this does not recognise is how a redaction quietly eats a feature.
+	 *
+	 * @param IUser                $user    The authenticated caller.
+	 * @param array<string, mixed> $payload The composed response.
+	 *
+	 * @return array<string, mixed> The payload, redacted when it has to be.
+	 *
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-answers-only-the-fields-the-caller-may-read-req-sec-cl-1
+	 */
+	public function redactForCaller(IUser $user, array $payload): array {
+		if ($this->maySeeSensitiveFields(user: $user) === true) {
+			return $payload;
+		}
+
+		foreach (['contactmomenten', 'recenteContactmomenten'] as $key) {
+			if (is_array(($payload[$key] ?? null)) === true) {
+				$payload[$key] = array_map(
+					static fn (mixed $row): mixed => (is_array($row) === true
+						? array_diff_key($row, array_flip(self::SENSITIVE_CONTACT_FIELDS))
+						: $row),
+					$payload[$key]
+				);
+			}
+		}
+
+		return $payload;
+	}//end redactForCaller()
+
+	/**
+	 * Which of the sensitive fields this caller was answered.
+	 *
+	 * Written into the audit row's `geraadpleegdeVelden`, so the record says
+	 * what was revealed rather than only that something was.
+	 *
+	 * @param IUser $user The authenticated caller.
+	 *
+	 * @return array<int, string> The fields, [] when none were.
+	 *
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 */
+	public function revealedFieldsFor(IUser $user): array {
+		if ($this->maySeeSensitiveFields(user: $user) === false) {
+			return [];
+		}
+
+		return self::SENSITIVE_CONTACT_FIELDS;
+	}//end revealedFieldsFor()
 }//end class

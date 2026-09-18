@@ -406,6 +406,29 @@ describe('Tasks index lenses', () => {
 		expect(page('Tasks').config.columns).toBeUndefined()
 		expect(page('Tasks').config.entitySource).toBe('tasks')
 	})
+
+	/**
+	 * task-search-fields: a lens answers one of six fixed questions, a field
+	 * lets you ask your own. Both reach the server and they compose.
+	 *
+	 * The sidebar only offers a filter for a property marked `facetable`, so
+	 * a sidebar switched on with no declaration is a search box and nothing
+	 * else. That is what this page shipped before, and it looks identical to
+	 * a sidebar whose filters happen to match everything.
+	 *
+	 * Whether each declared field reaches a real inbox argument is asserted
+	 * in `tests/vitest/taskSearchFields.spec.js`, under "every declared field
+	 * maps to an inbox argument".
+	 */
+	it('declares four search fields beside the six lenses', () => {
+		const config = page('Tasks').config
+		expect(config.sidebar.enabled).toBe(true)
+
+		const filters = Object.entries(config.sidebar.fields)
+			.filter(([, prop]) => prop.facetable === true)
+			.map(([key]) => key)
+		expect(filters).toEqual(['objectUuid', 'state', 'priority', 'dueAt'])
+	})
 })
 
 /**
@@ -668,6 +691,11 @@ describe('what this change does NOT move', () => {
 			'Organisations',
 			'Map layers',
 			'Case types',
+			// The eighth later addition (attribute-catalogue-folders): the
+			// attribute catalogue, beside the case types it files for. It
+			// spends no top-level slot either, because it carries
+			// `section: "settings"` like `Case types` and `Flows` do.
+			'Attributes',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',

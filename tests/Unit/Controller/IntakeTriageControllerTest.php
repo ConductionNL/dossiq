@@ -44,6 +44,7 @@ use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\IntakePolicy;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
@@ -203,6 +204,7 @@ final class IntakeTriageControllerTest extends TestCase {
 				logger: new NullLogger()
 			),
 			refusal: $this->refusal,
+			admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
 			sleep: $this->sleep,
 			fanOut: $this->fanOut,
 			log: $this->log,
