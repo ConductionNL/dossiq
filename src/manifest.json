@@ -2403,6 +2403,48 @@
 										"title": "Appointments & hearings",
 										"icon": "Calendar"
 									}
+								},
+								{
+									"label": "What happens next",
+									"widget": {
+										"id": "case-planned-actions",
+										"type": "object-list",
+										"title": "Planned actions",
+										"icon": "CalendarClock",
+										"_note": "task-dependencies-and-the-next-planned-action, gap register row 3.28. A case answers what happens next WITHOUT anybody reading the history, which is the whole reason the record exists. It sits beside Tasks rather than inside it because the two answer different questions: a task is work somebody is doing now, a planned action is work the case type says comes next and that nobody has started. The filter keeps `state: planned` and the sort is `plannedFor` ascending, so the FIRST ROW IS THE ANSWER; completed actions stay readable through the case's own object list rather than crowding the one sentence this section exists to say. `plannedFrom` is a column on purpose: it is what makes a chain readable backwards, so a handler can see that this call was planned by the confirmation before it rather than by somebody typing a date. Rows carry no `rowRoute`: there is no plannedAction detail page, and a route naming a page that does not exist pushes vue-router at a name it cannot resolve.",
+										"content": {
+											"register": "dossiq",
+											"schema": "plannedAction",
+											"filter": {
+												"case": "@objectId",
+												"state": "planned"
+											},
+											"sort": {
+												"field": "plannedFor",
+												"dir": "asc"
+											},
+											"limit": 10,
+											"columns": [
+												{
+													"key": "plannedFor",
+													"label": "Planned for"
+												},
+												{
+													"key": "label",
+													"label": "Action"
+												},
+												{
+													"key": "owner",
+													"label": "Owner"
+												},
+												{
+													"key": "plannedFrom",
+													"label": "Planned by"
+												}
+											],
+											"emptyText": "No next action is planned on this case"
+										}
+									}
 								}
 							]
 						}
