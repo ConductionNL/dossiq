@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.6"
+        "version": "0.20.8"
     },
     "x-openregister": {
         "type": "application",
@@ -651,6 +651,15 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "splittableParts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": ["documents", "parties", "tasks"]
+                        },
+                        "description": "What a split of a case of this type may divide. Which documents belong to which half is a judgement about the content and only the handler has it; what may be divided AT ALL is a rule that does not change per case, so it is declared here once and the handler is offered the allowed choices and no others. ABSENT MEANS ALL THREE: every case type predates this key, and reading silence as \"nothing may be divided\" would ship a split action that refuses every split on the day it arrives.",
+                        "title": "Splittable parts"
                     },
                     "paymentRequiredBeforeHandling": {
                         "type": "boolean",
@@ -4276,6 +4285,66 @@
                         "type": "string",
                         "description": "The property value",
                         "title": "Value"
+                    }
+                }
+            },
+            "incident": {
+                "slug": "incident",
+                "icon": "AlertOutline",
+                "version": "1.0.0",
+                "title": "Incident",
+                "description": "One dated event inside a case, with its own reporter, its own owner and its own outcome. NOT a sub-case: a deelzaak has its own number, its own term and its own decision, and giving every repeat report a beslistermijn it does not have is exactly the mistake this avoids (splitting-a-case-and-its-incidents D-4).",
+                "type": "object",
+                "properties": {
+                    "case": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "title": "Case",
+                        "description": "The case this incident belongs to. One case holds several: the pattern of repeat reports on one address is what makes the case worth keeping open.",
+                        "facetable": true
+                    },
+                    "eventDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Event date",
+                        "description": "When the incident happened. The list is ordered by THIS and not by the recording moment: a report recorded three weeks late belongs where it happened, and sorting by creation would quietly rewrite the sequence the case is about."
+                    },
+                    "recordedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Recorded at",
+                        "description": "When the incident was written down. Kept beside the event date rather than instead of it, so the delay between the two is visible rather than hidden.",
+                        "readOnly": true
+                    },
+                    "reporter": {
+                        "type": "string",
+                        "title": "Reporter",
+                        "description": "Who reported it. A name or a contact reference; the melder of one report is often not the melder of the next on the same address."
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "What was reported, in the reporter's terms."
+                    },
+                    "assignee": {
+                        "type": "string",
+                        "title": "Assignee",
+                        "description": "Who works THIS incident. Its own owner, not the case's: the case sits with the area handler while one report inside it is worked by an inspector, and handing the incident over must leave the case's assignee exactly as it was.",
+                        "facetable": true
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": ["open", "in-behandeling", "afgehandeld"],
+                        "default": "open",
+                        "title": "State",
+                        "description": "Where this incident stands. Deliberately three values and no transition machine: an incident is a report inside a case, and a lifecycle of its own would make it the deelzaak it must not become.",
+                        "facetable": true
+                    },
+                    "outcome": {
+                        "type": "string",
+                        "title": "Outcome",
+                        "description": "What was done about it. Written when the incident is finished, and read as the history of the address when the next report arrives."
                     }
                 }
             },
@@ -11220,6 +11289,7 @@
                     "caseProperty",
                     "caseDocument",
                     "caseObject",
+                    "incident",
                     "customerContact",
                     "decisionDocument",
                     "dispatch",
