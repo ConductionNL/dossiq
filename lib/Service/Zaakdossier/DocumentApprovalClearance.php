@@ -170,7 +170,11 @@ class DocumentApprovalClearance {
 			$step = trim((string)($entry['stageName'] ?? ''));
 			$actor = trim((string)($entry['actor'] ?? ''));
 
-			$part = ($route === '' ? 'an approval route' : $route);
+			$part = $route;
+			if ($part === '') {
+				$part = 'an approval route';
+			}
+
 			if ($step !== '') {
 				$part .= ', step "' . $step . '"';
 			}

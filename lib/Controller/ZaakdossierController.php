@@ -61,6 +61,8 @@ class ZaakdossierController extends Controller {
 	 * @param InformatieobjectReader $reader The clearance-gated document reader.
 	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
+	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
+	 *        so a document in an unfinished route cannot be made final.
 	 */
 	public function __construct(
 		string $appName,

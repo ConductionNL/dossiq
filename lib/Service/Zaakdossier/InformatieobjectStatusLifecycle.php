@@ -229,9 +229,13 @@ class InformatieobjectStatusLifecycle {
 		}
 
 		$reason = $this->approvals->describe(clearance: $clearance);
+		if ($reason === '') {
+			$reason = 'a route is still open.';
+		}
+
 		throw new InvalidArgumentException(
 			'This document is in an approval route that has not finished, so it cannot be made final yet: '
-			. ($reason === '' ? 'a route is still open.' : $reason)
+			. $reason
 		);
 	}//end requireApprovalCleared()
 
