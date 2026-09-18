@@ -409,6 +409,13 @@ $extra = [
         // dossiq-side side-effect: turning a saved note's @mention
         // tokens into real Nextcloud notifications.
     ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
+        // a-case-note-reaches-the-neighbouring-register: sending ONE note to a
+        // neighbouring ZGW register, as a zaakinformatieobject of a reserved
+        // type. A deliberate act rather than a hook on save, because note
+        // storage is OpenRegister's entirely and it dispatches no note-saved
+        // event dossiq could listen for; `notes#mention` above is called the
+        // same way, after the note is already stored.
+    ['name' => 'notes#push', 'url' => '/api/cases/{caseId}/notes/push', 'verb' => 'POST'],
 
         // ── Workflow Definitions (workflowTemplate) ─────────────────────
         // CRUD on workflowTemplate is served by the manifest renderer +
