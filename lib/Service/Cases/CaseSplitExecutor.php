@@ -603,6 +603,36 @@ class CaseSplitExecutor {
 	}//end requireCase()
 
 	/**
+	 * Which parts a split may divide on this case.
+	 *
+	 * 🔴 THE PICKER HAS TO ASK THIS BEFORE IT DRAWS. Without it the dialog
+	 * lists every document and party the case holds, the handler ticks one,
+	 * confirms, and learns only from the refusal that this case type does not
+	 * allow documents to be divided. The rule was always there and always
+	 * enforced; what was missing was saying it before the attempt rather than
+	 * after it.
+	 *
+	 * It answers the policy and nothing else. The policy already reads an
+	 * absent declaration as "everything may be divided", and an unreadable
+	 * case type reaches it as null rather than as a type declaring nothing, so
+	 * a case type that cannot be read offers all three rather than refusing
+	 * everything.
+	 *
+	 * @param string $caseId The case being looked at.
+	 *
+	 * @return array<int, string> The parts this case type allows, in a stable order.
+	 *
+	 * @throws RefusedException When the case cannot be read.
+	 *
+	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
+	 */
+	public function divisibleParts(string $caseId): array {
+		$case = $this->requireCase(caseId: trim($caseId));
+
+		return $this->policy->allowedFor(caseType: $this->caseTypeOf(case: $case));
+	}//end divisibleParts()
+
+	/**
 	 * The case type behind a case, or null.
 	 *
 	 * NULL AND AN EMPTY ARRAY ARE DIFFERENT ANSWERS to `CaseSplitPolicy`: it

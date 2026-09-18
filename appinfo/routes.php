@@ -972,6 +972,10 @@ $extra = [
     // DECIDING half of both shipped in #2945 as three pure classes with no
     // caller: CaseSplitPolicy, CaseSplitPlan and IncidentRecord answered
     // questions nobody was asking them. These are the doors that ask.
+        // What the case type allows a split to divide, asked BEFORE the picker
+        // draws so a handler reads the rule instead of discovering it from a
+        // refusal after choosing (split-picker-asks-the-policy).
+    ['name' => 'caseSplit#divisible',      'url' => '/api/case/{caseId}/split',                           'verb' => 'GET'],
     ['name' => 'caseSplit#split',          'url' => '/api/case/{caseId}/split',                           'verb' => 'POST'],
     ['name' => 'caseIncident#index',       'url' => '/api/case/{caseId}/incidents',                       'verb' => 'GET'],
     ['name' => 'caseIncident#record',      'url' => '/api/case/{caseId}/incidents',                       'verb' => 'POST'],

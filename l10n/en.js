@@ -5602,7 +5602,8 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "This case holds nothing of the kinds a split may divide here.": "This case holds nothing of the kinds a split may divide here."
     },
     "nplurals=2; plural=(n != 1);"
 )

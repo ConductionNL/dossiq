@@ -50,7 +50,7 @@
 
 			<template v-else>
 				<section
-					v-if="documents.length > 0"
+					v-if="allows('documents') && documents.length > 0"
 					class="case-split-dialog__section"
 					data-testid="case-split-documents">
 					<h4>{{ t('dossiq', 'Documents that move') }}</h4>
@@ -65,7 +65,7 @@
 				</section>
 
 				<section
-					v-if="parties.length > 0"
+					v-if="allows('parties') && parties.length > 0"
 					class="case-split-dialog__section"
 					data-testid="case-split-parties">
 					<h4>{{ t('dossiq', 'Parties that move') }}</h4>
@@ -86,10 +86,22 @@
 				</section>
 
 				<p
-					v-if="documents.length === 0 && parties.length === 0"
+					v-if="allowed.length === 0"
+					class="case-split-dialog__empty"
+					data-testid="case-split-forbidden">
+					{{ t('dossiq', 'This case type does not allow a split to divide anything.') }}
+				</p>
+
+				<p
+					v-else-if="nothingToDivide"
 					class="case-split-dialog__empty"
 					data-testid="case-split-empty">
-					{{ t('dossiq', 'This case type does not allow a split to divide anything.') }}
+					{{
+						t(
+							'dossiq',
+							'This case holds nothing of the kinds a split may divide here.',
+						)
+					}}
 				</p>
 			</template>
 
@@ -157,6 +169,11 @@ export default {
 	data() {
 		return {
 			title: '',
+			// What the case type allows, answered by the server before this
+			// dialog draws. It starts EMPTY rather than as all three: drawing
+			// every section first and removing the forbidden ones when the
+			// answer lands would flash a choice the handler may not make.
+			allowed: [],
 			documents: [],
 			parties: [],
 			chosenDocuments: [],
@@ -172,6 +189,22 @@ export default {
 		/** @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md */
 		targetCaseId() {
 			return this.caseId || String(this.$route?.params?.id ?? '')
+		},
+
+		/**
+		 * Whether the case type allows something but this case holds none of
+		 * it. A DIFFERENT FACT from a case type that forbids dividing
+		 * anything, and one sentence for both told a handler with an empty
+		 * case that their case type was the problem.
+		 *
+		 * @return {boolean} True when there is nothing to tick.
+		 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md
+		 */
+		nothingToDivide() {
+			return (
+				(!this.allows('documents') || this.documents.length === 0)
+				&& (!this.allows('parties') || this.parties.length === 0)
+			)
 		},
 
 		/**
@@ -253,13 +286,31 @@ export default {
 			this.error = ''
 
 			try {
+				// 🔴 THE RULE FIRST, THEN THE ROWS. `CaseSplitPolicy` decides
+				// what this case type allows, and asking it before drawing is
+				// the whole point: otherwise the handler ticks a document,
+				// confirms, and learns from the refusal that documents may not
+				// be divided here. The rule was always enforced; it was just
+				// never said until after the attempt.
+				const { data: rules } = await axios.get(
+					generateUrl(
+						`/apps/dossiq/api/case/${encodeURIComponent(this.targetCaseId)}/split`,
+					),
+				)
+				this.allowed = Array.isArray(rules?.allowed) ? rules.allowed : []
+
 				const [documents, parties] = await Promise.all([
-					this.children('caseDocument', ['title', 'name', 'documentType']),
-					this.children('role', ['roleType', 'name', 'displayName']),
+					this.allows('documents')
+						? this.children('caseDocument', ['title', 'name', 'documentType'])
+						: [],
+					this.allows('parties')
+						? this.children('role', ['roleType', 'name', 'displayName'])
+						: [],
 				])
 				this.documents = documents
 				this.parties = parties
 			} catch (loadError) {
+				this.allowed = []
 				this.documents = []
 				this.parties = []
 				this.error
@@ -268,6 +319,17 @@ export default {
 			} finally {
 				this.loading = false
 			}
+		},
+
+		/**
+		 * Whether the case type allows this part to be divided.
+		 *
+		 * @param {string} part One of documents, parties or tasks.
+		 * @return {boolean} True when it may be divided.
+		 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md
+		 */
+		allows(part) {
+			return this.allowed.includes(part)
 		},
 
 		/**

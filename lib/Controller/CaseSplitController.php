@@ -121,6 +121,36 @@ class CaseSplitController extends Controller {
 	}//end split()
 
 	/**
+	 * Which parts a split may divide on this case.
+	 *
+	 * The picker asks this before it draws, so a handler sees the case type's
+	 * rule instead of discovering it from a refusal after they have chosen. It
+	 * is the same `CaseSplitPolicy` the write path consults, asked earlier;
+	 * a second copy of the rule in the browser would be a second answer, and
+	 * the first time the two disagreed the handler would be told they may
+	 * divide something the server refuses.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return JSONResponse The parts, or the refusal.
+	 *
+	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
+	 */
+	#[NoAdminRequired]
+	public function divisible(string $caseId): JSONResponse {
+		$user = $this->writerOf(caseId: $caseId);
+		if ($user === null) {
+			return $this->notYours();
+		}
+
+		try {
+			return new JSONResponse(['allowed' => $this->splits->divisibleParts(caseId: $caseId)]);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'case split parts', e: $e);
+		}
+	}//end divisible()
+
+	/**
 	 * The caller, when they may move this case's material.
 	 *
 	 * @param string $caseId The case uuid.
