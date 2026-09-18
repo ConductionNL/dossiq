@@ -6,9 +6,16 @@ dossiq SHALL send a citizen's digital post by dispatching integriq's send
 event and reading its result. A tracked message id SHALL be recorded as
 sent. A structured refusal SHALL be recorded as not sent, with the reason.
 A result slot that came back unanswered SHALL be treated as a refusal.
-dossiq SHALL ship no digital post transport, no adapter interface of its
-own and no mock, because a fallback that reports a delivery is
-indistinguishable from a delivery.
+dossiq SHALL ship no digital post transport of its own. It keeps the
+adapter seam and its mock, and what changes is that the mock is no longer
+what an instance gets by forgetting: the default adapter dispatches
+integriq's command and refuses with a named reason when integriq is absent.
+That is the union of this change and `digital-post-reaches-integriq`, which
+asked for the seam to be kept and the mock to stay selectable for
+development. Deleting the seam outright was the one thing the two changes
+disagreed on, and keeping it costs nothing once the default refuses: a
+fallback that reports a delivery is indistinguishable from a delivery only
+while it is the fallback.
 
 #### Scenario: A letter integriq accepted is recorded as sent
 @e2e exclude a cross-app dispatch with no reachable transport on this instance; covered by BerichtenboxServiceTest over a doubled dispatcher

@@ -100,6 +100,9 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // Detail-tab components (used as `component:` in sidebarTabs[])
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
+// Send digital post — the CaseDetail header action's compose surface.
+// @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
 import BeschikkingComposerDialog from './dialogs/BeschikkingComposerDialog.vue'
@@ -590,6 +593,14 @@ const registry = {
 	// mounts them as plain child components of TaskDetailView, the same way
 	// WorkflowTab mounts WorkflowEditor. A registry entry no manifest names
 	// resolves for nobody and is dead configuration.
+
+	// --- Send digital post, the CaseDetail header action (digital-post-consumes-integriq). ---
+	// @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+	BerichtenboxComposeDialog: {
+		kind: 'modal',
+		component: BerichtenboxComposeDialog,
+		_note: "Composes one letter to a citizen's digital post and posts it to BerichtenboxController#send, which hands it to IntegriqAdapter and integriq's typed send command. UNTIL 2026-09-18 THIS FILE WAS REFERENCED NOWHERE IN DOSSIQ: not here, not by src/manifest.json, not by another component, and the only occurrence of its name in the repository was its own `name:` line. The CaseDetail `send-digital-post` header action opens it now, and tests/vitest/registryOrphans.spec.js fails on a registered modal that no manifest action names, so it cannot go dark again quietly. It takes `open` beside its older `show` because `open` is what every other registry modal on this page is opened with and an action declaring the wrong one of the two would mount a dialog that renders nothing; `caseId` arrives as the unresolved `@objectId` token, as it does for BeschikkingComposerDialog, and the route answers instead. The recipient is read off the case's `initiatorSourceId` and only for an `initiatorType` of person, because a KvK number is not an address a letter can go to. A REFUSAL DOES NOT CLOSE IT: `sent` is emitted only for a send carrying a tracked message, and the provider's own sentence is shown, because a handler told which credential is missing can ask for it and a handler told \"sending failed\" cannot.",
+	},
 
 	// --- Generate document, the CaseDetail header action (documents-on-the-case). ---
 	// @spec openspec/specs/beschikking-generatie/spec.md
