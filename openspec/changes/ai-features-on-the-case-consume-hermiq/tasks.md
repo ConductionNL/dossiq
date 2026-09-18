@@ -49,32 +49,38 @@ under `tests/Unit/`, and its Vue specs under `tests/vitest/`.
 - [ ] 8.2 e2e coverage or a reason-bearing exclusion per scenario, per gate 19.
   - `tests/e2e/ai-features-on-the-case.spec.ts`
 
-## Rescue verdict, 2026-09-18: NOT LANDED, and why
+## Rescue, 2026-09-18: the client has its caller
 
-`feat/ai-features-on-the-case-consume-hermiq` had no pull request of any state
-and merges onto `parity/round2` cleanly. It is still not landable, and the
-repo's own guard is what says so:
+`feat/ai-features-on-the-case-consume-hermiq` had no pull request of any state,
+merged cleanly, and still failed the dark-capability guard: it shipped
+`HermiqAiFeatureClient` and nothing called it.
 
-    NoDarkCapabilityTest::testEveryDecidingClassIsCalledOrExplained
-    These classes are shipped and nothing calls them, so the capability does
-    not exist:  HermiqAiFeatureClient
+**It has a caller now, and building it meant building 1.2 first**, because the
+caller could not exist without the declaration it reads:
 
-**The caller belongs to a part nobody built.** The branch ships exactly one
-file from this task list — task 2.1's `HermiqAiFeatureClient` — and none of the
-classes the list names as its callers: `CaseTypeAiFeatures` (1.2),
-`CaseAiFeatureGateway` (3.1), `ReportGroupingConsumer` (4.1), nor the panel at
-3.2. There is no route, no controller method and no surface. A client with no
-caller is a capability that does not exist, and merging it would put the claim
-in the tree without the thing.
+- `Service\Ai\CaseTypeAiFeatures` (task 1.2) answers which features a case type
+  placed on which surface — `case`, `intake` or `none` — naming them by
+  hermiq's own slug so one feature is one thing across the two apps.
+- `AssistantController::aiFeatures()` and `GET /api/assistant/ai-features` join
+  that declaration to `HermiqAiFeatureClient::featureResidency()`.
 
-Two ways out, and neither is a merge decision:
+**The declaration is read locally FIRST, and hermiq is asked only when
+something was declared.** That is REQ-AIC-01 and it is a privacy rule before it
+is a feature flag: an undeclared case type must not have its cases sent
+anywhere to find out what is available. An empty declaration reaches no
+network at all.
 
-1. Build 1.2 and 3.1 — the gateway and the case-type declaration — which is
-   what would make the client answer somebody. That is the rest of this change,
-   not a rescue.
-2. Add the client to `DARK_TODAY` with what wiring it would take, which the
-   guard explicitly offers. That records the gap instead of hiding it, but it
-   still ships a class nobody asks.
+**A feature declared here but unknown to hermiq is reported unavailable, never
+as local.** An unknown residency shown as "here" is the one wrong answer this
+endpoint could give, and REQ-AIC-02 is explicit that dossiq holds no provider,
+model or residency of its own.
 
-The branch is left as it is. What must NOT happen is the third way: deleting
-the guard, or deleting the client to make a suite green.
+`none` is kept as a declaration rather than collapsed into absence: an
+administrator who considered a feature and switched it off has said something,
+and a later reader needs that apart from a case type nobody has looked at.
+
+**Still open on this change**, and not claimed by this rescue: 3.1's
+`CaseAiFeatureGateway` (the document-reference refusal), 3.2's
+`CaseAiFeaturesPanel.vue`, and 4.1's `ReportGroupingConsumer`. The endpoint is
+the surface's contract; the panel that renders it is nextcloud-vue's and
+dossiq's Vue half.

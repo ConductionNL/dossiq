@@ -67,6 +67,10 @@ $extra = [
         // case-assistant-surface; this app only enriches with case context.
     ['name' => 'assistant#availability', 'url' => '/api/assistant/availability', 'verb' => 'GET'],
     ['name' => 'assistant#converse',     'url' => '/api/assistant/converse',     'verb' => 'POST'],
+    // Which AI features a case type offers, and where each one runs. The
+    // declaration is read locally first, so an undeclared case type reaches
+    // no network at all (REQ-AIC-01).
+    ['name' => 'assistant#aiFeatures',   'url' => '/api/assistant/ai-features',  'verb' => 'GET'],
 
         // KCC Klantcontact (kcc-klantcontact-integratie).
         // Static/verb routes precede the {id} wildcard routes.
