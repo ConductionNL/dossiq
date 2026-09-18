@@ -260,7 +260,7 @@
             "type": "string",
             "title": "Name",
             "description": "What the step is called, for example Ontvankelijkheidstoets.",
-            "x-translatable": true,
+            "translatable": true,
             "facetable": true,
             "maxLength": 255
           },
@@ -268,7 +268,7 @@
             "type": "string",
             "title": "Description",
             "description": "What happens in this step.",
-            "x-translatable": true
+            "translatable": true
           },
           "leadTimeDays": {
             "type": "integer",
@@ -301,7 +301,7 @@
             "type": "string",
             "title": "Name",
             "description": "What the template is called where a handler picks one, for example Vraag advies aan juridische zaken.",
-            "x-translatable": true,
+            "translatable": true,
             "facetable": true,
             "maxLength": 255
           },
@@ -323,7 +323,7 @@
             "type": "string",
             "title": "Body",
             "description": "The text the template presets.",
-            "x-translatable": true
+            "translatable": true
           },
           "caseTypes": {
             "type": "array",
