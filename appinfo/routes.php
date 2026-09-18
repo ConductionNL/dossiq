@@ -904,6 +904,20 @@ $extra = [
         // schema has no manifest page, so this is the only way in.
     ['name' => 'bezwaarHearing#recordAttendance', 'url' => '/api/bezwaar/hearings/{sessionId}/attendance', 'verb' => 'POST'],
 
+    // The decision on an objection, Awb 7:11. `DecisionService` has held the
+    // whole disposition matrix since the bezwaar lifecycle shipped and no
+    // route reached any of it, so a jurist could hold the hearing and had
+    // nowhere to write what it decided.
+    ['name' => 'bezwaarDecision#draft',   'url' => '/api/bezwaar/{objectionId}/decision',          'verb' => 'POST'],
+    ['name' => 'bezwaarDecision#publish', 'url' => '/api/bezwaar/decisions/{decisionId}/publish',  'verb' => 'POST'],
+
+    // Which besluit an objection is against. A CONTROLLER and not a listener:
+    // no create event carries a contested decision, because which besluit is
+    // contested is a judgement a jurist makes rather than a fact the case
+    // already holds, and a guessed one files the objection against the wrong
+    // besluit.
+    ['name' => 'bezwaarObjection#open',   'url' => '/api/bezwaar/{caseId}/objection',              'verb' => 'POST'],
+
         // Archief / e-Depot handover is owned by OpenRegister (migrate-archival-to-or,
         // ADR-022): retention, transfer, proof and destruction run through OR's
         // /api/archival, /api/transfers, /api/settings/edepot surfaces. Dossiq

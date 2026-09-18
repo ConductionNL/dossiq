@@ -13,6 +13,13 @@
  * and `CaseAreaResolver`, `QueueItemLifecycle` and
  * `CaseTypeContributionRegistry` behind it.
  *
+ * ⚠️ TWO OF THESE WERE FIRST READ AS DUPLICATES AND NEITHER WAS. `DecisionService`
+ * was noted as superseded by a `BezwaarDecisionService` THAT DOES NOT EXIST, and
+ * `PdokBagService` as superseded by `BagApiAdapter`, which its own interface
+ * calls deliberately distinct. Both notes were written from the name alone. A
+ * class that looks like a duplicate is the one case where the sweep's answer has
+ * to be checked against the code before anybody deletes anything.
+ *
  * 🔴 A UNIT TEST OF THE CLASS CANNOT SEE THIS. A pure class answers the same
  * whether anybody asks it or not, so its own suite is green throughout, which
  * is why the shape survived four merges. Only a sweep over the whole tree can
@@ -99,7 +106,6 @@ class NoDarkCapabilityTest extends TestCase {
 		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. Needs the address seam decided first.',
 		'QueueItemLifecycle' => 'one-personal-queue (dossiq#2842): answers whether a queue item still stands, given the subject AS ITS MECHANISM ANSWERS IT NOW. QueueSource returns QueueItems and no subjects, so feeding it means widening the source contract. Its `onRemoveRequested` also expects a remove gesture the queue has no endpoint for.',
 		'CaseTypeContributionRegistry' => 'case-types under My work (2026-09-02): gathers work surfaces other apps contribute. Nothing reads it and no app contributes yet, so the caller is the contribution endpoint that has not been specified.',
-		'BezwaarCreationHook' => 'pre-parity (2026-06-03), bezwaar/beroep code extensions. Listed rather than fixed: it predates the parity round and belongs to the debt sweep.',
 		'CofinancieringValidator' => 'pre-parity (2026-06-04), subsidieverlening-keten. Debt sweep.',
 		'StaatssteunClassifier' => 'pre-parity (2026-06-04), subsidieverlening-keten. Debt sweep.',
 		'DsoLvAuthService' => 'pre-parity (2026-06-06), DSO Omgevingsloket. Debt sweep.',
@@ -112,8 +118,7 @@ class NoDarkCapabilityTest extends TestCase {
 		// first pass of this sweep reported them as called. They are the
 		// clearest evidence that prose about a class is not a caller.
 		'ContactBetrokkeneMapper' => 'pre-parity (2026-06-24), StUF-ZKN outbound gateway. Named in a docblock and constructed nowhere. Debt sweep.',
-		'DecisionService' => 'pre-parity (2026-05-19), bezwaar. Named in a docblock and constructed nowhere; `BezwaarDecisionService` is the one in use. Likely a retire rather than a wire. Debt sweep.',
-		'PdokBagService' => 'pre-parity (2026-05-19), PDOK. Named in a docblock and constructed nowhere; `BagApiAdapter` is the live path. Likely a retire rather than a wire. Debt sweep.',
+		'PdokBagService' => 'pre-parity (2026-05-19), PDOK. NOT a duplicate of BagApiAdapter, and the earlier note here saying so was wrong: `BagAdapterInterface` and `BagRegistrar` both say the two are DELIBERATELY distinct, the adapter being the paid Kadaster Bevragingen v2 and this the free BAG WFS mirror. Wiring it means a third `BagAdapterInterface` implementation and an `integration.bag.mode` value for it, so an instance with no Kadaster key gets real lookups instead of the dormant log. Not a retirement.',
 	];
 
 	/**
