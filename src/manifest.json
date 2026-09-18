@@ -3177,6 +3177,7 @@
 				"_crossDomainNote": "the-social-domain-plan-and-its-grounds REQ-XDV-01 and REQ-XDV-02, row 5.18. Whether an open case exists in another social-domain register, which one, and who to call. Three facts, and there is no show-more: purpose limitation between Wmo, Jeugdwet and Participatiewet does not allow the 360 view row 5.4 asks for, and every field beyond those three is one somebody has to justify. A modal rather than an api-call because the GROUND is the act and is chosen BEFORE the answer: a ground filled in afterwards is a formality, and choosing it first is what makes the log mean something when the person asks what was looked up about them. Not gated on a group here, deliberately: the guard is that a ground has been chosen, the service refuses without one before it reads anything, and it writes the ground, the person, the requester, the moment and what came back to `sociaalDomeinAuditLog` in the same act as the answer, which is the field that had been declared and unread since the register was written.",
 				"_rebindNote": "case-rebind (case-type-rebind): move a running case to a DIFFERENT case type, which the version move beside it refuses by design. A case filed under the wrong type used to be closed and refiled, with a new number, a new term and a paper trail that stops; a rebind keeps all three. It is a modal because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for and so is every property the target requires in that status. The action is gated on `visibleWhen` rather than on a group key, because an action carries no group vocabulary: the endpoint answers whether the caller is a case coordinator, and the service checks the same group itself, since a hidden button is not an authorization.",
 				"_versionMoveNote": "case-version-move (case-type-version-chain): move this case to another version of its OWN case type, which nothing could do. A case filed the day before a correction was published had to be closed and refiled under a new number. It is a modal and not a confirm-gated api-call because the PREVIEW is the act's substance: the person moving the case is shown the status it lands in, the statuses and fields the other version adds and drops, and which of the dropped fields this case has already answered. Every one of those, and the refusal when the other version has no status by the name this case is sitting in, comes from the server, so the dialog cannot disagree with the write. Moving a case to a DIFFERENT case type is a rebind and is not this act: `case-type-rebind` owns that and declares this change as its dependency. Hidden on a closed case, like the other acts that rewrite what governs it.",
+				"_sendDigitalPostNote": "digital-post-consumes-integriq, the `send-digital-post` header action. It opens BerichtenboxComposeDialog, which was referenced NOWHERE in dossiq until 2026-09-18: not by src/registry.js, not by this file, not by another component, and the only occurrence of its name in the repository was its own `name:` line. So the compose surface worked, the routing service worked, the message was stored on the case, and nobody could press anything to reach any of it. `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim and the dialog renders on `open`; `caseId` is passed for the same reason BeschikkingComposerDialog's is and is IGNORED while it holds the unresolved `@objectId` token, because open-modal resolves no tokens and the route answers instead. `visibleWhen` tests `initiatorType`, a materialised field on the CASE and therefore readable by a local predicate, exactly as `case-reopen` tests `isFinalStatus`: only a person has a digital post box, and a company case would otherwise offer a gesture whose recipient field can only be filled with a KvK number. It is NOT gated on integriq being installed, and that is deliberate: an instance without integriq refuses the send and names the missing app, which is a sentence a handler can act on, while a button that is simply absent is a capability nobody can ask about.",
 				"_exportDossierNote": "document-acts-reach-a-surface REQ-ZAK-022, the `export-dossier` header action. The whole case file as one download, over ZaakdossierDownloadController::downloadZip, which answers a DataDownloadResponse of a zip carrying manifest.csv at its root and one sub-folder per informatieobjecttype (ZipManifestBuilder). `download: true` is the shape that asks for the response as a blob and hands it to the browser; without it an api-call shows a success toast over a zip nobody receives. NOT `/api/dossier/{caseId}/export`, which the change's own tasks named: that route is DossierExportController and it answers a JSON export PLAN for a beroep dossier, not bytes, so an action declared on it would have downloaded a file called dossier.zip holding JSON. Both routes guard on CaseAccessGuard::hasCaseReadAccess and refuse with 403 and no bytes; the plan route had no test for that until this change and has one now. No `visibleWhen`: the export is offered on an open case and on a closed one, because the archive export of a CLOSED case is half of what this action is for. FolderZipOutline was not in src/icons.js and is registered now, because an unregistered name renders no icon at all rather than a fallback glyph (hydra gate-60).",
 				"headerActions": [
 					{
@@ -3303,6 +3304,22 @@
 						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
 						"target": "CaseLifecycleMenuDialog"
+					},
+					{
+						"id": "send-digital-post",
+						"type": "open-modal",
+						"target": "BerichtenboxComposeDialog",
+						"label": "Send digital post",
+						"icon": "Send",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"visibleWhen": {
+							"field": "initiatorType",
+							"op": "eq",
+							"value": "person"
+						}
 					},
 					{
 						"id": "export-dossier",
