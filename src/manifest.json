@@ -543,6 +543,67 @@
 			"type": "dashboard",
 			"title": "Dashboard",
 			"config": {
+				"_userLayoutNote": "a-dashboard-the-reader-arranges, rows 10.1 and 10.10. `userLayout` hands the GEOMETRY of this page to the reader and keeps MEMBERSHIP with the administrator: CnDashboardPage merges the stored arrangement over the manifest widgets, so a widget taken out of this file disappears for everybody whatever anybody dragged. A page without the key makes no layout request and renders as it always did, which is why declaring it early is safe and why it is also silent: measured 2026-09-18, the published @conduction/nextcloud-vue (3.2.0 installed, 3.3.0 latest) carries neither `mergeUserLayout` nor the dashboardLayouts store plugin, both of which sit on nextcloud-vue `parity/round2` (#1209) and in no release. Until that release lands these two keys are read by nothing, and a reader who never drags a widget cannot tell that apart from the feature working.",
+				"userLayout": true,
+				"userWidgets": [
+					{
+						"id": "cases-you-follow",
+						"kind": "object-list",
+						"label": "Cases you follow",
+						"widget": {
+							"type": "object-list",
+							"title": "Cases you follow",
+							"icon": "EyeOutline",
+							"content": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_watching": true,
+									"statusHiddenInLists": false,
+									"isDraft": false
+								},
+								"limit": 10,
+								"columns": [
+									{ "key": "identifier", "label": "Number" },
+									{ "key": "title", "label": "Title" },
+									{ "key": "deadline", "label": "Deadline" }
+								],
+								"rowRoute": "CaseDetail",
+								"emptyText": "Follow a case to keep an eye on it here"
+							}
+						}
+					},
+					{
+						"id": "your-teams-queue",
+						"kind": "object-list",
+						"label": "Your team's queue",
+						"widget": {
+							"type": "object-list",
+							"title": "Your team's queue",
+							"icon": "AccountGroupOutline",
+							"content": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"assignee": "IS NULL",
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false,
+									"isTemplate": false
+								},
+								"limit": 10,
+								"columns": [
+									{ "key": "identifier", "label": "Number" },
+									{ "key": "title", "label": "Title" },
+									{ "key": "deadline", "label": "Deadline" }
+								],
+								"rowRoute": "CaseDetail",
+								"emptyText": "Nothing is waiting in the shared queue"
+							}
+						}
+					}
+				],
+				"_userWidgetsNote": "REQ-DASH-021. Each preset carries its own register, schema and filter, so adding one asks the reader for nothing they do not have: a user has neither a register nor a schema in front of them, and a widget type that asks for one arrives as a blank card rather than a refusal. `_watching` is OpenRegister's own per-reader lens, the same one the Followed chip and the My Work tile read, so the three cannot disagree. The second preset is the SHARED QUEUE, the unclaimed work the Queue page is built on, and not `assignedGroup`, which is what the requirement asks for and what nothing can express today: measured 2026-09-18, `resolveFilterTokens` knows @me, @now, @today, @today±Nd, @monthStart, @quarterStart and @yearStart and no group token, the manifest schema's `sentinelFilterToken` pattern enumerates exactly those, and OpenRegister's reserved lens list carries no group lens either. A preset filtering `assignedGroup` on an unresolved token sends the literal string, matches nothing and arrives as a permanently empty card, which is the failure this requirement was written to prevent. The group-scoped variant waits on a `@myGroups` token in nextcloud-vue's `resolveFilterTokens` plus its pattern in `sentinelTokens.js`; that is the library's half and is recorded on this change rather than guessed at here.",
 				"description": "Case volume, status and performance across the team",
 				"headerActions": [
 					{
@@ -1040,6 +1101,7 @@
 			"title": "My Work",
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
 			"config": {
+				"userLayout": true,
 				"description": "Your open tasks, deadlines and open cases",
 				"headerActions": [
 					{
@@ -4139,6 +4201,7 @@
 			"title": "Processing time",
 			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
 			"config": {
+				"userLayout": true,
 				"description": "SLA adherence and processing time analysis",
 				"headerActions": [
 					{
@@ -4305,6 +4368,7 @@
 			"title": "Process mining",
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
+				"userLayout": true,
 				"description": "Bottleneck analysis from recorded case status history",
 				"pageFilters": [
 					{
@@ -5904,6 +5968,7 @@
 			"title": "Deadline monitoring",
 			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
 			"config": {
+				"userLayout": true,
 				"description": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
 				"widgets": [
 					{
