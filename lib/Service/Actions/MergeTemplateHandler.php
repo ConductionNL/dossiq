@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class MergeTemplateHandler implements ActionHandlerInterface {
+	use AddressesTheCase;
 	use HandlesTemplates;
 
 	/**
@@ -250,6 +251,11 @@ class MergeTemplateHandler implements ActionHandlerInterface {
 				'direction' => 'outgoing',
 				'auteur' => $this->currentAuthor(),
 				'format' => 'text/markdown',
+				// A letter that leaves the case names who it went to, and it
+				// names a party rather than a line of text. Empty when the
+				// case has no addressee and no requester: the handler fills
+				// it in on the document's properties.
+				'recipients' => $this->addressedParties(caseId: $caseId),
 			]
 		);
 

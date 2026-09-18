@@ -104,6 +104,11 @@ class CreateDocumentHandlerTest extends TestCase {
 					'direction' => 'outgoing',
 					'auteur' => 'Ruben',
 					'format' => 'text/markdown',
+					// No CorrespondentWriter is registered in this container,
+					// so the letter is filed WITHOUT an addressee rather than
+					// not filed. A letter on the case can be addressed later
+					// on its properties dialog; a letter never filed cannot.
+					'recipients' => [],
 				]
 			)
 			->willReturn(['id' => 'doc-9']);

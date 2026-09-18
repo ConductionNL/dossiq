@@ -336,6 +336,13 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 	 * same words the standard uses, so there is nothing to translate. Every
 	 * other enum needs a `valueMapping` and a `zgw_enum_reverse` call.
 	 *
+	 * `verzending.relationshipType` joined them deliberately:
+	 * document-correspondents constrained it to `afzender, geadresseerde`,
+	 * which are the two values ZGW's own `Verzending.aardRelatie` declares
+	 * AND the two link roles the case schema declares. One word for one
+	 * meaning across the standard, the register and the People tab. A
+	 * translation table here would be three spellings to keep in step.
+	 *
 	 * @var string[]
 	 */
 	private const SAME_VOCABULARY_ON_BOTH_SIDES = [
@@ -346,6 +353,7 @@ class ZgwMappingSchemaTypeTest extends TestCase {
 		'resultaattype.archivalAction',
 		'informatieobjecttype.confidentiality',
 		'enkelvoudiginformatieobject.confidentiality',
+		'verzending.relationshipType',
 	];
 
 	/**
