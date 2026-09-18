@@ -1162,10 +1162,10 @@
     },
     {
       "file": "lib/Service/TermijnService.php",
-      "method": "getTermijnDefinitie",
+      "method": "definitionsFor",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`getTermijnDefinitie()` answers `return null` when the read fails; the catch logs at warning (\"TermijnService.getTermijnDefinitie lookup failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`definitionsFor()` answers `return []` when the read fails; the catch logs at warning (\"TermijnService.definitionsFor lookup failed\"), so a failed read and a case type with no definition are the same answer. This is the SAME catch the entry named `getTermijnDefinitie#1` covered: `term-configuration-beyond-the-case-type` split the read out so several definitions can be resolved between, and the method moved with it. The entry moved rather than being added, so the ceiling does not rise for a catch that already existed."
     },
     {
       "file": "lib/Service/TermijnService.php",
@@ -1691,6 +1691,13 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`caseTypeOf()` answers `return []` when the case type could not be read; the catch logs at warning naming the case type. An empty case type declares no admissibility judgement, and `judge()` then refuses the verdict with `admissibility-not-declared` rather than closing a case on a declaration nobody read. The empty value is therefore never the path to a write."
+    },
+    {
+      "file": "lib/Service/Term/FirstResponseOutcome.php",
+      "method": "casesWithAnOutcome",
+      "occurrence": 1,
+      "class": "read-miss",
+      "reason": "`casesWithAnOutcome()` answers `return []` when the read fails; the catch logs at warning (\"Dossiq: the first-response report could not be read\"), so a failed read and a quarter in which nothing was recorded are the same answer. The report is a count over what IS stored, and a report that threw would take the deadline dashboard down with it for a number nobody is owed instantly."
     }
   ]
 }

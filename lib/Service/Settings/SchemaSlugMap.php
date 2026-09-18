@@ -109,6 +109,17 @@ class SchemaSlugMap {
 		'partnerOrganization' => 'partner_organization_schema',
 		'sharePermissionLevel' => 'share_permission_level_schema',
 		'casetransfer' => 'case_transfer_schema',
+		// The dated chain of holdings, and the pull that asks for one. Both are
+		// custody-and-handover-of-a-case: the chain answers who held the case
+		// in March, which the transfer record cannot, and the takeover is the
+		// request the holder answers.
+		'caseCustody' => 'case_custody_schema',
+		'caseTakeover' => 'case_takeover_schema',
+		// The sociaal-domein consent. Declared in `register.d/50-sociaal-domein.json`
+		// since that fragment shipped and never mapped, so no service could
+		// resolve it and the hand-off gate had nothing to read. Mapping it is
+		// what turns a declared record into an enforced precondition (D-5).
+		'toestemming' => 'consent_schema',
 		'caseFederatedShare' => 'case_federated_share_schema',
 		'caseFederatedActivity' => 'case_federated_activity_schema',
 		'automaticAction' => 'automatic_action_schema',
@@ -278,6 +289,12 @@ class SchemaSlugMap {
 		// same reason `x-openregister-read-state` is: an absent block is not
 		// an inert default, it is a different answer.
 		'x-openregister-dedup',
+		// What happens when two cases become one. OpenRegister's MergeService
+		// reads this block off `Schema::getConfiguration()`, and an absent
+		// block is not an inert default: the reversal window falls back to the
+		// service default, so a merge an instance believes it can still undo
+		// may already be past undoing. Same reason as the dedup key above.
+		'x-openregister-merge',
 		// Which edge a grant travels down. OpenRegister resolves an inherited
 		// grant from `Schema::getConfiguration()` and from nowhere else, and
 		// an unknown configuration key is DROPPED on import in silence, so an

@@ -650,6 +650,8 @@
 					},
 					{
 						"id": "kpi-sla-compliance",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The share of cases met within their term is a figure about the team's performance, and it is the one tile on this page that is. The rest of the page is the reader's own work and the counts the lists already show them, so this tile is declared and the others are allowlisted with that reason in WidgetDeclaresRolesTest. `slaCompliance` leaves the payload entirely for a reader without the role: a tile hidden with a `v-if` still puts its number in the network tab (ADR-004).",
 						"type": "stat",
 						"title": "SLA Compliance",
 						"_note": "openspec/specs/dashboard/spec.md DASH-001e. Reads the share of this month's closed cases whose endDate met their deadline, computed server-side by KpiAggregationService. Clicking opens the doorlooptijd dashboard, as the scenario requires.",
@@ -1948,6 +1950,10 @@
 									"label": "Related"
 								},
 								{
+									"widgetId": "case-custody-panel",
+									"label": "Custody"
+								},
+								{
 									"widgetId": "case-archival-panel",
 									"label": "Archiving"
 								}
@@ -2484,7 +2490,7 @@
 										"type": "case-related-planned",
 										"title": "Case type, parent & related cases",
 										"icon": "LinkVariant",
-										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)."
+										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3). Waits on and blokkeert appear here with no section of their own: the pair is declared on the case schema as `x-openregister-relation-types`, and this widget groups by the label OpenRegister answers per direction. A hand-written section for either half would list the same links a second time, under a name this file chose rather than the one the schema did."
 									}
 								},
 								{
@@ -2651,6 +2657,13 @@
 						"title": "New since you last looked",
 						"icon": "BellBadgeOutline",
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
+					},
+					{
+						"id": "case-custody-panel",
+						"type": "case-custody-pane",
+						"title": "Custody",
+						"icon": "AccountSwitchOutline",
+						"_note": "Who has held this case, and who is asking for it (registry type case-custody-pane -> CaseCustodyPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, which is how two earlier panels in this app shipped as an empty tab that logged nothing. It sits beside Timeline rather than inside it on purpose: the timeline says what CHANGED and this says who HELD it, and reading a sequence of diffs back into a holding is a reconstruction rather than a record. It is a custom widget and NOT a data widget because a holding is only meaningful as a JOIN, between the moment one holding ended and the moment the next began; a row of values per holding would look complete on a chain with a gap in it."
 					},
 					{
 						"id": "case-archival-panel",
@@ -3011,6 +3024,23 @@
 						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
 						"target": "CaseLifecycleMenuDialog"
+					},
+					{
+						"id": "case-merge",
+						"type": "open-modal",
+						"target": "CaseMergeDialog",
+						"label": "Merge into",
+						"icon": "CallMerge",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"_note": "Two cases for one request become one (REQ-CM-37). Hidden on a closed case, because a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog: hiding them here would leave a handler wondering why an act they were told about is not there.",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
 					},
 					{
 						"id": "case-claim",
@@ -3978,26 +4008,36 @@
 				"widgets": [
 					{
 						"id": "dt-kpis",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "dt-charts",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Compliance",
 						"type": "custom"
 					},
 					{
 						"id": "dt-woo",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Woo statutory deadlines",
 						"type": "custom"
 					},
 					{
 						"id": "dt-atrisk",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Cases at risk",
 						"type": "custom"
 					},
 					{
 						"id": "dt-breakdown",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the team lead group and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Performance by case type",
 						"type": "custom"
 					}
@@ -4091,26 +4131,36 @@
 				"widgets": [
 					{
 						"id": "pm-kpis",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "pm-dwell",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Dwell time by status",
 						"type": "custom"
 					},
 					{
 						"id": "pm-throughput",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Throughput (cases closed per week)",
 						"type": "custom"
 					},
 					{
 						"id": "pm-bottlenecks",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the team lead group.",
 						"title": "Bottleneck ranking",
 						"type": "custom"
 					},
 					{
 						"id": "pm-dwell-by-assignee",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell time PER HANDLER: the one tile on this dashboard that names people, and the reason the rest of the page is declared for the team lead group rather than left open. It arrived on the integration branch while this change was in flight and the structural test caught it on the merge, which is exactly what that test is for.",
 						"title": "Dwell time by handler",
 						"type": "custom"
 					}
@@ -5417,16 +5467,22 @@
 				"widgets": [
 					{
 						"id": "td-kpis",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "td-quarterly",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Quarterly report",
 						"type": "custom"
 					},
 					{
 						"id": "td-annual",
+						"roles": ["dossiq-teamleider"],
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Annual dwangsom audit",
 						"type": "custom"
 					}

@@ -38,13 +38,15 @@ use PHPUnit\Framework\TestCase;
  */
 class IncidentAndSplitShippedTest extends TestCase {
 	/**
-	 * The highest register version claimed ahead of this change: 0.20.1 on the
-	 * integration branch, and 0.20.2, 0.20.3 and 0.20.4 on the three branches
-	 * that merge before it.
+	 * The highest register version claimed ahead of this change. 0.20.3 was
+	 * taken THREE times on the integration branch at once (#2923, #2937 and
+	 * #2936), each writing the identical line, which merges in silence and
+	 * makes every later import skip; the branches ahead of this one then take
+	 * 0.20.6 and 0.20.7 to carry what accumulated under it.
 	 *
 	 * @var string
 	 */
-	private const FLOOR = '0.20.4';
+	private const FLOOR = '0.20.7';
 
 	/**
 	 * The shipped register.
