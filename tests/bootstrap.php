@@ -472,7 +472,14 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 // IntakeMessageRoutedEvent rides the same loop (an-intake-message-opens-a-case):
 // integriq's channel intake asks whoever owns the target to open one, and
 // IntakeMessageRoutedListener answers it by name for the same reason.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent'] as $stubEvent) {
+// The two digital post events ride the same loop (digital-post-reaches-integriq):
+// IntegriqAdapter dispatches DigitalPostSendRequestedEvent and reads its result
+// slot, and DigitalPostDeliveredListener consumes DigitalPostDeliveredEvent,
+// both resolved by name so dossiq stays installable without integriq. Without
+// these stubs the adapter's resolve would only ever answer null, every test
+// would exercise the absent branch alone, and the branch that turns a handled
+// event with no tracked message into a refusal could never be reached.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
