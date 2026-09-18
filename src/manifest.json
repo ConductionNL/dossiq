@@ -1880,6 +1880,20 @@
 						"label": "Sub-cases",
 						"formatter": "subCaseCount",
 						"widget": "badge"
+					},
+					{
+						"key": "besluitdatum",
+						"label": "Decision date",
+						"_note": "columns-follow-the-case-type, row 11.9. The three columns below this line are on the page so a CASE TYPE can ask for them. A scope selects from the page's declared set and cannot add to it, so a case type naming a column the page does not carry has that column dropped in silence, which reads as a case type whose own columns did not take. They sit at the end because the All cases folder shows the page's list in order, and a permit's decision date is not a column a complaint's reader wants third."
+					},
+					{
+						"key": "procedureType",
+						"label": "Procedure"
+					},
+					{
+						"key": "riskLevel",
+						"label": "Risk",
+						"widget": "badge"
 					}
 				],
 				"sidebar": {
