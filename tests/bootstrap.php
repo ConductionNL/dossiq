@@ -469,7 +469,10 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 // classes by name so dossiq stays installable without integriq. The stubs
 // mirror integriq's real constructor signatures verbatim and no-op when the
 // real classes are present.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $stubEvent) {
+// IntakeMessageRoutedEvent rides the same loop (an-intake-message-opens-a-case):
+// integriq's channel intake asks whoever owns the target to open one, and
+// IntakeMessageRoutedListener answers it by name for the same reason.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
