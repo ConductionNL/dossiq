@@ -114,5 +114,22 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\IntakeMessageRoutedListener::class
 			);
 		}
+
+		// digital-post-reaches-integriq: what became of a letter. integriq
+		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
+		// tracked message, `failed` and `read` included, so this is how a case
+		// learns that a letter did not arrive rather than going on showing the
+		// last good news anyone heard. FQN string and a `class_exists` guard,
+		// the same as the three above and for the same reason.
+		//
+		// It fails towards doing nothing: a wrong name registers nothing, the
+		// stored message keeps the status the send gave it, and nobody is told
+		// a letter arrived that did not.
+		if (class_exists(\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT,
+				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::class
+			);
+		}
 	}//end register()
 }//end class

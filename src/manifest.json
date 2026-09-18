@@ -2143,6 +2143,10 @@
 								{
 									"widgetId": "case-archival-panel",
 									"label": "Archiving"
+								},
+								{
+									"widgetId": "case-knowledge-panel",
+									"label": "Knowledge"
 								}
 							]
 						}
@@ -2910,6 +2914,14 @@
 						"title": "Archiving",
 						"icon": "ArchiveOutline",
 						"_note": "What happens to this case when its business use ends, as openregister decided it (registry type case-archival-pane -> CaseArchivalPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, so the type custom this shipped as drew an empty Archiving tab and logged nothing. Every value is read off @self._retention, which openregister writes once at closure with the rule and the selectielijst row that produced it; the panel derives nothing, because a second derivation would eventually disagree with the stored one and a records manager reading a disposal date could not tell which of the two they were looking at. It is a custom widget and NOT a data widget: a data widget builds its fields from the schema's own properties, and _retention is metadata attached on the render path, so every field would render blank. An unnominatable case is drawn apart from a case nobody has closed yet, on purpose: the two look the same from an absent appraisal and only one of them is somebody's problem today. Recomputing asks for a reason before it sends, because openregister refuses a recomputation without one and meeting that refusal after the click teaches the archivist nothing."
+					},
+					{
+						"id": "case-knowledge-panel",
+						"type": "integration",
+						"integrationId": "collectives",
+						"title": "Knowledge",
+						"icon": "BookOpenPageVariant",
+						"_note": "knowledge-base-on-the-case, row 11.26. The pages that explain this case, through OpenRegister's `collectives` leaf. dossiq stores no article text and renders no wiki of its own: Collectives owns the page, its history, its versions and its team, and the team is what makes visibility per role, because a collective is scoped to a Nextcloud team and `roleType.ncGroupId` already names the group behind a role. So a handler who may not read a page in Collectives does not read it through a case either, and there is nothing here to enforce or to leak. TYPE `integration` AND NOT A REGISTRY KEY: this page already consumes leaves that way (`case-files`, `case-kpis-hours`, `case-payment-requests`), the leaf descriptor carries its own `requiredApp: \"collectives\"`, and a leaf whose app is absent is never registered, so the tab goes missing rather than drawing an empty knowledge base. `leafTab()` in src/registry.js exists for `component:` SIDEBAR tabs, and adding a second way to place the same leaf on the same page is how two placements drift. `xwiki` is in `case.linkedTypes` beside it for the municipalities that run one; the two are alternatives and neither is required, so only the leaf that is installed registers and only that tab appears."
 					},
 					{
 						"id": "case-attention",
@@ -6303,7 +6315,8 @@
 								"handlingModel",
 								"confidentiality",
 								"coordinatorRequiredBeforeSigning",
-								"isDraft"
+								"isDraft",
+								"knowledgeBasePage"
 							],
 							"hideEmpty": false
 						}
