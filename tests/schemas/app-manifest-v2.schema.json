@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.33.0",
+	"version": "2.34.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -737,6 +737,35 @@
 				"paneWidth": {
 					"type": "string",
 					"description": "CSS width of the detail pane, e.g. '38%' or '520px'. Defaults to '42%'."
+				}
+			}
+		},
+		"savedViewPlaces": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "A saved view of this page is a place. buildManifestRoutes() emits <route>/<routeBase>/:viewId under the name <pageId>__view, the view's own presentation config decides how it opens, and a pinned view hangs under this page's navigation entry rather than beside it. Index pages only, and only meaningful alongside allowSavedViews: without the dropdown there is no view to be a place. Absent, the page keeps the dropdown and the ?view= query it has today.",
+			"properties": {
+				"enabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether this page's saved views are places. False reads as a page that considered it and declined, and renders exactly as a page that never named the key."
+				},
+				"routeBase": {
+					"type": "string",
+					"pattern": "^[a-z0-9][a-z0-9-]*$",
+					"default": "views",
+					"description": "The path segment between the page's own route and the view id, so 'views' gives /cases/views/42. Lowercase and dash only, because it is a segment of an address a person reads and sends."
+				},
+				"navGroup": {
+					"type": "string",
+					"description": "The id of the navigation entry a pinned view hangs under. Omitted, it hangs under the entry that points at this page. A pinned view never becomes a top-level entry, so an app's navigation budget cannot be spent by a user pinning (ADR-097)."
+				},
+				"pinnedCap": {
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 20,
+					"default": 5,
+					"description": "How many pinned views the navigation renders under that entry. Past the cap the rest stay reachable from the page itself, so a person who pins twenty views gets a navigation that still reads (ADR-097)."
 				}
 			}
 		},
@@ -2317,6 +2346,10 @@
 					"$ref": "#/$defs/splitView",
 					"description": "Index pages only. Opens a row beside the list rather than instead of it, at the sibling route <route>/split/:id that buildManifestRoutes() emits. Refused on any other page type."
 				},
+				"savedViewPlaces": {
+					"$ref": "#/$defs/savedViewPlaces",
+					"description": "Index pages only. Makes each saved view of this page a place: its own route, the presentations its view config declares, and an entry under this page's navigation entry once a user pins it. Refused on any other page type."
+				},
 				"manualOrder": {
 					"type": "boolean",
 					"default": false,
@@ -2715,7 +2748,7 @@
 			},
 			"allOf": [
 				{
-					"description": "splitView and manualOrder are index-page mechanics. splitView emits a second route beside an index route and mounts the detail pane inside CnIndexPage; manualOrder holds a per-user row order for a list. Declared on a detail, dashboard or custom page they would validate and then do nothing, which is the failure this branch refuses out loud (case-page-and-list-as-a-place).",
+					"description": "splitView, manualOrder and savedViewPlaces are index-page mechanics. splitView emits a second route beside an index route and mounts the detail pane inside CnIndexPage; manualOrder holds a per-user row order for a list; savedViewPlaces turns this page's saved views into addressable places. Declared on a detail, dashboard or custom page they would validate and then do nothing, which is the failure this branch refuses out loud (case-page-and-list-as-a-place, saved-view-as-a-place).",
 					"if": {
 						"not": {
 							"properties": { "type": { "const": "index" } },
@@ -2726,7 +2759,8 @@
 						"not": {
 							"anyOf": [
 								{ "required": ["splitView"] },
-								{ "required": ["manualOrder"] }
+								{ "required": ["manualOrder"] },
+								{ "required": ["savedViewPlaces"] }
 							]
 						}
 					}
