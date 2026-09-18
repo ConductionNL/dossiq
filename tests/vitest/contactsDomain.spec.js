@@ -180,12 +180,17 @@ describe.each([
 		expect(p.component).toBeUndefined()
 	})
 
-	it('carries the card, the cases and the moments', () => {
+	it('carries the card, the cases, the moments and the documents', () => {
 		const p = get()
 		expect(p.config.widgets.map((w) => w.id)).toEqual([
 			'contact-card',
 			'contact-cases',
 			'contact-moments',
+			// The third question this page is for (#2993): what did we send
+			// them, and what did they send us. It reads last because the other
+			// three answer who they are and what is running, and a document is
+			// only meaningful against those.
+			'contact-documents',
 		])
 		expect(widget(p, 'contact-card').content.editable).toBe(false)
 	})

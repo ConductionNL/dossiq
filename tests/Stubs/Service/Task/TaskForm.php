@@ -52,15 +52,15 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Task\\TaskForm', false) === fals
          * @param string                                         $schema           The subject schema reference.
          * @param string|null                                    $action           The lifecycle action, if any.
          * @param array<int, array{field: string, required: bool}> $fields          The declared fields.
-         * @param string|null                                    $formId           The bound external form.
+         * @param int|null                                       $formId           The bound external form.
          * @param boolean                                        $requireChecklist Whether a checklist is required.
          */
         public function __construct(
-            public readonly ?string $kind = null,
+            public readonly ?string $kind,
             public readonly string $schema = '',
             public readonly ?string $action = null,
             public readonly array $fields = [],
-            public readonly ?string $formId = null,
+            public readonly ?int $formId = null,
             public readonly bool $requireChecklist = false,
         ) {
         }//end __construct()

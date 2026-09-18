@@ -156,7 +156,7 @@
         "digest": "c557d3536bbdbfb337d3043d5cb27cb8cdd5b7a61d71e02a67b51993c1527344"
     },
     "lib/Settings/dossiq_mock_register.json::contactmoment": {
-        "version": "1.4.0",
+        "version": "1.5.0",
         "digest": "d66a1682d798cf119c3d457345744598dcd5a8213e1381bffac4369ab7a67bab"
     },
     "lib/Settings/dossiq_mock_register.json::customerContact": {
@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.30.0",
-        "digest": "f199b156a7daf367b37050961a9d4fe537b7b4ecb4a3ccb98d18e486ddb1a36f"
+        "version": "1.31.0",
+        "digest": "d98a2e2372f86f4645b1bdece167618a4ce04b565eb41d1579814aea47c4aedc"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -975,6 +975,10 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/38-channel-intake.json::mailIntakeEntry": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
     "lib/Settings/register.d/38-markers-and-assessments.json::case": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
@@ -1000,6 +1004,10 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/39-case-access-links.json::caseShare": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/39-case-type-list-layout.json::caseType": {
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
@@ -1050,6 +1058,14 @@
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::syncQueue": {
         "version": "1.0.0",
         "digest": "4e0d15c6c85579c1595d686d7ad163d507c6bf3122148405ef7c2ef3b6172bbb"
+    },
+    "lib/Settings/register.d/41-case-knowledge-base.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/42-filterable-case-fields.json::propertyDefinition": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/48-starter-content.json::case": {
         "version": "",
