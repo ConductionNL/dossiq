@@ -452,6 +452,11 @@ class TermijnService {
 	 * @param string $termInstanceId Instance id.
 	 * @param DateTimeImmutable|null $voltooiDatum When completed (default now).
 	 * @param string $documentLink Optional document ref.
+	 * @param string $rationale Why the term ended, as the timeline will read it.
+	 *        The default names a beschikking because that is what closed every
+	 *        term before another act could: a merge closes one too, and a
+	 *        timeline that calls it a beschikking says the case was decided
+	 *        when it was not.
 	 *
 	 * @return array<string, mixed>|null
 	 *
@@ -461,6 +466,7 @@ class TermijnService {
 		string $termInstanceId,
 		?DateTimeImmutable $voltooiDatum = null,
 		string $documentLink = '',
+		string $rationale = 'Termijn voltooid door beschikking',
 	): ?array {
 		$voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
 
@@ -474,7 +480,7 @@ class TermijnService {
 				termInstanceId: $termInstanceId,
 				type: 'voltooi',
 				basis: 'AWB 4:13',
-				rationale: 'Termijn voltooid door beschikking',
+				rationale: $rationale,
 				daysImpact: 0,
 				moment: $voltooiDatum,
 				documentLink: $documentLink,
@@ -484,7 +490,7 @@ class TermijnService {
 			// same operation that made the term terminal (REQ-TOT-001).
 			$this->timerService?->cancelForInstance(
 				instanceId: $termInstanceId,
-				reason: 'Termijn voltooid door beschikking'
+				reason: $rationale
 			);
 		}
 

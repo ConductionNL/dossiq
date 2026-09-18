@@ -1536,7 +1536,36 @@
                 "configuration": {
                     "x-openregister-merge": {
                         "entityType": "case",
-                        "reversalWindowDays": 7
+                        "statusField": "mergeState",
+                        "survivorStatus": "active",
+                        "mergedStatus": "merged",
+                        "reversalWindowDays": 7,
+                        "x-dossiq-relink": [
+                            {
+                                "schema": "role",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseDocument",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseObject",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseProperty",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "customerContact",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "decision",
+                                "field": "case"
+                            }
+                        ]
                     },
                     "x-openregister-dedup": {
                         "blockingKeys": [
@@ -2864,6 +2893,38 @@
                         "title": "Merged into",
                         "description": "The case this one was merged into. Written by CaseMergedListener when OpenRegister reports the merge, and cleared when the merge is reversed inside its window. The old case number keeps working: mail matching and the public status page follow this reference until they reach a case that carries none.",
                         "order": 27
+                    },
+                    "mergeRelinked": {
+                        "type": "array",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Relinked at merge",
+                        "description": "Which rows moved to the survivor when this case was merged away, so a reversal can put exactly those back. Written by CaseMergeService; empty on every case that was never merged.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "schema": {
+                                    "type": "string",
+                                    "title": "Schema"
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Row"
+                                }
+                            }
+                        }
+                    },
+                    "mergeState": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "merged"
+                        ],
+                        "default": "active",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Merge state",
+                        "description": "Whether this case is still its own case. The OpenRegister merge engine writes this field and reads it back, which is why it is a plain value of its own and not the ending act: the engine compares it as a string and refuses a survivor that is not active. An absent value reads as active, so every case written before merging existed stays mergeable."
                     },
                     "duplicateOverrideOf": {
                         "type": "array",
