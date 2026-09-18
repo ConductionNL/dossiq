@@ -1,6 +1,6 @@
 ---
 kind: config
-depends_on: [documents-on-the-case]
+depends_on: [documents-on-the-case, gemachtigde-role-on-every-case-type]
 ---
 
 # Proposal: document-correspondents
@@ -26,39 +26,58 @@ The best competitor in the register: xxllnc Zaken,
 
 ## What changes
 
-- `sender` and `recipient` on the document projection that
-  `documents-on-the-case` declares for a Files node on a case, each a
-  reference to a party or a free-text name, plus `direction`.
-- The beschikking delivery writes `recipient` and `direction: outbound`
-  when it files the letter; the mail intake writes `sender` and
-  `direction: inbound` from the message's From header.
-- The Files tab shows Sender and Recipient as columns.
-- The `dispatch` schema is retired: its two fields live on the projection.
+- `sender` and `recipients` on the `informatieobject` schema, each holding
+  a party OF THE CASE in the role `afzender` or `geadresseerde`. Never a
+  typed name. `direction` is already there and keeps its three values.
+- Every write that files an outgoing document sets `recipients` and
+  `direction: outgoing`; the mail intake sets `sender` and
+  `direction: incoming`, matching the From address against the parties of
+  the case.
+- The document properties dialog edits both with a party picker, offering
+  exactly the parties the case has.
+- The dossier listing carries both, resolved to names, so a row can show
+  them and the tab can filter on a correspondent.
+- The People tab shows, per party, the documents they sent and received.
+- A `dispatch` record is written per correspondent, which is the first
+  writer that schema has had.
 
 ## Ownership
 
-dossiq builds the two fields, the two writers and the retirement. It
-consumes `documents-on-the-case` (dossiq, open, 2 of 13 tasks) for the
-projection, integriq's mail intake for the inbound write (the start-a-case
-offer of `leaf-integrations`, shipped), and the Files tab columns from
-nextcloud-vue, to be specified in nextcloud-vue under the register's slug
-`files-browser-columns` (row 4.8). Until that lands the two fields are
-visible in the document's properties dialog.
+dossiq builds the two fields, the writers and the surfaces. It consumes
+the party model from openregister#3761 (`GET /api/objects/{r}/{s}/{id}/parties`
+and `ContactService::getContactsForObject`) and the six generic link roles
+the `gemachtigde-role-on-every-case-type` change put on the case schema. The
+Files tab's own extra columns wait on nextcloud-vue `files-browser-columns`
+(row 4.8); until that lands the manifest declares them and the properties
+dialog and the dossier listing carry the values.
 
 ## ADRs
 
 - Company ADR-031: correspondents are declared fields, not a service.
-- Company ADR-075: one document channel; the delivery that files the
-  letter is the one that writes the recipient.
+- Company ADR-037: the schema change ships as a `register.d/` fragment.
+- Company ADR-022: the party model is read from OpenRegister, not wrapped.
 
 ## Capabilities
 
-- Modified: `document-zaakdossier`: a document knows its sender and
-  recipient.
+- Modified: `document-zaakdossier`: a document knows its sender and its
+  recipients, and both are parties.
 
 ## Impact
 
-The projection schema in `documents-on-the-case`; `lib/Service/Beschikking/`
-delivery; the intake listener of `leaf-integrations`;
-`lib/Settings/dossiq_register.json` (`dispatch` removed, with its seed);
-`src/manifest.json` `#CaseDetail` Files columns.
+`lib/Settings/register.d/71-document-correspondents.json` (new);
+`lib/Service/Zaakdossier/` (the rules and the writer);
+`lib/Service/ZaakdossierService.php` (upload and metadata);
+`lib/Service/Actions/MergeTemplateHandler.php` (the outgoing letter);
+`lib/Service/Email/InboundMailIntake.php` (the incoming message);
+`src/modals/DocumentMetadataDialog.vue`;
+`src/components/case/CasePartiesWidget.vue`; `src/manifest.json`.
+
+## Superseded within this change
+
+The first draft of 2026-09-13 modelled each correspondent as
+`{party?: ref, name: string}` and retired the `dispatch` schema. Both are
+reversed here. Free text was dropped because a typed name cannot be
+counted, cannot be filtered, and goes stale the day the party is
+corrected. `dispatch` is kept because it is the ZGW Verzending record and
+the natural home for the per-send date, and because the parties change that
+landed in between (dossiq#2849) made a real party the thing to point at.

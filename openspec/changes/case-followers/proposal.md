@@ -10,9 +10,9 @@ assignee" (`procest/_gaps/gap-register.md` in
 ConductionNL/market-intelligence, 2026-09-13). Rated no, owner openregister,
 slug `object-watchers`, size S. The register's second pick to build first:
 "eight of eight non-Dutch systems pass it and dossiq is the only no". This
-change is dossiq's half, opened in this lane because the half is a surface
-(a Follow action and a Followed lens); the subscription itself is
-openregister's `object-watchers`, to be specified there.
+change is dossiq's half: a surface. The subscription itself is
+openregister's `object-watchers`, which has since landed on openregister
+`development`.
 
 ## Why
 
@@ -26,19 +26,21 @@ Subscribed Tickets; eight of eight non-Dutch systems
 
 ## What changes
 
-- Header action Follow and Unfollow on `#CaseDetail`, writing the
-  platform's per-user, per-object subscription.
-- A Followed lens on `#Cases` and a tile Cases I follow on `#MyWorkHome`.
+- A Follow strip on `#CaseDetail`, beside the star, writing the platform's
+  per-user, per-object subscription. A strip and not a header action
+  (D-1): `api-call` writes POST or PUT only, and stopping is a DELETE.
+- A Followed lens on `#Cases` and a tile Cases you follow on `#MyWorkHome`,
+  both over the platform's `_watching` lens.
 - A Followers section on the People tab of the case.
-- Followers receive the case's notifications as the platform's
-  subscription defines; dossiq adds no dispatch.
+- The case schema addresses its watchers on a status move and on an
+  escalation, through the platform's `{"watchers": true}` recipient block.
+  dossiq adds no dispatch.
 
 ## Ownership
 
-dossiq builds the action, the lens, the tile and the section. It consumes
-openregister `object-watchers`, to be specified in openregister under that
-slug (row 13.18): the subscription object, the `@me`-scoped query and the
-notification fan-out.
+dossiq builds the strip, the lens, the tile, the section and the recipient
+block. It consumes openregister `object-watchers` for the subscription
+object, the `@me`-scoped query and the notification fan-out.
 
 ## ADRs
 
@@ -53,5 +55,7 @@ notification fan-out.
 ## Impact
 
 `src/manifest.json` `#CaseDetail`, `#Cases`, `#MyWorkHome`;
-`tests/vitest/caseActionsMenu.spec.js`, `caseListLenses.spec.js`; one e2e
-spec. No PHP.
+`src/services/watcherApi.js`, two components, `src/registry.js`,
+`src/icons.js`; `lib/Settings/dossiq_register.json` (the case schema's
+notification rules, version 1.24.0); `tests/vitest/caseFollowers.spec.js`,
+`caseListLenses.spec.js`; `tests/e2e/case-followers.spec.ts`. No PHP.

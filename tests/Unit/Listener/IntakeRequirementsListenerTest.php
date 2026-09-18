@@ -40,13 +40,17 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
 use OCA\Dossiq\Service\Intake\ClassificationSchemes;
+use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 
 /**
@@ -122,6 +126,12 @@ class IntakeRequirementsListenerTest extends TestCase {
 				schemes: new ClassificationSchemes(appConfig: $appConfig)
 			),
 			narrowing: new AssigneeNarrowing(),
+			duplicates: new DuplicatePolicy(
+				container: $this->createMock(originalClassName: ContainerInterface::class),
+				groupManager: $this->createMock(originalClassName: IGroupManager::class),
+				logger: new NullLogger()
+			),
+			userSession: $this->createMock(originalClassName: IUserSession::class),
 			logger: new NullLogger(),
 		);
 	}//end setUp()

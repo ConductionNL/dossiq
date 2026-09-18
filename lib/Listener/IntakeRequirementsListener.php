@@ -10,10 +10,10 @@
  *
  * `ObjectCreatingEvent` is pre-persist and stoppable, so this refuses the save
  * itself rather than cleaning up after it. `LocationBagValidationListener` uses
- * the same mechanism for the BAG claim; this is the same shape with three
+ * the same mechanism for the BAG claim; this is the same shape with four
  * declarations behind it.
  *
- * WHY THE UPDATE EVENT ENFORCES ONLY ONE OF THE THREE. What must be answered
+ * WHY THE UPDATE EVENT ENFORCES ONLY ONE OF THE FOUR. What must be answered
  * before the case EXISTS is exactly that, a creation rule. Refusing later
  * updates on the same list would make a case that is already valid unsavable
  * the moment an administrator adds a field to the declaration, and it would
@@ -35,6 +35,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
  * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
+ * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
  */
 
 declare(strict_types=1);
@@ -45,6 +46,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\Intake\AssigneeNarrowing;
 use OCA\Dossiq\Service\Intake\CaseClassification;
+use OCA\Dossiq\Service\Intake\DuplicatePolicy;
 use OCA\Dossiq\Service\Intake\IntakeRequirements;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\OpenRegister\Db\ObjectEntity;
@@ -52,6 +54,7 @@ use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
+use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -60,7 +63,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — three declarations decide
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — four declarations decide
  *  one save, and each of them is injected so a test can drive exactly one.
  *
  * @spec openspec/changes/intake-triage-and-refusal/specs/semantic-case-intake/spec.md
@@ -75,6 +78,8 @@ class IntakeRequirementsListener implements IEventListener {
 	 * @param IntakeRequirements $requirements     What must be answered, and when.
 	 * @param CaseClassification $classification   The facets and the access rule.
 	 * @param AssigneeNarrowing  $narrowing        Who may hold the case.
+	 * @param DuplicatePolicy    $duplicates       What this case type does about a case that already exists.
+	 * @param IUserSession       $userSession      Who is filing the case.
 	 * @param LoggerInterface    $logger           Logger.
 	 */
 	public function __construct(
@@ -83,6 +88,8 @@ class IntakeRequirementsListener implements IEventListener {
 		private readonly IntakeRequirements $requirements,
 		private readonly CaseClassification $classification,
 		private readonly AssigneeNarrowing $narrowing,
+		private readonly DuplicatePolicy $duplicates,
+		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -115,6 +122,8 @@ class IntakeRequirementsListener implements IEventListener {
 	 * @param boolean                                 $creating Whether this is a creation.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function inspect(
 		ObjectCreatingEvent|ObjectUpdatingEvent $event,
@@ -156,6 +165,11 @@ class IntakeRequirementsListener implements IEventListener {
 			if ($creating === true) {
 				$this->requirements->assertCreatable(case: $payload, caseType: $caseType);
 				$this->classification->assertCreatable(case: $payload, caseType: $caseType);
+				$this->duplicates->assertCreatable(
+					case: $payload,
+					caseType: $caseType,
+					user: $this->userSession->getUser()
+				);
 			}
 
 			$this->narrowing->assertWritable(case: $payload, caseType: $caseType);

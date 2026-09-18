@@ -26,10 +26,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
 use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypePublishService;
@@ -41,6 +43,7 @@ use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration;
 use OCA\Dossiq\Service\UnreadTriggerService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCP\AppFramework\Utility\ITimeFactory;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
@@ -58,6 +61,31 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector
  */
 class CaseTypePublishValidationTest extends TestCase {
+
+	/**
+	 * The day the clock in these tests is stopped on.
+	 *
+	 * @var string
+	 */
+	private const TODAY = '2026-09-16';
+
+	/**
+	 * A clock stopped on a day the assertions can name.
+	 *
+	 * The publish path writes `validFrom` on the new version and `validUntil`
+	 * on the one it replaces, so "today" is part of what these tests check. A
+	 * real clock would make the expected value the same expression as the code
+	 * under test, which is a test that cannot fail.
+	 *
+	 * @return ITimeFactory The clock.
+	 */
+	private function clock(): ITimeFactory {
+		$time = $this->createMock(ITimeFactory::class);
+		$time->method('getDateTime')->willReturn(new DateTime(self::TODAY));
+
+		return $time;
+	}//end clock()
+
 
 	/**
 	 * The rows the resolver reads.
@@ -136,6 +164,12 @@ class CaseTypePublishValidationTest extends TestCase {
 				logger: new NullLogger(),
 			),
 			fieldRoles: $this->createMock(CaseFieldRoleProjector::class),
+			window: new CaseTypeVersionWindow(
+				settingsService: $settings,
+				store: $store,
+				time: $this->clock(),
+				logger: new NullLogger(),
+			),
 			logger: new NullLogger(),
 		);
 	}//end service()

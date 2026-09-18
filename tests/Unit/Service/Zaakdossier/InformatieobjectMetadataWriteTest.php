@@ -20,6 +20,9 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\People\PersonLinkReader;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
@@ -123,6 +126,12 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 			new InformatieobjectMetadataNormaliser(),
 			$logger,
 			new DocumentRecordStore(settingsService: $settings),
+			new CorrespondentWriter(
+				rules: new DocumentCorrespondents(),
+				people: $this->createMock(originalClassName: PersonLinkReader::class),
+				settingsService: $settings,
+				store: new DocumentRecordStore(settingsService: $settings),
+			),
 		);
 
 	}//end service()

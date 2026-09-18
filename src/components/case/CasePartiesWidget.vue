@@ -104,6 +104,13 @@
 							{{ party.email }}
 						</span>
 						<span
+							v-if="correspondenceOf(party)"
+							class="case-parties__documents"
+							:data-party-documents="party.partyUuid || party.contactUid"
+							data-testid="case-parties-documents">
+							{{ correspondenceOf(party) }}
+						</span>
+						<span
 							v-for="indicator in indicatorsFor(party)"
 							:key="`${party.partyUuid}-${indicator.key}`"
 							class="case-parties__indicator"
@@ -121,7 +128,9 @@
 </template>
 
 <script>
-import { translate as t } from '@nextcloud/l10n'
+import axios from '@nextcloud/axios'
+import { translatePlural as n, translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
@@ -132,6 +141,7 @@ import {
 	indicatorVerdict,
 	rolesInOrder,
 } from '../../services/caseParties.js'
+import { documentsOfParty } from '../../services/documentCorrespondents.js'
 
 export default {
 	name: 'CasePartiesWidget',
@@ -153,6 +163,8 @@ export default {
 			listing: null,
 			/** The party records, keyed by uuid, for their indicators. */
 			partyRecords: {},
+			/** The documents of the case, for the correspondence line. */
+			documents: [],
 		}
 	},
 
@@ -240,6 +252,7 @@ export default {
 
 	methods: {
 		t,
+		n,
 
 		/**
 		 * Read the listing, then each party's own record for its indicators.
@@ -260,6 +273,7 @@ export default {
 			this.loading = true
 			this.failed = false
 			this.partyRecords = {}
+			this.documents = []
 
 			const listing = await fetchCaseParties(this.caseId)
 			if (listing === null) {
@@ -285,6 +299,7 @@ export default {
 				}
 			})
 			this.partyRecords = byUuid
+			await this.loadDocuments()
 			this.loading = false
 		},
 
@@ -317,6 +332,77 @@ export default {
 				return ''
 			}
 			return this.kindLabels[party.partyKind] || party.partyKind
+		},
+
+		/**
+		 * What one party wrote and was written to, in one line.
+		 *
+		 * Read from the documents the case already has rather than asked per
+		 * party: a case with eight parties would otherwise make eight reads to
+		 * draw eight short sentences.
+		 *
+		 * A party nobody corresponded with gets NO line at all, not "0
+		 * documents". An empty count on every row is noise on the tab that
+		 * answers who is on the case.
+		 *
+		 * @param {object} party The link row.
+		 * @return {string} The sentence, '' when there is no correspondence.
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		correspondenceOf(party) {
+			const { sent, received } = documentsOfParty(
+				this.documents,
+				party.partyUuid || party.contactUid || '',
+			)
+			if (sent.length === 0 && received.length === 0) {
+				return ''
+			}
+			if (received.length === 0) {
+				return n(
+					'dossiq',
+					'%n document sent',
+					'%n documents sent',
+					sent.length,
+				)
+			}
+			if (sent.length === 0) {
+				return n(
+					'dossiq',
+					'%n document received',
+					'%n documents received',
+					received.length,
+				)
+			}
+			return t('dossiq', '{sent} sent, {received} received', {
+				sent: sent.length,
+				received: received.length,
+			})
+		},
+
+		/**
+		 * The documents of this case, for the correspondence line.
+		 *
+		 * A failed read leaves the line off every party rather than claiming
+		 * nobody corresponded: the widget's own failure is already reported
+		 * for the party list, and a second empty state per row would say
+		 * something untrue about the dossier.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
+		 */
+		async loadDocuments() {
+			try {
+				const { data } = await axios.get(
+					generateUrl(
+						`/apps/dossiq/api/cases/${encodeURIComponent(this.caseId)}/dossier`,
+					),
+				)
+				this.documents = Array.isArray(data?.informatieobjecten)
+					? data.informatieobjecten
+					: []
+			} catch {
+				this.documents = []
+			}
 		},
 
 		/**
@@ -403,7 +489,8 @@ export default {
 	}
 
 	&__party-kind,
-	&__party-email {
+	&__party-email,
+	&__documents {
 		color: var(--color-text-maxcontrast);
 	}
 
