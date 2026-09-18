@@ -600,6 +600,20 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 writes nothing.
             -->
             <step>OCA\Dossiq\Repair\DeclareNotificationTemplates</step>
+            <!--
+                The family plan's `goals` and `deploymentTrajectories` string
+                arrays become goals and interventions. Every string is carried
+                with its text intact, its unmapped fields empty and a mark that
+                it came from the old shape; nothing is dropped and no provider
+                or target date is invented for a field the old shape never had
+                (REQ-CPN-02). Idempotent per PLAN rather than per string: a
+                string whose text a consulent has since corrected no longer
+                matches, so matching per string would give the household both.
+                Post-migration only, deliberately: there is nothing to carry on
+                a fresh install, and the step reads the register, which is not
+                imported yet at install time.
+            -->
+            <step>OCA\Dossiq\Repair\MigrateCasePlanStrings</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
