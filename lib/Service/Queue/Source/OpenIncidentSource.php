@@ -131,7 +131,9 @@ class OpenIncidentSource implements QueueSource {
 				// sits in: the address, the history and the other reports on it.
 				route: ($caseId === ''
 					? ['name' => 'PersonalQueue']
-					: ['name' => 'CaseDetail', 'params' => ['id' => $caseId]])
+					: ['name' => 'CaseDetail', 'params' => ['id' => $caseId]]),
+				waiting: [],
+				subject: $incident
 			);
 		}
 
