@@ -254,6 +254,25 @@ class SchemaSlugMap {
 		// and "referenced by", with nothing anywhere reporting it. That is the
 		// same silent fallback openregister#3764 exists to end.
 		'x-openregister-relation-types',
+		// Whether this schema's objects can be archived at all. OpenRegister's
+		// ArchiveHandler refuses archive, restore, freeze and unfreeze on a
+		// schema that does not declare it, and an absent block is the same
+		// answer as `enabled: false`. On an instance that imported the case
+		// schema before the block existed, leaving the key out of this list
+		// would therefore leave Archive refusing every case with "this schema
+		// does not declare x-openregister-archive", which reads as a broken
+		// feature rather than as a configuration that never arrived.
+		'x-openregister-archive',
+		// What counts as the same case, and who may file one anyway.
+		// OpenRegister's DuplicateDetectionService reads this block off
+		// `Schema::getConfiguration()` and nowhere else, so an instance that
+		// imported the case schema before the block existed answers the
+		// dedup-check endpoint with an empty match list. That reads exactly
+		// like "nothing looks like this case", which is the one answer a
+		// duplicate warning must never give by accident. Carried here for the
+		// same reason `x-openregister-read-state` is: an absent block is not
+		// an inert default, it is a different answer.
+		'x-openregister-dedup',
 	];
 
 	/**

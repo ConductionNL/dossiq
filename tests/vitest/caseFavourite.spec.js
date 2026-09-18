@@ -264,12 +264,14 @@ describe('the star is declared on the case page', () => {
 		expect(banners.sizeToContent).toBe(true)
 	})
 
-	it('is the first strip in the banner stack', () => {
+	it('is the first working strip in the banner stack, under the archive line', () => {
+		// Only the archived strip precedes it, because that one changes how
+		// everything under it should be read.
 		const stack = fs.readFileSync(
 			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
 			'utf8',
 		)
-		const order = ['CaseFavouriteStrip', 'CaseUnreadPanel', 'CaseStatusDeclarationPanel', 'CaseAttentionPanel']
+		const order = ['CaseArchivedStrip', 'CaseFavouriteStrip', 'CaseUnreadPanel', 'CaseStatusDeclarationPanel', 'CaseAttentionPanel']
 			.map((c) => stack.indexOf(`<${c}`))
 
 		expect(order.every((i) => i > -1)).toBe(true)

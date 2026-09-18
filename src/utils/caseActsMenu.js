@@ -161,8 +161,17 @@ function gestureEntries(state) {
  */
 function endingEntries(acts) {
 	const verdicts = Array.isArray(acts?.acts) ? acts.acts : []
+	const archived = yes(acts?.archived)
 
-	return ENDING_ACTS.map((ending) => {
+	return ENDING_ACTS.filter((ending) => {
+		// Archive leaves the list once the case is in the archive, and Restore
+		// takes its place (see archiveStateEntries). Two entries both enabled
+		// would let a handler archive a case that is already archived, which
+		// the platform answers with a shrug rather than a refusal, so nothing
+		// on screen would say what had happened. Finish and Abort stay: they
+		// are refused by their own guards, each with a sentence.
+		return (ending.act !== 'archive' || archived === false)
+	}).map((ending) => {
 		const verdict = verdicts.find((row) => String(row?.act ?? '') === ending.act)
 
 		return {
@@ -180,6 +189,51 @@ function endingEntries(acts) {
 			role: verdict ? String(verdict.role ?? '') : '',
 		}
 	})
+}
+
+/**
+ * Restore, offered on an archived case and on no other.
+ *
+ * 🔑 THE ENTRY IS READ OFF THE PLATFORM'S MARKER, not off `archiveStatus`.
+ * `/acts` answers `archived` from `@self.archived`, which is the same fact the
+ * lists exclude on, so the menu and the Cases page cannot disagree about which
+ * cases are in the archive. A case imported over ZGW carrying
+ * `archiefstatus: gearchiveerd` and no marker is in every working lens, and
+ * offering Restore on it would be a button that takes nothing back.
+ *
+ * It sits with the state acts rather than with the ending acts because it is
+ * the one act on this menu that UNDOES something, and the ending acts are
+ * ordered last precisely so a hurried handler does not meet them first.
+ *
+ * @param {object|null} acts The `/acts` answer.
+ * @return {Array<object>} The entries.
+ * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+ */
+function archiveStateEntries(acts) {
+	if (!yes(acts?.archived)) {
+		return []
+	}
+
+	const verdicts = Array.isArray(acts?.acts) ? acts.acts : []
+	const verdict = verdicts.find((row) => String(row?.act ?? '') === 'archive')
+
+	return [
+		{
+			kind: 'state',
+			id: 'unarchive',
+			label: 'Restore from the archive',
+			explainer: 'The case comes back into the working lists and can be edited again.',
+			// Restoring asks the same role archiving does, so the verdict on
+			// `archive` is the verdict on this. An absent verdict disables it
+			// and says so, exactly as the ending acts do: this one writes an
+			// archival consequence too.
+			disabled: verdict ? verdict.allowed !== true : true,
+			reason: verdict
+				? String(verdict.reason ?? '')
+				: 'What you may do with this case could not be read.',
+			role: verdict ? String(verdict.role ?? '') : '',
+		},
+	]
 }
 
 /**
@@ -252,6 +306,7 @@ export function buildActsMenu({ transitions, state, acts } = {}) {
 		...gestureEntries(state),
 		...endingEntries(acts),
 		...stateEntries(acts),
+		...archiveStateEntries(acts),
 	]
 }
 

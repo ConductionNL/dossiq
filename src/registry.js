@@ -28,6 +28,10 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
+// The line saying this case is in the archive, and what that means for the
+// reader (archived-cases-leave-the-lenses).
+// @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+import CaseArchivedStrip from './components/case/CaseArchivedStrip.vue'
 // The flag a person raised, the risk the organisation assessed, and the
 // markers the system raised against a named panel.
 // @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
@@ -111,7 +115,12 @@ import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // @spec openspec/specs/zaaktype-versioning/spec.md
 import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
 import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
+// The version chain: starting the next version, and moving one running case
+// along it (case-type-version-chain).
+// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
+import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -204,6 +213,9 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
+// Ask whether this case already exists, before it does.
+// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 import {
 	extendTermSelection,
 	reassignSelection,
@@ -432,6 +444,18 @@ const registry = {
 		propsSchema: {},
 		_note: 'CaseTypeDetail Duplicate: posts the copy, reads the new id out of the answer and ROUTES there. An api-call refreshes the page you are already on, so a person who asked for a copy would be left looking at the original with no clue where the copy went.',
 	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseTypeNewVersionDialog: {
+		kind: 'modal',
+		component: CaseTypeNewVersionDialog,
+		_note: 'CaseTypeDetail New version: posts the next version and ROUTES to the draft, for the reason Duplicate is a dialog. The tasks called for a declarative api-call, and an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one: the gesture beside it is Duplicate, and a duplicate is a second case type while a version is this one later on.',
+	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseVersionMoveDialog: {
+		kind: 'modal',
+		component: CaseVersionMoveDialog,
+		_note: 'CaseDetail Actions menu: move this case to another version of its own case type. The PREVIEW is why it is a modal and not a confirm gate: a case is pinned to the version it was filed under because its status is a row only that version holds, so the person moving it is shown the landing status and the statuses and fields the other version adds and drops, including the dropped ones this case has answered. It derives NONE of that: canMove and every refusal sentence come from the server, so the dialog cannot disagree with the write.',
+	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	CaseHandoverDialog: {
 		kind: 'modal',
@@ -548,6 +572,14 @@ const registry = {
 		component: CasePlanFollowUpDialog,
 		propsSchema: {},
 		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once" or "three times". A Repeat picker turns it into a series (planned-case-series): the recurrence becomes the cron fields, the end becomes the sweep\'s stop rule, and the Related tab grows a series row with a Stop series action. The form lives here and not in the manifest: an `open-modal` header action carries a target and props only, and the five fields (case type, date, title, Repeat, Ends) are bound to each other, since the end fields appear only once a repeat is chosen and no `visibleWhen` on a header action can say that. What the manifest does decide is that the gesture is a modal rather than a `handler`, because a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. The manifest entry itself carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action, so the rationale belongs in this file.',
+	},
+
+	// --- The duplicate warning at intake (duplicate-warning-at-intake). ---
+	// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	caseCreateWithDuplicateCheck: {
+		kind: 'create-override',
+		handler: createCaseWithDuplicateCheck,
+		_note: "Named by `createOverride` on every `new-case` open-form action. It owns the persist, so it can ask OpenRegister whether a case like this one already exists BEFORE the case is written, and show the matches with a link to each. It is not the enforcement: DuplicatePolicy refuses a blocked create on the pre-persist event, so the mail intake, an import and any integration are refused the same way. A createOverride runs on the press rather than on the keystroke, which is the one part of REQ-FCF-10 this seam cannot give: disabling the library dialog's own Create button needs a `beforeConfirm` hook in @conduction/nextcloud-vue.",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
@@ -885,6 +917,21 @@ const registry = {
 		_note: 'CaseDetail: the per-reader star, directly under the identity tiles because it is part of what identifies this case TO YOU. Starring writes nothing to the case: OpenRegister keeps the star in its own table, so no version is cut, no audit entry is written and no colleague can tell. The strip renders from `@self.favourite`, which every object read already carries, so it makes no call until somebody presses it.',
 	},
 
+	// --- The line saying this case is in the archive. ---
+	//
+	// A LAYOUT grid item and a widget TYPE, for the reason `case-unread` is
+	// one: CnDetailPage resolves a grid item's renderer from
+	// `cnRegistry[widget.type]` when the app supplies no `widget-<id>` slot,
+	// and dossiq supplies none.
+	// @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	'case-archived': {
+		// @custom-widget-ratchet exclude the archive marker is not a property of the case: `@self.archived` is metadata OpenRegister attaches on the render path, so a `data` widget builds its fields from the schema's properties and renders nothing at all, and there is no `integration` id that reaches it. The strip also has to be SILENT on an open case, which no declarative widget can be: a widget with no per-record visibility draws its empty box on every one of the cases that are not archived. Deleted the day CnDetailPage reads `@self.archived` itself, which is where this belongs for every app in the fleet
+		kind: 'widget',
+		component: CaseArchivedStrip,
+		...STRIP_WIDGET_META,
+		_note: 'CaseDetail: the sentence that says this case is in the archive, who filed it, on what day and with what reason. It is the first strip in CaseBannerStack, above the star and the unread badge, because it changes how everything under it should be read: the page is a record to consult rather than work to do. Restore is deliberately NOT a button here, it is one entry in the Lifecycle menu beside every other act, because an act offered in two places is gated in two places. Silent on a case that is not archived, which is almost every case.',
+	},
+
 	'case-unread': {
 		// @custom-widget-ratchet exclude the per-user read state is not a field of the case and no declarative widget reads it: `@self.unreadCounts` is attached on the render path, the count per panel comes from OpenRegister's read-state endpoint, and the gesture that clears one is a PUT carrying a sub-resource. Deleted the day CnTabsWidget takes a badge per tab and emits its tab change, which is where this belongs (nextcloud-vue, clusters 58 and 15)
 		kind: 'widget',
@@ -949,13 +996,13 @@ const registry = {
 		_note: 'CaseDetail: the flag a person raised with a written reason, the risk this organisation assessed and the markers the system raised against a named panel. Three different facts kept apart on purpose. Sits under the unread strip and says the opposite kind of thing: a marker survives opening the panel it points at and goes when the work behind it is done, where the unread badge goes because somebody looked.',
 	},
 
-	// --- The four strips above, in one grid row. ---
+	// --- The six strips above, in one grid row. ---
 	'case-banner-stack': {
-		// @custom-widget-ratchet exclude this adds no capability and reads nothing: it is a CONTAINER over the four strips already excluded above, each of which keeps its own fetch, its own conditions and its own tests. It exists because a grid row is reserved from the LAYOUT before a component renders and decides it has nothing to say, and three of the four are a root v-if -- so an ordinary case reserved three empty full-width rows that no CSS could reclaim, the engine positioning items absolutely from gridY/gridHeight. Deleted the day a widget can tell the grid it drew nothing, at which point the four go back to four rows
+		// @custom-widget-ratchet exclude this adds no capability and reads nothing: it is a CONTAINER over the six strips already excluded above, each of which keeps its own fetch, its own conditions and its own tests. It exists because a grid row is reserved from the LAYOUT before a component renders and decides it has nothing to say, and four of the six are a root v-if -- so an ordinary case reserved four empty full-width rows that no CSS could reclaim, the engine positioning items absolutely from gridY/gridHeight. Deleted the day a widget can tell the grid it drew nothing, at which point the six go back to six rows
 		kind: 'widget',
 		component: CaseBannerStack,
 		...STRIP_WIDGET_META,
-		_note: 'CaseDetail: Favourite, New since you last looked, What this status asks for and Attention in ONE grid row rather than four. Three of the four render conditionally, so four rows meant three reserved empty ones on an ordinary case — nothing new, nothing flagged, status fine — and a visible gap where they were. The row carries `sizeToContent` (nextcloud-vue CnDashboardGrid) so its height is whatever actually rendered, down to nothing. The four widget types stay registered: they are still valid placements, this is just the one the page uses.',
+		_note: 'CaseDetail: Archived, Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE grid row rather than six. Four of the six render conditionally, so six rows meant four reserved empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and a visible gap where they were. The row carries `sizeToContent` (nextcloud-vue CnDashboardGrid) so its height is whatever actually rendered, down to nothing. The six widget types stay registered: they are still valid placements, this is just the one the page uses.',
 	},
 
 	'case-notes-pane': {

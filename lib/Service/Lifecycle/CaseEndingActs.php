@@ -88,6 +88,8 @@ class CaseEndingActs {
 	 * @param CaseIncompleteness $incompleteness Refuses a finish on a case missing required data.
 	 * @param CaseJournal $journal The case's own record of what was done to it.
 	 * @param LoggerInterface $logger Records what was ended and by whom.
+	 * @param CaseArchiveState $archiveState The platform's archive marker, which
+	 *                                       is the state the lists read.
 	 */
 	public function __construct(
 		private readonly CaseStatusStore $store,
@@ -97,6 +99,7 @@ class CaseEndingActs {
 		private readonly CaseIncompleteness $incompleteness,
 		private readonly CaseJournal $journal,
 		private readonly LoggerInterface $logger,
+		private readonly CaseArchiveState $archiveState,
 	) {
 	}//end __construct()
 
@@ -217,6 +220,13 @@ class CaseEndingActs {
 		);
 		$this->store->saveCase(case: $case);
 
+		// The ZGW field is written first and the marker goes on last, because
+		// an archived object refuses every write to its data. Reversed, the
+		// save above would be refused by the archive this act had just put on,
+		// and the case would sit out of the lists with `archiveStatus` still
+		// reading `nog_te_archiveren`.
+		$marker = $this->archiveState->mark(caseId: $caseId, reason: $reason);
+
 		$this->logger->info(
 			'CaseEndingActs: case archived',
 			['caseId' => $caseId, 'nomination' => ($future['archiveNomination'] ?? null)],
@@ -228,8 +238,72 @@ class CaseEndingActs {
 			'archiveStatus' => $case['archiveStatus'],
 			'archiveNomination' => ($future['archiveNomination'] ?? null),
 			'archiveActionDate' => ($future['archiveActionDate'] ?? null),
+			'archived' => ($marker['archived'] ?? null),
 		];
 	}//end archive()
+
+	/**
+	 * Take a case back out of the archive.
+	 *
+	 * One act and no wizard (D-5): a case archived by mistake is one press
+	 * away from being worked again. The marker comes off first, because the
+	 * ZGW field cannot be written while it is on, and `archiveStatus` goes
+	 * back to `nog_te_archiveren` rather than to whatever it held before: the
+	 * case is once again a case that still has to be archived, which is what
+	 * that value means.
+	 *
+	 * The nomination and the action date are deliberately KEPT. They were
+	 * derived from the result type and they are still true; clearing them
+	 * would make a restore look like an appraisal that had been undone.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $reason Why it is coming back.
+	 *
+	 * @return array<string, mixed> The archive status it carries afterwards.
+	 *
+	 * @throws RefusedException When the caller may not archive, the case is not
+	 *                          archived, or the platform refuses.
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	public function unarchive(string $caseId, string $reason): array {
+		$case = $this->load(caseId: $caseId);
+		$this->requireReason(reason: $reason);
+
+		// Restoring is the same act as archiving read backwards, so it asks
+		// for the same role. A second, looser gate would let somebody who may
+		// not file a case take one back out of the file.
+		$this->gate->require(act: 'archive', case: $case);
+
+		if ($this->archiveState->isArchived(case: $case) === false) {
+			throw new RefusedException(
+				rule: 'case-not-archived',
+				sentence: 'This case is not in the archive.',
+				status: RefusedException::STATUS_REFUSED,
+			);
+		}
+
+		$this->archiveState->clear(caseId: $caseId, reason: $reason);
+
+		$case['archiveStatus'] = 'nog_te_archiveren';
+		$case = $this->journal->append(
+			case: $case,
+			entry: [
+				'type' => 'unarchive',
+				'reason' => $reason,
+			],
+		);
+		$this->store->saveCase(case: $case);
+
+		$this->logger->info('CaseEndingActs: case restored from the archive', ['caseId' => $caseId]);
+
+		return [
+			'caseId' => $caseId,
+			'act' => 'unarchive',
+			'archiveStatus' => $case['archiveStatus'],
+			'archived' => null,
+		];
+	}//end unarchive()
 
 	/**
 	 * The ending this case carries, for a reopen that has to keep it.

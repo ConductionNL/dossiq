@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.13.0",
+                "version": "1.14.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -403,6 +403,16 @@
                         "default": false,
                         "description": "Whether a case of this type needs a coordinator named before its besluit is signed. The Awb answer is signed by the second seat, and a case type that leaves this off never asks for one: most cases have a handler and nobody else.",
                         "title": "Coordinator required before signing"
+                    },
+                    "duplicatePolicy": {
+                        "type": "string",
+                        "enum": [
+                            "warn",
+                            "block"
+                        ],
+                        "default": "warn",
+                        "title": "Duplicate policy",
+                        "description": "What happens when a new case of this type looks like one that already exists. On warn, the handler sees the matches and decides. On block, only a coordinator may file it anyway, and they have to say why. The matching itself is not set here: the case schema declares the rules and OpenRegister scores them, so the same pair the nightly sweep finds is the pair the form shows."
                     },
                     "defaultInformatieobjecttype": {
                         "type": "string",
@@ -1464,7 +1474,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.24.0",
+                "version": "1.25.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1520,38 +1530,45 @@
                         "fair": 0.5
                     }
                 },
-                "x-openregister-dedup": {
-                    "blockingKeys": [
-                        "caseType"
-                    ],
-                    "matchRules": [
-                        {
-                            "field": "identifier",
-                            "method": "exact",
-                            "weight": 0.4
-                        },
-                        {
-                            "field": "permitApplicationRef",
-                            "method": "exact",
-                            "weight": 0.3
-                        },
-                        {
-                            "field": "title",
-                            "method": "normalized",
-                            "weight": 0.2
-                        },
-                        {
-                            "field": "title",
-                            "method": "levenshtein",
-                            "weight": 0.1
-                        }
-                    ],
-                    "threshold": 0.7
-                },
                 "title": "Case",
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-dedup": {
+                        "blockingKeys": [
+                            "caseType"
+                        ],
+                        "matchRules": [
+                            {
+                                "field": "requester",
+                                "method": "exact",
+                                "weight": 0.35
+                            },
+                            {
+                                "field": "permitApplicationRef",
+                                "method": "exact",
+                                "weight": 0.35
+                            },
+                            {
+                                "field": "title",
+                                "method": "normalized",
+                                "weight": 0.2
+                            },
+                            {
+                                "field": "title",
+                                "method": "levenshtein",
+                                "weight": 0.1
+                            }
+                        ],
+                        "threshold": 0.3,
+                        "onCreate": "warn",
+                        "overrideGroups": [
+                            "dossiq-coordinators"
+                        ],
+                        "dismissGroups": [
+                            "dossiq-coordinators"
+                        ]
+                    },
                     "x-openregister-lifecycle": {
                         "field": "status",
                         "initial": {
@@ -1559,6 +1576,10 @@
                             "field": "initialStatus"
                         },
                         "provider": "OCA\\Dossiq\\Lifecycle\\CaseActionProvider"
+                    },
+                    "_archiveNote": "archived-cases-leave-the-lenses D-1. This one key is what lets a case be archived at all: OpenRegister's ArchiveHandler refuses archive, restore, freeze and unfreeze on a schema that does not declare it, and Schema::isArchivingEnabled() is the single place that reads it. The marker it writes is @self.archived, and THAT is the state: it is what the object list, the aggregation endpoint and every search provider exclude by default, which is why no working lens on any dossiq page carries a filter of its own for this. case.archiveStatus keeps its ZGW meaning beside it and is written by the same act, never read as the state (ADR-022).",
+                    "x-openregister-archive": {
+                        "enabled": true
                     },
                     "objectNameField": "title",
                     "objectDescriptionField": "description",
@@ -2829,6 +2850,25 @@
                         "description": "Why the priority was overridden. A priority somebody raised by hand is a decision that has to be defensible later, so the reason is stored with it.",
                         "title": "Override reason",
                         "order": 24
+                    },
+                    "duplicateOverrideOf": {
+                        "type": "array",
+                        "readOnly": true,
+                        "title": "Filed over",
+                        "description": "The cases this one was filed over after the duplicate warning. Written once, when a coordinator files a case the case type would otherwise have blocked. Dossiq has no case-note store, so the reason lives on the case beside this list rather than in a note nobody can query.",
+                        "order": 25,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case"
+                        }
+                    },
+                    "duplicateOverrideReason": {
+                        "type": "string",
+                        "readOnly": true,
+                        "title": "Filed over a duplicate warning",
+                        "description": "Why this case was filed although one like it already existed. Typed by the coordinator who filed it, because the next handler reading two near-identical cases needs to know which of them was meant.",
+                        "order": 26
                     },
                     "parentCase": {
                         "type": "string",

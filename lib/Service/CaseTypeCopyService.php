@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -61,6 +62,22 @@ class CaseTypeCopyService {
 	];
 
 	/**
+	 * The workflow templates, copied for a VERSION and not for a duplicate.
+	 *
+	 * 🔴 IT IS NOT IN THE LIST ABOVE ON PURPOSE. A duplicate is a second case
+	 * type and starts with no process, which is what its own payload says by
+	 * clearing `workflowDefinition`. A version is the same case type later on,
+	 * and a version that lost the route its cases run is not the same case type
+	 * at all. Copying it for both would change the duplicate gesture as a side
+	 * effect of fixing the version one.
+	 *
+	 * @var string
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	private const WORKFLOW_TEMPLATE_CONFIG_KEY = 'workflow_template_schema';
+
+	/**
 	 * What the copy in progress could not carry.
 	 *
 	 * Held on the instance for the same reason `SeedDataService` holds its
@@ -76,13 +93,15 @@ class CaseTypeCopyService {
 	 *
 	 * @param SettingsService        $settingsService Shared OR register/schema resolver.
 	 * @param CaseTypeStore          $store           The app's one row and reference normaliser.
-	 * @param DerivedCaseTypePayload $payloads        What a duplicate and a version look like.
-	 * @param LoggerInterface        $logger          Logger.
+	 * @param DerivedCaseTypePayload    $payloads        What a duplicate and a version look like.
+	 * @param DerivedCaseTypeReferences $references      Pointing the copy at its own children.
+	 * @param LoggerInterface           $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeStore $store,
 		private readonly DerivedCaseTypePayload $payloads,
+		private readonly DerivedCaseTypeReferences $references,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -192,9 +211,12 @@ class CaseTypeCopyService {
 	 * to new cases") was not true. Copying instead leaves the running cases on
 	 * the objects they started under, and pins them there with no extra field
 	 * on the case: the reference they already hold IS the pin. Nothing migrates
-	 * a running case forward, deliberately. Its current status is a row the new
-	 * version does not contain, and its deadline was computed from the old
-	 * version's `processingDeadline`.
+	 * a running case forward BY ITSELF, deliberately. Its current status is a
+	 * row the new version does not contain, and its deadline was computed from
+	 * the old version's `processingDeadline`. Moving one is a deliberate act
+	 * somebody performs and gives a reason for, and it is
+	 * {@see \OCA\Dossiq\Service\CaseType\CaseVersionMove}, never a consequence
+	 * of publishing.
 	 *
 	 * The new version starts as a draft. It becomes the version new cases get
 	 * when it is published, which is when {@see CaseTypePublishService} writes
@@ -279,12 +301,24 @@ class CaseTypeCopyService {
 			newCaseTypeId: $newCaseTypeId
 		);
 
-		$created = $this->repointInitialStatus(
+		$templateMap = [];
+		if ($asVersion === true) {
+			$templateMap = $this->copyChildren(
+				objectService: $objectService,
+				register: $register,
+				configKey: self::WORKFLOW_TEMPLATE_CONFIG_KEY,
+				sourceCaseTypeId: $caseTypeId,
+				newCaseTypeId: $newCaseTypeId
+			);
+		}
+
+		$created = $this->references->repoint(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseTypeSchema,
 			caseType: $created,
-			statusMap: $statusMap
+			statusMap: $statusMap,
+			templateMap: $templateMap
 		);
 
 		$this->logger->info(
@@ -430,57 +464,6 @@ class CaseTypeCopyService {
 
 
 
-
-	/**
-	 * Point the new case type's initial status at its OWN copy of that status.
-	 *
-	 * Without this the copy files new cases into the SOURCE's status row: the
-	 * children are copied but `initialStatus` still holds the old id, and the
-	 * two are never reconciled. Publish validation catches it (the initial
-	 * status is not one of the type's own statuses) so it never reached a
-	 * running case, but it made every duplicate and every new version ask the
-	 * author to re-pick a status they had already picked.
-	 *
-	 * @param object                $objectService The OpenRegister ObjectService.
-	 * @param string                $register      The register slug.
-	 * @param string                $schema        The case type schema id.
-	 * @param array<string, mixed>  $caseType      The freshly created case type.
-	 * @param array<string, string> $statusMap     Old status id to new status id.
-	 *
-	 * @return array<string, mixed> The case type, repointed when it needed it.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function repointInitialStatus(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $caseType,
-		array $statusMap,
-	): array {
-		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
-		if ($initial === '' || isset($statusMap[$initial]) === false) {
-			return $caseType;
-		}
-
-		$caseType['initialStatus'] = $statusMap[$initial];
-
-		try {
-			$saved = $objectService->saveObject(
-				object: $caseType,
-				register: $register,
-				schema: $schema,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'CaseTypeCopyService: could not repoint the initial status',
-				['caseType' => ($caseType['id'] ?? ''), 'exception' => $e->getMessage()]
-			);
-			return $caseType;
-		}
-
-		return $this->store->asRow(value: $saved);
-	}//end repointInitialStatus()
 
 
 	/**

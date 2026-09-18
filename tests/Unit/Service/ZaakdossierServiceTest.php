@@ -30,6 +30,9 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\People\PersonLinkReader;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
 use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
@@ -232,6 +235,12 @@ class ZaakdossierServiceTest extends TestCase {
 			// exercise the production coercion rather than a mock's answers.
 			normaliser: new InformatieobjectMetadataNormaliser(),
 			recordStore: new DocumentRecordStore(settingsService: $this->settings),
+			correspondents: new CorrespondentWriter(
+				rules: new DocumentCorrespondents(),
+				people: $this->createMock(originalClassName: PersonLinkReader::class),
+				settingsService: $this->settings,
+				store: new DocumentRecordStore(settingsService: $this->settings),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

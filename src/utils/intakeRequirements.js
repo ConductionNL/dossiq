@@ -64,6 +64,7 @@ export function normaliseDeclaration(declaration) {
 	const requirements = source.intakeRequirements || {}
 	const classification = source.classification || {}
 	const narrowing = source.assigneeNarrowing || {}
+	const duplicatePolicy = source.duplicatePolicy || {}
 
 	return {
 		caseType: source.caseType || '',
@@ -83,6 +84,8 @@ export function normaliseDeclaration(declaration) {
 			role: '',
 		},
 		canRefuse: source.canRefuse === true,
+		duplicatePolicy: duplicatePolicy.policy === 'block' ? 'block' : 'warn',
+		mayOverrideDuplicates: duplicatePolicy.mayOverride === true,
 		unreadable: source.unreadable === true,
 	}
 }

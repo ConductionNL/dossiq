@@ -484,6 +484,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -972,6 +973,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -1598,6 +1600,13 @@
 						}
 					},
 					{
+						"label": "Archived",
+						"_note": "archived-cases-leave-the-lenses REQ-CM-42, D-3. The ONE lens that asks for archived cases, and a chip rather than a menu entry (ADR-097). `_archived` is openregister's own lens over the archive marker, resolved INSIDE the query the way `_unread` and `_favourite` are, so the page, the total and the facets cannot disagree: absent or false is the working set, `true` is the archive alone and `any` is both. \ud83d\udd34 NO OTHER LENS ON THIS PAGE CARRIES AN ARCHIVE FILTER, AND THAT IS NOT AN OVERSIGHT. The platform EXCLUDES archived objects by default from the object list, the aggregation endpoint and every search provider, so a working lens that spelled the exclusion out would be a second copy of a rule that already holds, and the day the two spellings drift the page and the tile beside it disagree. It deliberately carries no `statusHiddenInLists` either, for the reason Closed does not: an archived case is in a terminal status and mostly a hidden one, so filtering here would empty the one list that is supposed to hold them.",
+						"filter": {
+							"_archived": true
+						}
+					},
+					{
 						"label": "Closed with no result",
 						"_note": "case-search-declares-its-fields REQ-CSD-04. The register's own example for the missing-value facet: \"twelve cases have no result type\" is a data quality report nobody has to write. `result_isnull=true` is openregister's declared null grammar (MagicSearchHandler::COMPARISON_OPERATORS), answered server-side, so this is one query and not a page of twenty-five filtered after the fact. A LENS AND NOT A FACET CHIP: a terms facet now carries facet.missing.results, and normalizeFacets() in nextcloud-vue rebuilds the facet from `buckets` alone and drops it, so the count never reaches a consumer (ConductionNL/nextcloud-vue#1176). Reading the raw facet payload beside the normalised one, per app, is the drift the shared normaliser exists to remove. This lens needs no facet payload at all. Deliberately NOT folded into Closed: a closed case with its result recorded is finished work, and burying the ones without it is what lets a year of them pile up unnoticed.",
 						"filter": {
@@ -2100,7 +2109,7 @@
 						"title": "Files",
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
-						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files.",
+						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers.",
 						"props": {
 							"rowActions": [
 								{
@@ -2120,7 +2129,19 @@
 									"target": "FileRequestDialog"
 								}
 							],
-							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked"
+							"linkedItemsUrl": "/apps/dossiq/api/cases/{objectId}/dossier/linked",
+							"columns": [
+								{
+									"id": "sender",
+									"label": "Sender",
+									"property": "senderName"
+								},
+								{
+									"id": "recipients",
+									"label": "Recipients",
+									"property": "recipientNames"
+								}
+							]
 						}
 					},
 					{
@@ -2509,7 +2530,7 @@
 						"type": "case-banner-stack",
 						"title": "Case banners",
 						"icon": "FlagOutline",
-						"_note": "Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than five. Three of the five are a root v-if, so five rows reserved three empty ones on an ordinary case — nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The five widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
+						"_note": "Archived, Favourite, Follow, New since you last looked, What this status asks for and Attention in ONE row rather than six. Four of the six are a root v-if, so six rows reserved four empty ones on an ordinary case — open, nothing new, nothing flagged, status fine — and left a visible gap where they were. A grid row is reserved from the LAYOUT before the component renders and decides it has nothing to say, and GridStack positions items absolutely from gridY/gridHeight, so collapsing an empty one in CSS hides it without moving anything below it: the row has to not be there, or its height has to come from its content. This is both — one row, carrying `sizeToContent` so it is as tall as whatever actually rendered, down to nothing. The six widget TYPES stay in registry.js: they are still valid placements, this is just the one this page uses."
 					},
 					{
 						"id": "case-archival-panel",
@@ -2677,7 +2698,9 @@
 					]
 				},
 				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
+				"_archivedNote": "archived-cases-leave-the-lenses REQ-CM-43, D-4. Six header actions that WRITE to the case are gated on `@self.archived`, the platform's own marker, read straight off the case object the page already holds: the LOCAL form of `visibleWhen` dot-paths into that object, so the gate costs no round trip. `eq null` is how absence is spelled, and it is exact rather than loose: an absent marker is null and a present one is an object, and String(object) is never \"null\". THE FOUR THAT ARE NOT GATED ARE DELIBERATE. Claim, Release and Hand to another team already carry `isFinalStatus neq true`, and a case can only be archived once it has ended, so they are already gone on an archived case; `visibleWhen` holds ONE condition and no AND, so adding the archive to them would mean dropping the condition doing the work. Copy case stays, because a copy is a NEW case and writes nothing to this one. The Lifecycle menu stays, because Restore lives inside it and gating it would hide the one act that undoes the archive. Start keeps its own `hasStartableFlows` gate for the same one-condition reason, and a flow that writes to an archived case is refused by OpenRegister with a sentence naming the archive. \ud83d\udd34 THE GENERIC EDIT BUTTON IS STILL OFFERED, AND DOSSIQ CANNOT TAKE IT AWAY PER RECORD. `config.showEditAction` is a page-level boolean in the manifest schema and CnDetailPage has no predicate form of it, so pressing Edit opens the form, saving is refused by the platform, and the refusal names the archive, the archiving user and the date. That is the reason reaching the reader rather than a silent failure, but it arrives after the click where the other six are simply not there. It belongs in nextcloud-vue, where one detail page reading `@self.archived` answers for every app in the fleet.",
 				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. NEITHER IS GATED ON THE ASSIGNEE, though the requirement is worded that way. A local `visibleWhen` compares a dot-path against a LITERAL with eq or neq: it has no empty operator, it does not resolve `@me` in `value`, and neither its endpoint nor its source mode can name this case (the endpoint URL is fetched verbatim, and OpenRegister's object list ignores an `id` filter). So the gate is the one thing the record says for certain, which is that a closed case is not picked up, and the SERVER refuses a claim on a case that already has a handler, or a release by anyone who is not that handler, with a 409 and a sentence. That is this page's own convention, the one `case-resume` follows: a gesture the case does not allow is refused in words rather than silently accepted. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
+				"_versionMoveNote": "case-version-move (case-type-version-chain): move this case to another version of its OWN case type, which nothing could do. A case filed the day before a correction was published had to be closed and refiled under a new number. It is a modal and not a confirm-gated api-call because the PREVIEW is the act's substance: the person moving the case is shown the status it lands in, the statuses and fields the other version adds and drops, and which of the dropped fields this case has already answered. Every one of those, and the refusal when the other version has no status by the name this case is sitting in, comes from the server, so the dialog cannot disagree with the write. Moving a case to a DIFFERENT case type is a rebind and is not this act: `case-type-rebind` owns that and declares this change as its dependency. Hidden on a closed case, like the other acts that rewrite what governs it.",
 				"headerActions": [
 					{
 						"id": "add-party",
@@ -2702,6 +2725,11 @@
 						"successMessage": "Party added to the case.",
 						"props": {
 							"case": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
 						}
 					},
 					{
@@ -2725,6 +2753,11 @@
 						"successMessage": "Object linked to this case.",
 						"props": {
 							"case": "@objectId"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
 						}
 					},
 					{
@@ -2753,6 +2786,11 @@
 							"kccEmployeeId": "@me",
 							"identificationMethod": "non_geidentificeerd",
 							"nature": "informatieverzoek"
+						},
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
 						}
 					},
 					{
@@ -2765,7 +2803,12 @@
 							"caseId": "@objectId",
 							"open": true
 						},
-						"successMessage": "Document added to the case."
+						"successMessage": "Document added to the case.",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
+						}
 					},
 					{
 						"id": "case-lifecycle-menu",
@@ -2814,7 +2857,12 @@
 							"how": "Confirmed outside the app, recorded by the handler"
 						},
 						"successMessage": "Receipt confirmation recorded on this case.",
-						"errorMessage": "The confirmation could not be recorded."
+						"errorMessage": "The confirmation could not be recorded.",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
+						}
 					},
 					{
 						"id": "case-hand-over",
@@ -2822,6 +2870,18 @@
 						"label": "Hand to another team",
 						"icon": "SwapHorizontal",
 						"target": "CaseHandoverDialog",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-version-move",
+						"type": "open-modal",
+						"label": "Move to another version",
+						"icon": "SourceBranch",
+						"target": "CaseVersionMoveDialog",
 						"visibleWhen": {
 							"field": "isFinalStatus",
 							"op": "neq",
@@ -2852,7 +2912,12 @@
 						"type": "open-modal",
 						"label": "Plan follow-up",
 						"icon": "CalendarClock",
-						"target": "CasePlanFollowUpDialog"
+						"target": "CasePlanFollowUpDialog",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
+						}
 					}
 				]
 			},
@@ -5101,6 +5166,20 @@
 					"filterField": "category",
 					"allLabel": "All case types"
 				},
+				"_quickFiltersNote": "The index used to list every version of every case type, so a catalogue of forty types read as a list of ninety rows carrying the same nine names three times over, and the row you wanted was whichever one had no successor. Current versions is the DEFAULT chip and carries `supersededBy: \"IS NULL\"`, the literal sentinel every OpenRegister condition builder matches by value, which the Queue page's `assignee: \"IS NULL\"` already relies on. It is a CHIP and not a base `filter` on the page, deliberately: a base filter cannot be cleared by the person reading the list, and the older versions are exactly what an auditor asking which rules governed a case last March came here for. All versions drops the condition and shows the whole chain. A draft has no successor either, so it sits under both chips, which is right: a draft is the version you are about to publish.",
+				"quickFilters": [
+					{
+						"label": "Current versions",
+						"filter": {
+							"supersededBy": "IS NULL"
+						},
+						"default": true
+					},
+					{
+						"label": "All versions",
+						"filter": {}
+					}
+				],
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
@@ -5177,6 +5256,45 @@
 								"verwerkingsactiviteit"
 							],
 							"hideEmpty": false
+						}
+					},
+					{
+						"id": "case-type-chain",
+						"type": "object-list",
+						"title": "Version chain",
+						"icon": "SourceBranch",
+						"_note": "Every version of THIS case type, newest first, which the page could not show at all: the Versions widget below it lists the type's workflowTemplate rows, a different thing wearing the same word, so somebody looking for the version that replaced theirs found a list of workflow revisions instead. The filter is `identifier` and NOT a walk over `previousVersion`: two rows are versions of one zaaktype when they share ZGW's `identificatie`, and a walk answers a SHORTER list on a chain with a hole in it, where a version missing from the list reads as a version that does not exist. `@object.identifier` and not `@objectId`, because the filter compares the shared identifier rather than this row's own id. `rowRoute` points back at this same page, which is how you move between versions.",
+						"content": {
+							"register": "dossiq",
+							"schema": "caseType",
+							"filter": {
+								"identifier": "@object.identifier"
+							},
+							"sort": {
+								"field": "version",
+								"dir": "desc"
+							},
+							"limit": 25,
+							"columns": [
+								{
+									"key": "version",
+									"label": "Version"
+								},
+								{
+									"key": "isDraft",
+									"label": "Draft"
+								},
+								{
+									"key": "validFrom",
+									"label": "Valid from"
+								},
+								{
+									"key": "validUntil",
+									"label": "Valid until"
+								}
+							],
+							"rowRoute": "CaseTypeDetail",
+							"emptyText": "This case type has only this version"
 						}
 					},
 					{
@@ -5266,15 +5384,24 @@
 					},
 					{
 						"id": "5",
-						"widgetId": "case-type-versions",
+						"widgetId": "case-type-chain",
 						"gridX": 0,
 						"gridY": 10,
 						"gridWidth": 12,
 						"gridHeight": 4,
 						"showTitle": true
+					},
+					{
+						"id": "6",
+						"widgetId": "case-type-versions",
+						"gridX": 0,
+						"gridY": 14,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
 					}
 				],
-				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string.",
+				"_headerActionsNote": "There is no `run-action` header-action type. The manifest schema enumerates handler, open-modal, open-page, navigate, object-op, export, open-form, refresh, api-call, agent and toggle, and CnActionButtons resolves exactly those; the design's `run-action` would have been refused by `npm run check:manifest` and, had it slipped through, rendered a button that dispatches nothing. Export is an `api-call` with `download: true`, which is the shape that asks for the response as a blob and hands it to the browser -- the endpoint already answers a DataDownloadResponse. The other three are dialogs, each for a reason a declarative action cannot meet: Import takes a FILE (a confirm gate has no fields and an api-call sends JSON), Publish must show the validation findings BEFORE asking for a change note, and Duplicate must land on the copy rather than refresh the page you are already on. Every icon here is registered in src/icons.js (gate-60); a name that is not renders no icon at all. The three dialogs read the case type off the ROUTE and not off their props: `open-modal` forwards props verbatim, so a `@objectId` token would arrive as that literal string. case-type-version-chain adds two. NEW VERSION is a dialog and not the api-call its tasks named, for the reason Duplicate is one: an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one, because the gesture beside it is Duplicate: a duplicate is a second case type, a version is this one later on, same name, same identifier, and today's running cases stay where they are. DEPRECATE is an api-call to a dossiq endpoint and NOT the `object-op` the design named. An object-op merges its `values` into the row verbatim: `validUntil: \"@today\"` is not token-resolved for that action type, so the literal string `@today` would have been written into a date field and stored without complaint. The day comes from the server's clock instead, and the server also refuses to close a version nothing has replaced. Its `visibleWhen` is a SOURCE query rather than a local field test, because the local operator set is eq/neq/gt/gte/lt/lte with no is-set, and `supersededBy neq null` reads TRUE on an unset field, which is the opposite of what it means. Counting the published rows whose `previousVersion` is this one asks the same question and can answer it.",
 				"headerActions": [
 					{
 						"id": "case-type-export",
@@ -5303,6 +5430,41 @@
 						"label": "Duplicate",
 						"icon": "ContentDuplicate",
 						"target": "CaseTypeDuplicateDialog"
+					},
+					{
+						"id": "case-type-new-version",
+						"type": "open-modal",
+						"label": "New version",
+						"icon": "SourceBranch",
+						"target": "CaseTypeNewVersionDialog",
+						"visibleWhen": {
+							"field": "isDraft",
+							"op": "neq",
+							"value": true
+						}
+					},
+					{
+						"id": "case-type-deprecate",
+						"type": "api-call",
+						"label": "Deprecate",
+						"icon": "ArchiveOutline",
+						"url": "/apps/dossiq/api/case-types/@objectId/deprecate",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "This version is closed for new cases.",
+						"errorMessage": "This version was not closed.",
+						"visibleWhen": {
+							"source": {
+								"register": "dossiq",
+								"schema": "caseType",
+								"filter": {
+									"previousVersion": "@objectId",
+									"isDraft": false
+								}
+							},
+							"op": "gt",
+							"value": 0
+						}
 					},
 					{
 						"id": "case-type-publish",
@@ -5577,6 +5739,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"
@@ -5795,6 +5958,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"
