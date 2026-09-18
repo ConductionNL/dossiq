@@ -81,3 +81,19 @@ Nothing here changes leaf behaviour, so there is no overlap to reconcile beyond 
 - **Q1** — Should hearings (`hearing`, `hearingSession`) migrate their raw `talkRoomUrl`/`videoCallUrl` strings to linked Talk rooms? Property rename ⇒ data migration; needs its own change.
 - **Q2** — Should `intakeFormRef` support field mapping (form question → case property) beyond the description dump? Deferred until a real form demands it.
 - **Q3** — When OpenRegister's `integration-maps` ships the multi-object overview, `CasesOnMapView` should be retired in favour of it — tracked there, not here.
+
+## D-6. What the build found that the design did not know
+
+Four of this change's five leaves needed a different shape than the proposal named. Each is recorded where it was found, in the manifest note, the register or the test that pins it, and each is a silent failure rather than an error.
+
+**`mail` is not the email leaf.** The leaf and its PHP provider are both `email`. `mail` is a separate literal that OpenRegister's Mail sidebar filters on to decide which schemas may be linked to an email and which get a create button. Two consumers read one list in two vocabularies, and neither says so. REQ-LEAF-106 as first written would have had somebody remove `mail` from `case` as a dangling value, taking the link button and the create button with it.
+
+**A template without the sentinel is dark.** `complaint` had a template and no `linkedTypes` at all, so its create button could never have appeared. That is the same shape as the gap the change was opened for.
+
+**`communicationChannel` is `format: uri`.** The proposal named it as a template key with the literal `email`. A non-URI in a uri field is a validation failure at create time, on the button that is supposed to save the caseworker the typing.
+
+**Talk already has a surface.** `live-conversation-on-the-case` shipped `case-conversations-pane` after this change was written: it starts a room through `OCP\Talk\IBroker`, records the conversation on the case and declares the case major. The leaf lists rooms from OpenRegister's link table; the pane lists them from `case.conversations`. Two surfaces, two stores, one question. So this change declares `talk` and adds no second surface.
+
+**Neither inspection schema has a dossiq page.** Task 4.3 asked for the maps leaf tab on the `fieldInspection` and `inspectionChecklistRun` detail pages, and the manifest has neither page. The declaration still buys the leaf on OpenRegister's own object page; giving the schemas a page of their own is `no-schema-without-a-surface`.
+
+**A detail page never renders a leaf's chevron.** Not used here in the end, but worth recording beside the above: `CnDetailPage` runs `CnActionButtons` in `display: "menu"`, and that mode maps the visible actions into menu descriptors and never looks at `children`.

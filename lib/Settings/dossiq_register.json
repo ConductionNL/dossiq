@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.19.2"
+        "version": "0.20.0"
     },
     "x-openregister": {
         "type": "application",
@@ -651,6 +651,12 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "intakeFormRef": {
+                        "type": "string",
+                        "title": "Intake form",
+                        "description": "The hash of the Nextcloud Forms form that opens a case of this type. Leave it empty and nothing listens. A submission of a bound form starts the case with this type’s first status and the clock running from the day it came in.",
+                        "visible": true
                     }
                 }
             },
@@ -1607,7 +1613,9 @@
                         "photos",
                         "maps",
                         "shares",
-                        "decidesk-decisions"
+                        "decidesk-decisions",
+                        "talk",
+                        "deck"
                     ],
                     "x-openregister-processing": {
                         "logReads": true,
@@ -2264,7 +2272,14 @@
                             },
                             "symmetric": true
                         }
-                    ]
+                    ],
+                    "mailObjectTemplate": {
+                        "title": "{{subject}}",
+                        "description": "{{preview}}",
+                        "intakeChannel": "email",
+                        "startDate": "{{date}}",
+                        "initiatorDisplayName": "{{senderName}}"
+                    }
                 },
                 "required": [
                     "title",
@@ -7542,7 +7557,8 @@
                 "configuration": {
                     "linkedTypes": [
                         "forms",
-                        "photos"
+                        "photos",
+                        "maps"
                     ]
                 },
                 "required": [
@@ -9076,6 +9092,15 @@
                                 "description": "The complainant withdraws the complaint."
                             }
                         }
+                    },
+                    "linkedTypes": [
+                        "mail"
+                    ],
+                    "mailObjectTemplate": {
+                        "subject": "{{subject}}",
+                        "description": "{{preview}}",
+                        "receiptChannel": "email",
+                        "receiptDate": "{{date}}"
                     }
                 }
             },

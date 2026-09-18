@@ -76,5 +76,24 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\DeliveryConcludedListener::class
 			);
 		}
+
+		// leaf-integrations REQ-LEAF-103: a submission of a form a case type
+		// bound opens a case with the statutory clock already running. `forms`
+		// is optional, and the guard is what keeps an instance without it
+		// booting: the event name is an FQN STRING on the listener, never an
+		// import, because a type hint on a class the instance does not have is
+		// a fatal when the container builds the listener rather than a feature
+		// that is quietly missing.
+		//
+		// It also fails towards doing nothing. A wrong event name makes
+		// `class_exists` answer false, nothing registers, and no submission
+		// opens a case. For a path whose only act is CREATING work, that is
+		// the right direction to fail in.
+		if (class_exists(\OCA\Dossiq\Listener\FormSubmittedListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\FormSubmittedListener::EVENT,
+				\OCA\Dossiq\Listener\FormSubmittedListener::class
+			);
+		}
 	}//end register()
 }//end class
