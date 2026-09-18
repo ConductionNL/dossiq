@@ -106,7 +106,6 @@ class NoDarkCapabilityTest extends TestCase {
 	private const DARK_TODAY = [
 		'CaseAreaResolver' => 'REQ-RTP-04 write half (dossiq#2936): resolves a BAG address id to a wijk, and no case field carries an address id, so the listener that should call it has nothing to pass. Needs the address seam decided first.',
 		'CaseTypeContributionRegistry' => 'case-types under My work (2026-09-02): gathers work surfaces other apps contribute. Nothing reads it and no app contributes yet, so the caller is the contribution endpoint that has not been specified.',
-		'DsoLvAuthService' => 'pre-parity (2026-06-06), DSO Omgevingsloket. Debt sweep.',
 		// FOUND ONLY ONCE COMMENTS WERE STRIPPED. Each of these three is named
 		// in a docblock somewhere and constructed nowhere, which is why the
 		// first pass of this sweep reported them as called. They are the
