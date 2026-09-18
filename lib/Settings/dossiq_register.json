@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.2"
+        "version": "0.20.3"
     },
     "x-openregister": {
         "type": "application",
@@ -651,6 +651,11 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "areaFallbackRoleType": {
+                        "type": "string",
+                        "description": "The roleType a case of this type routes to when its address falls in no administered boundary. Declared per case type because the right fallback differs: a melding goes to the central desk, a vergunning goes to the duty handler. Absent, an unresolvable area routes by the rule's own roleType and the case still says the fallback was used.",
+                        "title": "Area fallback role type"
                     },
                     "consentRequiredInsideOrganisation": {
                         "type": "boolean",
@@ -3345,6 +3350,44 @@
                                 "type": "samenhang"
                             }
                         }
+                    },
+                    "district": {
+                        "type": "string",
+                        "description": "The wijk this case's address falls in, resolved once when the address is set rather than on every routing decision: resolving per query makes routing depend on an external service being up, and an unresolvable boundary would then read as a case with no area. Held here so a routing rule and a list filter can read the same value.",
+                        "title": "District",
+                        "facetable": true
+                    },
+                    "neighbourhood": {
+                        "type": "string",
+                        "description": "The buurt this case's address falls in, resolved with the district and from the same answer.",
+                        "title": "Neighbourhood",
+                        "facetable": true
+                    },
+                    "areaResolvedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the area was resolved. Boundaries change, and a municipality may redraw its own division, so a value on a case can only be explained beside the moment it was read.",
+                        "title": "Area resolved at",
+                        "readOnly": true
+                    },
+                    "areaSource": {
+                        "type": "string",
+                        "description": "The boundary set the area was read from, so the value can be explained by the boundaries in force at the time. Today that is PDOK's locatieserver through `PdokService`; when integriq publishes the `pdok-geo-boundaries` connection (ADR-019) this names that connection instead.",
+                        "title": "Area source",
+                        "readOnly": true
+                    },
+                    "areaFallbackUsed": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this case was routed by the case type's fallback because its address fell in no administered boundary. Addresses do: new developments, water, an address abroad, a case with no address at all. The flag is what keeps that from looking like routing that silently did nothing.",
+                        "title": "Area fallback used",
+                        "readOnly": true
+                    },
+                    "areaAddressId": {
+                        "type": "string",
+                        "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
+                        "title": "Area address id",
+                        "readOnly": true
                     }
                 },
                 "searchable": true
@@ -3423,6 +3466,19 @@
                         "format": "date-time",
                         "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
                         "title": "Delegate Until"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 1,
+                        "description": "How large a share of the pool's work this membership takes. The weight is on the MEMBERSHIP and not on the person, because the same handler may carry a full share of intake and a quarter share of objections, and one number on the person would be wrong for one of the two. A pool whose weights are all one is routed exactly as it was before weights existed. Zero means this member takes no new work without leaving the pool.",
+                        "title": "Weight"
+                    },
+                    "team": {
+                        "type": "string",
+                        "description": "The team this membership belongs to, so a routing rule can name a position INSIDE a team (the senior handler of team zuid) without an organisation-wide role for every senior of every team. That is how a role list reaches forty entries that mean six things. The value comes from the organisation; dossiq holds no second org chart.",
+                        "title": "Team",
+                        "facetable": true
                     },
                     "representedParty": {
                         "type": "string",
