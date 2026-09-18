@@ -3490,6 +3490,26 @@
                             }
                         }
                     },
+                    "receivedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Received at",
+                        "description": "The moment the submission arrived. Stored beside the moment the term starts rather than only being the record's creation timestamp, because a handler answering a complaint in March has to be able to say what the citizen was told in January, and a recomputed answer is not that.",
+                        "facetable": true
+                    },
+                    "termStartsAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Term starts at",
+                        "description": "The first working moment on or after `receivedAt`, on the same calendar the term counts on. Written once at creation and never recomputed: the calendar can gain a holiday afterwards, and a recomputation would quietly agree with whatever it says today.",
+                        "facetable": true
+                    },
+                    "receivedOutsideWorkingHours": {
+                        "type": "boolean",
+                        "title": "Received outside working hours",
+                        "description": "True when the request arrived when the municipality was closed, so the clock started later than the moment the applicant pressed send. Derivable from the two moments and stored anyway, because it is what a report filters on and what the ontvangstbevestiging branches on. Absent, rather than false, on a case the working calendar could not place: an unanswered calendar does not know whether the week was open.",
+                        "facetable": true
+                    },
                     "district": {
                         "type": "string",
                         "description": "The wijk this case's address falls in, resolved once when the address is set rather than on every routing decision: resolving per query makes routing depend on an external service being up, and an unresolvable boundary would then read as a case with no area. Held here so a routing rule and a list filter can read the same value.",

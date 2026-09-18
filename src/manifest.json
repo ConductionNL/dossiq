@@ -2311,10 +2311,22 @@
 											"title": "Receipt confirmation",
 											"columns": 1,
 											"include": [
+												"receivedAt",
+												"termStartsAt",
+												"receivedOutsideWorkingHours",
 												"acknowledgementDuty",
 												"outboundCommunications"
 											],
 											"overrides": {
+												"receivedAt": {
+													"editable": false
+												},
+												"termStartsAt": {
+													"editable": false
+												},
+												"receivedOutsideWorkingHours": {
+													"editable": false
+												},
 												"acknowledgementDuty": {
 													"editable": false
 												},
