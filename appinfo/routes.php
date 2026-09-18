@@ -990,6 +990,9 @@ $extra = [
         // documents-live-on-the-case: the documents joined to this case whose file
         // lives in another case's folder, as the Files tab's linked rows.
     ['name' => 'linkedDocuments#index',            'url' => '/api/cases/{caseId}/dossier/linked',              'verb' => 'GET'],
+    // scan-verdict-on-the-row: what files_antivirus recorded for one file, for
+    // the Scan column and the document properties dialog. dossiq scans nothing.
+    ['name' => 'scanVerdict#show',                 'url' => '/api/files/{fileId}/scan',                        'verb' => 'GET'],
     // people-on-the-case: who can be asked for a file, and the asking.
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
