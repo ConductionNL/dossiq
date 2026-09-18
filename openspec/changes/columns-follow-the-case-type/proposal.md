@@ -44,6 +44,13 @@ two are meant to stack.
 - A column naming a property the case type does not carry fails the manifest
   test, not the page.
 
+## Where this sits
+
+dossiq's umbrella `competitor-parity-2026-09` already carries row 11.9 in its
+sibling-owned table, naming nextcloud-vue as the owner and the dossiq half as
+"declare the columns per case type on Cases". This change is that sentence,
+written out, now that the nextcloud-vue half has merged.
+
 ## Ownership
 
 nextcloud-vue built the mechanism and it is merged. dossiq declares the

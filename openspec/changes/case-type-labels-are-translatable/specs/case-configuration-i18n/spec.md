@@ -73,3 +73,17 @@ label is a wrong label, not a present one.
 - **WHEN** the Dutch title is changed
 - **THEN** the English title SHALL be marked stale
 - **AND** the English completeness count SHALL drop by one
+
+### Requirement: The annotation is the key OpenRegister reads (REQ-CFI-05)
+
+`lib/Settings/` SHALL declare `translatable`, never `x-translatable`.
+OpenRegister's `TranslationHandler` tests `propertyDef['translatable']`, so a
+prefixed key marks nothing while reading as a declaration. No file under
+`lib/Settings/` SHALL contain `x-translatable` after this change.
+
+#### Scenario: The prefixed key is gone
+@e2e exclude Register declaration, covered by vitest.
+
+- **WHEN** the register files are checked
+- **THEN** `x-translatable` SHALL appear in none of them
+- **AND** every property that carried it SHALL carry `translatable` instead

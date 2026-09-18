@@ -46,6 +46,13 @@ which is true of the method and false of the feature.
 - A round trip test: export a seeded case type, import it into an empty
   register, and compare the two objects field by field.
 
+## Where this sits
+
+Row 11.2 is not in the sibling-owned table of `competitor-parity-2026-09` and
+not among the twelve rows its 2026-09-13 re-read closed. Nothing else carries
+it. That is consistent with how it hid: a row whose spec says SHALL and whose
+tasks are ticked reads as done from every angle except the code.
+
 ## Ownership
 
 dossiq builds all of it. The objects are OpenRegister's and are read and

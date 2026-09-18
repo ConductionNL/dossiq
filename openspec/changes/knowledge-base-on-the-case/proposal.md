@@ -44,6 +44,15 @@ sentence in an AI prompt.
 - `xwiki` joins `case.linkedTypes` too, for the municipalities that run it.
   The two leaves are alternatives, and neither is required.
 
+## Where this sits
+
+dossiq's umbrella `competitor-parity-2026-09` carries row 11.26 in its
+sibling-owned table, naming openregister's `integration-xwiki` and the dossiq
+half as "place the xwiki leaf on the case and in the KCC panel". This change
+is that, plus Collectives, which the table does not name and which is the
+closer fit: it ships with Nextcloud, it is scoped to a team, and the row asks
+for per-role visibility. XWiki stays in for the municipalities that run it.
+
 ## Ownership
 
 Nextcloud Collectives is the knowledge base. OpenRegister owns the leaves and

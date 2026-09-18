@@ -45,6 +45,18 @@ dossiq was waiting for exists.
 - The mock stays, selectable by config, for development. What changes is that
   it is never the silent default on an instance that asked for real post.
 
+## Where this sits
+
+`dossiq-delivers-nothing` audited every outbound surface on 2026-09-02 and
+staged Berichtenbox as phase 4, with an honest blocker: "No real transport
+exists... Nothing to move today, there is no transport." That blocker lifted
+on 2026-09-18. This change is phase 4, and it is small because that audit
+already decided where the line runs.
+
+The umbrella `competitor-parity-2026-09` carries the neighbouring row 12.14
+the same way, pointing at `dossiq-delivers-nothing` for the webhooks and the
+NRC fan-out. Those stay staged; this is only the Berichtenbox leg.
+
 ## Ownership
 
 integriq owns the Berichtenbox conversation, the credentials and the
