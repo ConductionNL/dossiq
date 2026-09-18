@@ -23,6 +23,13 @@
 -->
 <template>
 	<div class="case-sharing-tab">
+		<p
+			v-if="deelzaken.length > 0"
+			class="case-sharing-tab__inheritance"
+			data-testid="sharing-reaches-deelzaken">
+			{{ inheritanceWarning }}
+		</p>
+
 		<ShareTab
 			:shares="shares"
 			:loading="loading"
@@ -111,6 +118,7 @@ import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDia
 import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
 import ShareTab from './ShareTab.vue'
+import { useObjectStore } from '../../../store/modules/object.js'
 import {
 	createFederatedShareEndpoint,
 	federatedActivityEndpoint,
@@ -158,7 +166,30 @@ export default {
 			activeFederatedShareId: null,
 			activityEntries: [],
 			activityLoading: false,
+			deelzaken: [],
 		}
+	},
+
+	computed: {
+		/**
+		 * What a share on this case will reach beyond this case (D-5).
+		 *
+		 * Said BEFORE the share is made, not after. The failure this row is
+		 * about, inverted: a handler who shares a parent expecting the
+		 * children to stay private has already widened them by the time any
+		 * later screen could tell them so.
+		 *
+		 * @return {string} The sentence.
+		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 */
+		inheritanceWarning() {
+			return n(
+				'dossiq',
+				'This case has one sub-case. Sharing this case lets the holder read it too.',
+				'This case has %n sub-cases. Sharing this case lets the holder read them too.',
+				this.deelzaken.length,
+			)
+		},
 	},
 
 	/**
@@ -173,9 +204,38 @@ export default {
 		this.loadFederatedShares()
 		this.loadPartners()
 		this.loadCaseDocuments()
+		this.loadDeelzaken()
 	},
 
 	methods: {
+		/**
+		 * Read the sub-cases hanging under this case, so the warning above can
+		 * say how many a share reaches.
+		 *
+		 * A failed read leaves the list empty and says nothing. That is the
+		 * right way round here and only here: the warning is a courtesy on top
+		 * of a rule OpenRegister enforces, so a missing warning costs a
+		 * handler a surprise, while a warning about sub-cases that do not
+		 * exist would teach them to ignore the line.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 */
+		async loadDeelzaken() {
+			if (!this.objectId) {
+				return
+			}
+			try {
+				const rows = await useObjectStore().fetchCollection('case', {
+					parentCase: this.objectId,
+					_limit: 100,
+				})
+				this.deelzaken = rows || []
+			} catch {
+				this.deelzaken = []
+			}
+		},
+
 		/**
 		 * Load every access link on this case, each with its state.
 		 *

@@ -1483,7 +1483,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.25.0",
+                "version": "1.26.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1543,6 +1543,14 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "_hierarchyNote": "Row Q13.23. The edge is `parentCase` and NOTHING ELSE. `relatedCases` is a typed PEER relation written symmetrically by CaseRelationService, so declaring it here would make a grant travel sideways along every link a handler ever made, without limit and without anyone having asked for it. `maxDepth` is not a performance dial: a deelzaak chain is a graph nobody validates on write, and a cycle written by an import would otherwise resolve forever. `inheritedVerbs` names READ and no more, which is the measured half of the competitor's behaviour (Vikunja 2.6.0 read on the root reached the grandchild and was refused a write): a right to see the parent is not a right to change the child. THIS BLOCK IS INERT UNTIL OPENREGISTER READS IT (`rbac-inherits-to-children`, row Q13.23), and it is declared now so the edge is one thing rather than two. It is also listed in SchemaSlugMap::SCHEMA_ANNOTATION_KEYS, without which OpenRegister DROPS an unknown configuration key in silence and the declaration would never reach the instance at all.",
+                    "x-openregister-hierarchy": {
+                        "parentField": "parentCase",
+                        "maxDepth": 10,
+                        "inheritedVerbs": [
+                            "read"
+                        ]
+                    },
                     "x-openregister-dedup": {
                         "blockingKeys": [
                             "caseType"
