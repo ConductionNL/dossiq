@@ -24,7 +24,17 @@ case type after the type's own role types. When a type declares its own
 ### Requirement: The Parties tab shows who is represented (REQ-ROLE-010)
 
 A Gemachtigde row SHALL show the representative as participant and the
-represented party in the column Represented by, read from `delegateFrom`.
+represented party in the column Represented by, read from `representedParty`.
+
+AMENDED 2026-09-18. The proposal and the first wording of this requirement
+both named `delegateFrom`. That property was already taken: it is the START
+OF A DELEGATION WINDOW, a date-time, and `RoleDelegationResolver` compares it
+against now to decide whether to substitute a delegate. Writing a party uuid
+into it would have made every routing decision on that case compare a uuid
+against a clock, in silence, and the widget would still have rendered the
+name. `role.representedParty` is a new property, and the role schema moves to
+1.2.0 with it, because OpenRegister fast-skips a schema whose version did not
+move and would have dropped the property without a word.
 
 #### Scenario: Represented party is visible
 @e2e tests/e2e/case-parties.spec.ts

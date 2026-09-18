@@ -45,6 +45,25 @@ class GuardRegistry {
 	public const STATUS_CHECKLIST = 'statusChecklist';
 
 	/**
+	 * The other guard type every transition is checked against.
+	 *
+	 * The limit is authored on the STATUS BEING ENTERED, so a transition that
+	 * never names it is still subject to it — see CapacityGuard. Unlike the
+	 * checklist it needs one value from the transition, `toStatus`, because it
+	 * evaluates the status the case is moving INTO rather than the one it is
+	 * in.
+	 */
+	public const STATUS_CAPACITY = 'statusCapacity';
+
+	/**
+	 * The guard type every transition is checked against for a walked approval.
+	 *
+	 * The case type decides which acts it gates, so a transition that never
+	 * names it is still subject to it: see ApprovalGuard.
+	 */
+	public const APPROVAL_GATE = 'approvalGate';
+
+	/**
 	 * Registered evaluators keyed by guard type.
 	 *
 	 * @var array<string, GuardEvaluatorInterface>
@@ -60,7 +79,10 @@ class GuardRegistry {
 	 * @param RoleGuard $roleGuard Built-in role evaluator
 	 * @param MandaatGuard $mandateGuard Mandaatregister authority evaluator
 	 * @param StatusChecklistGuard $statusChecklist Required-items-of-the-current-status evaluator
+	 * @param CapacityGuard $capacity Capacity-of-the-status-being-entered evaluator
 	 * @param LoggerInterface $logger Logger for unknown guard types
+	 * @param ApprovalGuard|null $approvalGuard The walked-approval evaluator. Optional, so a
+	 *                                          registry built before it existed builds as it did.
 	 */
 	public function __construct(
 		ChecklistGuard $checklist,
@@ -69,7 +91,9 @@ class GuardRegistry {
 		RoleGuard $roleGuard,
 		MandaatGuard $mandateGuard,
 		StatusChecklistGuard $statusChecklist,
+		CapacityGuard $capacity,
 		private readonly LoggerInterface $logger,
+		?ApprovalGuard $approvalGuard = null,
 	) {
 		$this->evaluators = [
 			'checklist' => $checklist,
@@ -80,8 +104,32 @@ class GuardRegistry {
 			// Registered like any other type, but declared by no template: the
 			// engine appends it to every transition's guard list itself.
 			self::STATUS_CHECKLIST => $statusChecklist,
+			// Appended by the engine too, and carrying the one thing it needs
+			// from the transition: which status is being entered.
+			self::STATUS_CAPACITY => $capacity,
 		];
+
+		if ($approvalGuard !== null) {
+			$this->evaluators[self::APPROVAL_GATE] = $approvalGuard;
+		}
 	}//end __construct()
+
+	/**
+	 * Whether an evaluator answers for a guard type.
+	 *
+	 * The engine asks before it appends an implicit guard. An implicit guard
+	 * with no evaluator would be answered "Onbekende guard" and refuse every
+	 * transition of every case, which is a broken engine, not a closed gate.
+	 *
+	 * @param string $type Guard type identifier
+	 *
+	 * @return bool True when the type is registered
+	 *
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 */
+	public function knows(string $type): bool {
+		return isset($this->evaluators[$type]);
+	}//end knows()
 
 	/**
 	 * Register an additional evaluator (DI extension point).

@@ -44,6 +44,16 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Thirteen, one over the
+ * threshold, and four of the thirteen are the per-domain registrars this
+ * class delegates to rather than dependencies it entangles itself with. The
+ * one that crossed the line is `ContactListenerRegistrar`, and it was made a
+ * registrar of its own precisely so the binding it carries would not be a
+ * fifth listener import here. Splitting further would mean a registrar
+ * holding one registrar holding one listener, which trades a number for a
+ * layer and makes the list of what dossiq binds harder to read. The reason a
+ * ceiling exists is entanglement; a list of registrars is not that.
+ *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class ObjectListenerRegistrar {
@@ -65,6 +75,7 @@ class ObjectListenerRegistrar {
 		$this->registerCacheInvalidationListeners(context: $context);
 		$this->registerCaseDeleteGuard(context: $context);
 		(new IntakeListenerRegistrar())->register(context: $context);
+		(new ContactListenerRegistrar())->register(context: $context);
 		(new DocumentListenerRegistrar())->register(context: $context);
 		(new PersonListenerRegistrar())->register(context: $context);
 	}//end register()

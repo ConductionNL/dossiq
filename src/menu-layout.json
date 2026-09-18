@@ -46,6 +46,7 @@
 	],
 	"integrationsSection": [
 		"AvgRegisterLink",
-		"AiOversightLink"
+		"AiOversightLink",
+		"DataModelLink"
 	]
 }

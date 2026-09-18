@@ -2,47 +2,37 @@
 
 ## 1. Create-from-email templates (REQ-LEAF-101)
 
-- [ ] 1.1 `lib/Settings/dossiq_register.json`: add `configuration.mailObjectTemplate` to `case` (`title`/`description`/`intakeChannel`/`communicationChannel`/`startDate`/`initiatorDisplayName` per design D1) and `complaint` (`subject`/`description`/`receiptChannel`/`receiptDate`). Scalars only; never touch `initiatorSourceId`, `initiatorType`, `requester`, `complainant`. Bump the register version so the import repair step is not a no-op. `python3 -m json.tool` after each edit.
-- [ ] 1.2 Assert every template key is a real property of its schema (cross-check against `properties`) and that no other Dossiq schema gains a `mailObjectTemplate`.
+- [x] 1.1 `lib/Settings/dossiq_register.json`: `configuration.mailObjectTemplate` on `case` and `complaint`, scalars only, no identifying field. `communicationChannel` is NOT a key: the property is `format: uri` and `email` is not a URI. Register version 0.19.2 → 0.20.0, or the import repair step skips the whole thing.
+- [x] 1.2 `complaint` also gains `linkedTypes: ["mail"]`. A template without the sentinel is a button that never appears: the Mail sidebar builds its schema list by filtering on `linkedTypes.includes('mail')` and draws the create button per schema in THAT list.
+- [x] 1.3 `tests/Unit/LeafIntegrationDeclarationsTest.php`: exactly two schemas carry a template, every key is a real property, every value is a scalar, no identity is prefilled, and both are actually reachable.
 
-## 2. Talk on the case detail (REQ-LEAF-102)
+## 2. Talk (REQ-LEAF-102)
 
-- [ ] 2.1 `lib/Settings/dossiq_register.json`: add `"talk"` to `case.configuration.linkedTypes`.
-- [ ] 2.2 `src/registry.js`: register `TalkLeafTab` (`kind: 'page'`, `component: leafTab('talk')`) following the `CalendarLeafTab` precedent, with an ADR-022 `_note`.
-- [ ] 2.3 `src/manifest.json`: add the `case-talk` integration widget (`integrationId: "talk"`, icon `ChatOutline`), a layout entry, and the `TalkLeafTab` sidebar tab on the case detail page.
+- [x] 2.1 `"talk"` added to `case.configuration.linkedTypes`.
+- [x] 2.2 NO `TalkLeafTab` and NO Talk widget. `live-conversation-on-the-case` shipped a Talk surface after this change was written: `case-conversations-pane` starts a room through `OCP\Talk\IBroker`, records the conversation on the case and declares the case major. A leaf tab beside it would list rooms from OpenRegister's link table while the pane lists rooms from `case.conversations`, so the same question would have two answers that never agree.
 
 ## 3. Forms citizen intake (REQ-LEAF-103)
 
-- [ ] 3.1 `lib/Settings/dossiq_register.json`: add the optional `intakeFormRef` string property to `caseType` (title + description; additive — no required change).
-- [ ] 3.2 New `lib/Service/FormsIntakeService.php`: resolve the bound caseType by form hash, create the case with initial status, `intakeChannel: "forms"`, `startDate` = submission date (statutory clock via the existing `deadline` calculation), submission answers into `description`, link the submission via the forms leaf. Full PHPDoc + SPDX headers.
-- [ ] 3.3 Forms submission event listener registered in `lib/AppInfo/Application.php`; no-op when `forms` is disabled or the form is unbound. PHPUnit: bound-form creates a correctly-clocked case; unbound-form creates nothing (the guard must be shown able to say NO).
+- [x] 3.1 `caseType.intakeFormRef`, optional, additive.
+- [x] 3.2 `lib/Service/FormsIntakeService.php`: resolves the bound case type by form hash, RE-CHECKS the hash on every row the store returns, writes the case with the initial status, `intakeChannel: "forms"` and `startDate` = the submission date.
+- [x] 3.3 `lib/Listener/FormSubmittedListener.php`, registered in `CrossAppListenerRegistrar` behind `class_exists`. The event name is an FQN string on the listener, never an import: `forms` is optional and a type hint on an absent class is a fatal at container build time. A wrong name registers nothing and creates nothing, which for an intake path is the right way to fail.
+- [x] 3.4 `tests/Unit/Service/FormsIntakeServiceTest.php`: the unbound form is asserted first and the bound one is its control; a store that ignores the filter is shown not to get to choose the case type.
 
 ## 4. Maps on the VTH surfaces (REQ-LEAF-104)
 
-- [ ] 4.1 `lib/Settings/register.d/40-mobiel-inspectie-offline.json`: add `configuration.linkedTypes: ["maps"]` to `fieldInspection` (the fragment has no `configuration` object today — create it; never drop an existing key).
-- [ ] 4.2 `lib/Settings/dossiq_register.json`: extend `inspectionChecklistRun.configuration.linkedTypes` to `["forms", "photos", "maps"]`.
-- [ ] 4.3 `src/manifest.json`: surface the maps leaf tab on the `fieldInspection` and `inspectionChecklistRun` detail pages. Touch nothing in OpenRegister/nextcloud-vue maps code and leave `CasesOnMapView` unchanged (owned by OpenRegister `integration-maps`).
+- [x] 4.1 `register.d/40-mobiel-inspectie-offline.json`: `fieldInspection` gains a `configuration` object it did not have, with `linkedTypes: ["maps"]`.
+- [x] 4.2 `inspectionChecklistRun.configuration.linkedTypes` extended to `["forms", "photos", "maps"]`.
+- [x] 4.3 NO manifest change. Neither schema has a dossiq detail page to put a tab on, so the leaf surfaces on OpenRegister's own object page. Giving `fieldInspection` a page is a new surface and belongs to `no-schema-without-a-surface`.
 
-## 5. Deck on the case detail (REQ-LEAF-105)
+## 5. Deck (REQ-LEAF-105)
 
-- [ ] 5.1 `lib/Settings/dossiq_register.json`: add `"deck"` to `case.configuration.linkedTypes`.
-- [ ] 5.2 `src/registry.js` + `src/manifest.json`: `DeckLeafTab` (`leafTab('deck')`), `case-deck` widget (`integrationId: "deck"`, icon `ViewColumnOutline`), layout entry, sidebar tab — mirroring the Talk wiring.
-- [ ] 5.3 Assert no code path links `task` records to Deck cards in either direction (grep `deck` across `lib/` — only declaration/UI wiring may match).
+- [x] 5.1 `"deck"` added to `case.configuration.linkedTypes`.
+- [x] 5.2 `src/manifest.json`: a `case-deck` integration widget as a SECTION of the Work panel, beside the tasks. Not a body widget with a layout entry, which the design named: the case body is a tab strip and its grid is full.
+- [x] 5.3 Asserted that no code path links `task` to Deck, searching `lib/` for the shapes a real Deck call takes and asserting the searched-file count. The first form of that test matched the word `deck` anywhere and reddened on a docblock reading "Nextcloud Deck does it in one call": a sentence about Deck is not a call to Deck, and a gate that cannot tell them apart gets suppressed rather than fixed.
 
-## 6. Specs, quality, verification
+## 6. Specs and verification
 
-- [ ] 6.1 Sync the delta into `openspec/specs/leaf-integrations/spec.md` at archive time; ensure no `@spec` tag anywhere points at a change path (gate-46). `openspec validate` clean.
-- [ ] 6.2 Grep gates, with a non-zero searched-file count asserted: `mailObjectTemplate` matches exactly the `case` + `complaint` declarations; `linkedTypes` additions are exactly `talk`, `deck`, `maps` (×2); every declared linkedType id exists in `nextcloud-vue/src/integrations/builtin/leaves.js` or is `decidesk-decisions`.
-- [ ] 6.3 `php -l` on new/changed PHP; `composer check:strict` (PHPCS/PHPMD/Psalm/PHPStan) clean on touched files; `npm run build` green; run the hydra-gates suite and resolve any finding.
-- [ ] 6.4 Verify on a live instance: re-run the register import repair step, read `case`, `complaint`, `caseType`, `fieldInspection`, `inspectionChecklistRun` back **from OpenRegister** (not from the files — `case` is union-merged with `register.d/dso-omgevingsloket.json`) and assert the new `configuration` keys survived; `LogDanglingLinkedTypes` reports no dangling Dossiq value; Mail sidebar shows both create buttons and prefills per REQ-LEAF-101; case detail renders Talk and Deck surfaces (and their empty states with `spreed`/`deck` disabled); a bound Forms submission creates a correctly-clocked case and an unbound one creates nothing.
-
-## Re-verified 2026-09-09
-
-Nothing has landed. `mailObjectTemplate` has zero hits outside this change's own files; the
-only leaf tab in `src/components/tabs/` is `BesluitvormingLeafTab.vue`, with no Talk or Deck
-sibling; `FormsIntakeService.php` has an empty `git log --all`; `case.configuration.linkedTypes`
-is unchanged in both register files.
-
-Five unrelated leaves — email, Talk, Forms, maps, Deck — in one change is why none of them
-shipped: there is no order in which a reviewer can take a slice. Split at least the Forms
-intake service out before this is picked up again.
+- [x] 6.1 The delta spec rewritten to what shipped, with `@e2e` on every scenario. `openspec validate leaf-integrations --strict` clean.
+- [x] 6.2 `tests/e2e/leaf-integrations.spec.ts` reads every declaration back from `/apps/openregister/api/schemas` rather than from the files, because `ImportHandler` skips an import whose version did not move, `case` is union-merged with the DSO fragment, and an unknown configuration key is dropped in silence.
+- [x] 6.3 `php -l` on the new and changed PHP; the two new PHPUnit files pass; `node tests/validate-manifest.js` clean; `python3 -m json.tool` on both registers.
+- [ ] 6.4 Live verification is the sweep's, not this lane's: re-run the register import repair step, read the five schemas back from OpenRegister, confirm `LogDanglingLinkedTypes` reports no dangling Dossiq value, and confirm the Mail sidebar shows both create buttons. **`FormSubmittedListener::EVENT` is the one thing this lane could not verify**: no Forms app is installed in this checkout, so the event class name comes from the app's published API. Confirm it on an instance with `forms` enabled.

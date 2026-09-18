@@ -68,6 +68,13 @@ class CaseTimeline {
 	public const WRITE_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineWriteService';
 
 	/**
+	 * OpenRegister's timeline reader, named the same way and for the same reason.
+	 *
+	 * @var string
+	 */
+	public const READ_SERVICE = 'OCA\\OpenRegister\\Service\\Timeline\\TimelineEntryService';
+
+	/**
 	 * An entry only the handling organisation reads.
 	 *
 	 * @var string
@@ -193,6 +200,132 @@ class CaseTimeline {
 			return '';
 		}//end try
 	}//end record()
+
+	/**
+	 * The entries on a case that the applicant may read.
+	 *
+	 * ONE READER FOR BOTH OUTSIDE SURFACES. The portal contribution and the
+	 * public status page ask the same question, and a second reader beside
+	 * this one is how the two would come to disagree: the disagreement would
+	 * be an internal note on a citizen's screen, and it would look like a
+	 * working page right up until someone read it.
+	 *
+	 * THE FILTER IS THE READER'S, NOT THE CALLER'S. `publicEntries()` takes no
+	 * visibility argument, so no caller can ask it for the internal ones. A
+	 * surface that wants the whole feed reads OpenRegister's own endpoint with
+	 * a signed-in user behind it, which is where the access check belongs.
+	 *
+	 * THE AUTHOR DOES NOT TRAVEL. A handler's user id is not part of what
+	 * happened on the case as far as the applicant is concerned, and a public
+	 * projection is the last place to hand one out.
+	 *
+	 * IT ANSWERS THE EMPTY LIST ONLY WHEN IT KNOWS THE LIST IS EMPTY: no case
+	 * was asked for, OpenRegister or its reader is absent, the register is
+	 * unconfigured, or the case is not there. Each of those is a fact the
+	 * method establishes, not a failure it hides. A read that THROWS is a
+	 * different fact, so it is logged at warning naming the case and then
+	 * travels on. Unlike {@see self::record()}, which softens because an entry
+	 * records something that already happened, a reader has nothing to protect
+	 * by lying about what it found.
+	 *
+	 * @param string  $caseId The case to read.
+	 * @param integer $limit  How many entries at most, newest first.
+	 *
+	 * @return array<int, array<string, mixed>> The public entries.
+	 *
+	 * @throws Throwable When the timeline could not be read at all.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function publicEntries(string $caseId, int $limit = 50): array {
+		if (trim($caseId) === '') {
+			return [];
+		}
+
+		if ($this->settings->isOpenRegisterAvailable() === false || $this->container->has(self::READ_SERVICE) === false) {
+			return [];
+		}
+
+		$coordinates = $this->coordinates();
+		if ($coordinates === null) {
+			return [];
+		}
+
+		[$objectService, $register, $schema] = $coordinates;
+
+		try {
+			$object = $objectService->find($caseId, register: $register, schema: $schema);
+			if ($object === null) {
+				return [];
+			}
+
+			$entries = $this->container->get(self::READ_SERVICE)->listForObject(
+				object: $object,
+				visibility: self::PUBLIC_ENTRY,
+				limit: $limit,
+			);
+		} catch (Throwable $e) {
+			// LOGGED AND RETHROWN, NOT SWALLOWED. "I could not read" and
+			// "there are nothing public here" are different facts, and a
+			// reader that answered the empty list for both would report the
+			// second while meaning the first. That is the conflation ADR-105
+			// and `ServiceCatchReturnsNullTest` exist to stop, and on this
+			// method it would be a citizen told nothing has happened on their
+			// case because an optional dependency threw. The caller that owns
+			// the consequence decides; see
+			// `PortalContributionProvider::caseTimeline()`.
+			$this->soften(caseId: $caseId, kind: 'public read', reason: $e->getMessage());
+			throw $e;
+		}
+
+		$projected = [];
+		foreach ((array)$entries as $entry) {
+			$projected[] = $this->project(entry: $entry);
+		}
+
+		return $projected;
+	}//end publicEntries()
+
+	/**
+	 * One entry, cut down to what an applicant may be shown.
+	 *
+	 * @param mixed $entry The entry as OpenRegister answered it.
+	 *
+	 * @return array<string, mixed> The projection.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	private function project(mixed $entry): array {
+		$row = $entry;
+		if (is_object($entry) === true && method_exists($entry, 'jsonSerialize') === true) {
+			$row = $entry->jsonSerialize();
+		}
+
+		$row = (array)$row;
+
+		return [
+			'id' => (string)($row['uuid'] ?? ($row['id'] ?? '')),
+			'kind' => (string)($row['kind'] ?? ''),
+			'message' => (string)($row['message'] ?? ''),
+			'fields' => (array)($row['fields'] ?? []),
+			'occurredAt' => $this->moment(value: ($row['created'] ?? null)),
+		];
+	}//end project()
+
+	/**
+	 * A timestamp as a string, whichever shape it arrived in.
+	 *
+	 * @param mixed $value The raw value.
+	 *
+	 * @return string The moment, or '' when there is none.
+	 */
+	private function moment(mixed $value): string {
+		if ($value instanceof \DateTimeInterface === true) {
+			return $value->format(\DateTimeInterface::ATOM);
+		}
+
+		return (string)($value ?? '');
+	}//end moment()
 
 	/**
 	 * Resolve the further cases an entry also belongs on.
