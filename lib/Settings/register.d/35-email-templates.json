@@ -10,7 +10,7 @@
         "caseType": "omgevingsvergunning",
         "name": "Ontvangstbevestiging",
         "subject": "Bevestiging ontvangst zaak {{zaakNummer}}",
-        "body": "Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDatum}}. Wij streven ernaar uw aanvraag binnen de wettelijke termijn te behandelen.\n\nMet vriendelijke groet,\n{{behandelaar}}",
+        "body": "Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDate}}. Wij streven ernaar uw aanvraag binnen de wettelijke termijn te behandelen.\n\nMet vriendelijke groet,\n{{handler}}",
         "version": 1,
         "isActive": true
       },
@@ -23,7 +23,7 @@
         "caseType": "omgevingsvergunning",
         "name": "Informatieverzoek",
         "subject": "Aanvullende informatie nodig voor zaak {{zaakNummer}}",
-        "body": "Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie van u nodig. Wij verzoeken u de gevraagde gegevens binnen twee weken aan te leveren.\n\nMet vriendelijke groet,\n{{behandelaar}}",
+        "body": "Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie van u nodig. Wij verzoeken u de gevraagde gegevens binnen twee weken aan te leveren.\n\nMet vriendelijke groet,\n{{handler}}",
         "version": 1,
         "isActive": true
       },
@@ -36,7 +36,7 @@
         "caseType": "omgevingsvergunning",
         "name": "Besluit",
         "subject": "Besluit zaak {{zaakNummer}}",
-        "body": "Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{einddatum}} genomen. Tegen dit besluit kunt u binnen zes weken bezwaar maken.\n\nMet vriendelijke groet,\n{{behandelaar}}",
+        "body": "Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{endDate}} genomen. Tegen dit besluit kunt u binnen zes weken bezwaar maken.\n\nMet vriendelijke groet,\n{{handler}}",
         "version": 1,
         "isActive": true
       }
