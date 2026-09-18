@@ -73,7 +73,11 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// EndOfDay, the screen that closes the day against what they opened
 		// in it. Neither is a lens on an existing page: both cross stores no
 		// index page can name.
-		expect(manifest.pages).toHaveLength(53)
+		// 53 -> 54: `attribute-catalogue-folders` adds PropertyDefinitions,
+		// the attribute catalogue. It is a page rather than a lens because an
+		// attribute with no case type is shared across every one of them, so
+		// there is no existing index it could be a filter over.
+		expect(manifest.pages).toHaveLength(54)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)
