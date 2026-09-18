@@ -100,6 +100,11 @@ class ReportingEndpointIsGuardedTest extends TestCase {
 			. 'may register is not this change\'s to remove.',
 		'complaintAnalytics#kpi' => 'Already gated: the controller carries its own group check. The entry '
 			. 'exists so the sweep records that it was looked at rather than skipped.',
+		'widgetVisibility#index' => 'Answers a fact about the CALLER -- which tiles would you be shown -- '
+			. 'and carries no figure at all. Caught by the URL shape rather than by what it does, which is '
+			. 'what the allowlist is for. Gating it would hide the layout answer from the very readers who '
+			. 'need their dashboards laid out, and a caller who lied to it would gain a tile that answers '
+			. 'them 403 from the endpoint behind it.',
 	];
 
 	/**
