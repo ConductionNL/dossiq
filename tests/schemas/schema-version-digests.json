@@ -612,12 +612,16 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.26.0",
-        "digest": "82e06d43dd43df90aa513e61ef69cbdaf1b7c94de86856795f2d78fe1000592a"
+        "version": "1.29.0",
+        "digest": "683e2852d33207c0d3da73d98165b8aaa84ecb1f2fba969e21a240cf699cd413"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
         "digest": "858c3be5ffb1c2f26a43cce7ef4cb1ced5572bb57889a60dfcb71a521ea801c5"
+    },
+    "lib/Settings/dossiq_register.json::caseCustody": {
+        "version": "1.0.0",
+        "digest": "1e292065ac93b0f59124ff10e9281de4c0e709f4055e1d70c413c74000dcf6cd"
     },
     "lib/Settings/dossiq_register.json::caseDocument": {
         "version": "1.0.0",
@@ -646,6 +650,10 @@
     "lib/Settings/dossiq_register.json::caseSupplierInvoice": {
         "version": "1.0.0",
         "digest": "4c20d97d462c1534d3483fac40c5907dcf1ea524717600aab3ac4c9d1d822ab4"
+    },
+    "lib/Settings/dossiq_register.json::caseTakeover": {
+        "version": "1.0.0",
+        "digest": "edf99e78dccf60f40528c7ec7906bda9a92c691e0142906b9d649af2120ac14a"
     },
     "lib/Settings/dossiq_register.json::caseType": {
         "version": "1.14.0",
@@ -726,6 +734,10 @@
     "lib/Settings/dossiq_register.json::hearingSession": {
         "version": "1.2.0",
         "digest": "eb07f4e4dad1d9ac8e47633ff6234e4b866ba71445151a23c8c34c2221e0593e"
+    },
+    "lib/Settings/dossiq_register.json::incident": {
+        "version": "1.0.0",
+        "digest": "e0989984de39facac95ed45d166316310287af938f5f55103bf60015bb00e158"
     },
     "lib/Settings/dossiq_register.json::inspectieChecklist": {
         "version": "1.1.0",
@@ -1172,11 +1184,11 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::deadlineDefinition": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "edd9aacfc732e7c0033fb995a9b991e19223e32fde988a7f88664bf4ebb9a748"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::deadlineInstance": {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "digest": "b6155ea439c8725675d09d68b2b20b409679d2eeb0491fb16c93b64796e4599c"
     },
     "lib/Settings/register.d/60-termijnbewaking.json::dwangsomUitbetaling": {

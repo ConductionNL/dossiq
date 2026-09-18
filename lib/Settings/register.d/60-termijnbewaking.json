@@ -16,7 +16,7 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:DefinedTerm",
         "title": "Termijn Definitie",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
@@ -99,6 +99,78 @@
               }
             }
           },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "statutory",
+              "planned",
+              "internal",
+              "phase",
+              "firstResponse"
+            ],
+            "default": "statutory",
+            "title": "Kind",
+            "description": "Which clock this definition sets. A first-response term is the promise every service desk makes, that you hear from us within so many days, and it is an ordinary term rather than a second mechanism. An absent value reads as statutory, because every definition written before the kinds existed is one.",
+            "facetable": true
+          },
+          "organisation": {
+            "type": "string",
+            "title": "Organisation",
+            "description": "The organisation this term is agreed with. A gemeenschappelijke regeling runs one case type for five municipalities that agreed different norms, and without this the case type has to be duplicated five times and drifts. Empty means the term is the case type's own.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "service": {
+            "type": "string",
+            "title": "Service",
+            "description": "The service this term belongs to, for a case type offered at more than one service level. Empty means it applies to every service.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "description": "The derived priority this term applies to, read from the case's own priority (REQ-PRI-02) and never from a second priority field. Empty means it applies at every priority.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "runsInStatuses": {
+            "type": "array",
+            "title": "Runs in statuses",
+            "description": "The statuses this clock runs in. In any other status the engine timer is suspended, and resuming moves the end date by what was banked, so a case sitting with an external adviser does not burn the same clock as one on a handler's desk. An empty list means the clock runs in every status, which is how every term behaved before this was declarable.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "escalationLadder": {
+            "type": "array",
+            "title": "Escalation ladder",
+            "description": "The rungs this term escalates on, each either a number of days before the end or a share of the whole term. A share is resolved to a date when the timer is armed, so the engine ladder stays the ladder and dossiq adds no second escalation. A quarter of a six-week term and a quarter of a twenty-six-week term mean the same thing to a handler and different dates to the timer, which is the point.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "title": "Message"
+                },
+                "days": {
+                  "type": "integer",
+                  "title": "Days before the end",
+                  "minimum": 0
+                },
+                "share": {
+                  "type": "number",
+                  "title": "Share of the term elapsed",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "priority": {
+                  "type": "string",
+                  "title": "Priority"
+                }
+              }
+            }
+          },
           "validFrom": {
             "type": "string",
             "format": "date",
@@ -117,7 +189,7 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Action",
         "title": "Termijn Instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
@@ -251,6 +323,61 @@
             "format": "date",
             "title": "Completion Date",
             "description": "Date the term was completed by the beschikking"
+          },
+          "clockStoppedByStatus": {
+            "type": "boolean",
+            "default": false,
+            "title": "Clock stopped by status",
+            "description": "Whether this term's clock is currently stopped because the case sits in a status the term does not run in. Written only by the status clock, and read only by it: an opschorting under Awb 4:5 is a different suspension with a different reason, and resuming one must never resume the other.",
+            "facetable": true
+          },
+          "resolvedFrom": {
+            "type": "string",
+            "enum": [
+              "organisation",
+              "service",
+              "priority",
+              "caseType"
+            ],
+            "title": "Resolved from",
+            "description": "Which declaration produced this term. A term somebody disputes has to be explainable a year later, and the configuration will have changed by then, so the resolution is recorded rather than re-derived.",
+            "facetable": true
+          },
+          "resolutionSnapshot": {
+            "type": "object",
+            "title": "Resolution snapshot",
+            "description": "What the resolution was made from, copied at the moment it was made. The explanation of a term must not depend on the configuration as it stands now: that is the whole reason this is a copy and not a reference.",
+            "properties": {
+              "caseType": {
+                "type": "string",
+                "title": "Case type"
+              },
+              "organisation": {
+                "type": "string",
+                "title": "Organisation"
+              },
+              "service": {
+                "type": "string",
+                "title": "Service"
+              },
+              "priority": {
+                "type": "string",
+                "title": "Priority"
+              },
+              "durationDays": {
+                "type": "integer",
+                "title": "Duration in days"
+              },
+              "deadlineDefinition": {
+                "type": "string",
+                "title": "Definition"
+              },
+              "resolvedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Resolved on"
+              }
+            }
           }
         }
       },

@@ -18,7 +18,7 @@ the case and re-arm its term.
 - **AND** the second SHALL read result merged with a link to the first
 
 #### Scenario: The merged term is closed, the survivor's counts
-@e2e exclude covered by the merge-event listener unit test over the term service stub
+@e2e exclude covered by tests/Unit/Service/CaseMergeServiceTest.php::testTheMergedTermIsCompletedAndTheSurvivorsIsUntouched
 
 - **GIVEN** the merge above with a running term on each case
 - **WHEN** the merge event is handled
@@ -32,7 +32,7 @@ the survivor, and the merged case's public status page SHALL show the
 survivor's status.
 
 #### Scenario: A reply to the old number
-@e2e exclude the inbound path runs in the mail intake; covered by EmailCaseMatchingTest::testMergedResolvesToSurvivor
+@e2e exclude the inbound path runs in the mail intake; covered by tests/Unit/Service/CaseEmailMatchServiceTest.php::testMergedResolvesToSurvivor
 
 - **GIVEN** a mail quoting the merged case's number
 - **WHEN** it is matched

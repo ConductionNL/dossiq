@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\CaseDeleteGuardListener;
+use OCA\Dossiq\Listener\DependentTermListener;
 use OCA\Dossiq\Listener\KpiCacheInvalidationListener;
 use OCA\Dossiq\Listener\RoleMutationListener;
 use OCA\Dossiq\Notification\Notifier;
@@ -128,6 +129,15 @@ class ObjectListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectDeletedEvent::class,
 			listener: KpiCacheInvalidationListener::class
+		);
+
+		// A term event that moves a date offers the same move to the cases
+		// waiting on that case. Registered on the create only: the event row
+		// is written once per move, and the instance it names is rewritten
+		// several times for the same one.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: DependentTermListener::class
 		);
 
 		// Role-routing cache invalidation on role mutations.

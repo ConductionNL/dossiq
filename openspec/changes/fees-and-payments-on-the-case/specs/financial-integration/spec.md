@@ -1,18 +1,26 @@
 ## ADDED Requirements
 
-### Requirement: A case type declares its fee per intake channel (REQ-FEE-01)
+### Requirement: A case type's fee is published in shillinq, per intake channel (REQ-FEE-01)
 
-A case type SHALL be able to declare a fee as a list of entries, each
-carrying the intake channel, the amount, and the article of the
-legesverordening it comes from. Creating a case of a fee-bearing case type
-SHALL raise a payment request in shillinq carrying the case, the amount
-for that case's intake channel, and the article. Publishing a case type
-with a fee and no article SHALL warn, naming the entry.
+A fee SHALL be published against a case type as a shillinq fee schedule,
+carrying one amount per intake channel and the article of the
+legesverordening the amount rests on. Raising the leges for a case SHALL
+resolve the amount from that schedule for the case's own intake channel;
+dossiq SHALL NOT declare an amount of its own. A schedule with no citation
+SHALL be refused, and a case type with no published fee SHALL raise
+nothing.
+
+> Amended while building. The proposal put the fee list on the caseType.
+> shillinq#1637 shipped the schedule first, keyed by register, schema and
+> type value, with `amounts` per channel and a structured `legalBasis` it
+> refuses to publish without. A second list of amounts here would be the
+> two-sources-of-truth this change's own D-2 forbids for money, so dossiq
+> consumes the schedule instead of restating it.
 
 #### Scenario: the balie and the portal cost different amounts
 @e2e tests/e2e/fees-and-payments-on-the-case.spec.ts
 
-- **GIVEN** a case type declaring one amount for the portal and another for the balie
+- **GIVEN** a published schedule with one amount for the portal and another for the balie
 - **WHEN** a case is created through each
 - **THEN** each SHALL raise a payment request for its own amount
 
@@ -23,15 +31,20 @@ with a fee and no article SHALL warn, naming the entry.
 - **WHEN** a handler opens it
 - **THEN** the article of the legesverordening SHALL be named
 
-#### Scenario: a fee with no article warns on publication
+#### Scenario: a fee with no article is refused, not warned
 
-- **GIVEN** a case type declaring an amount and no article
+- **GIVEN** a schedule declaring an amount and no citation
 - **WHEN** it is published
-- **THEN** publication SHALL warn, naming the entry
+- **THEN** publication SHALL be refused, naming what is missing
+
+> Amended while building: shillinq refuses it outright
+> (`FeeScheduleService::assertLegalBasis`). An amount nobody can trace to a
+> council decision cannot be charged, and a warning is a thing that ships.
 
 #### Scenario: a case type with no fee raises nothing
+@e2e tests/e2e/fees-and-payments-on-the-case.spec.ts
 
-- **GIVEN** a case type declaring no fee
+- **GIVEN** a case type with no published fee
 - **WHEN** a case is created
 - **THEN** no payment request SHALL be raised
 
@@ -66,26 +79,32 @@ SHALL read as stale and SHALL NOT read as paid.
 
 ### Requirement: A named role sets the payment state by hand (REQ-FEE-03)
 
-A person holding the declared financial role SHALL be able to set a case's
-payment state by hand, recording who set it, when, and why. It SHALL be an
-act and SHALL NOT be an editable field. A person without that role SHALL be
-refused.
+Money that arrived another way SHALL be recorded as an act, behind
+shillinq's `payment.administer` permission, recording who, when and why,
+and performed on the case through shillinq's payment panel. dossiq SHALL
+offer no second way to set the state: the projection SHALL be read-only
+everywhere it renders, and no dossiq surface SHALL make it an editable
+field.
+
+> Amended while building. The proposal gave dossiq its own override act
+> behind its own role. shillinq#1637 shipped the settlement as an append
+> behind `payment.administer`, so a dossiq act would be a second path to
+> one financial fact, with a second rights matrix behind it and two
+> records of who said the money arrived.
 
 #### Scenario: cash at the balie is recorded
-@e2e tests/e2e/fees-and-payments-on-the-case.spec.ts
 
-- **GIVEN** a case with an outstanding payment and a person holding the financial role
-- **WHEN** they mark it paid with a reason
-- **THEN** the state SHALL read paid
-- **AND** who, when and why SHALL be recorded
+- **GIVEN** a case with an outstanding payment and a person holding `payment.administer`
+- **WHEN** they record the counter payment with a reference
+- **THEN** the case's state SHALL read paid at the next read
+- **AND** who, when and why SHALL be recorded in shillinq
 
-#### Scenario: an ordinary handler cannot change it
-@e2e tests/e2e/fees-and-payments-on-the-case.spec.ts
+#### Scenario: dossiq offers no second way to set it
 
-- **GIVEN** a case handler without the financial role
-- **WHEN** they try to set the payment state
-- **THEN** it SHALL be refused
-- **AND** the refusal SHALL name the role
+- **GIVEN** the payment state on a case
+- **WHEN** any dossiq surface renders it
+- **THEN** it SHALL be read-only
+- **AND** no dossiq endpoint SHALL write it from a request body
 
 ### Requirement: A case type decides whether an unpaid case proceeds (REQ-FEE-04)
 
@@ -132,7 +151,6 @@ and SHALL NOT raise the alert before a contract lapses.
 - **THEN** the case SHALL name the contract
 
 #### Scenario: the contract lists its cases
-@e2e tests/e2e/fees-and-payments-on-the-case.spec.ts
 
 - **GIVEN** three cases raised under one contract
 - **WHEN** the contract is read

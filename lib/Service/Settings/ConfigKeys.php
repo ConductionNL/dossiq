@@ -71,6 +71,7 @@ class ConfigKeys {
 		'case_property_schema',
 		'case_document_schema',
 		'case_object_schema',
+		'incident_schema',
 		'customer_contact_schema',
 		'decision_document_schema',
 		'dispatch_schema',
@@ -109,6 +110,12 @@ class ConfigKeys {
 		'partner_organization_schema',
 		'share_permission_level_schema',
 		'case_transfer_schema',
+		// The dated chain of holdings and the takeover request that asks for
+		// one (custody-and-handover-of-a-case).
+		'case_custody_schema',
+		'case_takeover_schema',
+		// The sociaal-domein consent a hand-off across organisations needs.
+		'consent_schema',
 		// Federated case collaboration (OCM, via OpenRegister's federation leaf).
 		'case_federated_share_schema',
 		'case_federated_activity_schema',

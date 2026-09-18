@@ -509,6 +509,13 @@ class AcknowledgementService {
 			'case' => (string)($quotable['identifier'] ?? ''),
 			'subject' => (string)($quotable['title'] ?? ''),
 			'endDate' => (string)($term['endDateCurrent'] ?? ($quotable['deadline'] ?? '')),
+			// THE STORED STAMP, NOT A RECOMPUTATION. The mail has to name the
+			// same start the case carries, or a citizen quoting it back is
+			// quoting a date the term does not use. An absent stamp stays
+			// absent: the template leaves the lines out rather than guessing.
+			'receivedAt' => (string)($quotable['receivedAt'] ?? ''),
+			'termStartsAt' => (string)($quotable['termStartsAt'] ?? ''),
+			'receivedOutsideWorkingHours' => (($quotable['receivedOutsideWorkingHours'] ?? false) === true),
 			'contentWithheld' => $withheld,
 			'notificationChannel' => $channel,
 			'contact' => (string)($caseType['responsible'] ?? ''),

@@ -650,6 +650,14 @@
 					},
 					{
 						"id": "kpi-sla-compliance",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.kpi-sla-compliance",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The share of cases met within their term is a figure about the team's performance, and it is the one tile on this page that is. The rest of the page is the reader's own work and the counts the lists already show them, so this tile is declared and the others are allowlisted with that reason in WidgetDeclaresRolesTest. `slaCompliance` leaves the payload entirely for a reader without the role: a tile hidden with a `v-if` still puts its number in the network tab (ADR-004).",
 						"type": "stat",
 						"title": "SLA Compliance",
 						"_note": "openspec/specs/dashboard/spec.md DASH-001e. Reads the share of this month's closed cases whose endDate met their deadline, computed server-side by KpiAggregationService. Clicking opens the doorlooptijd dashboard, as the scenario requires.",
@@ -1642,6 +1650,14 @@
 						}
 					},
 					{
+						"label": "Awaiting payment",
+						"filter": {
+							"isFinalStatus": false,
+							"paymentState": "outstanding"
+						},
+						"_note": "fees-and-payments-on-the-case REQ-FEE-02. The lens for the money, narrowing on the projection rather than post-filtering a page of twenty-five, so the count and the facets agree with the list. It deliberately does NOT include `stale`: a case whose state could not be read is not a case that owes money, and folding the two would put every case on the instance in this chip the hour shillinq is restarted."
+					},
+					{
 						"label": "Stuck",
 						"filter": {
 							"isFinalStatus": false,
@@ -1720,6 +1736,12 @@
 						"_note": "what-a-status-declares, task 4.2. The number is HELD on the case (currentStatusDwellDays), written by the transition engine as the status changes, which is what makes this column sortable at all: CnDataTable orders on the server, and the process mining page's own dwell figure is reconstructed per request from the statusRecord chain and exists in no column. A cell WIDGET rather than a formatter for the reason deadlineCountdown is one: a formatter returns a string and a string cannot carry the breached state. Breached is statusDwellBreached, its own flag with its own chip, and it is NOT the deadline: a case can be stuck for nine weeks inside a term that runs for six months, which is the case this column exists to find."
 					},
 					{
+						"key": "paymentState",
+						"label": "Payment",
+						"widget": "badge",
+						"_note": "fees-and-payments-on-the-case REQ-FEE-02: whether the leges were paid, on the list as well as on the case, so a teamleider can see which of four hundred aanvragen is waiting on money without opening any of them. It reads the PROJECTION, refreshed hourly by PaymentStateProjectionJob, and that is the whole reason the projection exists: a column cannot ask shillinq once per row. `stale` is a value a reader will see, and it means shillinq could not be asked rather than that the money is late; the gate that refuses acts reads shillinq live and never this column."
+					},
+					{
 						"key": "id",
 						"label": "Sub-cases",
 						"formatter": "subCaseCount",
@@ -1781,6 +1803,9 @@
 							"include": [
 								"statutoryTerm",
 								"legalBasis",
+								"paymentState",
+								"paymentStateCheckedAt",
+								"contract",
 								"paymentIndication",
 								"lastPaymentDate"
 							],
@@ -1800,6 +1825,22 @@
 						"title": "Hours booked",
 						"icon": "History",
 						"_note": "Hours live in humaniq, per ADR-107 decision 6: 'Hours logged on a case are hrmq time entries carrying the case reference.' So humaniq renders them. This widget is a PLACEMENT of humaniq's `humaniq-hours` leaf, not a query against another app's register. It used to be a stats-block that summed `humaniq`/`TimeEntry` straight out of this manifest, filtered on `domainObjectType` and `domainObjectRef`. On an install without humaniq that endpoint 404s and the tile renders `0`, which is exactly what a case with no hours booked renders: no error, no empty state, nothing a reader would notice. ADR-113 names that class. A leaf whose app is absent is never registered, so the surface goes missing rather than lying. The leaf identifies the host object the way humaniq stores it: `domainObjectType` is the `<app>:<schema>` literal and `domainObjectRef` is the object uuid. Nothing here declares either one. The host forwards `register`, `schema` and `objectId` to every leaf it mounts, and this page's config carries `dossiq` and `case`, so the literal comes out `dossiq:case`. `requiredApp: humaniq` went with the query. It was the honest form of the tile while the tile still read another app's register, and no other integration widget in this manifest declares one. The `log-hours` header action went with it. It wrote a TimeEntry through `open-form`, which the leaf's own Book hours dialog now does, seeded from the same object and beside the total those hours land in. Two booking paths on one page is one more than a reader needs, and the header one was the further from the figure it changes."
+					},
+					{
+						"id": "case-payment-requests",
+						"type": "integration",
+						"integrationId": "shillinq-payment-requests",
+						"title": "Fees and payments",
+						"icon": "CurrencyEur",
+						"_note": "fees-and-payments-on-the-case D-1 and D-3. The money lives in shillinq, so shillinq renders it: this is a PLACEMENT of the `shillinq-payment-requests` leaf, the same shape as the humaniq hours leaf beside it, and not a query against another app's register. What the panel shows is the requests raised on this case, the amount, and the article of the legesverordening the amount rests on, because a citizen may ask why they are being charged and \"because the configuration says so\" is not an answer a gemeente may give. It also carries the acts: raise the leges for this case's intake channel, send the payment link, and record money that arrived another way. THE COUNTER PAYMENT IS DELIBERATELY NOT A DOSSIQ ACT. shillinq puts it behind its own `payment.administer` permission, so the authority that owns the money decides who may say it arrived; a second dossiq path to the same fact would be a second answer with a second rights matrix behind it. dossiq's own half is the word on the case (`paymentState`), refreshed hourly for the list and read live whenever an act must be refused or allowed. A leaf whose app is absent is never registered, so on an install without shillinq this panel is missing rather than empty."
+					},
+					{
+						"id": "case-contract",
+						"type": "integration",
+						"integrationId": "shillinq-contracts",
+						"title": "Contract",
+						"icon": "FileSign",
+						"_note": "fees-and-payments-on-the-case D-5. The case names the contract it is handled under and reads its term, its counterparty and what is left of its value from shillinq, which flags a contract that is expiring, expired or terminated because those change what the handler should do next. NOTHING OF THE CONTRACT IS COPIED ONTO THE CASE: a copied term goes stale and then alerts on the wrong date, and the alert before a contract lapses is shillinq's anyway. The case carries one field, `contract`, which is the reference; the other direction is shillinq's `linkedObjects`, which is how a contract lists the cases raised under it."
 					},
 					{
 						"id": "case-flow-runs",
@@ -1946,6 +1987,10 @@
 								{
 									"widgetId": "case-related-panel",
 									"label": "Related"
+								},
+								{
+									"widgetId": "case-custody-panel",
+									"label": "Custody"
 								},
 								{
 									"widgetId": "case-archival-panel",
@@ -2305,10 +2350,22 @@
 											"title": "Receipt confirmation",
 											"columns": 1,
 											"include": [
+												"receivedAt",
+												"termStartsAt",
+												"receivedOutsideWorkingHours",
 												"acknowledgementDuty",
 												"outboundCommunications"
 											],
 											"overrides": {
+												"receivedAt": {
+													"editable": false
+												},
+												"termStartsAt": {
+													"editable": false
+												},
+												"receivedOutsideWorkingHours": {
+													"editable": false
+												},
 												"acknowledgementDuty": {
 													"editable": false
 												},
@@ -2402,6 +2459,7 @@
 										}
 									}
 								},
+								{"label": "Incidents", "widget": {"id": "case-incidents", "type": "object-list", "title": "Incidents", "icon": "AlertOutline", "_note": "splitting-a-case-and-its-incidents REQ-CM-47. Several dated reports inside one case, which is how repeat reports on one address are handled: the case holds the address and the history, and each report is a record with its own reporter, its own owner and its own outcome. SORTED BY `eventDate` AND NOT BY THE RECORDING MOMENT (D-6): a report written up three weeks late belongs where it happened, and `createdAt` order would quietly rewrite the sequence the case is about. It sits in the Work tab rather than in a tab of its own, because the strip is already eleven entries and an incident is work on the case; `recordedAt` is a column beside the event date so the delay between the two is visible rather than hidden. NOT a deelzaak: an incident has no number, no term and no decision, and making one would give every report a beslistermijn it does not have (D-4).", "content": {"register": "dossiq", "schema": "incident", "filter": {"case": "@objectId"}, "sort": {"field": "eventDate", "dir": "asc"}, "limit": 25, "columns": [{"key": "eventDate", "label": "Happened"}, {"key": "recordedAt", "label": "Recorded"}, {"key": "reporter", "label": "Reporter"}, {"key": "state", "label": "State"}, {"key": "assignee", "label": "Owner"}], "emptyText": "No incidents recorded on this case yet"}}},
 								{
 									"label": "Appointments",
 									"widget": {
@@ -2483,7 +2541,7 @@
 										"type": "case-related-planned",
 										"title": "Case type, parent & related cases",
 										"icon": "LinkVariant",
-										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3)."
+										"_note": "The Related cases tab, plus the follow-ups that do not exist yet (case-actions-menu row A26) and the series among them (planned-case-series, row 1.8). A series row carries its next occurrence, the cases it has already opened (filtered on `handoffSource` = `planned-series:<flowId>`, which every occurrence carries) and a Stop series action; stopping switches the flow off and leaves those cases alone. A planned follow-up is a SCHEDULED FLOW, not a case, and the `related` widget reads related OBJECTS, so it cannot list one; CasePlannedWidget wraps the library widget and hands it the planned rows as an extraSections group, leaving the built-in related content exactly as it was. The id, the title, the icon and the tab entry are all unchanged. TYPE is the registry key and NOT `custom`, because this is a child of the case-panels tabs widget: CnDetailPage renders a widget-<id> page slot per LAYOUT grid item only, a tab child is deliberately absent from layout, and CnTabsWidget resolves a tab child through cnRegistry[widget.type] and renders NOTHING at all when no key answers. Retyped back to `related` and this file deleted the day OpenRegister's related widget can include scheduled flows by subject (tasks 3.3). Waits on and blokkeert appear here with no section of their own: the pair is declared on the case schema as `x-openregister-relation-types`, and this widget groups by the label OpenRegister answers per direction. A hand-written section for either half would list the same links a second time, under a name this file chose rather than the one the schema did."
 									}
 								},
 								{
@@ -2652,6 +2710,13 @@
 						"_note": "unread-state-on-the-case, tasks 2.1 and 2.2. Names each panel of this case that holds something the reader has not seen, directly above the tab bar, because a case that is unread says look and a case whose Files panel is unread says where. Opening the case marks the CASE read and empties the notifications that were about it, in one write and with no separate dismissal; it does not stamp the panels, because OpenRegister stamps only the sub-resource a PUT names, so a document that arrived is still counted until the documents are actually looked at. The count sits on this strip rather than on the tab itself because CnTabsWidget renders a label and an icon per tab and neither takes a badge nor emits its tab change, so a sibling widget can neither decorate a tab nor learn that one was opened. That affordance belongs in nextcloud-vue, where every fleet app gets it. The strip renders nothing at all on a case with nothing new, and nothing rather than an error band on an instance whose OpenRegister does not carry the read state yet."
 					},
 					{
+						"id": "case-custody-panel",
+						"type": "case-custody-pane",
+						"title": "Custody",
+						"icon": "AccountSwitchOutline",
+						"_note": "Who has held this case, and who is asking for it (registry type case-custody-pane -> CaseCustodyPanel). Rendered by TYPE because a tab child resolves from cnRegistry[widget.type]: a page `slots` map is read by the widget GRID and never reaches a widget inside a tab panel, which is how two earlier panels in this app shipped as an empty tab that logged nothing. It sits beside Timeline rather than inside it on purpose: the timeline says what CHANGED and this says who HELD it, and reading a sequence of diffs back into a holding is a reconstruction rather than a record. It is a custom widget and NOT a data widget because a holding is only meaningful as a JOIN, between the moment one holding ended and the moment the next began; a row of values per holding would look complete on a chain with a gap in it."
+					},
+					{
 						"id": "case-archival-panel",
 						"type": "case-archival-pane",
 						"title": "Archiving",
@@ -2809,6 +2874,24 @@
 						"gridY": 16,
 						"gridWidth": 8,
 						"gridHeight": 6,
+						"showTitle": true
+					},
+					{
+						"id": "money-payments",
+						"widgetId": "case-payment-requests",
+						"gridX": 0,
+						"gridY": 22,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "money-contract",
+						"widgetId": "case-contract",
+						"gridX": 6,
+						"gridY": 22,
+						"gridWidth": 6,
+						"gridHeight": 4,
 						"showTitle": true
 					}
 				],
@@ -3010,6 +3093,23 @@
 						"label": "Lifecycle",
 						"icon": "PlayCircleOutline",
 						"target": "CaseLifecycleMenuDialog"
+					},
+					{
+						"id": "case-merge",
+						"type": "open-modal",
+						"target": "CaseMergeDialog",
+						"label": "Merge into",
+						"icon": "CallMerge",
+						"props": {
+							"caseId": "@objectId",
+							"open": true
+						},
+						"_note": "Two cases for one request become one (REQ-CM-37). Hidden on a closed case, because a closed case is a record of what was decided. The other two refusals, a signed beschikking and a case that was already merged, are the server's and arrive as a sentence in the dialog: hiding them here would leave a handler wondering why an act they were told about is not there.",
+						"visibleWhen": {
+							"field": "isFinalStatus",
+							"op": "neq",
+							"value": true
+						}
 					},
 					{
 						"id": "case-claim",
@@ -3977,26 +4077,66 @@
 				"widgets": [
 					{
 						"id": "dt-kpis",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-kpis",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "dt-charts",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-charts",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Compliance",
 						"type": "custom"
 					},
 					{
 						"id": "dt-woo",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-woo",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Woo statutory deadlines",
 						"type": "custom"
 					},
 					{
 						"id": "dt-atrisk",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-atrisk",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Cases at risk",
 						"type": "custom"
 					},
 					{
 						"id": "dt-breakdown",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.dt-breakdown",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Throughput against the statutory term, per case type and per team: a figure about how the TEAM is performing rather than about any case a handler is working on. Declared for the audience that already holds the endpoint behind it, and enforced on the read, so a handler does not receive the numbers and then have them hidden in the browser.",
 						"title": "Performance by case type",
 						"type": "custom"
 					}
@@ -4090,26 +4230,66 @@
 				"widgets": [
 					{
 						"id": "pm-kpis",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-kpis",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "pm-dwell",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-dwell",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
 						"title": "Dwell time by status",
 						"type": "custom"
 					},
 					{
 						"id": "pm-throughput",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-throughput",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
 						"title": "Throughput (cases closed per week)",
 						"type": "custom"
 					},
 					{
 						"id": "pm-bottlenecks",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-bottlenecks",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell times, throughput and the bottleneck ranking read as a judgement of where the work sticks, and beside the handler names in the queue they read as a judgement of people. Declared for the audience that already holds the endpoint behind it.",
 						"title": "Bottleneck ranking",
 						"type": "custom"
 					},
 					{
 						"id": "pm-dwell-by-assignee",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.pm-dwell-by-assignee",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. Dwell time PER HANDLER: the one tile on this dashboard that names people, and the reason the rest of the page is declared for the reporting audience rather than left open. It arrived on the integration branch while this change was in flight and the structural test caught it on the merge, which is exactly what that test is for.",
 						"title": "Dwell time by handler",
 						"type": "custom"
 					}
@@ -5416,16 +5596,40 @@
 				"widgets": [
 					{
 						"id": "td-kpis",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-kpis",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Overview",
 						"type": "custom"
 					},
 					{
 						"id": "td-quarterly",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-quarterly",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Quarterly report",
 						"type": "custom"
 					},
 					{
 						"id": "td-annual",
+						"roles": ["controllers", "beheerders", "admin"],
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/dashboard/widget-visibility",
+							"field": "visible.td-annual",
+							"op": "eq",
+							"value": true
+						},
+						"_rolesNote": "widget-roles-declared REQ-WRD-01. The dwangsom audit is the gemeente's exposure to statutory penalties, quarter by quarter. It belongs to whoever answers for it, which is not everyone who can open a case.",
 						"title": "Annual dwangsom audit",
 						"type": "custom"
 					}

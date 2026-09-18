@@ -34,6 +34,10 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Money\CasePaymentReader;
+use OCA\Dossiq\Service\Money\CasePaymentState;
+use OCA\Dossiq\Service\Money\UnpaidCaseGate;
+use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
 use OCA\Dossiq\Service\Transitions\GuardRegistry;
@@ -107,6 +111,9 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: $finalStatuses),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerAnswering()
@@ -345,6 +352,9 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -378,6 +388,9 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -485,6 +498,9 @@ class CaseActionProviderTest extends TestCase {
 				]
 			),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -532,6 +548,9 @@ class CaseActionProviderTest extends TestCase {
 				]
 			),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -577,6 +596,9 @@ class CaseActionProviderTest extends TestCase {
 			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->grantsAnswering(provenance: null),
 			externalHome: new ExternalHome(),
+			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+			payments: $this->createMock(CasePaymentReader::class),
+			caseTypes: $this->createMock(CaseTypeReader::class),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

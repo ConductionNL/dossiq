@@ -49,27 +49,45 @@ class EmailTemplateService {
 	 *
 	 * @var array<int, array<string, string>>
 	 */
+	/**
+	 * Placeholder names answered only for templates written before 2026-08-14.
+	 *
+	 * 🔴 ANSWERED, BUT NEVER SHIPPED AND NEVER OFFERED. These are the keys this
+	 * map used before the English rename, and they are in bodies administrators
+	 * have been editing since June, so the map still fills them. A template
+	 * dossiq SHIPS must not use one: `TemplatePlaceholdersTest` checks the
+	 * shipped bodies against the canonical keys with these subtracted, because
+	 * a gate that accepted them would have waved the original defect through.
+	 *
+	 * @var array<string, string> Deprecated name to the canonical one.
+	 */
+	public const DEPRECATED_ALIASES = [
+		'startDatum' => 'startDate',
+		'einddatum' => 'endDate',
+		'behandelaar' => 'handler',
+	];
+
 	private const DEFAULT_TEMPLATES = [
 		[
 			'slug' => 'ontvangstbevestiging',
 			'name' => 'Ontvangstbevestiging',
 			'subject' => 'Bevestiging ontvangst zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDatum}}.'
-				. '\n\nMet vriendelijke groet,\n{{behandelaar}}',
+			'body' => 'Geachte {{contactNaam}},\n\nWij hebben uw aanvraag {{zaakNummer}} ontvangen op {{startDate}}.'
+				. '\n\nMet vriendelijke groet,\n{{handler}}',
 		],
 		[
 			'slug' => 'informatieverzoek',
 			'name' => 'Informatieverzoek',
 			'subject' => 'Aanvullende informatie nodig voor zaak {{zaakNummer}}',
 			'body' => 'Geachte {{contactNaam}},\n\nVoor de behandeling van zaak {{zaakNummer}} hebben wij aanvullende informatie nodig.'
-				. '\n\nMet vriendelijke groet,\n{{behandelaar}}',
+				. '\n\nMet vriendelijke groet,\n{{handler}}',
 		],
 		[
 			'slug' => 'decision',
 			'name' => 'Besluit',
 			'subject' => 'Besluit zaak {{zaakNummer}}',
-			'body' => 'Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{einddatum}} genomen.'
-				. '\n\nMet vriendelijke groet,\n{{behandelaar}}',
+			'body' => 'Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{endDate}} genomen.'
+				. '\n\nMet vriendelijke groet,\n{{handler}}',
 		],
 	];
 
@@ -377,7 +395,7 @@ class EmailTemplateService {
 	 * @return array<string, string>
 	 */
 	private function buildVariableMap(array $case): array {
-		return [
+		$map = [
 			'zaakNummer' => (string)($case['identifier'] ?? ''),
 			'titel' => (string)($case['title'] ?? ''),
 			'startDate' => (string)($case['startDate'] ?? ''),
@@ -391,5 +409,26 @@ class EmailTemplateService {
 			'zaaktypeNaam' => (string)($case['caseTypeTitle'] ?? ''),
 			'zaaktypeOmschrijving' => (string)($case['caseTypeDescription'] ?? ''),
 		];
+
+		// 🔴 THE NAMES THIS MAP ANSWERED BEFORE 2026-08-14, POINTING AT THE
+		// SAME FIELDS. `75f578d2` translated the map's keys to English and
+		// could not see the template BODIES, which are strings, so every
+		// shipped template has carried a `{{behandelaar}}` nothing answers
+		// since. The bodies above are fixed, but an instance's STORED
+		// templates are not ours to rewrite: they were seeded in June and
+		// administrators have edited them since, and a migration that rewrote
+		// one would be editing somebody's letter behind their back. So the map
+		// answers the old names as well and those templates work again with
+		// nobody touching them.
+		//
+		// They are deliberately ABSENT from getAvailableVariables(): the
+		// aliases are a door out of the past, not a second vocabulary. A
+		// template authored tomorrow is offered `handler` and never
+		// `behandelaar`.
+		foreach (self::DEPRECATED_ALIASES as $was => $now) {
+			$map[$was] = $map[$now];
+		}
+
+		return $map;
 	}//end buildVariableMap()
 }//end class
