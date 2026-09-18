@@ -28,7 +28,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Portal;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
@@ -115,6 +117,84 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertNotContains('createBezwaar', $actionIds);
 		$this->assertNotContains('sendMessage', $actionIds);
 	}
+
+	/**
+	 * The citizen's case detail declares a timeline, and names the reader.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testTheCitizenCaseDeclaresATimeline(): void {
+		$contribution = $this->provider->getContribution(['audience' => 'citizen']);
+		$cases = $contribution['collections'][0];
+
+		$this->assertSame('mijnZaken', $cases['id']);
+		$this->assertSame('caseTimeline', $cases['timeline']['provider']);
+		$this->assertTrue(method_exists($this->provider, $cases['timeline']['provider']));
+	}//end testTheCitizenCaseDeclaresATimeline()
+
+	/**
+	 * The contribution's timeline is exactly what the one reader answers.
+	 *
+	 * THE POINT OF THE ASSERTION IS THE IDENTITY, NOT THE COUNT. The provider
+	 * is handed a case carrying two public entries and three internal ones,
+	 * and what comes back must be the reader's own answer rather than a list
+	 * the provider filtered for itself. A second filter here would drift from
+	 * the one `#PublicStatus` uses, and the drift would be an internal note on
+	 * a citizen's screen.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testTheTimelineIsWhatPublicEntriesAnswers(): void {
+		$public = [
+			['id' => 'e1', 'kind' => 'beschikking-verzonden', 'message' => 'Beschikking verzonden'],
+			['id' => 'e2', 'kind' => 'statuswijziging', 'message' => 'Status: In behandeling'],
+		];
+
+		$reader = $this->createMock(CaseTimeline::class);
+		$reader->expects($this->once())
+			->method('publicEntries')
+			->with(caseId: 'case-1')
+			->willReturn($public);
+
+		$provider = new PortalContributionProvider($reader);
+
+		$this->assertSame($public, $provider->caseTimeline('case-1'));
+	}//end testTheTimelineIsWhatPublicEntriesAnswers()
+
+	/**
+	 * A read that threw costs the citizen the history, not the page.
+	 *
+	 * The reader deliberately rethrows so it never reports an emptiness it did
+	 * not establish. This boundary is where that decision is made, because it
+	 * is the edge of a foreign app rendering our contribution, and it is the
+	 * only place that owns the consequence.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAReadThatThrewCostsTheHistoryAndNotThePage(): void {
+		$reader = $this->createMock(CaseTimeline::class);
+		$reader->method('publicEntries')->willThrowException(new RuntimeException('OpenRegister threw'));
+
+		$this->assertSame([], (new PortalContributionProvider($reader))->caseTimeline('case-1'));
+	}//end testAReadThatThrewCostsTheHistoryAndNotThePage()
+
+	/**
+	 * Without OpenRegister there is no reader, and the timeline is empty
+	 * rather than fatal: portaliq builds this class with `new`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAProviderBuiltWithoutAReaderAnswersNoTimeline(): void {
+		$this->assertSame([], (new PortalContributionProvider())->caseTimeline('case-1'));
+	}//end testAProviderBuiltWithoutAReaderAnswersNoTimeline()
 
 	public function testInspectorContributionShape(): void {
 		$contribution = $this->provider->getContribution(['audience' => 'inspector']);

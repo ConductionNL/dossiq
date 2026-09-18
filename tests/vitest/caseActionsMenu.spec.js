@@ -32,6 +32,11 @@ import {
 	recurrenceLabel,
 	recurrenceOptions,
 } from '../../src/utils/caseActionsHelpers.js'
+import {
+	buildActsMenu,
+	endpointFor,
+	inputsFor,
+} from '../../src/utils/caseActsMenu.js'
 const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -354,9 +359,15 @@ describe('The Related cases tab', () => {
 			.caseWidget('case-related-panel')
 			.content.sections.map((section) => section.widget.id)
 		// Objects joined the Related tab on 2026-09-13, from the retired
-		// Objects and locations tab. Related cases stays FIRST, which is what
-		// this test is about; the list is exact so a silent reorder reddens.
-		expect(sections).toEqual(['case-related', 'case-sub-cases', 'case-objects'])
+		// Objects and locations tab, and the Data model link followed it
+		// (data-model-link). Related cases stays FIRST, which is what this
+		// test is about; the list is exact so a silent reorder reddens.
+		expect(sections).toEqual([
+			'case-related',
+			'case-sub-cases',
+			'case-objects',
+			'case-object-types-link',
+		])
 	})
 
 	it('stays out of the layout, which would render it twice', () => {
@@ -673,5 +684,170 @@ describe('The Raw data dialog', () => {
 		// something does not add up.
 		expect(dialog).toContain('case-raw-data-error')
 		expect(dialog).toContain('You may not read this case.')
+	})
+})
+
+describe('Archive and Restore on the case page', () => {
+	const menuSource = fs.readFileSync(
+		path.join(ROOT, 'src', 'utils', 'caseActsMenu.js'),
+		'utf8',
+	)
+
+	/**
+	 * One source file with its prose taken out.
+	 *
+	 * The assertions below are about what the code READS, and both files
+	 * explain in a comment why they do not read `archiveStatus`. Matching the
+	 * raw text would fail on the sentence that documents the rule, which is
+	 * the test punishing the explanation.
+	 *
+	 * @param {string} source The file contents.
+	 * @return {string} The source with block, line and HTML comments removed.
+	 */
+	const codeOf = (source) =>
+		source
+			.replace(/<!--[\s\S]*?-->/g, '')
+			.replace(/\/\*[\s\S]*?\*\//g, '')
+			.replace(/^\s*\/\/.*$/gm, '')
+
+	/** An `/acts` answer where the handler may perform every ending act. */
+	const allowed = {
+		acts: [
+			{ act: 'finish', allowed: true, role: '', reason: '' },
+			{ act: 'abort', allowed: true, role: '', reason: '' },
+			{ act: 'archive', allowed: true, role: '', reason: '' },
+		],
+	}
+
+	/** The menu ids for one `/acts` answer. @param {object} acts The answer. @return {Array<string>} The ids. */
+	const ids = (acts) => buildActsMenu({ acts }).map((entry) => entry.id)
+
+	it('offers Archive on a case that is not archived', () => {
+		expect(ids(allowed)).toContain('archive')
+		expect(ids(allowed)).not.toContain('unarchive')
+	})
+
+	it('offers Restore instead of Archive once the case is archived', () => {
+		// Never both. The platform treats a second archive as a no-op rather
+		// than a refusal, so an Archive entry left beside Restore would be a
+		// button that changes nothing and says nothing.
+		const menu = ids({ ...allowed, archived: true })
+		expect(menu).toContain('unarchive')
+		expect(menu).not.toContain('archive')
+	})
+
+	it('keeps Finish and Abort on an archived case, refused by their own guards', () => {
+		const menu = ids({ ...allowed, archived: true })
+		expect(menu).toContain('finish')
+		expect(menu).toContain('abort')
+	})
+
+	it('reads the archived flag the way every JSON boolean in this app is read', () => {
+		expect(ids({ ...allowed, archived: 'true' })).toContain('unarchive')
+		expect(ids({ ...allowed, archived: 1 })).toContain('unarchive')
+		expect(ids({ ...allowed, archived: false })).not.toContain('unarchive')
+		expect(ids(allowed)).not.toContain('unarchive')
+	})
+
+	it('gives Restore the verdict archiving carries, because it needs the same role', () => {
+		const refused = {
+			archived: true,
+			acts: [
+				{
+					act: 'archive',
+					allowed: false,
+					role: 'archivaris',
+					reason: 'This act needs the archivaris group.',
+				},
+			],
+		}
+		const entry = buildActsMenu({ acts: refused }).find(
+			(row) => row.id === 'unarchive',
+		)
+		expect(entry.disabled).toBe(true)
+		expect(entry.reason).toContain('archivaris')
+		expect(entry.role).toBe('archivaris')
+	})
+
+	it('disables Restore when the acts read failed, rather than offering it', () => {
+		const entry = buildActsMenu({ acts: { archived: true } }).find(
+			(row) => row.id === 'unarchive',
+		)
+		expect(entry.disabled).toBe(true)
+		expect(entry.reason).not.toBe('')
+	})
+
+	it('asks for a reason before it posts, and posts to the route that exists', () => {
+		const entry = buildActsMenu({ acts: { ...allowed, archived: true } }).find(
+			(row) => row.id === 'unarchive',
+		)
+		expect(inputsFor(entry).reason).toBe(true)
+		expect(endpointFor(entry)).toBe('unarchive')
+		expect(routes).toContain('/api/case/{caseId}/unarchive')
+	})
+
+	it('reads the platform marker and never the ZGW field', () => {
+		// 🔴 `archiveStatus` is the ZGW fact and the lists do not look at it.
+		// A menu built on it would offer Restore on a case imported carrying
+		// `archiefstatus: gearchiveerd` that is still in every working lens,
+		// and the button would take nothing back.
+		expect(codeOf(menuSource)).not.toContain('archiveStatus')
+	})
+
+	it('renders the strip from the marker on the object the page already holds', () => {
+		const strip = fs.readFileSync(
+			path.join(ROOT, 'src', 'components', 'case', 'CaseArchivedStrip.vue'),
+			'utf8',
+		)
+		// `objectData` and not `object`: CnDetailWidgetHost binds the former,
+		// so a prop called `object` arrives null and the strip is silent on
+		// every archived case with nothing reporting it.
+		expect(strip).toContain('objectData')
+		expect(strip).toContain("self.archived")
+		expect(codeOf(strip)).not.toContain('archiveStatus')
+		// Silent on a case that is not archived, which is almost every case.
+		expect(strip).toContain('v-if="archived"')
+	})
+
+	it('registers the strip by widget TYPE, which is the key that has to answer', () => {
+		// A grid item resolves its renderer from `cnRegistry[widget.type]`
+		// when the app supplies no `widget-<id>` slot, and dossiq supplies
+		// none: a type nothing answers to draws an empty panel with no warning.
+		expect(registrySource).toContain("'case-archived': {")
+		expect(registrySource).toContain('@custom-widget-ratchet exclude')
+		const widget = caseDetail().config.widgets.find(
+			(entry) => entry.id === 'case-archived',
+		)
+		expect(widget.type).toBe('case-archived')
+		expect(iconsSource).toContain('\n\tArchiveOutline,\n')
+	})
+
+	it('hides the six write actions on an archived case and keeps the lifecycle menu', () => {
+		// REQ-CM-43. The marker is read off the case object the page already
+		// holds, so the gate costs no round trip, and `eq null` is exact: an
+		// absent marker is null and a present one is an object.
+		const gated = caseDetail()
+			.config.headerActions.filter(
+				(action) => action.visibleWhen?.field === '@self.archived',
+			)
+			.map((action) => action.id)
+		expect(gated).toEqual([
+			'add-party',
+			'link-object',
+			'log-contact',
+			'generate-document',
+			'case-acknowledgement-met',
+			'plan-follow-up',
+		])
+		for (const id of gated) {
+			expect(headerAction(id).visibleWhen).toEqual({
+				field: '@self.archived',
+				op: 'eq',
+				value: null,
+			})
+		}
+		// Restore lives inside the Lifecycle menu, so gating that entry would
+		// hide the one act that undoes the archive.
+		expect(headerAction('case-lifecycle-menu').visibleWhen).toBeUndefined()
 	})
 })

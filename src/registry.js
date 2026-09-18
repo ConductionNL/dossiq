@@ -26,6 +26,10 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 // The case's archival future as openregister decided it, on the Archiving tab.
 // @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 import CaseArchivalPanel from './components/case/CaseArchivalPanel.vue'
+// The line saying this case is in the archive, and what that means for the
+// reader (archived-cases-leave-the-lenses).
+// @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+import CaseArchivedStrip from './components/case/CaseArchivedStrip.vue'
 // The flag a person raised, the risk the organisation assessed, and the
 // markers the system raised against a named panel.
 // @spec openspec/changes/markers-and-assessments-on-the-case/specs/case-management/spec.md
@@ -111,7 +115,12 @@ import CaseStartFlowDialog from './dialogs/CaseStartFlowDialog.vue'
 // @spec openspec/specs/zaaktype-versioning/spec.md
 import CaseTypeDuplicateDialog from './dialogs/CaseTypeDuplicateDialog.vue'
 import CaseTypeImportDialog from './dialogs/CaseTypeImportDialog.vue'
+// The version chain: starting the next version, and moving one running case
+// along it (case-type-version-chain).
+// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+import CaseTypeNewVersionDialog from './dialogs/CaseTypeNewVersionDialog.vue'
 import CaseTypePublishDialog from './dialogs/CaseTypePublishDialog.vue'
+import CaseVersionMoveDialog from './dialogs/CaseVersionMoveDialog.vue'
 import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // The Documents tab's upload dialog and bulk-action dialog
 // (documents-on-the-case task 2.2: the tab itself is now a `type:
@@ -357,6 +366,18 @@ const registry = {
 		kind: 'modal',
 		component: CaseTypeDuplicateDialog,
 		_note: 'CaseTypeDetail Duplicate: posts the copy, reads the new id out of the answer and ROUTES there. An api-call refreshes the page you are already on, so a person who asked for a copy would be left looking at the original with no clue where the copy went.',
+	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseTypeNewVersionDialog: {
+		kind: 'modal',
+		component: CaseTypeNewVersionDialog,
+		_note: 'CaseTypeDetail New version: posts the next version and ROUTES to the draft, for the reason Duplicate is a dialog. The tasks called for a declarative api-call, and an api-call refreshes the page you are already on, so the person who asked for a new version would be left on the old one with the draft nowhere in sight. It also says what a version IS before making one: the gesture beside it is Duplicate, and a duplicate is a second case type while a version is this one later on.',
+	},
+	// @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	CaseVersionMoveDialog: {
+		kind: 'modal',
+		component: CaseVersionMoveDialog,
+		_note: 'CaseDetail Actions menu: move this case to another version of its own case type. The PREVIEW is why it is a modal and not a confirm gate: a case is pinned to the version it was filed under because its status is a row only that version holds, so the person moving it is shown the landing status and the statuses and fields the other version adds and drops, including the dropped ones this case has answered. It derives NONE of that: canMove and every refusal sentence come from the server, so the dialog cannot disagree with the write.',
 	},
 	// @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
 	CaseHandoverDialog: {
@@ -801,6 +822,20 @@ const registry = {
 		kind: 'widget',
 		component: CaseFavouriteStrip,
 		_note: 'CaseDetail: the per-reader star, directly under the identity tiles because it is part of what identifies this case TO YOU. Starring writes nothing to the case: OpenRegister keeps the star in its own table, so no version is cut, no audit entry is written and no colleague can tell. The strip renders from `@self.favourite`, which every object read already carries, so it makes no call until somebody presses it.',
+	},
+
+	// --- The line saying this case is in the archive. ---
+	//
+	// A LAYOUT grid item and a widget TYPE, for the reason `case-unread` is
+	// one: CnDetailPage resolves a grid item's renderer from
+	// `cnRegistry[widget.type]` when the app supplies no `widget-<id>` slot,
+	// and dossiq supplies none.
+	// @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	'case-archived': {
+		// @custom-widget-ratchet exclude the archive marker is not a property of the case: `@self.archived` is metadata OpenRegister attaches on the render path, so a `data` widget builds its fields from the schema's properties and renders nothing at all, and there is no `integration` id that reaches it. The strip also has to be SILENT on an open case, which no declarative widget can be: a widget with no per-record visibility draws its empty box on every one of the cases that are not archived. Deleted the day CnDetailPage reads `@self.archived` itself, which is where this belongs for every app in the fleet
+		kind: 'widget',
+		component: CaseArchivedStrip,
+		_note: 'CaseDetail: the sentence that says this case is in the archive, who filed it, on what day and with what reason. It sits directly above the unread strip because it changes how everything under it should be read: the page is a record to consult rather than work to do. Restore is deliberately NOT a button here, it is one entry in the Lifecycle menu beside every other act, because an act offered in two places is gated in two places. Silent on a case that is not archived, which is almost every case.',
 	},
 
 	'case-unread': {

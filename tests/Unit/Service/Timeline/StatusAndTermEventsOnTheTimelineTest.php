@@ -190,6 +190,64 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	}//end testAStatusMoveReachesTheTimeline()
 
 	/**
+	 * A status the organisation gave public words to is announced, in those words.
+	 *
+	 * BOTH HALVES ARE ASSERTED, AND THEY ARE ONE DECISION. Turning the flag
+	 * public without changing the sentence would hand the applicant the
+	 * administered from-and-to names of a workflow they are not part of, which
+	 * is a leak that reads exactly like a feature.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAStatusWithPublicWordsIsAnnouncedInThem(): void {
+		$store = $this->statusStore(actor: 'handler', publicLabel: 'In behandeling');
+
+		$store->writeStatusRecord(
+			caseId: 'case-1',
+			toStatus: 'st-behandeling',
+			fromStatus: 'st-intake',
+			label: 'Start behandeling',
+			comment: 'Stukken compleet',
+			evaluatedGuards: [],
+			noWorkflowTemplate: false,
+		);
+
+		self::assertSame('public', $this->seen['visibility']);
+		self::assertSame('Status: In behandeling', $this->seen['message']);
+		self::assertStringNotContainsString('Intake', $this->seen['message']);
+	}//end testAStatusWithPublicWordsIsAnnouncedInThem()
+
+	/**
+	 * A status with no public words stays inside, and `name` is not a fallback.
+	 *
+	 * Falling back to the administered name would announce every status the
+	 * moment a case type forgot to fill a public label in, so the absence is
+	 * asserted rather than assumed.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAStatusWithoutPublicWordsStaysInside(): void {
+		$store = $this->statusStore(actor: 'handler');
+
+		$store->writeStatusRecord(
+			caseId: 'case-1',
+			toStatus: 'st-behandeling',
+			fromStatus: 'st-intake',
+			label: 'Start behandeling',
+			comment: '',
+			evaluatedGuards: [],
+			noWorkflowTemplate: false,
+		);
+
+		self::assertSame('internal', $this->seen['visibility']);
+		self::assertSame('Status gewijzigd van Intake naar Behandeling', $this->seen['message']);
+	}//end testAStatusWithoutPublicWordsStaysInside()
+
+	/**
 	 * The actor the caller names wins over the signed-in session.
 	 *
 	 * `writeStatusRecord()` takes an actor because the four-eyes rule needs to
@@ -422,11 +480,12 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 	/**
 	 * A CaseStatusStore over two named statuses and a capturing writer.
 	 *
-	 * @param string $actor The signed-in user id, '' for nobody.
+	 * @param string $actor       The signed-in user id, '' for nobody.
+	 * @param string $publicLabel The words `st-behandeling` is announced in, '' when it is not announced.
 	 *
 	 * @return CaseStatusStore The store under test.
 	 */
-	private function statusStore(string $actor): CaseStatusStore {
+	private function statusStore(string $actor, string $publicLabel = ''): CaseStatusStore {
 		$objectService = $this->createMock(StatusStoreObjectServiceStub::class);
 		$objectService->method('saveObject')->willReturnCallback(
 			static function (array $object, string $register, string $schema): array {
@@ -434,10 +493,15 @@ class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 			}
 		);
 		$objectService->method('find')->willReturnCallback(
-			static function (string $id, mixed $register = null, mixed $schema = null): array {
+			static function (string $id, mixed $register = null, mixed $schema = null) use ($publicLabel): array {
+				$behandeling = ['id' => 'st-behandeling', 'name' => 'Behandeling'];
+				if ($publicLabel !== '') {
+					$behandeling['publicLabel'] = $publicLabel;
+				}
+
 				return ([
 					'st-intake' => ['id' => 'st-intake', 'name' => 'Intake'],
-					'st-behandeling' => ['id' => 'st-behandeling', 'name' => 'Behandeling'],
+					'st-behandeling' => $behandeling,
 				][$id] ?? []);
 			}
 		);

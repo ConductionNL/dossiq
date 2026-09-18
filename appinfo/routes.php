@@ -137,6 +137,17 @@ $extra = [
     ['name' => 'caseType#blueprint',       'url' => '/api/case-types/{id}/blueprint',        'verb' => 'GET'],
     ['name' => 'caseType#validatePublish', 'url' => '/api/case-types/{id}/publish/validate', 'verb' => 'GET'],
     ['name' => 'caseType#publish',         'url' => '/api/case-types/{id}/publish',          'verb' => 'POST'],
+        // The version chain (case-type-version-chain). The chain is keyed on a
+        // case type; the other two are keyed on a CASE, because moving one
+        // running case along the chain is a handler's act on their own work and
+        // not an administrator's act on the catalogue.
+    ['name' => 'caseVersion#chain',         'url' => '/api/case-types/{id}/chain',        'verb' => 'GET'],
+        // Deprecate is a SERVER act, not a field write from the page: an
+        // object-op merges its `values` verbatim, so the design's `@today`
+        // would have been stored as that literal string in a date field.
+    ['name' => 'caseVersion#deprecate',     'url' => '/api/case-types/{id}/deprecate',    'verb' => 'POST'],
+    ['name' => 'caseVersion#options',       'url' => '/api/case/{caseId}/version-move',   'verb' => 'GET'],
+    ['name' => 'caseVersion#moveToVersion', 'url' => '/api/case/{caseId}/version-move',   'verb' => 'POST'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
@@ -407,6 +418,7 @@ $extra = [
     ['name' => 'caseActs#finish',         'url' => '/api/case/{caseId}/finish',         'verb' => 'POST'],
     ['name' => 'caseActs#abort',          'url' => '/api/case/{caseId}/abort',          'verb' => 'POST'],
     ['name' => 'caseActs#archive',        'url' => '/api/case/{caseId}/archive',        'verb' => 'POST'],
+    ['name' => 'caseActs#unarchive',      'url' => '/api/case/{caseId}/unarchive',      'verb' => 'POST'],
     ['name' => 'caseActs#hold',           'url' => '/api/case/{caseId}/hold',           'verb' => 'POST'],
     ['name' => 'caseActs#releaseHold',    'url' => '/api/case/{caseId}/release-hold',   'verb' => 'POST'],
     ['name' => 'caseActs#draft',          'url' => '/api/case/{caseId}/draft',          'verb' => 'POST'],

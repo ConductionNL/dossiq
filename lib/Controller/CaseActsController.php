@@ -180,6 +180,26 @@ class CaseActsController extends Controller {
 	}//end archive()
 
 	/**
+	 * Take a case back out of the archive: one act, no wizard.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/archived-cases-leave-the-lenses/specs/case-management/spec.md
+	 */
+	#[NoAdminRequired]
+	public function unarchive(string $caseId): JSONResponse {
+		return $this->guarded(
+			caseId: $caseId,
+			run: fn (): array => $this->acts->unarchive(
+				caseId: $caseId,
+				reason: (string)$this->request->getParam('reason', ''),
+			),
+		);
+	}//end unarchive()
+
+	/**
 	 * Hold the case until a date.
 	 *
 	 * @param string $caseId The case UUID.

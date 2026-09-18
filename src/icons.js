@@ -92,6 +92,7 @@ import ContentCopy from 'vue-material-design-icons/ContentCopy.vue'
 import ContentDuplicate from 'vue-material-design-icons/ContentDuplicate.vue'
 import Creation from 'vue-material-design-icons/Creation.vue'
 import CubeOutline from 'vue-material-design-icons/CubeOutline.vue'
+import DatabaseCogOutline from 'vue-material-design-icons/DatabaseCogOutline.vue'
 import DeleteClockOutline from 'vue-material-design-icons/DeleteClockOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
 import Earth from 'vue-material-design-icons/Earth.vue'
@@ -295,6 +296,7 @@ export default {
 	ContentDuplicate,
 	Creation,
 	CubeOutline,
+	DatabaseCogOutline,
 	Domain,
 	Earth,
 	EmailAlert,
