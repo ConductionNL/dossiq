@@ -3004,6 +3004,17 @@
 							"field": "@self.archived",
 							"op": "eq",
 							"value": null
+						}},
+					{
+						"id": "case-remind",
+						"type": "open-modal",
+						"label": "Remind",
+						"icon": "BellPlusOutline",
+						"target": "RemindDialog",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
 						}
 					}
 				]
@@ -3541,13 +3552,27 @@
 								"urgent": "Urgent"
 							}
 						},
+						"kind": {
+							"type": "string",
+							"title": "Kind",
+							"description": "What sort of work the task is.",
+							"facetable": true,
+							"order": 4,
+							"inputControl": "select",
+							"enum": [
+								"reminder"
+							],
+							"enumLabels": {
+								"reminder": "Reminder"
+							}
+						},
 						"dueAt": {
 							"type": "string",
 							"format": "date",
 							"title": "Due between",
 							"description": "Tasks with a deadline inside this window.",
 							"facetable": true,
-							"order": 4,
+							"order": 5,
 							"inputControl": "date-range"
 						}
 					}
