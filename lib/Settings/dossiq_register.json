@@ -1013,7 +1013,7 @@
             "roleType": {
                 "slug": "roleType",
                 "icon": "BadgeAccountOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "RolType",
                 "title": "Role Type",
@@ -1053,9 +1053,10 @@
                             "decision_maker",
                             "coordinator",
                             "stakeholder",
-                            "contact"
+                            "contact",
+                            "gemachtigde"
                         ],
-                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",
+                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it, and SeedGemachtigdeRoleType keeps exactly one of it.",
                         "title": "Generic Role"
                     },
                     "ncGroupId": {
@@ -1094,6 +1095,14 @@
                         "type": "string",
                         "description": "The sentence a handler reads under the field while answering it. One line. This is the field's help: the case form renders it beside the input, not as a heading and not as the field's own documentation. Definition carries the short definition for whoever maintains the case type.",
                         "title": "Help text"
+                    },
+                    "category": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "default": "Uncategorised",
+                        "facetable": true,
+                        "description": "The folder this attribute sits in on the Attributes index, a free word rather than a fixed list: an organisation's own grouping (Adres, Financieel, Persoon) is the one it recognises. Attributes with no category are listed under Uncategorised.",
+                        "title": "Category"
                     },
                     "caseType": {
                         "type": "string",
@@ -1479,7 +1488,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.25.0",
+                "version": "1.26.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1539,6 +1548,14 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "_hierarchyNote": "Row Q13.23. The edge is `parentCase` and NOTHING ELSE. `relatedCases` is a typed PEER relation written symmetrically by CaseRelationService, so declaring it here would make a grant travel sideways along every link a handler ever made, without limit and without anyone having asked for it. `maxDepth` is not a performance dial: a deelzaak chain is a graph nobody validates on write, and a cycle written by an import would otherwise resolve forever. `inheritedVerbs` names READ and no more, which is the measured half of the competitor's behaviour (Vikunja 2.6.0 read on the root reached the grandchild and was refused a write): a right to see the parent is not a right to change the child. THIS BLOCK IS INERT UNTIL OPENREGISTER READS IT (`rbac-inherits-to-children`, row Q13.23), and it is declared now so the edge is one thing rather than two. It is also listed in SchemaSlugMap::SCHEMA_ANNOTATION_KEYS, without which OpenRegister DROPS an unknown configuration key in silence and the declaration would never reach the instance at all.",
+                    "x-openregister-hierarchy": {
+                        "parentField": "parentCase",
+                        "maxDepth": 10,
+                        "inheritedVerbs": [
+                            "read"
+                        ]
+                    },
                     "x-openregister-dedup": {
                         "blockingKeys": [
                             "caseType"
@@ -3302,7 +3319,7 @@
             "role": {
                 "slug": "role",
                 "icon": "AccountKeyOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "Rol",
                 "title": "Role",
@@ -3373,6 +3390,13 @@
                         "format": "date-time",
                         "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
                         "title": "Delegate Until"
+                    },
+                    "representedParty": {
+                        "type": "string",
+                        "format": "uuid",
+                        "facetable": true,
+                        "description": "Whom this participant acts for on this case. Filled on a role of type Gemachtigde (Awb 2:1) and empty on every other role. It is NOT delegateFrom: that is the start of a delegation window and RoleDelegationResolver reads it as a date, so writing a party uuid into it would make the resolver substitute a delegate at an unparseable moment.",
+                        "title": "Represented by"
                     }
                 }
             },
@@ -11202,6 +11226,7 @@
                     "slug": "rol-gemachtigde"
                 },
                 "name": "Gemachtigde",
+                "genericRole": "gemachtigde",
                 "description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
             },
             {

@@ -371,6 +371,14 @@
 			"order": 90
 		},
 		{
+			"id": "PropertyDefinitionsMenu",
+			"label": "Attributes",
+			"icon": "TagMultiple",
+			"route": "PropertyDefinitions",
+			"section": "settings",
+			"order": 91
+		},
+		{
 			"id": "FlowsMenu",
 			"label": "Flows",
 			"icon": "Sitemap",
@@ -2091,7 +2099,7 @@
 						"title": "Files",
 						"icon": "FolderOutline",
 						"_note": "The Files tab: the case's own folder as a files browser on the Files app's primitives (nextcloud-vue CnFilesBrowser through the `files` leaf): the trail of crumbs from the user's root down to this folder, the Files app's New menu (new folder, templates, create file request) and its row actions, DAV upload, rename. Replaces the Documents tab of 2026-09-13, which held the ZGW document list (DossierTab) above this folder as two sections under two headings: one title on the page, and the word is files (Ruben). The ZGW informatieobject API, the register and the ZaakdossierController stay; only their page surface is retired.",
-						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers.",
+						"_propsNote": "documents-live-on-the-case: `rowActions` puts Document properties on every file row (dispatched as an open-modal on DocumentMetadataDialog with the row's fileId and fileName merged in); `linkedItemsUrl` lists the documents joined to this case whose file lives in another case's folder, shown as linked rows after the folder's own files. document-correspondents: `columns` declares Sender and Recipients, read by nextcloud-vue `files-browser-columns` (gap register row 4.8) WHEN IT LANDS. The browser ignores a column type it cannot read, so this is inert today and is declared now so the values have somewhere to go; until then the two fields are on the document properties dialog and on every row of the dossier listing, which carries senderName and recipientNames beside the stored party identifiers. scan-verdict-on-the-row: `columns` also declares Scan, over `scanVerdict` and the formatter of the same name in src/services/formatters.js, read by the same `files-browser-columns` WHEN IT LANDS and inert for the same reason. Until then the verdict is on the document properties dialog beside the hash, which is where a handler decides whether to open the attachment. dossiq scans nothing: the verdict is whatever `files_antivirus` recorded for the node, read through GET /api/files/{fileId}/scan, and an instance with no scanner reads Not scanned rather than clean (ADR-102).",
 						"props": {
 							"rowActions": [
 								{
@@ -2122,6 +2130,12 @@
 									"id": "recipients",
 									"label": "Recipients",
 									"property": "recipientNames"
+								},
+								{
+									"id": "scan",
+									"label": "Scan",
+									"property": "scanVerdict",
+									"formatter": "scanVerdict"
 								}
 							]
 						}
@@ -2786,6 +2800,7 @@
 				"_linkObjectNote": "`case` is REQUIRED on the caseObject schema and is deliberately absent from `link-object`'s `includeFields`: an `open-form` action saves straight to the object API, so a required property the form does not ask has to arrive through `props` or the save is refused with a validation error the handler cannot act on. `@objectId` is the open case, the same shape `add-party` and `log-contact` use. Until nextcloud-vue passes `props` into the create form as initial data (triage #6) the field is not prefilled on screen; the value is still written, which is what the e2e asserts.",
 				"_archivedNote": "archived-cases-leave-the-lenses REQ-CM-43, D-4. Six header actions that WRITE to the case are gated on `@self.archived`, the platform's own marker, read straight off the case object the page already holds: the LOCAL form of `visibleWhen` dot-paths into that object, so the gate costs no round trip. `eq null` is how absence is spelled, and it is exact rather than loose: an absent marker is null and a present one is an object, and String(object) is never \"null\". THE FOUR THAT ARE NOT GATED ARE DELIBERATE. Claim, Release and Hand to another team already carry `isFinalStatus neq true`, and a case can only be archived once it has ended, so they are already gone on an archived case; `visibleWhen` holds ONE condition and no AND, so adding the archive to them would mean dropping the condition doing the work. Copy case stays, because a copy is a NEW case and writes nothing to this one. The Lifecycle menu stays, because Restore lives inside it and gating it would hide the one act that undoes the archive. Start keeps its own `hasStartableFlows` gate for the same one-condition reason, and a flow that writes to an archived case is refused by OpenRegister with a sentence naming the archive. \ud83d\udd34 THE GENERIC EDIT BUTTON IS STILL OFFERED, AND DOSSIQ CANNOT TAKE IT AWAY PER RECORD. `config.showEditAction` is a page-level boolean in the manifest schema and CnDetailPage has no predicate form of it, so pressing Edit opens the form, saving is refused by the platform, and the refusal names the archive, the archiving user and the date. That is the reason reaching the reader rather than a silent failure, but it arrives after the click where the other six are simply not there. It belongs in nextcloud-vue, where one detail page reading `@self.archived` answers for every app in the fleet.",
 				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. NEITHER IS GATED ON THE ASSIGNEE, though the requirement is worded that way. A local `visibleWhen` compares a dot-path against a LITERAL with eq or neq: it has no empty operator, it does not resolve `@me` in `value`, and neither its endpoint nor its source mode can name this case (the endpoint URL is fetched verbatim, and OpenRegister's object list ignores an `id` filter). So the gate is the one thing the record says for certain, which is that a closed case is not picked up, and the SERVER refuses a claim on a case that already has a handler, or a release by anyone who is not that handler, with a 409 and a sentence. That is this page's own convention, the one `case-resume` follows: a gesture the case does not allow is refused in words rather than silently accepted. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
+				"_rebindNote": "case-rebind (case-type-rebind): move a running case to a DIFFERENT case type, which the version move beside it refuses by design. A case filed under the wrong type used to be closed and refiled, with a new number, a new term and a paper trail that stops; a rebind keeps all three. It is a modal because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for and so is every property the target requires in that status. The action is gated on `visibleWhen` rather than on a group key, because an action carries no group vocabulary: the endpoint answers whether the caller is a case coordinator, and the service checks the same group itself, since a hidden button is not an authorization.",
 				"_versionMoveNote": "case-version-move (case-type-version-chain): move this case to another version of its OWN case type, which nothing could do. A case filed the day before a correction was published had to be closed and refiled under a new number. It is a modal and not a confirm-gated api-call because the PREVIEW is the act's substance: the person moving the case is shown the status it lands in, the statuses and fields the other version adds and drops, and which of the dropped fields this case has already answered. Every one of those, and the refusal when the other version has no status by the name this case is sitting in, comes from the server, so the dialog cannot disagree with the write. Moving a case to a DIFFERENT case type is a rebind and is not this act: `case-type-rebind` owns that and declares this change as its dependency. Hidden on a closed case, like the other acts that rewrite what governs it.",
 				"headerActions": [
 					{
@@ -2799,6 +2814,7 @@
 							"name",
 							"roleType",
 							"participant",
+							"representedParty",
 							"delegate",
 							"delegateUntil",
 							"description"
@@ -2806,6 +2822,14 @@
 						"fieldOverrides": {
 							"description": {
 								"widget": "textarea"
+							},
+							"roleType": {
+								"widget": "RoleTypePicker",
+								"label": "Role"
+							},
+							"representedParty": {
+								"widget": "InitiatorPicker",
+								"label": "Represented by"
 							}
 						},
 						"successMessage": "Party added to the case.",
@@ -2976,6 +3000,19 @@
 						}
 					},
 					{
+						"id": "case-rebind",
+						"type": "open-modal",
+						"label": "Change type or version",
+						"icon": "SwapVertical",
+						"target": "CaseRebindDialog",
+						"visibleWhen": {
+							"endpoint": "/apps/dossiq/api/rebind/permission",
+							"field": "mayRebind",
+							"op": "eq",
+							"value": true
+						}
+					},
+					{
 						"id": "copy-case",
 						"type": "open-modal",
 						"label": "Copy case",
@@ -3000,6 +3037,17 @@
 						"label": "Plan follow-up",
 						"icon": "CalendarClock",
 						"target": "CasePlanFollowUpDialog",
+						"visibleWhen": {
+							"field": "@self.archived",
+							"op": "eq",
+							"value": null
+						}},
+					{
+						"id": "case-remind",
+						"type": "open-modal",
+						"label": "Remind",
+						"icon": "BellPlusOutline",
+						"target": "RemindDialog",
 						"visibleWhen": {
 							"field": "@self.archived",
 							"op": "eq",
@@ -3541,13 +3589,27 @@
 								"urgent": "Urgent"
 							}
 						},
+						"kind": {
+							"type": "string",
+							"title": "Kind",
+							"description": "What sort of work the task is.",
+							"facetable": true,
+							"order": 4,
+							"inputControl": "select",
+							"enum": [
+								"reminder"
+							],
+							"enumLabels": {
+								"reminder": "Reminder"
+							}
+						},
 						"dueAt": {
 							"type": "string",
 							"format": "date",
 							"title": "Due between",
 							"description": "Tasks with a deadline inside this window.",
 							"facetable": true,
-							"order": 4,
+							"order": 5,
 							"inputControl": "date-range"
 						}
 					}
@@ -5373,6 +5435,50 @@
 				"documentationUrl": "https://dossiq.conduction.nl"
 			},
 			"_note": "A case type is the blueprint every case is governed by — lifecycle, deadlines, classification, the workflow that drives it — and `case.caseType` references it. It had no surface at all: the original `CaseTypesMenu` pointed at the in-app `/settings` page, which page-topology-cleanup B1 retired for mounting AdminRoot through the in-app router (ADR-004), and no replacement was ever built. The capability went with the page and only its stale `settingsSection` id was left behind. WorkflowDefinitionDetail's own note still says cases are 'reached through their caseType index', naming this page. Restored as an ordinary schema-driven index rather than by reviving the retired settings route."
+		},
+		{
+			"id": "PropertyDefinitions",
+			"route": "/settings/attributes",
+			"type": "index",
+			"title": "Attributes",
+			"config": {
+				"register": "dossiq",
+				"schema": "propertyDefinition",
+				"columns": [
+					"name",
+					"category",
+					"propertyType",
+					"definition",
+					"isRequired"
+				],
+				"showViewAction": false,
+				"_showViewActionNote": "There is no PropertyDefinitionDetail page and a view action with no route pushes vue-router at a name it cannot resolve, so the row opens the metadata sidebar instead. An attribute is eight fields; a page of its own would be the sidebar with a header.",
+				"formSize": "large",
+				"formColumns": 2,
+				"includeFields": [
+					"name",
+					"category",
+					"propertyType",
+					"definition",
+					"description",
+					"isRequired",
+					"defaultValue",
+					"maxLength"
+				],
+				"_folderSidebarNote": "`source: \"field\"` and not `source: \"facet\"`: CnFolderSidebar's validator takes custom, field and files only, and a sidebar declared as a facet falls through to `custom`, finds no `folders` array and renders an empty pane. The shape is the one `#CaseTypes` carries. Since nextcloud-vue 2.42.0 the `field` source PREFERS the facet, which OpenRegister computes over the whole query with pagination stripped, so a category is reachable even when all of its attributes sit on a later page; `facetable: true` on `propertyDefinition.category` plus this block is the whole contract and the object store adds `_facets=extend` on its own. AN ATTRIBUTE WITH NO CATEGORY GETS ITS FOLDER FROM THE SCHEMA DEFAULT, not from this pane: `fieldTree()` skips a row whose grouping value is null, undefined or empty, so there is nowhere here to name an empty bucket, and `category` defaults to Uncategorised on the register instead. ⚠️ The facet arrives up to an hour stale, because OpenRegister caches the response and no object write invalidates it (OpenRegister#3560), so a category added today may get no folder today.",
+				"folderSidebar": {
+					"source": "field",
+					"field": "category",
+					"filterField": "category",
+					"allLabel": "All attributes"
+				},
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			},
+			"_note": "The attribute catalogue, row 11.23 of the competitor gap register. Case types were in folders and attributes were a flat list, so a municipality with two hundred attributes scrolled. An attribute is not per case type: `caseType` is not in propertyDefinition's required list, and an attribute with no case type is shared across every one of them, which is exactly what makes a catalogue page worth having. Templates stay filinq's: the register names no slug for a template category and dossiq stores nothing about it."
 		},
 		{
 			"id": "CaseTypeDetail",

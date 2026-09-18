@@ -16,6 +16,14 @@
 				:error="!!nameError"
 				class="pd-fields__field"
 				@update:modelValue="(v) => set('name', v)" />
+			<NcTextField
+				:modelValue="value.category || ''"
+				:label="t('dossiq', 'Category')"
+				:helperText="
+					t('dossiq', 'The folder this attribute is filed under.')
+				"
+				class="pd-fields__field"
+				@update:modelValue="(v) => set('category', v)" />
 		</div>
 
 		<div class="pd-fields__row">

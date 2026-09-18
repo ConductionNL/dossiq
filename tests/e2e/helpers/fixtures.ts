@@ -907,6 +907,8 @@ export interface FlowTaskSeed {
 	dueAt?: string
 	/** low | normal | high | urgent. */
 	priority?: string
+	/** What sort of work this is, e.g. `reminder`. Indexed and filterable. */
+	kind?: string
 	/** The uids that may claim an unassigned task, i.e. its pool. */
 	candidateUsers?: string[]
 	/** The group ids that may claim an unassigned task. */
