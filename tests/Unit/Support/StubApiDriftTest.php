@@ -104,6 +104,16 @@ final class StubApiDriftTest extends TestCase {
 		// tree half-migrated. Tracked as dossiq#1763.
 		'Db\\Verwerkingsactiviteit' => 'dossiq#1763: the catalogue writes Dutch legal bases OR rejects; '
 			. 'stub, catalogue and assertions move together',
+		// The three person-link event stubs declare `getLink(): object` where the
+		// real events declare `ContactLink`. That is a WIDENING rather than a
+		// contradiction — anything written against `object` holds against a
+		// ContactLink — and narrowing it would mean carrying a ContactLink double
+		// this suite has no other use for. Waived deliberately rather than fixed
+		// by inventing a second double, and it stops being a waiver the day a
+		// ContactLink stub earns its place for some other reason.
+		'Event\\PersonLinkedEvent' => 'getLink() is widened to object: the suite carries no ContactLink double',
+		'Event\\PersonUnlinkedEvent' => 'getLink() is widened to object: the suite carries no ContactLink double',
+		'Event\\PersonLinkUpdatedEvent' => 'getLink() is widened to object: the suite carries no ContactLink double',
 	];
 
 	/**
@@ -299,6 +309,25 @@ final class StubApiDriftTest extends TestCase {
 					$name,
 					implode(', ', $signature['params']),
 					implode(', ', $realSignature['params'])
+				);
+				continue;
+			}
+
+			// What a method hands back, when both sides say. A stub returning
+			// `object` where the real class returns an entity is a stub every
+			// assertion about the return value agrees with and production does
+			// not, which is the same defect as a wrong argument in the other
+			// direction. Only compared when BOTH declare a type: a stub that
+			// declares none promises nothing, and reporting that would be a wall
+			// of noise about doubles that are merely less specific.
+			$stubReturns = ($signature['returns'] ?? '');
+			$realReturns = ($realSignature['returns'] ?? '');
+			if ($stubReturns !== '' && $realReturns !== '' && $stubReturns !== $realReturns) {
+				$drift[] = sprintf(
+					'%s() returns %s where the real class returns %s',
+					$name,
+					$stubReturns,
+					$realReturns
 				);
 			}
 		}//end foreach
