@@ -2,13 +2,16 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The two schemas that hold personal data can be reached.
+ * The schemas that were registered with nowhere to read them.
  *
- * Both shipped their storage and never shipped their page. That is a privacy
- * problem before it is a usability one: a supplier user is a named person with
- * an email address and an eHerkenning level, a breach record says how personal
- * data escaped, and neither could be read from this app at all. A data subject
- * asking what is held about them could not be answered.
+ * Each shipped its storage and never shipped a page, so an instance created the
+ * table, filled it, and offered nobody a way to look. For the first two that is
+ * a privacy problem before it is a usability one: a supplier user is a named
+ * person with an email address and an eHerkenning level, a breach record says
+ * how personal data escaped, and a data subject asking what is held about them
+ * could not be answered. For the offline three it is the opposite finding: the
+ * pages will be empty on every instance today, and an empty list somebody can
+ * open is how you learn the offline story ends at the schema.
  *
  * Every assertion here guards something that fails SILENTLY: a page with no
  * menu entry is routable and unfindable, an unregistered icon renders no glyph
@@ -87,6 +90,9 @@ function iconRenders(name) {
 describe.each([
 	['SupplierUsers', 'SupplierUsersMenu', 'supplierUser'],
 	['AvgIncidents', 'AvgIncidentsMenu', 'avgIncident'],
+	['FieldEvidence', 'FieldEvidenceMenu', 'fieldEvidence'],
+	['OfflineSyncQueue', 'OfflineSyncQueueMenu', 'syncQueue'],
+	['OfflineSyncConflicts', 'OfflineSyncConflictsMenu', 'conflictRecord'],
 ])('%s', (pageId, menuId, slug) => {
 	it('is a page over the schema the register declares', () => {
 		const p = page(pageId)
@@ -143,5 +149,58 @@ describe('the breach register reads newest first', () => {
 		// The 72-hour notification clock runs from the incident, so the row
 		// that matters is the most recent one, not the first ever recorded.
 		expect(page('AvgIncidents').config.defaultSort).toBe('-incidentDate')
+	})
+})
+
+describe('what the field evidence page does not show', () => {
+	it('keeps the content, the file link and the location out of the columns', () => {
+		// `transcription` is what somebody said, `cloudUrl` is a direct link
+		// to the file and `gpsLocation` is where a person stood. None belongs
+		// in a list that is scanned rather than opened, which is why this
+		// schema carries a sensitivityLevel at all. The record itself opens in
+		// the sidebar for anyone who needs it.
+		const columns = page('FieldEvidence').config.columns
+		for (const hidden of ['transcription', 'cloudUrl', 'gpsLocation']) {
+			expect(columns).not.toContain(hidden)
+			// And the field still exists, so this test fails if the reason for
+			// it quietly disappears.
+			expect(schemas.fieldEvidence.properties[hidden]).toBeTruthy()
+		}
+
+		expect(columns).toContain('sensitivityLevel')
+	})
+})
+
+describe('the sync surfaces show what somebody came to find out', () => {
+	it('puts the last error on the queue, and not the payload', () => {
+		// A queue that stopped draining is the only thing anybody opens this
+		// page for. The payload is the whole object being replayed and would
+		// print as an object in a cell.
+		const columns = page('OfflineSyncQueue').config.columns
+		expect(columns).toContain('lastError')
+		expect(columns).toContain('attemptCount')
+		expect(columns).not.toContain('payload')
+	})
+
+	it('keeps the two version snapshots off the conflict list', () => {
+		// Comparing them is what the sidebar is for; a column holding one
+		// would print an object.
+		const columns = page('OfflineSyncConflicts').config.columns
+		expect(columns).not.toContain('serverVersion')
+		expect(columns).not.toContain('clientVersion')
+		expect(columns).toContain('conflictType')
+	})
+})
+
+describe('the settings menu keeps its entries in a stated order', () => {
+	it('gives every settings entry a distinct order', () => {
+		// Two entries on the same order are placed by whatever the sort is
+		// stable about, which is nothing anybody declared. Five new entries
+		// arrived at once here, so the collision is worth an assertion rather
+		// than an eye.
+		const orders = manifest.menu
+			.filter((entry) => entry.section === 'settings')
+			.map((entry) => entry.order)
+		expect(new Set(orders).size).toBe(orders.length)
 	})
 })

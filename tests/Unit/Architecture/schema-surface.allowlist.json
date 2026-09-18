@@ -10,16 +10,6 @@
       "reason": "The geocoded addresses on a case. The map component and PdokLocatieserverService talk about it in prose and neither reads the slug; the CaseDetail page has no location widget. Named by openspec/specs/case-dashboard-view, so a surface is still promised."
     },
     {
-      "slug": "conflictRecord",
-      "ownerChange": "archive/2026-06-13-mobiel-inspectie-offline",
-      "reason": "One half of offline sync: what to show an inspector when the server and the device disagree. Without the sync surface there is nothing to resolve, so it goes or stays with syncQueue."
-    },
-    {
-      "slug": "fieldEvidence",
-      "ownerChange": "archive/2026-06-13-mobiel-inspectie-offline",
-      "reason": "Photos and notes captured in the field. EvidenceMetadataService builds the payload in prose and never names the slug, so the capture path stops short of the store."
-    },
-    {
       "slug": "indicatiestelling",
       "ownerChange": "archive/2026-06-13-beschikking-generatie",
       "reason": "The assessment a beschikking rests on. Named by two live specs and shown by neither."
@@ -38,11 +28,6 @@
       "slug": "supplierKpi",
       "ownerChange": "archive/2026-06-13-leverancier-zaakportaal-01-schema-foundation",
       "reason": "Supplier performance figures for the supplier portal. The portal's own schema foundation landed; the dashboard that reads these did not."
-    },
-    {
-      "slug": "syncQueue",
-      "ownerChange": "archive/2026-06-13-mobiel-inspectie-offline",
-      "reason": "The offline device's outbox. Nothing in dossiq enqueues or drains it, so the offline story currently ends at the schema."
     }
   ]
 }

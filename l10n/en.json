@@ -402,6 +402,7 @@
         "Always required": "Always required",
         "Amendment": "Amendment",
         "An advice request is still open": "An advice request is still open",
+        "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.",
         "An intrekking. There is a result, and it is not a besluit.": "An intrekking. There is a result, and it is not a besluit.",
         "An ISO 8601 duration, for example P7D for every seven days.": "An ISO 8601 duration, for example P7D for every seven days.",
         "An object type is an OpenRegister schema. Add one, or change its fields, on the register page.": "An object type is an OpenRegister schema. Add one, or change its fields, on the register page.",
@@ -711,6 +712,7 @@
         "Calculating": "Calculating",
         "Calculating (calculerend)": "Calculating (calculerend)",
         "Calculation": "Calculation",
+        "Calendar days": "Calendar days",
         "calendar days": "calendar days",
         "Call someone back": "Call someone back",
         "Call webhook": "Call webhook",
@@ -1126,6 +1128,7 @@
         "Count": "Count",
         "Counter": "Counter",
         "Counter (Balie)": "Counter (Balie)",
+        "Counting mode": "Counting mode",
         "Court Proceedings (Beroep)": "Court Proceedings (Beroep)",
         "Court Ruling": "Court Ruling",
         "Court Ruling Outcome": "Court Ruling Outcome",
@@ -1727,6 +1730,7 @@
         "Fee calculations": "Fee calculations",
         "Fee regulations": "Fee regulations",
         "Field": "Field",
+        "Field evidence": "Field evidence",
         "Field inspections": "Field inspections",
         "Field name": "Field name",
         "Field name (e.g. result)": "Field name (e.g. result)",
@@ -2910,6 +2914,8 @@
         "Off stops the marker being raised, without removing what it was for.": "Off stops the marker being raised, without removing what it was for.",
         "Off stops this destination opening a case, without removing what it was for.": "Off stops this destination opening a case, without removing what it was for.",
         "Off stops this moment sending, without removing what it was for.": "Off stops this moment sending, without removing what it was for.",
+        "Offline sync conflicts": "Offline sync conflicts",
+        "Offline sync queue": "Offline sync queue",
         "Offline: {n} changes waiting for sync": "Offline: {n} changes waiting for sync",
         "OIN (Organisatie-identificatienummer)": "OIN (Organisatie-identificatienummer)",
         "OK": "OK",
@@ -5563,9 +5569,6 @@
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years",
-        "Counting mode": "Counting mode",
-        "Calendar days": "Calendar days",
-        "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.": "An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar."
+        "{years} years": "{years} years"
     }
 }

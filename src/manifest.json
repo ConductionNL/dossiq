@@ -401,12 +401,39 @@
 			"order": 71
 		},
 		{
+			"id": "FieldEvidenceMenu",
+			"label": "Field evidence",
+			"icon": "CameraOutline",
+			"route": "FieldEvidence",
+			"section": "settings",
+			"order": 103,
+			"permission": "admin"
+		},
+		{
+			"id": "OfflineSyncQueueMenu",
+			"label": "Offline sync queue",
+			"icon": "CloudUploadOutline",
+			"route": "OfflineSyncQueue",
+			"section": "settings",
+			"order": 104,
+			"permission": "admin"
+		},
+		{
+			"id": "OfflineSyncConflictsMenu",
+			"label": "Offline sync conflicts",
+			"icon": "AlertOutline",
+			"route": "OfflineSyncConflicts",
+			"section": "settings",
+			"order": 105,
+			"permission": "admin"
+		},
+		{
 			"id": "SupplierUsersMenu",
 			"label": "Supplier portal accounts",
 			"icon": "AccountOutline",
 			"route": "SupplierUsers",
 			"section": "settings",
-			"order": 95,
+			"order": 101,
 			"permission": "admin"
 		},
 		{
@@ -415,7 +442,7 @@
 			"icon": "AlertOutline",
 			"route": "AvgIncidents",
 			"section": "settings",
-			"order": 96,
+			"order": 102,
 			"permission": "admin"
 		},
 		{
@@ -5133,6 +5160,85 @@
 				],
 				"showViewAction": true,
 				"defaultSort": "-incidentDate",
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "FieldEvidence",
+			"route": "/settings/field-evidence",
+			"type": "index",
+			"title": "Field evidence",
+			"permission": "admin",
+			"_note": "What an inspector captured in the field. The schema shipped with mobiel-inspectie-offline and nothing ever read it, so a photo or a voice memo could be uploaded from a device and reach nobody. THE COLUMNS ARE THE ENVELOPE, NOT THE CONTENT. `transcription` is what somebody said, `cloudUrl` is a direct link to the file and `gpsLocation` is where a person stood; none of the three belongs in a list that is scanned rather than opened, and `sensitivityLevel` exists on this schema precisely because the content is classified. So the page shows which inspection, what kind, when, whether the transcription finished and how sensitive it is, and the record itself opens in the sidebar. ADMIN-ONLY IS A PLACEHOLDER, and an honest one: the right reader is the handler working the inspection, and there is no inspection page to hang this off yet. Until there is, the choice is between an operational surface for the people who administer the instance and no surface at all, which is what it had.",
+			"config": {
+				"register": "dossiq",
+				"schema": "fieldEvidence",
+				"columns": [
+					"inspectionRef",
+					"type",
+					"capturedAt",
+					"transcriptionStatus",
+					"sensitivityLevel"
+				],
+				"showViewAction": true,
+				"defaultSort": "-capturedAt",
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "OfflineSyncQueue",
+			"route": "/settings/offline-sync",
+			"type": "index",
+			"title": "Offline sync queue",
+			"permission": "admin",
+			"_note": "The outbox of a device that worked offline. Nothing in dossiq enqueues or drains it yet, so this page will be empty on every instance today, and that is the point: an empty list somebody can look at is how you find out the offline story ends at the schema, where before there was nothing to look at and no way to tell. `payload` is not a column because it is the whole object being replayed; `lastError` is, because a queue that stopped draining is the only thing anybody comes here to find out.",
+			"config": {
+				"register": "dossiq",
+				"schema": "syncQueue",
+				"columns": [
+					"deviceId",
+					"operationType",
+					"targetEntity",
+					"status",
+					"attemptCount",
+					"lastError",
+					"queuedAt"
+				],
+				"showViewAction": true,
+				"defaultSort": "-queuedAt",
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://dossiq.conduction.nl"
+			}
+		},
+		{
+			"id": "OfflineSyncConflicts",
+			"route": "/settings/offline-conflicts",
+			"type": "index",
+			"title": "Offline sync conflicts",
+			"permission": "admin",
+			"_note": "Where the device and the server disagreed. The two version snapshots are the record and not the list: comparing them is what the sidebar is for, and a column holding one of them would print an object. `resolution` is nullable until somebody resolves it, so a blank in that column is the queue of work rather than a missing value.",
+			"config": {
+				"register": "dossiq",
+				"schema": "conflictRecord",
+				"columns": [
+					"syncQueueRef",
+					"conflictType",
+					"resolution",
+					"resolvedBy",
+					"resolvedAt"
+				],
+				"showViewAction": true,
 				"sidebar": {
 					"enabled": true,
 					"showMetadata": true
