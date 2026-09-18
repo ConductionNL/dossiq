@@ -6,7 +6,7 @@
  * dossiq's notification settings render the shared screen, not a second one.
  *
  * THE DEFECT THIS PINS DOWN. dossiq kept its own list of switches beside
- * `CnNotificationPreferences`. It could say three layers — the shipped
+ * `CnNotificationMatrix`. It could say three layers — the shipped
  * default, a team default and your own — and had nowhere to put a channel an
  * administrator has FORCED or one the platform REFUSES for this recipient. So
  * a handler could switch a notice off, keep receiving it, and read a page that
@@ -21,7 +21,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 
 const SharedScreenStub = defineComponent({
-	name: 'CnNotificationPreferences',
+	name: 'CnNotificationMatrix',
 	props: ['events', 'channels', 'groupValues', 'personalValues', 'forcedValues', 'refusals'],
 	emits: ['change'],
 	render() {
@@ -30,7 +30,7 @@ const SharedScreenStub = defineComponent({
 })
 
 vi.mock('@conduction/nextcloud-vue', () => ({
-	CnNotificationPreferences: SharedScreenStub,
+	CnNotificationMatrix: SharedScreenStub,
 }))
 
 const fetchPreferences = vi.fn()
@@ -102,7 +102,7 @@ beforeEach(() => {
 })
 
 describe('the shared screen is what renders', () => {
-	it('mounts CnNotificationPreferences rather than a list of its own', async () => {
+	it('mounts CnNotificationMatrix rather than a list of its own', async () => {
 		const wrapper = await mountSettings()
 
 		expect(wrapper.findComponent(SharedScreenStub).exists()).toBe(true)

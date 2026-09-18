@@ -7,7 +7,7 @@
  * dossiq had a second notification settings screen of its own. It said which
  * layer decided each value, which was the right idea, but it could only say
  * three layers and it had no way to show a channel an administrator has
- * forced. `CnNotificationPreferences` shows four layers and a refusal, so this
+ * forced. `CnNotificationMatrix` shows four layers and a refusal, so this
  * maps onto that rather than growing a second implementation beside it.
  *
  * 🔴 A LAYER NOBODY ANSWERED FOR IS NOT GUESSED. The platform returns the
@@ -198,7 +198,7 @@ export function propsFor({ entries = [], channels = [], label, singleChannelLabe
  * contain dashes; a schema name is one word. Splitting at the last would move
  * half the key into the schema and write to a notification nobody has.
  *
- * There is no clear here. `CnNotificationPreferences` emits true or false and
+ * There is no clear here. `CnNotificationMatrix` emits true or false and
  * has no third state, so the per-row "use the setting from my team" that
  * dossiq's own list carried has no equivalent yet. That loss is named in the
  * change rather than papered over with an unreachable branch: the store behind

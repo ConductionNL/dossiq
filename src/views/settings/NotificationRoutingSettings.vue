@@ -11,7 +11,7 @@
   than just reading as off.
 
   THIS IS NOW THE SHARED SCREEN. dossiq had its own list beside
-  CnNotificationPreferences, which does the same job with one layer more. The
+  CnNotificationMatrix, which does the same job with one layer more. The
   hand-rolled list could say app default, team default and your own, and had
   nowhere to put a channel an administrator has FORCED or one the platform
   REFUSES for this recipient. A handler could therefore see a switch that was
@@ -54,7 +54,7 @@
 				t('dossiq', 'This instance routes no dossiq notifications yet.')
 			" />
 
-		<CnNotificationPreferences
+		<CnNotificationMatrix
 			v-else
 			v-bind="preferenceProps"
 			data-testid="notification-routing-preferences"
@@ -119,7 +119,7 @@
 </template>
 
 <script>
-import { CnNotificationPreferences } from '@conduction/nextcloud-vue'
+import { CnNotificationMatrix } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
@@ -143,7 +143,7 @@ export default {
 	name: 'NotificationRoutingSettings',
 
 	components: {
-		CnNotificationPreferences,
+		CnNotificationMatrix,
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,

@@ -21,7 +21,7 @@
 - **spec_ref**: `openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md#requirement-dossiq-s-notification-settings-are-the-shared-screen`
 - **files**: `src/views/settings/NotificationRoutingSettings.vue`, `tests/vitest/notificationRoutingSettingsSharedScreen.spec.js`
 - **acceptance_criteria**:
-  - `CnNotificationPreferences` renders instead of dossiq's own list of switches
+  - `CnNotificationMatrix` renders instead of dossiq's own list of switches
   - A forced row and its reason reach the screen, so a handler sees which of their preferences an administrator has overridden and why
   - A change writes the notification the row stands for, and the screen is re-read afterwards so the deciding layer is the platform's answer
   - A refused write says so rather than leaving the switch where the click put it

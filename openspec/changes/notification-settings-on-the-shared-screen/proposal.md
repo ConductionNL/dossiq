@@ -9,7 +9,7 @@ depends_on: [unread-state-on-the-case]
 
 dossiq keeps its own notification settings screen,
 `src/views/settings/NotificationRoutingSettings.vue`, beside
-`CnNotificationPreferences` in the shared library. Both answer the same
+`CnNotificationMatrix` in the shared library. Both answer the same
 question, which notices reach you and which layer decided that, and the shared
 one answers it with a layer more.
 
@@ -27,7 +27,7 @@ show that, so the switch reads as available and the notice never arrives.
 
 ## What changes
 
-- `NotificationRoutingSettings.vue` renders `CnNotificationPreferences`
+- `NotificationRoutingSettings.vue` renders `CnNotificationMatrix`
   instead of its own list of switches. Four layers, forced rows with who and
   why, and refusals with their rule.
 - A new pure module, `src/services/notificationPreferenceProps.js`, maps the
@@ -42,7 +42,7 @@ show that, so the switch reads as available and the notice never arrives.
 
 ## What is lost, named rather than hidden
 
-The per-row "use the setting from my team" button goes. `CnNotificationPreferences`
+The per-row "use the setting from my team" button goes. `CnNotificationMatrix`
 emits true or false and has no third state, so there is no clear control to
 hang it on. The store behind the shared screen already accepts a null to clear,
 so the control belongs in the component; `clearPreference()` in
@@ -54,29 +54,26 @@ with the same value rather than clearing, so a later change to the team default
 will not follow them. That is a real regression and it is why this is written
 down rather than left for somebody to notice.
 
-## It needs a library release, and the reason matters
+## It needs a library release, and which one
 
-`CnNotificationPreferences` is not new. The library has shipped a component of
-that name since nextcloud-vue #446: it took NO props, fetched
-`/apps/openregister/api/notification-preferences` for itself, and rendered its
-own switches. nextcloud-vue #1217 REPLACED it in place with the props-driven
-screen this change consumes.
-
-Verified rather than assumed, by unpacking the published tarball:
+`CnNotificationMatrix` is a NEW component in the shared library, added by
+nextcloud-vue #1221. It is not in any published version:
 `@conduction/nextcloud-vue@3.2.0`, which is what dossiq's `package.json` asks
-for, still carries the OLD self-fetching component. So on the published version
-this screen would hand props to a component that ignores them and fetches for
-itself, and a handler would see neither the forced rows nor the refusals — the
-two things this change exists to show.
+for, does not carry it. Verified by unpacking the published tarball rather than
+read off a changelog.
 
-This change is therefore correct and NOT deployable until a nextcloud-vue
-release carries the new component, and dossiq's dependency is raised to it.
-That is the one thing to check before merging.
+So this change is correct and NOT mergeable until nextcloud-vue #1221 is
+released and dossiq's dependency is raised to that version. The version does
+not exist yet at the time of writing; whoever merges this raises the caret to
+whatever #1221 ships as.
 
-Two consequences beyond dossiq, worth raising rather than leaving to be found:
-a consumer that mounts the old component with no props now renders an empty
-table, and a self-fetching component becoming a props-driven one with the same
-name is a breaking change that no release note has declared yet.
+An earlier revision of #1221 built this screen by replacing the library's
+existing `CnNotificationPreferences` in place. That component is a
+self-contained pane taking no props, which `CnAppRoot` mounts as the default of
+its `#user-settings` slot, so the replacement left every app in the fleet
+rendering an empty pane with no error. #1221 now restores that pane
+byte-for-byte and ships the new screen beside it under its own name, which is
+why this change imports `CnNotificationMatrix` and not the older name.
 
 ## What is not decided here
 

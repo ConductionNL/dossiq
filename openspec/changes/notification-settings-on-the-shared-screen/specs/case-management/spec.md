@@ -4,7 +4,7 @@
 
 ### Requirement: dossiq's notification settings are the shared screen
 
-dossiq's notification settings SHALL render `CnNotificationPreferences` rather
+dossiq's notification settings SHALL render `CnNotificationMatrix` rather
 than a second implementation of the same screen, so that a handler sees which
 of their preferences an administrator has overridden and why.
 
