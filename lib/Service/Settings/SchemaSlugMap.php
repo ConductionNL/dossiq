@@ -233,6 +233,14 @@ class SchemaSlugMap {
 		// (mandaat-matrix) and was never mapped, so no service could resolve
 		// it; the domain copy is the first caller that needs to.
 		'caseTypeGroup' => 'case_type_group_schema',
+		// Mobiel-inspectie-offline. NEITHER WAS MAPPED, AND THAT ALONE MADE
+		// the capability unreachable: `TranscriptionService::persist()` reads
+		// `field_evidence_schema`, a key nothing configured, and returned the
+		// record unchanged rather than writing it. A reconciler that is never
+		// asked for a slug leaves its key empty, and an empty key is read here
+		// as "not configured on this instance", which is silence.
+		'fieldInspection' => 'field_inspection_schema',
+		'fieldEvidence' => 'field_evidence_schema',
 	];
 
 	/**

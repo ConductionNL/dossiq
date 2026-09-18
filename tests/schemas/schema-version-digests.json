@@ -1040,7 +1040,7 @@
         "digest": "726c6d430a6c4fcac4c7ab9774ca423994b85915a807447222a5b91371fa726a"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldEvidence": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "bc12cb9a90417b683b791ea579bca9dcb2ade3538d77db930ac56bf546ffaa7b"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldInspection": {
