@@ -902,6 +902,16 @@ $extra = [
     ['name' => 'caseHandover#accept',      'url' => '/api/case/{caseId}/handover/{transferId}/accept',    'verb' => 'POST'],
     ['name' => 'caseHandover#refuse',      'url' => '/api/case/{caseId}/handover/{transferId}/refuse',    'verb' => 'POST'],
     ['name' => 'caseHandover#outstanding', 'url' => '/api/teams/{team}/outstanding-handovers',            'verb' => 'GET'],
+
+    // The chain of custody (read-only: the chain is written by the moves) and
+    // the takeover request beside it (custody-and-handover-of-a-case).
+    ['name' => 'caseCustody#chain',        'url' => '/api/case/{caseId}/custody',                         'verb' => 'GET'],
+    ['name' => 'caseCustody#holder',       'url' => '/api/case/{caseId}/custody/holder',                  'verb' => 'GET'],
+    ['name' => 'caseCustody#unit',         'url' => '/api/units/{unit}/custody',                          'verb' => 'GET'],
+    ['name' => 'caseTakeover#ask',         'url' => '/api/case/{caseId}/takeover',                        'verb' => 'POST'],
+    ['name' => 'caseTakeover#on',          'url' => '/api/case/{caseId}/takeovers',                       'verb' => 'GET'],
+    ['name' => 'caseTakeover#accept',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/accept',    'verb' => 'POST'],
+    ['name' => 'caseTakeover#refuse',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/refuse',    'verb' => 'POST'],
     ['name' => 'caseSeats#show',           'url' => '/api/case/{caseId}/seats',                           'verb' => 'GET'],
     ['name' => 'caseSeats#nameCoordinator', 'url' => '/api/case/{caseId}/seats/coordinator',              'verb' => 'PUT'],
     ['name' => 'leaverHandover#preview',   'url' => '/api/leaver-handover/preview',                       'verb' => 'POST'],
