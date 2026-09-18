@@ -180,6 +180,9 @@ import TaskDetailView from './views/tasks/TaskDetailView.vue'
 import MyWorkWidget from './views/widgets/MyWorkWidget.vue'
 import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
 import { leafTab } from './integrations/leafTabs.js'
+// Ask whether this case already exists, before it does.
+// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+import { createCaseWithDuplicateCheck } from './services/createCaseWithDuplicateCheck.js'
 
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
 // overdue / stalled cases, my tasks, task reminders, deadline alerts) and the
@@ -458,6 +461,14 @@ const registry = {
 		kind: 'modal',
 		component: CasePlanFollowUpDialog,
 		_note: 'CaseDetail Actions menu and the Related cases tab: a case type, a date and a title, posted to /plan, which writes ONE scheduled flow creating the case on that date. The earliest date is tomorrow, because a schedule fires on a cron minute and a follow-up planned for today would fire in a few hours or not at all depending on the clock. Single-shot is kept by PlannedFollowUpSweepJob, not by the cron: five cron fields cannot say "once" or "three times". A Repeat picker turns it into a series (planned-case-series): the recurrence becomes the cron fields, the end becomes the sweep\'s stop rule, and the Related tab grows a series row with a Stop series action. The form lives here and not in the manifest: an `open-modal` header action carries a target and props only, and the five fields (case type, date, title, Repeat, Ends) are bound to each other, since the end fields appear only once a repeat is chosen and no `visibleWhen` on a header action can say that. What the manifest does decide is that the gesture is a modal rather than a `handler`, because a handler action resolves `action.handler` against `effectiveManifest.actions`, a JSON map that cannot hold a function, so the entry would warn to the console and do nothing when clicked. The manifest entry itself carries no `_note`: the v2 schema sets `additionalProperties: false` on a header action, so the rationale belongs in this file.',
+	},
+
+	// --- The duplicate warning at intake (duplicate-warning-at-intake). ---
+	// @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
+	caseCreateWithDuplicateCheck: {
+		kind: 'create-override',
+		handler: createCaseWithDuplicateCheck,
+		_note: "Named by `createOverride` on every `new-case` open-form action. It owns the persist, so it can ask OpenRegister whether a case like this one already exists BEFORE the case is written, and show the matches with a link to each. It is not the enforcement: DuplicatePolicy refuses a blocked create on the pre-persist event, so the mail intake, an import and any integration are refused the same way. A createOverride runs on the press rather than on the keystroke, which is the one part of REQ-FCF-10 this seam cannot give: disabling the library dialog's own Create button needs a `beforeConfirm` hook in @conduction/nextcloud-vue.",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---

@@ -485,6 +485,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -973,6 +974,7 @@
 						"icon": "Plus",
 						"register": "dossiq",
 						"schema": "case",
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"onSuccessRoute": "CaseDetail",
 						"successMessage": "Case created.",
 						"props": {
@@ -5623,6 +5625,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"
@@ -5841,6 +5844,7 @@
 								"label": "Requester"
 							}
 						},
+						"createOverride": "caseCreateWithDuplicateCheck",
 						"successMessage": "Case filed for this contact.",
 						"props": {
 							"requester": "@objectId"
