@@ -274,7 +274,8 @@ class VthCaseTypeChildSeeder {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['caseType' => $caseTypeId, '_limit' => 500]
+				filters: ['caseType' => $caseTypeId, '_limit' => 500],
+				unscoped: true
 			);
 		} catch (Throwable $e) {
 			// An unreadable list is NOT an empty one. Seeding on the strength

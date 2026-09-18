@@ -60,6 +60,8 @@ trait SearchesObjects {
 	 * @param int|string $schema Schema numeric ID or slug.
 	 * @param array<string, mixed> $filters Object-field filters plus OpenRegister
 	 *                                      pagination keys (`_limit`, `_offset`).
+	 * @param bool $unscoped Read the whole register regardless of the caller's
+	 *                       RBAC and tenancy; for seeding, which runs with no user.
 	 *
 	 * @return array<int, array<string, mixed>> Matching objects as associative arrays.
 	 *
@@ -73,7 +75,10 @@ trait SearchesObjects {
 		int|string $register,
 		int|string $schema,
 		array $filters = [],
+		bool $unscoped = false,
 	): array {
+		// Passed only when asked, so a service without these parameters still accepts the call.
+		$scope = $unscoped === true ? ['_rbac' => false, '_multitenancy' => false] : [];
 		$registerIsNumeric = (is_int($register) === true || ctype_digit((string)$register) === true);
 		$schemaIsNumeric = (is_int($schema) === true || ctype_digit((string)$schema) === true);
 
@@ -84,7 +89,8 @@ trait SearchesObjects {
 				rows: $objectService->searchObjectsBySlug(
 					(string)$register,
 					(string)$schema,
-					$filters
+					$filters,
+					...$scope
 				)
 			);
 		}
@@ -97,7 +103,7 @@ trait SearchesObjects {
 		$self['schema'] = (int)$schema;
 		$query['@self'] = $self;
 
-		return $this->normaliseObjectRows(rows: $objectService->searchObjects($query));
+		return $this->normaliseObjectRows(rows: $objectService->searchObjects($query, ...$scope));
 	}//end searchObjectsAsArrays()
 
 	/**
