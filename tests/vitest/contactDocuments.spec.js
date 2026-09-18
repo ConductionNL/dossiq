@@ -169,9 +169,8 @@ describe('openCaseOfDocument', () => {
 	// The `/index.php` prefix is the @nextcloud/router STUB's, mirroring
 	// generateUrl() on a default web root; what is asserted here is the tail.
 	it('opens the case a dispatch row names as a bare uuid', async () => {
-		const { openCaseOfDocument } = await import(
-			'../../src/utils/contactDocuments.js'
-		)
+		const { openCaseOfDocument } =
+			await import('../../src/utils/contactDocuments.js')
 		openCaseOfDocument({ item: { id: 'dispatch-1', case: 'case-9' } })
 
 		// The CASE, not the row: `dispatch-1` in this url would be the bug the
@@ -180,18 +179,16 @@ describe('openCaseOfDocument', () => {
 	})
 
 	it('reads the case when extend inlined it as an object', async () => {
-		const { openCaseOfDocument } = await import(
-			'../../src/utils/contactDocuments.js'
-		)
+		const { openCaseOfDocument } =
+			await import('../../src/utils/contactDocuments.js')
 		openCaseOfDocument({ id: 'dispatch-2', case: { id: 'case-9' } })
 
 		expect(assign).toHaveBeenCalledWith('/index.php/apps/dossiq/cases/case-9')
 	})
 
 	it('goes nowhere when the row names no case', async () => {
-		const { openCaseOfDocument } = await import(
-			'../../src/utils/contactDocuments.js'
-		)
+		const { openCaseOfDocument } =
+			await import('../../src/utils/contactDocuments.js')
 		openCaseOfDocument({ item: { id: 'dispatch-3' } })
 
 		expect(assign).not.toHaveBeenCalled()

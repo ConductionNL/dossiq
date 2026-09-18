@@ -100,8 +100,8 @@ test.describe('the translation engine sees dossiq labels', () => {
 		expect(
 			Object.keys(languageMeta),
 			'OpenRegister builds languageMeta from the properties marked `translatable` on the '
-			+ 'imported schema. An empty envelope means the mark did not reach the engine, which '
-			+ 'is exactly what `x-translatable` did for fifty properties until 2026-09-18.',
+				+ 'imported schema. An empty envelope means the mark did not reach the engine, which '
+				+ 'is exactly what `x-translatable` did for fifty properties until 2026-09-18.',
 		).toContain('title')
 
 		expect(
@@ -113,9 +113,9 @@ test.describe('the translation engine sees dossiq labels', () => {
 	test('caseType.description is in it too', async ({ request }) => {
 		const object = await showWithTranslationMeta(request, 'caseType', caseTypeId)
 
-		expect(
-			Object.keys(object._meta?.languageMeta ?? {}),
-		).toContain('description')
+		expect(Object.keys(object._meta?.languageMeta ?? {})).toContain(
+			'description',
+		)
 	})
 
 	test('a property nobody marked stays out of it', async ({ request }) => {
@@ -126,7 +126,7 @@ test.describe('the translation engine sees dossiq labels', () => {
 		expect(
 			Object.keys(object._meta?.languageMeta ?? {}),
 			'`identifier` is not translatable. If the envelope lists it, the envelope is not '
-			+ 'answering about the `translatable` mark and neither is this spec.',
+				+ 'answering about the `translatable` mark and neither is this spec.',
 		).not.toContain('identifier')
 	})
 })

@@ -54,7 +54,12 @@ const created: string[] = []
 function askGraph(form: Record<string, unknown>) {
 	return {
 		nodes: [
-			{ id: 'start', type: 'openregister.trigger-manual', config: {}, position: { x: 0, y: 0 } },
+			{
+				id: 'start',
+				type: 'openregister.trigger-manual',
+				config: {},
+				position: { x: 0, y: 0 },
+			},
 			{
 				id: 'ask',
 				type: 'dossiq.askPerson',
@@ -66,7 +71,12 @@ function askGraph(form: Record<string, unknown>) {
 				},
 				position: { x: 200, y: 0 },
 			},
-			{ id: 'end', type: 'openregister.end', config: {}, position: { x: 400, y: 0 } },
+			{
+				id: 'end',
+				type: 'openregister.end',
+				config: {},
+				position: { x: 400, y: 0 },
+			},
 		],
 		edges: [
 			{ id: 'e1', source: 'start', target: 'ask' },
@@ -81,10 +91,18 @@ function askGraph(form: Record<string, unknown>) {
  * @param form The form keys the ask step declares.
  * @return The response status and body text.
  */
-async function saveAsk(form: Record<string, unknown>): Promise<{ ok: boolean; body: string }> {
+async function saveAsk(
+	form: Record<string, unknown>,
+): Promise<{ ok: boolean; body: string }> {
 	const name = `${RUN_PREFIX}-ask-form-${Math.floor(Math.random() * 1e4)}`
 	try {
-		const id = await createFlow(api, token, name, 'ask step form declaration', askGraph(form))
+		const id = await createFlow(
+			api,
+			token,
+			name,
+			'ask step form declaration',
+			askGraph(form),
+		)
 		created.push(id)
 		const res = await api.post(`${OR_API}/flows/${id}/validate`, {
 			headers: { requesttoken: token, 'Content-Type': 'application/json' },
@@ -118,7 +136,10 @@ test.describe('a form the performer could not fill is refused at save', () => {
 			formFields: [{ field: 'verslagje', required: true }],
 		})
 
-		expect(ok, 'a step declaring a field the schema has no property for was accepted').toBeFalsy()
+		expect(
+			ok,
+			'a step declaring a field the schema has no property for was accepted',
+		).toBeFalsy()
 		expect(body, 'the refusal does not name the field').toContain('verslagje')
 		expect(body, 'the refusal does not name the schema').toContain('case')
 	})
@@ -133,13 +154,19 @@ test.describe('a form the performer could not fill is refused at save', () => {
 
 		expect(ok, 'a step declaring a read-only field was accepted').toBeFalsy()
 		expect(body).toContain('identifier')
-		expect(body, 'the refusal does not say why nobody can write it').toMatch(/read-only|read only/i)
+		expect(body, 'the refusal does not say why nobody can write it').toMatch(
+			/read-only|read only/i,
+		)
 	})
 
 	// @e2e openspec/changes/the-ask-step-asks-for-fields/specs/case-flow-human-steps/spec.md#scenario-a-field-the-schema-does-not-have-is-refused-at-save
 	test('a nested form block is refused rather than silently ignored', async () => {
 		const { ok } = await saveAsk({
-			form: { kind: 'fields', schema: 'case', fields: [{ field: 'verslag', required: true }] },
+			form: {
+				kind: 'fields',
+				schema: 'case',
+				fields: [{ field: 'verslag', required: true }],
+			},
 			formSchema: 'case',
 			formFields: [{ field: 'verslag', required: true }],
 		})
@@ -148,7 +175,10 @@ test.describe('a form the performer could not fill is refused at save', () => {
 		// orphaned keys are what turn "read by nothing" into a refusal the
 		// author can act on; without it an ask step copied from the
 		// transition path ships a task with no fields.
-		expect(ok, 'a step whose form keys name no kind was accepted, so the assignee would get a task with no fields').toBeFalsy()
+		expect(
+			ok,
+			'a step whose form keys name no kind was accepted, so the assignee would get a task with no fields',
+		).toBeFalsy()
 	})
 })
 
@@ -171,7 +201,9 @@ test.describe('a declared field reaches the person who has to answer it', () => 
 
 		await publishFlow(api, token, id)
 
-		const res = await api.get(`${OR_API}/flows/${id}`, { headers: { requesttoken: token } })
+		const res = await api.get(`${OR_API}/flows/${id}`, {
+			headers: { requesttoken: token },
+		})
 		expect(res.ok(), `reading the flow answered ${res.status()}`).toBeTruthy()
 		const flow = await res.json()
 		const ask = (flow.nodes ?? []).find((n: any) => n.id === 'ask')
@@ -188,6 +220,9 @@ test.describe('a declared field reaches the person who has to answer it', () => 
 	test('a step with no form is accepted exactly as before', async () => {
 		const { ok } = await saveAsk({})
 
-		expect(ok, 'a step that declares no form was refused, which would break every flow authored before this change').toBeTruthy()
+		expect(
+			ok,
+			'a step that declares no form was refused, which would break every flow authored before this change',
+		).toBeTruthy()
 	})
 })

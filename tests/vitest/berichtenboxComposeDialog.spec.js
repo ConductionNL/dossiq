@@ -30,10 +30,7 @@ const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 
 const mockGet = vi.fn()
 const mockPost = vi.fn()
@@ -77,9 +74,8 @@ vi.mock('@nextcloud/vue', () => ({
 	NcTextField: control('NcTextField'),
 }))
 
-const { default: BerichtenboxComposeDialog } = await import(
-	'../../src/dialogs/BerichtenboxComposeDialog.vue'
-)
+const { default: BerichtenboxComposeDialog } =
+	await import('../../src/dialogs/BerichtenboxComposeDialog.vue')
 
 beforeEach(() => {
 	mockGet.mockReset()

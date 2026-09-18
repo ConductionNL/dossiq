@@ -60,6 +60,11 @@ function boxStub(name, tag = 'div') {
 vi.mock('@nextcloud/vue', () => ({
 	NcAppContent: boxStub('NcAppContent'),
 	NcButton: boxStub('NcButton', 'button'),
+	// The file-on-a-case form arrived in a dialog. A component the view
+	// imports and this mock does not declare takes the WHOLE file down at
+	// collection time, which reads as a spec nobody wrote rather than as one
+	// component short.
+	NcDialog: boxStub('NcDialog'),
 	NcEmptyContent: boxStub('NcEmptyContent'),
 	NcLoadingIcon: boxStub('NcLoadingIcon', 'span'),
 	NcNoteCard: boxStub('NcNoteCard'),

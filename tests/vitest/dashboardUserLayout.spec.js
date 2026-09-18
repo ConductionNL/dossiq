@@ -163,7 +163,9 @@ describe('the two lists a handler wants are offered by name', () => {
 	it('uses no sentinel token the manifest schema does not admit', () => {
 		const pattern = new RegExp(schema.$defs.sentinelFilterToken.pattern)
 		for (const preset of presets) {
-			for (const [key, value] of Object.entries(preset.widget.content.filter)) {
+			for (const [key, value] of Object.entries(
+				preset.widget.content.filter,
+			)) {
 				if (typeof value !== 'string' || !value.startsWith('@')) {
 					continue
 				}
@@ -176,9 +178,7 @@ describe('the two lists a handler wants are offered by name', () => {
 	})
 
 	it('names a row route, so a preset row opens the case it names', () => {
-		const routed = new Set(
-			(manifest.pages || []).map((p) => p.id),
-		)
+		const routed = new Set((manifest.pages || []).map((p) => p.id))
 		for (const preset of presets) {
 			expect(routed.has(preset.widget.content.rowRoute)).toBe(true)
 		}

@@ -319,12 +319,22 @@ describe('the container type this change depends on', () => {
 			// holding would look complete on a chain with a gap in it.
 			'case-custody-panel': 'case-custody-pane',
 		}
+
+		// The tabs the LIBRARY draws from another app's leaf. Files was the
+		// first and Knowledge (#2995, the collectives leaf) the second, so the
+		// exception is a map rather than one id: each has to name the leaf it
+		// draws, because an `integration` widget with no `integrationId`
+		// renders an empty tab and logs nothing.
+		const LEAVES = {
+			'case-files': 'files',
+			'case-knowledge-panel': 'collectives',
+		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 
 		for (const { widgetId } of tabs()) {
-			if (widgetId === 'case-files') {
+			if (LEAVES[widgetId]) {
 				expect(widget(widgetId).type).toBe('integration')
-				expect(widget(widgetId).integrationId).toBe('files')
+				expect(widget(widgetId).integrationId).toBe(LEAVES[widgetId])
 				continue
 			}
 			if (PANES[widgetId]) {

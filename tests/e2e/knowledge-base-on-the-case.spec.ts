@@ -47,7 +47,8 @@ import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
 const SCHEMAS = `/index.php/apps/openregister/api/schemas`
 
 /** A page that exists nowhere, so a reader outside the team reads nothing. */
-const INSTRUCTION_URL = '/index.php/apps/collectives/handhaving/werkinstructie-bezwaar'
+const INSTRUCTION_URL =
+	'/index.php/apps/collectives/handhaving/werkinstructie-bezwaar'
 
 let api: APIRequestContext
 let token: string
@@ -111,7 +112,9 @@ test.describe('the case type carries its work instruction', () => {
 	})
 
 	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
-	test('the case type page offers the field to the person who authors the type', async ({ page }) => {
+	test('the case type page offers the field to the person who authors the type', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/#/case-types/${caseTypeId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -121,7 +124,9 @@ test.describe('the case type carries its work instruction', () => {
 
 test.describe('the pages render through the leaf, or the tab is absent', () => {
 	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-handler-outside-the-team-does-not-read-the-page
-	test('the Knowledge tab is present exactly when Collectives is', async ({ page }) => {
+	test('the Knowledge tab is present exactly when Collectives is', async ({
+		page,
+	}) => {
 		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -141,7 +146,10 @@ test.describe('the pages render through the leaf, or the tab is absent', () => {
 
 	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-handler-outside-the-team-does-not-read-the-page
 	test('dossiq shows no page body of its own', async ({ page }) => {
-		test.skip(!collectivesInstalled, 'no Collectives on this instance, so there is no leaf to read')
+		test.skip(
+			!collectivesInstalled,
+			'no Collectives on this instance, so there is no leaf to read',
+		)
 
 		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)

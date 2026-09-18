@@ -34,9 +34,8 @@ vi.mock('@nextcloud/dialogs', () => ({
 const mockEmit = vi.fn()
 vi.mock('@nextcloud/event-bus', () => ({ emit: (...a) => mockEmit(...a) }))
 
-const { looksLikeMail, readFileAsMessage } = await import(
-	'../../src/utils/savedMail.js'
-)
+const { looksLikeMail, readFileAsMessage } =
+	await import('../../src/utils/savedMail.js')
 
 beforeEach(() => {
 	mockPost.mockReset()

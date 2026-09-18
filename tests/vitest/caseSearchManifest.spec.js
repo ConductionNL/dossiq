@@ -36,7 +36,14 @@ const casesPage = manifest.pages.find((page) => page.id === 'Cases')
 
 describe('the Cases page and a refused search', () => {
 	it('mounts the refusal above the list, where the search box is', () => {
-		expect(casesPage.slots).toEqual({ 'below-header': 'CaseSearchRefusal' })
+		// `after-search` joined it with #3001: the filters a case type's own
+		// fields offer sit under the search box, beside the refusal that says
+		// when one of them was turned down. Asserted as the whole map rather
+		// than as one entry, so a third slot has to be a deliberate edit here.
+		expect(casesPage.slots).toEqual({
+			'below-header': 'CaseSearchRefusal',
+			'after-search': 'CaseTypeFieldFilters',
+		})
 	})
 
 	it('names a component the registry actually resolves', () => {

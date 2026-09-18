@@ -62,12 +62,17 @@ test.describe('a handler files a logged message on a case they pick', () => {
 		const row = page.locator('[data-testid^="intake-log-file-on-case-"]')
 		const rows = await row.count()
 		if (rows === 0) {
-			test.skip(true, 'this instance has processed no mail, so there is no entry to act on')
+			test.skip(
+				true,
+				'this instance has processed no mail, so there is no entry to act on',
+			)
 			return
 		}
 
 		await row.first().click()
-		await expect(page.locator('[data-testid="intake-log-case-id"]')).toBeVisible()
+		await expect(
+			page.locator('[data-testid="intake-log-case-id"]'),
+		).toBeVisible()
 		await expect(
 			page.locator('[data-testid="intake-log-file-reason"]'),
 		).toBeVisible()

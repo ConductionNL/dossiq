@@ -79,7 +79,10 @@ test.beforeAll(async ({ playwright, baseURL }) => {
 		caseType: caseTypeId,
 	})
 
-	for (const [key, value] of [['expensive', 150000], ['cheap', 90000]] as const) {
+	for (const [key, value] of [
+		['expensive', 150000],
+		['cheap', 90000],
+	] as const) {
 		const seeded = await seedCase(api, token, {
 			title: `${RUN_PREFIX} ${key}`,
 			caseType: caseTypeId,
@@ -109,7 +112,10 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 			`/index.php/apps/openregister/api/objects/${REGISTER}/propertyDefinition/${costDefinitionId}`,
 			{ headers: { requesttoken: token } },
 		)
-		expect(res.ok(), `reading the definition answered ${res.status()}`).toBeTruthy()
+		expect(
+			res.ok(),
+			`reading the definition answered ${res.status()}`,
+		).toBeTruthy()
 		const stored = await res.json()
 
 		expect(
@@ -119,7 +125,9 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 	})
 
 	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-definition-that-declares-nothing-is-not-offered
-	test('the bar offers the declared field and not the silent one', async ({ page }) => {
+	test('the bar offers the declared field and not the silent one', async ({
+		page,
+	}) => {
 		await page.goto(`${APP_URL}?caseType=${caseTypeId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -143,7 +151,9 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 
 test.describe('the case list filters on a case type own fields', () => {
 	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-two-fields-narrow-to-the-cases-that-satisfy-both
-	test('a cost filter lists the expensive case and NOT the cheap one', async ({ page }) => {
+	test('a cost filter lists the expensive case and NOT the cheap one', async ({
+		page,
+	}) => {
 		// Unfiltered first: both cases are here, so a later absence is the
 		// filter working rather than a fixture that never landed.
 		await page.goto(`${APP_URL}?caseType=${caseTypeId}`, PAGE_LOAD)
@@ -151,7 +161,9 @@ test.describe('the case list filters on a case type own fields', () => {
 		await expect(page.getByText(`${RUN_PREFIX} expensive`)).toBeVisible()
 		await expect(page.getByText(`${RUN_PREFIX} cheap`)).toBeVisible()
 
-		await page.getByTestId(`field-filter-${costDefinitionId}-from`).fill('100000')
+		await page
+			.getByTestId(`field-filter-${costDefinitionId}-from`)
+			.fill('100000')
 
 		await expect(page.getByText(`${RUN_PREFIX} expensive`)).toBeVisible()
 		await expect(
@@ -161,27 +173,36 @@ test.describe('the case list filters on a case type own fields', () => {
 	})
 
 	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-clearing-the-case-type-clears-its-field-filters
-	test('clearing the case type clears the field filters with it', async ({ page }) => {
+	test('clearing the case type clears the field filters with it', async ({
+		page,
+	}) => {
 		await page.goto(`${APP_URL}?caseType=${caseTypeId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
-		await page.getByTestId(`field-filter-${costDefinitionId}-from`).fill('100000')
+		await page
+			.getByTestId(`field-filter-${costDefinitionId}-from`)
+			.fill('100000')
 
 		await expect
-			.poll(() => page.url(), { message: 'the filter never reached the address bar' })
+			.poll(() => page.url(), {
+				message: 'the filter never reached the address bar',
+			})
 			.toContain('_related')
 
 		await page.getByRole('button', { name: 'All cases' }).click()
 
 		await expect
 			.poll(() => page.url(), {
-				message: 'the field filter survived the case type it belongs to, so the list is narrowed by a field these cases do not have',
+				message:
+					'the field filter survived the case type it belongs to, so the list is narrowed by a field these cases do not have',
 			})
 			.not.toContain('_related')
 		await expect(page.getByTestId('case-type-field-filters')).toHaveCount(0)
 	})
 
 	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-refused-filter-is-not-an-empty-result
-	test('a refused block says so instead of showing an empty list', async ({ page }) => {
+	test('a refused block says so instead of showing an empty list', async ({
+		page,
+	}) => {
 		// A block naming a definition that is not a uuid is malformed, and
 		// openregister refuses it rather than running it as a literal.
 		await page.goto(
@@ -190,6 +211,8 @@ test.describe('the case list filters on a case type own fields', () => {
 		)
 		await dismissSupportDialog(page)
 
-		await expect(page.getByTestId('case-type-field-filters-refusal')).toBeVisible()
+		await expect(
+			page.getByTestId('case-type-field-filters-refusal'),
+		).toBeVisible()
 	})
 })

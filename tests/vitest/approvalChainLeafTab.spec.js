@@ -45,7 +45,9 @@ function withRegistry(entry) {
 
 	window.OCA = {
 		OpenRegister: {
-			integrations: { get: (id) => (id === 'decidiq-approval-chain' ? entry : undefined) },
+			integrations: {
+				get: (id) => (id === 'decidiq-approval-chain' ? entry : undefined),
+			},
 		},
 	}
 }
@@ -68,7 +70,8 @@ function mountTab() {
 				NcEmptyContent: {
 					name: 'NcEmptyContent',
 					props: ['name', 'description'],
-					template: '<div class="empty">{{ name }} {{ description }}</div>',
+					template:
+						'<div class="empty">{{ name }} {{ description }}</div>',
 				},
 				CheckDecagramOutline: true,
 			},
@@ -119,7 +122,10 @@ describe('decidiq is installed', () => {
 		const wrapper = mountTab()
 
 		const host = wrapper.findComponent({ name: 'CnLeafMountHost' })
-		expect(host.exists(), 'decidiq declares renderMode mount, so this is the branch that renders').toBe(true)
+		expect(
+			host.exists(),
+			'decidiq declares renderMode mount, so this is the branch that renders',
+		).toBe(true)
 
 		const props = host.props('mountProps')
 		expect(props.objectId).toBe('io-1')

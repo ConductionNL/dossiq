@@ -196,7 +196,11 @@ export function buildRelatedFilters(entries) {
 
 		;['eq', 'gte', 'lte'].forEach((operator) => {
 			const operand = value[operator]
-			if (operand === undefined || operand === null || String(operand) === '') {
+			if (
+				operand === undefined
+				|| operand === null
+				|| String(operand) === ''
+			) {
 				return
 			}
 
@@ -243,9 +247,9 @@ export function readRelatedRefusal({ error, definitions } = {}) {
 
 	const message = String(
 		error?.response?.data?.error
-		|| error?.response?.data?.message
-		|| error?.message
-		|| '',
+			|| error?.response?.data?.message
+			|| error?.message
+			|| '',
 	)
 
 	if (message === '' || message.includes('_related') === false) {

@@ -45,7 +45,10 @@ function readJson(...parts) {
 const manifest = readJson('src', 'manifest.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
 const fragment = readJson(
-	'lib', 'Settings', 'register.d', '41-case-knowledge-base.json',
+	'lib',
+	'Settings',
+	'register.d',
+	'41-case-knowledge-base.json',
 )
 
 /**
@@ -69,13 +72,16 @@ describe('a case links the pages that explain it', () => {
 
 	it('places the Knowledge tab as the leaf, not as a dossiq surface', () => {
 		const detail = page('CaseDetail')
-		const widget = (detail.config.widgets || [])
-			.find((w) => w.id === 'case-knowledge-panel')
+		const widget = (detail.config.widgets || []).find(
+			(w) => w.id === 'case-knowledge-panel',
+		)
 		expect(widget, 'the case page has no Knowledge widget').toBeTruthy()
 		expect(widget.type).toBe('integration')
 		expect(widget.integrationId).toBe('collectives')
 
-		const strip = (detail.config.widgets || []).find((w) => w.id === 'case-panels')
+		const strip = (detail.config.widgets || []).find(
+			(w) => w.id === 'case-panels',
+		)
 		const labels = (strip.content.tabs || []).map((t) => t.label)
 		expect(labels).toContain('Knowledge')
 		expect(
@@ -85,7 +91,10 @@ describe('a case links the pages that explain it', () => {
 
 	it('leans on the leaf descriptor for requiredApp rather than restating it', async () => {
 		const descriptor = readJson(
-			'node_modules', '@conduction', 'nextcloud-vue', 'package.json',
+			'node_modules',
+			'@conduction',
+			'nextcloud-vue',
+			'package.json',
 		)
 		expect(descriptor.name).toBe('@conduction/nextcloud-vue')
 		const source = fs.readFileSync(
@@ -104,7 +113,8 @@ describe('a case links the pages that explain it', () => {
 
 describe('the case type points at its own work instruction', () => {
 	it('declares knowledgeBasePage, or the value is dropped on the way in', () => {
-		const prop = fragment.components.schemas.caseType.properties.knowledgeBasePage
+		const prop =
+			fragment.components.schemas.caseType.properties.knowledgeBasePage
 		expect(prop, 'knowledgeBasePage is not declared on caseType').toBeTruthy()
 		expect(prop.type).toBe('string')
 		expect(
@@ -114,8 +124,9 @@ describe('the case type points at its own work instruction', () => {
 	})
 
 	it('offers the field where a case type is authored', () => {
-		const core = (page('CaseTypeDetail').config.widgets || [])
-			.find((w) => w.id === 'case-type-core')
+		const core = (page('CaseTypeDetail').config.widgets || []).find(
+			(w) => w.id === 'case-type-core',
+		)
 		expect(core.content.include).toContain('knowledgeBasePage')
 	})
 })
@@ -126,14 +137,20 @@ describe('dossiq stores no article', () => {
 		const dir = path.join(ROOT, 'lib', 'Settings', 'register.d')
 		fs.readdirSync(dir)
 			.filter((f) => f.endsWith('.json'))
-			.forEach((f) => documents.push(readJson('lib', 'Settings', 'register.d', f)))
+			.forEach((f) =>
+				documents.push(readJson('lib', 'Settings', 'register.d', f)),
+			)
 
 		const offenders = []
 		for (const doc of documents) {
 			const schemas = (doc.components && doc.components.schemas) || {}
 			for (const [schemaName, schema] of Object.entries(schemas)) {
 				for (const name of Object.keys(schema.properties || {})) {
-					if (/^(articleBody|knowledgeArticle|wikiContent|pageBody)$/.test(name)) {
+					if (
+						/^(articleBody|knowledgeArticle|wikiContent|pageBody)$/.test(
+							name,
+						)
+					) {
 						offenders.push(`${schemaName}.${name}`)
 					}
 				}
@@ -141,12 +158,13 @@ describe('dossiq stores no article', () => {
 		}
 		expect(
 			offenders,
-			'a dossiq schema holds article text, which is a second copy of a page that goes stale and that the collective\'s team cannot keep anybody out of',
+			"a dossiq schema holds article text, which is a second copy of a page that goes stale and that the collective's team cannot keep anybody out of",
 		).toEqual([])
 	})
 
 	it('keeps the reference a page, not its text', () => {
-		const prop = fragment.components.schemas.caseType.properties.knowledgeBasePage
+		const prop =
+			fragment.components.schemas.caseType.properties.knowledgeBasePage
 		expect(prop.type).not.toBe('object')
 		expect(prop.title).toBe('Work instruction')
 	})

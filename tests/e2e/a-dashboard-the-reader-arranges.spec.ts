@@ -51,9 +51,11 @@ const MOVED_WIDGET = 'kpi-overdue'
  * @return The widget ids the grid renders, in the order it renders them.
  */
 async function widgetOrder(page: Page): Promise<string[]> {
-	return await page.locator('[data-widget-id]').evaluateAll(
-		(nodes) => nodes.map((n) => n.getAttribute('data-widget-id') || ''),
-	)
+	return await page
+		.locator('[data-widget-id]')
+		.evaluateAll((nodes) =>
+			nodes.map((n) => n.getAttribute('data-widget-id') || ''),
+		)
 }
 
 test.describe('a reader keeps their own arrangement of a dashboard', () => {
@@ -63,7 +65,9 @@ test.describe('a reader keeps their own arrangement of a dashboard', () => {
 	})
 
 	// @e2e openspec/changes/a-dashboard-the-reader-arranges/specs/dashboard/spec.md#scenario-one-users-arrangement-is-their-own
-	test('a card moved to the top row is still there after a reload', async ({ page }) => {
+	test('a card moved to the top row is still there after a reload', async ({
+		page,
+	}) => {
 		const errors = trackDossiqErrors(page)
 
 		const before = await widgetOrder(page)
@@ -100,7 +104,9 @@ test.describe('a reader keeps their own arrangement of a dashboard', () => {
 	})
 
 	// @e2e openspec/changes/a-dashboard-the-reader-arranges/specs/dashboard/spec.md#scenario-a-handler-adds-a-list-they-did-not-have-to-configure
-	test('the add-widget modal offers the two lists by name and adds one', async ({ page }) => {
+	test('the add-widget modal offers the two lists by name and adds one', async ({
+		page,
+	}) => {
 		await page.getByRole('button', { name: /add widget/i }).click()
 
 		const modal = page.getByRole('dialog')

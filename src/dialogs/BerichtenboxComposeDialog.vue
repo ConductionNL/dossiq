@@ -269,7 +269,10 @@ export default {
 					this.sendError =
 						answer?.error
 						|| answer?.message?.error
-						|| t('dossiq', 'This letter was not sent, and no reason was given.')
+						|| t(
+							'dossiq',
+							'This letter was not sent, and no reason was given.',
+						)
 					return
 				}
 

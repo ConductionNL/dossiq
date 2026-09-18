@@ -76,9 +76,7 @@ const entries: Record<string, string> = {}
  *
  * @param overrides The fields this entry needs.
  */
-function channelEntry(
-	overrides: Record<string, unknown>,
-): Record<string, unknown> {
+function channelEntry(overrides: Record<string, unknown>): Record<string, unknown> {
 	return {
 		channel: CHANNEL,
 		channelMessageId: `${RUN_PREFIX}-${Math.random().toString(36).slice(2)}`,
@@ -130,9 +128,7 @@ test.describe('A message from a channel', () => {
 
 		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)
 
-		const row = page.locator(
-			`[data-testid="intake-log-row-${entries.refused}"]`,
-		)
+		const row = page.locator(`[data-testid="intake-log-row-${entries.refused}"]`)
 		await expect(row).toBeVisible({ timeout: 30_000 })
 
 		// The reason is the whole point. A row that shows only "refused" sends
@@ -141,9 +137,7 @@ test.describe('A message from a channel', () => {
 	})
 
 	// @e2e openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md#a-form-submission-becomes-a-case-with-its-clock-running
-	test('a channel message that opened a case says which one', async ({
-		page,
-	}) => {
+	test('a channel message that opened a case says which one', async ({ page }) => {
 		await navToRoute(page, LOG_ROUTE)
 
 		await page.locator('input[data-testid="intake-log-sender"]').fill(SENDER)

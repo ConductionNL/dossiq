@@ -183,13 +183,17 @@ describe('the Files tab declares its columns', () => {
 			'senderName',
 			'recipientNames',
 			'scanVerdict',
+			// #3004: where a document sits in decidiq's approval route. Read
+			// from the approval leaf rather than the listing, same as
+			// scanVerdict above it.
+			'approvalMarker',
 		])
 	})
 
 	it('labels them in sentence case with no em-dash', () => {
 		const labels = filesTab().props.columns.map((column) => column.label)
 
-		expect(labels).toEqual(['Sender', 'Recipients', 'Scan'])
+		expect(labels).toEqual(['Sender', 'Recipients', 'Scan', 'Approval'])
 		for (const label of labels) {
 			expect(label).not.toMatch(/—|--/)
 		}

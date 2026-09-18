@@ -42,7 +42,10 @@ function readJson(...parts) {
 const manifest = readJson('src', 'manifest.json')
 const vthSeed = readJson('lib', 'Settings', 'vth_seed_data.json')
 const fragment = readJson(
-	'lib', 'Settings', 'register.d', '39-case-type-list-layout.json',
+	'lib',
+	'Settings',
+	'register.d',
+	'39-case-type-list-layout.json',
 )
 
 /** The three keys `resolveScopeLayout` reads off a scope, and no others. */
@@ -99,7 +102,10 @@ describe('a case type may carry its own list layout', () => {
 		const silent = (vthSeed.caseTypes || [])
 			.filter((c) => !c['x-index'])
 			.map((c) => c.slug)
-		expect(silent.length, 'every seeded case type overrides the page').toBeGreaterThan(0)
+		expect(
+			silent.length,
+			'every seeded case type overrides the page',
+		).toBeGreaterThan(0)
 	})
 })
 
@@ -123,14 +129,17 @@ describe('a column names a column the page carries', () => {
 		}
 	})
 
-	it.each(layouts)('%s carries no key the library does not read', (slug, layout) => {
-		for (const key of Object.keys(layout)) {
-			expect(
-				SCOPE_LAYOUT_KEYS,
-				`case type "${slug}" carries "${key}", which resolveScopeLayout never reads`,
-			).toContain(key)
-		}
-	})
+	it.each(layouts)(
+		'%s carries no key the library does not read',
+		(slug, layout) => {
+			for (const key of Object.keys(layout)) {
+				expect(
+					SCOPE_LAYOUT_KEYS,
+					`case type "${slug}" carries "${key}", which resolveScopeLayout never reads`,
+				).toContain(key)
+			}
+		},
+	)
 
 	it('names the three columns the case types added, on the page itself', () => {
 		for (const key of ['besluitdatum', 'procedureType', 'riskLevel']) {

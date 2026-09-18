@@ -26,9 +26,7 @@
 
 			<NcLoadingIcon v-if="loading" :size="24" />
 
-			<NcEmptyContent
-				v-else-if="error !== ''"
-				:name="error">
+			<NcEmptyContent v-else-if="error !== ''" :name="error">
 				<template #icon>
 					<AlertCircleOutline :size="20" />
 				</template>
@@ -61,7 +59,9 @@
 						<span class="dossier-export-panel__filename">{{
 							entry.filename
 						}}</span>
-						<span class="dossier-export-panel__meta">{{ entry.title }}</span>
+						<span class="dossier-export-panel__meta">{{
+							entry.title
+						}}</span>
 					</li>
 				</ol>
 			</template>
@@ -179,7 +179,10 @@ export default {
 				const status = e?.response?.status
 				this.error =
 					status === 403
-						? this.t('dossiq', 'You may not read every case in this chain')
+						? this.t(
+								'dossiq',
+								'You may not read every case in this chain',
+							)
 						: this.t('dossiq', 'Could not build the dossier export')
 			} finally {
 				this.loading = false

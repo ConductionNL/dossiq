@@ -75,7 +75,9 @@ test.describe('a case type carries its own columns', () => {
 		expect(res.ok(), `the case type list answered ${res.status()}`).toBeTruthy()
 		const body = await res.json()
 		const rows = body.results ?? body.data ?? []
-		const permit = rows.find((r: any) => r.slug === PERMIT_SLUG || r['@self']?.slug === PERMIT_SLUG)
+		const permit = rows.find(
+			(r: any) => r.slug === PERMIT_SLUG || r['@self']?.slug === PERMIT_SLUG,
+		)
 
 		expect(
 			permit,
@@ -90,7 +92,9 @@ test.describe('a case type carries its own columns', () => {
 	})
 
 	// @e2e openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-permit-shows-its-expiry-date
-	test('picking the permit changes the header, and All types changes it back', async ({ page }) => {
+	test('picking the permit changes the header, and All types changes it back', async ({
+		page,
+	}) => {
 		await page.goto(APP_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -100,11 +104,13 @@ test.describe('a case type carries its own columns', () => {
 			'the All cases header does not show the page columns, so nothing can be compared against it',
 		).toContain('Status')
 
-		await page.getByRole('button', { name: 'Omgevingsvergunning Bouwactiviteit' }).click()
+		await page
+			.getByRole('button', { name: 'Omgevingsvergunning Bouwactiviteit' })
+			.click()
 
 		await expect
 			.poll(async () => await headerLabels(page), {
-				message: 'the header did not take the permit\'s own columns',
+				message: "the header did not take the permit's own columns",
 			})
 			.toContain('Decision date')
 		expect(await headerLabels(page)).toContain('Procedure')
@@ -127,7 +133,9 @@ test.describe('a case type carries its own columns', () => {
 	})
 
 	// @e2e openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-bezwaar-orders-by-its-hearing-date
-	test('a case type that orders by its own date leads with the latest one', async ({ page }) => {
+	test('a case type that orders by its own date leads with the latest one', async ({
+		page,
+	}) => {
 		await page.goto(APP_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
@@ -141,7 +149,7 @@ test.describe('a case type carries its own columns', () => {
 			})
 			.toContain('Decision date')
 
-		const dates = (await page.locator('table tbody tr td').allInnerTexts())
+		const dates = await page.locator('table tbody tr td').allInnerTexts()
 		expect(
 			dates.length,
 			'the handhaving folder listed no rows, so the order cannot be read',

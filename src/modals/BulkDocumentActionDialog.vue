@@ -315,7 +315,11 @@ export default {
 		 */
 		async resolveFromFileId() {
 			const fileId = Number(this.fileId)
-			if (!Number.isFinite(fileId) || fileId <= 0 || this.resolvedCaseId === '') {
+			if (
+				!Number.isFinite(fileId)
+				|| fileId <= 0
+				|| this.resolvedCaseId === ''
+			) {
 				return []
 			}
 			const url = generateUrl(

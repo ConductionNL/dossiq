@@ -433,7 +433,10 @@ export default {
 									'dossiq',
 									'You cannot read that case, so the message was not filed on it.',
 								)
-							: t('dossiq', 'The message was not filed. Check the case number.')
+							: t(
+									'dossiq',
+									'The message was not filed. Check the case number.',
+								)
 					return
 				}
 

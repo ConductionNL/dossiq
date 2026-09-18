@@ -85,9 +85,7 @@ test.describe('a case note reaches the neighbouring register, or says why not', 
 	})
 
 	// @e2e openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md#a-note-left-on-the-default-never-leaves
-	test('the endpoint refuses a request carrying no note', async ({
-		request,
-	}) => {
+	test('the endpoint refuses a request carrying no note', async ({ request }) => {
 		const token = await getRequestToken(request)
 		const response = await request.post(
 			`/apps/dossiq/api/cases/${caseId}/notes/push`,

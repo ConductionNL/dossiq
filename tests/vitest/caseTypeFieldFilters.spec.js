@@ -52,9 +52,19 @@ function readJson(...parts) {
 
 /** A case type with three definitions, one of which is filterable. */
 const DEFINITIONS = [
-	{ '@self': { uuid: 'pd-1' }, name: 'bouwkosten', propertyType: 'number', filterable: true },
+	{
+		'@self': { uuid: 'pd-1' },
+		name: 'bouwkosten',
+		propertyType: 'number',
+		filterable: true,
+	},
 	{ '@self': { uuid: 'pd-2' }, name: 'oppervlakte', propertyType: 'number' },
-	{ '@self': { uuid: 'pd-3' }, name: 'aantalBouwlagen', propertyType: 'integer', filterable: false },
+	{
+		'@self': { uuid: 'pd-3' },
+		name: 'aantalBouwlagen',
+		propertyType: 'integer',
+		filterable: false,
+	},
 ]
 
 describe('a case type says which of its fields are worth filtering on', () => {
@@ -72,9 +82,13 @@ describe('a case type says which of its fields are worth filtering on', () => {
 
 	it('declares filterable on propertyDefinition, defaulting to false', () => {
 		const fragment = readJson(
-			'lib', 'Settings', 'register.d', '42-filterable-case-fields.json',
+			'lib',
+			'Settings',
+			'register.d',
+			'42-filterable-case-fields.json',
 		)
-		const property = fragment.components.schemas.propertyDefinition.properties.filterable
+		const property =
+			fragment.components.schemas.propertyDefinition.properties.filterable
 
 		expect(property.type).toBe('boolean')
 		expect(
@@ -92,17 +106,23 @@ describe('the control follows the definition, not the page', () => {
 
 	it('asks for a date as a date range, in both spellings the register stores', () => {
 		expect(controlFor({ propertyType: 'date' })).toBe(CONTROL_DATE_RANGE)
-		expect(controlFor({ propertyType: 'string', format: 'date' })).toBe(CONTROL_DATE_RANGE)
+		expect(controlFor({ propertyType: 'string', format: 'date' })).toBe(
+			CONTROL_DATE_RANGE,
+		)
 	})
 
 	it('asks for an enumeration as a select', () => {
-		expect(controlFor({ propertyType: 'string', enumValues: ['Noord', 'Zuid'] })).toBe(CONTROL_SELECT)
+		expect(
+			controlFor({ propertyType: 'string', enumValues: ['Noord', 'Zuid'] }),
+		).toBe(CONTROL_SELECT)
 	})
 
 	it('asks for everything else as text', () => {
 		expect(controlFor({ propertyType: 'string' })).toBe(CONTROL_TEXT)
 		expect(controlFor({})).toBe(CONTROL_TEXT)
-		expect(controlFor({ propertyType: 'number', enumValues: [] })).toBe(CONTROL_RANGE)
+		expect(controlFor({ propertyType: 'number', enumValues: [] })).toBe(
+			CONTROL_RANGE,
+		)
 	})
 })
 
@@ -124,9 +144,13 @@ describe('the bar compiles to one block per field', () => {
 			{ definitionId: 'pd-4', value: { eq: 'Noord' } },
 		])
 
-		expect(query['_related[caseProperty][0][case][propertyDefinition]']).toBe('pd-1')
+		expect(query['_related[caseProperty][0][case][propertyDefinition]']).toBe(
+			'pd-1',
+		)
 		expect(query['_related[caseProperty][0][case][value][gte]']).toBe('100000')
-		expect(query['_related[caseProperty][1][case][propertyDefinition]']).toBe('pd-4')
+		expect(query['_related[caseProperty][1][case][propertyDefinition]']).toBe(
+			'pd-4',
+		)
 		expect(query['_related[caseProperty][1][case][value]']).toBe('Noord')
 
 		// One block asking for two definitions is a row that cannot exist, so
@@ -134,17 +158,25 @@ describe('the bar compiles to one block per field', () => {
 		expect(
 			Object.keys(query).filter((k) => k.endsWith('[propertyDefinition]')),
 		).toHaveLength(2)
-		expect(query['_related[caseProperty][case][propertyDefinition]']).toBeUndefined()
+		expect(
+			query['_related[caseProperty][case][propertyDefinition]'],
+		).toBeUndefined()
 	})
 
 	it('writes nothing for a bar nobody has filled in', () => {
-		expect(buildRelatedFilters([{ definitionId: 'pd-1', value: {} }])).toEqual({})
-		expect(buildRelatedFilters([{ definitionId: 'pd-1', value: { eq: '' } }])).toEqual({})
+		expect(buildRelatedFilters([{ definitionId: 'pd-1', value: {} }])).toEqual(
+			{},
+		)
+		expect(
+			buildRelatedFilters([{ definitionId: 'pd-1', value: { eq: '' } }]),
+		).toEqual({})
 		expect(buildRelatedFilters([])).toEqual({})
 	})
 
 	it('drops an entry with no definition, which could only be sent as an empty id', () => {
-		expect(buildRelatedFilters([{ definitionId: '', value: { eq: 'x' } }])).toEqual({})
+		expect(
+			buildRelatedFilters([{ definitionId: '', value: { eq: 'x' } }]),
+		).toEqual({})
 	})
 
 	it('knows a filled field from an empty one', () => {
@@ -166,7 +198,9 @@ describe('the bar compiles to one block per field', () => {
 describe('a refused filter is not an empty result', () => {
 	it('names the field the refusal is about', () => {
 		const refusal = readRelatedRefusal({
-			error: { response: { data: { error: 'Malformed _related block for pd-1' } } },
+			error: {
+				response: { data: { error: 'Malformed _related block for pd-1' } },
+			},
 			definitions: DEFINITIONS,
 		})
 
@@ -175,13 +209,17 @@ describe('a refused filter is not an empty result', () => {
 	})
 
 	it('says nothing when the last fetch was not refused', () => {
-		expect(readRelatedRefusal({ error: null, definitions: DEFINITIONS })).toBeNull()
+		expect(
+			readRelatedRefusal({ error: null, definitions: DEFINITIONS }),
+		).toBeNull()
 	})
 
 	it('says nothing about a refusal that is not a _related one', () => {
 		expect(
 			readRelatedRefusal({
-				error: { response: { data: { error: 'Unclosed quote in _search' } } },
+				error: {
+					response: { data: { error: 'Unclosed quote in _search' } },
+				},
 				definitions: DEFINITIONS,
 			}),
 			'a refused search term must not be reported as a refused field filter',
@@ -247,7 +285,9 @@ describe('the bar is placed where it can be reached', () => {
 
 	it('names a registry key that exists, or the slot renders nothing at all', () => {
 		expect(registry).toContain('CaseTypeFieldFilters: {')
-		expect(registry).toContain("import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'")
+		expect(registry).toContain(
+			"import CaseTypeFieldFilters from './components/search/CaseTypeFieldFilters.vue'",
+		)
 	})
 
 	it('hangs off a folder sidebar that narrows by case type', () => {

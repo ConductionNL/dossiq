@@ -8,7 +8,9 @@
 				<label
 					v-if="controlOf(definition) === 'select'"
 					class="case-type-field-filters__field">
-					<span class="case-type-field-filters__label">{{ definition.name }}</span>
+					<span class="case-type-field-filters__label">{{
+						definition.name
+					}}</span>
 					<select
 						:data-testid="`field-filter-${idOf(definition)}`"
 						:value="valueOf(definition).eq || ''"
@@ -24,30 +26,47 @@
 				</label>
 
 				<fieldset
-					v-else-if="controlOf(definition) === 'range' || controlOf(definition) === 'dateRange'"
+					v-else-if="
+						controlOf(definition) === 'range'
+						|| controlOf(definition) === 'dateRange'
+					"
 					class="case-type-field-filters__field">
-					<legend class="case-type-field-filters__label">{{ definition.name }}</legend>
+					<legend class="case-type-field-filters__label">
+						{{ definition.name }}
+					</legend>
 					<input
 						:type="controlOf(definition) === 'range' ? 'number' : 'date'"
 						:aria-label="fromLabel(definition)"
 						:data-testid="`field-filter-${idOf(definition)}-from`"
 						:value="valueOf(definition).gte || ''"
-						@input="setValue(definition, { ...valueOf(definition), gte: $event.target.value })">
+						@input="
+							setValue(definition, {
+								...valueOf(definition),
+								gte: $event.target.value,
+							})
+						" />
 					<input
 						:type="controlOf(definition) === 'range' ? 'number' : 'date'"
 						:aria-label="toLabel(definition)"
 						:data-testid="`field-filter-${idOf(definition)}-to`"
 						:value="valueOf(definition).lte || ''"
-						@input="setValue(definition, { ...valueOf(definition), lte: $event.target.value })">
+						@input="
+							setValue(definition, {
+								...valueOf(definition),
+								lte: $event.target.value,
+							})
+						" />
 				</fieldset>
 
 				<label v-else class="case-type-field-filters__field">
-					<span class="case-type-field-filters__label">{{ definition.name }}</span>
+					<span class="case-type-field-filters__label">{{
+						definition.name
+					}}</span>
 					<input
 						type="text"
 						:data-testid="`field-filter-${idOf(definition)}`"
 						:value="valueOf(definition).eq || ''"
-						@input="setValue(definition, { eq: $event.target.value })">
+						@input="setValue(definition, { eq: $event.target.value })" />
 				</label>
 			</template>
 		</div>
@@ -58,7 +77,9 @@
 			class="case-type-field-filters__refusal"
 			data-testid="case-type-field-filters-refusal">
 			<p>{{ refusalHeadline }}</p>
-			<p class="case-type-field-filters__refusal-reason">{{ refusal.message }}</p>
+			<p class="case-type-field-filters__refusal-reason">
+				{{ refusal.message }}
+			</p>
 		</NcNoteCard>
 	</div>
 </template>
@@ -175,12 +196,19 @@ export default {
 		 */
 		refusalHeadline() {
 			if (this.refusal?.name) {
-				return t('dossiq', 'The filter on {field} was refused, so this list is not an answer.', {
-					field: this.refusal.name,
-				})
+				return t(
+					'dossiq',
+					'The filter on {field} was refused, so this list is not an answer.',
+					{
+						field: this.refusal.name,
+					},
+				)
 			}
 
-			return t('dossiq', 'One of the field filters was refused, so this list is not an answer.')
+			return t(
+				'dossiq',
+				'One of the field filters was refused, so this list is not an answer.',
+			)
 		},
 
 		/** The option that asks for nothing. */

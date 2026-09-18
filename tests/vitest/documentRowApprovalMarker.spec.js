@@ -23,7 +23,10 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
-import { approvalMarkerLabel, isInApprovalRoute } from '../../src/services/approvalMarker.js'
+import {
+	approvalMarkerLabel,
+	isInApprovalRoute,
+} from '../../src/services/approvalMarker.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
@@ -64,7 +67,9 @@ describe('a document in a route is marked, and one that is not is not', () => {
 	})
 
 	it('still marks a route whose step numbers are missing', () => {
-		expect(approvalMarkerLabel({ routed: true, cleared: false, waitingOn: [] })).toBe('In approval')
+		expect(
+			approvalMarkerLabel({ routed: true, cleared: false, waitingOn: [] }),
+		).toBe('In approval')
 	})
 })
 
@@ -72,7 +77,7 @@ describe('the column is declared where the rows are', () => {
 	const manifest = readJson('src', 'manifest.json')
 	const detail = (manifest.pages || []).find((p) => p.id === 'CaseDetail')
 	const files = (detail.config.widgets || []).find((w) => w.id === 'case-files')
-	const columns = ((files.props || files.content || {}).columns || [])
+	const columns = (files.props || files.content || {}).columns || []
 
 	it('declares an Approval column over the marker, with its formatter', () => {
 		const column = columns.find((c) => c.id === 'approval-chain')
@@ -83,7 +88,10 @@ describe('the column is declared where the rows are', () => {
 	})
 
 	it('names a formatter that is registered, or the cell renders the raw value', () => {
-		const formatters = fs.readFileSync(path.join(ROOT, 'src', 'services', 'formatters.js'), 'utf8')
+		const formatters = fs.readFileSync(
+			path.join(ROOT, 'src', 'services', 'formatters.js'),
+			'utf8',
+		)
 
 		expect(formatters).toContain('approvalChain:')
 	})
@@ -95,14 +103,20 @@ describe('dossiq stores no copy of the route state', () => {
 		const dir = path.join(ROOT, 'lib', 'Settings', 'register.d')
 		fs.readdirSync(dir)
 			.filter((f) => f.endsWith('.json'))
-			.forEach((f) => documents.push(readJson('lib', 'Settings', 'register.d', f)))
+			.forEach((f) =>
+				documents.push(readJson('lib', 'Settings', 'register.d', f)),
+			)
 
 		const offenders = []
 		for (const doc of documents) {
 			const schemas = (doc.components && doc.components.schemas) || {}
 			for (const [name, schema] of Object.entries(schemas)) {
 				for (const property of Object.keys(schema.properties || {})) {
-					if (/^(approvalMarker|approvalStep|approvalState|approvalChainStep)$/.test(property)) {
+					if (
+						/^(approvalMarker|approvalStep|approvalState|approvalChainStep)$/.test(
+							property,
+						)
+					) {
 						offenders.push(`${name}.${property}`)
 					}
 				}
@@ -116,7 +130,10 @@ describe('dossiq stores no copy of the route state', () => {
 	})
 
 	it('reads the markers from an endpoint that exists', () => {
-		const routes = fs.readFileSync(path.join(ROOT, 'appinfo', 'routes.php'), 'utf8')
+		const routes = fs.readFileSync(
+			path.join(ROOT, 'appinfo', 'routes.php'),
+			'utf8',
+		)
 
 		expect(routes).toContain("'name' => 'zaakdossier#approvalMarkers'")
 		expect(routes).toContain('/api/informatieobjecten/approval-markers')

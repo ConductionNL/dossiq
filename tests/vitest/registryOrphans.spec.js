@@ -114,8 +114,8 @@ describe('registry modals reach a surface', () => {
 		expect(
 			modalEntries().length,
 			'The regex found almost no registry entries, so every assertion below '
-			+ 'would pass without examining anything. The registry formatting has '
-			+ 'changed: fix `modalEntries()` before trusting this file again.',
+				+ 'would pass without examining anything. The registry formatting has '
+				+ 'changed: fix `modalEntries()` before trusting this file again.',
 		).toBeGreaterThanOrEqual(22)
 	})
 
@@ -129,13 +129,13 @@ describe('registry modals reach a surface', () => {
 		expect(
 			orphans,
 			'These modals are registered and no manifest action opens them, so no '
-			+ 'user can reach them. Do one of two things, and not a third. ROUTE it: '
-			+ 'add an `open-modal` action naming it to the page that should offer it, '
-			+ 'in src/manifest.json. RETIRE it: delete the component, its import and '
-			+ 'its registry entry, and say in the PR what the deletion takes with it. '
-			+ 'Only when neither is a decision you can take, add `_orphanReason` to '
-			+ 'its registry entry saying what is missing and what would make it '
-			+ 'reachable. A reason is not a place to park a dialog nobody wants.',
+				+ 'user can reach them. Do one of two things, and not a third. ROUTE it: '
+				+ 'add an `open-modal` action naming it to the page that should offer it, '
+				+ 'in src/manifest.json. RETIRE it: delete the component, its import and '
+				+ 'its registry entry, and say in the PR what the deletion takes with it. '
+				+ 'Only when neither is a decision you can take, add `_orphanReason` to '
+				+ 'its registry entry saying what is missing and what would make it '
+				+ 'reachable. A reason is not a place to park a dialog nobody wants.',
 		).toEqual([])
 	})
 
@@ -164,9 +164,9 @@ describe('registry modals reach a surface', () => {
 		expect(
 			withReason,
 			'These modals are registered with an `_orphanReason` instead of a '
-			+ 'caller. Read each reason: if what it waits on has landed, route '
-			+ 'the modal and drop the reason; if the reason has stopped being '
-			+ 'true, retire the modal. Update this list either way.',
+				+ 'caller. Read each reason: if what it waits on has landed, route '
+				+ 'the modal and drop the reason; if the reason has stopped being '
+				+ 'true, retire the modal. Update this list either way.',
 		).toEqual([])
 	})
 })
@@ -265,7 +265,7 @@ describe('every dialog file is imported by something', () => {
 		expect(
 			surfaceFiles().length,
 			'Almost no dialog files were found, so the check below examined '
-			+ 'nothing. Fix surfaceFiles() before trusting this file.',
+				+ 'nothing. Fix surfaceFiles() before trusting this file.',
 		).toBeGreaterThanOrEqual(40)
 	})
 
@@ -277,13 +277,13 @@ describe('every dialog file is imported by something', () => {
 		expect(
 			undeclared,
 			'Nothing in src/ imports these components, so they cannot render at '
-			+ 'all and no user can reach them. Do one of two things. ROUTE it: '
-			+ 'import it, register it in src/registry.js and name it from a '
-			+ 'manifest action. RETIRE it: delete it, and say in the PR what the '
-			+ 'deletion takes with it, having first checked what it does on mount, '
-			+ 'because a component deleted for its looks once took a mount-time '
-			+ 'write with it. Add it to KNOWN_UNIMPORTED only when neither is a '
-			+ 'decision you can take, with the reason and what would change it.',
+				+ 'all and no user can reach them. Do one of two things. ROUTE it: '
+				+ 'import it, register it in src/registry.js and name it from a '
+				+ 'manifest action. RETIRE it: delete it, and say in the PR what the '
+				+ 'deletion takes with it, having first checked what it does on mount, '
+				+ 'because a component deleted for its looks once took a mount-time '
+				+ 'write with it. Add it to KNOWN_UNIMPORTED only when neither is a '
+				+ 'decision you can take, with the reason and what would change it.',
 		).toEqual([])
 	})
 
@@ -295,7 +295,7 @@ describe('every dialog file is imported by something', () => {
 			expect(
 				unimported.includes(file),
 				`${file} is listed as unreachable and something imports it now. `
-				+ 'Remove it from KNOWN_UNIMPORTED.',
+					+ 'Remove it from KNOWN_UNIMPORTED.',
 			).toBe(true)
 		}
 	})

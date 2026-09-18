@@ -85,13 +85,21 @@ test.afterAll(async () => {
 
 test.describe('dossiq reads the route and never decides it', () => {
 	// @e2e openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md#scenario-decidiq-is-not-installed
-	test('the surface says so when decidiq is absent, and the rest of the properties render', async ({ page }) => {
-		test.skip(decidiqInstalled, 'decidiq answers on this instance, so the absent path is not the one under test')
+	test('the surface says so when decidiq is absent, and the rest of the properties render', async ({
+		page,
+	}) => {
+		test.skip(
+			decidiqInstalled,
+			'decidiq answers on this instance, so the absent path is not the one under test',
+		)
 
 		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Files' }).click()
-		await page.getByRole('button', { name: 'Document properties' }).first().click()
+		await page
+			.getByRole('button', { name: 'Document properties' })
+			.first()
+			.click()
 
 		await expect(page.getByText('Approval chain unavailable')).toBeVisible()
 		await expect(
@@ -102,7 +110,10 @@ test.describe('dossiq reads the route and never decides it', () => {
 
 	// @e2e openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md#scenario-an-open-route-refuses-the-lock
 	test('a document in an open route cannot be made final, and the refusal names the route', async () => {
-		test.skip(!decidiqInstalled, 'no decidiq on this instance, so no route can be held')
+		test.skip(
+			!decidiqInstalled,
+			'no decidiq on this instance, so no route can be held',
+		)
 
 		const held = await api.post(`${DECIDIQ_API}/approval-routes/instantiate`, {
 			headers: { requesttoken: token, 'Content-Type': 'application/json' },
@@ -127,12 +138,17 @@ test.describe('dossiq reads the route and never decides it', () => {
 			'a document in an open approval route was locked, so the route decided nothing',
 		).toBe(400)
 		const body = await refused.text()
-		expect(body, 'the refusal does not name the route').toContain(`${RUN_PREFIX} concept review`)
+		expect(body, 'the refusal does not name the route').toContain(
+			`${RUN_PREFIX} concept review`,
+		)
 	})
 
 	// @e2e openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md#scenario-a-document-in-a-route-is-marked-in-the-list
 	test('the Files tab marks the document that is in a route and leaves the others alone', async () => {
-		test.skip(!decidiqInstalled, 'no decidiq on this instance, so nothing is in a route')
+		test.skip(
+			!decidiqInstalled,
+			'no decidiq on this instance, so nothing is in a route',
+		)
 
 		const other = await createObject(api, token, 'informatieobject', {
 			titel: `${RUN_PREFIX} bijlage`,
@@ -145,10 +161,16 @@ test.describe('dossiq reads the route and never decides it', () => {
 			`${DOSSIQ_API}/informatieobjecten/approval-markers?ids=${documentId},${otherId}`,
 			{ headers: { requesttoken: token } },
 		)
-		expect(res.ok(), `the markers endpoint answered ${res.status()}`).toBeTruthy()
+		expect(
+			res.ok(),
+			`the markers endpoint answered ${res.status()}`,
+		).toBeTruthy()
 		const { markers } = await res.json()
 
-		expect(markers[documentId], 'the routed document carries no marker').toBeTruthy()
+		expect(
+			markers[documentId],
+			'the routed document carries no marker',
+		).toBeTruthy()
 		expect(markers[documentId].routed).toBe(true)
 		expect(markers[documentId].cleared).toBe(false)
 		expect(
@@ -158,13 +180,21 @@ test.describe('dossiq reads the route and never decides it', () => {
 	})
 
 	// @e2e openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md#scenario-somebody-who-is-not-the-current-actor-sees-the-timeline-only
-	test('the approval chain renders on the document properties, read only for a bystander', async ({ page }) => {
-		test.skip(!decidiqInstalled, 'no decidiq on this instance, so there is no chain to render')
+	test('the approval chain renders on the document properties, read only for a bystander', async ({
+		page,
+	}) => {
+		test.skip(
+			!decidiqInstalled,
+			'no decidiq on this instance, so there is no chain to render',
+		)
 
 		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: 'Files' }).click()
-		await page.getByRole('button', { name: 'Document properties' }).first().click()
+		await page
+			.getByRole('button', { name: 'Document properties' })
+			.first()
+			.click()
 
 		const section = page.getByTestId('document-approval-chain')
 		await expect(section).toBeVisible()
@@ -176,13 +206,19 @@ test.describe('dossiq reads the route and never decides it', () => {
 
 	// @e2e openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md#scenario-an-approved-route-offers-the-lock
 	test('a completed route lets the handler make the document final', async () => {
-		test.skip(!decidiqInstalled, 'no decidiq on this instance, so no route can complete')
+		test.skip(
+			!decidiqInstalled,
+			'no decidiq on this instance, so no route can complete',
+		)
 
 		const clearance = await api.get(
 			`${DECIDIQ_API}/approval-routes/clearance?subject=${documentId}&subjectSchema=informatieobject`,
 			{ headers: { requesttoken: token } },
 		)
-		expect(clearance.ok(), `the clearance endpoint answered ${clearance.status()}`).toBeTruthy()
+		expect(
+			clearance.ok(),
+			`the clearance endpoint answered ${clearance.status()}`,
+		).toBeTruthy()
 		const answer = await clearance.json()
 
 		test.skip(
@@ -198,7 +234,10 @@ test.describe('dossiq reads the route and never decides it', () => {
 			},
 		)
 
-		expect(locked.ok(), `locking a cleared document answered ${locked.status()}`).toBeTruthy()
+		expect(
+			locked.ok(),
+			`locking a cleared document answered ${locked.status()}`,
+		).toBeTruthy()
 		const body = await locked.json()
 		expect(body.status).toBe('final')
 		expect(body.lockedOn, 'a document made final must be stamped').toBeTruthy()
