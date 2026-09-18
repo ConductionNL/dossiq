@@ -276,6 +276,72 @@ class WorkingDayRoll {
 	}//end daysBetween()
 
 	/**
+	 * The first working moment at or after this one, or null.
+	 *
+	 * The same `add(0 business days)` trick roll() uses, and deliberately NOT
+	 * a second implementation of it: on a working day the engine answers the
+	 * instant given, and on a closed day it walks to the start of the next
+	 * working one. That is exactly "when does the clock start" for a request
+	 * that arrived on a Sunday evening.
+	 *
+	 * 🔴 NULL IS AN ANSWER AND IT IS NOT "AT ONCE". A calendar that cannot be
+	 * reached does not know whether the moment was inside the working week, so
+	 * returning the moment unchanged would stamp `receivedOutsideWorkingHours:
+	 * false` on a Sunday filing and tell the applicant a start date nobody
+	 * computed. The caller leaves the stamp OFF instead, which is visibly
+	 * absent rather than confidently wrong.
+	 *
+	 * ⚠️ IT ANSWERS AT DAY GRANULARITY, because that is all the engine
+	 * calendar holds today: `WorkingCalendar` carries working weekdays,
+	 * non-working dates and hours per day, and no intra-day window. So a
+	 * request filed at 23:00 on a Tuesday reads as inside the working week.
+	 * The window is openregister `working-calendar-admin`, still to be
+	 * specified; naming it here is cheaper than a reader re-deriving the gap
+	 * from a surprising test.
+	 *
+	 * @param DateTimeImmutable $moment The moment the request arrived.
+	 *
+	 * @return DateTimeImmutable|null The first working moment, or null when the calendar did not answer.
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
+	 */
+	public function firstWorkingMomentAtOrAfter(DateTimeImmutable $moment): ?DateTimeImmutable {
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		try {
+			$answered = $this->calculator->add(
+				from: $moment,
+				value: 0.0,
+				unit: self::UNIT_BUSINESS_DAYS,
+				calendar: $this->calendar
+			);
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar refused to name the first working moment',
+				['moment' => $moment->format('c'), 'error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+
+		// FORWARD ONLY, for the reason roll() gives: a calendar answering
+		// earlier than the moment asked about would start a citizen's term
+		// before their request arrived.
+		if ($answered < $moment) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar named a working moment before the one asked about',
+				['moment' => $moment->format('c'), 'answered' => $answered->format('c')],
+			);
+
+			return null;
+		}
+
+		return $answered;
+	}//end firstWorkingMomentAtOrAfter()
+
+	/**
 	 * The next ordinary day at or after this one, on the organisation calendar.
 	 *
 	 * Returns the date unchanged when the definition does not ask for the

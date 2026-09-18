@@ -32,10 +32,12 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Burger notification template renderer + dispatcher.
@@ -408,6 +410,8 @@ class TermijnNotificationService {
 			return $this->acknowledgementWaiting(english: $english);
 		}
 
+		$start = $this->termStartLines(context: $context, english: false);
+
 		if ($english === true) {
 			return $this->acknowledgementInEnglish(
 				case: $case,
@@ -415,6 +419,7 @@ class TermijnNotificationService {
 				hasTerm: $hasTerm,
 				subjectOf: $subjectOf,
 				contact: $contact,
+				start: $this->termStartLines(context: $context, english: true),
 			);
 		}
 
@@ -439,12 +444,81 @@ class TermijnNotificationService {
 			'body' => "Beste aanvrager,\n\n"
 				. 'Wij hebben uw aanvraag' . $waarover
 				. ' ontvangen en geregistreerd onder kenmerk ' . $case . ".\n"
+				. $start
 				. $termijn
 				. "U volgt deze zaak via het burgerportaal.\n"
 				. $waar
 				. "\nMet vriendelijke groet",
 		];
 	}//end acknowledgement()
+
+	/**
+	 * When the request arrived, and when its clock started.
+	 *
+	 * 🔴 THE EXPLANATION APPEARS ONLY WHEN IT IS NEEDED (D-4). A request filed
+	 * on a Tuesday morning gets three dates and no sentence, because there is
+	 * nothing to explain: the clock started when they pressed send. A request
+	 * filed on a Sunday gets the same three plus one sentence. An explanation
+	 * on every confirmation teaches people to stop reading them, and then the
+	 * one that mattered goes unread too.
+	 *
+	 * 🔴 AN UNSTAMPED CASE GETS NO LINES AT ALL, rather than a line saying the
+	 * term starts today. The stamp is absent exactly when the working calendar
+	 * could not be reached, and inventing a start there would put a date in
+	 * front of a citizen that the term does not count from.
+	 *
+	 * @param array<string, mixed> $context The render context.
+	 * @param bool                 $english Whether the reader asked for English.
+	 *
+	 * @return string The lines, ending in a newline, or an empty string.
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 */
+	private function termStartLines(array $context, bool $english): string {
+		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''));
+		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''));
+		if ($received === '' || $starts === '') {
+			return '';
+		}
+
+		$outside = (($context['receivedOutsideWorkingHours'] ?? false) === true);
+
+		if ($english === true) {
+			$lines = 'We received it on ' . $received . ' and the decision period starts on ' . $starts . ".\n";
+			if ($outside === true) {
+				$lines .= "Your request arrived when we were closed, so the period starts on the first working day after it.\n";
+			}
+
+			return $lines;
+		}
+
+		$lines = 'Wij hebben uw aanvraag ontvangen op ' . $received . ' en de beslistermijn start op ' . $starts . ".\n";
+		if ($outside === true) {
+			$lines .= "Uw aanvraag kwam binnen buiten onze openingstijden, daarom start de termijn op de eerstvolgende werkdag.\n";
+		}
+
+		return $lines;
+	}//end termStartLines()
+
+	/**
+	 * One stored moment as a day a person reads.
+	 *
+	 * @param string $value The stored ISO 8601 moment.
+	 *
+	 * @return string The day, or an empty string when there is none to read.
+	 */
+	private function dayOf(string $value): string {
+		$value = trim($value);
+		if ($value === '') {
+			return '';
+		}
+
+		try {
+			return (new DateTimeImmutable($value))->format('d-m-Y');
+		} catch (Throwable $e) {
+			return '';
+		}
+	}//end dayOf()
 
 	/**
 	 * The doorzending, Awb 2:3.
@@ -566,6 +640,7 @@ class TermijnNotificationService {
 		bool $hasTerm,
 		string $subjectOf,
 		string $contact,
+		string $start = '',
 	): array {
 		$term = "No statutory decision period applies to this application.\n";
 		if ($hasTerm === true) {
@@ -588,6 +663,7 @@ class TermijnNotificationService {
 			'body' => "Dear applicant,\n\n"
 				. 'We have received your application' . $about
 				. ' and registered it under reference ' . $case . ".\n"
+				. $start
 				. $term
 				. "You can follow this case in the citizen portal.\n"
 				. $where

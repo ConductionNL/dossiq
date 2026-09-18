@@ -7,9 +7,18 @@ Tier: V1. Kind: code. Row Q13.23. Waits on openregister
   hierarchy edge on `case`, with a depth cap; `relatedCases` is not
   declared (D-1).
   - `@spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md`
-- [x] 1.2 `lib/Service/CaseAccessGuard.php`: `hasCaseReadAccess()` and
-  `hasCaseMutationAccess()` ask the platform; the app-side resolution is
-  deleted in the same change, not left beside it (D-2).
+- [x] 1.2 `lib/Service/CaseAccessGuard.php`: the app-side resolution is
+  DELETED (D-2). `readAccessSource()`, `worksOnCase()` and
+  `HIERARCHY_MAX_DEPTH` are gone, and `hasCaseReadAccess()` asks
+  OpenRegister's `ObjectGrantResolver` instead, which since openregister#3873
+  expands a grant over the declared `x-openregister-hierarchy` edge.
+  **`hasCaseMutationAccess()` deliberately does NOT ask it**: that is where
+  the verb would widen, now across an app boundary.
+  **It does not defer wholesale to the case resolving**, either:
+  `ObjectService::find()` applies the SCHEMA's read rule, so on an instance
+  whose case schema admits `authenticated` a wholesale deferral would make
+  this guard one that every logged-in user passes, with nothing looking
+  different afterwards.
   - `tests/Unit/Service/CaseAccessGuardTest.php`
 - [x] 1.3 Pin the verb rule: a read grant on a parent does not become a
   mutation grant on a deelzaak (D-3).

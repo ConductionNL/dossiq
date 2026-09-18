@@ -71,6 +71,11 @@ class SchemaSlugMap {
 		'caseProperty' => 'case_property_schema',
 		'caseDocument' => 'case_document_schema',
 		'caseObject' => 'case_object_schema',
+		// One dated event inside a case, with its own owner
+		// (splitting-a-case-and-its-incidents REQ-CM-47). A schema with no key
+		// here resolves to nothing and every read of it answers an empty list,
+		// which reads exactly like a case with no incidents.
+		'incident' => 'incident_schema',
 		'customerContact' => 'customer_contact_schema',
 		// One row per message the mailbox processed (inbound-mail-filters).
 		'mailIntakeEntry' => 'mail_intake_entry_schema',

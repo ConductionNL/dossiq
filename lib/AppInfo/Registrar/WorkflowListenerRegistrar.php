@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
 use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Listener\TaskCompletionEffectsListener;
 use OCA\Dossiq\Listener\TaskCompletionResumeListener;
@@ -131,6 +132,14 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: CustodyCaseCreatedListener::class
+		);
+
+		// When the request arrived, and when its clock starts. Written once at
+		// creation and never recomputed: the stamp is a record of what the
+		// citizen was told, not a derivation of what today's calendar says.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: IntakeTermStartListener::class
 		);
 
 		// A phase carries its own clock, and the clock moves when the case

@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.31-unstable.20260918120500</version>
+    <version>0.4.36-unstable.20260918125500</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -191,6 +191,15 @@ Vrij en open source onder de EUPL-1.2-licentie.
              cron fields cannot say "once", so a planned follow-up is
              switched off after it has fired rather than left to come round
              again next year. -->
+        <!--
+            fees-and-payments-on-the-case REQ-FEE-02: the word the case list
+            filters on, refreshed from shillinq hourly. Every DECISION about
+            the money reads shillinq live at the moment it must refuse or
+            allow, so a case this sweep has not reached is never handled on a
+            stale word. A read that fails writes nothing rather than stamping
+            `stale` over the last state anybody knew.
+        -->
+        <job>OCA\Dossiq\BackgroundJob\PaymentStateProjectionJob</job>
         <job>OCA\Dossiq\BackgroundJob\PlannedFollowUpSweepJob</job>
         <!-- A sweep rather than a timer per item: four other acts can end a
              triage item's life, and a timer armed against an entry that is
