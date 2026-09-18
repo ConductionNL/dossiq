@@ -274,7 +274,7 @@ final class ClassApi {
 	 * @param list<array{0:int,1:string,2:int}|string> $body The class body's tokens.
 	 * @param integer                                  $from Index of the T_FUNCTION token.
 	 *
-	 * @return array{total:int, required:int, params:list<string>} The signature.
+	 * @return array{total:int, required:int, params:list<string>, returns:string} The signature.
 	 */
 	private static function readParameterList(array $body, int $from): array {
 		$count = count($body);
@@ -291,6 +291,7 @@ final class ClassApi {
 				'total' => 0,
 				'required' => 0,
 				'params' => [],
+				'returns' => '',
 			];
 		}
 
@@ -367,8 +368,95 @@ final class ClassApi {
 			'total' => count($params),
 			'required' => $required,
 			'params' => $params,
+			'returns' => self::readReturnType($body, $i),
 		];
 	}//end readParameterList()
+
+	/**
+	 * Read the declared return type that follows a parameter list.
+	 *
+	 * What a method hands back is part of its signature in the way that matters
+	 * here: a stub returning `object` where the real class returns an entity is a
+	 * stub every assertion about the return value agrees with, and production
+	 * does not. The parameter list already caught callers going in; this catches
+	 * them coming out.
+	 *
+	 * @param list<array{0:int,1:string,2:int}|string> $body The class body's tokens.
+	 * @param integer $from Index of the parameter list's closing parenthesis.
+	 *
+	 * @return string The normalised type text, or '' when none is declared.
+	 */
+	private static function readReturnType(array $body, int $from): string {
+		$count = count($body);
+		$sawColon = false;
+		$type = '';
+
+		for ($i = ($from + 1); $i < $count; $i++) {
+			$token = $body[$i];
+
+			if (is_string($token) === true) {
+				// The body, or an abstract/interface method: either way the type,
+				// if there was one, is complete.
+				if ($token === '{' || $token === ';') {
+					break;
+				}
+
+				if ($token === ':' && $sawColon === false) {
+					$sawColon = true;
+					continue;
+				}
+
+				if ($sawColon === true) {
+					$type .= $token;
+				}
+
+				continue;
+			}
+
+			if (in_array($token[0], [T_WHITESPACE, T_COMMENT, T_DOC_COMMENT], true) === true) {
+				continue;
+			}
+
+			if ($sawColon === true) {
+				$type .= $token[1];
+			}
+		}//end for
+
+		return self::normaliseType($type);
+	}//end readReturnType()
+
+	/**
+	 * Normalise a type so a stub and its subject can be compared by name.
+	 *
+	 * A leading backslash and a namespace prefix are spelling, not meaning: a stub
+	 * writing `\OCA\OpenRegister\Db\AuditTrail` and a real class writing
+	 * `AuditTrail` promise the same thing. `?` and `|` are kept, because they do
+	 * not.
+	 *
+	 * @param string $type The raw type text.
+	 *
+	 * @return string The normalised type.
+	 */
+	private static function normaliseType(string $type): string {
+		$type = str_replace(' ', '', $type);
+		if ($type === '') {
+			return '';
+		}
+
+		$parts = [];
+		foreach (explode('|', $type) as $part) {
+			$nullable = '';
+			if (str_starts_with($part, '?') === true) {
+				$nullable = '?';
+				$part = substr($part, 1);
+			}
+
+			$segments = explode('\\', $part);
+			$parts[] = $nullable . end($segments);
+		}
+
+		return implode('|', $parts);
+	}//end normaliseType()
 
 	/**
 	 * Collect public constants and the source text of their values.

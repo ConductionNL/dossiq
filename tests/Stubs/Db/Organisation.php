@@ -188,8 +188,10 @@ class Organisation {
 	/**
 	 * @param array<int, string>|null $groups Groups list.
 	 */
-	public function setGroups(?array $groups): void {
+	public function setGroups(?array $groups): static {
 		$this->groups = ($groups ?? []);
+
+		return $this;
 	}
 
 	public function getActive(): bool {
@@ -200,8 +202,10 @@ class Organisation {
 		return $this->active;
 	}
 
-	public function setActive(mixed $active): void {
+	public function setActive(mixed $active): static {
 		$this->active = (bool)$active;
+
+		return $this;
 	}
 
 	public function getStorageQuota(): ?int {
