@@ -1,0 +1,11 @@
+{
+  "about": "Files under lib/ that still hold a holiday list of their own. Which days an organisation does not work is one fact and ADR-022 puts it in the engine working calendar; a second list here is a second answer, and the two diverge the first time an administrator adds a closure in one of them. An entry names the file, the change that retires the copy, and why it is still here. NoLocalCalendarTest fails on an entry missing either, and fails in the OTHER direction on a file that has stopped holding one, so the list can only shrink deliberately.",
+  "measured": "2026-09-18",
+  "entries": [
+    {
+      "file": "lib/Service/WorkingDayCalculator.php",
+      "retiresWith": "termijnbewaking phase 3.2",
+      "reason": "The one copy, and the reason it is still here is written in its own header: the Awt roll it would need is deliberately not implemented because the recognised-holiday list has never been confirmed by somebody qualified to read Awt art. 3. It is now only the degraded path. Terms roll on the engine calendar when one answers; this list is what an instance without OpenRegister falls back to, and every caller that reaches it is logged."
+    }
+  ]
+}
