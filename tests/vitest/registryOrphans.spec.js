@@ -110,7 +110,12 @@ describe('registry modals reach a surface', () => {
 		// 🔴 THE GUARD AGAINST A LOOP THAT MATCHED NOTHING. If the registry's
 		// formatting changes and the regex stops finding entries, every
 		// assertion below passes vacuously. This one does not.
-		expect(modalEntries().length).toBeGreaterThanOrEqual(22)
+		expect(
+			modalEntries().length,
+			'The regex found almost no registry entries, so every assertion below '
+			+ 'would pass without examining anything. The registry formatting has '
+			+ 'changed: fix `modalEntries()` before trusting this file again.',
+		).toBeGreaterThanOrEqual(22)
 	})
 
 	it('names every registered modal from at least one manifest action', () => {
@@ -120,7 +125,17 @@ describe('registry modals reach a surface', () => {
 			.filter((entry) => !targets.has(entry.name))
 			.map((entry) => entry.name)
 
-		expect(orphans).toEqual([])
+		expect(
+			orphans,
+			'These modals are registered and no manifest action opens them, so no '
+			+ 'user can reach them. Do one of two things, and not a third. ROUTE it: '
+			+ 'add an `open-modal` action naming it to the page that should offer it, '
+			+ 'in src/manifest.json. RETIRE it: delete the component, its import and '
+			+ 'its registry entry, and say in the PR what the deletion takes with it. '
+			+ 'Only when neither is a decision you can take, add `_orphanReason` to '
+			+ 'its registry entry saying what is missing and what would make it '
+			+ 'reachable. A reason is not a place to park a dialog nobody wants.',
+		).toEqual([])
 	})
 
 	it('opens the two dialogs the retired Documents tab left behind', () => {
@@ -134,5 +149,149 @@ describe('registry modals reach a surface', () => {
 		expect(withReason.map((entry) => entry.name)).toContain(
 			'CaseLifecycleActionDialog',
 		)
+	})
+})
+
+/**
+ * Dialog and modal files nothing imports, and the verdict on each.
+ *
+ * THE SECOND HOLE, AND WHY THE FIRST CHECK CANNOT SEE IT. Everything above
+ * compares the registry with the manifest. A component that was never
+ * registered is in neither, so it is invisible to that comparison: the only
+ * occurrence of `BerichtenboxComposeDialog` in the whole repository was its
+ * own `name:` line, and the registry check would have passed forever.
+ *
+ * Eight files failed this on its first run. Five carried no test and nothing
+ * else referenced them, and were retired in the same change: StatusTransitionDialog
+ * and ConsultationCreateDialog and ConsultationResponseForm and
+ * DeleteChecklistDialog and RenewalRequestModal. Each was measured first, and
+ * none did network work on mount, so none took a side effect with it.
+ *
+ * What is left is listed below, with what would remove it from the list.
+ */
+const KNOWN_UNIMPORTED = {
+	'src/dialogs/BerichtenboxComposeDialog.vue':
+		'ROUTE, NOT YET. Its transport is MockAdapter, which simulates a delivery '
+		+ 'without making one. Registering it today gives a handler a button that '
+		+ 'hands a citizen letter to nothing, which is worse than no button. '
+		+ 'openspec/changes/digital-post-consumes-integriq tasks 3.1 and 3.2 '
+		+ 'register it and add the CaseDetail header action, after the integriq '
+		+ 'seam in digital-post-reaches-integriq lands.',
+	'src/dialogs/CaseTransitionConfirmDialog.vue':
+		'RETIRE, and the cost is why it is still here. A case transition is '
+		+ 'already served by two surfaces a person reaches on CaseDetail: the '
+		+ 'stages widget and CaseLifecycleMenuDialog, which reads '
+		+ '/available-transitions, /lifecycle and /acts and posts the move '
+		+ 'itself. So the rule says retire. What retiring takes with it is three '
+		+ 'test files that mount this component and assert on it: '
+		+ 'caseTransitionOutcome, workflowBoardMove and resultTemplateOnClose. '
+		+ 'They assert about a component nothing renders, so they cover nothing '
+		+ 'that runs, but deleting 400 lines of assertions is a coverage decision '
+		+ 'and not a routing one. It does no network work on mount.',
+	'src/dialogs/DsoCaseDetail.vue':
+		'RETIRE. It posts to /apps/dossiq/api/dso/cases/, and no page, route or '
+		+ 'schema in the manifest resolves a DSO case: the only DSO surface is '
+		+ 'DSOIntakeController, which is a machine-to-machine intake endpoint '
+		+ 'with no reader. Held back with the one above because '
+		+ 'dialogTemplateBindings mounts it, and that file also covers dialogs '
+		+ 'that are alive, so it is an edit rather than a deletion. No network '
+		+ 'work on mount.',
+}
+
+/**
+ * Every `.vue` file under the dialog and modal folders.
+ *
+ * @return {string[]} Repository-relative paths.
+ */
+function surfaceFiles() {
+	return ['src/modals', 'src/dialogs'].flatMap((dir) =>
+		fs
+			.readdirSync(path.join(ROOT, dir))
+			.filter((name) => name.endsWith('.vue'))
+			.map((name) => `${dir}/${name}`),
+	)
+}
+
+/**
+ * Every source file that could import one of them.
+ *
+ * @return {Array<{path: string, text: string}>} Paths and contents.
+ */
+function sourceFiles() {
+	const out = []
+	const walk = (dir) => {
+		for (const entry of fs.readdirSync(path.join(ROOT, dir), {
+			withFileTypes: true,
+		})) {
+			const child = `${dir}/${entry.name}`
+			if (entry.isDirectory()) {
+				walk(child)
+			} else if (/\.(js|ts|vue)$/.test(entry.name)) {
+				out.push({
+					path: child,
+					text: fs.readFileSync(path.join(ROOT, child), 'utf8'),
+				})
+			}
+		}
+	}
+	walk('src')
+	return out
+}
+
+/**
+ * The dialog and modal files nothing in src/ imports.
+ *
+ * @return {string[]} Repository-relative paths.
+ */
+function unimportedSurfaces() {
+	const sources = sourceFiles()
+	return surfaceFiles().filter((file) => {
+		const base = file.split('/').pop()
+		return !sources.some(
+			(source) => source.path !== file && source.text.includes(base),
+		)
+	})
+}
+
+describe('every dialog file is imported by something', () => {
+	it('examines every dialog and modal file', () => {
+		// The same vacuous-pass guard as above: an empty folder listing would
+		// make the assertion below pass without looking at anything.
+		expect(
+			surfaceFiles().length,
+			'Almost no dialog files were found, so the check below examined '
+			+ 'nothing. Fix surfaceFiles() before trusting this file.',
+		).toBeGreaterThanOrEqual(40)
+	})
+
+	it('imports each one, or records why it cannot be reached', () => {
+		const undeclared = unimportedSurfaces().filter(
+			(file) => !(file in KNOWN_UNIMPORTED),
+		)
+
+		expect(
+			undeclared,
+			'Nothing in src/ imports these components, so they cannot render at '
+			+ 'all and no user can reach them. Do one of two things. ROUTE it: '
+			+ 'import it, register it in src/registry.js and name it from a '
+			+ 'manifest action. RETIRE it: delete it, and say in the PR what the '
+			+ 'deletion takes with it, having first checked what it does on mount, '
+			+ 'because a component deleted for its looks once took a mount-time '
+			+ 'write with it. Add it to KNOWN_UNIMPORTED only when neither is a '
+			+ 'decision you can take, with the reason and what would change it.',
+		).toEqual([])
+	})
+
+	it('drops an entry that has stopped being true', () => {
+		// Without this, the list only ever grows, and an entry for something
+		// somebody quietly re-homed goes on claiming it is broken.
+		const unimported = unimportedSurfaces()
+		for (const file of Object.keys(KNOWN_UNIMPORTED)) {
+			expect(
+				unimported.includes(file),
+				`${file} is listed as unreachable and something imports it now. `
+				+ 'Remove it from KNOWN_UNIMPORTED.',
+			).toBe(true)
+		}
 	})
 })

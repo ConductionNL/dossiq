@@ -142,6 +142,7 @@ import BulkDocumentActionDialog from './modals/BulkDocumentActionDialog.vue'
 // @spec openspec/specs/document-zaakdossier/spec.md
 // @spec openspec/specs/document-zaakdossier/spec.md
 import DocumentMetadataDialog from './modals/DocumentMetadataDialog.vue'
+import DossierExportPanel from './modals/DossierExportPanel.vue'
 import FileRequestDialog from './modals/FileRequestDialog.vue'
 import VersionHistoryPanel from './modals/VersionHistoryPanel.vue'
 import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
@@ -620,6 +621,11 @@ const registry = {
 		kind: 'modal',
 		component: BulkDocumentActionDialog,
 		_note: "Mark final / Change confidentiality / Download ZIP, one dialog in three `mode`s (mirrors BulkTransitionDialog). ITS PARENT IS GONE: the Documents tab whose object-list `bulkActions` opened it was retired on 2026-09-13 and replaced by the `case-files` leaf, and this note went on naming it for five days while no manifest action named this dialog at all. tests/vitest/registryOrphans.spec.js fails on that now. Opened today by the `case-files` `rowActions` entries Mark as final and Change confidentiality, as `type: open-modal`; CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto the declared props, so the dialog resolves ONE informatieobject through the case's dossier listing rather than a selection of join ids. The `selectedIds` path stays for a widget object-list that still hands a selection over, and takes precedence when it is non-empty. `zip` mode has no caller here on purpose: the whole case file as one download is the CaseDetail `export-dossier` header action, and two buttons for one zip is a worse answer than one.",
+	},
+	DossierExportPanel: {
+		kind: 'modal',
+		component: DossierExportPanel,
+		_note: "The Awb-ordered dossier a griffier submits to the bestuursrechter, read-only, opened by the Dossier for the court header action on BeroepDetail and BezwaarDetail. NOT the same thing as CaseDetail's Export dossier: that one is the whole case file as a zip over ZaakdossierDownloadController, and this one is GET /api/dossier/{caseId}/export, which answers a JSON PLAN from BeroepDossierExport with every document of the bezwaar and beroep chain renamed 01-primair-besluit.pdf and so on. That route had answered since the bezwaar-beroep work shipped and no line of src/ had ever called it, so the order a court reads first was one nobody could check. The panel tells a 403 apart from an empty dossier, because both render as nothing and only one of them means the case has no documents.",
 	},
 	VersionHistoryPanel: {
 		kind: 'modal',

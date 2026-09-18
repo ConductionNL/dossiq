@@ -3540,6 +3540,19 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "objectionProceeding",
+				"_dossierExportNote": "four-unreachable-surfaces: GET /api/dossier/{caseId}/export answers the Awb-ordered plan BeroepDossierExport builds, and no line of src/ had ever called it. It is NOT CaseDetail's Export dossier, which downloads the whole case file as a zip; this one is the submission ORDER, which is the part a court reads first. An api-call cannot host it, because the route answers JSON and would have handed the reader a file called dossier.zip holding JSON, which is the reason document-acts-reach-a-surface left it alone. So it is an open-modal onto DossierExportPanel, read-only: it renames nothing and writes nothing, and shows what the export would contain so the mistake is found before the submission.",
+				"headerActions": [
+					{
+						"id": "dossier-export-plan",
+						"label": "Dossier for the court",
+						"icon": "ScaleBalance",
+						"type": "open-modal",
+						"target": "DossierExportPanel",
+						"props": {
+							"caseId": "@objectId"
+						}
+					}
+				],
 				"_note": "OBJECTION-CASE archetype (AWB bezwaar), ADR-062 round 2. `bezwaar` is a supporting schema on a unified case (bezwaar.case) and declares NO comms linkedTypes — so NO files/notes/contacts/calendar leaves here; those live on the parent CaseDetail. The lead row pairs the field-scoped 'Objection' core widget (case/objection/status/awbReference/ontvangstdatum/decisionDeadline) with an in-grid KPI stats-block (advice-request and decision counts, replacing the deprecated header summaryAggregates). The AWB statutory-clock fields (verdaging/opschorting/hearing waiver/ingebrekestelling/dwangsom) are a genuinely distinct group and get their own 'Statutory clock & suspension' data widget. The two real child collections follow as FK-scoped object-lists side by side: committee advice requests (bacAdviceRequest.bezwaar) and decisions on the objection (bezwaarDecision.bezwaar), each deep-linking to its own detail page. lifecycleActions drive the bezwaar status (Ontvangen → … → Afgehandeld). Audit history stays a sidebar tab.",
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
@@ -5878,6 +5891,19 @@
 			"config": {
 				"register": "dossiq",
 				"schema": "beroep",
+				"_dossierExportNote": "four-unreachable-surfaces: GET /api/dossier/{caseId}/export answers the Awb-ordered plan BeroepDossierExport builds, and no line of src/ had ever called it. It is NOT CaseDetail's Export dossier, which downloads the whole case file as a zip; this one is the submission ORDER, which is the part a court reads first. An api-call cannot host it, because the route answers JSON and would have handed the reader a file called dossier.zip holding JSON, which is the reason document-acts-reach-a-surface left it alone. So it is an open-modal onto DossierExportPanel, read-only: it renames nothing and writes nothing, and shows what the export would contain so the mistake is found before the submission.",
+				"headerActions": [
+					{
+						"id": "dossier-export-plan",
+						"label": "Dossier for the court",
+						"icon": "ScaleBalance",
+						"type": "open-modal",
+						"target": "DossierExportPanel",
+						"props": {
+							"caseId": "@objectId"
+						}
+					}
+				],
 				"_note": "APPEAL-CASE archetype (AWB beroep at the rechtbank), ADR-062 round 2. `beroep` is a supporting schema on a unified case (beroep.case) and declares NO comms linkedTypes, so no files/notes/contacts/calendar here — those live on the parent CaseDetail. The 17-field schema splits into two genuinely distinct groups: 'Appeal' (the court header — case, sourceBezwaar, contestedDecision, courtReference, responsibleChamber, competentCourt) paired with the Related panel (parent case and source bezwaar), and 'Filing & judgment' (the clock, sub-process and outcome — appellantFilingDate/NotifiedDate, filingDeadline, voorzieningRequested, latefilingNotice, fileInspectionRequests[], judgmentOutcome/Date/Document, cascadeAction/cascadeBezwaarCase) full-width below. No status enum on this schema, so no lifecycleActions. Audit history is a sidebar tab.",
 				"documentationUrl": "https://dossiq.conduction.nl",
 				"widgets": [
