@@ -57,6 +57,8 @@ class NotesController extends Controller {
 	 * @param MentionNotificationService $mentionSvc The mention notification service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
+	 * @param NotePush $notePush Pushes a note to the neighbouring ZGW register, or says why it did not
+	 * @param CaseAccessGuard $caseAccessGuard Decides whether the caller may write notes on this case
 	 */
 	public function __construct(
 		IRequest $request,

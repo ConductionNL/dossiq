@@ -274,10 +274,15 @@ class NotePush {
 	 * @return void
 	 */
 	private function record(string $caseId, array $note, string $message, string $outcome, string $reason): void {
+		$sentence = $message;
+		if ($reason !== '') {
+			$sentence = ($message . ': ' . $reason);
+		}
+
 		$this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::MAIL_OUT,
-			message: ($reason === '') ? $message : ($message . ': ' . $reason),
+			message: $sentence,
 			fields: [
 				'noteId' => (string)($note['id'] ?? ''),
 				'status' => $outcome,
