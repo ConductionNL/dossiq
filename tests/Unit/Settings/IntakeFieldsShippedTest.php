@@ -32,13 +32,17 @@ use PHPUnit\Framework\TestCase;
  */
 class IntakeFieldsShippedTest extends TestCase {
 	/**
-	 * The highest register version claimed when this change landed: 0.20.1 on
-	 * the integration branch, 0.20.2 on fees-and-payments and 0.20.3 on
-	 * routing-by-weight, both of which merge first.
+	 * The highest register version claimed when this change landed. THREE
+	 * changes landed on 0.20.3 at once while this branch waited — #2923, #2937
+	 * and #2936 — each writing the identical line, which merges in silence and
+	 * makes the later imports skip. The fees-and-payments branch ahead of this
+	 * one takes 0.20.6 to carry everything that accumulated under that
+	 * collision, so this one is above 0.20.6 and not above the number it was
+	 * written against.
 	 *
 	 * @var string
 	 */
-	private const FLOOR = '0.20.3';
+	private const FLOOR = '0.20.6';
 
 	/**
 	 * The shipped register.
@@ -102,7 +106,7 @@ class IntakeFieldsShippedTest extends TestCase {
 		$this->assertNotFalse($xml, 'info.xml could not be read');
 
 		$this->assertTrue(
-			version_compare((string)$xml->version, '0.4.31-unstable.20260918120500', '>'),
+			version_compare((string)$xml->version, '0.4.34-unstable.20260918124500', '>'),
 			'The app version must be strictly above every number already claimed.'
 		);
 	}//end testTheAppVersionMovedPastTheFleet()

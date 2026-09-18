@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\TermResolution;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -65,8 +66,20 @@ class ComplaintService {
 
 	/**
 	 * Awb chapter 9 acknowledgment deadline in working days.
+	 *
+	 * 🔴 THIS IS NOW THE FALLBACK, NOT THE RULE. The first-response term is
+	 * declared like any other term, on the case type, so an instance that
+	 * agreed a different norm can say so and a service manager can see whether
+	 * it was met. The constant stays as the value an instance that declares
+	 * nothing gets, which is what every complaint got before it was
+	 * declarable: five working days, the same dates as today.
 	 */
 	private const AWB_ACK_WORKING_DAYS = 5;
+
+	/**
+	 * The case type a complaint is, for resolving its first-response term.
+	 */
+	private const COMPLAINT_CASE_TYPE = 'klacht';
 
 	/**
 	 * Awb chapter 9 resolution deadline in calendar weeks.
@@ -92,8 +105,33 @@ class ComplaintService {
 		private readonly LoggerInterface $logger,
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermResolution $resolution = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * How many working days the acknowledgement is promised within.
+	 *
+	 * The declaration wins when a case type carries a `firstResponse` term;
+	 * otherwise the Awb chapter 9 constant, which is the value every complaint
+	 * had before this was declarable. Behaviour parity is the point: an
+	 * instance that declares nothing keeps exactly the dates it has today.
+	 *
+	 * @return int The working days.
+	 *
+	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 */
+	private function acknowledgementDays(): int {
+		$resolved = $this->resolution?->resolve(
+			caseType: self::COMPLAINT_CASE_TYPE,
+			context: [],
+			kind: TermKind::FIRST_RESPONSE
+		);
+
+		$declared = (int)($resolved['definition']['standardDurationDays'] ?? 0);
+
+		return ($declared > 0 ? $declared : self::AWB_ACK_WORKING_DAYS);
+	}//end acknowledgementDays()
 
 	/**
 	 * Create a new complaint.
@@ -130,8 +168,13 @@ class ComplaintService {
 		$data['status'] = 'received';
 		$data['postponementPossible'] = true;
 
-		// Compute Awb deadlines.
-		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(startDate: $receiptDate, days: self::AWB_ACK_WORKING_DAYS);
+		// Compute Awb deadlines. The acknowledgement is the complaint's
+		// first-response term, so it comes from the declaration when there is
+		// one and from the Awb constant when there is not.
+		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(
+			startDate: $receiptDate,
+			days: $this->acknowledgementDays()
+		);
 		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $receiptDate, weeks: self::AWB_RESOLUTION_WEEKS);
 
 		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);

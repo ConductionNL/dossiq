@@ -33,6 +33,7 @@ use OCA\Dossiq\Listener\CaseNumberListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\CasePhaseTermListener;
 use OCA\Dossiq\Listener\CasePlanProjectionListener;
+use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Listener\TaskCompletionEffectsListener;
@@ -122,6 +123,15 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class
+		);
+
+		// The chain of custody starts where the case was registered. Without
+		// this the chain would begin at the first MOVE, which reads as though
+		// nobody held the case until it changed hands. The backfill repairs the
+		// cases that already existed; this stops the hole reopening.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CustodyCaseCreatedListener::class
 		);
 
 		// A phase carries its own clock, and the clock moves when the case

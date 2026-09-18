@@ -475,6 +475,24 @@ $extra = [
     ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
     ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
 
+        // Merging two cases into one (case-merge, row 2.23). The merge itself
+        // is OpenRegister's; what lives here is the refusal, because whether a
+        // case may be merged away is a case management rule and the browser
+        // hiding the action is not a refusal.
+    ['name' => 'caseMerge#merge',        'url' => '/api/case/{caseId}/merge',      'verb' => 'POST'],
+
+        // The public "track your case" link of a case that was merged away.
+        // OpenRegister's own token endpoint answers with the case the token
+        // names; this one follows `mergedInto` and answers with the case the
+        // request became part of, under the same public-group read.
+    ['name' => 'publicCaseSurvivor#survivor', 'url' => '/api/public/case-tokens/{token}/survivor', 'verb' => 'GET', 'requirements' => ['token' => '[^/]+']],
+
+        // The two answers to a followed term move (dependent-term-follows-
+        // predecessor, row Q3.21). The days are on the task, not in the body,
+        // so neither endpoint takes one.
+    ['name' => 'caseTermFollow#accept',  'url' => '/api/case/{caseId}/term-follow/{taskId}/accept',  'verb' => 'POST'],
+    ['name' => 'caseTermFollow#decline', 'url' => '/api/case/{caseId}/term-follow/{taskId}/decline', 'verb' => 'POST'],
+
         // The Awb 4:3a acknowledgement of receipt (ontvangstbevestiging). One
         // read that answers "did we confirm receipt, when, to whom and by
         // which channel", and one write for the case an acknowledgement never
@@ -933,6 +951,16 @@ $extra = [
     ['name' => 'caseHandover#accept',      'url' => '/api/case/{caseId}/handover/{transferId}/accept',    'verb' => 'POST'],
     ['name' => 'caseHandover#refuse',      'url' => '/api/case/{caseId}/handover/{transferId}/refuse',    'verb' => 'POST'],
     ['name' => 'caseHandover#outstanding', 'url' => '/api/teams/{team}/outstanding-handovers',            'verb' => 'GET'],
+
+    // The chain of custody (read-only: the chain is written by the moves) and
+    // the takeover request beside it (custody-and-handover-of-a-case).
+    ['name' => 'caseCustody#chain',        'url' => '/api/case/{caseId}/custody',                         'verb' => 'GET'],
+    ['name' => 'caseCustody#holder',       'url' => '/api/case/{caseId}/custody/holder',                  'verb' => 'GET'],
+    ['name' => 'caseCustody#unit',         'url' => '/api/units/{unit}/custody',                          'verb' => 'GET'],
+    ['name' => 'caseTakeover#ask',         'url' => '/api/case/{caseId}/takeover',                        'verb' => 'POST'],
+    ['name' => 'caseTakeover#on',          'url' => '/api/case/{caseId}/takeovers',                       'verb' => 'GET'],
+    ['name' => 'caseTakeover#accept',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/accept',    'verb' => 'POST'],
+    ['name' => 'caseTakeover#refuse',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/refuse',    'verb' => 'POST'],
     ['name' => 'caseSeats#show',           'url' => '/api/case/{caseId}/seats',                           'verb' => 'GET'],
     ['name' => 'caseSeats#nameCoordinator', 'url' => '/api/case/{caseId}/seats/coordinator',              'verb' => 'PUT'],
     ['name' => 'leaverHandover#preview',   'url' => '/api/leaver-handover/preview',                       'verb' => 'POST'],
@@ -984,6 +1012,11 @@ $extra = [
         // TermijnDefinitiesTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.
     ['name' => 'termijnDefinitie#index',  'url' => '/api/termijn/definities',      'verb' => 'GET'],
+    // What every term on this instance is counted against: the zone, and
+    // whether an organisation calendar answers the Awt roll. The admin page
+    // says which, because a roll that could not be made and a roll that was
+    // not needed produce the same plausible date.
+    ['name' => 'termijnDefinitie#calendar', 'url' => '/api/termijn/calendar',      'verb' => 'GET'],
     ['name' => 'termijnDefinitie#create', 'url' => '/api/termijn/definities',      'verb' => 'POST'],
     ['name' => 'termijnDefinitie#update', 'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
         // Notice-of-default registration.
@@ -1008,6 +1041,9 @@ $extra = [
     ['name' => 'deadlineReporting#dashboard',        'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
     ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
     ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+        // The first response, counted and averaged from what was stored on the
+        // cases at the time (term-configuration-beyond-the-case-type, row 8.24).
+    ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/termijn/reports/eerste-reactie', 'verb' => 'GET'],
         // IV3/BBV taakveld reference list, for the case-type classification
         // picker. The quarterly IV3 cost report that used to sit alongside it
         // is gone under ADR-081 — Shillinq is the only statutory reporter. The

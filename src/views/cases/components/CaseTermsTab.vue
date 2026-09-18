@@ -138,6 +138,13 @@
 									:data-testid="`case-terms-pause-${row.kind}`">
 									{{ row.pause }}
 								</span>
+								<span
+									v-for="(line, idx) in row.moves"
+									:key="`move-${idx}`"
+									class="case-terms-tab__hint"
+									:data-testid="`case-terms-move-${row.kind}`">
+									{{ line }}
+								</span>
 							</td>
 						</tr>
 					</tbody>

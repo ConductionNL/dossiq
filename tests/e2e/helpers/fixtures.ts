@@ -202,6 +202,16 @@ export const FIXTURE_SCHEMAS = [
 	'jeugdwetZaak',
 	// A role points at a case AND at a role type, so it goes before both.
 	'role',
+	// The chain of holdings, the takeover request and the consent all name the
+	// case, so all three go before it for the same reason every other child
+	// does: `case` is on a CASCADE, and a case removed first takes them with it
+	// and the sweep then reports rows it cannot find.
+	'caseCustody',
+	'caseTakeover',
+	// A consent is somebody's recorded permission to disclose their file, so a
+	// run that leaves one behind is worse than an orphan row: it is a standing
+	// authorisation nobody granted.
+	'toestemming',
 	'case',
 	'roleType',
 	// The team a case names. After `case` for the same reason `caseType` is:
