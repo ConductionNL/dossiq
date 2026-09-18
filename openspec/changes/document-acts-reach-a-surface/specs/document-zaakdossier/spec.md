@@ -16,6 +16,14 @@ restored through the Nextcloud Files versions API.
 - **THEN** the panel SHALL list three versions of `besluit.pdf`
 - **AND** restoring the oldest SHALL make it the current file in the folder
 
+#### Scenario: The panel reads the file the browser clicked, not a row it was never given
+@e2e exclude a prop-precedence branch with one gesture behind it; covered by the VersionHistoryPanel unit test
+
+- **GIVEN** the panel is opened with a file id and with a row naming another file
+- **WHEN** it reads the version history
+- **THEN** it SHALL read the versions of the file id
+- **AND** the row SHALL be used only when no file id arrived
+
 #### Scenario: A panel handed no file refuses instead of showing an empty list
 @e2e exclude a defensive branch with no reachable gesture; covered by the VersionHistoryPanel unit test, which mounts it with neither prop
 
@@ -25,19 +33,36 @@ restored through the Nextcloud Files versions API.
 - **AND** it SHALL NOT render an empty version list, because no versions and
   no file look identical to a reader
 
-### Requirement: REQ-ZAK-021 A selection of case files can be acted on at once
+### Requirement: REQ-ZAK-021 A case file can be marked final or reclassified from its row
 
-The Files tab SHALL offer mark final, change confidentiality and download
-as zip over a selection of rows. Each act SHALL report how many files it
-changed, and a file the act could not be applied to SHALL be named rather
-than silently skipped.
+The Files tab SHALL offer mark final and change confidentiality on a file
+row, and each act SHALL report what it changed. A file the act could not be
+applied to SHALL be named rather than silently skipped, and an act that
+found no document to work on SHALL refuse rather than report that it
+changed nothing.
 
-#### Scenario: Two files are marked final in one act
+Acting on SEVERAL files at once is deliberately not required here. The
+files browser carries no selection bar: the Files app's own list, its
+selection bar and its inline rename are bound to the Files app's router and
+cannot be mounted on a case page, which the component says of itself. A
+bulk-actions declaration on that widget would therefore be read by nothing,
+and a declared capability nobody can reach is the exact failure this change
+exists to end. The whole case file as one download is REQ-ZAK-022.
 
-- **GIVEN** a case whose folder holds four files, two of them selected
-- **WHEN** the handler marks the selection final
-- **THEN** both selected documents SHALL read final
-- **AND** the two unselected documents SHALL be unchanged
+#### Scenario: A file is marked final from its row
+
+- **GIVEN** a case whose folder holds a file with a document record
+- **WHEN** the handler picks Mark as final on that row and applies it
+- **THEN** that document SHALL read final
+- **AND** the other files in the folder SHALL be unchanged
+
+#### Scenario: A file with no document record refuses rather than reporting nothing
+@e2e exclude a timing branch that needs the projection listener held back; covered by the BulkDocumentActionDialog unit test
+
+- **GIVEN** a file whose informatieobject record has not been written yet
+- **WHEN** the handler marks it final
+- **THEN** the act SHALL say no document record was found
+- **AND** it SHALL NOT report a count of zero as a success
 
 ### Requirement: REQ-ZAK-022 The case file can be exported as one download
 

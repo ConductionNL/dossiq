@@ -254,3 +254,93 @@ describe('BulkDocumentActionDialog — zip', () => {
 		expect(mockPost).not.toHaveBeenCalled()
 	})
 })
+
+describe('BulkDocumentActionDialog opened from a file row', () => {
+	// document-acts-reach-a-surface REQ-ZAK-021. The dialog's only caller now
+	// is the `case-files` leaf, which hands over the clicked node's `fileId`
+	// and NO selection: CnFilesBrowser carries no selection bar, because the
+	// Files app's own list is bound to the Files router and cannot be mounted
+	// off the Files page. So the dialog resolves one document through the
+	// case's dossier listing, which is the one endpoint carrying every record
+	// beside its `fileId`.
+	it('resolves the clicked file to its document id before POSTing', async () => {
+		mockGet.mockImplementation((url) => {
+			if (String(url).includes('/dossier'))
+				return Promise.resolve({
+					data: {
+						informatieobjecten: [
+							{ id: 'doc-7', fileId: 77, title: 'Besluit' },
+							{ id: 'doc-8', fileId: 88, title: 'Bijlage' },
+						],
+					},
+				})
+			return Promise.resolve({ data: {} })
+		})
+		mockPost.mockResolvedValue({ data: { results: [{ success: true }] } })
+
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: {
+				mode: 'mark-final',
+				fileId: 77,
+				fileName: 'besluit.pdf',
+				caseId: 'case-1',
+			},
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('bulk/status'),
+			{ ids: ['doc-7'], status: 'final' },
+		)
+	})
+
+	it('refuses instead of reporting 0 of 0 when the file has no record yet', async () => {
+		// A file dropped a moment ago has no informatieobject until the
+		// projection listener runs. Posting an empty id list answers 200 with
+		// an empty per-item list, which rendered as a SUCCESS sentence over an
+		// act that never had a document to act on.
+		mockGet.mockResolvedValue({ data: { informatieobjecten: [] } })
+
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: {
+				mode: 'mark-final',
+				fileId: 999,
+				fileName: 'net-geupload.pdf',
+				caseId: 'case-1',
+			},
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).not.toHaveBeenCalled()
+		expect(mockSuccess).not.toHaveBeenCalled()
+		expect(mockError).toHaveBeenCalledWith(
+			'No document record was found for net-geupload.pdf, so nothing was changed',
+		)
+	})
+
+	it('lets a real selection win over the file id when both arrive', async () => {
+		mockPost.mockResolvedValue({
+			data: { results: [{ success: true }, { success: true }] },
+		})
+		const wrapper = mount(BulkDocumentActionDialog, {
+			props: {
+				mode: 'mark-final',
+				selectedIds: ['join-1', 'join-2'],
+				fileId: 77,
+				caseId: 'case-1',
+			},
+		})
+
+		await wrapper.vm.onConfirm()
+		await flushPromises()
+
+		expect(mockPost).toHaveBeenCalledWith(
+			expect.stringContaining('bulk/status'),
+			{ ids: ['doc-1', 'doc-2'], status: 'final' },
+		)
+	})
+})

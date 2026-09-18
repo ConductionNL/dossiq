@@ -415,7 +415,8 @@ const registry = {
 	CaseLifecycleActionDialog: {
 		kind: 'modal',
 		component: CaseLifecycleActionDialog,
-		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen; the manifest header actions open it with `props.action`. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
+		_note: 'One reason dialog for Suspend, Resume, Extend term and Reopen. It reads /lifecycle first, so a gesture the case type forbids says so before the POST rather than after it.',
+		_orphanReason: "NO MANIFEST ACTION OPENS THIS, and its own note claimed four did until tests/vitest/registryOrphans.spec.js asked. The CaseDetail header carries `case-lifecycle-menu` onto CaseLifecycleMenuDialog, which offers the same four gestures and POSTs them itself, so this dialog has had no caller since that menu landed. It is named here rather than deleted because the deletion is a decision about which of the two surfaces is the one: this one reads GET /api/case/{id}/lifecycle before it posts and the menu does its own checks, and moving the gestures between them is its own change. What this entry buys in the meantime is that the debt is written down where the next reader of the registry will see it, instead of being a component nobody can find a route to.",
 	},
 	// @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
 	CaseLifecycleMenuDialog: {
@@ -618,12 +619,12 @@ const registry = {
 	BulkDocumentActionDialog: {
 		kind: 'modal',
 		component: BulkDocumentActionDialog,
-		_note: 'Mark final / Change confidentiality / Download ZIP on a Documents-tab selection, one dialog in three `mode`s (mirrors BulkTransitionDialog). Opened by the object-list `bulkActions` entries as `type: open-modal`; CnObjectListWidget merges `props.selectedIds` onto the declared props the same way a drop merges `props.files`.',
+		_note: "Mark final / Change confidentiality / Download ZIP, one dialog in three `mode`s (mirrors BulkTransitionDialog). ITS PARENT IS GONE: the Documents tab whose object-list `bulkActions` opened it was retired on 2026-09-13 and replaced by the `case-files` leaf, and this note went on naming it for five days while no manifest action named this dialog at all. tests/vitest/registryOrphans.spec.js fails on that now. Opened today by the `case-files` `rowActions` entries Mark as final and Change confidentiality, as `type: open-modal`; CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto the declared props, so the dialog resolves ONE informatieobject through the case's dossier listing rather than a selection of join ids. The `selectedIds` path stays for a widget object-list that still hands a selection over, and takes precedence when it is non-empty. `zip` mode has no caller here on purpose: the whole case file as one download is the CaseDetail `export-dossier` header action, and two buttons for one zip is a worse answer than one.",
 	},
 	VersionHistoryPanel: {
 		kind: 'modal',
 		component: VersionHistoryPanel,
-		_note: 'Version history for one dossier document, over the Nextcloud Files versions WebDAV API. Opened by the object-list `rowActions` Versions entry as `type: open-modal`; CnObjectListWidget merges `props.row` (the clicked zaakinformatieobject row, `informatieobject` inlined by `content.extend`) onto the declared props (nextcloud-vue#1117) -- an open-modal row action otherwise carries no per-click information at all. Self-sufficient: reads the informatieobject off `row.informatieobject` and the signed-in user via `getCurrentUser()`, since there is no parent DossierTab any more to pass either down.',
+		_note: "Version history for one dossier document, over the Nextcloud Files versions WebDAV API. ITS PARENT IS GONE, the same way BulkDocumentActionDialog's is: the object-list `rowActions` Versions entry that opened it belonged to the Documents tab retired on 2026-09-13, and nothing has named this dialog since. Opened today by the `case-files` `rowActions` Versions entry, where CnFilesBrowser merges the clicked node's `fileId`, `fileName` and `path` onto the declared props; the older `props.row` path (the zaakinformatieobject row with `informatieobject` inlined by `content.extend`, nextcloud-vue#1117) is still read, second, for a widget object-list that passes one. Handed neither, the panel names the file it could not find and offers Show in Files rather than rendering an empty version list. Self-sufficient: the signed-in user comes from `getCurrentUser()`, since there is no parent DossierTab any more to pass it down.",
 	},
 
 	// --- The inline task pane on the case page (task-on-the-case A06). ---

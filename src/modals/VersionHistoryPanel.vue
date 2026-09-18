@@ -8,14 +8,29 @@
 			</h4>
 
 			<NcEmptyContent
-				v-if="!loading && versions.length === 0"
+				v-if="hasNoFile"
+				class="dossier-version-panel__refusal"
+				:name="t('dossiq', 'No file to read versions of')"
+				:description="refusalDescription">
+				<template #icon>
+					<History :size="20" />
+				</template>
+				<template #action>
+					<NcButton variant="secondary" @click="showInFiles">
+						{{ t('dossiq', 'Show in Files') }}
+					</NcButton>
+				</template>
+			</NcEmptyContent>
+
+			<NcEmptyContent
+				v-if="!hasNoFile && !loading && versions.length === 0"
 				:name="t('dossiq', 'No previous versions')">
 				<template #icon>
 					<History :size="20" />
 				</template>
 			</NcEmptyContent>
 
-			<NcLoadingIcon v-if="loading" :size="24" />
+			<NcLoadingIcon v-if="loading && !hasNoFile" :size="24" />
 
 			<ul v-if="versions.length > 0" class="dossier-version-panel__list">
 				<li
@@ -63,7 +78,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
-import { generateRemoteUrl } from '@nextcloud/router'
+import { generateRemoteUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
@@ -80,6 +95,17 @@ import History from 'vue-material-design-icons/History.vue'
  * `document` object a parent DossierTab used to pass down directly, and no
  * `userId` prop either, since there is no parent to read `getCurrentUser()`
  * for it any more.
+ *
+ * TWO CALLERS, ONE FILE (document-acts-reach-a-surface REQ-ZAK-020). This
+ * panel was registered and named by no manifest action at all between
+ * 2026-09-13, when the Documents tab that opened it was retired, and this
+ * change. The `case-files` leaf opens it now, and CnFilesBrowser merges the
+ * clicked node's `fileId`, `fileName` and `path` onto the action's props
+ * rather than a row, so `fileId` is read first and `row.informatieobject`
+ * second. Handed NEITHER, it says which file it could not find and offers
+ * Show in Files; it does NOT render the empty-versions state, because a file
+ * with no history and no file at all are two different sentences and only one
+ * of them is about the document.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
@@ -104,6 +130,27 @@ export default {
 		row: {
 			type: Object,
 			default: () => ({}),
+		},
+
+		/**
+		 * The Nextcloud file id of the clicked node, merged onto an
+		 * `open-modal` row action's props by CnFilesBrowser.
+		 *
+		 * This is the path the `case-files` leaf uses and the only one that
+		 * still has a caller: the Documents tab that handed `row` down was
+		 * retired on 2026-09-13. `row` is kept because a widget row action on
+		 * an object-list still passes it, and losing that would swap one dark
+		 * caller for another.
+		 */
+		fileId: {
+			type: [String, Number],
+			default: '',
+		},
+
+		/** The clicked node's name, for the refusal sentence. */
+		fileName: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -130,6 +177,40 @@ export default {
 		},
 
 		/**
+		 * The Nextcloud file id whose versions this panel reads.
+		 *
+		 * The `fileId` prop wins over the row, because a row action on the
+		 * files browser names the node that was clicked while `row` is empty
+		 * there.
+		 *
+		 * @return {number} The file id, or 0 when neither prop carries one.
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 */
+		resolvedFileId() {
+			const fromProp = Number(this.fileId)
+			if (Number.isFinite(fromProp) && fromProp > 0) {
+				return fromProp
+			}
+			const fromRow = Number(this.document.fileId)
+			return Number.isFinite(fromRow) && fromRow > 0 ? fromRow : 0
+		},
+
+		/**
+		 * Whether the panel was handed no file at all.
+		 *
+		 * A panel with no file must SAY so. Rendering the empty-versions state
+		 * instead reads as "this file has no previous versions", which is a
+		 * different sentence and the wrong one: no versions and no file look
+		 * identical to a reader.
+		 *
+		 * @return {boolean} True when neither prop named a file.
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 */
+		hasNoFile() {
+			return this.resolvedFileId === 0
+		},
+
+		/**
 		 * The signed-in user id, for the versions DAV path.
 		 *
 		 * @return {string} The user id, or empty string.
@@ -148,6 +229,26 @@ export default {
 		 */
 		restoreDisabled() {
 			return this.document.status === 'final'
+		},
+
+		/**
+		 * The sentence the refusal shows, naming the file when one was named.
+		 *
+		 * @return {string} The description.
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 */
+		refusalDescription() {
+			if (this.fileName !== '') {
+				return this.t(
+					'dossiq',
+					'{name} could not be resolved to a file on this server, so its versions cannot be read here.',
+					{ name: this.fileName },
+				)
+			}
+			return this.t(
+				'dossiq',
+				'This panel was opened without a file, so there is nothing to read versions of.',
+			)
 		},
 	},
 
@@ -176,7 +277,7 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		async fetchVersions() {
-			if (!this.document.fileId || !this.userId) {
+			if (this.resolvedFileId === 0 || !this.userId) {
 				this.versions = []
 				return
 			}
@@ -190,7 +291,7 @@ export default {
 				// said "No previous versions" on every such instance — including the
 				// `php -S` instance this app's own E2E job runs on.
 				const url = generateRemoteUrl(
-					`dav/versions/${this.userId}/versions/${this.document.fileId}`,
+					`dav/versions/${this.userId}/versions/${this.resolvedFileId}`,
 				)
 				const { data } = await axios.request({
 					method: 'PROPFIND',
@@ -231,7 +332,7 @@ export default {
 				if (
 					!href
 					|| href.textContent.endsWith(
-						'/versions/' + this.document.fileId + '/',
+						'/versions/' + this.resolvedFileId + '/',
 					)
 				) {
 					return
@@ -279,6 +380,23 @@ export default {
 				return
 			}
 			window.open(version.id, '_blank')
+		},
+
+		/**
+		 * Open the Files app when this panel has no file of its own to read.
+		 *
+		 * The panel refuses rather than showing an empty list, and a refusal
+		 * that offers nothing to do next is a dead end; the Files app is where
+		 * the versions of any node can still be reached.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 */
+		showInFiles() {
+			if (typeof window === 'undefined') {
+				return
+			}
+			window.open(generateUrl('/apps/files'), '_blank', 'noopener')
 		},
 
 		/**
