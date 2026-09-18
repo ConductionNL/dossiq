@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
 use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeReachability;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
@@ -170,6 +171,7 @@ class CaseTypePublishValidationTest extends TestCase {
 				time: $this->clock(),
 				logger: new NullLogger(),
 			),
+			reachability: new CaseTypeReachability(),
 			logger: new NullLogger(),
 		);
 	}//end service()
