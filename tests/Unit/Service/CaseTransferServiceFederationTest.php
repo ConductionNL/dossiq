@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\CaseTransferService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
+use OCA\Dossiq\Service\Transfer\FederatedIdempotency;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
@@ -256,10 +257,9 @@ class CaseTransferServiceFederationTest extends TestCase {
 		LoggerInterface $logger,
 		TenantAuditTrailService $auditTrail,
 	): CaseTransferService {
-		$gateway = new TransferRegisterGateway($appManager, $container, $logger);
+		$gateway = new TransferRegisterGateway($appManager, $container, $logger, $settings);
 
 		return new CaseTransferService(
-			settingsService: $settings,
 			gateway: $gateway,
 			shareBroker: new TransferShareBroker($gateway, $logger),
 			logger: $logger,
@@ -278,6 +278,10 @@ class CaseTransferServiceFederationTest extends TestCase {
 			// assertion, so it answers the allowing verdict explicitly.
 			custody: self::createStub(CaseCustodyChain::class),
 			consent: self::allowingConsentGate(),
+			// A REAL idempotency over the SAME gateway. This test's subject is
+			// the federated key and the token, and both are still watched
+			// through the same register double: only the wiring line moved.
+			idempotency: new FederatedIdempotency($gateway),
 		);
 	}//end makeTransferService()
 

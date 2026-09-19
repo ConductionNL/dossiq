@@ -30,6 +30,7 @@ use DateTime;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Transfer\FederatedIdempotency;
 use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
@@ -47,7 +48,6 @@ class CaseTransferService {
 	/**
 	 * Constructor for the CaseTransferService.
 	 *
-	 * @param SettingsService $settingsService The settings service
 	 * @param TransferRegisterGateway $gateway OpenRegister resolution for the transfer surface
 	 * @param TransferShareBroker $shareBroker Transfer-scoped OCM token minting and resolution
 	 * @param LoggerInterface $logger The logger
@@ -55,11 +55,11 @@ class CaseTransferService {
 	 * @param InternalHandover $internal The same act with a team in place of the target organisation
 	 * @param CaseCustodyChain $custody The dated chain of holdings every move writes into
 	 * @param CaseTransferConsentGate $consent Whether this case may leave the organisation at all
+	 * @param FederatedIdempotency $idempotency The key a repeated federated ask is recognised by
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
 		private TransferRegisterGateway $gateway,
 		private TransferShareBroker $shareBroker,
 		private LoggerInterface $logger,
@@ -67,6 +67,7 @@ class CaseTransferService {
 		private InternalHandover $internal,
 		private CaseCustodyChain $custody,
 		private CaseTransferConsentGate $consent,
+		private FederatedIdempotency $idempotency,
 	) {
 	}//end __construct()
 
@@ -123,10 +124,9 @@ class CaseTransferService {
 			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
+		[$register, $schema] = $this->gateway->transferScope();
 
-		$precheck = $this->federatedPrecheck(
+		$precheck = $this->idempotency->precheck(
 			remoteCloudId: $remoteCloudId,
 			caseId: $caseId,
 			targetOrganization: $targetOrganization,
@@ -189,54 +189,6 @@ class CaseTransferService {
 		return $resultData;
 	}//end initiateTransfer()
 
-	/**
-	 * The idempotency key a federated hand-off needs, and the answer when there is one already.
-	 *
-	 * A hand-off that has already been initiated for this case, target and
-	 * remote is answered with the transfer that exists rather than a second
-	 * one. A local hand-off needs no key and has nothing to look up.
-	 *
-	 * @param string|null $remoteCloudId      The remote, or null for a local hand-off.
-	 * @param string      $caseId             The case.
-	 * @param string      $targetOrganization Who is receiving it.
-	 * @param int         $register           The register transfers live in.
-	 * @param int         $schema             The transfer schema.
-	 * @param object      $objectService      The OpenRegister object service.
-	 *
-	 * @return array{key: string|null, answer: array<string, mixed>|null} The key, and the
-	 *         answer to give straight back when there is one.
-	 */
-	private function federatedPrecheck(
-		?string $remoteCloudId,
-		string $caseId,
-		string $targetOrganization,
-		int $register,
-		int $schema,
-		object $objectService,
-	): array {
-		if ($remoteCloudId === null || $remoteCloudId === '') {
-			return ['key' => null, 'answer' => null];
-		}
-
-		if ($this->gateway->federationShareService() === null) {
-			return [
-				'key' => null,
-				'answer' => ['error' => 'Federated case transfer requires the OpenRegister federation leaf'],
-			];
-		}
-
-		$idempotencyKey = hash('sha256', $caseId . '|' . $targetOrganization . '|' . $remoteCloudId);
-
-		return [
-			'key' => $idempotencyKey,
-			'answer' => $this->findTransferByIdempotencyKey(
-				idempotencyKey: $idempotencyKey,
-				register: $register,
-				schema: $schema,
-				objectService: $objectService,
-			),
-		];
-	}//end federatedPrecheck()
 
 	/**
 	 * Build the initial (pending) transfer object payload with its first
@@ -391,8 +343,7 @@ class CaseTransferService {
 			return ['error' => 'OpenRegister is not available'];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
+		[$register, $schema] = $this->gateway->transferScope();
 
 		$transferData = $this->pendingTransfer(
 			objectService: $objectService,
@@ -617,8 +568,7 @@ class CaseTransferService {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
+		[$register, $schema] = $this->gateway->transferScope();
 		if (empty($register) === true || empty($schema) === true) {
 			return null;
 		}
@@ -667,40 +617,6 @@ class CaseTransferService {
 		return $this->shareBroker->resolveTransferShare(shareToken: $shareToken, transferId: $transferId);
 	}//end resolveFederatedTransferShare()
 
-	/**
-	 * Find an existing transfer by idempotency key (pending or accepted
-	 * only — a rejected transfer does not block re-initiating).
-	 *
-	 * @param string $idempotencyKey The sha256 idempotency key
-	 * @param int $register The register id
-	 * @param int $schema The schema id
-	 * @param object $objectService The resolved OR ObjectService
-	 *
-	 * @return array|null The existing transfer data, or null when none found
-	 */
-	private function findTransferByIdempotencyKey(string $idempotencyKey, int $register, int $schema, object $objectService): ?array {
-		try {
-			$matches = $objectService->findAll(
-				['filters' => ['register' => $register, 'schema' => $schema, 'idempotencyKey' => $idempotencyKey]],
-			);
-		} catch (\Throwable $e) {
-			return null;
-		}
-
-		foreach ((array)$matches as $match) {
-			$matchData = $match;
-			if (is_array($match) === false) {
-				$matchData = $match->jsonSerialize();
-			}
-
-			$status = (string)($matchData['status'] ?? '');
-			if ($status === 'pending' || $status === 'accepted') {
-				return $matchData;
-			}
-		}
-
-		return null;
-	}//end findTransferByIdempotencyKey()
 
 	/**
 	 * Hand a case to another team inside this organisation.
