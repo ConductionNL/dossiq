@@ -66,6 +66,14 @@ use Throwable;
 /**
  * Finish, abort, archive, hold, draft, promote and record incompleteness.
  *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) Ten routed endpoints over one
+ *  resource, each a three-line call into {@see CaseActs} and back through
+ *  TranslatesRefusals. The count is the number of acts a case has, not a
+ *  responsibility this class took on: there is no behaviour here to move. A
+ *  second controller would split one resource's route table in two and give a
+ *  reader of appinfo/routes.php two places to look for "what can happen to a
+ *  case".
+ *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 class CaseActsController extends Controller {

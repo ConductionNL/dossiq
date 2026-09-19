@@ -46,6 +46,15 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 /**
  * Registers the termijnbewaking and decision-outcome listeners.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Naming classes IS this class's
+ *  job. Its only method is one `registerEventListener()` call per listener, so
+ *  its coupling is the count of listeners dossiq attaches to OpenRegister's
+ *  events and nothing else: it holds no state, reaches through none of them and
+ *  calls no method on any of them. Splitting it would leave two registrars that
+ *  each know half the wiring, which is how a listener stops registering without
+ *  anything failing, and that silent stop is the failure this file's own
+ *  comments are about.
+ *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md

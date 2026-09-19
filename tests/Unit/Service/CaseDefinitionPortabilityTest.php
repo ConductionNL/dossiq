@@ -34,7 +34,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseDefinitionExportService;
+use OCA\Dossiq\Service\CaseDefinition\PackageIds;
+use OCA\Dossiq\Service\CaseDefinition\PackageValidator;
 use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
+use OCA\Dossiq\Service\CaseDefinition\WorkflowDeployer;
 use OCA\Dossiq\Service\CaseDefinitionImportService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -223,6 +226,8 @@ class CaseDefinitionPortabilityTest extends TestCase {
 		return new CaseDefinitionImportService(
 			new NullLogger(),
 			new PackageWriter(new NullLogger(), $settings),
+			new WorkflowDeployer(new NullLogger(), $settings),
+			new PackageValidator(new NullLogger(), new PackageIds()),
 		);
 	}//end importer()
 

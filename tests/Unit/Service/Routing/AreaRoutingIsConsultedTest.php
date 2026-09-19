@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Routing;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
+use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
 use OCA\Dossiq\Service\SettingsService;
@@ -56,6 +57,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\RoleResolverService::resolve
  * @uses \OCA\Dossiq\Service\Routing\AreaRouting
  * @uses \OCA\Dossiq\Service\Routing\RoleDelegationResolver
+ * @uses \OCA\Dossiq\Service\Routing\RoleResolutionCache
  * @uses \OCA\Dossiq\Service\Routing\RoutingStrategyInterface
  * @uses \OCA\Dossiq\Service\Routing\StrategyRegistry
  * @uses \OCA\Dossiq\Service\SettingsService
@@ -196,7 +198,10 @@ class AreaRoutingIsConsultedTest extends TestCase {
 		return new RoleResolverService(
 			registry: $registry,
 			settingsService: $settings,
-			cacheFactory: $cacheFactory,
+			// A REAL cache over the SAME factory double, which answers a miss,
+			// so every resolve in this suite still runs the strategy. Only the
+			// wiring line moved when the cache was split out.
+			cache: new RoleResolutionCache($cacheFactory),
 			delegation: $delegation,
 			area: new AreaRouting(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),

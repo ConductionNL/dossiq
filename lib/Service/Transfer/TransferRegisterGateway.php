@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transfer;
 
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -57,13 +58,32 @@ class TransferRegisterGateway {
 	 * @param IAppManager $appManager The app manager
 	 * @param ContainerInterface $container The DI container
 	 * @param LoggerInterface $logger The logger
+	 * @param SettingsService $settings The register and schema names
 	 */
 	public function __construct(
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly SettingsService $settings,
 	) {
 	}//end __construct()
+
+	/**
+	 * The register and schema a transfer record is written to.
+	 *
+	 * Named here rather than at each call site, because a transfer read from
+	 * one schema and written to another is a hand-off that answers as missing.
+	 *
+	 * @return array{0: int, 1: int} The register and the schema.
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md
+	 */
+	public function transferScope(): array {
+		return [
+			(int)$this->settings->getConfigValue('register'),
+			(int)$this->settings->getConfigValue('case_transfer_schema'),
+		];
+	}//end transferScope()
 
 	/**
 	 * Get the OpenRegister ObjectService.

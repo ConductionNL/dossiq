@@ -28,12 +28,13 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseRebindService;
+use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Termijn\TermRearm;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -43,13 +44,14 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseRebindService
  *
+ * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\CaseTypeSlugResolver
  * @uses \OCA\Dossiq\Service\CaseType\EngineRunMigration
  * @uses \OCA\Dossiq\Service\SettingsService
- * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Termijn\TermRearm
  */
 class CaseRebindServiceTest extends TestCase {
 
@@ -155,14 +157,19 @@ class CaseRebindServiceTest extends TestCase {
 				=> ($isCoordinator === true && $group === CaseRebindService::COORDINATOR_GROUP)
 		);
 
+		$resolver = new CaseTypeResolver(store: $store);
+
 		return new CaseRebindService(
 			settingsService: $settings,
 			store: $store,
-			resolver: new CaseTypeResolver(store: $store),
+			resolver: $resolver,
 			engine: $this->engine(refusal: $engineRefusal),
 			terms: $this->terms(),
 			slugs: $this->createMock(CaseTypeSlugResolver::class),
-			groupManager: $groups,
+			// A REAL gate over the SAME store, resolver and group double the
+			// assertions read through. Only the wiring line moved when the
+			// refusals were split out.
+			gate: new CaseRebindGate(store: $store, resolver: $resolver, groupManager: $groups),
 			logger: new NullLogger(),
 		);
 	}//end service()
@@ -230,17 +237,17 @@ class CaseRebindServiceTest extends TestCase {
 	}//end engine()
 
 	/**
-	 * The term service, recording what it was asked to re-arm.
+	 * The re-arm, recording what it was asked to re-arm.
 	 *
-	 * @return TermijnService The double.
+	 * @return TermRearm The double.
 	 */
-	private function terms(): TermijnService {
-		$terms = $this->getMockBuilder(TermijnService::class)
+	private function terms(): TermRearm {
+		$terms = $this->getMockBuilder(TermRearm::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['rearmForDefinition'])
+			->onlyMethods(['forDefinition'])
 			->getMock();
 
-		$terms->method('rearmForDefinition')->willReturn(['rearmed' => 1, 'kept' => 0, 'note' => '']);
+		$terms->method('forDefinition')->willReturn(['rearmed' => 1, 'kept' => 0, 'note' => '']);
 
 		return $terms;
 	}//end terms()

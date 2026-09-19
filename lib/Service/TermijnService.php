@@ -37,8 +37,8 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\Support\SearchesObjects;
-use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
+use OCA\Dossiq\Service\Termijn\TermInstanceStore;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Timeline\TermEventEntry;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -49,14 +49,20 @@ use RuntimeException;
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
 class TermijnService {
-	use SearchesObjects;
 
 	/**
-	 * Per-request TermijnDefinitie cache keyed by zaaktype.
+	 * What a case type's term definitions say.
 	 *
-	 * @var array<string, array<string, mixed>>
+	 * @var TermDefinitions
 	 */
-	private array $definitieCache = [];
+	private readonly TermDefinitions $definitions;
+
+	/**
+	 * Where a term instance is read and written.
+	 *
+	 * @var TermInstanceStore
+	 */
+	private readonly TermInstanceStore $store;
 
 	/**
 	 * Constructor.
@@ -66,7 +72,17 @@ class TermijnService {
 	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
 	 * @param TermEventEntry|null $termEntry The timeline entry a term event writes.
 	 * @param CaseDateNormaliser|null $dates Reads a date off a case in the one place that knows its shapes.
-	 * @param WorkingDayRoll|null $roll Counts a term in working days when its definition asks for them.
+	 * @param TermDefinitions|null $definitions What a case type's term definitions say, and the end
+	 *        date their duration implies. It took the `roll` parameter's place: counting a term in
+	 *        working days is what a definition's counting mode asks for, so the calendar is reached
+	 *        from there rather than from here, and no caller passed a sixth argument. Left out it is
+	 *        built over the settings, the logger and the TIMER this service was given, because the
+	 *        Awt roll moved into it and a default built without the timer would answer an unrolled
+	 *        end date to a caller that used to get a rolled one.
+	 * @param TermInstanceStore|null $store Where a term instance is read and written. Left out it is
+	 *        built over the same settings and logger this service was given, because those are its
+	 *        only two dependencies and a default built from them is the same store the container
+	 *        wires: fifteen test builds keep working without naming a collaborator they never chose.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -74,8 +90,16 @@ class TermijnService {
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermEventEntry $termEntry = null,
 		private readonly ?CaseDateNormaliser $dates = null,
-		private readonly ?WorkingDayRoll $roll = null,
+		?TermDefinitions $definitions = null,
+		?TermInstanceStore $store = null,
 	) {
+		$this->definitions = ($definitions ?? new TermDefinitions(
+			settingsService: $settingsService,
+			logger: $logger,
+			roll: null,
+			timer: $timerService,
+		));
+		$this->store = ($store ?? new TermInstanceStore(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
 
 	/**
@@ -125,27 +149,13 @@ class TermijnService {
 		}
 
 		$durationDays = (int)($definitie['standardDurationDays'] ?? 0);
-		$computed = $this->endDateFor(start: $startDate, days: $durationDays, definitie: $definitie);
-
-		// THE ALGEMENE TERMIJNENWET ROLL. `+N days` on its own lands a third
-		// of dossiq's terms on a Saturday, a Sunday or a recognised holiday,
-		// which Awt art. 1 says must move to the next ordinary day.
-		//
-		// 🔑 ONE ROLL FOR THE WHOLE APP, AND IT IS THE TIMER SERVICE'S.
-		// `rollTermEndFor()` is the call every other term site makes, it reads
-		// the declared flag itself, and it refuses when a term names a
-		// calendar the engine cannot resolve. A second roll here read the same
-		// flag with the OPPOSITE default for a few hours, which is how two
-		// implementations of one statutory rule start answering different
-		// dates for the same case.
-		//
-		// The armed timer inherits the rolled date without a third rule: it
-		// derives its SLA from `endDateCurrent` through
-		// {@see TermijnTimerService::slaDaysFor()}, so one computation decides
-		// both the stored date and the deadline the engine counts to.
-		$computed = ($this->timerService?->rollTermEndFor(date: $computed, definitie: $definitie) ?? $computed);
-
-		$endDate = $computed->format('Y-m-d');
+		// COUNTED AND ROLLED IN ONE CALL. The Algemene termijnenwet roll used to
+		// sit here, one line below the count, and the two always ran together.
+		// They live together now, on the class that reads what the definition
+		// declares, so no caller can take the count without the roll.
+		$endDate = $this->definitions
+			->endDateFor(start: $startDate, days: $durationDays, definitie: $definitie)
+			->format('Y-m-d');
 
 		$instance = [
 			'case' => $caseId,
@@ -171,7 +181,7 @@ class TermijnService {
 			$instance['resolutionSnapshot'] = (array)($resolution['snapshot'] ?? []);
 		}
 
-		$saved = $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
+		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
 		if ($saved === null) {
 			throw new RuntimeException(
 				'Failed to persist TermijnInstance for zaak "' . $caseId . '" (persistence unavailable)'
@@ -189,76 +199,6 @@ class TermijnService {
 
 		return ($this->armEngineTimer(instance: $saved, definitie: $definitie) ?? $saved);
 	}//end createTermijnInstance()
-
-	/**
-	 * The end date of a term, counted in the mode its definition declares.
-	 *
-	 * 🔴 A DEGRADED WORKING-DAY TERM IS LOGGED, NOT SILENTLY SHORTENED. When
-	 * the definition asks for working days and the organisation calendar does
-	 * not answer, the fallback counts calendar days, which gives the case a
-	 * SHORTER term than it is owed: ten working days is fourteen calendar
-	 * days, so the applicant loses four. That is the documented degradation
-	 * (D-2, the D-7 posture) and it is stated at warning naming the case type,
-	 * because a term nobody can see is short is the failure this whole change
-	 * exists to end.
-	 *
-	 * @param DateTimeImmutable    $start     The day the term starts.
-	 * @param int                  $days      The declared duration.
-	 * @param array<string, mixed> $definitie The definition.
-	 *
-	 * @return DateTimeImmutable The end date, before the Awt roll.
-	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
-	 *
-	 * @psalm-suppress FalsableReturnStatement `modify()` is falsable in the
-	 * stub because its argument is an arbitrary string. Here the string is
-	 * built from an int, so the only value that could make it unparseable does
-	 * not exist; PHP 8.3 throws rather than returning false in any case.
-	 */
-	private function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
-		$mode = self::countingModeOf(definitie: $definitie);
-		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS || $this->roll === null) {
-			return $start->modify('+' . $days . ' days');
-		}
-
-		$computed = $this->roll->endAfter(start: $start, days: $days, mode: $mode);
-		if ($computed !== null) {
-			return $computed;
-		}
-
-		$this->logger->warning(
-			'Dossiq termijn: a term declares working days and the organisation calendar did not answer, '
-			. 'so its end date was counted in calendar days and the term is SHORTER than it is owed',
-			['caseType' => (string)($definitie['caseType'] ?? ''), 'days' => $days]
-		);
-
-		return $start->modify('+' . $days . ' days');
-	}//end endDateFor()
-
-	/**
-	 * The counting mode a definition declares.
-	 *
-	 * Static, because the timer service asks the same question of the same row
-	 * and two readings of one declaration is how the badge and the engine come
-	 * to count down to different dates. An absent or unknown value reads as
-	 * calendar days: every definition written before this property existed
-	 * counts them, and an Awb beslistermijn counts them by law.
-	 *
-	 * @param array<string, mixed> $definitie The definition.
-	 *
-	 * @return string One of the two modes.
-	 *
-	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
-	 */
-	public static function countingModeOf(array $definitie): string {
-		$declared = trim((string)($definitie['countingMode'] ?? ''));
-
-		if ($declared === WorkingDayRoll::MODE_WORKING_DAYS) {
-			return WorkingDayRoll::MODE_WORKING_DAYS;
-		}
-
-		return WorkingDayRoll::MODE_CALENDAR_DAYS;
-	}//end countingModeOf()
 
 	/**
 	 * Arm the engine timer for a freshly created instance and store its
@@ -299,31 +239,7 @@ class TermijnService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnInstance(string $termInstanceId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		try {
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $termInstanceId
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermijnService.getTermijnInstance failed',
-				['id' => $termInstanceId, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->store->read(termInstanceId: $termInstanceId);
 	}//end getTermijnInstance()
 
 	/**
@@ -336,34 +252,7 @@ class TermijnService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnInstanceForZaak(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['case' => $caseId]);
-		} catch (\Throwable $e) {
-			return null;
-		}
-
-		if (count($rows) === 0) {
-			return null;
-		}
-
-		usort(
-			$rows,
-			static fn (array $a, array $b): int
-				=> strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''))
-		);
-
-		return $rows[0];
+		return $this->store->latestForCase(caseId: $caseId);
 	}//end getTermijnInstanceForZaak()
 
 	/**
@@ -384,48 +273,7 @@ class TermijnService {
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
 	public function instancesForCase(string $caseId): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null || $caseId === '') {
-			return [];
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['case' => $caseId]
-			);
-		} catch (\Throwable $e) {
-			// NOT an empty list. A case with no clocks and a case whose clocks
-			// could not be read are opposite facts, and the second rendered as
-			// the first tells a handler there is no deadline.
-			$this->logger->warning(
-				'TermijnService.instancesForCase lookup failed, so the read is refused',
-				['case' => $caseId, 'error' => $e->getMessage()]
-			);
-
-			throw new RefusedException(
-				rule: 'term-instances-unreadable',
-				sentence: 'The terms on this case could not be read.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}//end try
-
-		usort(
-			$rows,
-			static fn (array $a, array $b): int
-				=> strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''))
-		);
-
-		return $rows;
+		return $this->store->allForCase(caseId: $caseId);
 	}//end instancesForCase()
 
 	/**
@@ -444,7 +292,7 @@ class TermijnService {
 	 * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
 	 */
 	public function saveTermInstance(array $instance): ?array {
-		$saved = $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
+		$saved = $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
 
 		// A REWRITE IS NOT A START. `bindStatutory()` re-binds a term that is
 		// already running when the case type's fixed end date moves, and a
@@ -475,7 +323,7 @@ class TermijnService {
 
 		$merged = array_merge($current, $patch);
 		$merged['id'] = $termInstanceId;
-		return $this->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
+		return $this->store->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
 	}//end updateTermijnInstance()
 
 	/**
@@ -491,17 +339,7 @@ class TermijnService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function getTermijnDefinitie(string $caseType): ?array {
-		if (isset($this->definitieCache[$caseType]) === true) {
-			return $this->definitieCache[$caseType];
-		}
-
-		$active = $this->definitionsFor(caseType: $caseType);
-		if (count($active) === 0) {
-			return null;
-		}
-
-		$this->definitieCache[$caseType] = $active[0];
-		return $active[0];
+		return $this->definitions->activeFor(caseType: $caseType);
 	}//end getTermijnDefinitie()
 
 	/**
@@ -521,60 +359,8 @@ class TermijnService {
 	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function definitionsFor(string $caseType): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['caseType' => $caseType]
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermijnService.definitionsFor lookup failed',
-				['caseType' => $caseType, 'error' => $e->getMessage()]
-			);
-			return [];
-		}
-
-		$today = (new DateTimeImmutable())->format('Y-m-d');
-		$active = $this->filterActiveDefinities(rows: $rows, today: $today);
-
-		usort(
-			$active,
-			static fn (array $a, array $b): int
-				=> strcmp((string)($b['validFrom'] ?? ''), (string)($a['validFrom'] ?? ''))
-		);
-
-		return $active;
+		return $this->definitions->allActiveFor(caseType: $caseType);
 	}//end definitionsFor()
-
-	/**
-	 * Keep the TermijnDefinitie rows whose validity window covers today.
-	 *
-	 * @param array<int, array<string, mixed>> $rows Candidate definitions.
-	 * @param string $today Today's date as `Y-m-d`.
-	 *
-	 * @return array<int, array<string, mixed>> The definitions valid today.
-	 */
-	private function filterActiveDefinities(array $rows, string $today): array {
-		$active = [];
-		foreach ($rows as $row) {
-			$validFrom = (string)($row['validFrom'] ?? '1970-01-01');
-			$validUntil = (string)($row['validUntil'] ?? '');
-			if ($validFrom <= $today && ($validUntil === '' || $validUntil >= $today)) {
-				$active[] = $row;
-			}
-		}//end foreach
-
-		return $active;
-	}//end filterActiveDefinities()
 
 	/**
 	 * Mark a TermijnInstance as completed.
@@ -639,298 +425,6 @@ class TermijnService {
 	}//end markTermijnCompleted()
 
 	/**
-	 * Re-arm this case's running terms against another case type's definition.
-	 *
-	 * 🔴 A REBIND MOVES NO STATUTORY CLOCK, AND THAT IS THE WHOLE RULE. The
-	 * case was received on a day, and the Awb term runs from the day it was
-	 * received, not from the day somebody noticed it had been filed under the
-	 * wrong type. So the new instance keeps the old one's `startDate`, and the
-	 * only thing the target definition supplies is the DURATION. Starting the
-	 * clock again at the rebind would hand the organisation weeks it is not
-	 * entitled to, silently, on every case that was ever refiled.
-	 *
-	 * 🔑 EXTENSIONS AND SUSPENSIONS TRAVEL AS DAYS, NOT AS DATES. An Awb 4:14
-	 * verdaging is "this term is longer by N days", and the days are what
-	 * survives a change of definition: carrying the old `endDateCurrent`
-	 * forward would carry the old duration with it and quietly ignore the
-	 * target's rule. Each carried event is re-recorded on the new instance, so
-	 * the trail says why the end date is where it is rather than leaving a
-	 * number nobody can account for. D-2's fixture is the test of exactly this:
-	 * a 56-day term started 1 June, extended once by 14 days, rebound on 20
-	 * June to an 84-day definition, ends on 1 June plus 98 days.
-	 *
-	 * A target case type with no term definition is NOT an empty answer. The
-	 * old instances are left running and the count of them is reported, because
-	 * completing a statutory clock that has no successor is how a case silently
-	 * stops being watched.
-	 *
-	 * @param string $caseId       The case whose terms are re-armed.
-	 * @param string $caseTypeSlug The TARGET case type, as the slug the term
-	 *                             definitions are keyed by. A uuid matches no
-	 *                             definition and the re-arm silently does
-	 *                             nothing, so callers holding one convert it
-	 *                             through {@see CaseTypeSlugResolver} first.
-	 * @param string $reason       Why the case was rebound, for the trail.
-	 *
-	 * @return array{rearmed: int, kept: int, note: string} What happened to the clocks.
-	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 */
-	public function rearmForDefinition(string $caseId, string $caseTypeSlug, string $reason): array {
-		$running = [];
-		foreach ($this->instancesForCase(caseId: $caseId) as $instance) {
-			if ((string)($instance['status'] ?? '') === 'lopend') {
-				$running[] = $instance;
-			}
-		}
-
-		if ($running === []) {
-			return ['rearmed' => 0, 'kept' => 0, 'note' => ''];
-		}
-
-		$definitie = $this->getTermijnDefinitie(caseType: $caseTypeSlug);
-		if ($definitie === null) {
-			$this->logger->warning(
-				'TermijnService.rearmForDefinition: the target case type has no active term definition, '
-					. 'so the running terms were left on the definition they started under',
-				['case' => $caseId, 'caseType' => $caseTypeSlug, 'running' => count($running)]
-			);
-
-			return [
-				'rearmed' => 0,
-				'kept' => count($running),
-				'note' => 'The target case type has no active term definition, so this case\'s running terms '
-					. 'were left as they are rather than closed with nothing to replace them.',
-			];
-		}
-
-		$rearmed = 0;
-		foreach ($running as $instance) {
-			if ($this->rearmOne(instance: $instance, caseId: $caseId, caseTypeSlug: $caseTypeSlug, reason: $reason) === true) {
-				$rearmed++;
-			}
-		}
-
-		return [
-			'rearmed' => $rearmed,
-			'kept' => (count($running) - $rearmed),
-			'note' => '',
-		];
-	}//end rearmForDefinition()
-
-	/**
-	 * Close one running term and open its successor on the same start date.
-	 *
-	 * @param array<string, mixed> $instance     The running instance.
-	 * @param string               $caseId       The case.
-	 * @param string               $caseTypeSlug The target case type's slug.
-	 * @param string               $reason       Why the case was rebound.
-	 *
-	 * @return boolean True when the successor was created.
-	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 */
-	private function rearmOne(array $instance, string $caseId, string $caseTypeSlug, string $reason): bool {
-		$instanceId = (string)($instance['id'] ?? '');
-		if ($instanceId === '') {
-			return false;
-		}
-
-		$carried = $this->carriedEvents(termInstanceId: $instanceId);
-		$startDate = $this->startOf(instance: $instance);
-
-		try {
-			$successor = $this->createTermijnInstance(
-				caseId: $caseId,
-				caseType: $caseTypeSlug,
-				startDate: $startDate
-			);
-		} catch (NoTermijnDefinitieException | RuntimeException $e) {
-			// The successor is created BEFORE the old one is closed, so a
-			// failure here leaves the case with the clock it already had
-			// rather than with none at all.
-			$this->logger->error(
-				'TermijnService.rearmForDefinition: the successor term could not be created, '
-					. 'so the running term was left alone',
-				['case' => $caseId, 'instance' => $instanceId, 'error' => $e->getMessage()]
-			);
-
-			return false;
-		}
-
-		$this->markTermijnCompleted(
-			termInstanceId: $instanceId,
-			rationale: 'Termijn afgesloten bij herbinding naar een ander zaaktype: ' . $reason,
-		);
-
-		$this->replay(successor: $successor, carried: $carried);
-
-		return true;
-	}//end rearmOne()
-
-	/**
-	 * Re-record the old term's extensions and suspensions on its successor.
-	 *
-	 * @param array<string, mixed>             $successor The new instance.
-	 * @param array<int, array<string, mixed>> $carried   The events to carry.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 */
-	private function replay(array $successor, array $carried): void {
-		$successorId = (string)($successor['id'] ?? '');
-		if ($successorId === '' || $carried === []) {
-			return;
-		}
-
-		$days = 0;
-		$extensions = 0;
-		foreach ($carried as $event) {
-			$impact = (int)($event['daysImpact'] ?? 0);
-			$days += $impact;
-			if ((string)($event['type'] ?? '') === 'verdaging') {
-				$extensions++;
-			}
-
-			$this->recordEvent(
-				termInstanceId: $successorId,
-				type: (string)($event['type'] ?? 'verdaging'),
-				basis: (string)($event['basis'] ?? 'AWB 4:14'),
-				rationale: (string)($event['rationale'] ?? ''),
-				daysImpact: $impact,
-				moment: $this->momentOf(event: $event),
-				actor: (string)($event['actor'] ?? 'system'),
-			);
-		}
-
-		if ($days === 0 && $extensions === 0) {
-			return;
-		}
-
-		$current = $this->shifted(
-			calculated: (string)($successor['endDateCalculated'] ?? ''),
-			days: $days,
-		);
-
-		$this->updateTermijnInstance(
-			termInstanceId: $successorId,
-			patch: ['endDateCurrent' => $current, 'countExtensions' => $extensions]
-		);
-	}//end replay()
-
-	/**
-	 * A calculated end date moved by the days the carried events are worth.
-	 *
-	 * @param string $calculated The calculated end date, `Y-m-d`, or '' when there is none.
-	 * @param int    $days       The days to move it by, which may be negative.
-	 *
-	 * @return string The moved date, or the calculated one when there is nothing to move.
-	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 */
-	private function shifted(string $calculated, int $days): string {
-		if ($calculated === '' || $days === 0) {
-			return $calculated;
-		}
-
-		$sign = '-';
-		if ($days >= 0) {
-			$sign = '+';
-		}
-
-		return (new DateTimeImmutable($calculated))
-			->modify($sign . abs($days) . ' days')
-			->format('Y-m-d');
-	}//end shifted()
-
-	/**
-	 * The events of one instance that change how long it runs.
-	 *
-	 * `start` is excluded because the successor's own start event already
-	 * carries the target definition's duration, and adding the old one would
-	 * count a duration twice. `voltooi` is excluded because it ends a term
-	 * rather than lengthening it.
-	 *
-	 * @param string $termInstanceId The instance.
-	 *
-	 * @return array<int, array<string, mixed>> The events, oldest first.
-	 *
-	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
-	 */
-	private function carriedEvents(string $termInstanceId): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue('termijn_gebeurtenis_schema');
-		if ($objectService === null || $register === '' || $schema === '') {
-			return [];
-		}
-
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['deadlineInstance' => $termInstanceId]
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'TermijnService.carriedEvents lookup failed, so no extension was carried forward',
-				['instance' => $termInstanceId, 'error' => $e->getMessage()]
-			);
-
-			return [];
-		}
-
-		$carried = [];
-		foreach ($rows as $row) {
-			if (in_array((string)($row['type'] ?? ''), ['start', 'voltooi'], true) === false) {
-				$carried[] = $row;
-			}
-		}
-
-		usort(
-			$carried,
-			static fn (array $a, array $b): int
-				=> strcmp((string)($a['moment'] ?? ''), (string)($b['moment'] ?? ''))
-		);
-
-		return $carried;
-	}//end carriedEvents()
-
-	/**
-	 * The day a running term started, as a date.
-	 *
-	 * @param array<string, mixed> $instance The instance.
-	 *
-	 * @return DateTimeImmutable|null The start, or null when it carries none.
-	 */
-	private function startOf(array $instance): ?DateTimeImmutable {
-		// THE ONE DATE PATH. `new DateTimeImmutable($raw)` here read the
-		// PROCESS zone, so the same stored string became a different day on
-		// two servers, and the swallowing catch meant nothing said so. The
-		// normaliser resolves the administered zone and answers null for a
-		// value it cannot read, which is the same contract without the second
-		// rule.
-		return $this->dates?->tryParse($instance['startDate'] ?? null);
-	}//end startOf()
-
-	/**
-	 * The moment an event was recorded, as a date.
-	 *
-	 * @param array<string, mixed> $event The event.
-	 *
-	 * @return DateTimeImmutable|null The moment, or null for now.
-	 */
-	private function momentOf(array $event): ?DateTimeImmutable {
-		// Same rule as {@see self::startOf()}, and the reason
-		// `OneDateWritePathTest` names this method by name: a private method
-		// whose name reads like a date helper and whose body parses a string
-		// is a second definition of what a date is.
-		return $this->dates?->tryParse($event['moment'] ?? null);
-	}//end momentOf()
-
-	/**
 	 * Append an immutable TermijnGebeurtenis row.
 	 *
 	 * @param string $termInstanceId Instance id.
@@ -978,7 +472,7 @@ class TermijnService {
 			$event['items'] = array_values($items);
 		}
 
-		$saved = $this->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
+		$saved = $this->store->save(schemaConfigKey: 'termijn_gebeurtenis_schema', object: $event);
 
 		// The event row names its instance, and the instance names the case.
 		// That read belongs here: this is the only class that knows how to
@@ -997,39 +491,4 @@ class TermijnService {
 		return $saved;
 	}//end recordEvent()
 
-	/**
-	 * Persist an object to a configured schema.
-	 *
-	 * @param string $schemaConfigKey The schema config key (e.g. 'termijn_instance_schema').
-	 * @param array<string, mixed> $object The payload.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function save(string $schemaConfigKey, array $object): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = (string)$this->settingsService->getConfigValue('register');
-		$schema = (string)$this->settingsService->getConfigValue($schemaConfigKey);
-		if ($register === '' || $schema === '') {
-			return null;
-		}
-
-		try {
-			return $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				object: $object
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'TermijnService persist failed',
-				['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
-			);
-			return null;
-		}
-	}//end save()
 }//end class

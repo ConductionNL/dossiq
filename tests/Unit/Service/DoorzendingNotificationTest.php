@@ -38,6 +38,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\Transfer\DoorzendingNotifier
  * @uses \OCA\Dossiq\Service\TermijnNotificationService
+ * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */

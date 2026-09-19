@@ -125,6 +125,7 @@ class CaseSplitExecutor {
 	 * @param CaseSplitPolicy  $policy          What the case type allows to be divided.
 	 * @param CaseSplitPlan    $plan            Which rows move, and what each leaves behind.
 	 * @param LoggerInterface  $logger          Records every split and every refusal.
+	 * @param CaseSplitStore   $store           Where a split reads and writes.
 	 *
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 	 */
@@ -133,6 +134,7 @@ class CaseSplitExecutor {
 		private readonly CaseSplitPolicy $policy,
 		private readonly CaseSplitPlan $plan,
 		private readonly LoggerInterface $logger,
+		private readonly CaseSplitStore $store,
 	) {
 	}//end __construct()
 
@@ -157,7 +159,7 @@ class CaseSplitExecutor {
 	 */
 	public function split(string $caseId, string $title, array $chosen, string $actor): array {
 		$caseId = trim($caseId);
-		$case = $this->requireCase(caseId: $caseId);
+		$case = $this->store->requireCase(caseId: $caseId);
 		$caseType = $this->caseTypeOf(case: $case);
 
 		$this->refuseSelection(chosen: $chosen, caseType: $caseType);
@@ -178,7 +180,7 @@ class CaseSplitExecutor {
 		}
 
 		$newCase = $this->openSecondCase(source: $case, title: $title, actor: $actor);
-		$newId = $this->uuidOf(row: $newCase);
+		$newId = $this->store->uuidOf(row: $newCase);
 
 		$planned = $this->plan->forSelection(sourceId: $caseId, newId: $newId, chosen: $rows);
 
@@ -313,11 +315,11 @@ class CaseSplitExecutor {
 		$source = self::PART_SOURCES[$part];
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: $source['schema']),
+				schema: $this->store->schema(key: $source['schema']),
 				filters: [$source['key'] => $caseId, '_limit' => self::PAGE_SIZE],
 			);
 		} catch (Throwable $e) {
@@ -331,7 +333,7 @@ class CaseSplitExecutor {
 
 		$chosen = [];
 		foreach ($rows as $row) {
-			$id = $this->uuidOf(row: $row);
+			$id = $this->store->uuidOf(row: $row);
 			if ($id !== '' && in_array($id, $wanted, true) === true) {
 				$row['id'] = $id;
 				$chosen[] = $row;
@@ -359,7 +361,7 @@ class CaseSplitExecutor {
 
 		$row = null;
 		foreach (($rows[$part] ?? []) as $candidate) {
-			if ($this->uuidOf(row: $candidate) === $id) {
+			if ($this->store->uuidOf(row: $candidate) === $id) {
 				$row = $candidate;
 				break;
 			}
@@ -373,11 +375,11 @@ class CaseSplitExecutor {
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
 				register: $register,
-				schema: $this->schema(key: $source['schema']),
+				schema: $this->store->schema(key: $source['schema']),
 				uuid: $id,
 			);
 
@@ -409,11 +411,11 @@ class CaseSplitExecutor {
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
 				register: $register,
-				schema: $this->schema(key: self::PART_SOURCES['parties']['schema']),
+				schema: $this->store->schema(key: self::PART_SOURCES['parties']['schema']),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -442,7 +444,7 @@ class CaseSplitExecutor {
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
-		$sourceId = $this->uuidOf(row: $source);
+		$sourceId = $this->store->uuidOf(row: $source);
 		$title = trim($title);
 		if ($title === '') {
 			$title = 'Split from ' . (string)($source['title'] ?? '');
@@ -469,11 +471,11 @@ class CaseSplitExecutor {
 		];
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 			$saved = $this->saveObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_schema'),
+				schema: $this->store->schema(key: 'case_schema'),
 				object: $payload,
 			);
 		} catch (Throwable $e) {
@@ -533,11 +535,11 @@ class CaseSplitExecutor {
 		unset($payload['@self'], $payload['id'], $payload['uuid']);
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 			$objectService->saveObject(
 				object: $payload,
 				register: $register,
-				schema: $this->schema(key: 'case_schema'),
+				schema: $this->store->schema(key: 'case_schema'),
 				uuid: $caseId,
 			);
 		} catch (Throwable $e) {
@@ -568,43 +570,6 @@ class CaseSplitExecutor {
 		return $ids;
 	}//end idsFor()
 
-	/**
-	 * The stored case, or a refusal.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When it cannot be read.
-	 */
-	private function requireCase(string $caseId): array {
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: $caseId,
-			);
-		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not split.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
-
-		if ($case === null) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so it was not split.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		return $case;
-	}//end requireCase()
 
 	/**
 	 * Which parts a split may divide on this case.
@@ -631,7 +596,7 @@ class CaseSplitExecutor {
 	 * @spec openspec/changes/split-picker-asks-the-policy/specs/case-management/spec.md#requirement-the-picker-says-what-may-be-divided-before-the-handler-chooses-req-cm-49
 	 */
 	public function divisibleParts(string $caseId): array {
-		$case = $this->requireCase(caseId: trim($caseId));
+		$case = $this->store->requireCase(caseId: trim($caseId));
 
 		return $this->policy->allowedFor(caseType: $this->caseTypeOf(case: $case));
 	}//end divisibleParts()
@@ -655,12 +620,12 @@ class CaseSplitExecutor {
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 
 			return $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_type_schema'),
+				schema: $this->store->schema(key: 'case_type_schema'),
 				id: $caseTypeId,
 			);
 		} catch (Throwable $e) {
@@ -668,53 +633,6 @@ class CaseSplitExecutor {
 		}
 	}//end caseTypeOf()
 
-	/**
-	 * The uuid of a stored row, however the register spelled it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or an empty string.
-	 */
-	private function uuidOf(array $row): string {
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
-	}//end uuidOf()
 
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
 }//end class

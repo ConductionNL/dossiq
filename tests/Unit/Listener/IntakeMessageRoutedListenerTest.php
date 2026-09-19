@@ -29,6 +29,7 @@ use OCA\Dossiq\Listener\IntakeMessageRoutedListener;
 use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Intake\ChannelIntake;
+use OCA\Dossiq\Service\Intake\MessageFacts;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\IntakeMessageRoutedEvent;
@@ -281,6 +282,9 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 			log: $log,
 			dates: $dates,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			// REAL facts over the SAME date double the assertions read through.
+			// Only the wiring line moved when they were split out.
+			facts: new MessageFacts($dates),
 		);
 	}//end intake()
 

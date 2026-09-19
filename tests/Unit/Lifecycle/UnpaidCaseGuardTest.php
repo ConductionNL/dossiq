@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
+use OCA\Dossiq\Lifecycle\CaseActionList;
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
@@ -94,12 +95,18 @@ class UnpaidCaseGuardTest extends TestCase {
 
 		$provider = new CaseActionProvider(
 			transitionEngine: ($engine ?? $this->engineOfferingOneMove()),
-			resultWriter: $this->createMock(CaseResultWriter::class),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $payments,
-			caseTypes: $caseTypes,
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->createMock(CaseResultWriter::class),
+				externalHome: new ExternalHome(),
+				caseTypes: $caseTypes,
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $payments,
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

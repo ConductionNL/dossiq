@@ -32,6 +32,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
@@ -106,6 +107,22 @@ class TermijnTimerRollTest extends TestCase {
 			fallbackCalendar: new WorkingDayCalculator(),
 		);
 	}
+
+	/**
+	 * The roll on its own, for the two assertions about the declared flag.
+	 *
+	 * `rollEnabled()` reads the definition and nothing else, so it needs no
+	 * engine and no settings: it is asked here of the class that now owns it.
+	 *
+	 * @return TermEndRoll The roll.
+	 */
+	private function ends(): TermEndRoll {
+		return new TermEndRoll(
+			settingsService: $this->createMock(SettingsService::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
+	}//end ends()
 
 	/**
 	 * A term ending on a day the administered calendar closes runs to the
@@ -200,7 +217,7 @@ class TermijnTimerRollTest extends TestCase {
 	 */
 	public function testATermWithoutTheRollIsUnchanged(): void {
 		$service = $this->service();
-		$roll = $service->rollEnabled(definitie: ['rollToWorkingDay' => false]);
+		$roll = $this->ends()->rollEnabled(definitie: ['rollToWorkingDay' => false]);
 
 		self::assertFalse($roll);
 		self::assertSame(
@@ -219,8 +236,8 @@ class TermijnTimerRollTest extends TestCase {
 	public function testTheRollAppliesWhenTheDefinitionIsSilent(): void {
 		$service = $this->service();
 
-		self::assertTrue($service->rollEnabled(definitie: []));
-		self::assertTrue($service->rollEnabled(definitie: ['rollToWorkingDay' => true]));
+		self::assertTrue($this->ends()->rollEnabled(definitie: []));
+		self::assertTrue($this->ends()->rollEnabled(definitie: ['rollToWorkingDay' => true]));
 	}
 
 	/**

@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Lifecycle\CaseActionList;
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
@@ -75,18 +76,16 @@ class LifecycleRegistrar {
 			CaseActionProvider::class,
 			static fn (ContainerInterface $container): CaseActionProvider => new CaseActionProvider(
 				transitionEngine: $container->get(StatusTransitionService::class),
-				resultWriter: $container->get(CaseResultWriter::class),
 				grants: $container->get(OpenRegisterGrantsGateway::class),
 				externalHome: $container->get(ExternalHome::class),
-				// The three fees-and-payments-on-the-case (#2930) added to the
-				// provider. They are named here for the same reason the four
-				// above them are: this service is built by hand, so a
-				// dependency added to the constructor and not to this call is
+				// The acts a case offers, and what blocks them. Named here for
+				// the reason the others are: this service is built by hand, so
+				// a dependency added to the constructor and not to this call is
 				// an ArgumentCountError on the available-actions call, which a
-				// reader sees as a case whose timeline is dead.
-				unpaidCases: $container->get(UnpaidCaseGate::class),
-				payments: $container->get(CasePaymentReader::class),
-				caseTypes: $container->get(CaseTypeReader::class),
+				// reader sees as a case whose timeline is dead. The four
+				// collaborators it takes were the provider's own until the list
+				// was split out; the list itself is autowired.
+				actions: $container->get(CaseActionList::class),
 				logger: $container->get(LoggerInterface::class),
 			)
 		);

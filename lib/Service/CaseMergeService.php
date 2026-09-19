@@ -43,8 +43,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Settings\SchemaSlugMap;
-use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Cases\CaseMergeRelink;
+use OCA\Dossiq\Service\Cases\CaseMergeRule;
+use OCA\Dossiq\Service\Cases\CaseMergeStore;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -54,22 +55,6 @@ use Throwable;
  * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
  */
 class CaseMergeService {
-	use SearchesObjects;
-
-	/**
-	 * The register every dossiq schema lives in.
-	 */
-	private const REGISTER_CONFIG_KEY = 'register';
-
-	/**
-	 * The `case` schema's config key.
-	 */
-	private const CASE_SCHEMA_CONFIG_KEY = 'case_schema';
-
-	/**
-	 * The shipped register, which is where the merge rule is declared.
-	 */
-	private const REGISTER_JSON = __DIR__ . '/../Settings/dossiq_register.json';
 
 	/**
 	 * Term statuses that still count as running, and so are the ones a merge
@@ -97,22 +82,21 @@ class CaseMergeService {
 	private const MERGE_SERVICE_CLASS = 'OCA\\OpenRegister\\Service\\Merge\\MergeService';
 
 	/**
-	 * The merge rule, read once per request.
-	 *
-	 * @var array<string, mixed>|null
-	 */
-	private ?array $rule = null;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Register and schema ids, and the object service.
 	 * @param TermijnService  $termijnService  The one writer of a term instance.
+	 * @param CaseMergeStore  $store           Where a merge reads and writes.
+	 * @param CaseMergeRule   $rule            What the case schema declares about merging.
+	 * @param CaseMergeRelink $relink          Moving the rows that hang off a merged case.
 	 * @param LoggerInterface $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly TermijnService $termijnService,
+		private readonly CaseMergeStore $store,
+		private readonly CaseMergeRule $rule,
+		private readonly CaseMergeRelink $relink,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -125,25 +109,7 @@ class CaseMergeService {
 	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function mergeRule(): array {
-		if ($this->rule !== null) {
-			return $this->rule;
-		}
-
-		$this->rule = [];
-
-		try {
-			$raw = file_get_contents(self::REGISTER_JSON);
-			$decoded = json_decode((string)$raw, true);
-			$case = ($decoded['components']['schemas']['case'] ?? []);
-			$declared = ($case['configuration']['x-openregister-merge'] ?? []);
-			if (is_array($declared) === true) {
-				$this->rule = $declared;
-			}
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: the case merge rule could not be read: ' . $e->getMessage());
-		}
-
-		return $this->rule;
+		return $this->rule->rule();
 	}//end mergeRule()
 
 	/**
@@ -178,12 +144,12 @@ class CaseMergeService {
 
 			$seen[$current] = true;
 
-			$case = $this->readCase(caseId: $current);
+			$case = $this->store->readCase(caseId: $current);
 			if ($case === null) {
 				return $current;
 			}
 
-			$next = $this->referencedId(value: ($case['mergedInto'] ?? null));
+			$next = $this->store->referencedId(value: ($case['mergedInto'] ?? null));
 			if ($next === '' || $next === $current) {
 				return $current;
 			}
@@ -231,11 +197,11 @@ class CaseMergeService {
 			return 'final-status';
 		}
 
-		if ($this->referencedId(value: ($case['besluitDocument'] ?? null)) !== '') {
+		if ($this->store->referencedId(value: ($case['besluitDocument'] ?? null)) !== '') {
 			return 'signed-beschikking';
 		}
 
-		if ($this->referencedId(value: ($case['mergedInto'] ?? null)) !== '') {
+		if ($this->store->referencedId(value: ($case['mergedInto'] ?? null)) !== '') {
 			return 'already-merged';
 		}
 
@@ -299,8 +265,8 @@ class CaseMergeService {
 			return 'same-case';
 		}
 
-		$source = $this->readCase(caseId: $mergedId);
-		$survivor = $this->readCase(caseId: $survivorId);
+		$source = $this->store->readCase(caseId: $mergedId);
+		$survivor = $this->store->readCase(caseId: $survivorId);
 		if ($source === null || $survivor === null) {
 			return 'unknown-case';
 		}
@@ -310,7 +276,7 @@ class CaseMergeService {
 			return $refusal;
 		}
 
-		if ($this->referencedId(value: ($survivor['mergedInto'] ?? null)) !== '') {
+		if ($this->store->referencedId(value: ($survivor['mergedInto'] ?? null)) !== '') {
 			return 'survivor-already-merged';
 		}
 
@@ -357,9 +323,9 @@ class CaseMergeService {
 			return false;
 		}
 
-		$moved = $this->relink(fromId: $mergedId, toId: $survivorId);
+		$moved = $this->relink->move(fromId: $mergedId, toId: $survivorId);
 
-		$written = $this->patchCase(
+		$written = $this->store->patchCase(
 			caseId: $mergedId,
 			changes: [
 				'mergedInto' => $survivorId,
@@ -388,11 +354,11 @@ class CaseMergeService {
 			return false;
 		}
 
-		$case = $this->readCase(caseId: $mergedId);
+		$case = $this->store->readCase(caseId: $mergedId);
 		$moved = (array)(($case['mergeRelinked'] ?? []));
-		$this->moveBack(moves: $moved, toId: $mergedId);
+		$this->relink->moveBack(moves: $moved, toId: $mergedId);
 
-		$written = $this->patchCase(
+		$written = $this->store->patchCase(
 			caseId: $mergedId,
 			changes: [
 				'mergedInto' => null,
@@ -405,90 +371,6 @@ class CaseMergeService {
 
 		return $written;
 	}//end applyReversal()
-
-	/**
-	 * Move every declared kind of row from the merged case to the survivor.
-	 *
-	 * @param string $fromId The merged case.
-	 * @param string $toId   The survivor.
-	 *
-	 * @return array<int, array{schema: string, id: string}> The moves, for a reversal.
-	 */
-	private function relink(string $fromId, string $toId): array {
-		$moves = [];
-
-		foreach ($this->relinkDeclarations() as $declaration) {
-			$slug = (string)($declaration['schema'] ?? '');
-			$field = (string)($declaration['field'] ?? '');
-			$schemaId = $this->schemaId(slug: $slug);
-			if ($slug === '' || $field === '' || $schemaId === '') {
-				continue;
-			}
-
-			foreach ($this->rowsFor(schemaId: $schemaId, filters: [$field => $fromId]) as $row) {
-				$id = (string)($row['id'] ?? '');
-				if ($id === '') {
-					continue;
-				}
-
-				if ($this->patchRow(schemaId: $schemaId, id: $id, changes: [$field => $toId]) === false) {
-					continue;
-				}
-
-				$moves[] = [
-					'schema' => $slug,
-					'id' => $id,
-				];
-			}
-		}
-
-		return $moves;
-	}//end relink()
-
-	/**
-	 * Put the recorded moves back on the case they came from.
-	 *
-	 * @param array<int, mixed> $moves The moves written at merge time.
-	 * @param string            $toId  The case they belong to again.
-	 *
-	 * @return void
-	 */
-	private function moveBack(array $moves, string $toId): void {
-		$fields = [];
-		foreach ($this->relinkDeclarations() as $declaration) {
-			$fields[(string)($declaration['schema'] ?? '')] = (string)($declaration['field'] ?? '');
-		}
-
-		foreach ($moves as $move) {
-			if (is_array($move) === false) {
-				continue;
-			}
-
-			$slug = (string)($move['schema'] ?? '');
-			$id = (string)($move['id'] ?? '');
-			$field = (string)($fields[$slug] ?? '');
-			$schemaId = $this->schemaId(slug: $slug);
-			if ($id === '' || $field === '' || $schemaId === '') {
-				continue;
-			}
-
-			$this->patchRow(schemaId: $schemaId, id: $id, changes: [$field => $toId]);
-		}
-	}//end moveBack()
-
-	/**
-	 * The declared relink pairs.
-	 *
-	 * @return array<int, array<string, mixed>> Each with a `schema` slug and a `field`.
-	 */
-	private function relinkDeclarations(): array {
-		$declared = ($this->mergeRule()['x-dossiq-relink'] ?? []);
-		if (is_array($declared) === false) {
-			return [];
-		}
-
-		return array_values(array_filter($declared, static fn (mixed $row): bool => is_array($row) === true));
-	}//end relinkDeclarations()
 
 	/**
 	 * Complete the merged case's running term, naming the merge as the reason.
@@ -548,159 +430,5 @@ class CaseMergeService {
 			. $survivorId . '" was reversed'
 		);
 	}//end rearmTerm()
-
-	/**
-	 * Read a case as an array.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return array<string, mixed>|null The case, or null when it cannot be read.
-	 */
-	private function readCase(string $caseId): ?array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->registerId();
-		$schema = $this->caseSchemaId();
-		if ($objectService === null || $register === '' || $schema === '') {
-			return null;
-		}
-
-		try {
-			return $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				id: $caseId
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: case "' . $caseId . '" could not be read: ' . $e->getMessage());
-			return null;
-		}
-	}//end readCase()
-
-	/**
-	 * Write a few fields onto a case.
-	 *
-	 * @param string               $caseId  The case uuid.
-	 * @param array<string, mixed> $changes The fields to write.
-	 *
-	 * @return bool True when the write landed.
-	 */
-	private function patchCase(string $caseId, array $changes): bool {
-		return $this->patchRow(schemaId: $this->caseSchemaId(), id: $caseId, changes: $changes);
-	}//end patchCase()
-
-	/**
-	 * Write a few fields onto one row of any dossiq schema.
-	 *
-	 * @param string               $schemaId The schema id.
-	 * @param string               $id       The row uuid.
-	 * @param array<string, mixed> $changes  The fields to write.
-	 *
-	 * @return bool True when the write landed.
-	 */
-	private function patchRow(string $schemaId, string $id, array $changes): bool {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->registerId();
-		if ($objectService === null || $register === '' || $schemaId === '') {
-			return false;
-		}
-
-		try {
-			return $this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $schemaId,
-				id: $id,
-				changes: $changes
-			) !== null;
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq: a merge write on "' . $id . '" failed: ' . $e->getMessage()
-			);
-			return false;
-		}
-	}//end patchRow()
-
-	/**
-	 * Every row of a schema that points at one case.
-	 *
-	 * @param string               $schemaId The schema id.
-	 * @param array<string, mixed> $filters  The field filter.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function rowsFor(string $schemaId, array $filters): array {
-		$objectService = $this->settingsService->getObjectService();
-		$register = $this->registerId();
-		if ($objectService === null || $register === '') {
-			return [];
-		}
-
-		try {
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schemaId,
-				filters: $filters
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning('Dossiq: a merge read failed: ' . $e->getMessage());
-			return [];
-		}
-	}//end rowsFor()
-
-	/**
-	 * The configured register id.
-	 *
-	 * @return string The id, empty when unconfigured.
-	 */
-	private function registerId(): string {
-		return (string)$this->settingsService->getConfigValue(self::REGISTER_CONFIG_KEY);
-	}//end registerId()
-
-	/**
-	 * The configured `case` schema id.
-	 *
-	 * @return string The id, empty when unconfigured.
-	 */
-	private function caseSchemaId(): string {
-		return (string)$this->settingsService->getConfigValue(self::CASE_SCHEMA_CONFIG_KEY);
-	}//end caseSchemaId()
-
-	/**
-	 * The configured schema id behind a schema slug.
-	 *
-	 * @param string $slug The schema slug as the register declares it.
-	 *
-	 * @return string The id, empty when the slug is unknown or unconfigured.
-	 */
-	private function schemaId(string $slug): string {
-		$configKey = (string)(SchemaSlugMap::SLUG_TO_CONFIG_KEY[$slug] ?? '');
-		if ($configKey === '') {
-			return '';
-		}
-
-		return (string)$this->settingsService->getConfigValue($configKey);
-	}//end schemaId()
-
-	/**
-	 * The uuid behind a reference, which OpenRegister hands back either as the
-	 * bare id or as the extended object it points at.
-	 *
-	 * @param mixed $value The stored reference.
-	 *
-	 * @return string The uuid, empty when there is none.
-	 */
-	private function referencedId(mixed $value): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === true) {
-			return trim((string)($value['id'] ?? ''));
-		}
-
-		return '';
-	}//end referencedId()
 
 }//end class
