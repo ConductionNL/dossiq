@@ -70,6 +70,8 @@ class BerichtenboxJournal {
 	 * @param array<string, mixed> $result           What the adapter answered.
 	 *
 	 * @return array<string, mixed> The record to store.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function messageRecord(
 		string $caseId,
@@ -151,6 +153,8 @@ class BerichtenboxJournal {
 	 * @param string               $lastError         The provider's reason, when it failed.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function recordStatus(
 		array $data,

@@ -91,6 +91,8 @@ class PackageWriter {
 	 * @param string $strategy The conflict resolution strategy.
 	 *
 	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
+	 *
+	 * @spec openspec/specs/case-type-portability/spec.md
 	 */
 	public function writeCollections(string $component, array $data, array $collections, string $strategy): array {
 		$objectService = $this->settings->getObjectService();

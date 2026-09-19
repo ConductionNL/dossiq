@@ -74,17 +74,15 @@ class CaseDefinitionImportService {
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger instance.
-	 * @param SettingsService $settings The register and schema names, and the
-	 *                                  OpenRegister object service this writes
-	 *                                  through. dossiq stores nothing of its
-	 *                                  own here: the objects are OpenRegister's
-	 *                                  and are written the way the rest of the
-	 *                                  app writes them (ADR-022).
-	 * @param PackageWriter   $writer   Writes the package's rows and workflows.
+	 * @param PackageWriter   $writer Writes the package's rows and workflows. dossiq
+	 *                                stores nothing of its own here: the objects are
+	 *                                OpenRegister's and are written the way the rest
+	 *                                of the app writes them (ADR-022), which is why
+	 *                                the register and schema names now live with the
+	 *                                writer rather than here.
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
-		private readonly SettingsService $settings,
 		private readonly PackageWriter $writer,
 	) {
 	}//end __construct()

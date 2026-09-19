@@ -299,7 +299,7 @@ class MilestoneSchedule {
 	 * @param array<string, int>                    $cumulative   The cumulative durations.
 	 * @param DateTimeImmutable                     $caseStart    When the case started.
 	 * @param array<string, DateTimeImmutable>      $reached      The milestones already reached.
-	 * @param array<string, DateTimeImmutable|null> $dates        The dates resolved so far.
+	 * @param array<string, DateTimeImmutable>      $dates        The memo, written in place.
 	 * @param int                                   $depth        How deep the chain walk is.
 	 *
 	 * @return DateTimeImmutable|null The latest predecessor date, or null when none resolved.

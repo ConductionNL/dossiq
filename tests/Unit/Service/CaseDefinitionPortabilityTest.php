@@ -222,7 +222,6 @@ class CaseDefinitionPortabilityTest extends TestCase {
 		// did not move when the writer was split out: only the wiring line did.
 		return new CaseDefinitionImportService(
 			new NullLogger(),
-			$settings,
 			new PackageWriter(new NullLogger(), $settings),
 		);
 	}//end importer()
