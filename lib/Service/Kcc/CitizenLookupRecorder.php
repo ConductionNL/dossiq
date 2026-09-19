@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Kcc;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IRequest;
@@ -176,7 +178,7 @@ class CitizenLookupRecorder {
 			'employeeId' => $employeeId,
 			'subjectId' => $subjectId,
 			'action' => 'read',
-			'moment' => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+			'moment' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
 			'ipAddress' => $this->request->getRemoteAddress(),
 			'geraadpleegdeVelden' => array_values($fields),
 			'authorisationGround' => $ground,
