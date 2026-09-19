@@ -305,6 +305,43 @@ jobs:
       # size. A missing bundle returns HTTP 200 `text/html` (the Nextcloud error
       # page through index.php), never a 404, so a status-code check alone would
       # read the exact failure this input was disabled for as a success.
+      #
+      # ── The Quality Report is not the E2E tier ────────────────────────────
+      #
+      # THERE IS NO `e2e-promotion-only` KEY HERE, AND ADDING ONE WOULD BE A
+      # MISTAKE. Read this before you touch the E2E inputs to make the Quality
+      # Report go green.
+      #
+      # The shared workflow runs Playwright on the promotion path and on
+      # demand, not on ordinary `development` traffic. That is
+      # ConductionNL/.github#768, merged 2026-09-13. The input is
+      # `e2e-promotion-only`, it lives in the shared workflow, and it defaults
+      # to true, so no app repo sets it. Every one of the 21 apps inherits the
+      # same behaviour.
+      #
+      # The E2E job therefore reports `skipped` on every push to
+      # `development`, and the Quality Report's test-tier census READS THAT AS
+      # A VERDICT rather than as a gap. #768 changed the census in the same
+      # commit, which is the part worth knowing: a tier that skips with NO
+      # stated reason still fails the report, so skipping without one would
+      # have moved the red instead of removing it. The `changes` job emits the
+      # reason next to the boolean, and the census prints it.
+      #
+      # Measured rather than assumed, because the census line reads like a
+      # complaint and has been mistaken for one. In dossiq run 35449832129 the
+      # Quality Report's step 13, "a test job that was ENABLED but never ran
+      # has no verdict", has conclusion `success`, and its log ends "Every
+      # enabled test job produced a verdict." That run is red on step 12,
+      # "fail when any upstream job failed", which is a different sentence
+      # about a different thing. opencatalogi run 35445823235 is green overall
+      # and prints the same Playwright census line word for word.
+      #
+      # So when the Quality Report is red, read WHICH STEP failed before
+      # changing anything here. Step 12 is an aggregator: it is naming the
+      # upstream jobs, and the fix is in those jobs. Setting
+      # `e2e-promotion-only: false` would turn all three shards back on for
+      # every `development` push, cost about 45 minutes a run, and leave the
+      # failure exactly where it was.
       enable-playwright: true
       # Double duty in the shared workflow: it is both the directory the
       # "Validate Playwright tests exist" step counts *.spec.ts in, AND the
