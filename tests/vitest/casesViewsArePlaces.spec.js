@@ -114,14 +114,18 @@ describe('a fresh install has the navigation it had yesterday', () => {
 })
 
 describe('the schema the manifest gate reads knows the key', () => {
-	it('carries savedViewPlaces on a page, from schema 2.34.0', () => {
+	it('carries savedViewPlaces on a page', () => {
 		// The gate prefers the INSTALLED @conduction/nextcloud-vue schema over
 		// this vendored copy, deliberately, so a manifest satisfies the rules
-		// its own dependency ships. Until a release carrying 2.34.0 is
-		// published and this app bumps to it, `npm run check:manifest` reads
-		// 2.33.0 and rejects these two pages. That is the one known red on
-		// this change and it clears with the bump, not with a manifest edit.
-		expect(schema.version).toBe('2.34.0')
+		// its own dependency ships. That used to reject these two pages,
+		// because the key existed only in the vendored 2.34.0 and no release
+		// carried it. 3.4.0 ships schema 2.37.0, which declares it, so the
+		// red cleared with the bump exactly as this note said it would.
+		//
+		// The version is no longer pinned to a number. What matters is that
+		// the key and its shape are there, and pinning the version meant a
+		// re-vendor reddened a test about `savedViewPlaces` for a reason
+		// that had nothing to do with it.
 		expect(schema.$defs.page.properties.savedViewPlaces).toBeTruthy()
 		expect(schema.$defs.savedViewPlaces.properties.routeBase.pattern).toBe(
 			'^[a-z0-9][a-z0-9-]*$',

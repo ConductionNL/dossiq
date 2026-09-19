@@ -16,6 +16,8 @@
       "case": {
         "properties": {
           "dataSubjectRequestType": {
+              "matchType": "exact",
+              "inputControl": "select",
             "type": "string",
             "title": "Data subject request",
             "description": "Which right under the AVG this case answers: inzage (art. 15), correctie (art. 16) or verwijdering (art. 17). Empty on every case that is not a data subject request. The closing transitions name this field, which is what stops a verwijdering being closed down the inzage path and skipping the erasure guard.",
@@ -27,22 +29,30 @@
             "facetable": true
           },
           "dataSubject": {
+              "matchType": "exact",
+              "inputControl": "text",
             "type": "string",
             "title": "Data subject",
             "description": "The identifier the platform searches on: an email address, a BSN, or whatever else the PII index holds for this person. This is the value handed to OpenRegister, so it is the one the counts were computed for."
           },
           "dataSubjectType": {
+              "matchType": "exact",
+              "inputControl": "select",
             "type": "string",
             "title": "Identifier kind",
             "description": "Which kind of identifier `dataSubject` is, passed to the platform as its `type` filter. Left empty the platform searches every kind, which is wider than most requests mean."
           },
           "erasurePreviewId": {
+              "matchType": "exact",
+              "inputControl": "text",
             "type": "string",
             "readOnly": true,
             "title": "Erasure preview",
             "description": "The preview OpenRegister recorded for this case. The approval and the run both name it, so a case that carries none has nothing to approve and nothing to run."
           },
           "erasureDigest": {
+              "matchType": "exact",
+              "inputControl": "text",
             "type": "string",
             "readOnly": true,
             "title": "Preview digest",
@@ -87,12 +97,16 @@
             }
           },
           "erasureApprovedBy": {
+              "matchType": "prefix",
+              "inputControl": "text",
             "type": "string",
             "readOnly": true,
             "title": "Approved by",
             "description": "Who took the approving transition. Written by the engine's status record chain and copied here so the run can refuse without walking that chain. Never the person who prepared the preview: the transition declares `notPerformedBy` against the preparing act."
           },
           "erasureApprovedAt": {
+              "matchType": "range",
+              "inputControl": "date-range",
             "type": "string",
             "format": "date-time",
             "readOnly": true,
@@ -107,12 +121,16 @@
             "facetable": false
           },
           "subjectExportId": {
+              "matchType": "exact",
+              "inputControl": "text",
             "type": "string",
             "readOnly": true,
             "title": "Subject export",
             "description": "The export OpenRegister is producing or has produced for this subject. An inzage case carries one; a verwijdering case usually does not."
           },
           "subjectExportExpiresAt": {
+              "matchType": "range",
+              "inputControl": "date-range",
             "type": "string",
             "format": "date-time",
             "readOnly": true,
@@ -120,6 +138,7 @@
             "description": "The end of the export's seven day life, as the platform reported it. Past it the download is not offered and the export is asked for again, because the platform refuses the link rather than serving a stale file."
           },
           "subjectExportReady": {
+              "inputControl": "boolean",
             "type": "boolean",
             "default": false,
             "readOnly": true,
