@@ -89,7 +89,7 @@ class CaseTypeAiFeatures {
 	 * @psalm-return list<string>
 	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-a-case-type-declares-which-ai-features-are-on-and-where-they-appear-req-aic-01
 	 */
-	public function on(array $caseType, string $surface): array {
+	public function onSurface(array $caseType, string $surface): array {
 		$features = [];
 		foreach ($this->declared(caseType: $caseType) as $slug => $declaredSurface) {
 			if ($declaredSurface === $surface && $surface !== self::SURFACE_NONE) {
@@ -98,7 +98,7 @@ class CaseTypeAiFeatures {
 		}
 
 		return $features;
-	}//end on()
+	}//end onSurface()
 
 	/**
 	 * Whether this case type has anything to ask hermiq about at all.

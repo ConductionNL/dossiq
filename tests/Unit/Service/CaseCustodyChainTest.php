@@ -112,7 +112,7 @@ class CaseCustodyChainTest extends TestCase {
 			handler: 'sofie',
 			reason: 'Dit is handhaving',
 			movedBy: 'jan',
-			at: '2026-04-12T14:30:00+02:00',
+			movedAt: '2026-04-12T14:30:00+02:00',
 		);
 
 		$holdings = $chain->holdings(caseId: 'case-1');

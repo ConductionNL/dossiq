@@ -100,7 +100,7 @@ class CaseCustodyChain {
 	 * @param string $handler          The person on the seat, or an empty string when nobody is named.
 	 * @param string $reason           Why the case is moving.
 	 * @param string $movedBy          Who made the move.
-	 * @param string $at               The moment of the move in ISO 8601, or an empty string for now.
+	 * @param string $movedAt          The moment of the move in ISO 8601, or an empty string for now.
 	 *
 	 * @return array<string, mixed> The holding that is now open.
 	 *
@@ -114,7 +114,7 @@ class CaseCustodyChain {
 		string $handler,
 		string $reason,
 		string $movedBy,
-		string $at = '',
+		string $movedAt = '',
 	): array {
 		$caseId = trim($caseId);
 		if ($caseId === '') {
@@ -125,7 +125,7 @@ class CaseCustodyChain {
 			);
 		}
 
-		$moment = $this->moment(at: $at);
+		$moment = $this->moment(candidate: $movedAt);
 		$previous = $this->openHoldingFor(caseId: $caseId);
 		$sequence = 1;
 		if ($previous !== null) {
@@ -148,7 +148,7 @@ class CaseCustodyChain {
 		);
 
 		if ($previous !== null) {
-			$this->close(holding: $previous, at: $moment);
+			$this->close(holding: $previous, closedAt: $moment);
 		}
 
 		$this->logger->info(
@@ -202,7 +202,7 @@ class CaseCustodyChain {
 				'caseId' => $caseId,
 				'organisationUnit' => trim($organisationUnit),
 				'handler' => trim($handler),
-				'from' => $this->moment(at: $from),
+				'from' => $this->moment(candidate: $from),
 				'until' => '',
 				'open' => true,
 				'reason' => trim($reason),
@@ -286,11 +286,11 @@ class CaseCustodyChain {
 	 * Close a holding at a moment.
 	 *
 	 * @param array<string, mixed> $holding The holding as it was read.
-	 * @param string               $at      The closing moment in ISO 8601.
+	 * @param string               $closedAt The closing moment in ISO 8601.
 	 *
 	 * @return void
 	 */
-	private function close(array $holding, string $at): void {
+	private function close(array $holding, string $closedAt): void {
 		$uuid = trim((string)($holding['id'] ?? ($holding['uuid'] ?? '')));
 		if ($uuid === '') {
 			$this->logger->error(
@@ -301,7 +301,7 @@ class CaseCustodyChain {
 			return;
 		}
 
-		$holding['until'] = $at;
+		$holding['until'] = $closedAt;
 		$holding['open'] = false;
 
 		try {
@@ -362,13 +362,13 @@ class CaseCustodyChain {
 	/**
 	 * A moment in ISO 8601: the one given, or now.
 	 *
-	 * @param string $at The candidate moment.
+	 * @param string $candidate The candidate moment.
 	 *
 	 * @return string The moment.
 	 */
-	private function moment(string $at): string {
-		$at = trim($at);
-		if ($at === '') {
+	private function moment(string $candidate): string {
+		$candidate = trim($candidate);
+		if ($candidate === '') {
 			return $this->dates->nowAsMoment();
 		}
 
@@ -377,7 +377,7 @@ class CaseCustodyChain {
 		// on the chain ends up in the server zone and the next in the
 		// administered one (openspec/changes/one-date-write-path). An
 		// unreadable value reads as now, which is what it read as before.
-		$parsed = $this->dates->tryParse($at);
+		$parsed = $this->dates->tryParse($candidate);
 		if ($parsed === null) {
 			return $this->dates->nowAsMoment();
 		}

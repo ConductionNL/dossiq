@@ -1001,7 +1001,7 @@ $extra = [
     ['name' => 'caseCustody#holder',       'url' => '/api/case/{caseId}/custody/holder',                  'verb' => 'GET'],
     ['name' => 'caseCustody#unit',         'url' => '/api/units/{unit}/custody',                          'verb' => 'GET'],
     ['name' => 'caseTakeover#ask',         'url' => '/api/case/{caseId}/takeover',                        'verb' => 'POST'],
-    ['name' => 'caseTakeover#on',          'url' => '/api/case/{caseId}/takeovers',                       'verb' => 'GET'],
+    ['name' => 'caseTakeover#onCase',      'url' => '/api/case/{caseId}/takeovers',                       'verb' => 'GET'],
     ['name' => 'caseTakeover#accept',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/accept',    'verb' => 'POST'],
     ['name' => 'caseTakeover#refuse',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/refuse',    'verb' => 'POST'],
 

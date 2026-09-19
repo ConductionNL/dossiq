@@ -106,8 +106,8 @@ class CaseTransferConsentGate {
 	 *
 	 * @param string $caseId                The case being handed on.
 	 * @param string $sourceOrganisation    The organisation letting go of it.
-	 * @param string $receivingOrganisation The organisation receiving it.
-	 * @param string $at                    The moment of the hand-off in ISO 8601, or empty for now.
+	 * @param string $receivingOrg The organisation receiving it.
+	 * @param string $atDate               The moment of the hand-off in ISO 8601, or empty for now.
 	 *
 	 * @return array{
 	 *     allowed: bool,
@@ -124,13 +124,13 @@ class CaseTransferConsentGate {
 	public function assess(
 		string $caseId,
 		string $sourceOrganisation,
-		string $receivingOrganisation,
-		string $at = '',
+		string $receivingOrg,
+		string $atDate = '',
 	): array {
-		$receiver = trim($receivingOrganisation);
+		$receiver = trim($receivingOrg);
 		$crosses = $this->crossesOrganisation(
 			sourceOrganisation: $sourceOrganisation,
-			receivingOrganisation: $receiver,
+			receivingOrg: $receiver,
 		);
 
 		if ($crosses === false && $this->consentRequiredInside(caseId: $caseId) === false) {
@@ -139,7 +139,7 @@ class CaseTransferConsentGate {
 			return $this->verdict(allowed: true, rule: '', sentence: '', consent: null, crosses: false);
 		}
 
-		$moment = $this->instant(value: $at) ?? new DateTimeImmutable();
+		$moment = $this->instant(value: $atDate) ?? new DateTimeImmutable();
 		$candidates = $this->consentsFor(caseId: $caseId, receiver: $receiver);
 
 		if ($candidates === []) {
@@ -211,14 +211,14 @@ class CaseTransferConsentGate {
 	 * skip the gate entirely.
 	 *
 	 * @param string $sourceOrganisation    The organisation letting go.
-	 * @param string $receivingOrganisation The organisation receiving.
+	 * @param string $receivingOrg The organisation receiving.
 	 *
 	 * @return bool True when the boundary is crossed.
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
-	public function crossesOrganisation(string $sourceOrganisation, string $receivingOrganisation): bool {
+	public function crossesOrganisation(string $sourceOrganisation, string $receivingOrg): bool {
 		$source = strtolower(trim($sourceOrganisation));
-		$receiver = strtolower(trim($receivingOrganisation));
+		$receiver = strtolower(trim($receivingOrg));
 
 		if ($source === '' || $receiver === '') {
 			return true;

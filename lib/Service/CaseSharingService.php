@@ -272,7 +272,7 @@ class CaseSharingService {
 		$verdict = $this->consent->assess(
 			caseId: $caseId,
 			sourceOrganisation: '',
-			receivingOrganisation: $partnerId,
+			receivingOrg: $partnerId,
 		);
 		if ($verdict['allowed'] === false) {
 			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];

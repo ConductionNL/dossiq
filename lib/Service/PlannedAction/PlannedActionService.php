@@ -200,7 +200,7 @@ class PlannedActionService {
 		array $roleHolders = [],
 		?DateTimeImmutable $completedOn = null,
 	): ?array {
-		$on = ($completedOn ?? new DateTimeImmutable('today'));
+		$moment = ($completedOn ?? new DateTimeImmutable('today'));
 		$actionId = (string)($action['id'] ?? ($action['uuid'] ?? ''));
 		$uuid = null;
 		if ($actionId !== '') {
@@ -212,7 +212,7 @@ class PlannedActionService {
 				$action,
 				[
 					'state' => 'completed',
-					'completedAt' => $on->format('Y-m-d\TH:i:sP'),
+					'completedAt' => $moment->format('Y-m-d\TH:i:sP'),
 					'completedBy' => $completedBy,
 				]
 			),
@@ -222,7 +222,7 @@ class PlannedActionService {
 		$next = $this->chain->next(
 			completed: $action,
 			types: $this->typesFor(caseTypeId: (string)($action['caseType'] ?? '')),
-			completedOn: $on,
+			completedOn: $moment,
 			roleHolders: $roleHolders
 		);
 

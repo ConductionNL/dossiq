@@ -122,8 +122,8 @@ class CaseCustodyController extends Controller {
 			return $this->notYours();
 		}
 
-		$on = trim((string)$this->request->getParam('on', ''));
-		if ($on === '') {
+		$asOf = trim((string)$this->request->getParam('on', ''));
+		if ($asOf === '') {
 			return new JSONResponse(
 				['message' => 'Name the date you are asking about.', 'error' => 'custody-date-missing'],
 				Http::STATUS_BAD_REQUEST,
@@ -133,8 +133,8 @@ class CaseCustodyController extends Controller {
 		return new JSONResponse(
 			[
 				'caseId' => $caseId,
-				'on' => $on,
-				'holding' => $this->query->holderOn(caseId: $caseId, on: $on),
+				'on' => $asOf,
+				'holding' => $this->query->holderOn(caseId: $caseId, asOf: $asOf),
 			]
 		);
 	}//end holder()

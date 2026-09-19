@@ -99,7 +99,7 @@ class CaseIncidentController extends Controller {
 		}
 
 		$incidents = [];
-		foreach ($this->incidents->on(caseId: $caseId) as $incident) {
+		foreach ($this->incidents->onCase(caseId: $caseId) as $incident) {
 			// THE DELAY TRAVELS WITH THE ROW. Computed here rather than in the
 			// browser so the list and a report cannot disagree about how late
 			// a report was written down.

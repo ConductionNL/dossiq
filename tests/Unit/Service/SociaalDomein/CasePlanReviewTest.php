@@ -123,7 +123,7 @@ class CasePlanReviewTest extends TestCase {
 				'Interventie "Weerbaarheidstraining" toegevoegd',
 			],
 			nextReviewDate: '2026-12-01',
-			on: '2026-06-01',
+			onDate: '2026-06-01',
 		);
 
 		self::assertCount(1, $plan['reviews']);
@@ -147,13 +147,13 @@ class CasePlanReviewTest extends TestCase {
 			planId: 'plan-1',
 			reviewedBy: 'anna',
 			changes: ['Eerste herziening'],
-			on: '2026-06-01',
+			onDate: '2026-06-01',
 		);
 		$plan = $this->review->record(
 			planId: 'plan-1',
 			reviewedBy: 'bram',
 			changes: ['Tweede herziening'],
-			on: '2026-09-01',
+			onDate: '2026-09-01',
 		);
 
 		self::assertCount(2, $plan['reviews']);
