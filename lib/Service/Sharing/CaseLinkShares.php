@@ -44,6 +44,25 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md
  */
 class CaseLinkShares {
+
+	/**
+	 * The failure is this instance's own configuration, not OpenRegister.
+	 *
+	 * Carried on the error array so {@see \OCA\Dossiq\Controller\CaseSharingController}
+	 * can answer 503 and name the gap, instead of 502 and a bare
+	 * "Service unavailable" that points at an app which did nothing wrong.
+	 *
+	 * @var string
+	 */
+	public const REASON_NOT_CONFIGURED = 'not-configured';
+
+	/**
+	 * The share record could not be written, so the minted links were pulled.
+	 *
+	 * @var string
+	 */
+	public const REASON_ROLLED_BACK = 'rolled-back';
+
 	/**
 	 * Constructor.
 	 *
@@ -247,7 +266,22 @@ class CaseLinkShares {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_share_schema');
 		if (empty($register) === true || empty($schema) === true) {
-			return ['error' => 'Service unavailable'];
+			// 🔴 NAME WHAT IS UNAVAILABLE. This branch is reached when this
+			// instance never finished configuring dossiq, which is a LOCAL
+			// gap and not OpenRegister refusing anything. It used to answer
+			// a bare "Service unavailable", which the controller then mapped
+			// to 502. An e2e lane spent a batch on that 502 before the cause
+			// turned out to be an unwritten app-config key. The `reason` is
+			// what lets the controller answer 503 rather than 502.
+			$this->logger->error(
+				'CaseLinkShares: the case share schema is not configured, so no share can be recorded',
+				['caseId' => $caseId, 'register' => $register, 'schema' => $schema]
+			);
+			return [
+				'error' => 'Sharing is not configured on this instance yet. '
+					. 'An administrator reloads the dossiq configuration to map the case share schema.',
+				'reason' => self::REASON_NOT_CONFIGURED,
+			];
 		}
 
 		$capabilities = (array)($link['capabilities'] ?? []);
@@ -271,7 +305,10 @@ class CaseLinkShares {
 				'CaseLinkShares: the link was minted and the share record was not written',
 				['caseId' => $caseId, 'exception' => $e->getMessage()]
 			);
-			return ['error' => 'Could not record the share'];
+			return [
+				'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
+				'reason' => self::REASON_ROLLED_BACK,
+			];
 		}
 
 		$this->logger->info(
@@ -286,6 +323,38 @@ class CaseLinkShares {
 
 		return $this->gateway->toArray($result);
 	}//end store()
+
+	/**
+	 * Pull the links a failed mint already published.
+	 *
+	 * 🔴 THE LINK IS LIVE BEFORE THE RECORD EXISTS. `createTokenShare()` mints
+	 * the case link first and writes the share record second, so every way the
+	 * write can fail leaves a published access link on the case that dossiq
+	 * has no row for. Nobody can see it in the sharing tab, and nobody can
+	 * revoke it there, because revoking reads the record. The caller is told
+	 * the share failed, which is true and is the opposite of what happened to
+	 * the case.
+	 *
+	 * So the mint is undone. A link that cannot be recorded must not stay
+	 * open.
+	 *
+	 * @param array<string, mixed> $link The minted case link.
+	 * @param array<int, array<string, mixed>> $documents The file links minted beside it.
+	 * @param string $userId The principal who minted them.
+	 *
+	 * @return array<int, int> The link ids OpenRegister refused to revoke.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	public function revokeMinted(array $link, array $documents, string $userId): array {
+		return $this->revokeLinksOf(
+			share: [
+				'accessLinkId' => (int)($link['id'] ?? 0),
+				'sharedDocuments' => $documents,
+			],
+			userId: $userId
+		);
+	}//end revokeMinted()
 
 	/**
 	 * Revoke every access link a share was minted as, and name the ones
@@ -303,6 +372,7 @@ class CaseLinkShares {
 	 *
 	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-document-named-on-the-share-gets-its-own-file-link-req-cal-02
 	 */
+
 	public function revokeLinksOf(array $share, string $userId): array {
 		$refused = [];
 		foreach ($this->linkIdsOf(share: $share) as $id) {
