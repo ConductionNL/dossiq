@@ -267,6 +267,52 @@ class MilestoneSchedule {
 			return $dates[$identifier];
 		}
 
+		// Every named predecessor missing from this case type falls back to the
+		// case start: the declaration points at nothing, and dropping the
+		// milestone off the timeline would hide that rather than show it.
+		$from = $this->latestPredecessorDate(
+			predecessors: $predecessors,
+			byIdentifier: $byIdentifier,
+			cumulative: $cumulative,
+			caseStart: $caseStart,
+			reached: $reached,
+			dates: $dates,
+			depth: $depth,
+		) ?? $caseStart;
+
+		$dates[$identifier] = $this->workingDays->addWorkingDays(
+			start: $from,
+			days: $this->durationOf(definition: $definition)
+		);
+
+		return $dates[$identifier];
+	}//end resolve()
+
+	/**
+	 * The latest date among a milestone's predecessors, or null when none resolve.
+	 *
+	 * All of them must be reached before this one, so the date that satisfies
+	 * the declaration is the LATEST of them, not the first.
+	 *
+	 * @param array<int, string>                    $predecessors The declared predecessors.
+	 * @param array<string, array<string, mixed>>   $byIdentifier Every milestone by identifier.
+	 * @param array<string, int>                    $cumulative   The cumulative durations.
+	 * @param DateTimeImmutable                     $caseStart    When the case started.
+	 * @param array<string, DateTimeImmutable>      $reached      The milestones already reached.
+	 * @param array<string, DateTimeImmutable|null> $dates        The dates resolved so far.
+	 * @param int                                   $depth        How deep the chain walk is.
+	 *
+	 * @return DateTimeImmutable|null The latest predecessor date, or null when none resolved.
+	 */
+	private function latestPredecessorDate(
+		array $predecessors,
+		array $byIdentifier,
+		array $cumulative,
+		DateTimeImmutable $caseStart,
+		array $reached,
+		array &$dates,
+		int $depth,
+	): ?DateTimeImmutable {
 		$from = null;
 		foreach ($predecessors as $predecessor) {
 			$predecessorDate = $this->resolve(
@@ -278,31 +324,14 @@ class MilestoneSchedule {
 				dates: $dates,
 				depth: ($depth + 1)
 			);
-			if ($predecessorDate === null) {
-				continue;
-			}
 
-			// All of them must be reached before this one, so the date that
-			// satisfies the declaration is the LATEST of them.
-			if ($from === null || $predecessorDate > $from) {
+			if ($predecessorDate !== null && ($from === null || $predecessorDate > $from)) {
 				$from = $predecessorDate;
 			}
 		}
 
-		if ($from === null) {
-			// Every named predecessor is missing from this case type. The
-			// declaration points at nothing, so this falls back to the case
-			// start rather than dropping the milestone off the timeline.
-			$from = $caseStart;
-		}
-
-		$dates[$identifier] = $this->workingDays->addWorkingDays(
-			start: $from,
-			days: $this->durationOf(definition: $definition)
-		);
-
-		return $dates[$identifier];
-	}//end resolve()
+		return $from;
+	}//end latestPredecessorDate()
 
 	/**
 	 * Depth-first walk looking for a cycle.
