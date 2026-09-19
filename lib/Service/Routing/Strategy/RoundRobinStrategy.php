@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Routing\Strategy;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Routing\PoolMembership;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCP\IAppConfig;
 
@@ -41,9 +42,11 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 	 * Constructor.
 	 *
 	 * @param IAppConfig $appConfig Persists the per-(caseType, roleType) cursor
+	 * @param PoolMembership $pool Reads the pool, its weights and its teams
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
+		private readonly PoolMembership $pool,
 	) {
 	}//end __construct()
 
@@ -78,26 +81,32 @@ class RoundRobinStrategy implements RoutingStrategyInterface {
 			return [];
 		}
 
-		$participants = [];
-		foreach ($roles as $role) {
-			if ((string)($role['roleType'] ?? '') !== $target) {
-				continue;
-			}
+		// A rule may narrow the pool to one team, which is how the senior
+		// handler OF TEAM ZUID is named without an organisation-wide role for
+		// every senior of every team (REQ-RTP-02).
+		$team = trim((string)($rule['team'] ?? ''));
+		$members = $this->pool->membersOf(roles: $roles, roleType: $target, team: $team);
 
-			$participant = (string)($role['participant'] ?? '');
-			if ($participant !== '') {
-				$participants[] = $participant;
-			}
-		}
-
-		$participants = array_values(array_unique($participants));
+		// The rotation is the pool expanded by weight, and it is the
+		// participants UNCHANGED when nobody declared one. That identity is
+		// what makes an existing pool route exactly as it did yesterday
+		// (REQ-RTP-01).
+		$participants = $this->pool->rotation(members: $members);
 		$count = count($participants);
 		if ($count === 0) {
 			return [];
 		}
 
 		$caseType = (string)($case['caseType'] ?? '');
-		$key = sprintf('routing.rr.%s.%s', $caseType, $target);
+		// The cursor is keyed by the TEAM as well, because two rules over one
+		// roleType in two teams are two rotations; one cursor between them
+		// would make each rule skip the other's turn.
+		$suffix = '';
+		if ($team !== '') {
+			$suffix = ('.' . $team);
+		}
+
+		$key = sprintf('routing.rr.%s.%s%s', $caseType, $target, $suffix);
 		$cursor = (int)$this->appConfig->getValueInt(
 			Application::APP_ID,
 			$key,

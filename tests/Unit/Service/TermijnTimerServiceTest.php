@@ -32,13 +32,19 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class TermijnTimerServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FlowTimerEngineFake $engine;
 	private TermijnTimerService $service;
 
@@ -48,7 +54,11 @@ class TermijnTimerServiceTest extends TestCase {
 		$settings->method('getOpenRegisterClass')
 			->with(TermijnTimerService::ENGINE_CLASS)
 			->willReturn($this->engine);
-		$this->service = new TermijnTimerService($settings, $this->createMock(LoggerInterface::class));
+		$this->service = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 	}
 
 	/**
@@ -217,7 +227,11 @@ class TermijnTimerServiceTest extends TestCase {
 	public function testAbsentEngineDegradesToNoOp(): void {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getOpenRegisterClass')->willReturn(null);
-		$service = new TermijnTimerService($settings, $this->createMock(LoggerInterface::class));
+		$service = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 
 		self::assertNull($service->armBeslistermijn(instance: $this->instance(), definitie: []));
 		self::assertFalse($service->suspendBeslistermijn(instance: $this->instance(), reason: 'x', until: null));

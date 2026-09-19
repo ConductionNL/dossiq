@@ -41,8 +41,11 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * Minimal OpenRegister ObjectService shape used by StatusTransitionService.
@@ -67,8 +70,12 @@ interface ReplayObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\CaseStatusStore
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 class StatusTransitionServiceReplayRegressionTest extends TestCase {
+	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
+
 
 	/**
 	 * @var SettingsService&MockObject
@@ -107,6 +114,14 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase {
 			$this->logger,
 			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $this->logger)),
 			$this->createMock(StatusChecklist::class),
+			$this->undeclaredStatuses(),
+			$this->undeclaredTransitions(),
+			$this->offeredTransitions(
+				guards: $this->createMock(originalClassName: GuardRegistry::class),
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 	}//end setUp()

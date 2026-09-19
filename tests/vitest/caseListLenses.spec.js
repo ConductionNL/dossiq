@@ -86,9 +86,124 @@ const chip = (id, label) => chips(id).find((entry) => entry.label === label)
  */
 const LENSES = ['All', 'Mine', 'Unclaimed', 'Closed', 'Overdue', 'Due this week']
 
+/**
+ * The lens the Cases list gained with `lifecycle-acts-on-the-case`.
+ *
+ * A draft binds no statutory term and belongs in no working list, so every
+ * other lens excludes it and My drafts is the only way back to one. It has no
+ * counterpart on a list of tasks, so it is filtered out of the parity check
+ * below exactly as Unread is.
+ */
+const DRAFTS_LENS = 'My drafts'
+
+/**
+ * The Cases chips, which carry one lens the Tasks list does not.
+ *
+ * Unread is a per-USER lens over OpenRegister's read state, not a field of the
+ * row, so it has no counterpart on a list of tasks and the parallel above is
+ * deliberately left unbroken. It is asserted in its own file,
+ * `caseListUnread.spec.js`, which names the chip, its flat boolean key and the
+ * column beside it.
+ *
+ * Handed on is the second such lens, and it is spelled out here rather than
+ * spliced into LENSES because the list is no longer LENSES plus one: two
+ * Cases-only chips sit at different positions, and `slice(1)` with two
+ * insertions reads as arithmetic rather than as an order anybody chose. Its
+ * key and its filter are asserted in `handingACaseOver.spec.js`.
+ */
+const CASE_LENSES = [
+	'All',
+	'Unread',
+	// Two lenses over per-user platform state rather than a field of the case
+	// (case-number-and-favourites row 2.19, openregister#3766). They sit with
+	// Unread because all three answer about YOU, not about the case: the star
+	// you set and the cases you last opened.
+	'Favourites',
+	// The third lens over per-user platform state, and the one that is not
+	// silent: a star is private, where a subscription produces notifications
+	// and its list is visible to the people who may edit the case
+	// (case-followers row 13.18, openregister `object-watchers`). It sits next
+	// to Favourites because both answer "which cases did I pick out", and
+	// before Recently opened because a case you chose outranks one you
+	// happened to open.
+	'Followed',
+	'Recently opened',
+	// Three lenses over a stored, facetable boolean on the case, each from a
+	// change that named the row it answers. `Waiting on the applicant`
+	// (aanvullingsverzoek-as-a-record row 1.17, #2858) is what the APPLICANT
+	// still owes; `Needs attention` and `Assessed high risk`
+	// (markers-and-assessments-on-the-case rows 2.36 and 2.40, #2837) are the
+	// flag a named person raised and the risk this organisation assessed.
+	// They sit before Mine because all three are about the CASE, and Mine
+	// onwards are about who is holding it.
+	'Waiting on the applicant',
+	'Needs attention',
+	'Assessed high risk',
+	'Mine',
+	'Unclaimed',
+	'Handed on',
+	'Closed',
+	// The one lens that ASKS for archived cases (archived-cases-leave-the-lenses
+	// REQ-CM-42). It sits after Closed because a case is closed before it is
+	// filed, and every lens above it is the working set the platform already
+	// excludes the archive from, which is why not one of them spells the
+	// exclusion out.
+	'Archived',
+	// The closed cases that ended without a result (b210638, the search change
+	// that made the no-result closures a lens of their own). It sits after
+	// Closed because it narrows that set.
+	'Closed with no result',
+	DRAFTS_LENS,
+	'Overdue',
+	'Due this week',
+	// fees-and-payments-on-the-case (#2930): the cases whose type makes a fee
+	// due and whose payment shillinq has not confirmed. It sits with the two
+	// clock lenses because it is the same question about a different clock:
+	// what this case is waiting on before it can move.
+	'Awaiting payment',
+	'Stuck',
+]
+
+/**
+ * The four chips the Cases list carries and the Tasks list cannot.
+ *
+ * Named once so the parity test below subtracts exactly these and nothing
+ * else: a hand-written `filter` per exception is how a fifth Cases-only lens
+ * would quietly stop being compared at all.
+ *
+ * Each is Cases-only for its own reason. Unread is a per-USER lens over
+ * OpenRegister's read state on the `case` schema. Handed on is about a case
+ * moving between teams, which a task does not do on its own. My drafts is a
+ * case nobody has accepted yet, and a task belongs to a case that already
+ * exists. Stuck reads `statusDwellBreached`, written when a case sits in a
+ * STATUS longer than that status allows, and a task has neither a status type
+ * nor a maximum dwell.
+ */
+const CASES_ONLY = [
+	'Unread',
+	'Favourites',
+	'Followed',
+	'Recently opened',
+	'Waiting on the applicant',
+	'Needs attention',
+	'Assessed high risk',
+	'Handed on',
+	// A task is not archived through the case's marker: the Tasks index reads
+	// OpenRegister's task engine through a named entity source, not the `case`
+	// schema, so `_archived` on that list would narrow nothing.
+	'Archived',
+	// A case closes with or without a result; a task completes and has none.
+	'Closed with no result',
+	DRAFTS_LENS,
+	// A fee is due on a CASE, under its type's own rule; a task carries no
+	// payment of its own and nothing on the Tasks list could answer this.
+	'Awaiting payment',
+	'Stuck',
+]
+
 describe('Cases index lenses', () => {
-	it('declares the six chips in order', () => {
-		expect(chips('Cases').map((entry) => entry.label)).toEqual(LENSES)
+	it('declares the seventeen chips in order', () => {
+		expect(chips('Cases').map((entry) => entry.label)).toEqual(CASE_LENSES)
 	})
 
 	it('marks All as the default chip and nothing else', () => {
@@ -101,7 +216,15 @@ describe('Cases index lenses', () => {
 		// opens on. The ONE condition is still the whole filter — no
 		// assignee, no case type, nothing that narrows to a person's own
 		// work — which is what this test has always been guarding.
-		expect(defaults[0].filter).toEqual({ statusHiddenInLists: false })
+		// Two conditions now, and neither narrows to a person's own work,
+		// which is what this test has always been guarding. A hidden status
+		// and a draft are properties of the CASE: one is a status its
+		// administrator marked hidden, the other is a case nobody has accepted
+		// yet. An assignee condition here would still be the defect.
+		expect(defaults[0].filter).toEqual({
+			statusHiddenInLists: false,
+			isDraft: false,
+		})
 	})
 
 	it('keeps closed cases out of Mine and Unclaimed', () => {
@@ -123,9 +246,62 @@ describe('Cases index lenses', () => {
 		)
 	})
 
+	it('offers exactly one lens that asks for archived cases', () => {
+		// REQ-CM-42. One lens rather than a toggle on every page (D-3), and a
+		// chip rather than a menu entry (ADR-097).
+		const asking = chips('Cases').filter(
+			(entry) => entry.filter && '_archived' in entry.filter,
+		)
+		expect(asking).toHaveLength(1)
+		expect(asking[0].label).toBe('Archived')
+		expect(asking[0].filter).toEqual({ _archived: true })
+	})
+
+	it('is not the default lens, so the archive is never the first paint', () => {
+		expect(chip('Cases', 'Archived').default).toBeUndefined()
+	})
+
+	it('adds no navigation entry for the archive', () => {
+		// REQ-CM-42, ADR-097. The Archived lens is reachable from the Cases
+		// page and nowhere else. A menu entry would make the archive look like
+		// a second place cases live, which is exactly what an archive is not.
+		const archiveEntries = (manifest.menu ?? []).filter((entry) =>
+			JSON.stringify(entry).toLowerCase().includes('archived'),
+		)
+		expect(archiveEntries).toEqual([])
+	})
+
+	it('leaves every working lens free of an archive filter', () => {
+		// 🔴 THE EXCLUSION IS THE PLATFORM'S, NOT THIS PAGE'S. OpenRegister's
+		// object list, aggregation endpoint and search providers all exclude
+		// archived objects unless a query asks for them, so a working lens
+		// that spelled `_archived: false` would be a second copy of a rule
+		// that already holds. Two spellings of one rule is how a list and the
+		// tile beside it come to disagree.
+		const spelled = chips('Cases').filter(
+			(entry) =>
+				entry.label !== 'Archived'
+				&& entry.filter
+				&& '_archived' in entry.filter,
+		)
+		expect(spelled).toEqual([])
+	})
+
+	it('keeps the archive out of the Queue by the same default', () => {
+		// The Queue's base filter carries no archive condition either, and it
+		// does not need one twice over: the platform excludes archived objects
+		// from every list, and a case can only be archived after it has ended,
+		// which `isFinalStatus: false` already keeps out.
+		const queue = page('Queue').config.filter
+		expect('_archived' in queue).toBe(false)
+		expect(queue.isFinalStatus).toBe(false)
+	})
+
 	it('spells the Overdue operator as a flat bracket key', () => {
 		expect(chip('Cases', 'Overdue').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[lt]': '@today',
 		})
 	})
@@ -133,6 +309,8 @@ describe('Cases index lenses', () => {
 	it('gives Due this week the half-open window on deadline', () => {
 		expect(chip('Cases', 'Due this week').filter).toEqual({
 			isFinalStatus: false,
+			statusHiddenInLists: false,
+			isDraft: false,
 			'deadline[gte]': '@today',
 			'deadline[lt]': '@today+7d',
 		})
@@ -140,10 +318,21 @@ describe('Cases index lenses', () => {
 })
 
 describe('Tasks index lenses', () => {
-	it('declares the same six labels as Cases, in the same order', () => {
+	it('declares the same six labels as the Cases list shares with it, in order', () => {
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(LENSES)
+		// The parity is still asserted, with the three lenses a task list
+		// cannot carry taken out rather than the whole comparison dropped.
+		// Unread is a per-USER lens over OpenRegister's read state on the
+		// `case` schema, and a task is a different object with a read state of
+		// its own. Handed on reads `handoverPending`, which a case carries
+		// because a case is what moves between teams; a task moves with its
+		// case. Stuck reads a case sitting in a STATUS longer than that status
+		// allows, and a task has neither a status type nor a maximum dwell.
+		// The day any of the three grows a counterpart, this filter says so.
 		expect(chips('Tasks').map((entry) => entry.label)).toEqual(
-			chips('Cases').map((entry) => entry.label),
+			chips('Cases')
+				.map((entry) => entry.label)
+				.filter((label) => CASES_ONLY.includes(label) === false),
 		)
 	})
 
@@ -225,6 +414,33 @@ describe('Tasks index lenses', () => {
 		expect(page('Tasks').config.columns).toBeUndefined()
 		expect(page('Tasks').config.entitySource).toBe('tasks')
 	})
+
+	/**
+	 * task-search-fields: a lens answers one of six fixed questions, a field
+	 * lets you ask your own. Both reach the server and they compose.
+	 *
+	 * The sidebar only offers a filter for a property marked `facetable`, so
+	 * a sidebar switched on with no declaration is a search box and nothing
+	 * else. That is what this page shipped before, and it looks identical to
+	 * a sidebar whose filters happen to match everything.
+	 *
+	 * Whether each declared field reaches a real inbox argument is asserted
+	 * in `tests/vitest/taskSearchFields.spec.js`, under "every declared field
+	 * maps to an inbox argument".
+	 */
+	it('declares five search fields beside the six lenses', () => {
+		const config = page('Tasks').config
+		expect(config.sidebar.enabled).toBe(true)
+
+		const filters = Object.entries(config.sidebar.fields)
+			.filter(([, prop]) => prop.facetable === true)
+			.map(([key]) => key)
+		// `kind` joined the four with case-reminder-as-task (#2920): a
+		// reminder is an engine task like any other, so the only thing that
+		// tells it apart from the work a flow scheduled is what sort of task
+		// it is, and the list could not be asked that.
+		expect(filters).toEqual(['objectUuid', 'state', 'priority', 'kind', 'dueAt'])
+	})
 })
 
 /**
@@ -254,7 +470,8 @@ describe('the relative-date tokens the windows are built from', () => {
 })
 
 /**
- * The dashboard widgets that link to the Cases page with a deadline filter.
+ * The dashboard / My Work widgets that link to the Cases page with a
+ * deadline filter.
  *
  * `dashboard-tiles` merged `overdue-cases` and `deadline-alerts` into one
  * `deadlines` table whose window is WIDER than the Overdue chip: everything
@@ -264,12 +481,18 @@ describe('the relative-date tokens the windows are built from', () => {
  * chip exactly; `deadlines` must reproduce its OWN filter, which is what
  * makes its count and its View all agree.
  *
- * @return {object} The Dashboard page's widgets, by id.
+ * dashboard-my-work-split (2026-09-13) moved `deadlines` off the Dashboard
+ * page onto the My Work landing page (`MyWorkHome`); `kpi-overdue` stayed on
+ * the Dashboard. Both pages are read here so either widget resolves.
+ *
+ * @return {object} The two pages' widgets, by id.
  */
 function dashboardWidgets() {
 	const byId = {}
-	for (const widget of page('Dashboard').config.widgets) {
-		byId[widget.id] = widget
+	for (const pageId of ['Dashboard', 'MyWorkHome']) {
+		for (const widget of page(pageId).config.widgets) {
+			byId[widget.id] = widget
+		}
 	}
 	return byId
 }
@@ -439,8 +662,12 @@ describe('what this change does NOT move', () => {
 		// first such addition, `Integrations`
 		// (pluggable-integration-registry) the second, `Contacts`
 		// (contacts-domain) the third and the `Organisations` right after it
-		// (contacts-you-can-find) the fourth; every entry this change was
-		// about is unmoved, in the same order.
+		// (contacts-you-can-find) the fourth, and `Deleted cases`
+		// (case-recycle-window) the fifth; every entry this change was
+		// about is unmoved, in the same order. `Deleted cases` spends no
+		// top-level slot: `menu-layout.json` relocates it under `My work`
+		// beside `All cases`, which is where a handler looks for the case
+		// they just deleted.
 		//
 		// TWO ENTRIES ARE LABELLED `Organisations` AND THAT IS NOT A TYPO. The
 		// second one, further down, is `TenantsMenu` — the multitenancy
@@ -450,14 +677,21 @@ describe('what this change does NOT move', () => {
 		// exactly where it should be visible.
 		expect(manifest.menu.map((entry) => entry.label)).toEqual([
 			'Dashboard',
+			// `Your queue` and `Close out your day` are the sixth and seventh
+			// later additions (one-personal-queue, #2842): one page holding
+			// everything waiting on the reader across four stores, and the
+			// screen that closes the day against what they opened in it.
+			'Your queue',
 			'Queue',
 			'Assigned to me',
 			'My work',
 			'Contacts',
 			'Organisations',
 			'All cases',
+			'Deleted cases',
 			'Objects',
 			'Tasks',
+			'Close out your day',
 			'Workflow board',
 			'Reports',
 			'Processing time',
@@ -469,14 +703,37 @@ describe('what this change does NOT move', () => {
 			'Organisations',
 			'Map layers',
 			'Case types',
+			// The eighth later addition (attribute-catalogue-folders): the
+			// attribute catalogue, beside the case types it files for. It
+			// spends no top-level slot either, because it carries
+			// `section: "settings"` like `Case types` and `Flows` do.
+			'Attributes',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
+			// Eight schemas that shipped with a register entry and no way in
+			// (#2959, #2961, #2958): the offline inspection trio, the three
+			// remaining sociaal domein records, the supplier portal accounts
+			// and the data breach register. Each spends no top-level slot,
+			// because all eight carry `section: "settings"`, and each existed
+			// as stored data only an admin reading the register could see.
+			'Field evidence',
+			'Offline sync queue',
+			'Offline sync conflicts',
+			'Needs assessments',
+			'Multidisciplinary consultations',
+			'Re-integration pathways',
+			'Supplier portal accounts',
+			'Data breach register',
 			'Substitutions & reassignment',
 			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',
 			'AI oversight',
+			// The register behind every case type, reachable from the app
+			// rather than only from OpenRegister (#2911). It reads last
+			// because it is the only entry that leaves dossiq.
+			'Data model',
 		])
 	})
 })

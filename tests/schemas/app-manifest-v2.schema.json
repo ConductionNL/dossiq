@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.26.0",
+	"version": "2.37.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -90,7 +90,8 @@
 									"properties": { "value": {}, "label": { "type": "string" } }
 								}
 							},
-							"optionsSource": { "type": "string", "description": "choice: endpoint/registry to load options from (alternative to static options)." },
+							"optionsSource": { "type": "string", "description": "choice: where to read the option list from at runtime, instead of declaring it here. Names a key in the app's own GET /api/setup/status document (dots walk into nested objects, e.g. `profiles`). Entries accept `id` for `value` and `name` for `label`, and a numeric `objectCount` becomes the stat a card shows. Use it when the SERVER owns what is on offer, so the manifest cannot drift from it." },
+							"display": { "type": "string", "enum": ["select", "cards"], "default": "select", "description": "choice: how the options are rendered. `select` is a dropdown; `cards` is a grid of CnChoiceCards, which shows each option's description and stats. Pick cards when the choice needs explaining." },
 							"dependsOn": { "type": "string", "description": "choice: the configKey of a previous choice step this one cascades from. Disabled until the parent is set; its option list is taken from optionsByParent[parentValue] (e.g. organisation-type depends on country)." },
 							"optionsByParent": { "type": "object", "description": "choice: map of parent-choice value → options[] for a dependent (dependsOn) choice. Same option item shape as `options`.", "additionalProperties": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["value", "label"], "properties": { "value": {}, "label": { "type": "string" } } } } },
 							"suggestFrom": { "type": "string", "description": "choice: the configKey of an earlier choice this step pre-fills a suggestion from. When that value is set and the user has not yet picked here, the option matching suggestMap[parentValue] is auto-selected (still user-overridable)." },
@@ -216,6 +217,10 @@
 				}
 			}
 		},
+		"personalisation": {
+			"$ref": "#/$defs/personalisation",
+			"description": "App defaults for the per-user options CnPersonalPreferences renders, and the switch that turns the personal layer off instance wide."
+		},
 		"nav": {
 			"type": "object",
 			"additionalProperties": false,
@@ -327,6 +332,26 @@
 			"$ref": "#/$defs/observability",
 			"description": "Declarative observability block (ADR-040). Consumed at request time by the OpenRegister AppHost observability engine (GenericHealthController + GenericMetricsController), NOT by the Vue renderer. Declares the app's health checks and Prometheus metric descriptors so adopting apps ship zero hand-written observability PHP while keeping their /api/health + /api/metrics URLs and the ADR-006 contract."
 		},
+		"store": {
+			"type": "object",
+			"description": "ADR-080 / ADR-114 Decision 4. The declarative store plane. An app that declares this block gets a working Store surface with NO backend of its own: OpenRegister's AppHost aliases /api/store/items and /api/store/items/{slug}/install at its GenericStoreController, which reads this block at request time. Discovery stays in the engine (the SSRF guard, the redirect refusal and the registry token never leave it) and the app builds no registry URL.",
+			"additionalProperties": false,
+			"anyOf": [
+				{ "required": ["schema"], "title": "An objects store names the remote schema its registry serves." },
+				{ "required": ["types"], "title": "A configuration store names the shareable types it surfaces." }
+			],
+			"properties": {
+				"schema": { "type": "string", "description": "Remote schema slug the registry serves (e.g. \"case-type-template\", \"application-template\")." },
+				"register": { "type": "string", "description": "Remote register segment, used when the instance's registry_register config is unset or empty." },
+				"localRegister": { "type": "string", "description": "The register an install WRITES into. Defaults to the app id. A schema slug is NOT unique across the fleet (`case`, `task` and `document` exist in several apps at once), so an unscoped write can land in another app's register: an app whose OpenRegister register slug differs from its app id must set this." },
+				"installable": { "type": "array", "items": { "type": "string" }, "description": "Schema slugs an install may write. THIS IS A SECURITY BOUNDARY, not a convenience: a registry is somebody else's server, and without the allowlist an item could name any schema the app owns. An absent or empty list refuses EVERY install rather than permitting every install." },
+				"kinds": { "type": "array", "items": { "type": "string" }, "description": "Kind quick-filters (ADR-080 Decision 5). Declared ONCE here, beside the allowlist: the engine returns them in the search response and CnStorePage prefers them over its page config. Defaults to the shared vocabulary when omitted." },
+				"types": { "type": "array", "items": { "type": "string" }, "description": "Shareable configuration type ids this store surfaces (store-over-federated-config). Declaring these makes the store exchange CONFIGURATION rather than rows: an item is a configuration set (`openregister.configset`), a flow (`openregister.flows`), a register with its schemas (`openregister.registers`), or any schema that marked itself `x-openregister-shareable`. Cards come from federated discovery and an install runs through the owning type, so a set arrives as registers, schemas, objects, views, flows, sources and mappings. An app that declares none keeps the remote objects API described by `schema`/`register`, and makes no discovery call at all." },
+				"cardFields": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Card field to remote property map. Defaults to the field names the fleet's registries already publish." },
+				"builtIn": { "type": "array", "description": "The items this app ships itself, rendered when no registry is configured or the registry does not answer. ADR-080 Decision 4 makes this the price of the word Store: a surface that goes blank without a registry was never a store.", "items": { "type": "object", "additionalProperties": false, "required": ["slug", "title"], "properties": { "slug": { "type": "string" }, "title": { "type": "string" }, "description": { "type": "string" }, "kind": { "type": "string" } } } },
+				"_note": { "type": "string", "description": "Free-text rationale, ignored at runtime." }
+			}
+		},
 		"deepLinks": {
 			"type": "array",
 			"items": { "$ref": "#/$defs/deepLink" },
@@ -412,6 +437,114 @@
 		}
 	},
 	"$defs": {
+		"rowIndicator": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": [
+				"field",
+				"text"
+			],
+			"description": "One declared state indicator on an index page's rows. Renders as an icon with a text alternative and a tooltip, never as colour alone.",
+			"properties": {
+				"id": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Stable id for this indicator, used as its test id and its render key. Defaults to `field`."
+				},
+				"field": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Dotted path on the row the condition reads."
+				},
+				"equals": {
+					"description": "The indicator applies when the field equals this value exactly."
+				},
+				"in": {
+					"type": "array",
+					"description": "The indicator applies when the field's value is one of these."
+				},
+				"icon": {
+					"type": "string",
+					"description": "CnIcon name (PascalCase). Defaults to InformationOutline."
+				},
+				"text": {
+					"type": "string",
+					"minLength": 1,
+					"description": "The text alternative, read out beside the icon. Required: an indicator without one does not render."
+				},
+				"tooltip": {
+					"type": "string",
+					"description": "Hover text. Defaults to `text`."
+				}
+			}
+		},
+		"folderSidebarScope": {
+			"type": "object",
+			"additionalProperties": true,
+			"description": "One folder in `config.folderSidebar.folders[]`, which doubles as a SCOPE: the three optional list-layout keys below let one index page show each folder the way that folder needs. Every other key (id, name, icon, ...) stays free-form, so an existing folder list validates unchanged. The page's `config.columns` still decides which columns this page HAS; a scope only decides which of them are shown, in what order, sorted by what and searched over what. A scope naming a column the page does not declare is refused by validateManifestV2, not silently rendered.",
+			"properties": {
+				"columns": {
+					"type": "array",
+					"description": "The columns this scope shows, in order. Same shapes as `config.columns`: a bare key string or a column object. Every key must be one the page's `config.columns` declares. Omit to show the page's own columns.",
+					"items": {
+						"oneOf": [
+							{
+								"type": "string"
+							},
+							{
+								"type": "object",
+								"additionalProperties": true
+							}
+						]
+					}
+				},
+				"defaultSort": {
+					"description": "The sort the fetch carries while this scope is active. One `{ key, order }` entry or a list of them; `order` is 'asc' (default) or 'desc'. `field` is accepted in place of `key`, matching the CnIndexPage `defaultSort` prop.",
+					"oneOf": [
+						{
+							"$ref": "#/$defs/folderSidebarScopeSort"
+						},
+						{
+							"type": "array",
+							"items": {
+								"$ref": "#/$defs/folderSidebarScopeSort"
+							}
+						}
+					]
+				},
+				"searchFields": {
+					"type": "array",
+					"items": {
+						"type": "string",
+						"minLength": 1
+					},
+					"description": "The fields the search box searches over while this scope is active. Omit to search whatever the page searches by default."
+				}
+			}
+		},
+		"folderSidebarScopeSort": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "One sort entry for a `folderSidebar` scope. Name the column with `key` (manifest spelling) or `field` (the CnIndexPage prop spelling); an entry carrying neither is dropped rather than sent as an empty sort key.",
+			"properties": {
+				"key": {
+					"type": "string",
+					"minLength": 1
+				},
+				"field": {
+					"type": "string",
+					"minLength": 1
+				},
+				"order": {
+					"type": "string",
+					"enum": [
+						"asc",
+						"desc"
+					],
+					"default": "asc"
+				}
+			}
+		},
 		"supportButton": {
 			"type": "object",
 			"additionalProperties": false,
@@ -692,6 +825,248 @@
 				}
 			}
 		},
+		"splitView": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "The list and one open record, side by side. Declared on an index page; buildManifestRoutes() then emits a second route <route>/split/:id under the name <pageId>__split, carrying meta.cnSplitOf so CnPageRenderer still resolves it to this page and the list never unmounts.",
+			"properties": {
+				"enabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether opening a row opens it beside the list. False renders exactly as today: a full page list and a full page detail."
+				},
+				"breakpoint": {
+					"type": "integer",
+					"minimum": 320,
+					"maximum": 2560,
+					"default": 1024,
+					"description": "Viewport width in pixels below which the split address renders the full detail page instead of the pane, so a link sent from a laptop opens on a phone."
+				},
+				"paneWidth": {
+					"type": "string",
+					"description": "CSS width of the detail pane, e.g. '38%' or '520px'. Defaults to '42%'."
+				}
+			}
+		},
+		"savedViewPlaces": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "A saved view of this page is a place. buildManifestRoutes() emits <route>/<routeBase>/:viewId under the name <pageId>__view, the view's own presentation config decides how it opens, and a pinned view hangs under this page's navigation entry rather than beside it. Index pages only, and only meaningful alongside allowSavedViews: without the dropdown there is no view to be a place. Absent, the page keeps the dropdown and the ?view= query it has today.",
+			"properties": {
+				"enabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether this page's saved views are places. False reads as a page that considered it and declined, and renders exactly as a page that never named the key."
+				},
+				"routeBase": {
+					"type": "string",
+					"pattern": "^[a-z0-9][a-z0-9-]*$",
+					"default": "views",
+					"description": "The path segment between the page's own route and the view id, so 'views' gives /cases/views/42. Lowercase and dash only, because it is a segment of an address a person reads and sends."
+				},
+				"navGroup": {
+					"type": "string",
+					"description": "The id of the navigation entry a pinned view hangs under. Omitted, it hangs under the entry that points at this page. A pinned view never becomes a top-level entry, so an app's navigation budget cannot be spent by a user pinning (ADR-097)."
+				},
+				"pinnedCap": {
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 20,
+					"default": 5,
+					"description": "How many pinned views the navigation renders under that entry. Past the cap the rest stay reachable from the page itself, so a person who pins twenty views gets a navigation that still reads (ADR-097)."
+				}
+			}
+		},
+		"savedViewTree": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "Saved views render as a tree rather than a flat list, carry labels, and may ship with the app. Two hundred personal views in one dropdown is the problem this solves. Index pages only, and only meaningful alongside allowSavedViews: without the dropdown there is no view to put in a tree. Absent, the page renders the flat dropdown it renders today. The view entity itself, its parent, its labels and its slug are OpenRegister's (saved-search-views); this key declares how this page presents them.",
+			"properties": {
+				"enabled": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether this page renders its saved views as a tree. False reads as a page that considered it and declined, and renders exactly as a page that never named the key."
+				},
+				"maxDepth": {
+					"type": "integer",
+					"minimum": 1,
+					"maximum": 5,
+					"default": 3,
+					"description": "How deep a parent chain may go. A bound rather than a taste: inheritance resolves by walking the chain, so an unbounded depth turns one render into an unbounded walk, and a person who can nest for ever will. Past the bound a save is refused naming the view, which is louder than a tree nobody can read."
+				},
+				"templates": {
+					"type": "array",
+					"description": "What a new view may start from. A template presets the columns, the sort and the export field set, and the person may change each. Declare none and Save current view means what it has always meant: the list as it stands.",
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["slug", "name"],
+						"properties": {
+							"slug": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+							"name": { "type": "string" },
+							"columns": { "type": "array", "items": { "type": "string" } },
+							"defaultSort": { "type": "string" },
+							"exportFields": { "type": "array", "items": { "type": "string" } }
+						}
+					}
+				},
+				"landingView": {
+					"type": "object",
+					"additionalProperties": false,
+					"description": "Which view a role opens this page on, as { role: slug }. A personal choice always wins and Reset returns here, so this is where somebody starts rather than where they are kept. A role's landing view changing mid-session applies on the next arrival: moving a reader's list out from under them is worse than a stale default.",
+					"patternProperties": {
+						"^[A-Za-z0-9_.-]+$": { "type": "string" }
+					}
+				},
+				"columnsPerRole": {
+					"type": "object",
+					"additionalProperties": false,
+					"description": "Which columns a role sees, as { role: [column] }. NARROWS index-columns-per-scope rather than replacing it: a role naming a column the scope does not offer gets nothing extra, because a per-role list that could add one would be a second, quieter way to put a field on screen the scope deliberately left off.",
+					"patternProperties": {
+						"^[A-Za-z0-9_.-]+$": { "type": "array", "items": { "type": "string" } }
+					}
+				},
+				"groupBy": {
+					"type": "string",
+					"description": "A field the list groups on, with a count per group. The counts are of the rows the list HOLDS, so on a paged list they are of the page and the surface says so; a second fetch per group is the cost this grouping exists to avoid."
+				},
+				"seeded": {
+					"type": "array",
+					"description": "Views that ship with the app. They render as their own group above the user's own, and a user may copy one but not delete it: a view the product promises is not a view one person can remove from everybody's install.",
+					"items": {
+						"type": "object",
+						"additionalProperties": false,
+						"required": ["slug", "name"],
+						"properties": {
+							"slug": {
+								"type": "string",
+								"pattern": "^[a-z0-9][a-z0-9-]*$",
+								"description": "The stable name a dashboard widget, an export action or an API caller cites this view by. Lowercase and dash only, because it appears in an address and in a manifest somebody else writes. Required: a seeded view with no slug is a view nothing can call, which is most of the reason to seed it."
+							},
+							"name": {
+								"type": "string",
+								"description": "What the view is called in the control. Translatable."
+							},
+							"label": {
+								"type": "string",
+								"description": "One label this view carries, for the label filter. A view may carry none and stays reachable when no label filter is active."
+							},
+							"parent": {
+								"type": "string",
+								"description": "The slug of the view this one hangs under. Omitted, it sits at the root of the seeded group."
+							},
+							"actions": {
+								"type": "array",
+								"description": "The action ids this view offers, so a triage view offers three and not thirty. INTERSECTED with what the reader may run and never added to: a view declaring an action the reader has no right to does not grant it. Declare none and the view offers the page's actions, as today.",
+								"items": { "type": "string" },
+								"uniqueItems": true
+							},
+							"inherits": {
+								"type": "array",
+								"description": "Which parts this view takes from its parent. Each part resolves independently, so a child may narrow the criteria and keep the parent's columns. Declared on a view with no parent it is a contradiction and the validator refuses it: there is nothing to inherit from.",
+								"items": {
+									"type": "string",
+									"enum": ["criteria", "columns", "sorting", "defaultSort", "exportFields"]
+								},
+								"uniqueItems": true
+							}
+						},
+						"allOf": [
+							{
+								"description": "inherits without a parent is a declaration that reads as configured and resolves to nothing. Refused here rather than silently ignored at render, which is the shape this whole change exists to stop.",
+								"if": {
+									"required": ["inherits"]
+								},
+								"then": {
+									"required": ["parent"]
+								}
+							}
+						]
+					}
+				}
+			}
+		},
+		"boardView": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["statusField"],
+			"description": "The board view of this list: one column per stage of a status field. Index pages only, and only offered when `viewModes` also lists `board`. The COLUMNS COME FROM THE SCHEMA, not from the values present in the loaded rows: a board built from the data would lose the stage nothing is in, which is the one you drag a card into, and would reorder itself as work moved. A move goes through the host's transition and never writes the status field, so a board can never move a case past a rule the case page enforces.",
+			"properties": {
+				"statusField": {
+					"type": "string",
+					"description": "The property the columns come from. Required: a board with no status field has nothing to be a board of. Its enum or lifecycle states are read from the register schema at RUNTIME, so a field with neither cannot be caught here; the view says so on screen instead of drawing empty columns."
+				},
+				"cardFields": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "The fields a card shows. Keep it short: a card is scanned, not read."
+				},
+				"swimlaneField": {
+					"type": "string",
+					"description": "A second field to group the board into rows by, while the columns stay the stages. Cards with no value for it land in one named row, last, rather than being dropped: grouping by handler and hiding the unassigned work turns a board into a picture of what is already somebody's problem."
+				}
+			}
+		},
+		"dateAxisView": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": ["startField", "endField"],
+			"description": "The date-axis view of this list: rows on a time scale, overlaps visible. Index pages only, and only offered when `viewModes` also lists `dateAxis`. IT HIDES NOTHING AND RESCHEDULES NOTHING: overlapping bars get their own track so the lane grows taller rather than losing a bar, rows with no usable dates go to a visible unplanned lane, and the only gesture is opening a row. A view that moved a bar on drag would be changing statutory dates from a picture.",
+			"properties": {
+				"startField": {
+					"type": "string",
+					"description": "Where a row's start is. Required: a bar needs both ends, and a row missing one is unplanned rather than drawn."
+				},
+				"endField": {
+					"type": "string",
+					"description": "Where a row's end is. Required, for the same reason."
+				},
+				"laneField": {
+					"type": "string",
+					"description": "What to put in a lane together, usually the person the work is on. Omitted, everything shares one lane."
+				},
+				"labelField": {
+					"type": "string",
+					"description": "The field a bar is named by, on screen and in its accessible name. A bar positioned by percentage says nothing at all to a reader who cannot see it."
+				}
+			}
+		},
+		"personalisation": {
+			"type": "object",
+			"additionalProperties": false,
+			"description": "The app's own defaults for the per-user options CnPersonalPreferences renders. The values a person chooses are stored in their Nextcloud preferences, never here; this block is only the bottom layer of the app default, administered value, personal value order.",
+			"properties": {
+				"enabled": {
+					"type": "boolean",
+					"default": true,
+					"description": "Whether the personal layer applies at all. An administrator setting this false collapses it: the options render as unavailable with the reason, rather than being silently ignored."
+				},
+				"disabledReason": {
+					"type": "string",
+					"description": "What to tell a person when the personal layer is off. Shown beside the unavailable options."
+				},
+				"landingPage": {
+					"type": "string",
+					"description": "Page id the app opens on when a person has chosen nothing."
+				},
+				"dateDisplay": {
+					"type": "string",
+					"enum": ["absolute", "relative"],
+					"default": "absolute",
+					"description": "How dates read by default. A relative date always carries its absolute date in the accessible name and the tooltip, because a term read as '3 dagen geleden' hides the date the term runs to."
+				},
+				"rememberLastView": {
+					"type": "boolean",
+					"default": false,
+					"description": "Whether each list reopens in the view mode that person last used on it."
+				},
+				"pinnedMenu": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "Menu ids pinned to the top of the navigation by default. A person may reorder and repin their own."
+				}
+			}
+		},
 		"primaryAction": {
 			"type": "object",
 			"required": ["label"],
@@ -955,6 +1330,21 @@
 			"additionalProperties": false,
 			"description": "A uniform widget placement entry used on every page type in v2. Replaces the v1 widgetDef + layoutItem pair with a single shape. Its props/dataSource/filter string leaves are guarded against the closed sentinel vocabulary via the sentinelGuardedValue allOf. The cross-field constraint gridX + gridWidth <= 12 CANNOT be expressed in JSON Schema (arithmetic over sibling fields) — it is documented here and enforced at runtime by validateManifestV2() as a post-schema check. Failure message: \"Widget '{widgetKey}' in slot '{slot}': gridX ({gridX}) + gridWidth ({gridWidth}) exceeds 12\".",
 			"properties": {
+				"roles": {
+					"type": "array",
+					"items": { "type": "string", "minLength": 1 },
+					"description": "Group ids that may see this widget. A DECLARATION THE HOST APP ENFORCES, not something this library evaluates: the check belongs on the read, where the figures are, because a widget hidden in the browser still had its data in the page payload (ADR-004). Pair it with `visibleWhen` pointing at an endpoint of the app's own, which IS evaluated here and collapses the cell when the fetch or the shape fails, so the declaration and the layout cannot disagree. Omitting it means every reader of the page sees the widget. Added because the key was expressible in the legacy `config.widgets[]` array, whose items are open, and refused here, so the same declaration validated on one page and was rejected on another.",
+					"examples": [["controllers", "beheerders", "admin"]]
+				},
+				"visibleWhen": {
+					"$ref": "#/$defs/visibleWhen",
+					"description": "Render this widget only while the predicate holds. The same shape every other surface takes it in. It was already honoured at runtime for widgets (CnDashboardPage reads `def.visibleWhen`) and could not be declared in this shape, so a widget in the uniform entry had no way to express a visibility condition at all while one in the legacy array did."
+				},
+				"requiredApp": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Nextcloud app id this widget leans on — its data lives in that app's register, or its component comes from that app's integration leaf. When the app is absent the widget renders its normal chrome and a set-up state and issues NO request. Declared rather than inferred from content.register, because a register slug is not always the app id and a widget can depend on an app without querying it."
+				},
 				"id": {
 					"type": "string",
 					"pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
@@ -1607,7 +1997,7 @@
 			"type": "object",
 			"required": ["id", "label"],
 			"additionalProperties": false,
-			"description": "A typed page action with a discriminator field. The type field determines behaviour: handler (registry function), open-modal (modal by id), open-page (named route), navigate (URL), object-op (declarative OpenRegister mutation via useObjectStore), export (opens the shared CnMassExportDialog export launcher), open-form (schema-driven create dialog — CnActionButtons), refresh (bumps the cn:page:refresh signal), api-call (POST/PUT an app endpoint + toast + refresh — CnActionButtons/dispatchAction), toggle (two-way state button — CnActionButtons only, NOT dispatchable). When type is omitted, it defaults to 'handler' (back-compatibility with v1.3.0 action declarations). The Ajv instance is compiled with useDefaults: true so the default is applied during validation.",
+			"description": "A typed page action with a discriminator field. The type field determines behaviour: handler (registry function), open-modal (modal by id), open-page (named route), navigate (URL), object-op (declarative OpenRegister mutation via useObjectStore), export (opens the shared CnMassExportDialog export launcher), open-form (schema-driven create dialog — CnActionButtons), refresh (bumps the cn:page:refresh signal), api-call (POST/PUT an app endpoint + toast + refresh — CnActionButtons/dispatchAction), agent (run a governed hermiq agent), run-node (invoke one OpenRegister flow node against the page object, config collected via a dialog sourced from the node's own declared form — CnActionButtons/dispatchAction, or-flow-run-node; distinct from the UNRELATED setup-wizard step type of a similar name, 'run-action'), toggle (two-way state button — CnActionButtons only, NOT dispatchable). When type is omitted, it defaults to 'handler' (back-compatibility with v1.3.0 action declarations). The Ajv instance is compiled with useDefaults: true so the default is applied during validation.",
 			"properties": {
 				"id": {
 					"type": "string",
@@ -1619,7 +2009,7 @@
 				},
 				"type": {
 					"type": "string",
-					"enum": ["handler", "open-modal", "open-page", "navigate", "object-op", "export", "open-form", "refresh", "api-call", "agent", "toggle"],
+					"enum": ["handler", "open-modal", "open-page", "navigate", "object-op", "export", "open-form", "refresh", "api-call", "agent", "run-node", "toggle"],
 					"default": "handler",
 					"description": "Action behaviour discriminator. Defaults to 'handler' when omitted (back-compat with v1.3.0). handler: calls a registry function; open-modal: opens a modal by target id; open-page: navigates to a named route; navigate: navigates to a URL; object-op: dispatches a declarative mutation (patch | delete | create) of an OpenRegister object via the shared object store; export: opens the shared CnMassExportDialog export launcher configured via entities[]/formats[] — the confirm payload ({format, entity?}) routes to the action's `handler` in the manifest actions map (the app's export service does the download). open-form (#91 Wave 3): CnActionButtons opens a schema-driven create dialog (CnAdvancedFormDialog) for the action's register/schema, saves + toasts + refreshes + optionally navigates to onSuccessRoute. refresh (#91 Wave 3): bumps the page-level cn:page:refresh event-bus signal so every endpoint-bound widget refetches. api-call (#91 Wave 3): POST/PUT the token-interpolated url with payload/params (JSON body, payload resolves @-tokens recursively at any depth) + success/error toast + auto page-refresh (unless refresh:false); confirm gating is surface-consumed intent (object-op precedent); download:true requests a binary blob and triggers a browser file download instead (auto-refresh defaults to OFF in that mode). agent (hermiq#41): run a governed hermiq agent against the page object — POSTs { register, schema, objectId, resultField?, skill?, prompt? } to /apps/hermiq/api/agents/{agent}/run-on-object (object-RBAC-scoped; dispatches the governed AgentRunRequestedEvent). register/schema/objectId default to the page's @register/@schema/@objectId object context. A first-class companion to api-call (which remains the fallback for a bespoke body); hermiq is NOT hard-required — an app-level 404 surfaces a graceful 'agent runtime unavailable' toast. toggle (#91 Wave 3): a stateful two-way state button rendered by CnActionButtons (GET stateSource on mount, optimistic write on click) — NOT dispatchable through dispatchAction. object-op declares mutation INTENT only — authority is enforced server-side by OpenRegister RBAC (ADR-022/ADR-023); authorization-shaped fields have no client-side effect and are not accepted here."
 				},
@@ -1646,6 +2036,46 @@
 					"type": "object",
 					"description": "Additional props forwarded to the handler or modal.",
 					"additionalProperties": true
+				},
+				"createOverride": {
+					"type": "string",
+					"description": "Registry handler name that owns the persist for an `open-form` action, replacing the default objectStore.saveObject. Resolved exactly as CnIndexPage resolves its own `createOverride` prop (a kind:'create-override' entry's `.handler`, a function-valued registry entry, or a function in the legacy customComponents map). Needed when the schema requires a field the create form cannot supply on its own — a server-minted foreign key, say — where a straight save would 400."
+				},
+				"includeFields": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "open-form: the only fields the create dialog asks for. One schema often backs two surfaces, a detail page that edits all of it and a header button that collects what someone filing a new one types, and this is how the button says which it is. Omit for the whole schema."
+				},
+				"excludeFields": {
+					"type": "array",
+					"items": { "type": "string" },
+					"description": "open-form: fields the create dialog leaves out. Use it to drop a handful; use includeFields when it is easier to name what stays."
+				},
+				"fieldOverrides": {
+					"type": "object",
+					"additionalProperties": true,
+					"description": "open-form: per-field overrides passed to fieldsFromSchema, keyed by field. Recognised keys include label, order, hidden, readOnly and widget."
+				},
+				"advanced": {
+					"type": "boolean",
+					"default": false,
+					"description": "open-form: open the properties-and-JSON table (CnAdvancedFormDialog) instead of the plain form. The plain form is the default because a header button is aimed at someone filing a record, not at inspecting its schema."
+				},
+				"formTitle": {
+					"type": "string",
+					"description": "open-form: overrides the create dialog's heading. Defaults to 'Create {schema title}'."
+				},
+				"size": {
+					"type": "string",
+					"enum": ["small", "normal", "large", "full"],
+					"default": "normal",
+					"description": "open-form: how wide the create dialog is, passed straight to NcDialog. Widen a form that asks enough questions to need scrolling; pair it with columns: 2."
+				},
+				"columns": {
+					"type": "integer",
+					"enum": [1, 2],
+					"default": 1,
+					"description": "open-form: how many columns the fields flow into. 2 pairs them up, which halves the scrolling on a longer form. Textareas and JSON editors still span the full width, and the layout collapses to one column below 700px. Widen the dialog with size: 'large' as well, or two columns are merely two narrow ones."
 				},
 				"handler": {
 					"type": "string",
@@ -1724,16 +2154,28 @@
 				},
 				"successMessage": {
 					"type": "string",
-					"description": "api-call / open-form / agent / toggle: pre-translated success toast text (a library default applies when absent; agent default 'Run queued')."
+					"description": "api-call / open-form / agent / run-node / toggle: pre-translated success toast text (a library default applies when absent; agent default 'Run queued')."
 				},
 				"errorMessage": {
 					"type": "string",
-					"description": "api-call / agent / toggle: pre-translated error toast text (falls back to the server's error/message, then a library default; an agent 404 with no structured body toasts 'agent runtime unavailable' instead)."
+					"description": "api-call / agent / run-node / toggle: pre-translated error toast text (falls back to the server's error/message, then a library default; an agent 404 with no structured body toasts 'agent runtime unavailable' instead)."
 				},
 				"refresh": {
 					"type": "boolean",
 					"default": true,
-					"description": "api-call / agent / toggle: bump the page-level cn:page:refresh signal after a successful call (default true; set false to skip). EXCEPTION: for an api-call with download:true the default flips to false — a file download normally shouldn't also force-refetch every widget — set refresh:true explicitly to opt back in."
+					"description": "api-call / agent / run-node / toggle: bump the page-level cn:page:refresh signal after a successful call (default true; set false to skip). EXCEPTION: for an api-call with download:true the default flips to false — a file download normally shouldn't also force-refetch every widget — set refresh:true explicitly to opt back in."
+				},
+				"flowId": {
+					"type": "string",
+					"description": "run-node only (REQUIRED): the published flow's uuid whose node this action invokes. A node's config and eligibility are properties of the flow it lives in (RN-3, OpenRegister's or-flow-run-node), so the manifest names which flow's instance to call rather than a bare node type — two flows could each carry the same node TYPE wired differently."
+				},
+				"nodeId": {
+					"type": "string",
+					"description": "run-node only (REQUIRED): the id of the node, within flowId's published graph, to invoke directly. POSTed to /api/flows/{flowId}/nodes/{nodeId}/run — refused (404) unless that node type has opted in to direct invocation (IFlowDirectlyInvokable)."
+				},
+				"subject": {
+					"type": "string",
+					"description": "run-node only: the subject object the node acts on and is authorized against (OpenRegister object-RBAC — the caller needs update permission on it; the flow's own flow.run right is deliberately NOT what gates this). Typically @objectId; may interpolate the shared @-token grammar. An unresolved required token BLOCKS the call, matching agent's objectId."
 				},
 				"agent": {
 					"type": "string",
@@ -1757,11 +2199,11 @@
 				},
 				"register": {
 					"type": "string",
-					"description": "open-form / agent: OpenRegister register slug. open-form: the create dialog's schema register. agent: the run-on-object register — both fall back to the page object context's @register."
+					"description": "open-form / agent / run-node: OpenRegister register slug. open-form: the create dialog's schema register. agent / run-node: the register the subject object belongs to — falls back to the page object context's @register."
 				},
 				"schema": {
 					"type": "string",
-					"description": "open-form / agent: OpenRegister schema slug. open-form: the create dialog fetches this schema and saves the new object against it. agent: the run-on-object schema — falls back to the page object context's @schema."
+					"description": "open-form / agent / run-node: OpenRegister schema slug. open-form: the create dialog fetches this schema and saves the new object against it. agent / run-node: the schema the subject object belongs to — falls back to the page object context's @schema."
 				},
 				"onSuccessRoute": {
 					"description": "open-form only: optional post-save navigation target (#91). A bare route NAME (string) navigates with the saved object's id merged into the route params under `id` (harmless when the route has no `:id` segment — backward compatible). The object form { name, paramField?, objectParam? } names the id param (`paramField`, default `id`) and, when `objectParam` is set, also passes the whole saved object under that param key (for a props:true detail route to render without a refetch). The id is read from saved.id, then saved.uuid, then saved['@self'].id.",
@@ -1801,7 +2243,16 @@
 				},
 				"variant": {
 					"type": "string",
-					"description": "CnActionButtons button variant (e.g. 'primary', 'secondary', 'error'). 'error' also styles the confirm dialog as destructive."
+					"description": "CnActionButtons button variant (e.g. 'primary', 'secondary', 'error'). 'error' also styles the confirm dialog as destructive. A 'primary' action is never collapsed into CnActionButtons' overflow menu and consumes none of its `inline` slots: NcActions paints all of its inline actions with one shared variant, so a lone primary among them is not expressible."
+				},
+				"children": {
+					"type": "array",
+					"description": "Sub-actions, rendered by CnActionButtons as this action's OWN chevron dropdown beside its button — deliberately not folded into the page's single overflow menu, because NcActions cannot nest and a list that grows per record (app versions, say) would swamp it. Children take the same shape as any action, `visibleWhen` included, and an action carrying them consumes none of the `inline` slots. The parent itself still renders its own button beside the chevron (`type` defaults to 'handler' when omitted), so a parent meant only to group its children needs a `handler` that does something meaningful — an untyped, handler-less parent renders a button that dispatches to nothing.",
+					"items": { "$ref": "#/$defs/action" }
+				},
+				"childrenLabel": {
+					"type": "string",
+					"description": "i18n key naming the `children` dropdown. Falls back to the parent action's own label, so the chevron is never announced unlabelled."
 				},
 				"visibleWhen": {
 					"$ref": "#/$defs/visibleWhen",
@@ -1848,6 +2299,14 @@
 						"required": ["type"]
 					},
 					"then": { "required": ["writeUrl"] }
+				},
+				{
+					"description": "run-node actions MUST declare which flow and which node within it (RN-3, or-flow-run-node) — a node's config and eligibility are properties of the flow it lives in, so neither can be inferred.",
+					"if": {
+						"properties": { "type": { "const": "run-node" } },
+						"required": ["type"]
+					},
+					"then": { "required": ["flowId", "nodeId"] }
 				}
 			]
 		},
@@ -1883,6 +2342,11 @@
 			"additionalProperties": false,
 			"description": "#91 Wave 3: the shared visibility predicate (the Wave-1 banner shape). THREE modes: `endpoint` (GET a JSON endpoint, `field` dot-paths into the body), `source` (an OpenRegister { register, schema, filter? } query — `field` into the first result, or omit / use @total for the collection total), or LOCAL (neither endpoint nor source — `field` dot-paths into the caller's object context, e.g. a detail-page record). `op` defaults to eq. Evaluation is FAIL-SAFE (any error → hidden).",
 			"properties": {
+				"appInstalled": {
+					"type": "string",
+					"minLength": 1,
+					"description": "Nextcloud app id that must be installed and enabled for the guarded element to show. A PRECONDITION rather than a fourth mode: it is checked before anything else, and on its own it is the whole condition. Combined with endpoint/source/field it gates that mode too, so both must hold. It exists because the menu's `visibleIf` already spoke this word and `visibleWhen` did not, so the same manifest vocabulary meant two different things in two places. Use it on an action that writes into a sibling app, so an install without that app shows no button rather than a form that saves nowhere."
+				},
 				"endpoint": {
 					"type": "string",
 					"description": "A same-origin URL returning JSON; `field` is a dot-path into the body."
@@ -2087,6 +2551,21 @@
 			"additionalProperties": false,
 			"description": "A v2 page definition. CnPageRenderer dispatches by type and matches by $route.name === page.id. All page types support a uniform widgets[] array for declarative slot placement. Sentinels (@resolve:*) are NOT allowed in id, route, component, headerComponent, actionsComponent, or slots.* — those are router and registry invariants.",
 			"properties": {
+				"requiresApp": {
+					"description": "Soft dependency gating this WHOLE page. When the named Nextcloud app is not installed, the page renders the missing-dependency screen instead of its body. This is for the DEEP LINK: an entry gated by visibleIf.appInstalled is already hidden from the menu, so the remaining ways in are a bookmark, a shared URL, a redirect or an e2e spec, and those otherwise land on an empty page where 'not installed' looks the same as 'no data'. Gate a single WIDGET with visibleIf.appInstalled instead: a detail page may carry many widgets where only one needs the app, and that widget should hide while the page renders normally.",
+					"oneOf": [
+						{ "type": "string", "minLength": 1 },
+						{
+							"type": "object",
+							"required": ["id"],
+							"additionalProperties": false,
+							"properties": {
+								"id": { "type": "string", "minLength": 1 },
+								"name": { "type": "string", "minLength": 1, "description": "Human-readable app name shown on the screen; defaults to the id." }
+							}
+						}
+					]
+				},
 				"id": {
 					"type": "string",
 					"description": "Vue-router route name. MUST be unique across pages[]. Sentinels (@resolve:*) are NOT allowed."
@@ -2097,8 +2576,9 @@
 				},
 				"type": {
 					"type": "string",
-					"enum": ["index", "detail", "dashboard", "logs", "settings", "chat", "files", "form", "map", "roadmap", "search", "wiki", "flow", "flows", "flow-detail", "custom"],
-					"description": "Page type. Closed enum of 17 supported types. 'flow' opens ONE flow in the editor; the flow LIST is an ordinary 'index' with config.source='flows'. 'flows' and 'flow-detail' are DEPRECATED aliases kept for migration — 'flows' predates named index sources and 'flow-detail' is the old name for 'flow'. 'roadmap' mounts CnFeaturesAndRoadmapPage (features + GitHub-issue-backed roadmap). 'search' mounts CnSearchPage (cross-schema query + facet sidebar + results list; consumers wire the actual search via @search). 'wiki' mounts CnWikiPage (manifest-declared markdown article + optional sidebar tree; MUST declare config.register + config.schema). 'flows' mounts CnFlowsPage (the app-scoped flow list) and 'flow-detail' mounts CnFlowEditorPage (the shared node/edge canvas); both take config.app to scope to the owning app, and neither can be expressed as 'index'/'detail' because a flow lives in OpenRegister's native flow store rather than a register/schema pair (ADR-110 Decision 4). 'custom' requires a _note field explaining why a standard type was not feasible."
+					"enum": ["index", "detail", "dashboard", "logs", "settings", "chat", "files", "form", "map", "roadmap", "reports",
+						"store", "search", "wiki", "flow", "flows", "flow-detail", "custom"],
+					"description": "Page type. Closed enum of 17 supported types. 'flow' opens ONE flow in the editor; the flow LIST is an ordinary 'index' with config.entitySource='flows'. 'flows' and 'flow-detail' are DEPRECATED aliases kept for migration — 'flows' predates named index sources and 'flow-detail' is the old name for 'flow'. 'roadmap' mounts CnFeaturesAndRoadmapPage (features + GitHub-issue-backed roadmap). 'search' mounts CnSearchPage (cross-schema query + facet sidebar + results list; consumers wire the actual search via @search). 'wiki' mounts CnWikiPage (manifest-declared markdown article + optional sidebar tree; MUST declare config.register + config.schema). 'flow' and the deprecated 'flow-detail' both mount CnFlowEditorPage (the shared node/edge canvas) and take config.app to scope to the owning app. A flow lives in OpenRegister's native flow store rather than a register/schema pair, so a single flow cannot be a 'detail' page — but the LIST is a plain 'index' once a named entitySource supplies it, which is why 'flows' is deprecated (ADR-110 Decision 4). 'custom' requires a _note field explaining why a standard type was not feasible."
 				},
 				"title": {
 					"type": "string",
@@ -2132,12 +2612,47 @@
 				},
 				"primaryAction": {
 					"$ref": "#/$defs/primaryAction",
-					"description": "Active-page-scoped primary action rendered as an NcAppNavigationNew button above the menu list when the current route resolves to this page. Page-scoped declarations win over nav.primaryAction."
+					"description": "Active-page-scoped primary action rendered as an NcAppNavigationNew button above the menu list when the current route resolves to this page. Page-scoped declarations win over nav.primaryAction. Also the target of the detail page's skip link: a keyboard user tabs in, follows the link and lands on this action."
+				},
+				"splitView": {
+					"$ref": "#/$defs/splitView",
+					"description": "Index pages only. Opens a row beside the list rather than instead of it, at the sibling route <route>/split/:id that buildManifestRoutes() emits. Refused on any other page type."
+				},
+				"savedViewPlaces": {
+					"$ref": "#/$defs/savedViewPlaces",
+					"description": "Index pages only. Makes each saved view of this page a place: its own route, the presentations its view config declares, and an entry under this page's navigation entry once a user pins it. Refused on any other page type."
+				},
+				"board": {
+					"$ref": "#/$defs/boardView",
+					"description": "Index pages only. The board view's configuration, handed to CnIndexPage as the `board` prop. The segment appears only when `viewModes` also lists `board`. Refused on any other page type."
+				},
+				"dateAxis": {
+					"$ref": "#/$defs/dateAxisView",
+					"description": "Index pages only. The date-axis view's configuration, handed to CnIndexPage as the `dateAxis` prop. The segment appears only when `viewModes` also lists `dateAxis`. Refused on any other page type."
+				},
+				"savedViewTree": {
+					"$ref": "#/$defs/savedViewTree",
+					"description": "Index pages only. Renders this page's saved views as a tree with labels, and declares the views that ship with the app. Refused on any other page type, for the same reason savedViewPlaces is: a page with no saved-view dropdown has nothing to put in a tree."
+				},
+				"manualOrder": {
+					"type": "boolean",
+					"default": false,
+					"description": "Index pages only. Lets a person drag the rows into an order of their own, held per user and per list in their Nextcloud preferences and never written onto the records. Refused on any other page type."
+				},
+				"tabInAddress": {
+					"type": "boolean",
+					"default": false,
+					"description": "Detail pages only. Puts the active tab in the address as ?_tab=<id> so a link points at a tab of a record rather than at the record. The underscore prefix keeps it out of resolveQueryFilters(), which reads every other query key as a filter. Refused on any other page type."
+				},
+				"referencePreview": {
+					"type": "boolean",
+					"default": false,
+					"description": "Lets a reference on this page show a summary of the record it points at, on focus and on hover, without leaving the page. Rendered by CnReferencePreview."
 				},
 				"widgets": {
 					"type": "array",
 					"items": { "$ref": "#/$defs/widgetEntry" },
-					"description": "Uniform widget placement array. Available on ALL page types in v2 (not just dashboard). Each entry specifies a widget key, slot, and grid coordinates. The cross-field constraint gridX + gridWidth <= 12 is enforced by validateManifestV2() post-schema check. Single-widget dashboards: a type:'dashboard' page with exactly one body widget covering the full 12×12 grid whose widgetKey resolves to a custom (non-library-built-in) registry component is REJECTED — see ADR-036 Decision 1 (single-widget dashboard anti-pattern). Use type:'custom' with component:'<widgetKey>' or split into N>1 widgets instead. Library built-in widget keys (object-table, card-grid, form-renderer, map-viewer, chart, stats-block, banner, audit-trail, header, text, divider) are exempt from the rule. Enforced by validateManifestV2() post-schema check."
+					"description": "Uniform widget placement array. Available on ALL page types in v2 (not just dashboard). Each entry specifies a widget key, slot, and grid coordinates. The cross-field constraint gridX + gridWidth <= 12 is enforced by validateManifestV2() post-schema check. Single-widget dashboards: a type:'dashboard' page with exactly one body widget covering the full 12×12 grid whose widgetKey resolves to a custom (non-library-built-in) registry component is REJECTED — see ADR-036 Decision 1 (single-widget dashboard anti-pattern). Use type:'custom' with component:'<widgetKey>' or split into N>1 widgets instead. Library built-in widget keys are exempt from the rule; the exempt set is LIBRARY_WIDGET_KEYS in src/utils/libraryWidgetKeys.js, which is held to set equality against the BUILT_IN_WIDGETS registry and the dashboard widget catalog by tests/utils/libraryWidgetKeys.spec.js. It is not restated here, because an out-of-date second copy of that list is the defect this replaced. Enforced by validateManifestV2() post-schema check."
 				},
 				"actions": {
 					"type": "array",
@@ -2152,12 +2667,12 @@
 					"properties": {
 						"entitySource": {
 							"type": "string",
-							"enum": ["flows"],
-							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js."
+							"enum": ["flows", "tasks"],
+							"description": "Name a registered NON-OBJECT entity collection for a type='index' page, instead of register+schema. Deliberately NOT called `source`: that key is already taken on page config and is polymorphic (a URL string in some manifests, an object with `params` in others), so reusing it would give one key two meanings and break six deployed shillinq pages. A flow definition is deliberately not an OpenRegister object, so an index had nothing to bind to and such lists became bespoke type='custom' pages. With a source the index loads the list itself. Takes precedence over register/schema; non-empty `objects` still wins over both. Registered sources live in src/composables/indexSources.js. `tasks` lists the viewer's task inbox from OpenRegister's flow-tasks read (cn-tasks-entity-source)."
 						},
 						"app": {
 							"type": "string",
-							"description": "Scopes a named `source` to one app (e.g. source='flows' with app='dossiq' lists that app's flows)."
+							"description": "Scopes a named `entitySource` to one app (e.g. entitySource='flows' with app='dossiq' lists that app's flows)."
 						},
 						"register": {
 							"type": "string",
@@ -2365,6 +2880,20 @@
 								]
 							}
 						},
+						"folderSidebar": {
+							"type": "object",
+							"additionalProperties": true,
+							"description": "type='index': the opt-in folder navigation pane (CnFolderSidebar) rendered left of the list. Selecting a folder filters the list by `filterField` (or `field`); \"All\" clears it. Only the per-scope list-layout keys are typed here; the pane's own keys (source, register, schema, idField, nameField, folders, allLabel, title, allowCreate, ...) stay free-form. Maps to CnIndexPage `folderSidebar`.",
+							"properties": {
+								"folders": {
+									"type": "array",
+									"description": "Explicit folder list for source:'custom', and the place a folder declares its own list layout. Every other folder key stays free-form.",
+									"items": {
+										"$ref": "#/$defs/folderSidebarScope"
+									}
+								}
+							}
+						},
 						"layout": {
 							"type": "array",
 							"description": "Dashboard layout entries (for type='dashboard', legacy). Carry-forward from v1.",
@@ -2391,8 +2920,100 @@
 						},
 						"headerActions": {
 							"type": "array",
-							"description": "Page-level header actions rendered inside CnActionsBar's overflow dropdown (between the built-in Refresh action and the `#action-items` slot). Same shape as the row-level `actions[]` ($ref action), but handlers receive NO row context — they are page-level. Reserved ids (`refresh`, `import`, `export`, `copy`, `delete`) are dropped at render time to avoid shadowing built-ins. See manifest-icons-and-page-actions for the dispatch semantics.",
+							"description": "Page-level header actions rendered inside CnActionsBar's overflow dropdown (between the built-in Refresh action and the `#action-items` slot). On a `type:'detail'` page the same entries render in the header's Actions menu, above the Request-a-feature / Report-a-bug / Documentation trio. Same shape as the row-level `actions[]` ($ref action), but handlers receive NO row context — they are page-level. Reserved ids (`refresh`, `import`, `export`, `copy`, `delete`) are dropped at render time to avoid shadowing built-ins. See manifest-icons-and-page-actions for the dispatch semantics.",
 							"items": { "$ref": "#/$defs/action" }
+						},
+						"bulkActions": {
+							"type": "array",
+							"description": "Bulk actions rendered in the contextual selection strip that appears while rows are selected. Same shape as the row-level `actions[]` ($ref action), but the handler receives the SELECTION rather than a row: `{ actionId, selectedIds, count }`. For `type: \"open-modal\"` the selection is merged into the modal's props as `selectedIds` and `count`, so a manifest-declared modal component can act on the selection without the page hand-writing anything. Reserved ids (`copy`, `delete`) are dropped at render time: the strip already ships both as built-ins. Before this existed the strip had only a `#selection-actions` slot, which only a hand-written host component could fill \u2014 so a page declared in a manifest could carry row actions and header actions but never a bulk one.",
+							"items": { "$ref": "#/$defs/action" }
+						},
+						"actions": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"required": ["label"],
+								"additionalProperties": true,
+								"properties": {
+									"label": { "type": "string", "minLength": 1 }
+								}
+							},
+							"description": "Declarative actions on a page. Governed ONLY by \"an object carrying a non-empty label\", deliberately: this key is polymorphic by page type (index rows dispatch $defs/action; detail pages also carry type='lifecycle-transition' entries), so one closed grammar here would reject working manifests. A label is what every dialect needs — CnRowActions renders an entry from its label and icon, so an entry without one became a full-height, clickable, EMPTY row in the overflow menu. Two shapes hit this, both meaning \"show the built-in\": a bare string (\"edit\") and a key-only object ({\"key\": \"edit\"}). Built-ins are enabled with config.actionToggles / the show*Action keys, never by naming them here."
+						},
+						"rowIndicators": {
+							"type": "array",
+							"description": "type='index': state indicators the page declares for its rows. Each entry names a `field` (a dotted path on the row), a condition (`equals`, `in`, or plain truthiness when neither is given), an `icon` (a CnIcon name) and a `text` (the text alternative, required). An entry without `text` does not render, because an icon with no text is colour and shape alone. The page declares which indicators exist; a record cannot add one the page has not declared. Maps to CnIndexPage `rowIndicators`.",
+							"items": {
+								"$ref": "#/$defs/rowIndicator"
+							}
+						},
+						"rowIndicatorCap": {
+							"type": "integer",
+							"minimum": 0,
+							"default": 3,
+							"description": "type='index': how many declared indicators render on the row itself before the rest move into the row menu. Maps to CnIndexPage `rowIndicatorCap`."
+						},
+						"quickEditFields": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1
+							},
+							"description": "type='index': the fields a quick edit asks for, opened from a row without leaving the list. The page names them; a record cannot open a form on a field the page did not name. A field this caller may not write (see `writableField`) renders read-only rather than missing. Maps to CnIndexPage `quickEditFields`."
+						},
+						"writableField": {
+							"type": "string",
+							"default": "@self.writableFields",
+							"description": "type='index': the dotted path where a record lists the fields this caller may write. A row carrying nothing there leaves every field the quick edit named editable; an empty list is a refusal and locks them all. Maps to CnIndexPage `writableField`."
+						},
+						"viewTabs": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1
+							},
+							"description": "type='index': saved view ids this page renders as tabs instead of as entries in the views control. A view appears in one place or the other, never both. An id naming a view that no longer exists produces no tab, rather than a tab that opens nothing. Maps to CnIndexPage `viewTabs`."
+						},
+						"priorityField": {
+							"type": "string",
+							"description": "type='index': the field carrying a record's DERIVED priority. The list reads the value and sorts on it; it never computes one. A record with no priority, or one outside `priorityLevels`, sorts after every ranked record in BOTH directions and stays in the list. Maps to CnIndexPage `priorityField`."
+						},
+						"priorityLevels": {
+							"type": "array",
+							"items": {
+								"type": "string",
+								"minLength": 1
+							},
+							"description": "type='index': the priority values in rank order, lowest first (e.g. ['low', 'medium', 'high']). Needed because a priority does not sort alphabetically into the order a person means. Maps to CnIndexPage `priorityLevels`."
+						},
+						"listShortcuts": {
+							"type": "boolean",
+							"default": false,
+							"description": "type='index': offer the list's keyboard shortcuts. Every shortcut is also listed in the command palette and on the help key, from one catalogue, because a shortcut nobody can find does not count. Maps to CnIndexPage `listShortcuts`."
+						},
+						"rowActionField": {
+							"type": "string",
+							"description": "type='index': the dotted path on each row where the server lists the actions this caller may run on that record (default '@self.actions'). A row's menu is then the intersection of what `config.actions` declares and what the server allows: an action the server allows but the page does not declare stays out, and an action the page declares but the server refuses stays out with its reason kept. A row carrying nothing at this path leaves the declaration standing. Maps to CnIndexPage `rowActionField`."
+						},
+						"editOpensDetail": {
+							"type": "boolean",
+							"description": "type='index': send the Edit row action to the record's detail page instead of opening the edit modal. Set automatically by CnPageRenderer when a type='detail' page exists for the same register+schema (or config.rowRoute is set); declare it explicitly only to override that. Maps to CnIndexPage `editOpensDetail`."
+						},
+						"showEditAction": {
+							"type": "boolean",
+							"description": "type='detail': show the header Edit button that opens the record's schema form. Set automatically by CnPageRenderer for every schema-bound detail page; declare false to make a detail page read-only. Maps to CnDetailPage `showEditAction`."
+						},
+						"formSize": {
+							"type": "string",
+							"enum": ["small", "normal", "large"],
+							"default": "normal",
+							"description": "NcDialog size for the page's built-in Add/Edit form dialog (type='index' and type='detail'). A manifest `open-form` header action has always been able to ask for `large`; the built-in dialog could not, so the same app could have a roomy create form on one surface and a cramped one on another. Maps to CnIndexPage / CnDetailPage `formSize`."
+						},
+						"formColumns": {
+							"type": "integer",
+							"enum": [1, 2],
+							"default": 1,
+							"description": "How many columns the page's built-in Add/Edit form flows its fields into. Pair 2 with formSize 'large', or the two columns are merely two narrow ones. CnFormDialog collapses back to one column below 700px, and a textarea or JSON editor spans both columns regardless. Maps to CnIndexPage / CnDetailPage `formColumns`."
 						},
 						"actionToggles": {
 							"type": "object",
@@ -2479,6 +3100,39 @@
 				}
 			},
 			"allOf": [
+				{
+					"description": "splitView, manualOrder, savedViewPlaces, savedViewTree, board and dateAxis are index-page mechanics. splitView emits a second route beside an index route and mounts the detail pane inside CnIndexPage; manualOrder holds a per-user row order for a list; savedViewPlaces turns this page's saved views into addressable places. Declared on a detail, dashboard or custom page they would validate and then do nothing, which is the failure this branch refuses out loud (case-page-and-list-as-a-place, saved-view-as-a-place).",
+					"if": {
+						"not": {
+							"properties": { "type": { "const": "index" } },
+							"required": ["type"]
+						}
+					},
+					"then": {
+						"not": {
+							"anyOf": [
+								{ "required": ["splitView"] },
+								{ "required": ["manualOrder"] },
+								{ "required": ["savedViewPlaces"] },
+								{ "required": ["savedViewTree"] },
+								{ "required": ["board"] },
+								{ "required": ["dateAxis"] }
+							]
+						}
+					}
+				},
+				{
+					"description": "tabInAddress puts the active tab of a record in the address. Only a detail page has a record and a tab strip, so the key is refused elsewhere rather than validating into a no-op (case-page-and-list-as-a-place).",
+					"if": {
+						"not": {
+							"properties": { "type": { "const": "detail" } },
+							"required": ["type"]
+						}
+					},
+					"then": {
+						"not": { "required": ["tabInAddress"] }
+					}
+				},
 				{
 					"description": "type='wiki' (CnWikiPage) renders one manifest-declared markdown article. It MUST declare both config.register and config.schema as non-empty strings so the manifest stays the source of truth for which OpenRegister register/schema the article body is read from (manifest-wiki-page-type).",
 					"if": {

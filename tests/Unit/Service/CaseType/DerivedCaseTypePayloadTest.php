@@ -188,19 +188,61 @@ class DerivedCaseTypePayloadTest extends TestCase {
 	}//end testAVersionKeepsTheSourcesSiblings()
 
 	/**
-	 * A version drops the workflow pin, for the reason a duplicate does.
+	 * 🔴 A version CARRIES the workflow pin, where a duplicate drops it.
 	 *
-	 * It names a template belonging to the previous version, and a type
-	 * claiming a default route its own Workflow tab cannot show is worse than a
-	 * type claiming none.
+	 * This assertion used to be `assertNull`, and the reasoning behind it was
+	 * sound and the conclusion wrong: the pin named a template belonging to the
+	 * previous version only because a new version did not copy the templates at
+	 * all. It does now, and the value left here is the PREVIOUS version's
+	 * template id, which is what CaseTypeCopyService maps FROM when it repoints
+	 * the new version at its own copy. Clearing it here would leave that
+	 * mapping nothing to work with, and every new version would lose its
+	 * process again.
 	 *
 	 * @return void
 	 */
-	public function testAVersionDropsTheWorkflowPin(): void {
+	public function testAVersionCarriesTheWorkflowPinForTheCopyToRepoint(): void {
 		$payload = $this->payloads->nextVersion(source: $this->source(), sourceId: 'ct-1');
 
+		self::assertSame('wf-3', $payload['workflowDefinition']);
+	}//end testAVersionCarriesTheWorkflowPinForTheCopyToRepoint()
+
+	/**
+	 * A duplicate still drops it, and that is a different gesture.
+	 *
+	 * @return void
+	 */
+	public function testADuplicateStillDropsTheWorkflowPin(): void {
+		$payload = $this->payloads->duplicate(source: $this->source());
+
 		self::assertNull($payload['workflowDefinition']);
-	}//end testAVersionDropsTheWorkflowPin()
+	}//end testADuplicateStillDropsTheWorkflowPin()
+
+	/**
+	 * A draft version is not valid from or until anything yet.
+	 *
+	 * Carrying the previous version's dates would make a brand-new draft read
+	 * as the version in force since a date belonging to its predecessor, and
+	 * would make the closing write at publish time a no-op: `retire()` only
+	 * fills a `validUntil` that is empty, so an inherited one would keep the
+	 * old version open with the successor's own end date on it.
+	 *
+	 * @return void
+	 */
+	public function testAVersionStartsWithNoValidityDates(): void {
+		$payload = $this->payloads->nextVersion(
+			source: $this->source([
+				'validFrom' => '2024-01-01',
+				'validUntil' => '2025-12-31',
+				'versionDate' => '2024-01-01',
+			]),
+			sourceId: 'ct-1'
+		);
+
+		self::assertNull($payload['validFrom']);
+		self::assertNull($payload['validUntil']);
+		self::assertNull($payload['versionDate']);
+	}//end testAVersionStartsWithNoValidityDates()
 
 	/**
 	 * Both gestures strip identity, so the save creates rather than updates.

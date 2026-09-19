@@ -219,11 +219,21 @@ class DemoCaseloadSeedDataService {
 			'description' => (string)($caseSeed['description'] ?? ''),
 			'caseType' => (string)$caseType['id'],
 			'assignee' => (string)($caseSeed['assignee'] ?? ''),
-			'priority' => (string)($caseSeed['priority'] ?? 'normal'),
 			'intakeChannel' => (string)($caseSeed['intakeChannel'] ?? 'manual'),
 			'confidentiality' => (string)($caseSeed['confidentiality'] ?? 'openbaar'),
 			'startDate' => $startDate->format('Y-m-d'),
 		];
+
+		// The seed names a priority because that is what a reader of the demo
+		// caseload sees, but a priority cannot be written directly any more:
+		// the derivation recomputes it on every save from impact and urgency,
+		// so a seeded `urgent` would arrive as the instance default and the
+		// ten demo cases would all read the same. Writing the pair behind the
+		// priority puts it back through the matrix and gets the same answer.
+		$pair = (CasePriorityService::PRIORITY_SEED_PAIRS[(string)($caseSeed['priority'] ?? 'normal')]
+			?? CasePriorityService::PRIORITY_SEED_PAIRS['normal']);
+		$data['impact'] = $pair['impact'];
+		$data['urgency'] = $pair['urgency'];
 
 		$statusId = ($statuses[$caseType['id'] . '|' . (string)($caseSeed['status'] ?? '')] ?? '');
 		if ($statusId !== '') {

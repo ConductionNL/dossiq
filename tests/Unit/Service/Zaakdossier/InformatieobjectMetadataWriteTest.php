@@ -20,10 +20,13 @@ namespace OCA\Dossiq\Tests\Unit\Service\Zaakdossier;
 
 use OCA\Dossiq\Service\InformatieobjectAccessGuard;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\People\PersonLinkReader;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
+use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Dossiq\Service\ZaakdossierService;
-use OCA\Dossiq\Service\ZgwDocumentService;
 use OCA\Dossiq\Tests\Unit\Fixtures\PatchingObjectService;
 use OCA\Dossiq\Tests\Unit\Fixtures\ReplacingObjectService;
 use OCP\IGroupManager;
@@ -35,9 +38,11 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\ZaakdossierService
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  */
 class InformatieobjectMetadataWriteTest extends TestCase {
 
@@ -117,11 +122,17 @@ class InformatieobjectMetadataWriteTest extends TestCase {
 
 		return new ZaakdossierService(
 			$settings,
-			$this->createMock(ZgwDocumentService::class),
 			new InformatieobjectAccessGuard($settings, $this->createMock(IGroupManager::class), $logger),
 			new InformatieobjectStatusLifecycle($settings, $logger),
 			new InformatieobjectMetadataNormaliser(),
 			$logger,
+			new DocumentRecordStore(settingsService: $settings),
+			new CorrespondentWriter(
+				rules: new DocumentCorrespondents(),
+				people: $this->createMock(originalClassName: PersonLinkReader::class),
+				settingsService: $settings,
+				store: new DocumentRecordStore(settingsService: $settings),
+			),
 		);
 
 	}//end service()

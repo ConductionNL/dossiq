@@ -781,8 +781,8 @@
       "avgIncident": {
         "slug": "avgIncident",
         "icon": "AlertOutline",
-        "version": "1.0.0",
-        "title": "AVG Incident",
+        "version": "1.1.0",
+        "title": "GDPR incident",
         "description": "Datalek-incident registratie met AP-meldbeoordeling (AVG art. 33, 72-uurs meldplicht). OpenRegister-backed.",
         "type": "object",
         "required": [
@@ -794,34 +794,34 @@
             "title": "Incident Date",
             "type": "string",
             "format": "date-time",
-            "description": "Datum/tijd van het incident"
+            "description": "The date and time of the incident"
           },
           "cause": {
             "title": "Cause",
             "type": "string",
-            "description": "Oorzaak van het incident"
+            "description": "The cause of the incident"
           },
           "gegevensImpact": {
             "title": "Data Impact",
             "type": "string",
-            "description": "Impact op de gegevens (scope, aantal betrokkenen, encryptiestatus)"
+            "description": "The impact on the data: its scope, the number of people affected, and whether it was encrypted"
           },
           "reportAp": {
             "title": "AP Notification Required",
             "type": "boolean",
             "default": false,
-            "description": "Of melding aan de Autoriteit Persoonsgegevens vereist is"
+            "description": "Whether the data protection authority has to be notified"
           },
           "reportDate": {
             "title": "Notification Date",
             "type": "string",
             "format": "date-time",
-            "description": "Datum/tijd van de AP-melding"
+            "description": "The date and time the data protection authority was notified"
           },
           "reportReference": {
             "title": "Notification Reference",
             "type": "string",
-            "description": "Referentienummer van de AP-melding"
+            "description": "The reference number of the notification to the data protection authority"
           },
           "remediatingActions": {
             "title": "Remediating Actions",
@@ -829,7 +829,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Genomen herstelmaatregelen"
+            "description": "The remediating actions taken"
           }
         }
       },
@@ -1004,8 +1004,8 @@
       "belplan": {
         "slug": "belplan",
         "icon": "PhoneForward",
-        "version": "1.0.0",
-        "title": "Belplan",
+        "version": "1.1.0",
+        "title": "Call plan",
         "description": "Routing rules for inbound telephony, datagedreven on keuzemenu, vaardigheid matching and wachtrij-overflow.",
         "type": "object",
         "required": [
@@ -1338,7 +1338,7 @@
             "type": "string",
             "title": "Motivation",
             "description": "Reasoning underpinning the decision",
-            "x-translatable": false
+            "translatable": false
           },
           "legalRemediesClause": {
             "type": "string",
@@ -2156,7 +2156,7 @@
       "brpPerson": {
         "slug": "brpPerson",
         "icon": "AccountOutline",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Person",
         "x-zgw-equivalent": "Rol betrokkene natuurlijk_persoon",
         "title": "BRP person (test register set)",
@@ -2168,6 +2168,13 @@
         ],
         "properties": {
           "citizenServiceNumber": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "pattern": "^[0-9]{9}$",
             "format": "bsn",
@@ -2181,47 +2188,47 @@
             "properties": {
               "givenNames": {
                 "type": "string",
-                "title": "Voornamen",
+                "title": "First names",
                 "description": "Given names of the person."
               },
               "namePrefix": {
                 "type": "string",
-                "title": "Voorvoegsel",
+                "title": "Name prefix",
                 "description": "Surname prefix (tussenvoegsel), e.g. 'de' or 'van'."
               },
               "surname": {
                 "type": "string",
-                "title": "Geslachtsnaam",
+                "title": "Last name",
                 "description": "Family name of the person."
               }
             }
           },
           "birth": {
             "type": "object",
-            "title": "Geboorte",
+            "title": "Birth",
             "description": "Birth block per Haal Centraal naming.",
             "properties": {
               "date": {
                 "type": "string",
                 "format": "date",
-                "title": "Geboortedatum",
+                "title": "Date of birth",
                 "description": "Date of birth (ISO 8601)."
               }
             }
           },
           "residence": {
             "type": "object",
-            "title": "Verblijfplaats",
+            "title": "Residence",
             "description": "Residence block per Haal Centraal naming (straat, huisnummer, postcode, woonplaats).",
             "properties": {
               "street": {
                 "type": "string",
-                "title": "Straat",
+                "title": "Street",
                 "description": "Street name of the residence."
               },
               "houseNumber": {
                 "type": "integer",
-                "title": "Huisnummer",
+                "title": "House number",
                 "description": "House number of the residence."
               },
               "postcode": {
@@ -2231,7 +2238,7 @@
               },
               "city": {
                 "type": "string",
-                "title": "Woonplaats",
+                "title": "City",
                 "description": "City/town of the residence."
               }
             }
@@ -2245,11 +2252,82 @@
             "type": "string",
             "title": "Description",
             "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+          },
+          "addresses": {
+            "type": "array",
+            "title": "Addresses",
+            "description": "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "correspondence",
+                    "case",
+                    "location"
+                  ],
+                  "title": "Kind",
+                  "description": "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map."
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Type",
+                  "description": "email, postal, phone or geo."
+                },
+                "value": {
+                  "type": "string",
+                  "title": "Value",
+                  "description": "The address itself: the mailbox, the street address, the number or the coordinate."
+                }
+              }
+            }
+          },
+          "indicators": {
+            "type": "array",
+            "title": "Indicators",
+            "description": "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "title": "Key",
+                  "description": "The stable key of the indicator, so a rule can name it without depending on its wording."
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label",
+                  "description": "What the indicator is called on screen and in the refusal that names it."
+                },
+                "effect": {
+                  "type": "string",
+                  "enum": [
+                    "warn",
+                    "refuse-publication",
+                    "refuse-send"
+                  ],
+                  "title": "Effect",
+                  "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party."
+                },
+                "note": {
+                  "type": "string",
+                  "title": "Note",
+                  "description": "Why the indicator was set, for the handler who meets the refusal."
+                }
+              }
+            }
           }
         },
         "configuration": {
           "objectNameField": "displayName",
-          "objectDescriptionField": "description"
+          "objectDescriptionField": "description",
+          "x-openregister-party": {
+            "kind": "person",
+            "nameProperty": "displayName",
+            "addressesProperty": "addresses",
+            "indicatorsProperty": "indicators"
+          }
         }
       },
       "callbackRequest": {
@@ -2366,7 +2444,7 @@
           }
         },
         "icon": "FolderAccountOutline",
-        "version": "1.10.0",
+        "version": "1.11.0",
         "x-schema-org": "schema:Project",
         "x-zgw-equivalent": "Zaak",
         "x-openregister-archival": {
@@ -2454,6 +2532,14 @@
         "description": "A case instance in the case management system",
         "type": "object",
         "configuration": {
+          "x-openregister-lifecycle": {
+            "field": "status",
+            "initial": {
+              "from": "caseType",
+              "field": "initialStatus"
+            },
+            "provider": "OCA\\Dossiq\\Lifecycle\\CaseActionProvider"
+          },
           "objectNameField": "title",
           "objectDescriptionField": "description",
           "tmloDefaults": {
@@ -2683,7 +2769,61 @@
                 }
               }
             }
-          }
+          },
+          "x-openregister-relation-types": [
+            {
+              "key": "deelzaak",
+              "label": {
+                "nl": "deelzaak van",
+                "en": "sub-case of"
+              },
+              "inverseLabel": {
+                "nl": "heeft deelzaak",
+                "en": "has sub-case"
+              }
+            },
+            {
+              "key": "vervolg",
+              "label": {
+                "nl": "vervolg op",
+                "en": "follow-up to"
+              },
+              "inverseLabel": {
+                "nl": "heeft vervolg",
+                "en": "has follow-up"
+              }
+            },
+            {
+              "key": "subject",
+              "label": {
+                "nl": "gaat over",
+                "en": "is about"
+              },
+              "inverseLabel": {
+                "nl": "onderwerp van",
+                "en": "subject of"
+              }
+            },
+            {
+              "key": "bijdrage",
+              "label": {
+                "nl": "draagt bij aan",
+                "en": "contributes to"
+              },
+              "inverseLabel": {
+                "nl": "krijgt bijdrage van",
+                "en": "receives a contribution from"
+              }
+            },
+            {
+              "key": "samenhang",
+              "label": {
+                "nl": "hangt samen met",
+                "en": "related to"
+              },
+              "symmetric": true
+            }
+          ]
         },
         "required": [
           "title",
@@ -2723,7 +2863,7 @@
             "x-relation-filter": {
               "caseType": "@object.caseType"
             },
-            "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by the x-openregister-prefill block on `caseType` (status <- initialStatus), which is what actually writes it. The schema also carried an x-openregister-lifecycle block claiming to do this; it was invalid and ignored (OR's static mode requires field+initial+transitions over an ENUM-anchored field, and `status` is a $ref uuid), logged 8x per install, and is removed. Transitions are owned by StatusTransitionService: dossiq#1678 ruled that OR's lifecycle engine cannot express a per-caseType dynamic statusType graph, and declaring OR's graph mode here would install a second engine over the same field. x-relation-filter scopes the picker to the case's own type's statuses.",
+            "description": "Reference to the current status type. The case type sets the first one, through the x-openregister-prefill block on caseType. Moves between statuses belong to dossiq's StatusTransitionService. Every case type carries its own workflow template, so the routes are data rather than schema. OpenRegister reads them through the provider this schema's x-openregister-lifecycle block names. So available-actions answers a case's real transitions. The write path validates against that same reader. x-relation-filter scopes the picker to the case type's own statuses.",
             "title": "Status",
             "facetable": true
           },
@@ -2842,7 +2982,14 @@
             "$ref": "case",
             "title": "Parent case",
             "description": "Reference to parent case (for sub-cases)",
-            "visible": true
+            "visible": true,
+            "x-openregister-relation": {
+              "type": "deelzaak",
+              "inherits": {
+                "confidentiality": "confidentiality",
+                "responsible": "assignee"
+              }
+            }
           },
           "relatedCases": {
             "type": "string",
@@ -3109,6 +3256,62 @@
             "title": "Published at",
             "description": "Timestamp of the most recent besluit publication on any channel. Mirrors the real register.",
             "visible": false
+          },
+          "followUpCases": {
+            "type": "array",
+            "title": "Follow-up cases",
+            "description": "Cases that follow on from this one. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"heeft vervolg\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "vervolg"
+              }
+            }
+          },
+          "subjectCases": {
+            "type": "array",
+            "title": "Subject cases",
+            "description": "Cases this one is about. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"onderwerp van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "subject"
+              }
+            }
+          },
+          "contributingCases": {
+            "type": "array",
+            "title": "Contributing cases",
+            "description": "Cases this one contributes to. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"krijgt bijdrage van\" through OpenRegister's /used.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "bijdrage"
+              }
+            }
+          },
+          "associatedCases": {
+            "type": "array",
+            "title": "Associated cases",
+            "description": "Cases that belong together without one leading the other, such as the cases one intake submission opens. Symmetric: both sides read \"hangt samen met\". Written by CaseRelationService.",
+            "visible": false,
+            "items": {
+              "type": "string",
+              "format": "uuid",
+              "$ref": "case",
+              "x-openregister-relation": {
+                "type": "samenhang"
+              }
+            }
           }
         },
         "searchable": true
@@ -3812,13 +4015,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Title"
           },
           "description": {
             "type": "string",
             "description": "Detailed description of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "identifier": {
@@ -3829,19 +4032,19 @@
           "purpose": {
             "type": "string",
             "description": "The purpose or goal of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Purpose"
           },
           "trigger": {
             "type": "string",
             "description": "What triggers the creation of a case of this type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Trigger"
           },
           "subject": {
             "type": "string",
             "description": "The subject matter of this case type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Subject"
           },
           "processingDeadline": {
@@ -4252,7 +4455,7 @@
             "type": "string",
             "maxLength": 255,
             "description": "Short subject of the complaint",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Subject"
           },
           "description": {
@@ -4463,13 +4666,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Category name",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this category",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "defaultHandler": {
@@ -4790,7 +4993,7 @@
       "contactmoment": {
         "slug": "contactmoment",
         "icon": "PhoneInTalk",
-        "version": "1.3.0",
+        "version": "1.5.0",
         "configuration": {
           "x-openregister-processing": {
             "logReads": true,
@@ -4854,11 +5057,25 @@
             "description": "Calculated duration in seconds"
           },
           "callerIdentification": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Caller Identification",
             "description": "Phone number, email or social handle of the caller"
           },
           "geidentificeerdeBurgerId": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Identified Citizen ID",
             "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"
@@ -4922,6 +5139,13 @@
             "description": "Nature of the contact"
           },
           "summary": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Summary",
             "description": "Summary of the contact"
@@ -4937,7 +5161,20 @@
             "default": false,
             "description": "Whether the issue was resolved in one contact"
           },
+          "visibleToApplicant": {
+            "type": "boolean",
+            "title": "Visible to the applicant",
+            "default": false,
+            "description": "Off by default. Tick it to put this contact on the timeline the applicant reads."
+          },
           "transcript": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "type": "string",
             "title": "Transcription",
             "description": "Optional voice-to-text transcription"
@@ -5097,9 +5334,9 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:DefinedTerm",
-        "title": "Termijn Definitie",
+        "title": "Term definition",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
         "type": "object",
         "required": [
@@ -5194,9 +5431,9 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Action",
-        "title": "Termijn Instance",
+        "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
         "type": "object",
         "required": [
@@ -5558,13 +5795,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this decision type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this decision type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "caseType": {
@@ -5905,13 +6142,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this document type (e.g. Situatietekening)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this document type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "caseType": {
@@ -5975,8 +6212,8 @@
       "doorverbinding": {
         "slug": "doorverbinding",
         "icon": "PhoneForward",
-        "version": "1.0.0",
-        "title": "Doorverbinding",
+        "version": "1.1.0",
+        "title": "Call transfer",
         "description": "A warm transfer with immutable context-overdracht snapshot to a specialist.",
         "type": "object",
         "required": [
@@ -6188,8 +6425,8 @@
       "gdprClassification": {
         "slug": "gdprClassification",
         "icon": "ShieldLockOutline",
-        "version": "1.0.0",
-        "title": "AVG Classificatie",
+        "version": "1.1.0",
+        "title": "GDPR classification",
         "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
         "type": "object",
         "required": [
@@ -6213,57 +6450,57 @@
                 "politieke-overtuiging"
               ]
             },
-            "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+            "description": "The article 9 GDPR data categories this case processes"
           },
           "specialPersonalData": {
             "title": "Special Personal Data",
             "type": "boolean",
-            "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+            "description": "Set as soon as an article 9 category is selected"
           },
           "justification": {
             "title": "Legal Basis",
             "type": "string",
-            "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+            "description": "The article 9.2 GDPR exemption code, for example artikel-9-2-h-avg for health care and social work"
           },
           "justificationNotes": {
             "title": "Legal Basis Explanation",
             "type": "string",
-            "description": "Plain-Dutch toelichting voor de FG-audit"
+            "description": "A plain language explanation for the data protection officer's audit"
           },
           "retentionTermYears": {
             "title": "Retention Period Years",
             "type": "integer",
-            "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+            "description": "The statutory retention period: fifteen years under the social support act, twenty under the youth act and ten under the participation act, per the 2020 municipal selection list"
           },
           "destructionDate": {
             "title": "Destruction Date",
             "type": "string",
             "format": "date",
-            "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+            "description": "Derived from the closing date plus the retention period in years"
           },
           "accessRestriction": {
             "title": "Access Restriction",
             "type": "string",
-            "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+            "description": "The access restriction, enforced in the query guards, for example alleen-behandelaar-en-wijkteam"
           },
           "anonymisationAtParts": {
             "title": "Anonymize When Sharing",
             "type": "boolean",
             "default": true,
-            "description": "Auto-anonimiseren bij export tenzij toestemming"
+            "description": "Anonymise on export unless consent was given"
           },
           "exportRestriction": {
             "title": "Export Restriction",
             "type": "string",
-            "description": "Exportbeperking (bijv. geen-bulk-export)"
+            "description": "The export restriction, for example geen-bulk-export"
           }
         }
       },
       "gezinsplan": {
         "slug": "gezinsplan",
         "icon": "FileTreeOutline",
-        "version": "1.0.0",
-        "title": "Gezinsplan",
+        "version": "1.2.0",
+        "title": "Family plan",
         "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
         "type": "object",
         "required": [
@@ -6274,23 +6511,30 @@
           "caseId": {
             "title": "Case ID",
             "type": "string",
-            "description": "Referentie naar de JeugdwetZaak"
+            "description": "A reference to the youth act case"
           },
           "preparedBy": {
             "title": "Prepared By",
             "type": "string",
-            "description": "Nextcloud user id van de opsteller"
+            "description": "The Nextcloud user id of the person who drew the plan up"
           },
           "preparedDate": {
             "title": "Preparation Date",
             "type": "string",
             "format": "date",
-            "description": "Datum van opstellen"
+            "description": "The date the plan was drawn up"
           },
           "gezinsleden": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Family Members",
             "type": "array",
-            "description": "Gezinsleden met akkoord-tracking",
+            "description": "The family members, each with their agreement tracked",
             "items": {
               "type": "object",
               "properties": {
@@ -6319,7 +6563,7 @@
                 "ageConsentRequirement": {
                   "title": "Age Consent Requirement",
                   "type": "boolean",
-                  "description": "True wanneer dit lid (16+) zelfstandig moet tekenen"
+                  "description": "Set when this member is sixteen or over and has to sign in their own right"
                 }
               }
             }
@@ -6330,7 +6574,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Doelen van het gezinsplan"
+            "description": "The goals of the family plan"
           },
           "deploymentTrajectories": {
             "title": "Deployed Trajectories",
@@ -6338,7 +6582,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Ingezette hulptrajecten"
+            "description": "The support trajectories put in place"
           },
           "evaluationMoments": {
             "title": "Evaluation Moments",
@@ -6347,17 +6591,17 @@
               "type": "string",
               "format": "date"
             },
-            "description": "Geplande evaluatiemomenten"
+            "description": "The planned evaluation moments"
           },
           "extensionPossible": {
             "title": "Extension Possible",
             "type": "boolean",
-            "description": "Of verlenging mogelijk is"
+            "description": "Whether an extension is possible"
           },
           "extensionFrom": {
             "title": "Extension Of",
             "type": "string",
-            "description": "Referentie naar het vorige gezinsplan bij verlenging"
+            "description": "A reference to the previous family plan when this one extends it"
           }
         }
       },
@@ -6795,8 +7039,8 @@
       "indicatiestelling": {
         "slug": "indicatiestelling",
         "icon": "ClipboardPulseOutline",
-        "version": "1.0.0",
-        "title": "Indicatiestelling",
+        "version": "1.2.0",
+        "title": "Needs assessment",
         "description": "WMO-assessment record met geadviseerde ondersteuningsvorm, omvang en duur. OpenRegister-backed.",
         "type": "object",
         "required": [
@@ -6807,18 +7051,18 @@
           "caseId": {
             "title": "Case ID",
             "type": "string",
-            "description": "Referentie naar de WmoZaak"
+            "description": "A reference to the social support act case"
           },
           "indicationAuthor": {
             "title": "Assessor",
             "type": "string",
-            "description": "Nextcloud user id van de consulent die de indicatie stelt"
+            "description": "The Nextcloud user id of the case worker making the assessment"
           },
           "dateInvestigation": {
             "title": "Investigation Date",
             "type": "string",
             "format": "date",
-            "description": "Datum van het onderzoek (moet binnen 6 weken na aanvraagDatum liggen)"
+            "description": "The date of the investigation, which has to fall within six weeks of the application date"
           },
           "form": {
             "title": "Type",
@@ -6828,17 +7072,31 @@
               "telefonisch",
               "dossieronderzoek"
             ],
-            "description": "Vorm van het onderzoek"
+            "description": "The form the investigation took"
           },
           "investigationMinutes": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Investigation Report",
             "type": "string",
-            "description": "Optionele Nextcloud file-referentie naar het onderzoeksverslag"
+            "description": "An optional Nextcloud file reference to the investigation report"
           },
           "advisedSupport": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Recommended Support",
             "type": "object",
-            "description": "Geadviseerde ondersteuning (soort, omvang, duur)",
+            "description": "The support advised, with its kind, its volume and its duration",
             "properties": {
               "kind": {
                 "title": "Type",
@@ -6870,13 +7128,13 @@
           "decisionId": {
             "title": "Decision ID",
             "type": "string",
-            "description": "Optionele referentie naar de gegenereerde beschikking"
+            "description": "An optional reference to the decision that was generated"
           },
           "evaluationDate": {
             "title": "Evaluation Date",
             "type": "string",
             "format": "date",
-            "description": "Geplande evaluatiedatum"
+            "description": "The planned evaluation date"
           }
         }
       },
@@ -8007,8 +8265,8 @@
       "jeugdwetZaak": {
         "slug": "jeugdwetZaak",
         "icon": "HumanMaleChild",
-        "version": "1.0.0",
-        "title": "Jeugdwet Zaak",
+        "version": "1.2.0",
+        "title": "Youth act case",
         "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
         "type": "object",
         "required": [
@@ -8025,63 +8283,77 @@
               "jeugdwet-melding"
             ],
             "default": "jeugdwet-melding",
-            "description": "Vaste zaaktype-identifier voor Jeugdwet-melding"
+            "description": "The fixed case type identifier for a youth act report"
           },
           "caseNumber": {
             "title": "Case Number",
             "type": "string",
-            "description": "Zaakidentifier in formaat zaak-{jaar}-jeugd-{5-cijferig}"
+            "description": "The case identifier, in the form zaak-{jaar}-jeugd-{5-cijferig}"
           },
           "familyId": {
             "title": "Family ID",
             "type": "string",
-            "description": "Identifier van het gezinssysteem (gezinsgerichte eenheid)"
+            "description": "The identifier of the family system, which is the family oriented unit"
           },
           "jeugdigeBsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Youth BSN",
             "type": "string",
-            "description": "BSN van de jeugdige (bijzonder persoonsgegeven)"
+            "description": "The young person's BSN, which is special category personal data"
           },
           "juvenileAge": {
             "title": "Youth Age",
             "type": "integer",
-            "description": "Leeftijd van de jeugdige; vanaf 16 is de jeugdige zelfstandig toestemmingspartij"
+            "description": "The young person's age. From sixteen they give consent in their own right"
           },
           "requestChannel": {
             "title": "Request Channel",
             "type": "string",
-            "description": "Kanaal van het verzoek (huisarts, school, zelfmelding, ...)"
+            "description": "The channel the request came in on: a general practitioner, a school, the applicant themselves and so on"
           },
           "requestDate": {
             "title": "Request Date",
             "type": "string",
             "format": "date",
-            "description": "Datum van het verzoek"
+            "description": "The date of the request"
           },
           "referrer": {
             "title": "Referrer",
             "type": "string",
-            "description": "Verwijzende partij (huisarts, jeugdarts, gecertificeerde instelling, ...)"
+            "description": "The referring party: a general practitioner, a youth doctor, a certified institution and so on"
           },
           "supportRequest": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Support Request",
             "type": "string",
-            "description": "Inhoudelijke ondersteuningsvraag (alleen-jeugdteam zichtbaar)"
+            "description": "The support question in the applicant's own terms, visible to the youth team only"
           },
           "districtTeam": {
             "title": "Neighborhood Team",
             "type": "string",
-            "description": "Toegewezen jeugdteam; data-driven toegangsgrond"
+            "description": "The youth team assigned, which is a data driven ground for access"
           },
           "handlerId": {
             "title": "Case Handler ID",
             "type": "string",
-            "description": "Nextcloud user id van de behandelend jeugdconsulent"
+            "description": "The Nextcloud user id of the youth case worker handling this case"
           },
           "secondHandlerId": {
             "title": "Second Case Handler ID",
             "type": "string",
-            "description": "Optionele tweede behandelaar; override op wijkteam-toegang"
+            "description": "An optional second case handler, which overrides district team access"
           },
           "status": {
             "title": "Status",
@@ -8097,25 +8369,46 @@
               "closed"
             ],
             "default": "report",
-            "description": "Gezinsgerichte status-lifecycle (ADR-031: declaratief)"
+            "description": "The family oriented status lifecycle, declarative per ADR-031"
           },
           "gezinsplanId": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Family Plan ID",
             "type": "string",
-            "description": "Referentie naar het actuele Gezinsplan"
+            "description": "A reference to the family plan currently in force"
           },
           "mdoConsultationIds": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "MDO Meeting IDs",
             "type": "array",
             "items": {
               "type": "string"
             },
-            "description": "Referenties naar MdoOverleg-records"
+            "description": "References to the multidisciplinary consultation records"
           },
           "supervisionOrderActive": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Supervision Order Active",
             "type": "boolean",
-            "description": "Of een ondertoezichtstelling (OTS) actief is"
+            "description": "Whether a supervision order is in force"
           },
           "extensionHistory": {
             "title": "Extension History",
@@ -8123,10 +8416,10 @@
             "items": {
               "type": "string"
             },
-            "description": "Historie van eerdere gezinsplannen (verlengingen)"
+            "description": "The history of earlier family plans, which is the extension chain"
           },
           "gdprClassification": {
-            "title": "AVG Classificatie",
+            "title": "GDPR classification",
             "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
             "type": "object",
             "required": [
@@ -8150,49 +8443,49 @@
                     "politieke-overtuiging"
                   ]
                 },
-                "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+                "description": "The article 9 GDPR data categories this case processes"
               },
               "specialPersonalData": {
                 "title": "Special Personal Data",
                 "type": "boolean",
-                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+                "description": "Set as soon as an article 9 category is selected"
               },
               "justification": {
                 "title": "Legal Basis",
                 "type": "string",
-                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+                "description": "The article 9.2 GDPR exemption code, for example artikel-9-2-h-avg for health care and social work"
               },
               "justificationNotes": {
                 "title": "Legal Basis Explanation",
                 "type": "string",
-                "description": "Plain-Dutch toelichting voor de FG-audit"
+                "description": "A plain language explanation for the data protection officer's audit"
               },
               "retentionTermYears": {
                 "title": "Retention Period Years",
                 "type": "integer",
-                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+                "description": "The statutory retention period: fifteen years under the social support act, twenty under the youth act and ten under the participation act, per the 2020 municipal selection list"
               },
               "destructionDate": {
                 "title": "Destruction Date",
                 "type": "string",
                 "format": "date",
-                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+                "description": "Derived from the closing date plus the retention period in years"
               },
               "accessRestriction": {
                 "title": "Access Restriction",
                 "type": "string",
-                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+                "description": "The access restriction, enforced in the query guards, for example alleen-behandelaar-en-wijkteam"
               },
               "anonymisationAtParts": {
                 "title": "Anonymize When Sharing",
                 "type": "boolean",
                 "default": true,
-                "description": "Auto-anonimiseren bij export tenzij toestemming"
+                "description": "Anonymise on export unless consent was given"
               },
               "exportRestriction": {
                 "title": "Export Restriction",
                 "type": "string",
-                "description": "Exportbeperking (bijv. geen-bulk-export)"
+                "description": "The export restriction, for example geen-bulk-export"
               }
             }
           }
@@ -8407,7 +8700,7 @@
       "kvkCompany": {
         "slug": "kvkCompany",
         "icon": "Domain",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Organization",
         "x-zgw-equivalent": "Rol betrokkene niet_natuurlijk_persoon",
         "title": "KvK company (test register set)",
@@ -8441,12 +8734,12 @@
             "properties": {
               "streetName": {
                 "type": "string",
-                "title": "Straatnaam",
+                "title": "Street name",
                 "description": "Street name of the bezoekadres."
               },
               "houseNumber": {
                 "type": "integer",
-                "title": "Huisnummer",
+                "title": "House number",
                 "description": "House number of the bezoekadres."
               },
               "postcode": {
@@ -8465,11 +8758,91 @@
             "type": "string",
             "title": "Description",
             "description": "Provenance marker: identifies the row as official fictitious test data and names its fixture source."
+          },
+          "addresses": {
+            "type": "array",
+            "title": "Addresses",
+            "description": "How this party is reached. Each address carries a kind: correspondence is what outbound mail picks, case is the address the case is about, location is a point on the map. Inbound mail from any of them resolves to this party, so a second record is never created.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "correspondence",
+                    "case",
+                    "location"
+                  ],
+                  "title": "Kind",
+                  "description": "Which address this is: correspondence is the one outbound mail picks, case is the address the case is about, location is a point on the map."
+                },
+                "type": {
+                  "type": "string",
+                  "title": "Type",
+                  "description": "email, postal, phone or geo."
+                },
+                "value": {
+                  "type": "string",
+                  "title": "Value",
+                  "description": "The address itself: the mailbox, the street address, the number or the coordinate."
+                }
+              }
+            }
+          },
+          "indicators": {
+            "type": "array",
+            "title": "Indicators",
+            "description": "What this party's situation refuses. warn shows the reader a notice and blocks nothing; refuse-publication refuses publishing a file on any case this party is on; refuse-send refuses an outbound message to this party. The effect is evaluated where the act happens, not where the chip is drawn.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": {
+                  "type": "string",
+                  "title": "Key",
+                  "description": "The stable key of the indicator, so a rule can name it without depending on its wording."
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label",
+                  "description": "What the indicator is called on screen and in the refusal that names it."
+                },
+                "effect": {
+                  "type": "string",
+                  "enum": [
+                    "warn",
+                    "refuse-publication",
+                    "refuse-send"
+                  ],
+                  "title": "Effect",
+                  "description": "What it does: warn shows the reader a notice and blocks nothing, refuse-publication refuses publishing a file on a case this party is on, refuse-send refuses an outbound message to this party."
+                },
+                "note": {
+                  "type": "string",
+                  "title": "Note",
+                  "description": "Why the indicator was set, for the handler who meets the refusal."
+                }
+              }
+            }
+          },
+          "parentOrganisation": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "kvkCompany",
+            "title": "Parent organisation",
+            "description": "The organisation this one belongs to. OpenRegister vetoes a save whose parent would close a cycle or pass the declared depth, on the save rather than in one caller."
           }
         },
         "configuration": {
           "objectNameField": "tradeName",
-          "objectDescriptionField": "description"
+          "objectDescriptionField": "description",
+          "x-openregister-party": {
+            "kind": "organisation",
+            "nameProperty": "tradeName",
+            "addressesProperty": "addresses",
+            "indicatorsProperty": "indicators",
+            "parentProperty": "parentOrganisation",
+            "maxDepth": 10
+          }
         }
       },
       "lhsMatrix": {
@@ -8981,9 +9354,9 @@
       "mandateArrangement": {
         "slug": "mandateArrangement",
         "icon": "AccountTieOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Legislation",
-        "title": "Mandaatregeling",
+        "title": "Mandate regulation",
         "description": "Defines which approval levels (niveau) may sign which decision types up to which bedrag (Awb 10:3-10:12). Point-in-time: the regeling-id + version is captured on the beschikking at akkoord.",
         "type": "object",
         "required": [
@@ -9374,8 +9747,8 @@
       "mdoOverleg": {
         "slug": "mdoOverleg",
         "icon": "AccountGroupOutline",
-        "version": "1.0.0",
-        "title": "Multidisciplinair Overleg (MDO)",
+        "version": "1.2.0",
+        "title": "Multidisciplinary consultation",
         "description": "Multidisciplinair overleg met expliciete toestemmingsregistratie per externe deelnemer; verslag wordt geanonimiseerd bij ontbrekende toestemming. OpenRegister-backed.",
         "type": "object",
         "required": [
@@ -9389,18 +9762,18 @@
             "items": {
               "type": "string"
             },
-            "description": "Betrokken zaak-referenties"
+            "description": "References to the cases involved"
           },
           "consultationDate": {
             "title": "Meeting Date",
             "type": "string",
             "format": "date",
-            "description": "Datum van het overleg"
+            "description": "The date of the meeting"
           },
           "participants": {
             "title": "Participants",
             "type": "array",
-            "description": "Deelnemers met toestemmingsregistratie",
+            "description": "The participants, each with their consent recorded",
             "items": {
               "type": "object",
               "properties": {
@@ -9430,26 +9803,40 @@
           "agenda": {
             "title": "Agenda",
             "type": "string",
-            "description": "Agenda van het overleg"
+            "description": "The agenda for the meeting"
           },
           "minutes": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Report",
             "type": "string",
-            "description": "Verslag (geanonimiseerd indien toestemming ontbreekt)"
+            "description": "The minutes, anonymised where consent is missing"
           },
           "toestemmingenGeregistreerd": {
             "title": "Consents Registered",
             "type": "boolean",
-            "description": "Of alle vereiste toestemmingen geregistreerd zijn"
+            "description": "Whether every required consent is recorded"
           },
           "gedeeldeGegevens": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Shared Data",
             "type": "string",
             "enum": [
               "alle-gegevens",
               "alleen-anonimiseerde-summary"
             ],
-            "description": "Welke gegevens gedeeld zijn"
+            "description": "Which data was shared"
           }
         }
       },
@@ -9656,9 +10043,9 @@
       "noticeOfDefault": {
         "slug": "noticeOfDefault",
         "icon": "EmailAlert",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Message",
-        "title": "Ingebrekestelling",
+        "title": "Notice of default",
         "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
         "type": "object",
         "required": [
@@ -10226,6 +10613,46 @@
           }
         }
       },
+      "caseTypeGroup": {
+        "slug": "caseTypeGroup",
+        "icon": "FolderAccountOutline",
+        "version": "1.0.0",
+        "title": "Case Type Group",
+        "description": "A group of case types granted as one.",
+        "type": "object",
+        "required": [
+          "groupName"
+        ],
+        "properties": {
+          "groupName": {
+            "type": "string",
+            "title": "Group Name",
+            "description": "Human-readable name of this group of case types.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "description": "What this group is for, and who it belongs to."
+          },
+          "partner": {
+            "type": "string",
+            "title": "Partner",
+            "description": "The samenwerkingsverband or partner organisation the group belongs to.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "caseTypes": {
+            "type": "array",
+            "title": "Case Types",
+            "description": "The case types in this group.",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
@@ -10283,8 +10710,8 @@
       "participatiewetZaak": {
         "slug": "participatiewetZaak",
         "icon": "BriefcaseAccountOutline",
-        "version": "1.0.0",
-        "title": "Participatiewet Zaak",
+        "version": "1.2.0",
+        "title": "Participation act case",
         "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
         "type": "object",
         "required": [
@@ -10300,17 +10727,24 @@
               "bijstandsaanvraag"
             ],
             "default": "bijstandsaanvraag",
-            "description": "Vaste zaaktype-identifier voor bijstandsaanvraag"
+            "description": "The fixed case type identifier for a benefit application"
           },
           "caseNumber": {
             "title": "Case Number",
             "type": "string",
-            "description": "Zaakidentifier in formaat zaak-{jaar}-pw-{5-cijferig}"
+            "description": "The case identifier, in the form zaak-{jaar}-pw-{5-cijferig}"
           },
           "bsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "BSN",
             "type": "string",
-            "description": "BSN van de aanvrager (bijzonder persoonsgegeven)"
+            "description": "The applicant's BSN, which is special category personal data"
           },
           "requestKind": {
             "title": "Application Type",
@@ -10321,34 +10755,48 @@
               "social-assistance-werkloze-uitkeringontvangers",
               "noodvoorziening"
             ],
-            "description": "Soort bijstandsaanvraag"
+            "description": "The kind of benefit applied for"
           },
           "requestDate": {
             "title": "Application Date",
             "type": "string",
             "format": "date",
-            "description": "Datum van aanvraag"
+            "description": "The date of the application"
           },
           "effectiveDateDesired": {
             "title": "Desired Effective Date",
             "type": "string",
             "format": "date",
-            "description": "Gewenste ingangsdatum van de bijstand"
+            "description": "The date the applicant wants the benefit to start"
           },
           "ageGroup": {
             "title": "Age Group",
             "type": "string",
-            "description": "Leeftijdsgroep van de aanvrager"
+            "description": "The applicant's age group"
           },
           "householdsSituation": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Household Situation",
             "type": "string",
-            "description": "Huishoudenssituatie (alleenstaand, alleenstaand-met-kinderen, gehuwd, ...)"
+            "description": "The household situation: living alone, a single parent, married and so on"
           },
           "equityAssessment": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Means Test",
             "type": "object",
-            "description": "Vermogenstoets (art. 34)",
+            "description": "The means test under article 34",
             "properties": {
               "uitgevoerd": {
                 "title": "Executed",
@@ -10374,9 +10822,16 @@
             }
           },
           "incomeAssessment": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Income Test",
             "type": "object",
-            "description": "Inkomenstoets (art. 31-33)",
+            "description": "The income test under articles 31 to 33",
             "properties": {
               "uitgevoerd": {
                 "title": "Executed",
@@ -10404,17 +10859,17 @@
           "reIntegrationTrajectoryId": {
             "title": "Re-integration Trajectory ID",
             "type": "string",
-            "description": "Referentie naar het ReIntegratieTraject"
+            "description": "A reference to the return to work trajectory"
           },
           "handlerId": {
             "title": "Case Handler ID",
             "type": "string",
-            "description": "Nextcloud user id van de klantmanager"
+            "description": "The Nextcloud user id of the client manager"
           },
           "districtTeam": {
             "title": "Neighborhood Team",
             "type": "string",
-            "description": "Werk-en-inkomenteam; data-driven toegangsgrond"
+            "description": "The work and income team, which is a data driven ground for access"
           },
           "status": {
             "title": "Status",
@@ -10430,15 +10885,15 @@
               "closed"
             ],
             "default": "request-received",
-            "description": "Inkomensgerichte status-lifecycle (ADR-031: declaratief)"
+            "description": "The income oriented status lifecycle, declarative per ADR-031"
           },
           "afwijzingsvoorstel": {
             "title": "Rejection Proposal",
             "type": "boolean",
-            "description": "True bij vermogen boven vrijstelling (auto-afwijzing)"
+            "description": "Set when assets exceed the exemption, which proposes a refusal"
           },
           "gdprClassification": {
-            "title": "AVG Classificatie",
+            "title": "GDPR classification",
             "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
             "type": "object",
             "required": [
@@ -10462,49 +10917,49 @@
                     "politieke-overtuiging"
                   ]
                 },
-                "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+                "description": "The article 9 GDPR data categories this case processes"
               },
               "specialPersonalData": {
                 "title": "Special Personal Data",
                 "type": "boolean",
-                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+                "description": "Set as soon as an article 9 category is selected"
               },
               "justification": {
                 "title": "Legal Basis",
                 "type": "string",
-                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+                "description": "The article 9.2 GDPR exemption code, for example artikel-9-2-h-avg for health care and social work"
               },
               "justificationNotes": {
                 "title": "Legal Basis Explanation",
                 "type": "string",
-                "description": "Plain-Dutch toelichting voor de FG-audit"
+                "description": "A plain language explanation for the data protection officer's audit"
               },
               "retentionTermYears": {
                 "title": "Retention Period Years",
                 "type": "integer",
-                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+                "description": "The statutory retention period: fifteen years under the social support act, twenty under the youth act and ten under the participation act, per the 2020 municipal selection list"
               },
               "destructionDate": {
                 "title": "Destruction Date",
                 "type": "string",
                 "format": "date",
-                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+                "description": "Derived from the closing date plus the retention period in years"
               },
               "accessRestriction": {
                 "title": "Access Restriction",
                 "type": "string",
-                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+                "description": "The access restriction, enforced in the query guards, for example alleen-behandelaar-en-wijkteam"
               },
               "anonymisationAtParts": {
                 "title": "Anonymize When Sharing",
                 "type": "boolean",
                 "default": true,
-                "description": "Auto-anonimiseren bij export tenzij toestemming"
+                "description": "Anonymise on export unless consent was given"
               },
               "exportRestriction": {
                 "title": "Export Restriction",
                 "type": "string",
-                "description": "Exportbeperking (bijv. geen-bulk-export)"
+                "description": "The export restriction, for example geen-bulk-export"
               }
             }
           }
@@ -10896,9 +11351,9 @@
       "portaalVerzoek": {
         "slug": "portaalVerzoek",
         "icon": "FileDocumentEditOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Action",
-        "title": "Portaal Verzoek",
+        "title": "Portal request",
         "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Dossiq.",
         "type": "object",
         "required": [
@@ -11043,6 +11498,14 @@
             "description": "Longer explanation of this property",
             "title": "Description"
           },
+          "category": {
+            "type": "string",
+            "maxLength": 255,
+            "default": "Uncategorised",
+            "facetable": true,
+            "description": "The folder this attribute sits in on the Attributes index, a free word rather than a fixed list: an organisation's own grouping (Adres, Financieel, Persoon) is the one it recognises. Attributes with no category are listed under Uncategorised.",
+            "title": "Category"
+          },
           "caseType": {
             "type": "string",
             "format": "uuid",
@@ -11089,8 +11552,8 @@
       "reIntegratieTraject": {
         "slug": "reIntegratieTraject",
         "icon": "StairsUp",
-        "version": "1.0.0",
-        "title": "Re-integratietraject",
+        "version": "1.1.0",
+        "title": "Return to work trajectory",
         "description": "Participatiewet re-integratietraject met instrumenten (loonkostensubsidie, scholing, jobcoaching), tegenprestatie en vrijstellingen. OpenRegister-backed.",
         "type": "object",
         "required": [
@@ -11101,23 +11564,23 @@
           "caseId": {
             "title": "Case ID",
             "type": "string",
-            "description": "Referentie naar de ParticipatiewetZaak"
+            "description": "A reference to the participation act case"
           },
           "caseManagerId": {
             "title": "Client Manager ID",
             "type": "string",
-            "description": "Nextcloud user id van de klantmanager"
+            "description": "The Nextcloud user id of the client manager"
           },
           "startDate": {
             "title": "Start Date",
             "type": "string",
             "format": "date",
-            "description": "Startdatum van het traject"
+            "description": "The date the trajectory starts"
           },
           "trajectKind": {
             "title": "Trajectory Type",
             "type": "string",
-            "description": "Soort traject (werkfit-maken, naar-werk, scholing, ...)"
+            "description": "The kind of trajectory: getting fit for work, moving into work, training and so on"
           },
           "distanceToLabourMarket": {
             "title": "Distance to Labour Market",
@@ -11128,12 +11591,12 @@
               "groot",
               "zeer-groot"
             ],
-            "description": "Ingeschatte afstand tot de arbeidsmarkt"
+            "description": "The estimated distance to the labour market"
           },
           "instrumenten": {
             "title": "Instruments",
             "type": "array",
-            "description": "Ingezette instrumenten",
+            "description": "The instruments put in place",
             "items": {
               "type": "object",
               "properties": {
@@ -11173,7 +11636,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Samenwerkende partijen (UWV, werkbedrijf, werkgever, opleider, ...)"
+            "description": "The parties working together on this: UWV, the employment agency, an employer, a training provider and so on"
           },
           "evaluationMoments": {
             "title": "Evaluation Moments",
@@ -11182,17 +11645,17 @@
               "type": "string",
               "format": "date"
             },
-            "description": "Geplande evaluatiemomenten"
+            "description": "The planned evaluation moments"
           },
           "considerationMandatory": {
             "title": "Reciprocal Obligation Required",
             "type": "boolean",
-            "description": "Of een tegenprestatie verplicht is"
+            "description": "Whether a reciprocal obligation applies"
           },
           "exemptionWorkObligation": {
             "title": "Work Obligation Exemption",
             "type": "object",
-            "description": "Optionele vrijstelling van de arbeidsverplichting",
+            "description": "An optional exemption from the obligation to work",
             "properties": {
               "actief": {
                 "title": "Active",
@@ -11274,13 +11737,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this result type (e.g. Vergunning verleend)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description/toelichting of this result type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "genericDescription": {
@@ -11326,7 +11789,7 @@
       "role": {
         "slug": "role",
         "icon": "AccountKeyOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "Rol",
         "title": "Role",
@@ -11397,13 +11860,20 @@
             "format": "date-time",
             "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
             "title": "Delegate Until"
+          },
+          "representedParty": {
+            "type": "string",
+            "format": "uuid",
+            "facetable": true,
+            "description": "Whom this participant acts for on this case. Filled on a role of type Gemachtigde (Awb 2:1) and empty on every other role. It is NOT delegateFrom: that is the start of a delegation window and RoleDelegationResolver reads it as a date.",
+            "title": "Represented by"
           }
         }
       },
       "roleType": {
         "slug": "roleType",
         "icon": "BadgeAccountOutline",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Role",
         "x-zgw-equivalent": "RolType",
         "title": "Role Type",
@@ -11417,13 +11887,13 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this role type",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
           },
           "caseType": {
@@ -11432,6 +11902,22 @@
             "$ref": "caseType",
             "description": "Reference to the parent case type",
             "title": "Case Type"
+          },
+          "genericRole": {
+            "type": "string",
+            "enum": [
+              "initiator",
+              "co_initiator",
+              "handler",
+              "advisor",
+              "decision_maker",
+              "coordinator",
+              "stakeholder",
+              "contact",
+              "gemachtigde"
+            ],
+            "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it.",
+            "title": "Generic Role"
           },
           "ncGroupId": {
             "type": "string",
@@ -11516,12 +12002,11 @@
       "sociaalDomeinAuditLog": {
         "slug": "sociaalDomeinAuditLog",
         "icon": "FileEyeOutline",
-        "version": "1.0.0",
-        "title": "Sociaal Domein Audit Log",
-        "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd.",
+        "version": "1.2.0",
+        "title": "Social domain audit log",
+        "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd. V1.1 additief: een raadpleging kan over een BURGER gaan in plaats van over een zaak, dus subjectId is toegevoegd en caseId is niet langer verplicht. Elke bestaande rij blijft geldig en elke bestaande schrijver blijft werken.",
         "type": "object",
         "required": [
-          "caseId",
           "action",
           "moment"
         ],
@@ -11529,17 +12014,23 @@
           "caseId": {
             "title": "Case ID",
             "type": "string",
-            "description": "Referentie naar de geraadpleegde zaak"
+            "description": "A reference to the case that was read. Empty for a lookup that is about a citizen and returns no case at all, such as a refused one."
+          },
+          "subjectId": {
+            "title": "Subject ID",
+            "type": "string",
+            "facetable": true,
+            "description": "The citizen reference the lookup was made on, a BSN or a citizen id. This is what a subject access request searches on: the question is who looked at ME, not who looked at a case."
           },
           "employeeId": {
             "title": "Employee ID",
             "type": "string",
-            "description": "Nextcloud user id van de raadpleger (null bij externe partij)"
+            "description": "The Nextcloud user id of the person doing the lookup, empty for an external party"
           },
           "organisation": {
             "title": "Organization",
             "type": "string",
-            "description": "Organisatie van de raadpleger (gemeente of externe partij)"
+            "description": "The organisation the person doing the lookup belongs to, the municipality or an external party"
           },
           "action": {
             "title": "Action",
@@ -11556,12 +12047,12 @@
             "title": "Timestamp",
             "type": "string",
             "format": "date-time",
-            "description": "Tijdstip van de actie"
+            "description": "The moment the action took place"
           },
           "ipAddress": {
             "title": "IP Address",
             "type": "string",
-            "description": "IP-adres van de raadpleger"
+            "description": "The IP address the lookup came from"
           },
           "geraadpleegdeVelden": {
             "title": "Consulted Fields",
@@ -11569,7 +12060,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Velden die zijn geraadpleegd"
+            "description": "The fields that were read"
           },
           "authorisationGround": {
             "title": "Authorization Basis",
@@ -11585,7 +12076,7 @@
               "fg-audit-mode-metadata-only",
               "geanonimiseerd"
             ],
-            "description": "Resultaat van de toegangspoging"
+            "description": "The outcome of the access attempt"
           }
         }
       },
@@ -11859,14 +12350,27 @@
             "type": "string",
             "maxLength": 255,
             "description": "Name of this status (e.g. Ontvangen, In behandeling)",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this status phase",
-            "x-translatable": true,
+            "translatable": true,
             "title": "Description"
+          },
+          "publicLabel": {
+            "type": "string",
+            "maxLength": 255,
+            "description": "What the applicant reads for this status. Leave it empty and they read the name.",
+            "translatable": true,
+            "title": "Public label"
+          },
+          "publicDescription": {
+            "type": "string",
+            "description": "What the applicant is told this status means. Empty shows no description.",
+            "translatable": true,
+            "title": "Public description"
           },
           "caseType": {
             "type": "string",
@@ -11988,8 +12492,8 @@
       "subsidieBeoordeling": {
         "slug": "subsidieBeoordeling",
         "icon": "ClipboardCheckOutline",
-        "version": "1.0.0",
-        "title": "Subsidiebeoordeling",
+        "version": "1.1.0",
+        "title": "Grant assessment",
         "description": "Assessment record for a grant application.",
         "type": "object",
         "required": [
@@ -12199,9 +12703,9 @@
       "subsidieRegeling": {
         "slug": "subsidieRegeling",
         "icon": "FileDocumentMultipleOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:GovernmentService",
-        "title": "Subsidieregeling",
+        "title": "Grant scheme",
         "description": "DEPRECATED: superseded by caseType plus its propertyDefinition records (openspec/changes/subsidieregeling-is-a-casetype). Retained for ONE release so MigrateSubsidieRegelingToCaseType can still resolve and read these objects: a schema the register no longer carries returns zero rows, and a migration that reads nothing reports the same success as one that had nothing to do. Remove once the migration has run everywhere. Policy-level definition of a grant program (AWB titel 4.2 / VNG ASV).",
         "type": "object",
         "required": [
@@ -12290,8 +12794,8 @@
       "subsidieUitvoering": {
         "slug": "subsidieUitvoering",
         "icon": "ProgressClock",
-        "version": "1.0.0",
-        "title": "Subsidie-uitvoering",
+        "version": "1.1.0",
+        "title": "Grant execution",
         "description": "Ongoing execution phase of a grant.",
         "type": "object",
         "required": [
@@ -13617,9 +14121,9 @@
       "termijnGebeurtenis": {
         "slug": "termijnGebeurtenis",
         "icon": "ScriptText",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Event",
-        "title": "Termijn Gebeurtenis",
+        "title": "Term event",
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
         "type": "object",
         "required": [
@@ -13783,8 +14287,8 @@
       "toestemming": {
         "slug": "toestemming",
         "icon": "HandshakeOutline",
-        "version": "1.0.0",
-        "title": "Toestemming",
+        "version": "1.2.0",
+        "title": "Consent",
         "description": "Expliciete, herroepbare toestemming voor gegevensdeling met externe partijen (AVG art. 6/9). OpenRegister-backed; gedeeld door alle sociaal-domein zaaktypes.",
         "type": "object",
         "required": [
@@ -13795,46 +14299,53 @@
           "caseId": {
             "title": "Case ID",
             "type": "string",
-            "description": "Referentie naar de betrokken zaak"
+            "description": "A reference to the case this concerns"
           },
           "grantedByBsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Granted By BSN",
             "type": "string",
-            "description": "BSN van de toestemming-verlenende burger/ouder"
+            "description": "The BSN of the citizen or parent who gives consent"
           },
           "grantedByName": {
             "title": "Granted By Name",
             "type": "string",
-            "description": "Naam van de toestemming-verlener"
+            "description": "The name of the person giving consent"
           },
           "grantedDate": {
             "title": "Consent Date",
             "type": "string",
             "format": "date",
-            "description": "Datum van verlening"
+            "description": "The date consent was given"
           },
           "validTo": {
             "title": "Expires On",
             "type": "string",
             "format": "date",
-            "description": "Optionele vervaldatum van de toestemming"
+            "description": "The date the consent expires, if it expires at all"
           },
           "withdrawalPossible": {
             "title": "Revocable",
             "type": "boolean",
             "default": true,
-            "description": "Of de toestemming herroepbaar is"
+            "description": "Whether the consent can be withdrawn"
           },
           "withdrawn": {
             "title": "Revoked",
             "type": "boolean",
             "default": false,
-            "description": "Of de toestemming is ingetrokken"
+            "description": "Whether the consent has been withdrawn"
           },
           "scope": {
             "title": "Scope",
             "type": "string",
-            "description": "Reikwijdte van de toestemming"
+            "description": "What the consent covers"
           },
           "recipientParties": {
             "title": "Recipients",
@@ -13842,7 +14353,7 @@
             "items": {
               "type": "string"
             },
-            "description": "Ontvangende partijen"
+            "description": "The parties receiving the data"
           },
           "tegegevens": {
             "title": "Data Fields",
@@ -13850,22 +14361,22 @@
             "items": {
               "type": "string"
             },
-            "description": "Specifieke gegevens(velden) waarvoor toestemming geldt"
+            "description": "The specific data fields the consent covers"
           },
           "tedoel": {
             "title": "Processing Purpose",
             "type": "string",
-            "description": "Doel van de gegevensdeling"
+            "description": "The purpose the data is shared for"
           },
           "recordedViaChannel": {
             "title": "Recorded Via Channel",
             "type": "string",
-            "description": "Kanaal waarlangs toestemming is vastgelegd (schriftelijk, mondeling-genotuleerd, digitaal, ...)"
+            "description": "The channel consent was recorded on: in writing, spoken and minuted, digitally and so on"
           },
           "evidenceFileId": {
             "title": "Evidence File ID",
             "type": "string",
-            "description": "Optionele Nextcloud file-referentie naar het bewijs"
+            "description": "An optional Nextcloud file reference to the evidence"
           }
         }
       },
@@ -13910,8 +14421,8 @@
       "wmoZaak": {
         "slug": "wmoZaak",
         "icon": "HumanWheelchair",
-        "version": "1.0.0",
-        "title": "WMO Zaak",
+        "version": "1.2.0",
+        "title": "Social support act case",
         "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
         "type": "object",
         "required": [
@@ -13928,22 +14439,29 @@
               "wmo-melding"
             ],
             "default": "wmo-melding",
-            "description": "Vaste zaaktype-identifier voor WMO-melding"
+            "description": "The fixed case type identifier for a social support act report"
           },
           "caseNumber": {
             "title": "Case Number",
             "type": "string",
-            "description": "Zaakidentifier in formaat zaak-{jaar}-wmo-{5-cijferig}"
+            "description": "The case identifier, in the form zaak-{jaar}-wmo-{5-cijferig}"
           },
           "bsn": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "BSN",
             "type": "string",
-            "description": "BSN van de aanvrager (bijzonder persoonsgegeven; gemaskeerd bij export zonder toestemming)"
+            "description": "The applicant's BSN, which is special category personal data and is masked on an export without consent"
           },
           "name": {
             "title": "Name",
             "type": "string",
-            "description": "Naam van de aanvrager"
+            "description": "The applicant's name"
           },
           "requestKind": {
             "title": "Application Type",
@@ -13956,43 +14474,57 @@
               "respijtzorg",
               "other"
             ],
-            "description": "Soort gevraagde ondersteuning"
+            "description": "The kind of support asked for"
           },
           "requestDate": {
             "title": "Application Date",
             "type": "string",
             "format": "date",
-            "description": "Datum van melding/aanvraag"
+            "description": "The date of the report or application"
           },
           "reportChannel": {
             "title": "Notification Channel",
             "type": "string",
-            "description": "Kanaal waarlangs de melding binnenkwam (telefonisch, balie, online, ...)"
+            "description": "The channel the report came in on: by phone, at the desk, online and so on"
           },
           "supportRequest": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Support Request",
             "type": "string",
-            "description": "Inhoudelijke ondersteuningsvraag (alleen-wijkteam zichtbaar)"
+            "description": "The support question in the applicant's own terms, visible to the district team only"
           },
           "householdsComposition": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Household Composition",
             "type": "string",
-            "description": "Optionele beschrijving van de huishoudenssamenstelling"
+            "description": "An optional description of who the household is made up of"
           },
           "districtTeam": {
             "title": "Neighborhood Team",
             "type": "string",
-            "description": "Toegewezen wijkteam; data-driven toegangsgrond"
+            "description": "The district team assigned, which is a data driven ground for access"
           },
           "handlerId": {
             "title": "Case Handler ID",
             "type": "string",
-            "description": "Nextcloud user id van de behandelend consulent"
+            "description": "The Nextcloud user id of the case worker handling this case"
           },
           "secondHandlerId": {
             "title": "Second Case Handler ID",
             "type": "string",
-            "description": "Optionele tweede behandelaar; override op wijkteam-toegang"
+            "description": "An optional second case handler, which overrides district team access"
           },
           "status": {
             "title": "Status",
@@ -14007,12 +14539,12 @@
               "closed"
             ],
             "default": "report",
-            "description": "Status-lifecycle (ADR-031: declaratief, geen custom workflow engine)"
+            "description": "The status lifecycle, declarative per ADR-031 and not a workflow engine of its own"
           },
           "leadTimeStatutory": {
             "title": "Legal Processing Time",
             "type": "object",
-            "description": "Wettelijke doorlooptijden (onderzoek 6 weken + beschikking 2 weken = 8 weken)",
+            "description": "The statutory lead times: six weeks of investigation plus two weeks for the decision, eight in total",
             "properties": {
               "investigationWeeks": {
                 "title": "Investigation Weeks",
@@ -14038,15 +14570,22 @@
             "title": "Investigation Deadline Exceeded Since",
             "type": "string",
             "format": "date",
-            "description": "Gezet door de batch-job wanneer de onderzoekstermijn is overschreden"
+            "description": "Set by the batch job when the investigation term is exceeded"
           },
           "needsAssessmentId": {
+            "authorization": {
+              "read": [
+                {
+                  "group": "dossiq-sensitive"
+                }
+              ]
+            },
             "title": "Indication ID",
             "type": "string",
-            "description": "Referentie naar de bijbehorende Indicatiestelling"
+            "description": "A reference to the needs assessment this belongs to"
           },
           "gdprClassification": {
-            "title": "AVG Classificatie",
+            "title": "GDPR classification",
             "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
             "type": "object",
             "required": [
@@ -14070,49 +14609,49 @@
                     "politieke-overtuiging"
                   ]
                 },
-                "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
+                "description": "The article 9 GDPR data categories this case processes"
               },
               "specialPersonalData": {
                 "title": "Special Personal Data",
                 "type": "boolean",
-                "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
+                "description": "Set as soon as an article 9 category is selected"
               },
               "justification": {
                 "title": "Legal Basis",
                 "type": "string",
-                "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
+                "description": "The article 9.2 GDPR exemption code, for example artikel-9-2-h-avg for health care and social work"
               },
               "justificationNotes": {
                 "title": "Legal Basis Explanation",
                 "type": "string",
-                "description": "Plain-Dutch toelichting voor de FG-audit"
+                "description": "A plain language explanation for the data protection officer's audit"
               },
               "retentionTermYears": {
                 "title": "Retention Period Years",
                 "type": "integer",
-                "description": "Wettelijke bewaartermijn (WMO 15 / Jeugdwet 20 / Participatiewet 10 jaar, selectielijst gemeenten 2020)"
+                "description": "The statutory retention period: fifteen years under the social support act, twenty under the youth act and ten under the participation act, per the 2020 municipal selection list"
               },
               "destructionDate": {
                 "title": "Destruction Date",
                 "type": "string",
                 "format": "date",
-                "description": "Auto-berekend: sluitingsdatum + bewaarTermijnJaren"
+                "description": "Derived from the closing date plus the retention period in years"
               },
               "accessRestriction": {
                 "title": "Access Restriction",
                 "type": "string",
-                "description": "Toegangsbeperking, hardcoded in query-guards (bijv. alleen-behandelaar-en-wijkteam)"
+                "description": "The access restriction, enforced in the query guards, for example alleen-behandelaar-en-wijkteam"
               },
               "anonymisationAtParts": {
                 "title": "Anonymize When Sharing",
                 "type": "boolean",
                 "default": true,
-                "description": "Auto-anonimiseren bij export tenzij toestemming"
+                "description": "Anonymise on export unless consent was given"
               },
               "exportRestriction": {
                 "title": "Export Restriction",
                 "type": "string",
-                "description": "Exportbeperking (bijv. geen-bulk-export)"
+                "description": "The export restriction, for example geen-bulk-export"
               }
             }
           }
@@ -16953,6 +17492,65 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-1-1",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a01"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "advice",
+        "title": "Voorbeeld adviesaanvraag bij de commissie",
+        "placedOn": "Voorbeeld Behandelaar 1",
+        "placedOnGroup": "Voorbeeld Adviescommissie",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "open",
+        "dueAt": "2026-03-15",
+        "source": "7469134a-eb38-496e-85b6-821bbd4238b9"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-2-2",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a02"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "inspection",
+        "title": "Voorbeeld inspectie ter plaatse",
+        "placedOnGroup": "Voorbeeld Toezicht",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "met",
+        "dueAt": "2026-03-10",
+        "metAt": "2026-03-08T11:00:00+00:00",
+        "settlementNote": "Voorbeeld inspectierapport vastgelegd"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "obligation",
+          "slug": "obligation-obligation-3-3",
+          "id": "0f3b1f4a-6d1e-4c2b-9a37-2b1e5d8c4a03"
+        },
+        "case": "72cd0b02-18c7-4df2-aa5c-c70da9fd8495",
+        "kind": "fee",
+        "title": "Voorbeeld openstaande leges",
+        "placedOnGroup": "Voorbeeld Financien",
+        "placedAt": "2026-03-01T09:00:00+00:00",
+        "blocks": [
+          "closing"
+        ],
+        "state": "withdrawn",
+        "withdrawnAt": "2026-03-09T11:00:00+00:00",
+        "withdrawalReason": "Voorbeeld: de leges zijn kwijtgescholden"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "consultation",
           "slug": "consultation-consultation-1-1",
           "id": "7469134a-eb38-496e-85b6-821bbd4238b9"
@@ -17630,13 +18228,11 @@
           "id": "b3706ca7-e0df-469c-a7e4-af6dd0b28927"
         },
         "document": "https://example.invalid/resource/0",
-        "relationshipType": "Voorbeeld Relationshiptype 1",
+        "relationshipType": "geadresseerde",
         "involvedParty": "https://example.invalid/resource/0",
         "description": "Voorbeeld Description 1",
-        "receiveDate": "2026-03-01",
         "sendDate": "2026-03-01",
-        "contactPerson": "https://example.invalid/resource/0",
-        "contactPersonName": "Voorbeeld Contactpersonname 1"
+        "contactPerson": "https://example.invalid/resource/0"
       },
       {
         "@self": {
@@ -17646,13 +18242,11 @@
           "id": "84f3452c-bc13-41ad-ade5-27e8c76bdb07"
         },
         "document": "https://example.invalid/resource/1",
-        "relationshipType": "Voorbeeld Relationshiptype 2",
+        "relationshipType": "afzender",
         "involvedParty": "https://example.invalid/resource/1",
         "description": "Voorbeeld Description 2",
         "receiveDate": "2026-03-02",
-        "sendDate": "2026-03-02",
-        "contactPerson": "https://example.invalid/resource/1",
-        "contactPersonName": "Voorbeeld Contactpersonname 2"
+        "contactPerson": "https://example.invalid/resource/1"
       },
       {
         "@self": {
@@ -17662,13 +18256,11 @@
           "id": "f2a26f6d-4c5f-4583-8bb8-a25e5addd9e5"
         },
         "document": "https://example.invalid/resource/2",
-        "relationshipType": "Voorbeeld Relationshiptype 3",
+        "relationshipType": "geadresseerde",
         "involvedParty": "https://example.invalid/resource/2",
         "description": "Voorbeeld Description 3",
-        "receiveDate": "2026-03-03",
         "sendDate": "2026-03-03",
-        "contactPerson": "https://example.invalid/resource/2",
-        "contactPersonName": "Voorbeeld Contactpersonname 3"
+        "contactPerson": "https://example.invalid/resource/2"
       },
       {
         "@self": {
@@ -20550,6 +21142,48 @@
       {
         "@self": {
           "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-1-1",
+          "id": "5f2b0c41-9d8e-4f27-8a13-6c0d5b7e9a24"
+        },
+        "groupName": "Voorbeeld Groupname 1",
+        "description": "Voorbeeld Description 1",
+        "partner": "Voorbeeld Partner 1",
+        "caseTypes": [
+          "Voorbeeld Casetypes 1"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-2-2",
+          "id": "8a4d1e63-2b7c-4f19-9e05-71c3d8a6b4f2"
+        },
+        "groupName": "Voorbeeld Groupname 2",
+        "description": "Voorbeeld Description 2",
+        "partner": "Voorbeeld Partner 2",
+        "caseTypes": [
+          "Voorbeeld Casetypes 2"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTypeGroup",
+          "slug": "casetypegroup-casetypegroup-3-3",
+          "id": "c93f7a25-6e41-4d0b-b28f-0a5e14c7d9b3"
+        },
+        "groupName": "Voorbeeld Groupname 3",
+        "description": "Voorbeeld Description 3",
+        "partner": "Voorbeeld Partner 3",
+        "caseTypes": [
+          "Voorbeeld Casetypes 3"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
           "schema": "organisatieRol",
           "slug": "organisatierol-organisatierol-1-1",
           "id": "013e4560-22d5-4abf-a567-1cc980917ec5"
@@ -21701,6 +22335,8 @@
         "caseType": "474ae3aa-bd13-4d7c-9056-272eb118fc32",
         "order": 0,
         "description": "Voorbeeld Description 1",
+        "publicLabel": "We hebben uw aanvraag ontvangen",
+        "publicDescription": "U hoeft nu niets te doen. U hoort binnen twee weken van ons.",
         "isFinal": false
       },
       {
@@ -21714,6 +22350,7 @@
         "caseType": "809089ca-e08f-4ed1-a57e-7cd9ed06dbb9",
         "order": 0,
         "description": "Voorbeeld Description 2",
+        "publicLabel": "We beoordelen uw aanvraag",
         "isFinal": false
       },
       {
@@ -23660,7 +24297,12 @@
           "timestamp": "2026-06-02T10:02:00+02:00"
         },
         "transcription": "Spantvoet zuidzijde staat 40 millimeter uit het hart. Uitvoerder haalt de berekening op bij de constructeur.",
-        "transcriptionStatus": "synced",
+        "transcriptionStatus": "done",
+        "durationSeconds": 38,
+        "language": "nl",
+        "transcriptionQueuedAt": "2026-06-02T10:02:10+02:00",
+        "transcriptionCompletedAt": "2026-06-02T10:03:41+02:00",
+        "transcriptionAttempts": 1,
         "tags": [
           "dakconstructie",
           "afwijking"
@@ -24122,6 +24764,760 @@
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
         "respondedOn": "2026-02-22T16:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-hoofdcatalogus",
+          "id": "9f1d6b2e-4c3a-4b71-9a5e-1c0d8f2a7b31"
+        },
+        "domein": "HOOFD",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Sanne de Wit",
+        "contactPersonManagementPhoneNumber": "0612345678",
+        "contactPersonManagementEmailAddress": "catalogusbeheer@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-vergunningen",
+          "id": "2a7c4e91-8d60-4f2b-bc13-6e94a05d3c78"
+        },
+        "domein": "VERG",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Joost Prins",
+        "contactPersonManagementPhoneNumber": "0687654321",
+        "contactPersonManagementEmailAddress": "vergunningen@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "zgwCatalogus",
+          "slug": "zgwcatalogus-handhaving",
+          "id": "c40b8f15-7e22-4d8a-9f36-b5127ae0d964"
+        },
+        "domein": "HAND",
+        "rsin": "002564440",
+        "contactPersonManagementName": "Amina Yildiz",
+        "contactPersonManagementPhoneNumber": "0611223344",
+        "contactPersonManagementEmailAddress": "handhaving@example.invalid"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "mailIntakeEntry",
+          "slug": "mailintakeentry-mailintakeentry-1-1",
+          "id": "ef2b35b8-1d8d-5342-8eb8-8ace7adff1ef"
+        },
+        "mailMessageId": "<voorbeeld-1@voorbeeld.invalid>",
+        "accountId": 1,
+        "mailbox": "INBOX",
+        "uid": 101,
+        "sender": "aanvrager@example.invalid",
+        "recipient": "zaken@example.invalid",
+        "subject": "[ZAAK-2026-000142] Aanvullende stukken",
+        "receivedAt": "2026-09-11T09:15:00+00:00",
+        "sentAt": "2026-09-11T09:10:00+00:00",
+        "original": "From: aanvrager@example.invalid\r\nSubject: [ZAAK-2026-000142] Aanvullende stukken\r\n\r\nVoorbeeldtekst 1.",
+        "originalTruncated": false,
+        "decidingFilter": "",
+        "filterOutcome": "accept",
+        "filterReason": "No filter objected, so the pipeline reached its accept default.",
+        "spfResult": "pass",
+        "dkimResult": "pass",
+        "dmarcResult": "pass",
+        "threadingResult": "pass",
+        "outcome": "case",
+        "reason": "Linked to the case its subject names."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "mailIntakeEntry",
+          "slug": "mailintakeentry-mailintakeentry-2-1",
+          "id": "3a7b6a10-4f82-57f2-9b06-7dec46c87dbb"
+        },
+        "mailMessageId": "<voorbeeld-2@voorbeeld.invalid>",
+        "accountId": 1,
+        "mailbox": "INBOX",
+        "uid": 102,
+        "sender": "afwezig@example.invalid",
+        "recipient": "zaken@example.invalid",
+        "subject": "Automatisch antwoord: uw bericht",
+        "receivedAt": "2026-09-12T09:30:00+00:00",
+        "sentAt": "2026-09-12T09:25:00+00:00",
+        "original": "From: afwezig@example.invalid\r\nSubject: Automatisch antwoord: uw bericht\r\n\r\nVoorbeeldtekst 2.",
+        "originalTruncated": false,
+        "decidingFilter": "auto-reply",
+        "filterOutcome": "reject",
+        "filterReason": "The message declares auto-submitted: auto-replied.",
+        "spfResult": "pass",
+        "dkimResult": "none",
+        "dmarcResult": "none",
+        "threadingResult": "none",
+        "outcome": "refused",
+        "reason": "An automatic reply opens no case."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "mailIntakeEntry",
+          "slug": "mailintakeentry-mailintakeentry-3-1",
+          "id": "14ea299b-677b-53b9-90aa-49630278c94b"
+        },
+        "mailMessageId": "<voorbeeld-3@voorbeeld.invalid>",
+        "accountId": 1,
+        "mailbox": "INBOX",
+        "uid": 103,
+        "sender": "onbekend@example.invalid",
+        "recipient": "zaken@example.invalid",
+        "subject": "Vraag over mijn vergunning",
+        "receivedAt": "2026-09-13T09:45:00+00:00",
+        "sentAt": "2026-09-13T09:40:00+00:00",
+        "original": "From: onbekend@example.invalid\r\nSubject: Vraag over mijn vergunning\r\n\r\nVoorbeeldtekst 3.",
+        "originalTruncated": false,
+        "decidingFilter": "",
+        "filterOutcome": "accept",
+        "filterReason": "No filter objected, so the pipeline reached its accept default.",
+        "spfResult": "unavailable",
+        "dkimResult": "unavailable",
+        "dmarcResult": "unavailable",
+        "threadingResult": "none",
+        "outcome": "inbox",
+        "reason": "No case and no case type claimed this message, so it is waiting in the intake inbox."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-1-1",
+          "id": "0f3b2e64-5c1a-4f8e-9d20-7a1c4b6e9d01"
+        },
+        "person": "Voorbeeld Person 1",
+        "day": "2026-03-01",
+        "waiting": 4,
+        "late": 1,
+        "summary": "Voorbeeld Summary 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-2-2",
+          "id": "1a7d5c92-8b34-4e17-ae55-3c2f8d4a7b12"
+        },
+        "person": "Voorbeeld Person 2",
+        "day": "2026-03-02",
+        "waiting": 11,
+        "late": 3,
+        "summary": "Voorbeeld Summary 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "workDigest",
+          "slug": "workdigest-workdigest-3-3",
+          "id": "2c9e4a18-6f72-4b03-8c19-5d8b1e7f3a23"
+        },
+        "person": "Voorbeeld Person 3",
+        "day": "2026-03-03",
+        "waiting": 2,
+        "late": 0,
+        "summary": "Voorbeeld Summary 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-1-1",
+          "id": "3e1f7b26-9d48-4c85-b740-6a3c2e9d8f34"
+        },
+        "person": "Voorbeeld Person 1",
+        "actor": "Voorbeeld Actor 1",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 1",
+        "noteId": "Voorbeeld Noteid 1",
+        "mentionedAt": "2026-03-01T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-2-2",
+          "id": "4b8c3d95-1e60-4a72-9f38-7c5d4b1a2e45"
+        },
+        "person": "Voorbeeld Person 2",
+        "actor": "Voorbeeld Actor 2",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 2",
+        "noteId": "Voorbeeld Noteid 2",
+        "mentionedAt": "2026-03-02T09:00:00+01:00",
+        "acknowledgedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "queueMention",
+          "slug": "queuemention-queuemention-3-3",
+          "id": "5d2a6e83-4f19-4d56-a821-8e6f3c2b1d56"
+        },
+        "person": "Voorbeeld Person 3",
+        "actor": "Voorbeeld Actor 3",
+        "subjectType": "case",
+        "subjectId": "Voorbeeld Subjectid 3",
+        "noteId": "Voorbeeld Noteid 3",
+        "mentionedAt": "2026-03-03T09:00:00+01:00",
+        "acknowledgedAt": "2026-03-03T17:30:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-1-1",
+          "id": "b41e7d92-0c85-4a63-9f17-2d3e8a5c6014"
+        },
+        "set": "bezwaar-beroep",
+        "setVersion": "1.0.0",
+        "targetSchema": "caseType",
+        "targetObject": "Voorbeeld Targetobject 1",
+        "fingerprint": "0f2c1a7e5b83d46092af1c3e7d508b6419a2c7f03e5d18b64a90c2f7e315d8b04",
+        "seededAt": "2026-03-01T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-2-2",
+          "id": "c52f8e03-1d96-4b74-8a28-3e4f9b6d7125"
+        },
+        "set": "vth",
+        "setVersion": "1.0.0",
+        "targetSchema": "statusType",
+        "targetObject": "Voorbeeld Targetobject 2",
+        "fingerprint": "1a3d2b8f6c94e5710bc02d4f8e619c7520b3d8016f4e29c75ba1d308f426e9c15",
+        "seededAt": "2026-03-02T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "shippedOrigin",
+          "slug": "shippedorigin-shippedorigin-3-3",
+          "id": "d63a9f14-2e07-4c85-9b39-4f501c7e8236"
+        },
+        "set": "gemeentelijke-rollen",
+        "setVersion": "1.0.0",
+        "targetSchema": "roleType",
+        "targetObject": "Voorbeeld Targetobject 3",
+        "fingerprint": "2b4e3c9076a5f6821cd13e509f72ad8631c4e9127054f3ad86cb2e419053f7d26",
+        "seededAt": "2026-03-03T09:00:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-1-1",
+          "id": "e74b0a25-3f18-4d96-8c40-5a612d8f9347"
+        },
+        "set": "gemeentelijke-rollen",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 1",
+        "adoptedAt": "2026-03-01T10:15:00+01:00",
+        "reversedBy": "",
+        "reversedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-2-2",
+          "id": "f85c1b36-4a29-4e07-9d51-6b723e901458"
+        },
+        "set": "vth",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 2",
+        "adoptedAt": "2026-03-02T10:15:00+01:00",
+        "reversedBy": "",
+        "reversedAt": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "starterSetAdoption",
+          "slug": "startersetadoption-startersetadoption-3-3",
+          "id": "0916d247-5b30-4f18-8e62-7c834a012569"
+        },
+        "set": "bezwaar-beroep",
+        "setVersion": "1.0.0",
+        "adoptedBy": "Voorbeeld Adoptedby 3",
+        "adoptedAt": "2026-03-03T10:15:00+01:00",
+        "reversedBy": "Voorbeeld Reversedby 3",
+        "reversedAt": "2026-03-04T11:45:00+01:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-1-1",
+          "id": "1a27e358-6c41-4029-9f73-8d945b12367a"
+        },
+        "name": "Voorbeeld Name 1",
+        "description": "Voorbeeld Description 1",
+        "leadTimeDays": 5,
+        "assigneeRole": "Voorbeeld Assigneerole 1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-2-2",
+          "id": "2b38f469-7d52-4130-8a84-9e056c23478b"
+        },
+        "name": "Voorbeeld Name 2",
+        "description": "Voorbeeld Description 2",
+        "leadTimeDays": 10,
+        "assigneeRole": "Voorbeeld Assigneerole 2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "reusableStep",
+          "slug": "reusablestep-reusablestep-3-3",
+          "id": "3c49057a-8e63-4241-9b95-0f167d34589c"
+        },
+        "name": "Voorbeeld Name 3",
+        "description": "Voorbeeld Description 3",
+        "leadTimeDays": 15,
+        "assigneeRole": "Voorbeeld Assigneerole 3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-1-1",
+          "id": "4d5a168b-9f74-4352-8ca6-10278e45690d"
+        },
+        "name": "Voorbeeld Name 1",
+        "kind": "document",
+        "body": "Voorbeeld Body 1",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-2-2",
+          "id": "5e6b279c-0a85-4463-9db7-21389f56701e"
+        },
+        "name": "Voorbeeld Name 2",
+        "kind": "task",
+        "body": "Voorbeeld Body 2",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "contentTemplate",
+          "slug": "contenttemplate-contenttemplate-3-3",
+          "id": "6f7c38ad-1b96-4574-8ec8-324a0067812f"
+        },
+        "name": "Voorbeeld Name 3",
+        "kind": "result",
+        "body": "Voorbeeld Body 3",
+        "caseTypes": [],
+        "presets": {}
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-1-1",
+          "id": "5c4af069-024a-4642-98f5-7fb4db6977f1"
+        },
+        "case": "Voorbeeld Zaak 1",
+        "summary": "Bankafschrift laatste drie maanden",
+        "party": "Voorbeeld Aanvrager 1",
+        "recipient": "aanvrager1@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bankafschrift laatste drie maanden",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar1",
+        "requestedAt": "2026-09-01T09:00:00+00:00",
+        "hersteltermijn": "2026-10-01",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-2-1",
+          "id": "57aea7b6-5afd-4ff2-95a0-86d26c78501c"
+        },
+        "case": "Voorbeeld Zaak 2",
+        "summary": "Huurcontract",
+        "party": "Voorbeeld Aanvrager 2",
+        "recipient": "aanvrager2@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Huurcontract",
+            "received": true
+          }
+        ],
+        "requestedBy": "behandelaar2",
+        "requestedAt": "2026-09-02T09:00:00+00:00",
+        "hersteltermijn": "2026-10-08",
+        "state": "open",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "aanvullingsverzoek",
+          "slug": "aanvullingsverzoek-aanvullingsverzoek-3-1",
+          "id": "8546eb50-7fc2-4db5-9ae4-863946dfeda6"
+        },
+        "case": "Voorbeeld Zaak 3",
+        "summary": "Bewijs van inschrijving",
+        "party": "Voorbeeld Aanvrager 3",
+        "recipient": "aanvrager3@example.invalid",
+        "rationale": "Zonder deze stukken kan de aanvraag niet worden beoordeeld",
+        "missingItems": [
+          {
+            "item": "Bewijs van inschrijving",
+            "received": false
+          }
+        ],
+        "requestedBy": "behandelaar3",
+        "requestedAt": "2026-09-03T09:00:00+00:00",
+        "hersteltermijn": "2026-07-01",
+        "state": "expired",
+        "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseCustody",
+          "slug": "dossiq-case-custody-1"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "organisationUnit": "team-vergunningen",
+        "handler": "j.devries",
+        "from": "2026-01-12T09:00:00+01:00",
+        "until": "2026-03-02T17:00:00+01:00",
+        "open": false,
+        "reason": "Intake door het vergunningenteam",
+        "movedBy": "systeem",
+        "sequence": 1
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseCustody",
+          "slug": "dossiq-case-custody-2"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "organisationUnit": "team-handhaving",
+        "handler": "m.bakker",
+        "from": "2026-03-02T17:00:00+01:00",
+        "until": "2026-05-18T12:00:00+02:00",
+        "open": false,
+        "reason": "Overgedragen na constatering ter plaatse",
+        "movedBy": "j.devries",
+        "sequence": 2
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseCustody",
+          "slug": "dossiq-case-custody-3"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "organisationUnit": "team-juridische-zaken",
+        "handler": "s.elhaddad",
+        "from": "2026-05-18T12:00:00+02:00",
+        "open": true,
+        "reason": "Bezwaar ingediend, juridische behandeling",
+        "movedBy": "m.bakker",
+        "sequence": 3
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseIncident",
+          "slug": "dossiq-case-incident-1"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "eventDate": "2026-03-14T20:15:00+01:00",
+        "recordedAt": "2026-03-15T08:30:00+01:00",
+        "reporter": "Melding via telefoon, bewoner Kerkstraat 12",
+        "description": "Geluidsoverlast tot laat in de avond.",
+        "assignee": "m.bakker",
+        "state": "afgehandeld",
+        "outcome": "Waarschuwing gegeven"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseIncident",
+          "slug": "dossiq-case-incident-2"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "eventDate": "2026-06-02T22:40:00+02:00",
+        "recordedAt": "2026-06-24T11:05:00+02:00",
+        "reporter": "Melding via het formulier",
+        "description": "Opnieuw geluidsoverlast, drie weken later pas verwerkt.",
+        "assignee": "m.bakker",
+        "state": "in-behandeling",
+        "outcome": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseIncident",
+          "slug": "dossiq-case-incident-3"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "eventDate": "2026-09-08T19:05:00+02:00",
+        "recordedAt": "2026-09-08T19:20:00+02:00",
+        "reporter": "Constatering door toezichthouder",
+        "description": "Derde constatering op hetzelfde adres.",
+        "assignee": "s.elhaddad",
+        "state": "open",
+        "outcome": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTakeover",
+          "slug": "dossiq-case-takeover-1"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "requestedBy": "s.elhaddad",
+        "holder": "m.bakker",
+        "holdingUnit": "team-handhaving",
+        "reason": "Bezwaar ingediend, de zaak hoort bij juridische zaken.",
+        "status": "pending",
+        "requestedAt": "2026-05-18T10:12:00+02:00",
+        "taskId": "task-takeover-1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTakeover",
+          "slug": "dossiq-case-takeover-2"
+        },
+        "caseId": "9c74e0b8-1a52-4d63-8e19-7b40f2ca6d55",
+        "requestedBy": "m.bakker",
+        "holder": "j.devries",
+        "holdingUnit": "team-vergunningen",
+        "reason": "Handhaving neemt over na constatering.",
+        "status": "accepted",
+        "requestedAt": "2026-03-02T09:30:00+01:00",
+        "answeredBy": "j.devries",
+        "answeredAt": "2026-03-02T16:45:00+01:00",
+        "taskId": "task-takeover-2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTakeover",
+          "slug": "dossiq-case-takeover-3"
+        },
+        "caseId": "c05a7e11-6d39-4b82-a4f1-18e3907cb2d4",
+        "requestedBy": "a.jansen",
+        "holder": "s.elhaddad",
+        "holdingUnit": "team-juridische-zaken",
+        "reason": "Verzoek tot overname wegens vakantie.",
+        "status": "refused",
+        "requestedAt": "2026-07-01T08:00:00+02:00",
+        "answeredBy": "s.elhaddad",
+        "answeredAt": "2026-07-01T09:15:00+02:00",
+        "refusalReason": "De hoorzitting staat volgende week en is al met de indiener afgestemd.",
+        "taskId": "task-takeover-3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "casePlanGoal",
+          "slug": "dossiq-case-plan-goal-1"
+        },
+        "plan": "plan-gezin-1",
+        "title": "Stabiele woonruimte voor het gezin",
+        "metWhen": "Er is een huurovereenkomst op naam van een van de ouders.",
+        "state": "open",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "casePlanGoal",
+          "slug": "dossiq-case-plan-goal-2"
+        },
+        "plan": "plan-gezin-1",
+        "title": "Schoolgang van de oudste weer op gang",
+        "metWhen": "Vier aaneengesloten weken zonder ongeoorloofd verzuim.",
+        "state": "met",
+        "closedObservation": "Sinds 12 mei geen verzuim meer gemeld door school.",
+        "closedDate": "2026-06-10",
+        "migratedFrom": "gezinsplan.goals"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "casePlanGoal",
+          "slug": "dossiq-case-plan-goal-3"
+        },
+        "plan": "plan-gezin-2",
+        "title": "Schuldhulpverlening gestart",
+        "metWhen": "Een intakegesprek bij de schuldhulpverlening heeft plaatsgevonden.",
+        "state": "withdrawn",
+        "closedObservation": "Het gezin is verhuisd naar een andere gemeente.",
+        "closedDate": "2026-04-02",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "intervention",
+          "slug": "dossiq-intervention-1"
+        },
+        "plan": "plan-gezin-1",
+        "goal": "goal-woonruimte",
+        "title": "Ambulante begeleiding thuis",
+        "description": "Wekelijkse begeleiding bij het op orde brengen van de administratie.",
+        "provider": "aanbieder-118",
+        "providerName": "Stichting Thuisbasis",
+        "startDate": "2026-04-01",
+        "targetDate": "2026-10-01",
+        "state": "running",
+        "outcome": "",
+        "migratedFrom": "gezinsplan.deploymentTrajectories"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "intervention",
+          "slug": "dossiq-intervention-2"
+        },
+        "plan": "plan-gezin-1",
+        "goal": "goal-schoolgang",
+        "title": "Inzet leerplichtambtenaar",
+        "description": "Gesprek met school, ouders en de leerplichtambtenaar.",
+        "provider": "aanbieder-004",
+        "providerName": "Bureau Leerplicht",
+        "startDate": "2026-02-17",
+        "targetDate": "2026-06-01",
+        "state": "complete",
+        "outcome": "Verzuim gestopt, dossier gesloten.",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "intervention",
+          "slug": "dossiq-intervention-3"
+        },
+        "plan": "plan-gezin-2",
+        "goal": "goal-schulden",
+        "title": "Budgetcoaching",
+        "description": "Twaalf gesprekken met een budgetcoach.",
+        "provider": "aanbieder-231",
+        "providerName": "Gemeentelijke Kredietbank",
+        "startDate": "2026-03-09",
+        "targetDate": "2026-09-09",
+        "state": "stopped",
+        "outcome": "Gestopt na verhuizing van het gezin.",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedActionType",
+          "slug": "dossiq-planned-action-type-1"
+        },
+        "identifier": "controle-ter-plaatse",
+        "label": "Controle ter plaatse",
+        "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
+        "successor": "hercontrole",
+        "successorOffsetWorkingDays": 15,
+        "ownerRole": "toezichthouder"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedActionType",
+          "slug": "dossiq-planned-action-type-2"
+        },
+        "identifier": "hercontrole",
+        "label": "Hercontrole",
+        "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
+        "successor": "voornemen-last",
+        "successorOffsetWorkingDays": 10,
+        "ownerRole": "toezichthouder"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedActionType",
+          "slug": "dossiq-planned-action-type-3"
+        },
+        "identifier": "voornemen-last",
+        "label": "Voornemen last onder dwangsom",
+        "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
+        "successorOffsetWorkingDays": 0,
+        "ownerRole": "juridisch-medewerker"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedAction",
+          "slug": "dossiq-planned-action-1"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "actionType": "controle-ter-plaatse",
+        "label": "Controle ter plaatse",
+        "owner": "m.bakker",
+        "plannedFor": "2026-03-20",
+        "state": "completed",
+        "completedAt": "2026-03-20T14:30:00+01:00",
+        "completedBy": "m.bakker"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedAction",
+          "slug": "dossiq-planned-action-2"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "actionType": "hercontrole",
+        "label": "Hercontrole",
+        "owner": "m.bakker",
+        "plannedFor": "2026-04-10",
+        "state": "planned",
+        "plannedFrom": "7d2c48f0-93ab-4e57-b016-5fa9c3218e64"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedAction",
+          "slug": "dossiq-planned-action-3"
+        },
+        "case": "9c74e0b8-1a52-4d63-8e19-7b40f2ca6d55",
+        "actionType": "voornemen-last",
+        "label": "Voornemen last onder dwangsom",
+        "owner": "s.elhaddad",
+        "plannedFor": "2026-05-04",
+        "state": "cancelled"
       }
     ]
   }

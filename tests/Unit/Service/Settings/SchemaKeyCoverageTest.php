@@ -58,7 +58,6 @@ class SchemaKeyCoverageTest extends TestCase {
 		'case_decision_schema' => 'Case-level decision link. Unmapped.',
 		'dso_samenwerkverzoek_schema' => 'DSO samenwerkingsverzoek. Unmapped since the dso-omgevingsloket register landed.',
 		'email_message_schema' => 'Inbound and outbound email records. Unmapped.',
-		'field_evidence_schema' => 'Mobile inspection evidence. Unmapped since the mobiel-inspectie-offline register landed.',
 		'woo_assessment_schema' => 'Woo assessment record. Unmapped.',
 	];
 

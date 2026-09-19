@@ -146,9 +146,9 @@ test.describe('Cases — full CRUD with persistence', () => {
 	// the zaaknummer, and at the time it was right. It does now, in two places,
 	// and they are covered by two different specs:
 	//
-	//   1. Under the title, by dossiq's own `CaseHeaderRow.vue`
-	//      (`data-testid="case-header-identifier"`). case-header.spec.ts owns
-	//      that one.
+	//   1. In the identity row at the top of the page, as the configured
+	//      `case-tile-number` KPI tile that replaced CaseHeaderRow.
+	//      case-header.spec.ts owns that one.
 	//   2. In the case INFO PANEL: `identifier` in the `case-core` widget's
 	//      `content.include`, with an override re-admitting it as
 	//      `readOnly: false` (the widget's `_note` records that
@@ -157,10 +157,11 @@ test.describe('Cases — full CRUD with persistence', () => {
 	//
 	// 🔴 `config.subtitleField` IS NOT A THIRD PLACE. CaseDetail declares it
 	// and its `_subtitleNote` says the number "reads under the title", but in
-	// @conduction/nextcloud-vue 2.46.0 and 2.48.1 alike only CnIndexPage,
-	// CnObjectRow and CnObjectList read `subtitleField`. CnDetailPage never
-	// maps it onto its `subtitle` prop. Mutating it on CI run 34583207838
-	// changed nothing. CaseHeaderRow is what actually does that job.
+	// @conduction/nextcloud-vue 2.46.0, 2.48.1 and 2.49.0 alike only
+	// CnIndexPage, CnObjectRow and CnObjectList read `subtitleField`.
+	// CnDetailPage never maps it onto its `subtitle` prop. Mutating it on CI
+	// run 34583207838 changed nothing. The `case-tile-number` tile is what
+	// actually does that job.
 	//
 	// 🔴 SCOPED, BECAUSE UNSCOPED IT COULD NOT FAIL. This used to be
 	// `page.getByText(identifier).first()`, which the header copy satisfies on

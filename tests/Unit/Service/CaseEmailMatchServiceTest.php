@@ -34,10 +34,12 @@ use Generator;
 use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseEmailMatchService;
+use OCA\Dossiq\Service\CaseMergeService;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMessageSource;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnService;
 use OCP\Config\IUserConfig;
 use OCP\IUser;
 use OCP\IUserManager;
@@ -54,6 +56,7 @@ use Stringable;
  * @covers \OCA\Dossiq\Service\CaseEmailMatchService
  * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
  * @covers \OCA\Dossiq\Service\Email\CaseEmailMatchPreferences
+ * @uses \OCA\Dossiq\Service\CaseMergeService
  */
 class CaseEmailMatchServiceTest extends TestCase {
 
@@ -91,6 +94,14 @@ class CaseEmailMatchServiceTest extends TestCase {
 	 * @var array<string, array<int, array<string, mixed>>>
 	 */
 	private array $cases = [];
+
+	/**
+	 * Cases by uuid, for the one read the merge follower makes. A uuid listed
+	 * here with a `mergedInto` is a case that was merged away.
+	 *
+	 * @var array<string, array<string, mixed>>
+	 */
+	private array $mergedCases = [];
 
 	/**
 	 * Messages in Alice's account.
@@ -177,6 +188,7 @@ class CaseEmailMatchServiceTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
+		$this->mergedCases = [];
 		$this->config = [
 			CaseEmailMatchService::INSTANCE_TOGGLE_KEY => 'yes',
 			'register' => '23',
@@ -258,7 +270,9 @@ class CaseEmailMatchServiceTest extends TestCase {
 			};
 		}//end if
 
-		return new class($cases) {
+		$merged = &$this->mergedCases;
+
+		return new class($cases, $merged) {
 			/**
 			 * Searches made, each with the user it ran as.
 			 *
@@ -281,9 +295,10 @@ class CaseEmailMatchServiceTest extends TestCase {
 			public ?string $actingAs = null;
 
 			/**
-			 * @param array<string, array<int, array<string, mixed>>> $cases The case rows.
+			 * @param array<string, array<int, array<string, mixed>>> $cases  The case rows.
+			 * @param array<string, array<string, mixed>>             $merged The cases by uuid.
 			 */
-			public function __construct(private array &$cases) {
+			public function __construct(private array &$cases, private array &$merged) {
 			}
 
 			/**
@@ -305,6 +320,30 @@ class CaseEmailMatchServiceTest extends TestCase {
 			 */
 			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
 				return $this->searchObjects($filters + ['_slug' => $register . '/' . $schema]);
+			}
+
+			/**
+			 * One case by uuid. This is the read the merge follower makes, and
+			 * the only reason this fake has it: a case that carries no
+			 * `mergedInto` is still a case, so an unknown uuid answers an
+			 * empty row rather than nothing.
+			 *
+			 * @param int|string      $id       The case uuid.
+			 * @param array|null      $_extend  Unused.
+			 * @param bool            $files    Unused.
+			 * @param int|string|null $register Unused.
+			 * @param int|string|null $schema   Unused.
+			 *
+			 * @return array<string, mixed> The case.
+			 */
+			public function find(
+				int|string $id,
+				?array $_extend = null,
+				bool $files = false,
+				int|string|null $register = null,
+				int|string|null $schema = null,
+			): array {
+				return ($this->merged[(string)$id] ?? ['id' => (string)$id]);
 			}
 
 			/**
@@ -555,7 +594,12 @@ class CaseEmailMatchServiceTest extends TestCase {
 			userManager: $userManager,
 			messages: $messages,
 			container: $container,
-			logger: $logger
+			logger: $logger,
+			mergeService: new CaseMergeService(
+				settingsService: $settings,
+				termijnService: $this->createMock(TermijnService::class),
+				logger: $logger
+			)
 		);
 	}//end service()
 
@@ -780,6 +824,43 @@ class CaseEmailMatchServiceTest extends TestCase {
 
 		$this->assertSame(['case-43'], $this->linkedCases());
 	}//end testAnUnresolvedSubjectCandidateFallsThroughToTheBody()
+
+	/**
+	 * A reply quoting a merged case's number is filed on the survivor.
+	 *
+	 * Scenario "A reply to the old number" of REQ-CM-38. The applicant writes
+	 * back with the number they were given, and that case no longer exists as
+	 * its own case.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
+	 */
+	public function testMergedResolvesToSurvivor(): void {
+		$this->mergedCases = ['case-43' => ['id' => 'case-43', 'mergedInto' => 'case-42']];
+		$this->receive(id: 101, subject: 'Re: zaak 2026-0043');
+
+		$this->service()->runForUser(userId: self::OWNER);
+
+		$this->assertSame(['case-42'], $this->linkedCases());
+	}//end testMergedResolvesToSurvivor()
+
+	/**
+	 * Two numbers that now name one case are one link, not two.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
+	 */
+	public function testAMailNamingBothHalvesOfAMergeLinksOnce(): void {
+		$this->mergedCases = ['case-43' => ['id' => 'case-43', 'mergedInto' => 'case-42']];
+		$this->receive(id: 101, subject: 'Samenhang 2026-0042 en 2026-0043');
+
+		$result = $this->service()->runForUser(userId: self::OWNER);
+
+		$this->assertSame(['case-42'], $this->linkedCases());
+		$this->assertSame(['linked' => 1, 'scanned' => 1], $result);
+	}//end testAMailNamingBothHalvesOfAMergeLinksOnce()
 
 	/**
 	 * A mail naming two cases is linked to both.

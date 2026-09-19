@@ -81,13 +81,20 @@ describe('CasePlannedWidget', () => {
 		const wrapper = mountWidget()
 		await flushPromises()
 
-		// The endpoint, with the case in the path. Asserted because the widget
-		// reads it on an `objectId` watcher: an id that never arrives produces
-		// the same empty group as a case with nothing planned.
-		expect(axios.get).toHaveBeenCalledTimes(1)
-		expect(String(axios.get.mock.calls[0][0])).toContain(
-			'/apps/dossiq/api/case/case-1/planned',
-		)
+		// Both endpoints, each with the case in the path. Asserted because the
+		// widget reads them on an `objectId` watcher: an id that never arrives
+		// produces the same empty group as a case with nothing planned and no
+		// relations.
+		const urls = axios.get.mock.calls.map((call) => String(call[0]))
+		expect(urls).toHaveLength(2)
+		expect(
+			urls.some((url) => url.includes('/apps/dossiq/api/case/case-1/planned')),
+		).toBe(true)
+		expect(
+			urls.some((url) =>
+				url.includes('/apps/dossiq/api/cases/case-1/relations'),
+			),
+		).toBe(true)
 
 		const group = wrapper.find('.cn-related-objects-widget__group')
 		expect(group.exists()).toBe(true)

@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service\Beschikking;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -52,33 +53,55 @@ class BezwaarTermijnScheduler {
 	 *
 	 * @param SettingsService $settingsService The settings/config service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; the
+	 *        bezwaartermijn rolls on the administered calendar through it.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
 	/**
 	 * Compute the bezwaartermijn end date and its reminder date.
 	 *
-	 * Six weeks from bekendmaking (Awb 6:7), reminder one week before.
+	 * Six weeks from bekendmaking (Awb 6:7), reminder one week before. Six weeks
+	 * is the term; where it LANDS is Algemene termijnenwet art. 1, so both dates
+	 * go through the calendar the organisation administers. The reminder rolls
+	 * too: one that falls on Tweede Kerstdag reaches nobody.
+	 *
+	 * The case type may declare its own term, and then that term is the one:
+	 * the clause printed on the decision and the date stored on it come from
+	 * one declaration, so a besluit cannot say forty-two days over a clock that
+	 * runs for six weeks. A case type that declares nothing keeps the six weeks
+	 * the Awb sets, which is what every case type did before the declaration
+	 * existed.
 	 *
 	 * @param string $bekendmaking The bekendmaking date (Y-m-d).
+	 * @param array<string, mixed> $definitie The term definition, when one is known;
+	 *        `rollToWorkingDay` false returns the raw dates.
+	 * @param integer $termDays The declared term in days, 0 for the statutory six weeks.
 	 *
 	 * @return array{endDate: string, herinnering: string} Both as `Y-m-d`.
 	 *
-	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/beschikking-generatie/spec.md
 	 */
-	public function computeTermijn(string $bekendmaking): array {
-		$endDate = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
+	public function computeTermijn(string $bekendmaking, array $definitie = [], int $termDays = 0): array {
+		$span = new DateInterval('P6W');
+		if ($termDays > 0) {
+			$span = new DateInterval('P' . $termDays . 'D');
+		}
+
+		$endDate = (new DateTimeImmutable($bekendmaking))->add($span);
 		$herinnering = $endDate->sub(new DateInterval('P1W'));
 
 		return [
-			'endDate' => $endDate->format('Y-m-d'),
-			'herinnering' => $herinnering->format('Y-m-d'),
+			'endDate' => ($this->timerService?->rollTermEndFor(date: $endDate, definitie: $definitie) ?? $endDate)->format('Y-m-d'),
+			'herinnering' => ($this->timerService?->rollTermEndFor(date: $herinnering, definitie: $definitie) ?? $herinnering)->format('Y-m-d'),
 		];
 	}//end computeTermijn()
 

@@ -80,10 +80,16 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
 	 * @param LoggerInterface $logger Logger.
+	 * @param DocumentApprovalClearance|null $approvals decidiq's answer about
+	 *        this document's approval routes. Nullable and LAST so every
+	 *        existing construction site keeps working; a null reader means no
+	 *        route is known, which is where every document was before this
+	 *        change, and is the same answer an instance without decidiq gives.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?DocumentApprovalClearance $approvals = null,
 	) {
 	}//end __construct()
 
@@ -146,6 +152,8 @@ class InformatieobjectStatusLifecycle {
 			);
 		}
 
+		$this->requireApprovalCleared(infoObjectId: $infoObjectId, newStatus: $newStatus);
+
 		$updateData = ['status' => $newStatus];
 		if ($newStatus === 'final') {
 			$updateData['lockedOn'] = date('Y-m-d\TH:i:s');
@@ -186,6 +194,51 @@ class InformatieobjectStatusLifecycle {
 			$lockedOn,
 		);
 	}//end transition()
+
+	/**
+	 * Refuse the lock while the document's approval route is still running.
+	 *
+	 * 🔑 THE ROUTE IS THE GROUND FOR THE ACT, NEVER THE ACT. Making a document
+	 * final LOCKS it and stamps `lockedOn`, and the person who has to defend
+	 * that lock is the handler on the case, not the last approver clicking
+	 * Approve in a widget. So an approved route makes the transition available
+	 * and a person makes it; nothing here moves a document on decidiq's say-so.
+	 *
+	 * 🔴 IT GUARDS ONE TRANSITION. `final` is the one that locks. `archived`
+	 * happens after it and its own guard is the forward-only rule, and a
+	 * document nobody ever routed is untouched, which is where every document
+	 * on every instance without decidiq stays.
+	 *
+	 * @param string $infoObjectId The informatieobject UUID.
+	 * @param string $newStatus The requested status.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When a route is still open.
+	 *
+	 * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+	 */
+	private function requireApprovalCleared(string $infoObjectId, string $newStatus): void {
+		if ($newStatus !== 'final' || $this->approvals === null) {
+			return;
+		}
+
+		$clearance = $this->approvals->forDocument(documentId: $infoObjectId);
+		if (($clearance['routed'] ?? false) !== true || ($clearance['cleared'] ?? true) === true) {
+			return;
+		}
+
+		$reason = $this->approvals->describe(clearance: $clearance);
+		if ($reason === '') {
+			$reason = 'a route is still open.';
+		}
+
+		throw new InvalidArgumentException(
+			'This document is in an approval route that has not finished, so it cannot be made final yet: '
+			. $reason
+		);
+	}//end requireApprovalCleared()
+
 
 	/**
 	 * Apply a bulk status transition, returning a per-id success/failure list.

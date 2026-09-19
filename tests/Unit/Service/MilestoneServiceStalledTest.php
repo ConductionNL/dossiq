@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
+use OCA\Dossiq\Service\Milestone\MilestoneSchedule;
 use OCA\Dossiq\Service\Milestone\StalledCaseDetector;
 use OCA\Dossiq\Service\MilestoneService;
 use OCA\Dossiq\Service\SettingsService;
@@ -38,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Milestone\StalledCaseDetector
  * @covers \OCA\Dossiq\Service\Milestone\MilestoneRepository
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Milestone\MilestoneSchedule
  */
 class MilestoneServiceStalledTest extends TestCase {
 
@@ -85,6 +87,7 @@ class MilestoneServiceStalledTest extends TestCase {
 				settingsService: $this->settingsService,
 				repository: $repository,
 				workingDays: new WorkingDayCalculator(),
+				schedule: new MilestoneSchedule(workingDays: new WorkingDayCalculator()),
 			),
 			logger: $this->logger,
 		);

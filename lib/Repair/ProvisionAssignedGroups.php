@@ -124,6 +124,36 @@ class ProvisionAssignedGroups implements IRepairStep {
 		'controllers',
 		'kcc',
 		'klantcontact',
+		// Assigned a notification role by the case schema's
+		// `authorization.roles` (register.d/66-notification-routing.json).
+		// `behandelaars` above already carries the behandelaar role. A role
+		// assigned a group the server does not have is not a quiet team: the
+		// resolver reports it and the dispatcher records `recipient-unresolved`
+		// on every firing, so an unprovisioned group here is a fault row per
+		// case rather than a missing notice. AuthorizationRolesAreProvisioned
+		// Test sweeps the shipped roles against this list.
+		'coordinatoren',
+		// Named by a field rule rather than by a flow step: a case type's
+		// `fieldRoleRules` hands these two the fields it takes off the
+		// handlers, and OpenRegister's property RBAC reads the membership.
+		// An authorization group the server does not have fails the other way
+		// round from an assignment group: nobody qualifies for the allow list,
+		// so the field is withheld from everyone who is not an administrator,
+		// and the person who lost it has nothing to look at. `dossiq-risk-
+		// assessment` (register.d/38-markers-and-assessments.json) has been in
+		// that state since it shipped and is provisioned here for the same
+		// reason.
+		'dossiq-coordinators',
+		'dossiq-quality',
+		'dossiq-risk-assessment',
+		// The extra permission on a BSN and on the special-category fields of
+		// the sociaal-domein schemas (sensitive-fields-declared, row 5.6). Same
+		// direction of failure as the three above: an authorization group the
+		// server does not have matches nobody, so the field is withheld from
+		// every reader who is not an administrator. The group is created EMPTY
+		// on purpose. Sensitive data should be readable by the people an
+		// administrator names, not by everybody who happened to be installed.
+		'dossiq-sensitive',
 	];
 
 	/**

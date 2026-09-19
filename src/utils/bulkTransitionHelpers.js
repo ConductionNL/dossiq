@@ -77,30 +77,58 @@ export function clearSelection() {
 }
 
 /**
- * Build the request payload for `POST /api/cases/bulk-transition/preview`.
+ * The parameters a status transition needs as a bulk job.
  *
- * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
- * @param {string} transitionId The transition id to preview.
- * @return {{caseIds: Array<string>, transitionId: string}}
+ * The comment travels as a parameter rather than as the job's justification:
+ * the job's justification is the record of why the ACT was ordered, and the
+ * comment is what lands on each case's own timeline. They are usually the same
+ * sentence and are still two different things.
+ *
+ * @param {string} transitionId The transition to run.
+ * @param {string} [comment] What to write on each case.
+ *
+ * @return {{transitionId: string, comment: string}} The job parameters.
+ *
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
-export function buildPreviewPayload(selection, transitionId) {
-	const caseIds =
-		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
-	return { caseIds, transitionId: transitionId || '' }
+export function transitionParameters(transitionId, comment) {
+	return { transitionId: transitionId || '', comment: comment || '' }
 }
 
 /**
- * Build the request payload for `POST /api/cases/bulk-transition/execute`.
+ * The parameters a lifecycle gesture needs as a bulk job.
  *
- * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
- * @param {string} transitionId The transition id to execute.
- * @param {string|null} [comment] Optional free-form comment applied to every case.
- * @return {{caseIds: Array<string>, transitionId: string, comment: string|null}}
+ * `days` goes only with suspend and `newEndDate` only with extend. A key the
+ * gesture has no use for is noise in the audit trail and a value the next
+ * reader has to explain away.
+ *
+ * The reason is a parameter AND the job's justification. The job stores it as
+ * the record of the act; the per-case write reads it from the parameters,
+ * because a bulk action is handed its parameters and not its job.
+ *
+ * @param {string} gesture One of suspend, resume, extend.
+ * @param {{reason?: string, days?: (number|string), newEndDate?: string}} [fields] The dialog's fields.
+ *
+ * @return {object} The job parameters.
+ *
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
-export function buildExecutePayload(selection, transitionId, comment) {
-	const caseIds =
-		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
-	return { caseIds, transitionId: transitionId || '', comment: comment || null }
+export function lifecycleParameters(gesture, fields) {
+	const given = fields || {}
+	const parameters = {
+		gesture: gesture || '',
+		reason: (given.reason || '').trim(),
+	}
+
+	if (gesture === 'suspend') {
+		parameters.days = Number(given.days) || 0
+	}
+
+	if (gesture === 'extend') {
+		parameters.newEndDate = given.newEndDate || ''
+	}
+
+	return parameters
 }
 
 /**
@@ -124,92 +152,4 @@ export const LIFECYCLE_GESTURES = ['suspend', 'resume', 'extend']
  */
 export function isLifecycleGesture(mode) {
 	return LIFECYCLE_GESTURES.includes(mode)
-}
-
-/**
- * Build the request payload for a bulk LIFECYCLE preview.
- *
- * The endpoint is the same one a transition previews through
- * (`/api/cases/bulk-transition/preview`); `gesture` is what tells it apart.
- * One endpoint because the preview, the per-case result map and the
- * partial-failure reporting are the parts worth keeping equal across all
- * four bulk actions — which is also why one dialog serves them.
- *
- * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
- * @param {string} gesture One of suspend, resume, extend.
- * @return {{caseIds: Array<string>, gesture: string}}
- *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
- */
-export function buildLifecyclePreviewPayload(selection, gesture) {
-	const caseIds =
-		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
-	return { caseIds, gesture: gesture || '' }
-}
-
-/**
- * Build the request payload for a bulk LIFECYCLE execute.
- *
- * The reason is sent for every gesture, never only for suspend. Each of the
- * three is a statutory act someone has to justify later, and the server
- * refuses a batch without one — a bulk gesture is exactly when a
- * justification goes unwritten, so it is required rather than optional here
- * the way the transition `comment` is.
- *
- * `days` is sent only for suspend and `newEndDate` only for extend: a key
- * the gesture has no use for is noise in the audit trail and a value the
- * next reader has to explain away.
- *
- * @param {{columnId: string|null, caseIds: Array<string>}} selection Current selection state.
- * @param {string} gesture One of suspend, resume, extend.
- * @param {{reason?: string, days?: (number|string), newEndDate?: string}} [fields] The dialog's fields.
- * @return {{caseIds: Array<string>, gesture: string, reason: string, days?: number, newEndDate?: string}}
- *
- * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
- */
-export function buildLifecycleExecutePayload(selection, gesture, fields) {
-	const caseIds =
-		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
-	const given = fields || {}
-	const payload = {
-		caseIds,
-		gesture: gesture || '',
-		reason: (given.reason || '').trim(),
-	}
-
-	if (gesture === 'suspend') {
-		payload.days = Number(given.days) || 0
-	}
-
-	if (gesture === 'extend') {
-		payload.newEndDate = given.newEndDate || ''
-	}
-
-	return payload
-}
-
-/**
- * Summarise a bulk preview/execute `results` map (`{caseId: {status, reasons?}}`)
- * into per-status counts and the list of non-ready/non-succeeded entries
- * (blocked/failed/error) so a dialog can render "N ready, M blocked" plus the
- * specific per-case failure reasons — partial failure is always surfaced,
- * never silently swallowed.
- *
- * @param {{[key: string]: {status: string, reasons?: Array}}} results The per-case results map.
- * @return {{total: number, counts: {[key: string]: number}, failed: Array<{caseId: string, status: string, reasons: Array}>}}
- */
-export function summarizeResults(results) {
-	const map = results && typeof results === 'object' ? results : {}
-	const counts = {}
-	const failed = []
-
-	for (const [caseId, entry] of Object.entries(map)) {
-		const status = (entry && entry.status) || 'unknown'
-		counts[status] = (counts[status] || 0) + 1
-		if (status !== 'ready' && status !== 'succeeded') {
-			failed.push({ caseId, status, reasons: (entry && entry.reasons) || [] })
-		}
-	}
-
-	return { total: Object.keys(map).length, counts, failed }
 }

@@ -313,9 +313,6 @@ class EngineInboxQuery {
      *
      * @return object|null The service, or null when unavailable.
      *
-     * @psalm-suppress MixedReturnStatement
-     * @psalm-suppress MixedInferredReturnType
-     *
      * @spec openspec/changes/dossiq-duplication-to-abstractions/tasks.md
      */
     protected function resolveInbox(): ?object {

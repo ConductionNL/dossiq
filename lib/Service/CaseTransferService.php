@@ -27,6 +27,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Custody\CaseCustodyChain;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
 use Psr\Log\LoggerInterface;
@@ -48,6 +52,9 @@ class CaseTransferService {
 	 * @param TransferShareBroker $shareBroker Transfer-scoped OCM token minting and resolution
 	 * @param LoggerInterface $logger The logger
 	 * @param TenantAuditTrailService $auditTrail Audit-trail emitter for custody-change actions
+	 * @param InternalHandover $internal The same act with a team in place of the target organisation
+	 * @param CaseCustodyChain $custody The dated chain of holdings every move writes into
+	 * @param CaseTransferConsentGate $consent Whether this case may leave the organisation at all
 	 *
 	 * @return void
 	 */
@@ -57,6 +64,9 @@ class CaseTransferService {
 		private TransferShareBroker $shareBroker,
 		private LoggerInterface $logger,
 		private TenantAuditTrailService $auditTrail,
+		private InternalHandover $internal,
+		private CaseCustodyChain $custody,
+		private CaseTransferConsentGate $consent,
 	) {
 	}//end __construct()
 
@@ -97,6 +107,20 @@ class CaseTransferService {
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			return ['error' => 'OpenRegister is not available'];
+		}
+
+		// 🔴 THE CONSENT IS A PRECONDITION, NOT A WARNING (D-5). It runs before
+		// the idempotency lookup on purpose: a refused hand-off must not leave
+		// a pending transfer behind that a later call would happily return as
+		// "already initiated".
+		$verdict = $this->consent->assess(
+			caseId: $caseId,
+			sourceOrganisation: $sourceOrganization,
+			receivingOrg: $targetOrganization,
+			atDate: $requestedDate,
+		);
+		if ($verdict['allowed'] === false) {
+			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
@@ -366,6 +390,24 @@ class CaseTransferService {
 			now: $now,
 		);
 
+		// RECORDED FIRST, THEN APPLIED, the same order InternalHandover uses.
+		// A chain written after the status would leave a hole whenever the
+		// chain write failed, and a chain with a hole reads as an answer. This
+		// way the failure is that the transfer stays pending, which is visible.
+		if ($targetStatus === 'accepted') {
+			try {
+				$this->custody->move(
+					caseId: $caseId,
+					organisationUnit: (string)($transferData['targetOrganization'] ?? ''),
+					handler: '',
+					reason: (string)($transferData['reason'] ?? ''),
+					movedBy: ($remoteCloudId ?? (string)($transferData['initiatedBy'] ?? '')),
+				);
+			} catch (RefusedException $e) {
+				return ['error' => $e->getSentence(), 'rule' => $e->getRule()];
+			}
+		}
+
 		$result = $objectService->saveObject(
 			object: $transferData,
 			register: (int)$register,
@@ -554,4 +596,98 @@ class CaseTransferService {
 
 		return null;
 	}//end findTransferByIdempotencyKey()
+
+	/**
+	 * Hand a case to another team inside this organisation.
+	 *
+	 * 🔑 ONE DOOR, TWO BOUNDARIES. The internal handover enters through this
+	 * class rather than beside it, so anyone looking for "how does a case
+	 * move" finds every answer in one place and neither path can grow a
+	 * custody trail the other does not know about. The work itself lives in
+	 * {@see InternalHandover} because this class was already at its
+	 * complexity ceiling, which is decomposition and not a second mechanism.
+	 *
+	 * @param string $caseId The case uuid.
+	 * @param string $targetTeam The receiving team's Nextcloud group id.
+	 * @param string $reason Why the case is moving.
+	 * @param string $initiatedBy Who handed it on.
+	 * @param bool $doorzending Whether this is a doorzending under Awb 2:3.
+	 *
+	 * @return array The transfer record.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The declaration Awb 2:3
+	 * hangs on, stored on the record. See InternalHandover::initiate().
+	 */
+	public function handToTeam(
+		string $caseId,
+		string $targetTeam,
+		string $reason,
+		string $initiatedBy,
+		bool $doorzending = false,
+	): array {
+		$record = $this->internal->initiate(
+			caseId: $caseId,
+			targetTeam: $targetTeam,
+			reason: $reason,
+			initiatedBy: $initiatedBy,
+			doorzending: $doorzending,
+		);
+
+		// One door, one chain. The internal handover moves the case on
+		// initiate — the receiving team owns it before anybody accepts — so
+		// the holding opens here rather than on the answer.
+		$this->custody->move(
+			caseId: $caseId,
+			organisationUnit: $targetTeam,
+			handler: '',
+			reason: $reason,
+			movedBy: $initiatedBy,
+		);
+
+		return $record;
+	}//end handToTeam()
+
+	/**
+	 * Accept a handover on the receiving team's behalf.
+	 *
+	 * @param string $transferId The handover's uuid.
+	 * @param string $acceptedBy Who accepted it.
+	 *
+	 * @return array The settled record.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	public function acceptHandover(string $transferId, string $acceptedBy): array {
+		return $this->internal->accept(transferId: $transferId, acceptedBy: $acceptedBy);
+	}//end acceptHandover()
+
+	/**
+	 * Refuse a handover back, with a reason.
+	 *
+	 * @param string $transferId The handover's uuid.
+	 * @param string $reason Why the receiving team will not take it.
+	 * @param string $refusedBy Who refused it.
+	 *
+	 * @return array The settled record.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	public function refuseHandover(string $transferId, string $reason, string $refusedBy): array {
+		return $this->internal->refuse(transferId: $transferId, reason: $reason, refusedBy: $refusedBy);
+	}//end refuseHandover()
+
+	/**
+	 * The handovers a team sent that nobody has picked up.
+	 *
+	 * @param string $team The sending team's Nextcloud group id.
+	 *
+	 * @return array The outstanding handovers.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	public function outstandingHandovers(string $team): array {
+		return $this->internal->outstandingFor(team: $team);
+	}//end outstandingHandovers()
 }//end class

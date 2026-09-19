@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -79,63 +80,22 @@ describe('the caseTitle formatter', () => {
 })
 
 /**
- * The two formatters the Integrations page reads its Status and Settings
- * columns with.
- *
- * Both have a fallback that decides whether the page tells the truth. A status
- * outside the four the schema declares must render ITSELF rather than an empty
- * cell — an unnamed status is still a status the admin has to see, and a blank
- * cell reads as "nothing is wrong". The settings label must render the EMPTY
- * string when there is no destination, because that is what makes CnCellRenderer
- * fall through from an anchor to plain text and stop offering a link into a
- * section that does not exist.
+ * The Integrations page reads its Status and Settings columns with the
+ * `connectionStatus` and `connectionSettingsLabel` formatters that
+ * nextcloud-vue ships built in. CnAppRoot spreads the app's own registry OVER
+ * the built-ins, so a local formatter under either name silently wins. A copy
+ * that predates `disabled` would show the raw word on a switched-off
+ * connection. This builds the registry the way CnAppRoot does and asks it.
  *
  * @spec openspec/specs/admin-settings/spec.md
  */
-describe('the integration status formatter', () => {
-	it('names each of the five states', () => {
-		expect(formatters.integrationStatus('configured')).toBe('Configured')
-		expect(formatters.integrationStatus('unconfigured')).toBe('Not configured')
-		expect(formatters.integrationStatus('unavailable')).toBe('Not available')
-		expect(formatters.integrationStatus('simulated')).toBe('Simulated')
-		expect(formatters.integrationStatus('error')).toBe('Error')
-	})
+describe('the connection formatters the Integrations page reads', () => {
+	it('come from the library, so a switched-off connection reads Switched off', async () => {
+		const { BUILT_IN_FORMATTERS } =
+			await import('@conduction/nextcloud-vue/src/utils/builtInFormatters.js')
+		const registry = { ...BUILT_IN_FORMATTERS, ...formatters }
 
-	// Simulated is the state the page did not have and needed. A seam bound to
-	// a mock adapter answers, succeeds and returns an id, so it is neither
-	// unavailable nor configured, and rendering it as either is the claim this
-	// page exists to stop the app from making.
-	it('does not let a mock adapter read as a configured channel', () => {
-		expect(formatters.integrationStatus('simulated')).not.toBe(
-			formatters.integrationStatus('configured'),
-		)
-		expect(formatters.integrationStatus('simulated')).not.toBe(
-			formatters.integrationStatus('unavailable'),
-		)
-	})
-
-	it('renders an unknown value as itself, not as an empty cell', () => {
-		expect(formatters.integrationStatus('degraded')).toBe('degraded')
-	})
-
-	it('renders a missing value as empty rather than as the word undefined', () => {
-		expect(formatters.integrationStatus(undefined)).toBe('')
-		expect(formatters.integrationStatus(null)).toBe('')
-	})
-})
-
-describe('the integration settings-link formatter', () => {
-	it('labels a link when there is somewhere to go', () => {
-		expect(
-			formatters.integrationSettingsLabel(
-				'/settings/admin/dossiq#section-stuf',
-			),
-		).toBe('Open settings')
-	})
-
-	it('offers nothing when the connection has no settings section', () => {
-		expect(formatters.integrationSettingsLabel('')).toBe('')
-		expect(formatters.integrationSettingsLabel(undefined)).toBe('')
-		expect(formatters.integrationSettingsLabel(null)).toBe('')
+		expect(registry.connectionStatus('disabled')).toBe('Switched off')
+		expect(registry.connectionSettingsLabel('')).toBe('')
 	})
 })

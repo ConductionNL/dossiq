@@ -82,6 +82,23 @@ vi.mock('@nextcloud/vue', () => ({
 			return h('span')
 		},
 	}),
+	// `CaseTypeList.vue` fills `CnIndexPage`'s `#empty` slot with this. A
+	// `vi.mock` factory REPLACES the module rather than extending it, so a
+	// named import the factory omits throws while the component is still being
+	// imported. That reddens the file as "0 test" with no assertion having run,
+	// which is why the tally above it reads 1312 passed and not 1315 — the
+	// three tests here did not fail, they never started. Every component this
+	// file mounts has to find each of its `@nextcloud/vue` imports here.
+	NcEmptyContent: defineComponent({
+		name: 'NcEmptyContent',
+		props: {
+			name: { type: String, default: '' },
+			description: { type: String, default: '' },
+		},
+		render() {
+			return h('div', { class: 'nc-empty-content-stub' }, this.name)
+		},
+	}),
 }))
 
 vi.mock('../../src/store/modules/object.js', () => ({

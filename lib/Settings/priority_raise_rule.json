@@ -1,0 +1,21 @@
+{
+	"id": "case-priority-term-raise",
+	"title": "Raise a case's priority as its statutory term approaches",
+	"direction": "raise-only",
+	"engine": "openregister",
+	"engineNote": "The condition and the clock are OpenRegister's, not dossiq's. The rungs of a beslistermijn are OpenRegister flow timers (see lib/AppInfo/Registrar/TermijnTimerRegistrar.php), OpenRegister decides when one fires, and dossiq only maps the rung it is handed onto the floor this file declares. dossiq ships no evaluator, no condition parser and no scheduler behind this rule: read CasePriorityService::termRaiseFloor() and it is a lookup in this table. The declarative home for the condition itself is OpenRegister's rules engine under ADR decision D3, wave 1, whose capability slug that lane has not opened yet; when it does, this file names it and the thresholds move there unchanged.",
+	"directionNote": "Raising is safe and lowering is not. A rule that lowered a priority somebody deliberately escalated would hide work, so a threshold sets a FLOOR: it can only lift a case, never drop one. That is also why an extended term leaves a raised case where it is.",
+	"trigger": "termijn",
+	"thresholds": [
+		{
+			"daysToTerm": 2,
+			"minimumPriority": "high",
+			"note": "Two days out, a case that is still normal or low is the one about to be late."
+		},
+		{
+			"daysToTerm": 0,
+			"minimumPriority": "urgent",
+			"note": "The term has run out. Awb 4:13."
+		}
+	]
+}

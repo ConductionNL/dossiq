@@ -55,6 +55,27 @@
 			</div>
 
 			<div class="form-group">
+				<label for="td-counting-mode">{{
+					t('dossiq', 'Counting mode')
+				}}</label>
+				<NcSelect
+					id="td-counting-mode"
+					data-testid="termijn-counting-mode"
+					:modelValue="selectedCountingMode"
+					:options="countingModeOptions"
+					:inputLabel="t('dossiq', 'Counting mode')"
+					@update:modelValue="
+						(v) => (form.countingMode = v ? v.id : 'calendarDays')
+					" />
+				<span class="field-hint">{{
+					t(
+						'dossiq',
+						'An Awb beslistermijn counts calendar days. A service norm or a callback counts only the days the organisation works, on the organisation calendar.',
+					)
+				}}</span>
+			</div>
+
+			<div class="form-group">
 				<label for="td-categorie">{{ t('dossiq', 'Category') }}</label>
 				<NcSelect
 					id="td-categorie"
@@ -167,11 +188,41 @@ export default {
 				category: this.definition?.category || 'beslis',
 				extendable: this.definition?.extendable || false,
 				maxExtensionDagen: this.definition?.maxExtensionDagen || 0,
+				// Calendar days unless the definition says otherwise, so a new
+				// version of a term nobody has administered keeps counting the
+				// way it counted yesterday.
+				countingMode: this.definition?.countingMode || 'calendarDays',
 			},
 		}
 	},
 
 	computed: {
+		/**
+		 * The two modes a term can count in.
+		 *
+		 * @return {Array} The options.
+		 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+		 */
+		countingModeOptions() {
+			return [
+				{ id: 'calendarDays', label: t('dossiq', 'Calendar days') },
+				{ id: 'workingDays', label: t('dossiq', 'Working days') },
+			]
+		},
+
+		/**
+		 * The option the form currently holds.
+		 *
+		 * @return {object} The option.
+		 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+		 */
+		selectedCountingMode() {
+			return (
+				this.countingModeOptions.find((o) => o.id === this.form.countingMode)
+				|| this.countingModeOptions[0]
+			)
+		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
@@ -261,6 +312,13 @@ export default {
 .form-group label.required::after {
 	content: ' *';
 	color: var(--color-error);
+}
+
+.field-hint {
+	display: block;
+	margin-top: 4px;
+	color: var(--color-text-maxcontrast);
+	font-size: 0.85em;
 }
 
 .field-error {

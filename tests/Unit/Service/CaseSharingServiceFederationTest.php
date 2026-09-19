@@ -28,9 +28,12 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
-use OCA\Dossiq\Service\Sharing\CaseTokenShareService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
+use OCA\Dossiq\Service\Sharing\AccessLinkProjection;
+use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
@@ -144,7 +147,9 @@ final class CsfFakeFederatedShare {
  * @covers \OCA\Dossiq\Service\CaseSharingService
  *
  * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
- * @uses \OCA\Dossiq\Service\Sharing\CaseTokenShareService
+ * @uses \OCA\Dossiq\Service\Sharing\AccessLinkProjection
+ * @uses \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
+ * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  */
@@ -162,7 +167,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 	/**
 	 * Assemble CaseSharingService with real sharing collaborators.
 	 *
-	 * The gateway, access policy, token-share service and federated-share
+	 * The gateway, access policy, access-link service and federated-share
 	 * service are real objects rather than mocks: every assertion in this
 	 * class is about behaviour they inherited verbatim from CaseSharingService,
 	 * and they stay driven entirely by the mocked app manager, container and
@@ -185,15 +190,45 @@ class CaseSharingServiceFederationTest extends TestCase {
 	): CaseSharingService {
 		$gateway = new OpenRegisterSharingGateway($appManager, $container, $logger);
 
+		$accessLinks = new CaseAccessLinkService($gateway, new AccessLinkProjection(), $logger);
+
 		return new CaseSharingService(
 			settingsService: $settings,
 			gateway: $gateway,
 			accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
-			tokenShares: new CaseTokenShareService($settings, $gateway, $logger),
+			accessLinks: $accessLinks,
+			linkShares: new CaseLinkShares($settings, $gateway, $accessLinks, $logger),
 			federatedShares: new FederatedCaseShareService($settings, $gateway, $logger, $audit),
+			consent: self::allowingConsentGate(),
 			logger: $logger,
 		);
 	}//end makeSharingService()
+
+	/**
+	 * A consent gate that lets every partner share through.
+	 *
+	 * Stubbed here because this test's subject is the federated share and the
+	 * access link, not the consent. REQ-CST-01 and REQ-CST-02 are watched
+	 * against a real in-memory register in PartnerShareScopeTest.
+	 *
+	 * @return CaseTransferConsentGate The gate.
+	 */
+	private static function allowingConsentGate(): CaseTransferConsentGate {
+		$gate = self::createStub(CaseTransferConsentGate::class);
+		$gate->method('assess')->willReturn(
+			[
+				'allowed' => true,
+				'rule' => '',
+				'sentence' => '',
+				'consent' => null,
+				'scope' => [],
+				'until' => '',
+				'crossesOrganisation' => true,
+			]
+		);
+
+		return $gate;
+	}//end allowingConsentGate()
 
 	/**
 	 * @return void

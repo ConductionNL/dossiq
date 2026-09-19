@@ -18,6 +18,7 @@
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
 // --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import { generateUrl } from '@nextcloud/router'
 import { createApp } from 'vue'
 import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 // --- Detail-tab custom components (one per cross-schema relation). ---
@@ -28,14 +29,13 @@ import ReassignSelectionDialog from './dialogs/ReassignSelectionDialog.vue'
 // --- Case-email sidebar tab (leaf-first per ADR-022). ---
 // @spec openspec/changes/case-email-integration/tasks.md#T12
 import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
-// --- ZGW DRC case dossier sidebar tab. ---
-// @spec openspec/changes/document-zaakdossier/tasks.md#T10
-import DossierTab from './views/cases/components/DossierTab.vue'
+import CaseTimelineTab from './views/cases/components/CaseTimelineTab.vue'
 import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
+import DeletedCasesView from './views/cases/DeletedCasesView.vue'
 // --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
 //     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
 //     re-expressed as the `supplier` audience in
@@ -51,18 +51,19 @@ import DtChartsWidget from './views/doorlooptijd/widgets/DtChartsWidget.vue'
 import DtKpiWidget from './views/doorlooptijd/widgets/DtKpiWidget.vue'
 import DtWooWidget from './views/doorlooptijd/widgets/DtWooWidget.vue'
 import FeaturesRoadmapView from './views/FeaturesRoadmapView.vue'
+// --- Mail intake log: a custom page because the intake-role check lives in
+//     MailIntakeController, and an index page would read the generic object
+//     endpoint and show every processed message's original to anyone the
+//     register lets read. ---
+// @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
+import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
 import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
 import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
-// Token-addressed advice-response surface for external advisory bodies
-// (consultation-management TASK-CN-06). Declared as page
-// `ExternalConsultationResponse` in src/manifest.d/consultation-public.json;
-// its absence here rendered the manifest renderer's "This page is empty"
-// placeholder on /public/consultations/:token instead of this component.
-import ExternalConsultationResponsePage from './views/public/ExternalConsultationResponsePage.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 // Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
 import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
@@ -79,6 +80,21 @@ import TdAnnualWidget from './views/termijn/TdAnnualWidget.vue'
 import TdCaseTypeFilter from './views/termijn/TdCaseTypeFilter.vue'
 import TdKpiWidget from './views/termijn/TdKpiWidget.vue'
 import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
+import { countMatchingCases } from './services/bulkJobApi.js'
+// The Queue's and Cases' Claim row action, in its own module so a unit test
+// can reach it without importing every page this file mounts.
+// @spec openspec/changes/case-claim-action/specs/case-management/spec.md
+import { claimCase } from './utils/caseClaim.js'
+// Star a case, or take the star off, from a list row
+// (case-number-and-favourites, row 2.19).
+// @spec openspec/changes/case-number-and-favourites/specs/case-management/spec.md
+import { toggleCaseFavourite } from './utils/caseFavourite.js'
+// Mark a case read or unread from a list row (unread-state-on-the-case).
+// @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
+import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
+import { openCaseOfDocument } from './utils/contactDocuments.js'
+import { readFileAsMessage } from './utils/savedMail.js'
+import { readLocationFilters } from './utils/selectionScope.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
 // registered with dossiq's offline schema mapping in src/main.js. The custom
@@ -104,11 +120,13 @@ import TdQuarterlyWidget from './views/termijn/TdQuarterlyWidget.vue'
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
  */
-function reassignSelection({ selectedIds }) {
+async function reassignSelection({ selectedIds }) {
 	const ids = Array.isArray(selectedIds) ? selectedIds : []
 	if (ids.length === 0) {
 		return
 	}
+
+	const { filters, total } = await listScope(ids)
 
 	const host = document.createElement('div')
 	document.body.appendChild(host)
@@ -116,6 +134,8 @@ function reassignSelection({ selectedIds }) {
 	const app = createApp(ReassignSelectionDialog, {
 		open: true,
 		selectedIds: ids,
+		filters,
+		matchingTotal: total,
 		'onUpdate:open': (open) => {
 			if (open === false) {
 				app.unmount()
@@ -133,6 +153,31 @@ function reassignSelection({ selectedIds }) {
 }
 
 /**
+ * What the case list is showing, beyond the rows the handler ticked.
+ *
+ * A bulk handler is called with the selection and nothing else, so the whole
+ * result set has to be found rather than passed. The filters are in the
+ * address bar, and the count comes from OpenRegister.
+ *
+ * A count that cannot be read comes back as zero, which makes the scope
+ * affordance withhold the whole-result offer. That is the right failure: an
+ * offer of "select all 400" that cannot say where 400 came from is the exact
+ * surprise the affordance exists to prevent.
+ *
+ * @param {Array<string>} ids The ticked rows.
+ *
+ * @return {Promise<{filters: object, total: number}>} What the list holds.
+ *
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
+ */
+async function listScope(ids) {
+	const filters = readLocationFilters()
+	const total = await countMatchingCases(filters)
+
+	return { filters, total: total > ids.length ? total : 0 }
+}
+
+/**
  * Mount `BulkTransitionDialog` for a selection, in one of its four modes.
  *
  * Mounted here rather than declared in the manifest for the same reason
@@ -146,11 +191,13 @@ function reassignSelection({ selectedIds }) {
  *
  * @spec openspec/changes/one-case-list/specs/case-bulk-status-transition/spec.md
  */
-function openBulkDialog(mode, selectedIds) {
+async function openBulkDialog(mode, selectedIds) {
 	const ids = Array.isArray(selectedIds) ? selectedIds : []
 	if (ids.length === 0) {
 		return
 	}
+
+	const { filters, total } = await listScope(ids)
 
 	const host = document.createElement('div')
 	document.body.appendChild(host)
@@ -170,6 +217,8 @@ function openBulkDialog(mode, selectedIds) {
 	app = createApp(BulkTransitionDialog, {
 		caseIds: ids,
 		mode,
+		filters,
+		matchingTotal: total,
 		onClose: close,
 		onCompleted: () => {
 			close()
@@ -233,7 +282,54 @@ function extendTermSelection({ selectedIds }) {
 	openBulkDialog('extend', selectedIds)
 }
 
+/**
+ * Where Add integration lands: integriq's overview, preset and linking.
+ */
+export const INTEGRIQ_CONNECTIONS_PATH =
+	'/apps/integriq/connections?app=dossiq&link=1'
+
+/**
+ * The Integrations page's Add integration header action.
+ *
+ * A connection row is integriq's, and a source is linked to it on integriq's
+ * Connections overview (hydra connection-registry D9). `link=1` opens the
+ * link-a-source dialog there, pre-filtered to dossiq's connections.
+ *
+ * A FUNCTION handler because a header action's `navigate` keyword only pushes
+ * a route name inside this app's router, which cannot leave the app.
+ *
+ * The route is the one hydra connection-registry D9 names.
+ *
+ * @return {void}
+ *
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
+ */
+export function openIntegriqConnections() {
+	window.location.assign(generateUrl(INTEGRIQ_CONNECTIONS_PATH))
+}
+
 export default {
+	// The Queue's and Cases' `claim` row action (case-claim-action, row 2.4).
+	// A function handler for the reason the bulk actions below are ones, plus
+	// one of its own: the row dispatcher knows neither `api-call` nor a
+	// token-resolving write, so a declarative claim would either do nothing or
+	// store the literal string `@me`.
+	claimCase,
+	// The Queue's and Cases' `mark-unread` and `mark-read` row actions
+	// (unread-state-on-the-case, tasks 1.2). Function handlers for the same
+	// reason `claimCase` is one: the row dispatcher knows only `navigate`,
+	// `open-page` and a handler NAME, so a declarative `api-call` here would
+	// render a menu item that does nothing when clicked.
+	markCaseRead,
+	markCaseUnread,
+	// The Queue's and Cases' `favourite` row action
+	// (case-number-and-favourites). One entry rather than a star and an
+	// unstar, because `@self.favourite` rides every row, so the menu item can
+	// say what the click will do. A function handler for the same reason the
+	// two above are ones, plus one of its own: the gesture is PUT to star and
+	// DELETE to unstar on one path, and no declarative write takes two
+	// methods.
+	toggleCaseFavourite,
 	// --- Genuine exceptions: no abstract analogue. ---
 	// The Cases page's `reassign` bulk action. A FUNCTION handler, not the
 	// manifest's declarative `handler: "open-modal"` path: that path emits an
@@ -247,11 +343,33 @@ export default {
 	suspendSelection,
 	resumeSelection,
 	extendTermSelection,
+	// The Integrations page's Add integration header action. A FUNCTION
+	// handler because it leaves the app for integriq's Connections overview.
+	openIntegriqConnections,
+	// The contact and organisation Documents panels' `open-case` row action
+	// (the-contact-360-shows-documents). A FUNCTION handler because the row is
+	// a `dispatch` and the destination is its CASE: `rowRoute` pushes the row's
+	// own id, which would navigate to a case page for a uuid no case has, and
+	// that looks exactly like a deleted case rather than like a bug.
+	openCaseOfDocument,
+	// The case Files tab's `read-as-message` row action
+	// (inbound-messages-consume-integriq). A FUNCTION handler because
+	// CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and
+	// has no `api-call`, so a declared POST would render a menu item that does
+	// nothing when clicked; and because the browser has NO per-row condition,
+	// so the check that this row is a mail file at all lives in the handler
+	// and answers with a sentence rather than by being absent.
+	readFileAsMessage,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// Features & roadmap. Wraps the lib's CnFeaturesAndRoadmapPage (which has
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds
 	// the capability comparison. See the component header.
 	FeaturesRoadmapView,
+	// The deleted lens. A plain component rather than an index page: the
+	// deleted rows are not in the objects endpoint the index renderer fetches
+	// from, they are in OpenRegister's trash, which answers on its own door.
+	DeletedCasesView,
+	MailIntakeLogView,
 	StoreGallery, // remote store cards — index renderer cannot address a REMOTE object
 	// CaseMapView removed — see import comment above.
 
@@ -276,12 +394,15 @@ export default {
 	PmDwellChartWidget, // dwell time by status (CnChartWidget bar)
 	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
 	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
+	PmDwellByAssigneeWidget, // the same dwell intervals keyed by who held them (dwell-time-on-the-working-calendar)
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,
 	PublicStatusPage,
 	PublicFederatedTransferPage,
-	ExternalConsultationResponsePage,
+	// The token-addressed advice-response page is gone. Nothing ever minted
+	// the token it read, so it could never be entered; an advisory body now
+	// answers through an OpenRegister access link declaring `comment` (#3817).
 
 	// --- Leverancier-zaakportaal external supplier portal MOVED to Portaliq
 	//     (ADR-046, procest#162) — see import-section comment. ---
@@ -302,9 +423,7 @@ export default {
 
 	// --- Case-email sidebar tab (display via leaf, compose via NC Mail draft). ---
 	CaseEmailTab,
-
-	// --- ZGW DRC case dossier tab (document-zaakdossier). ---
-	DossierTab,
+	CaseTimelineTab,
 
 	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
 }

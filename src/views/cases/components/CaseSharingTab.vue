@@ -23,17 +23,57 @@
 -->
 <template>
 	<div class="case-sharing-tab">
+		<p
+			v-if="deelzaken.length > 0"
+			class="case-sharing-tab__inheritance"
+			data-testid="sharing-reaches-deelzaken">
+			{{ inheritanceWarning }}
+		</p>
+
 		<ShareTab
 			:shares="shares"
 			:loading="loading"
+			:links="links"
+			:linksLoading="linksLoading"
 			:federatedShares="federatedShares"
 			:federatedLoading="federatedLoading"
 			@revoke="revokeShare"
+			@createLink="createAccessLinkDialogOpen = true"
+			@revokeLink="revokeLink"
+			@pauseLink="pauseLink"
+			@previewLink="previewLink"
 			@createPartnerShare="createShareDialogOpen = true"
 			@transferCase="transferDialogOpen = true"
 			@createFederatedShare="createFederatedShareDialogOpen = true"
 			@revokeFederated="revokeFederatedShare"
 			@openActivity="openActivity" />
+
+		<CreateAccessLinkDialog
+			:open="createAccessLinkDialogOpen"
+			:caseId="objectId"
+			:documents="caseDocuments"
+			@update:open="createAccessLinkDialogOpen = $event"
+			@created="createLink" />
+
+		<!--
+			What the holder reads, so a handler can check a link before they
+			send it. The body comes from OpenRegister's own reader and dossiq
+			strips it a second time, so an internal that OpenRegister starts
+			publishing tomorrow does not reach this pane today.
+		-->
+		<div v-if="preview" class="case-sharing-tab__preview">
+			<h4>
+				{{
+					t('dossiq', 'What {who} sees', {
+						who: previewOf || t('dossiq', 'the holder'),
+					})
+				}}
+			</h4>
+			<pre>{{ preview }}</pre>
+			<NcButton @click="preview = null">
+				{{ t('dossiq', 'Close') }}
+			</NcButton>
+		</div>
 
 		<CreateShareDialog
 			:open="createShareDialogOpen"
@@ -71,11 +111,14 @@
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
+import { NcButton } from '@nextcloud/vue'
 import CaseTransferDialog from '../../../dialogs/CaseTransferDialog.vue'
+import CreateAccessLinkDialog from '../../../dialogs/CreateAccessLinkDialog.vue'
 import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDialog.vue'
 import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
 import ShareTab from './ShareTab.vue'
+import { useObjectStore } from '../../../store/modules/object.js'
 import {
 	createFederatedShareEndpoint,
 	federatedActivityEndpoint,
@@ -87,6 +130,8 @@ export default {
 	name: 'CaseSharingTab',
 	components: {
 		ShareTab,
+		NcButton,
+		CreateAccessLinkDialog,
 		CreateShareDialog,
 		CaseTransferDialog,
 		CreateFederatedShareDialog,
@@ -105,6 +150,11 @@ export default {
 		return {
 			shares: [],
 			loading: false,
+			links: [],
+			linksLoading: false,
+			createAccessLinkDialogOpen: false,
+			preview: null,
+			previewOf: '',
 			federatedShares: [],
 			federatedLoading: false,
 			partners: [],
@@ -116,17 +166,201 @@ export default {
 			activeFederatedShareId: null,
 			activityEntries: [],
 			activityLoading: false,
+			deelzaken: [],
 		}
 	},
 
+	computed: {
+		/**
+		 * What a share on this case will reach beyond this case (D-5).
+		 *
+		 * Said BEFORE the share is made, not after. The failure this row is
+		 * about, inverted: a handler who shares a parent expecting the
+		 * children to stay private has already widened them by the time any
+		 * later screen could tell them so.
+		 *
+		 * @return {string} The sentence.
+		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 */
+		inheritanceWarning() {
+			return n(
+				'dossiq',
+				'This case has one sub-case. Sharing this case lets the holder read it too.',
+				'This case has %n sub-cases. Sharing this case lets the holder read them too.',
+				this.deelzaken.length,
+			)
+		},
+	},
+
+	/**
+	 * Load the three surfaces this tab owns: the access links, the partner
+	 * shares and the federated shares, plus what the dialogs need to offer.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 */
 	mounted() {
 		this.loadShares()
+		this.loadLinks()
 		this.loadFederatedShares()
 		this.loadPartners()
 		this.loadCaseDocuments()
+		this.loadDeelzaken()
 	},
 
 	methods: {
+		/**
+		 * Read the sub-cases hanging under this case, so the warning above can
+		 * say how many a share reaches.
+		 *
+		 * A failed read leaves the list empty and says nothing. That is the
+		 * right way round here and only here: the warning is a courtesy on top
+		 * of a rule OpenRegister enforces, so a missing warning costs a
+		 * handler a surprise, while a warning about sub-cases that do not
+		 * exist would teach them to ignore the line.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 */
+		async loadDeelzaken() {
+			if (!this.objectId) {
+				return
+			}
+			try {
+				const rows = await useObjectStore().fetchCollection('case', {
+					parentCase: this.objectId,
+					_limit: 100,
+				})
+				this.deelzaken = rows || []
+			} catch {
+				this.deelzaken = []
+			}
+		},
+
+		/**
+		 * Load every access link on this case, each with its state.
+		 *
+		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 */
+		async loadLinks() {
+			if (!this.objectId) {
+				return
+			}
+			this.linksLoading = true
+			try {
+				const response = await axios.get(
+					generateUrl(
+						`/apps/dossiq/api/access-links/case/${encodeURIComponent(this.objectId)}`,
+					),
+				)
+				this.links = response.data?.results || []
+			} catch {
+				this.links = []
+				showError(t('dossiq', 'Could not load the links on this case'))
+			} finally {
+				this.linksLoading = false
+			}
+		},
+
+		/**
+		 * Mint a link and show the handler the address to send.
+		 *
+		 * @param {object} payload the link payload from CreateAccessLinkDialog.
+		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 */
+		async createLink(payload) {
+			try {
+				const response = await axios.post(
+					generateUrl('/apps/dossiq/api/shares'),
+					payload,
+				)
+				this.createAccessLinkDialogOpen = false
+				showSuccess(
+					t('dossiq', 'The link is ready: {url}', {
+						url: response.data?.url || '',
+					}),
+				)
+				this.loadLinks()
+			} catch (err) {
+				showError(
+					err.response?.data?.error
+						|| t('dossiq', 'Could not create the link'),
+				)
+			}
+		},
+
+		/**
+		 * Revoke a link. OpenRegister allows this only for the colleague who
+		 * created it, so the refusal is shown rather than hidden.
+		 *
+		 * @param {object} link the link row.
+		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 */
+		async revokeLink(link) {
+			try {
+				await axios.delete(
+					generateUrl(
+						`/apps/dossiq/api/access-links/${encodeURIComponent(link.accessLinkId)}`,
+					),
+					{ params: { caseId: this.objectId } },
+				)
+				showSuccess(t('dossiq', 'The link no longer opens the case'))
+				this.loadLinks()
+			} catch (err) {
+				showError(
+					err.response?.data?.error
+						|| t('dossiq', 'Could not revoke the link'),
+				)
+			}
+		},
+
+		/**
+		 * Switch a link off, or back on.
+		 *
+		 * @param {object} link the link row.
+		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 */
+		async pauseLink(link) {
+			try {
+				await axios.put(
+					generateUrl(
+						`/apps/dossiq/api/access-links/${encodeURIComponent(link.accessLinkId)}`,
+					),
+					{ caseId: this.objectId, disabled: link.state !== 'paused' },
+				)
+				this.loadLinks()
+			} catch (err) {
+				showError(
+					err.response?.data?.error
+						|| t('dossiq', 'Could not change the link'),
+				)
+			}
+		},
+
+		/**
+		 * Show the handler what the holder of this link reads.
+		 *
+		 * @param {object} link the link row.
+		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 */
+		async previewLink(link) {
+			try {
+				const response = await axios.get(
+					generateUrl(
+						`/apps/dossiq/api/access-links/${encodeURIComponent(link.accessLinkId)}/preview`,
+					),
+					{ params: { caseId: this.objectId } },
+				)
+				this.preview = response.data?.preview || null
+				this.previewOf = link.label || ''
+			} catch (err) {
+				this.preview = null
+				showError(
+					err.response?.data?.error
+						|| t('dossiq', 'That link opens nothing any more'),
+				)
+			}
+		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadShares() {
 			if (!this.objectId) {
@@ -360,5 +594,20 @@ export default {
 <style scoped>
 .case-sharing-tab {
 	height: 100%;
+}
+
+.case-sharing-tab__preview {
+	margin: 12px;
+	padding: 12px;
+	border: 1px solid var(--color-border);
+	border-radius: var(--border-radius-large);
+}
+
+.case-sharing-tab__preview pre {
+	max-height: 320px;
+	overflow: auto;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font-size: 12px;
 }
 </style>

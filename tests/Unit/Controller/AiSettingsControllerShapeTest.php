@@ -50,8 +50,10 @@ use OCA\Dossiq\Service\Ai\AiModelIdentity;
 use OCA\Dossiq\Service\Ai\AiPiiRedactor;
 use OCA\Dossiq\Service\Ai\AiPromptFactory;
 use OCA\Dossiq\Service\AiService;
+use OCA\Dossiq\Service\Settings\ConfigKeys;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
+use OCP\AppFramework\Http;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -72,21 +74,33 @@ use Psr\Log\LoggerInterface;
 class AiSettingsControllerShapeTest extends TestCase {
 
 	/**
-	 * Every on/off setting the admin tab draws as a switch.
+	 * The on/off settings that are not per-feature flags.
 	 *
 	 * @var string[]
 	 */
-	private const SWITCH_KEYS = [
-		'ai_enabled',
-		'ai_feature_classification',
-		'ai_feature_extraction',
-		'ai_feature_qa',
-		'ai_feature_summary',
-		'ai_feature_routing',
-		'ai_feature_decision_support',
-		'ai_pii_stripping',
-		'ai_dpia_acknowledged',
-	];
+	private const STANDING_SWITCHES = ['ai_enabled', 'ai_pii_stripping', 'ai_dpia_acknowledged'];
+
+	/**
+	 * Every on/off setting the admin tab draws as a switch.
+	 *
+	 * Derived from `ConfigKeys::ALL` rather than restated, because a restated list
+	 * is one that stops being true silently: adding a feature flag to ConfigKeys
+	 * left this constant still claiming to cover "every on/off setting the admin
+	 * tab draws" while quietly covering one fewer. The list is the thing under
+	 * test, so it is read from the source of truth and not typed twice.
+	 *
+	 * @return string[] The switch keys.
+	 */
+	private static function switchKeys(): array {
+		$featureFlags = array_values(
+			array_filter(
+				ConfigKeys::ALL,
+				static fn (string $key): bool => str_starts_with($key, 'ai_feature_')
+			)
+		);
+
+		return array_merge(self::STANDING_SWITCHES, $featureFlags);
+	}//end switchKeys()
 
 	/**
 	 * Build a controller over an app-config stubbed with the given stored values.
@@ -130,8 +144,16 @@ class AiSettingsControllerShapeTest extends TestCase {
 	 * @return void
 	 */
 	public function testSettingsAreReturnedUnderASettingsKey(): void {
-		$body = $this->controller(stored: [])->getSettings()->getData();
+		$response = $this->controller(stored: [])->getSettings();
+		$body = $response->getData();
 
+		// The status, beside the state: reading only the body would pass on a
+		// 500 that happened to carry the same keys (REQ-QG-CRN-2).
+		$this->assertSame(
+			expected: Http::STATUS_OK,
+			actual: $response->getStatus(),
+			message: 'The settings read answers 200.'
+		);
 		$this->assertIsArray($body);
 		$this->assertArrayHasKey('settings', $body);
 		$this->assertIsArray($body['settings']);
@@ -149,13 +171,13 @@ class AiSettingsControllerShapeTest extends TestCase {
 	 */
 	public function testStoredOffFlagsAreReportedAsOff(): void {
 		$stored = [];
-		foreach (self::SWITCH_KEYS as $key) {
+		foreach (self::switchKeys() as $key) {
 			$stored[$key] = '';
 		}
 
 		$settings = $this->controller(stored: $stored)->getSettings()->getData()['settings'];
 
-		foreach (self::SWITCH_KEYS as $key) {
+		foreach (self::switchKeys() as $key) {
 			$this->assertFalse($settings[$key], $key . ' is stored off and must report false');
 		}
 	}//end testStoredOffFlagsAreReportedAsOff()
@@ -167,13 +189,13 @@ class AiSettingsControllerShapeTest extends TestCase {
 	 */
 	public function testStoredOnFlagsAreReportedAsOn(): void {
 		$stored = [];
-		foreach (self::SWITCH_KEYS as $key) {
+		foreach (self::switchKeys() as $key) {
 			$stored[$key] = '1';
 		}
 
 		$settings = $this->controller(stored: $stored)->getSettings()->getData()['settings'];
 
-		foreach (self::SWITCH_KEYS as $key) {
+		foreach (self::switchKeys() as $key) {
 			$this->assertTrue($settings[$key], $key . ' is stored on and must report true');
 		}
 	}//end testStoredOnFlagsAreReportedAsOn()
@@ -203,7 +225,7 @@ class AiSettingsControllerShapeTest extends TestCase {
 
 		$this->assertTrue($settings['ai_pii_stripping'], 'PII stripping defaults to on');
 
-		foreach (self::SWITCH_KEYS as $key) {
+		foreach (self::switchKeys() as $key) {
 			if ($key === 'ai_pii_stripping') {
 				continue;
 			}

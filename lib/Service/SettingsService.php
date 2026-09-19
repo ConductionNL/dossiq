@@ -229,9 +229,6 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?object {
@@ -251,6 +248,44 @@ class SettingsService {
 	}//end getObjectService()
 
 	/**
+	 * Lazily resolve OpenRegister's per-object grant resolver.
+	 *
+	 * THE ONE THING DOSSIQ CANNOT ANSWER FOR ITSELF. A grant is a real
+	 * Nextcloud share on the object's folder, resolved per request by
+	 * OpenRegister, and since openregister#3873 that resolution walks the
+	 * declared hierarchy: a grant on a parent case answers for its deelzaken.
+	 * Asking this service is how dossiq consumes that instead of keeping a
+	 * second, parallel answer, which is what ADR-022 is about and what
+	 * `deelzaken-inherit-the-parent-grants` D-2 asks for by name.
+	 *
+	 * Same lazy-resolve contract as {@see self::getObjectService()}: an
+	 * optional runtime dependency, resolved at call time rather than
+	 * type-hinted, and callers MUST handle null. A null answer means dossiq
+	 * cannot ask, which every caller here treats as NOT GRANTED — the
+	 * fail-closed direction, and the behaviour dossiq had before inheritance
+	 * existed at all.
+	 *
+	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function getObjectGrantResolver(): ?object {
+		if ($this->isOpenRegisterAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return $this->container->get('OCA\OpenRegister\Service\Rbac\ObjectGrantResolver');
+		} catch (\Exception $e) {
+			$this->logger->error(
+				'Dossiq: Could not access OpenRegister ObjectGrantResolver',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end getObjectGrantResolver()
+
+	/**
 	 * Lazily resolve OpenRegister's FileService for in-process file attachment.
 	 *
 	 * ADR-084 publishes `ObjectServiceInterface` — 25 methods — and **none of
@@ -268,9 +303,6 @@ class SettingsService {
 	 * rather than type-hinted in the constructor, and callers MUST handle null.
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
-	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
 	 *
 	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
 	 */
@@ -304,9 +336,6 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ApprovalService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getApprovalService(): ?object {
@@ -335,9 +364,6 @@ class SettingsService {
 	 * @param string $class Fully-qualified OpenRegister class name
 	 *
 	 * @return object|null The resolved service, or null when unavailable
-	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
 	 *
 	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
@@ -435,7 +461,20 @@ class SettingsService {
 				'configured' => $configuredCount,
 				'result' => $importResult,
 			];
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
+			// 🔴 `\Throwable`, NOT `\Exception`. A declaration this app ships
+			// that OpenRegister's entity setters refuse arrives here as a
+			// `TypeError`, which is an `\Error` and not an `\Exception`, so a
+			// `catch (\Exception)` lets it out of the controller and the
+			// caller reads HTTP 500 with a Nextcloud error page. Measured
+			// 2026-09-19 on a live instance: one fragment declared
+			// `searchable` as an array of property names, OpenRegister's
+			// `Schema::setSearchable(bool)` raised a TypeError, and
+			// `POST /api/settings/load` answered 500. The seed then fell back
+			// to the importer that cannot merge `register.d`, so every schema
+			// this app declares in a fragment was absent and none of the
+			// `*_schema` config keys was ever written. A 500 says nothing
+			// about which declaration is wrong; the shape below names it.
 			$this->logger->error(
 				'Dossiq: Configuration import failed',
 				['exception' => $e->getMessage()]

@@ -4,13 +4,25 @@
  *
  * Guards the capability comparison shown on the Features & roadmap page.
  *
- * The data file is generated ONCE, offline, from a private audit repo, so CI
- * cannot regenerate it and diff the result. These assertions are the only
- * thing standing between a hand-edit and a page that quietly claims something
- * the audit never said.
+ * The data file is RE-ISSUED from the parity corpus in
+ * `ConductionNL/market-intelligence` by `scripts/sync-capability-comparison.mjs`.
+ * CI has no checkout of that repo, so it cannot re-run the script and diff the
+ * result. What it can do, and what the first test below does, is compare the
+ * data file's id set against `capabilityComparison.corpus-ids.json`, which the
+ * same script writes from the same source in the same run.
+ *
+ * That test exists because the rule it enforces was already written, already
+ * correct, and was broken anyway. On 2026-09-10 dossiq#2314 hand-added 104 rows
+ * here that no corpus artefact held, under ids the corpus used for other
+ * questions. 42 ids collided, five discovery lanes then cited 39 of them as
+ * existing rows, and eleven research candidates were withdrawn against rows
+ * that did not exist. Nothing failed, because nothing checked. The
+ * reconciliation is `procest/_round4/compare/dossiq-matrix-drift.md` in the
+ * corpus repo and the decision is D1.
  */
 
 import { describe, expect, it } from 'vitest'
+import corpusIds from '../../src/data/capabilityComparison.corpus-ids.json'
 import data from '../../src/data/capabilityComparison.json'
 import {
 	behindEveryRival,
@@ -23,36 +35,44 @@ import {
 	tally,
 } from '../../src/utils/capabilityComparison.js'
 
-// The audit's own totals. Hard-coded on purpose: if a row is edited, one of
-// these fails and names the system whose score moved.
+// The corpus's own totals over the 225 ROWS. Hard-coded on purpose: if a row
+// is edited, one of these fails and names the system whose score moved.
+//
+// These count `capabilities` and nothing else. `pending` is a second list with
+// one rated column out of five, and folding it in would move every score
+// against cells nobody has filled.
 //
 // Round 3 added 19 rows on 2026-09-09. It read GLPI and Zammad, not the other
 // products in this table, so each of them carries `unknown` on all 19 and their
-// yes/partial/no counts did not move. Ours did, downward: 84/87/35 over 206
-// became 87/92/46 over 225. That is the round working, not the product
-// regressing. The rows are things the round 2 list never thought to ask.
+// yes/partial/no counts did not move. Ours did.
 //
 // Dimpact ZAC joined as a fifth column on 2026-09-10, from a round 3 reading
 // of infonl/dimpact-zaakafhandelcomponent taken on 2026-09-08. That reading
 // covered the 206 rows round 2 produced, so ZAC is `unknown` on the same 19
 // rows the other three are: it was never read against them either.
 //
-// Round 4 added 104 more on 2026-09-10, from 19 systems examined and three
-// installed and driven. It read Odoo, iTop, EspoCRM and sixteen others, NONE of
-// which is a column here, so all four rivals are `unknown` on all 104 and their
-// counts did not move again. Ours moved a long way down: 87/92/46 over 225
-// became 96/126/107 over 329. Our `no` count more than doubled in one round.
-// That is the instrument widening, and the number is meant to be uncomfortable:
-// a list that only asks questions we can answer measures nothing.
+// Our own column moved again on 2026-09-14, from the corpus's case-type depth
+// study: 2.3, 2.7 and 3.3 from `partial` to `yes` and 11.2 from `yes` to `no`.
+// 87/92/46 became 89/89/47. Every move is in `_rerated` with its evidence.
+//
+// The 104 rows this file carried between 2026-09-10 and 2026-09-14 are gone
+// from `capabilities` and are not a regression: they were never rows. They are
+// 98 of the 146 proposals in `pending`, under the ids the corpus issued them.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 96, partial: 126, no: 107, unknown: 0 },
-	opencase: { yes: 62, partial: 46, no: 98, unknown: 123 },
-	gzac: { yes: 86, partial: 55, no: 65, unknown: 123 },
-	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 123 },
-	zac: { yes: 69, partial: 61, no: 76, unknown: 123 },
+	dossiq: { yes: 89, partial: 89, no: 47, unknown: 0 },
+	opencase: { yes: 62, partial: 46, no: 98, unknown: 19 },
+	gzac: { yes: 86, partial: 55, no: 65, unknown: 19 },
+	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 19 },
+	zac: { yes: 69, partial: 61, no: 76, unknown: 19 },
 }
 
-const ROW_COUNT = 329
+const ROW_COUNT = 225
+
+// The proposals. Not rows, not scored, not in any total on the page.
+const PENDING_COUNT = 146
+
+// The proposals whose own column we have not filled either. See the test.
+const OURS_UNMEASURED = ['Q13.25']
 
 // Thirteen areas came from the audit. Round 4 added four more, because four of
 // its rows had nowhere to go: a case plan of arranged services, money on the
@@ -73,6 +93,13 @@ const COMPARED_ON = '2026-09-07'
 // move is listed in the data file's `_rerated`, which the guard below pins to
 // the ratings themselves so a note cannot outlive the score it explains.
 const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
+
+// Our column moved again on 2026-09-14, and for a different reason: the corpus
+// re-read our case-type configuration end to end and three ratings were too
+// harsh while one was too kind. `cause: 'corrected'` rather than `'built'`,
+// because nothing was shipped between the two readings. The first reading was
+// wrong, and a page about honesty has to be able to say which of the two it is.
+const CORRECTED_IDS = ['2.3', '2.7', '3.3', '11.2']
 
 // Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad
 // 7.1.3 driven locally. They are logged in `_rerated` with `cause: 'added'`
@@ -99,123 +126,16 @@ const ROUND3_ADDED_IDS = [
 	'13.18',
 ]
 
-// Rows round 4 added on 2026-09-10, from 19 systems examined. Pinned the
-// same way, and listed per round rather than in one heap: `addedOn` differs
-// between them, and a single list would hide a row dated to the wrong round.
-const ROUND4_ADDED_IDS = [
-	'1.14',
-	'1.15',
-	'2.28',
-	'2.29',
-	'2.30',
-	'2.31',
-	'2.32',
-	'2.33',
-	'2.34',
-	'2.35',
-	'2.36',
-	'2.37',
-	'2.38',
-	'2.39',
-	'2.40',
-	'2.41',
-	'2.42',
-	'2.43',
-	'2.44',
-	'2.45',
-	'3.21',
-	'3.22',
-	'3.23',
-	'3.24',
-	'3.25',
-	'3.26',
-	'3.27',
-	'3.28',
-	'3.29',
-	'4.24',
-	'4.25',
-	'4.26',
-	'5.14',
-	'5.15',
-	'5.16',
-	'5.17',
-	'5.18',
-	'5.19',
-	'6.17',
-	'6.18',
-	'6.19',
-	'6.20',
-	'6.21',
-	'6.22',
-	'6.23',
-	'6.24',
-	'7.8',
-	'7.9',
-	'8.16',
-	'8.17',
-	'8.18',
-	'8.19',
-	'8.20',
-	'8.21',
-	'8.22',
-	'9.14',
-	'9.15',
-	'10.12',
-	'10.13',
-	'10.14',
-	'10.15',
-	'11.27',
-	'11.28',
-	'11.29',
-	'11.30',
-	'11.31',
-	'11.32',
-	'11.33',
-	'11.34',
-	'11.35',
-	'11.36',
-	'11.37',
-	'11.38',
-	'11.39',
-	'11.40',
-	'11.41',
-	'11.42',
-	'11.43',
-	'11.44',
-	'11.45',
-	'11.46',
-	'13.19',
-	'13.20',
-	'13.21',
-	'13.22',
-	'13.23',
-	'13.24',
-	'13.25',
-	'13.26',
-	'13.27',
-	'13.28',
-	'13.29',
-	'13.30',
-	'13.31',
-	'13.32',
-	'13.33',
-	'13.34',
-	'13.35',
-	'13.36',
-	'13.37',
-	'14.1',
-	'15.1',
-	'16.1',
-	'17.1',
-]
-
-const ADDED_IDS = [...ROUND3_ADDED_IDS, ...ROUND4_ADDED_IDS]
+// Round 4's 104 rows used to be pinned here too. They are not rows any more:
+// they were added to this file and to nothing else, and they are now 98 of the
+// 146 proposals in `pending`, which carry no `addedOn` because they were never
+// added to the scored list. The guards below therefore cover round 3's 19.
+const ADDED_IDS = [...ROUND3_ADDED_IDS]
 
 // The date each batch above was added, so the guard can check a row against
 // its OWN round instead of against whichever round happened to be last.
 const ADDED_ON = {
 	...Object.fromEntries(ROUND3_ADDED_IDS.map((id) => [id, '2026-09-09'])),
-	...Object.fromEntries(ROUND4_ADDED_IDS.map((id) => [id, '2026-09-10'])),
 }
 
 // The rows where every rival has the capability and we do not. Pinned
@@ -243,29 +163,125 @@ const BEHIND_EVERY_RIVAL = ['2.4', '4.16', '4.22', '9.1', '11.10', '12.7']
 const IDENTICAL_BY_DESIGN = new Set(['12.4'])
 
 describe('capabilityComparison data', () => {
-	it('carries the 329 rows, 17 areas and 5 columns the rounds produced', () => {
+	it('holds exactly the ids the corpus issued', () => {
+		// THE GUARD THIS FILE WAS MISSING ON 2026-09-10, and the reason 104
+		// rows the corpus had never issued reached a customer page. Both files
+		// are written by `scripts/sync-capability-comparison.mjs` in one run
+		// from one source, so a hand edit to either one alone fails here and
+		// names the ids that appeared or went missing.
+		//
+		// It compares the SET and the ORDER, because the corpus's order is the
+		// numbering a reader sees in the first column.
+		expect(data.capabilities.map((c) => c.id)).toEqual(corpusIds.rows)
+		expect(data.pending.map((c) => c.id)).toEqual(corpusIds.pending)
+	})
+
+	it('carries the 225 rows, 146 proposals, 17 areas and 5 columns', () => {
 		expect(data.capabilities).toHaveLength(ROW_COUNT)
+		expect(data.pending).toHaveLength(PENDING_COUNT)
 		expect(data.areas).toHaveLength(AREA_COUNT)
 		expect(data.systems).toHaveLength(5)
 	})
 
-	it('gives every declared area at least one row', () => {
-		// An area with no rows is a heading over nothing. Round 4 added four
-		// areas at once, and the way to get that wrong is to declare the area
-		// and file its row under the old one, which reads as a rendering bug.
-		const filled = new Set(data.capabilities.map((c) => c.area))
+	it('gives every declared area at least one row or one proposal', () => {
+		// An area with nothing in it is a heading over nothing. Areas 14 to 17
+		// hold proposals and no rows today, which is a real state and not a
+		// filing error: they are four questions round 4 raised that had
+		// nowhere to go, and no competitor has been read against any of them.
+		const filled = new Set([
+			...data.capabilities.map((c) => c.area),
+			...data.pending.map((c) => c.area),
+		])
 		const empty = data.areas.filter((a) => !filled.has(a.key))
 		expect(empty.map((a) => a.key)).toEqual([])
 	})
 
-	it('gives every row a unique id', () => {
-		const ids = data.capabilities.map((c) => c.id)
+	it('gives every row and every proposal a unique id', () => {
+		const ids = [
+			...data.capabilities.map((c) => c.id),
+			...data.pending.map((c) => c.id),
+		]
 		expect(new Set(ids).size).toBe(ids.length)
 	})
 
-	it('files every row under a declared area', () => {
+	it('marks every proposal pending, rates only our own column on it', () => {
+		// A proposal with a competitor rating is the failure this split exists
+		// to prevent: one product was read and the other four were not, so any
+		// value but `unknown` in their columns is a guess published as a
+		// reading. Our own column is rated, because we can read our own code,
+		// and an `unknown` there would understate our score for free.
+		const rivals = data.systems.filter((s) => !s.isSelf).map((s) => s.key)
+		const bad = []
+		for (const row of data.pending) {
+			if (row.status !== 'pending') {
+				bad.push(`${row.id}/status=${row.status}`)
+			}
+			if (!RATING_COLUMNS.includes(row.dossiq)) {
+				bad.push(`${row.id}/dossiq=${row.dossiq}`)
+			}
+			if (!row.dossiqNote || row.dossiqNote.length < 21) {
+				bad.push(`${row.id}/no evidence`)
+			}
+			for (const key of rivals) {
+				if (row[key] !== 'unknown') {
+					bad.push(`${row.id}/${key}=${row[key]}`)
+				}
+			}
+		}
+		expect(bad).toEqual([])
+	})
+
+	it('pins the proposals we have not measured ourselves on', () => {
+		// One, and the corpus says why: Q13.25 asks whether a role can take a
+		// right away as well as grant one, and answering it needs the
+		// permission resolver read end to end rather than grepped. The batch
+		// that proposed it marked the cell unmeasured instead of guessing at
+		// our own product, which is the same rule the competitor columns
+		// follow. Pinned rather than asserted empty, so the list shrinking is
+		// visible and a second one cannot appear quietly.
+		const unmeasured = data.pending.filter((p) => !RATINGS.includes(p.dossiq))
+		expect(unmeasured.map((p) => p.id)).toEqual(OURS_UNMEASURED)
+		for (const row of unmeasured) {
+			expect(row.dossiqNote.toLowerCase(), row.id).toContain('unmeasured')
+		}
+	})
+
+	it('keeps a proposal out of every tally', () => {
+		// The whole point of the second list. `overallTallies` counts rows, so
+		// its total is the row count and never the sum of the two lists. This
+		// is the assertion that fails if somebody later merges `pending` into
+		// `capabilities` to simplify the template.
+		const totals = overallTallies(data)
+		for (const system of data.systems) {
+			expect(totals[system.key].total, system.key).toBe(ROW_COUNT)
+		}
+		const areas = groupByArea(data)
+		const rowsInAreas = areas.reduce((n, a) => n + a.capabilities.length, 0)
+		const pendingInAreas = areas.reduce((n, a) => n + a.pending.length, 0)
+		expect(rowsInAreas).toBe(ROW_COUNT)
+		expect(pendingInAreas).toBe(PENDING_COUNT)
+		for (const area of areas) {
+			expect(area.tallies.dossiq.total, area.key).toBe(
+				area.capabilities.length,
+			)
+		}
+	})
+
+	it('names the corpus it was re-issued from', () => {
+		// A copy that does not say where it came from is how the last one
+		// drifted: the old `_comment` cited a private repo that no longer
+		// resolves, and nobody could check the claim.
+		expect(data.corpus.repo).toBe('ConductionNL/market-intelligence')
+		expect(data.corpus.file).toBe('procest/_round4/tools/corpus-rows.json')
+		expect(data.corpus.rows).toBe(ROW_COUNT)
+		expect(data.corpus.pending).toBe(PENDING_COUNT)
+	})
+
+	it('files every row and every proposal under a declared area', () => {
 		const areas = new Set(data.areas.map((a) => a.key))
-		const orphans = data.capabilities.filter((c) => !areas.has(c.area))
+		const orphans = [...data.capabilities, ...data.pending].filter(
+			(c) => !areas.has(c.area),
+		)
 		expect(orphans.map((c) => c.id)).toEqual([])
 	})
 
@@ -351,6 +367,11 @@ describe('capabilityComparison data', () => {
 	})
 
 	it('translates every capability and every area into Dutch', () => {
+		// Rows only. A proposal arrives from the corpus, which is written in
+		// English, and `labelFor` falls back to English when there is no Dutch
+		// rather than rendering a blank cell. Asserting Dutch on all 146 would
+		// force a translation of a question that may never become a row, and
+		// the honest place to translate one is the change that promotes it.
 		const missing = data.capabilities.filter(
 			(c) => !c.name_nl || c.name_nl.trim() === '',
 		)
@@ -410,14 +431,29 @@ describe('capabilityComparison data', () => {
 
 	it('explains every correction, and corrects only our own column', () => {
 		expect(data._rerated.map((r) => r.id).sort()).toEqual(
-			[...RERATED_IDS, ...ADDED_IDS].sort(),
+			[...RERATED_IDS, ...CORRECTED_IDS, ...ADDED_IDS].sort(),
 		)
 		for (const entry of data._rerated) {
 			expect(entry.from, entry.id).not.toBe(entry.to)
 			expect(RATINGS, entry.id).toContain(entry.to)
 			expect(entry.on, entry.id).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 			expect(entry.reason.length, entry.id).toBeGreaterThan(20)
-			expect(['built', 'added'], entry.id).toContain(entry.cause)
+			expect(['built', 'added', 'corrected'], entry.id).toContain(entry.cause)
+		}
+	})
+
+	it('separates a correction from a capability we shipped', () => {
+		// `built` says the product changed between two readings. `corrected`
+		// says the first reading was wrong and nothing was shipped. They read
+		// the same on the page as "we moved our own rating", and they are not
+		// the same claim: one is a release note, the other is an erratum.
+		const corrected = data._rerated.filter((e) => e.cause === 'corrected')
+		expect(corrected.map((e) => e.id).sort()).toEqual([...CORRECTED_IDS].sort())
+		for (const entry of corrected) {
+			expect(RATINGS, entry.id).toContain(entry.from)
+			expect(entry.on > data.comparedOn, entry.id).toBe(true)
+			// The evidence, not a note saying there is evidence somewhere.
+			expect(entry.reason.length, entry.id).toBeGreaterThan(60)
 		}
 	})
 
@@ -560,8 +596,13 @@ describe('groupByArea', () => {
 	it('tallies each area per system', () => {
 		const groups = groupByArea(data, 'en')
 		const intake = groups.find((g) => g.key === 'intake')
-		expect(intake.capabilities).toHaveLength(15)
-		expect(intake.tallies.dossiq.total).toBe(15)
+		// 13 rows and 5 proposals: Q1.14 to Q1.16 from round 4's batches, and
+		// 1.17 and 1.18, which dossiq published as 1.14 and 1.15 before the
+		// corpus renumbered them. The tally counts the rows only: a proposal
+		// has one rated column out of five and belongs in no score.
+		expect(intake.capabilities).toHaveLength(13)
+		expect(intake.pending).toHaveLength(5)
+		expect(intake.tallies.dossiq.total).toBe(13)
 	})
 })
 

@@ -26,6 +26,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantBillingService
+ * @uses \OCA\Dossiq\Service\ShillinqIntegrationService
  */
 class TenantBillingServiceTest extends TestCase {
 	private TenantBillingService $svc;
@@ -125,5 +126,68 @@ class TenantBillingServiceTest extends TestCase {
 
 	public function testAllowedEventTypesIncludesRefund(): void {
 		$this->assertContains('case_refund', TenantBillingService::ALLOWED_EVENT_TYPES);
+	}
+
+	public function testAnEventWithNoReadablePriceIsCountedNotBilledAtZero(): void {
+		$events = [
+			['eventType' => 'case_created', 'quantity' => 2.0, 'unitPrice' => 5.0],
+			['eventType' => 'case_created', 'quantity' => 2.0, 'unitPrice' => 'op aanvraag'],
+			['eventType' => 'user_activated', 'quantity' => null, 'unitPrice' => 149.0],
+		];
+
+		$summary = $this->svc->aggregate($events);
+
+		// 10.00 is the priceable line alone. The other two used to add 0.00
+		// each, so the tenant underpaid and the invoice looked complete.
+		$this->assertSame(10.0, $summary['totalAmount']);
+		$this->assertSame(2, $summary['unpricedCount']);
+
+		// And they leave no row behind. Casting them to zero created a
+		// user_activated bucket of 0.00, which reads as a type that was
+		// billed and cost nothing.
+		$this->assertArrayNotHasKey('user_activated', $summary['byType']);
+	}
+
+	public function testNoInvoiceIsExportedWhileAnyEventCannotBePriced(): void {
+		$events = [
+			['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'user_activated', 'quantity' => 1.0, 'unitPrice' => 149.0, 'currency' => 'EUR', 'occurredAt' => '2026-07-05T10:00:00+00:00', 'invoiceRef' => null],
+			['uuid' => 'e-2', 'tenantRef' => 't-1', 'eventType' => 'case_created', 'quantity' => 3.0, 'unitPrice' => null, 'currency' => 'EUR', 'occurredAt' => '2026-07-06T10:00:00+00:00', 'invoiceRef' => null],
+		];
+
+		$shillinq = $this->createMock(\OCA\Dossiq\Service\ShillinqIntegrationService::class);
+		$shillinq->expects($this->never())->method('exportInvoice');
+
+		$svc = $this->getMockBuilder(TenantBillingService::class)
+			->setConstructorArgs([
+				$this->createMock(IAppManager::class),
+				$this->createMock(ContainerInterface::class),
+				$this->createMock(LoggerInterface::class),
+				$shillinq,
+			])
+			->onlyMethods(['fetchEventsForMonth', 'markExported'])
+			->getMock();
+		$svc->method('fetchEventsForMonth')->willReturn($events);
+
+		// 🔑 NOTHING IS STAMPED. An event carrying an invoiceRef is never
+		// picked up again, so stamping these writes the difference off for
+		// good; leaving them unbilled lets the month invoice correctly once
+		// the rows are fixed.
+		$svc->expects($this->never())->method('markExported');
+
+		$result = $svc->runInvoicing('t-1', '2026-07');
+
+		$this->assertFalse($result['exported']);
+		$this->assertStringContainsString('no readable price', (string)$result['error']);
+	}
+
+	public function testAnInvoiceLineIsNeverPricedByDefault(): void {
+		$svc = new \OCA\Dossiq\Service\ShillinqIntegrationService(
+			$this->createMock(\OCP\Http\Client\IClientService::class),
+			$this->createMock(LoggerInterface::class),
+		);
+
+		$this->expectException(InvalidArgumentException::class);
+
+		$svc->buildInvoicePayload('t-1', '2026-07', [['eventType' => 'case_created', 'quantity' => 2]]);
 	}
 }

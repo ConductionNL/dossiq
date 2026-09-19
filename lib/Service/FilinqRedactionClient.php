@@ -121,13 +121,6 @@ class FilinqRedactionClient {
 	 *
 	 * @throws RuntimeException When filinq is absent, the file cannot be located, or filinq refuses.
 	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver over the
-	 *      app-id and namespace rename map.
-	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
 	 */
 	public function redact(string $caseId, array $document): array {
@@ -226,10 +219,6 @@ class FilinqRedactionClient {
 	 *
 	 * @return string|null The effective method, or null when OpenRegister
 	 *                     cannot be asked.
-	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by class name.
-	 * @psalm-suppress MixedAssignment OpenRegister is resolved by class name.
-	 * @psalm-suppress MixedPropertyFetch OpenRegister is resolved by class name.
 	 */
 	private function detectionBackend(): ?string {
 		try {

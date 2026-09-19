@@ -328,4 +328,65 @@ class CaseActionsControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame('invalid_date', $response->getData()['code']);
 	}//end testAnInvalidPlanDateIsABadRequest()
+
+	/**
+	 * Stopping a series switches a flow off, so it is a write and takes the
+	 * mutation guard.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 */
+	public function testStopSeriesIsRefusedWithoutMutationAccess(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(false);
+		$this->flowActions->expects($this->never())->method('stopSeries');
+
+		$response = $this->controller()->stopSeries(caseId: 'case-1', flowId: 'flow-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testStopSeriesIsRefusedWithoutMutationAccess()
+
+	/**
+	 * The route carries the case and the flow, and the identity comes from
+	 * the session rather than the caller, the same way plan does it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 */
+	public function testStopSeriesCarriesTheRouteAndTheSessionUser(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$seen = [];
+		$this->flowActions->method('stopSeries')->willReturnCallback(
+			function (string $caseId, string $flowId, string $uid) use (&$seen): array {
+				$seen = [$caseId, $flowId, $uid];
+
+				return ['id' => $flowId, 'stopped' => true];
+			}
+		);
+
+		$response = $this->controller()->stopSeries(caseId: 'case-1', flowId: 'flow-9');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['case-1', 'flow-9', 'behandelaar'], $seen);
+		$this->assertTrue($response->getData()['stopped']);
+	}//end testStopSeriesCarriesTheRouteAndTheSessionUser()
+
+	/**
+	 * A series whose case is gone is a 404 with its code, so the Related tab
+	 * can say the row is gone rather than fail silently.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 */
+	public function testStoppingAnUnknownSeriesIsNotFound(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->flowActions->method('stopSeries')->willThrowException(new RuntimeException('case_not_found'));
+
+		$response = $this->controller()->stopSeries(caseId: 'case-1', flowId: 'flow-9');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame('case_not_found', $response->getData()['code']);
+	}//end testStoppingAnUnknownSeriesIsNotFound()
 }//end class

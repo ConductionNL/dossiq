@@ -49,6 +49,7 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { leafTab } from '../../../integrations/leafTabs.js'
+import logger from '../../../logger.js'
 
 export default {
 	name: 'CaseNotesTab',
@@ -105,10 +106,9 @@ export default {
 					payload,
 				)
 			} catch (e) {
-				// eslint-disable-next-line no-console
-				console.warn(
-					'[CaseNotesTab] Failed to dispatch mention notification',
-					e,
+				logger.warn(
+					'CaseNotesTab: failed to dispatch mention notification',
+					{ error: e },
 				)
 			}
 		},

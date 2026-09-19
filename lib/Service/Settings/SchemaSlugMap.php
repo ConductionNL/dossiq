@@ -46,7 +46,9 @@ class SchemaSlugMap {
 	 * @var array<string, string>
 	 */
 	public const SLUG_TO_CONFIG_KEY = [
-		'catalog' => 'catalogus_schema',
+		// NOT 'catalog': opencatalogi owns that slug, and slugs are global on a
+		// shared OpenRegister, so both definitions would resolve to each other.
+		'zgwCatalogus' => 'catalogus_schema',
 		'case' => 'case_schema',
 		// `caseTask` is gone. remove-casetask deleted the schema from both
 		// descriptors, so a mapping left here would ask SchemaKeyReconciler to
@@ -69,7 +71,18 @@ class SchemaSlugMap {
 		'caseProperty' => 'case_property_schema',
 		'caseDocument' => 'case_document_schema',
 		'caseObject' => 'case_object_schema',
+		// One dated event inside a case, with its own owner
+		// (splitting-a-case-and-its-incidents REQ-CM-53). A schema with no key
+		// here resolves to nothing and every read of it answers an empty list,
+		// which reads exactly like a case with no incidents.
+		//
+		// QUALIFIED ON PURPOSE. Slugs are global on a shared OpenRegister and
+		// hermiq declares the bare `incident` for an AI-agent lifecycle
+		// record. Two apps on one word means either definition can answer.
+		'caseIncident' => 'case_incident_schema',
 		'customerContact' => 'customer_contact_schema',
+		// One row per message the mailbox processed (inbound-mail-filters).
+		'mailIntakeEntry' => 'mail_intake_entry_schema',
 		'decisionDocument' => 'decision_document_schema',
 		'dispatch' => 'dispatch_schema',
 		'document' => 'document_schema',
@@ -100,6 +113,17 @@ class SchemaSlugMap {
 		'partnerOrganization' => 'partner_organization_schema',
 		'sharePermissionLevel' => 'share_permission_level_schema',
 		'casetransfer' => 'case_transfer_schema',
+		// The dated chain of holdings, and the pull that asks for one. Both are
+		// custody-and-handover-of-a-case: the chain answers who held the case
+		// in March, which the transfer record cannot, and the takeover is the
+		// request the holder answers.
+		'caseCustody' => 'case_custody_schema',
+		'caseTakeover' => 'case_takeover_schema',
+		// The sociaal-domein consent. Declared in `register.d/50-sociaal-domein.json`
+		// since that fragment shipped and never mapped, so no service could
+		// resolve it and the hand-off gate had nothing to read. Mapping it is
+		// what turns a declared record into an enforced precondition (D-5).
+		'toestemming' => 'consent_schema',
 		'caseFederatedShare' => 'case_federated_share_schema',
 		'caseFederatedActivity' => 'case_federated_activity_schema',
 		'automaticAction' => 'automatic_action_schema',
@@ -182,6 +206,10 @@ class SchemaSlugMap {
 		'emailTemplate' => 'email_template_schema',
 		// Consultation management (consultation-management spec).
 		'consultation' => 'consultation_schema',
+		// One declared mechanism for everything a case waits on somebody else
+		// to do (what-a-transition-declares). The advice request is the first
+		// obligation of this kind rather than a second mechanism beside it.
+		'obligation' => 'obligation_schema',
 		'adviceResponse' => 'advice_response_schema',
 		'advisoryBody' => 'advisory_body_schema',
 		// Milestone tracking (milestone-tracking spec).
@@ -197,6 +225,26 @@ class SchemaSlugMap {
 		// The connections Dossiq has to systems outside it
 		// (pluggable-integration-registry).
 		'dossiqIntegration' => 'dossiq_integration_schema',
+		// What a new instance starts with (starter-content-and-templates).
+		// `shippedOrigin` is the provenance ledger: one row per seeded object,
+		// carrying the set, its version and a fingerprint of what shipped, so
+		// `shipped and untouched` is a comparison rather than a guess.
+		'shippedOrigin' => 'shipped_origin_schema',
+		'starterSetAdoption' => 'starter_set_adoption_schema',
+		'reusableStep' => 'reusable_step_schema',
+		'contentTemplate' => 'content_template_schema',
+		// The domain a copy carries. The group already existed for the grant
+		// (mandaat-matrix) and was never mapped, so no service could resolve
+		// it; the domain copy is the first caller that needs to.
+		'caseTypeGroup' => 'case_type_group_schema',
+		// Mobiel-inspectie-offline. NEITHER WAS MAPPED, AND THAT ALONE MADE
+		// the capability unreachable: `TranscriptionService::persist()` reads
+		// `field_evidence_schema`, a key nothing configured, and returned the
+		// record unchanged rather than writing it. A reconciler that is never
+		// asked for a slug leaves its key empty, and an empty key is read here
+		// as "not configured on this instance", which is silence.
+		'fieldInspection' => 'field_inspection_schema',
+		'fieldEvidence' => 'field_evidence_schema',
 	];
 
 	/**
@@ -216,6 +264,61 @@ class SchemaSlugMap {
 		'x-openregister-lifecycle',
 		'x-openregister-aggregations',
 		'x-openregister-object-source',
+		// Which changes to a case are news to somebody who has already seen
+		// it. OpenRegister's SubstantiveChangeEvaluator reads this block off
+		// `Schema::getConfiguration()`, and an ABSENT block is not an inert
+		// default: it means every non-computed property counts, so one bulk
+		// correction marks four hundred cases unread. Leaving the key out of
+		// this list would therefore not disable the badge, it would make it
+		// cry wolf, with nothing anywhere saying so.
+		'x-openregister-read-state',
+		// What a typed case link is called from each side. OpenRegister's
+		// RelationTypeResolver reads this vocabulary off
+		// `Schema::getConfiguration()` and resolves a property's
+		// `x-openregister-relation: {type: "vervolg"}` against it. A key the
+		// vocabulary does not hold is DROPPED rather than carried, so on an
+		// instance that imported the case schema before this block existed
+		// every typed relation would quietly read as the property's own title
+		// and "referenced by", with nothing anywhere reporting it. That is the
+		// same silent fallback openregister#3764 exists to end.
+		'x-openregister-relation-types',
+		// Whether this schema's objects can be archived at all. OpenRegister's
+		// ArchiveHandler refuses archive, restore, freeze and unfreeze on a
+		// schema that does not declare it, and an absent block is the same
+		// answer as `enabled: false`. On an instance that imported the case
+		// schema before the block existed, leaving the key out of this list
+		// would therefore leave Archive refusing every case with "this schema
+		// does not declare x-openregister-archive", which reads as a broken
+		// feature rather than as a configuration that never arrived.
+		'x-openregister-archive',
+		// What counts as the same case, and who may file one anyway.
+		// OpenRegister's DuplicateDetectionService reads this block off
+		// `Schema::getConfiguration()` and nowhere else, so an instance that
+		// imported the case schema before the block existed answers the
+		// dedup-check endpoint with an empty match list. That reads exactly
+		// like "nothing looks like this case", which is the one answer a
+		// duplicate warning must never give by accident. Carried here for the
+		// same reason `x-openregister-read-state` is: an absent block is not
+		// an inert default, it is a different answer.
+		'x-openregister-dedup',
+		// What happens when two cases become one. OpenRegister's MergeService
+		// reads this block off `Schema::getConfiguration()`, and an absent
+		// block is not an inert default: the reversal window falls back to the
+		// service default, so a merge an instance believes it can still undo
+		// may already be past undoing. Same reason as the dedup key above.
+		'x-openregister-merge',
+		// Which edge a grant travels down. OpenRegister resolves an inherited
+		// grant from `Schema::getConfiguration()` and from nowhere else, and
+		// an unknown configuration key is DROPPED on import in silence, so an
+		// instance that never received this block answers that a deelzaak is
+		// closed to somebody who holds the parent. That failure is invisible
+		// from both ends: dossiq declared the edge, OpenRegister reports no
+		// inheritance, and neither says the declaration never arrived. It is
+		// listed here for the same reason `x-openregister-dedup` is, with one
+		// difference worth stating: a dropped dedup block gives a wrong
+		// answer about duplicates, and a dropped hierarchy block gives a wrong
+		// answer about who may open a dossier.
+		'x-openregister-hierarchy',
 	];
 
 	/**

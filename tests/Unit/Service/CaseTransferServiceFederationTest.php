@@ -33,6 +33,9 @@ use OCA\Dossiq\Service\CaseTransferService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
+use OCA\Dossiq\Service\Custody\CaseCustodyChain;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -261,8 +264,44 @@ class CaseTransferServiceFederationTest extends TestCase {
 			shareBroker: new TransferShareBroker($gateway, $logger),
 			logger: $logger,
 			auditTrail: $auditTrail,
+			// A STUB, not a mock: the helper is static, and `createMock()` is an
+			// instance method. The federated path never reaches the internal
+			// handover, so a stub that answers nothing is the whole
+			// requirement here.
+			internal: self::createStub(InternalHandover::class),
+			// The chain and the gate are stubbed here BECAUSE THIS TEST IS
+			// ABOUT NEITHER. Its subject is the federated idempotency and the
+			// token; the holding it writes and the consent it needs are
+			// watched by CaseCustodyChainTest and CaseTransferConsentGateTest
+			// against a real in-memory register. A gate that answered nothing
+			// would refuse every federated transfer here and redden the wrong
+			// assertion, so it answers the allowing verdict explicitly.
+			custody: self::createStub(CaseCustodyChain::class),
+			consent: self::allowingConsentGate(),
 		);
 	}//end makeTransferService()
+
+	/**
+	 * A consent gate that lets every hand-off through.
+	 *
+	 * @return CaseTransferConsentGate&\PHPUnit\Framework\MockObject\Stub The gate.
+	 */
+	private static function allowingConsentGate(): CaseTransferConsentGate {
+		$gate = self::createStub(CaseTransferConsentGate::class);
+		$gate->method('assess')->willReturn(
+			[
+				'allowed' => true,
+				'rule' => '',
+				'sentence' => '',
+				'consent' => null,
+				'scope' => [],
+				'until' => '',
+				'crossesOrganisation' => true,
+			]
+		);
+
+		return $gate;
+	}//end allowingConsentGate()
 
 	/**
 	 * @return void

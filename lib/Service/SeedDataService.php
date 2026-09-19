@@ -26,6 +26,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Besluitvorming\WorkflowReferenceResolver;
+use OCA\Dossiq\Service\Starter\ShippedConfigurationService;
+use OCA\Dossiq\Service\Starter\ShippedSets;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Support\SeedSummary;
 use OCP\IAppConfig;
@@ -34,8 +36,6 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Service for seeding bezwaar/beroep case types and related configuration.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister service access
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -65,6 +65,7 @@ class SeedDataService {
 	 * @param IAppConfig $appConfig The app configuration service
 	 * @param ContainerInterface $container The DI container
 	 * @param LoggerInterface $logger The logger interface
+	 * @param ShippedConfigurationService|null $shipped The provenance ledger, or null when it cannot be built
 	 *
 	 * @return void
 	 */
@@ -72,8 +73,37 @@ class SeedDataService {
 		private IAppConfig $appConfig,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
+		private ?ShippedConfigurationService $shipped = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Record that this seed wrote an object, and from which set.
+	 *
+	 * 🔑 THE STAMP IS BEST EFFORT AND THE SEED IS NOT. A provenance row that
+	 * could not be written must never take a seeded case type down with it: the
+	 * screen losing one line is a smaller failure than an install that stops.
+	 * Optional in the constructor for the same reason the seed runs from a
+	 * repair step with no session.
+	 *
+	 * @param string               $targetSchema The seeded object's schema slug.
+	 * @param string               $targetObject The seeded object's id.
+	 * @param array<string, mixed> $object       The object as it shipped.
+	 *
+	 * @return void
+	 */
+	private function stamp(string $targetSchema, string $targetObject, array $object): void {
+		if ($this->shipped === null || $targetObject === '') {
+			return;
+		}
+
+		$this->shipped->stamp(
+			set: ShippedSets::BEZWAAR_BEROEP,
+			targetSchema: $targetSchema,
+			targetObject: $targetObject,
+			object: $object,
+		);
+	}//end stamp()
 
 	/**
 	 * Seed the bezwaar and beroep case types with all related objects.
@@ -176,8 +206,6 @@ class SeedDataService {
 	 * @param string $workflowSchema The workflow template schema UUID
 	 *
 	 * @return array Counts of created and skipped objects
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all schema IDs are needed
 	 */
 	private function seedCaseType(
 		object $objectService,
@@ -357,6 +385,8 @@ class SeedDataService {
 			$caseTypeId = $this->getObjectId(object: $caseType);
 		}
 
+		$this->stamp(targetSchema: 'caseType', targetObject: $caseTypeId, object: $caseTypeData);
+
 		$this->logger->info(
 			'Dossiq: Created case type',
 			['identifier' => $identifier, 'id' => $caseTypeId]
@@ -405,6 +435,7 @@ class SeedDataService {
 			if ($childObj !== null) {
 				$map[$childData['name']] = $childId;
 				$created++;
+				$this->stamp(targetSchema: $schemaId, targetObject: $childId, object: $childData);
 			}
 		}
 
@@ -517,16 +548,32 @@ class SeedDataService {
 				],
 			);
 
-			if (is_array($results) === true && count($results) > 0) {
-				return $results[0];
+			if (is_array($results) === false) {
+				return null;
 			}
 
-			// Handle paginated result format.
-			if (is_array($results) === true
-				&& isset($results['results']) === true
+			// PAGINATED SHAPE FIRST, and that order is the fix.
+			//
+			// With the plain-list branch first, `count($results) > 0` is also
+			// true for `['results' => [...]]`, since one key is still one
+			// element, so it returned `$results[0]`, an offset that shape does
+			// not have. PHP 8 warns and hands back null, so this method
+			// answered "not found" for every paginated response and the branch
+			// below could never run.
+			//
+			// Psalm had this the whole time: with the list branch taken, it
+			// narrowed `$results` to the empty array and reported
+			// EmptyArrayAccess on `$results['results']`. The blanket
+			// suppression is what kept it quiet.
+			if (isset($results['results']) === true
+				&& is_array($results['results']) === true
 				&& count($results['results']) > 0
 			) {
 				return $results['results'][0];
+			}
+
+			if (count($results) > 0) {
+				return $results[0];
 			}
 
 			return null;

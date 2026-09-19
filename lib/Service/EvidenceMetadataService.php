@@ -228,23 +228,35 @@ class EvidenceMetadataService {
 			$transcriptionStatus = 'pending';
 		}
 
+		$capturedAt = ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
+
 		$payload = [
 			'inspectionRef' => $inspectionRef,
 			'type' => $type,
 			'localBlobRef' => ((string)($extra['localBlobRef'] ?? '')),
 			'cloudUrl' => null,
-			'gpsLocation' => [
-				'lat' => $gps['location']['lat'],
-				'lon' => $gps['location']['lon'],
-				'accuracy' => $gps['location']['accuracy'],
-				'timestamp' => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
-			],
-			'capturedAt' => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
+			'capturedAt' => $capturedAt,
 			'transcription' => null,
 			'transcriptionStatus' => $transcriptionStatus,
 			'tags' => ($extra['tags'] ?? []),
 			'sensitivityLevel' => ((string)($extra['sensitivityLevel'] ?? 'internal')),
 		];
+
+		// 🔴 A SENSORLESS CAPTURE WITH NO FALLBACK CARRIES NO LOCATION AT ALL.
+		// classifyGps() answers `lat: null, lon: null` when the device had no
+		// fix and no case address was passed, and this method wrote that block
+		// out as it stood. The schema declares lat and lon as numbers, so the
+		// nulls either fail validation or land as zeroes, and a photo at 0,0
+		// is a photo in the Gulf of Guinea. An absent block says the honest
+		// thing: nobody knows where this was taken.
+		if ($gps['location']['lat'] !== null && $gps['location']['lon'] !== null) {
+			$payload['gpsLocation'] = [
+				'lat' => $gps['location']['lat'],
+				'lon' => $gps['location']['lon'],
+				'accuracy' => $gps['location']['accuracy'],
+				'timestamp' => $capturedAt,
+			];
+		}
 
 		return $payload;
 	}//end buildEvidencePayload()

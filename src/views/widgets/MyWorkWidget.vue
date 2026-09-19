@@ -33,6 +33,14 @@
 			<router-link class="cn-data-table__view-all" :to="viewAllRoute">
 				{{ viewAllLabel }}
 			</router-link>
+			<NcButton
+				v-if="substitutedTasks.length"
+				variant="tertiary"
+				data-testid="substituted-toggle-widget"
+				:aria-pressed="String(showSubstituted)"
+				@click="toggleSubstituted">
+				{{ substitutedToggleLabel }}
+			</NcButton>
 		</template>
 	</CnDataTable>
 </template>
@@ -40,12 +48,24 @@
 <script>
 import { CnDataTable } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton } from '@nextcloud/vue'
+import { fetchSubstitutedWork } from '../../services/substitutionApi.js'
 import {
 	isTerminal,
 	signedDaysUntilDue,
 	useEngineTaskStore,
 } from '../../store/modules/engineTask.js'
 import { taskRouteFor } from '../../utils/caseTaskPaneHelpers.js'
+import {
+	applySubstitutedFilter,
+	asSubstitutedItems,
+	buildSubstitutedMap,
+	mergeSubstitutedCases,
+	readShowSubstituted,
+	substitutedFor,
+	substitutedUntil,
+	writeShowSubstituted,
+} from '../../utils/substitutionHelpers.js'
 
 /** How many rows the tile shows when the manifest names no limit. */
 const DEFAULT_LIMIT = 10
@@ -55,6 +75,7 @@ export default {
 
 	components: {
 		CnDataTable,
+		NcButton,
 	},
 
 	props: {
@@ -88,6 +109,12 @@ export default {
 			tasks: [],
 			/** The read's own failure, when the read threw rather than returned. */
 			failure: '',
+			/** Open tasks routed here by an active substitution. */
+			substitutedTasks: [],
+			/** `task:<id>` -> the routing context, for the marker and the filter. */
+			substitutedMap: {},
+			/** Whether substituted rows are listed; remembered per browser. */
+			showSubstituted: readShowSubstituted(),
 		}
 	},
 
@@ -183,18 +210,45 @@ export default {
 		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		columns() {
-			return [
+			const columns = [
 				{
 					key: 'title',
 					label: t('dossiq', 'Task'),
 					cellClass: 'cn-cell--strong',
 				},
-				{
-					key: 'daysLeft',
-					label: t('dossiq', 'Days left'),
-					cellClass: 'cn-cell--muted cn-cell--end',
-				},
 			]
+
+			// Only when there is substituted work to mark. A column that is
+			// blank on every row for everyone who has no waarneming is the
+			// same empty-cell noise the Case column was removed for.
+			if (this.substitutedTasks.length > 0) {
+				columns.push({
+					key: 'substitutedMarker',
+					label: t('dossiq', 'Standing in for'),
+					cellClass: 'cn-cell--muted',
+				})
+			}
+
+			columns.push({
+				key: 'daysLeft',
+				label: t('dossiq', 'Days left'),
+				cellClass: 'cn-cell--muted cn-cell--end',
+			})
+
+			return columns
+		},
+
+		/**
+		 * The toggle's label, which says what clicking it does.
+		 *
+		 * @return {string} The button text.
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		substitutedToggleLabel() {
+			if (this.showSubstituted === true) {
+				return t('dossiq', 'Hide substituted work')
+			}
+			return t('dossiq', 'Show substituted work')
 		},
 
 		/**
@@ -215,16 +269,36 @@ export default {
 		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		rows() {
-			return this.tasks.map((task) => ({
+			// The reader's own rows are passed through untouched: only the
+			// substituted ones carry the `type` half of the map key, and an own
+			// row that carries none simply misses the map, which is what it is.
+			const merged = mergeSubstitutedCases(this.tasks, this.substitutedTasks)
+			const visible = applySubstitutedFilter(
+				merged,
+				this.substitutedMap,
+				this.showSubstituted,
+			)
+
+			return visible.map((task) => ({
 				...task,
-				daysUntilDue: signedDaysUntilDue(task),
-				daysLeft: this.daysLeftPhrase(signedDaysUntilDue(task)),
+				daysUntilDue: this.daysUntilDueOf(task),
+				daysLeft: this.daysLeftPhrase(this.daysUntilDueOf(task)),
+				substitutedMarker: this.markerFor(task),
 			}))
 		},
 	},
 
+	/**
+	 * Both reads, side by side: the reader's own open tasks and whatever an
+	 * active substitution routes here. Neither waits on the other.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 */
 	mounted() {
 		this.fetchData()
+		this.loadSubstitutedWork()
 	},
 
 	methods: {
@@ -250,6 +324,95 @@ export default {
 				return t('dossiq', 'Due today')
 			}
 			return t('dossiq', '{n} days remaining', { n: days })
+		},
+
+		/**
+		 * How far a row is from its deadline, in signed days.
+		 *
+		 * `signedDaysUntilDue` reads the two counters the engine's own inbox
+		 * API computes. A substituted row does not come from there: it comes
+		 * from `/api/substitutions/work`, which answers the register's
+		 * vocabulary (`dueDate`) and no counters at all. Without the fallback
+		 * every substituted task reads "No deadline" beside a deadline it has,
+		 * which is the same looks-fine-shows-nothing cell this tile was
+		 * rewritten to remove.
+		 *
+		 * @param {object} task A merged task row.
+		 * @return {number|null} Days left, negative when overdue, null when the
+		 *   row carries no deadline at all.
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		daysUntilDueOf(task) {
+			const counted = signedDaysUntilDue(task)
+			if (counted !== null) {
+				return counted
+			}
+
+			const due = new Date(task?.dueDate ?? '')
+			if (isNaN(due.getTime())) {
+				return null
+			}
+
+			const startOfToday = new Date()
+			startOfToday.setHours(0, 0, 0, 0)
+			return Math.ceil((due.getTime() - startOfToday.getTime()) / 86400000)
+		},
+
+		/**
+		 * The marker naming whose task this is, and until when.
+		 *
+		 * Empty on the reader's own rows, which is how the column stays
+		 * readable: a marker on every row would mark nothing.
+		 *
+		 * @param {object} row A merged task row.
+		 * @return {string} The marker text, or ''.
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		markerFor(row) {
+			const absentee = substitutedFor(this.substitutedMap, row)
+			if (absentee === '') {
+				return ''
+			}
+			const until = substitutedUntil(this.substitutedMap, row)
+			if (until === '') {
+				return t('dossiq', 'for {name}', { name: absentee })
+			}
+			return t('dossiq', 'for {name}, until {date}', {
+				name: absentee,
+				date: until,
+			})
+		},
+
+		/**
+		 * Show or hide the substituted rows, and remember which.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		toggleSubstituted() {
+			this.showSubstituted = !this.showSubstituted
+			writeShowSubstituted(this.showSubstituted)
+		},
+
+		/**
+		 * Ask the resolver what an active substitution routes to this reader.
+		 *
+		 * Scope and the reader's own OpenRegister permissions were applied
+		 * server-side, so every row returned may be shown. A failure leaves the
+		 * tile with the reader's own tasks rather than emptying it.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		async loadSubstitutedWork() {
+			try {
+				const work = await fetchSubstitutedWork()
+				this.substitutedMap = buildSubstitutedMap(work.cases, work.tasks)
+				this.substitutedTasks = asSubstitutedItems(work.tasks, 'task')
+			} catch {
+				this.substitutedTasks = []
+				this.substitutedMap = {}
+			}
 		},
 
 		/**

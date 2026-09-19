@@ -1,0 +1,49 @@
+{
+	"_note": "Mechanisms that are in the inventory and reach no handler's queue. An entry is a CLASSIFICATION, not a waiver: it says this mechanism addresses somebody who has no dossiq queue, or nobody at all. A mechanism that does reach a handler belongs in a queue source's mechanisms() list instead. Every entry is checked against the live tree, so one that stops offending fails the build rather than sitting here.",
+	"entries": [
+		{
+			"mechanism": "notification:onStatusChange",
+			"reason": "The recipient is the applicant, the citizen who filed the case. A citizen reads their case in the portal and has no dossiq queue for anything to land on."
+		},
+		{
+			"mechanism": "notification:workDigestReady",
+			"reason": "This notification IS the digest. It reports the queue rather than adding to it, and a source for it would put every morning's digest on the queue it summarises."
+		},
+		{
+			"mechanism": "flow:DossiqCallWebhookNode",
+			"reason": "Calls another system over HTTP. Nothing on the other end is a person with an account here, so there is no queue for the call to reach."
+		},
+		{
+			"mechanism": "flow:DossiqTxWebhookNode",
+			"reason": "The transition-side twin of the webhook node, with the same reason: it addresses a system and never a person."
+		},
+		{
+			"mechanism": "flow:DossiqCreateDocumentNode",
+			"reason": "Writes a document onto the case and asks nobody to do anything with it. When somebody has to act on the document, a task node does the asking and that node is covered."
+		},
+		{
+			"mechanism": "flow:DossiqMergeTemplateNode",
+			"reason": "Renders a template into text for another step to use. It addresses no recipient at all, so there is nobody whose queue it could reach."
+		},
+		{
+			"mechanism": "flow:DossiqSendEmailNode",
+			"reason": "Sends mail to a correspondent on the case, who is outside the instance. An external recipient has no queue here, and mail is the whole delivery."
+		},
+		{
+			"mechanism": "flow:DossiqTxSendEmailNode",
+			"reason": "The transition-side twin of the send-email node, with the same reason: the recipient is a correspondent outside the instance."
+		},
+		{
+			"mechanism": "flow:DossiqTxBesluitvormingPublishNode",
+			"reason": "Publishes a decision that has already been taken. The approval that preceded it is what asked a person, and DossiqRequestDecisionNode carries that mechanism."
+		},
+		{
+			"mechanism": "notification:caseDeclaredMajor",
+			"reason": "The recipients are the responders a case type names for a calamiteit, and they are staff with queues, so this entry says where it stops rather than that nobody is addressed. It reaches them twice already: the notification bell, and the Talk channel the declaration opens them into. What it does not do is put a row on the queue, because no source answers \"a case you were pulled into\": AssignedCasesSource lists cases assigned to you, and a responder is not the assignee, so naming it there would be a claim the query does not make. A source for pulled-in work is the way to close this, and it belongs with the queue rather than with the declaration."
+		},
+		{
+			"mechanism": "notification:caseMovedForItsFollowers",
+			"reason": "The recipients are the case's watchers, who are staff with queues, so this entry says where it stops rather than that nobody is addressed. It reaches them through the notification bell, and that is the whole of it BY DESIGN rather than for want of a source. A queue is what you have to do; a case you follow is a case somebody else is doing. Putting followed cases on the personal queue would fill a handler's own list with work that is not theirs, which is the failure this test was written to catch, running the other way. The Followed lens on Cases and the Cases you follow tile on My Work are where a follower looks, and neither is the queue."
+		}
+	]
+}

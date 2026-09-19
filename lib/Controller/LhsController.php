@@ -92,8 +92,6 @@ class LhsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
 	 */
 	public function recommend(): JSONResponse {
@@ -233,8 +231,6 @@ class LhsController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
 	 */
 	public function override(): JSONResponse {
@@ -294,8 +290,6 @@ class LhsController extends Controller {
 	 * @return JSONResponse The matching lhsMatrixCell {gedragRow, gevolgColumn, interventieStep, description}
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-8
 	 */

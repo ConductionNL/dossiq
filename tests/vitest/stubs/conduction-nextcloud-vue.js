@@ -36,6 +36,26 @@ export function createObjectStore(_id, _options) {
 	}
 }
 
+/**
+ * Stand-in for the library's own `useObjectStore` (pinia id
+ * `conduction-objects`).
+ *
+ * 🔴 IT IS NOT dossiq's `src/store/modules/object.js`, WHICH IS A SECOND
+ * STORE UNDER THE ID `object`. CnIndexPage's self-fetch mode reads the
+ * library one, so a surface that wants the Cases list's own loading state or
+ * its last error has to read the same instance. A spec that stubbed dossiq's
+ * store instead would assert against a store the page never wrote to, and
+ * pass.
+ *
+ * A spec overrides the `objectStore` computed on the component under test, so
+ * this only has to satisfy the `import` at module load.
+ *
+ * @return {object} An empty store.
+ */
+export function useObjectStore() {
+	return { collections: {}, errors: {}, loading: {}, facets: {}, pagination: {} }
+}
+
 export const filesPlugin = () => ({})
 export const auditTrailsPlugin = () => ({})
 export const relationsPlugin = () => ({})
@@ -200,3 +220,25 @@ export const CnDataTable = {
 		])
 	},
 }
+
+/**
+ * `buildManifestRoutes` and its helpers — RE-EXPORTED FROM THE REAL PACKAGE,
+ * not stubbed.
+ *
+ * Everything above this line stands in for a Vue component the suite cannot
+ * mount. This one is different: it is pure JavaScript over a plain object,
+ * and it is the thing `src/utils/manifestRoutes.js` is tested FOR. A stub of
+ * it would make `routePermissions.spec.js` assert that our own fake emits the
+ * split route, which is a test that cannot fail. The subpath import is not
+ * aliased back here — the alias in `vitest.config.js` matches the bare
+ * package name exactly — so this reaches the installed library.
+ */
+export {
+	buildManifestRoutes,
+	pageHasSplitView,
+	pageIdForRoute,
+	SPLIT_ROUTE_SUFFIX,
+	splitIdForRoute,
+	splitRouteName,
+	splitRoutePath,
+} from '@conduction/nextcloud-vue/src/utils/buildManifestRoutes.js'

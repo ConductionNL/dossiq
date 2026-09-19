@@ -510,20 +510,13 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		expect(saved.initiatorSourceId).toBe(PERSON.bsn)
 		expect(saved.initiatorDisplayName).toBe(PERSON.name)
 
-		// The widget sent the browser to the case it made. Detail overview:
-		// name, type, and the number linking to the person's page in this app.
-		// Not OpenRegister's object viewer any more: that moved with
-		// `contacts-domain` (#1947), as case-requester.spec.ts records.
-		const card = page.getByTestId('initiator-section')
-		await expect(card).toBeVisible({ timeout: 30_000 })
-		await expect(card.getByTestId('initiator-name')).toHaveText(PERSON.name)
-		await expect(card.getByTestId('initiator-type')).toHaveText(/Person|Persoon/)
-		const link = card.getByTestId('initiator-source-link')
-		await expect(link).toHaveText(PERSON.bsn)
-		await expect(link).toHaveAttribute(
-			'href',
-			new RegExp(`/contacts/${String(saved.requester)}$`),
-		)
+		// The widget sent the browser to the case it made. The initiator card
+		// that used to name the person there left the page on 2026-09-12
+		// (Ruben); the requester reads in the Data tab, and the projection
+		// asserted above on the record is what the card printed.
+		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
+			timeout: 30_000,
+		})
 	})
 
 	// @e2e openspec/specs/initiator-display/spec.md#no-initiator-no-clutter
@@ -547,16 +540,12 @@ test.describe('Initiator selection (brp-kvk-register-sets)', () => {
 		expect(saved.initiatorType ?? '').toBe('')
 		expect(saved.initiatorDisplayName ?? '').toBe('')
 
-		// The tab strip is on every case page unconditionally, so once it is
-		// there an absent card is a decision rather than a render still due.
+		// The tab strip is on every case page unconditionally; the initiator
+		// card is on none of them since 2026-09-12, so the page renders no
+		// initiator block for this case or any other.
 		await expect(page.locator('.cn-tabs-widget')).toBeVisible({
 			timeout: 30_000,
 		})
 		await expect(page.getByTestId('initiator-section')).toHaveCount(0)
-		// ...and the widget cell says so, under its own testid, rather than
-		// sitting as a titled empty box.
-		await expect(page.getByTestId('initiator-empty')).toBeVisible({
-			timeout: 15_000,
-		})
 	})
 })

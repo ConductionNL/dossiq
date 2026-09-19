@@ -39,8 +39,6 @@ use RuntimeException;
 /**
  * OpenRegister access for the demo caseload.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister service access
- *
  * @spec openspec/specs/dossiq-app-scaffold/spec.md
  */
 class DemoCaseloadGateway {

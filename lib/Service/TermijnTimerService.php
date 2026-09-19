@@ -37,6 +37,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Term\ThresholdShares;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -51,6 +54,30 @@ class TermijnTimerService {
 	 * @var string
 	 */
 	public const ENGINE_CLASS = 'OCA\OpenRegister\Service\Flow\Timer\FlowTimerService';
+
+	/**
+	 * The engine's working-calendar resolver, resolved lazily.
+	 *
+	 * @var string
+	 */
+	public const CALENDAR_SERVICE_CLASS = 'OCA\OpenRegister\Service\Flow\Timer\WorkingCalendarService';
+
+	/**
+	 * The engine's business-time calculator, resolved lazily. Its
+	 * `businessDays` walk IS the Algemene termijnenwet roll: adding zero
+	 * business days from a date returns that date when the calendar calls
+	 * it a working day, and the next ordinary day when it does not.
+	 *
+	 * @var string
+	 */
+	public const SLA_CALCULATOR_CLASS = 'OCA\OpenRegister\Service\Flow\Timer\SlaCalculator';
+
+	/**
+	 * The unit whose walk skips non-working days.
+	 *
+	 * @var string
+	 */
+	public const UNIT_BUSINESS_DAYS = 'businessDays';
 
 	/**
 	 * The seeded 14/7/2/0 escalation ladder — the same matrix
@@ -79,12 +106,40 @@ class TermijnTimerService {
 	 *
 	 * @param SettingsService $settingsService Lazy OpenRegister access.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param WorkingDayCalculator|null $fallbackCalendar The documented fallback for
+	 *        an absent engine; built here when the container does not supply one.
+	 * @param TermCalendarGuard|null $calendarGuard Refuses a term whose NAMED calendar
+	 *        does not resolve. The container always supplies it; the parameter is
+	 *        nullable so a test that builds this service by hand and never names a
+	 *        calendar keeps working, which is every such test written before
+	 *        REQ-TERM-060.
+	 * @param ThresholdShares|null $thresholdShares The rungs a term notifies on, as
+	 *        shares of its own length. Defaulted rather than required for the same
+	 *        reason as the two above it.
+	 * @param WorkingDayRoll|null $roll Counts a term in working days when its
+	 *        definition asks for them, and answers null when the calendar is absent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
+		private readonly ?WorkingDayCalculator $fallbackCalendar = null,
+		private readonly ?TermCalendarGuard $calendarGuard = null,
+		private readonly ?ThresholdShares $thresholdShares = null,
+		private readonly ?WorkingDayRoll $roll = null,
 	) {
+		$this->shares = ($thresholdShares ?? new ThresholdShares());
 	}//end __construct()
+
+	/**
+	 * Resolves a declared ladder's rungs to offsets. Built here when it was
+	 * not injected: it computes and reads nothing, so an instance that did not
+	 * wire it must not thereby ignore the ladders a case type declares.
+	 *
+	 * @var ThresholdShares
+	 */
+	private readonly ThresholdShares $shares;
 
 	/**
 	 * Arm the beslistermijn timer for a TermijnInstance.
@@ -102,15 +157,33 @@ class TermijnTimerService {
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `TermijnService::countingModeOf()` is a
+	 *  pure function of the array handed to it: no state, no collaborators, and
+	 *  nothing resolved implicitly, so the hidden dependency this rule exists to
+	 *  catch is not present. Reading `countingMode` here instead would put the
+	 *  rule that decides calendar against working days in two places, and the two
+	 *  disagreeing is how a ten day term silently becomes fourteen. Injecting
+	 *  TermijnService is not open either: it already depends on this class.
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
-		$start = $this->dateOrNull(value: (string)($instance['startDate'] ?? ''));
+		$start = $this->dates->tryParse($instance['startDate'] ?? null);
 		if ($instanceId === '' || $start === null) {
 			return null;
 		}
 
-		$slaDays = $this->slaDaysFor(instance: $instance, definitie: $definitie, start: $start);
+		// The mode the definition declares decides BOTH halves of the SLA. A
+		// value counted in calendar days under `unit: businessDays` would give
+		// a ten working day term fourteen working days, which is two weeks the
+		// case is not entitled to, so the unit never moves without the value.
+		$mode = TermijnService::countingModeOf(definitie: $definitie);
+		$slaUnit = WorkingDayRoll::UNIT_CALENDAR_DAYS;
+		if ($mode === WorkingDayRoll::MODE_WORKING_DAYS) {
+			$slaUnit = WorkingDayRoll::UNIT_BUSINESS_DAYS;
+		}
+
+		$slaDays = $this->slaDaysFor(instance: $instance, definitie: $definitie, start: $start, mode: $mode);
 
 		$config = [
 			'subjectType' => 'object',
@@ -121,7 +194,7 @@ class TermijnTimerService {
 			'legalEffect' => 'wettelijk',
 			'sla' => [
 				'value' => $slaDays,
-				'unit' => 'calendarDays',
+				'unit' => $slaUnit,
 			],
 			'ladder' => self::LADDER_DEFAULT,
 			'extensionMax' => max(1, (int)($definitie['countExtensions'] ?? 1)),
@@ -137,6 +210,21 @@ class TermijnTimerService {
 			],
 		];
 
+		// A declared ladder REPLACES the seeded one rather than sitting beside
+		// it. Two ladders on one timer is two escalations for one term, and
+		// the whole reason a share is resolved here, at the one moment the
+		// length of the term is known, is that the engine's ladder stays the
+		// ladder. An extension re-arms this timer, so the shares are resolved
+		// again from the new length.
+		$rules = $this->shares->rulesFor(
+			ladder: (array)($definitie['escalationLadder'] ?? []),
+			slaDays: $slaDays
+		);
+		if ($rules !== []) {
+			unset($config['ladder']);
+			$config['escalationRules'] = $rules;
+		}
+
 		return $this->arm(config: $config, context: 'beslistermijn', instanceId: $instanceId);
 	}//end armBeslistermijn()
 
@@ -149,14 +237,22 @@ class TermijnTimerService {
 	 * has no single-timer cancel, so a helper outliving an on-time
 	 * aanvulling is dropped by the listener's still-paused guard instead.
 	 *
+	 * A pause reason with a chasing schedule adds one `preBreach` rung per
+	 * reminder inside its budget, so the engine fires the reminders on the same
+	 * clock it fires the expiry on and dossiq keeps no schedule of its own. The
+	 * rungs are advisory in the same way the expiry rung is: the listener
+	 * re-reads the instance and lets {@see \OCA\Dossiq\Service\Pause\ChaseSchedule}
+	 * decide, so a rung that fires after a resume, or twice, sends nothing.
+	 *
 	 * @param array<string, mixed> $instance The TermijnInstance row.
 	 * @param int $durationDays The hersteltermijn length in days.
+	 * @param array<int, int> $chaseOffsets Days before the pause ends, one per reminder.
 	 *
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
-	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
-	public function armHersteltermijn(array $instance, int $durationDays): ?string {
+	public function armHersteltermijn(array $instance, int $durationDays, array $chaseOffsets = []): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
 		if ($instanceId === '' || $durationDays <= 0) {
 			return null;
@@ -173,18 +269,21 @@ class TermijnTimerService {
 				'value' => $durationDays,
 				'unit' => 'calendarDays',
 			],
-			'escalationRules' => [
+			'escalationRules' => array_merge(
 				[
-					'trigger' => 'slaBreached',
-					'offset' => 0,
-					'offsetUnit' => 'calendarDays',
-					'notifyRole' => ['handler'],
-					'escalateToRole' => [],
-					'priority' => 'high',
-					'message' => 'pauze-verlopen',
-					'openIncident' => false,
+					[
+						'trigger' => 'slaBreached',
+						'offset' => 0,
+						'offsetUnit' => 'calendarDays',
+						'notifyRole' => ['handler'],
+						'escalateToRole' => [],
+						'priority' => 'high',
+						'message' => 'pauze-verlopen',
+						'openIncident' => false,
+					],
 				],
-			],
+				$this->chaseRules(offsets: $chaseOffsets)
+			),
 			'anchorEvent' => 'hersteltermijn_start',
 			'metadata' => [
 				'source' => self::METADATA_SOURCE,
@@ -197,6 +296,44 @@ class TermijnTimerService {
 
 		return $this->arm(config: $config, context: 'hersteltermijn', instanceId: $instanceId);
 	}//end armHersteltermijn()
+
+	/**
+	 * The engine rules for the reminders on one pause.
+	 *
+	 * `preBreach` rather than a negative `slaBreached` offset, because
+	 * `preBreach:<days>` is the rung shape the fired listener already parses
+	 * and a second shape would need a second parser. The message is
+	 * `pauze-chase` so a human reading the engine's own log can tell a reminder
+	 * from the expiry beside it.
+	 *
+	 * @param array<int, int> $offsets Days before the pause ends, one per reminder.
+	 *
+	 * @return array<int, array<string, mixed>> The rules, empty when the reason does not chase.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	private function chaseRules(array $offsets): array {
+		$rules = [];
+		foreach ($offsets as $offset) {
+			$days = (int)$offset;
+			if ($days <= 0) {
+				continue;
+			}
+
+			$rules[] = [
+				'trigger' => 'preBreach',
+				'offset' => $days,
+				'offsetUnit' => 'calendarDays',
+				'notifyRole' => [],
+				'escalateToRole' => [],
+				'priority' => 'normal',
+				'message' => 'pauze-chase',
+				'openIncident' => false,
+			];
+		}//end foreach
+
+		return $rules;
+	}//end chaseRules()
 
 	/**
 	 * Suspend the beslistermijn timer (opschorting, AWB 4:5).
@@ -336,6 +473,191 @@ class TermijnTimerService {
 	}//end cancelForInstance()
 
 	/**
+	 * Move a statutory end date off a non-working day, on the calendar the
+	 * organisation administers.
+	 *
+	 * Algemene termijnenwet art. 1: a term ending on a Saturday, a Sunday or a
+	 * generally recognised holiday runs to the next ordinary day. The roll is
+	 * CONSUMED, not reimplemented: the engine's `SlaCalculator` walks its own
+	 * `businessDays` unit over the resolved `WorkingCalendar`, so dossiq never
+	 * decides which days are holidays and never holds a second list.
+	 *
+	 * When OpenRegister is absent the call degrades to
+	 * {@see WorkingDayCalculator}, the one local holiday list this app is
+	 * allowed to keep, and says so in the log. That is the only working-day
+	 * arithmetic left in `lib/`, and it is behind the engine's absence.
+	 *
+	 * @param DateTimeImmutable $date The computed end date.
+	 * @param bool $roll Whether the term declares the roll; false returns the raw date.
+	 * @param string|null $calendarSlug The calendar named on the term, when any.
+	 * @param string|null $organisation The subject's organisation, when any.
+	 *
+	 * @return DateTimeImmutable The first ordinary day on or after the date.
+	 *
+	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
+	 *
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — the flag IS the declared
+	 * `deadlineDefinition.rollToWorkingDay`, carried to the one place that reads it.
+	 */
+	public function rollTermEnd(
+		DateTimeImmutable $date,
+		bool $roll = true,
+		?string $calendarSlug = null,
+		?string $organisation = null,
+	): DateTimeImmutable {
+		if ($roll === false) {
+			return $date;
+		}
+
+		return $this->rollOnCalendar(date: $date, calendarSlug: $calendarSlug, organisation: $organisation);
+	}//end rollTermEnd()
+
+	/**
+	 * The call every term site makes: roll this end date if the term declares
+	 * the roll, on the calendar the organisation administers.
+	 *
+	 * One expression per site, so a site cannot half-adopt the calendar. The
+	 * primitive is {@see rollTermEnd()}; this reads the declared flag first.
+	 *
+	 * @param DateTimeImmutable $date The computed end date.
+	 * @param array<string, mixed> $definitie The term definition, when one is known.
+	 * @param string|null $calendarSlug The calendar named on the term, when any.
+	 * @param string|null $organisation The subject's organisation, when any.
+	 *
+	 * @return DateTimeImmutable The day the term actually ends on.
+	 *
+	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
+	 *
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function rollTermEndFor(
+		DateTimeImmutable $date,
+		array $definitie = [],
+		?string $calendarSlug = null,
+		?string $organisation = null,
+	): DateTimeImmutable {
+		return $this->rollTermEnd(
+			date: $date,
+			roll: $this->rollEnabled(definitie: $definitie),
+			calendarSlug: $calendarSlug,
+			organisation: $organisation
+		);
+	}//end rollTermEndFor()
+
+	/**
+	 * Whether a term declares the Algemene termijnenwet roll.
+	 *
+	 * `deadlineDefinition.rollToWorkingDay` decides, and
+	 * `terms-on-the-engine-calendar` owns that property. A definition that does
+	 * not carry it gets the roll, because Awt art. 1 applies by law and not by
+	 * configuration; the flag exists to switch it OFF for a term the Awt does
+	 * not govern.
+	 *
+	 * @param array<string, mixed> $definitie The resolved TermijnDefinitie (may be empty).
+	 *
+	 * @return bool True when the end date rolls.
+	 *
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function rollEnabled(array $definitie): bool {
+		if (array_key_exists('rollToWorkingDay', $definitie) === false) {
+			return true;
+		}
+
+		return (bool)$definitie['rollToWorkingDay'];
+	}//end rollEnabled()
+
+	/**
+	 * Whether an organisation calendar is answering at all.
+	 *
+	 * ASKED SO A SURFACE CAN SAY WHICH IT IS. A roll that was not needed and a
+	 * roll that could not be made produce the same plausible date, so a page
+	 * that shows the date and nothing else cannot tell an administrator that
+	 * the Awt rule is currently inert on this instance.
+	 *
+	 * Deliberately not inferred from a roll's result: the roll falls back
+	 * silently by design, because a term must still get a date.
+	 *
+	 * @return boolean True when both engine classes resolve.
+	 *
+	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function calendarAnswers(): bool {
+		return ($this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS) !== null
+			&& $this->settingsService->getOpenRegisterClass(self::SLA_CALCULATOR_CLASS) !== null);
+	}//end calendarAnswers()
+
+	/**
+	 * The roll as the engine computes it, falling back when it cannot answer.
+	 *
+	 * @param DateTimeImmutable $date The computed end date.
+	 * @param string|null $calendarSlug The calendar named on the term, when any.
+	 * @param string|null $organisation The subject's organisation, when any.
+	 *
+	 * @return DateTimeImmutable The first ordinary day on or after the date.
+	 */
+	private function rollOnCalendar(
+		DateTimeImmutable $date,
+		?string $calendarSlug,
+		?string $organisation,
+	): DateTimeImmutable {
+		$calendars = $this->settingsService->getOpenRegisterClass(self::CALENDAR_SERVICE_CLASS);
+		$calculator = $this->settingsService->getOpenRegisterClass(self::SLA_CALCULATOR_CLASS);
+
+		// A term that NAMES a calendar refuses when that calendar does not
+		// resolve, rather than answering on a different one (REQ-TERM-060). The
+		// decision belongs to the guard, so the rest of this method keeps the
+		// shape `every-term-on-the-engine-calendar` shipped: a term naming no
+		// calendar still falls back, and still says so in the log.
+		$this->calendarGuard?->requireNamedCalendarResolves(
+			calendarSlug: $calendarSlug,
+			organisation: $organisation,
+			calendars: $calendars
+		);
+
+		if ($calendars === null || $calculator === null) {
+			return $this->fallbackRoll(date: $date, because: 'OpenRegister is not installed');
+		}
+
+		try {
+			$calendar = $calendars->resolve(calendarSlug: $calendarSlug, organisation: $organisation);
+
+			return $calculator->add(
+				from: $date,
+				value: 0.0,
+				unit: self::UNIT_BUSINESS_DAYS,
+				calendar: $calendar
+			);
+		} catch (\Throwable $e) {
+			$this->logFailure(operation: 'roll to working day', timerId: $date->format('Y-m-d'), error: $e);
+			return $this->fallbackRoll(date: $date, because: 'the engine calendar could not be read');
+		}
+	}//end rollOnCalendar()
+
+	/**
+	 * The roll on dossiq's own calendar, used only when the engine cannot answer.
+	 *
+	 * @param DateTimeImmutable $date The computed end date.
+	 * @param string $because What was absent, so the operator can tell an
+	 *        uninstalled engine from a broken calendar.
+	 *
+	 * @return DateTimeImmutable The first ordinary day on or after the date.
+	 */
+	private function fallbackRoll(DateTimeImmutable $date, string $because): DateTimeImmutable {
+		$calculator = ($this->fallbackCalendar ?? new WorkingDayCalculator());
+		$rolled = $calculator->nextWorkingDay(date: $date);
+
+		$this->logger->info(
+			'Dossiq termijn: engine calendar unavailable, term end rolled on the local calendar',
+			['date' => $date->format('Y-m-d'), 'rolled' => $rolled->format('Y-m-d'), 'because' => $because]
+		);
+
+		return $rolled;
+	}//end fallbackRoll()
+
+	/**
 	 * Arm one timer, returning the persisted uuid.
 	 *
 	 * @param array<string, mixed> $config The engine arm configuration.
@@ -371,15 +693,24 @@ class TermijnTimerService {
 	 * @param array<string, mixed> $instance The TermijnInstance row.
 	 * @param array<string, mixed> $definitie The TermijnDefinitie row.
 	 * @param DateTimeImmutable $start The term's start.
+	 * @param string $mode Which days the term counts, calendar or working.
 	 *
 	 * @return int Calendar days, at least 1 (the engine refuses 0).
 	 */
-	private function slaDaysFor(array $instance, array $definitie, DateTimeImmutable $start): int {
-		$end = $this->dateOrNull(value: (string)($instance['endDateCurrent'] ?? ''));
+	private function slaDaysFor(
+		array $instance,
+		array $definitie,
+		DateTimeImmutable $start,
+		string $mode = WorkingDayRoll::MODE_CALENDAR_DAYS,
+	): int {
+		$end = $this->dates->tryParse($instance['endDateCurrent'] ?? null);
 		if ($end !== null) {
-			$startDay = new DateTimeImmutable($start->format('Y-m-d'));
-			$days = (int)$startDay->diff($end)->days;
-			if ($end >= $startDay && $days > 0) {
+			// Both sides at day granularity in the administered zone. Reading
+			// one of them through the process zone is how a term lost a day
+			// between two servers.
+			$startDay = $this->dates->parse($this->dates->formatCalendarDate($start), 'startDate');
+			$days = $this->spanFor(from: $startDay, to: $end, mode: $mode);
+			if ($end >= $startDay && $days !== null && $days > 0) {
 				return $days;
 			}
 		}
@@ -388,23 +719,29 @@ class TermijnTimerService {
 	}//end slaDaysFor()
 
 	/**
-	 * Parse a stored date string, or null.
+	 * The span between two dates in one counting mode, or null when working
+	 * days were asked for and the organisation calendar did not answer.
 	 *
-	 * @param string $value The stored value.
+	 * Null rather than the calendar-day span, so the caller falls back to the
+	 * DECLARED duration instead of arming a working-day timer with a number
+	 * counted the other way.
 	 *
-	 * @return DateTimeImmutable|null The parsed date.
+	 * @param DateTimeImmutable $from The start.
+	 * @param DateTimeImmutable $to   The end.
+	 * @param string            $mode The declared mode.
+	 *
+	 * @return int|null The span.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
 	 */
-	private function dateOrNull(string $value): ?DateTimeImmutable {
-		if (trim($value) === '') {
-			return null;
+	private function spanFor(DateTimeImmutable $from, DateTimeImmutable $to, string $mode): ?int {
+		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS) {
+			return (int)$from->diff($to)->days;
 		}
 
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return null;
-		}
-	}//end dateOrNull()
+		return $this->roll?->daysBetween(from: $from, to: $to, mode: $mode);
+	}//end spanFor()
+
 
 	/**
 	 * Resolve the engine, or null when OpenRegister (or the timer stack) is absent.

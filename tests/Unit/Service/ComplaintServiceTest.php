@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -86,8 +87,11 @@ interface ComplaintObjectServiceStub {
  * @covers \OCA\Dossiq\Service\ComplaintService
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ComplaintServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -117,6 +121,7 @@ class ComplaintServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			workingDays: new WorkingDayCalculator(),
+			dates: $this->caseDates(),
 		);
 	}//end setUp()
 
@@ -504,5 +509,61 @@ class ComplaintServiceTest extends TestCase {
 			array_column($this->service->getDeadlineAlerts(warningDays: 14)['warning'], 'id')
 		);
 	}//end testGetDeadlineAlertsHonoursTheWarningWindow()
+
+	/**
+	 * createComplaint sends no klachtnummer, and reports the one it got back.
+	 *
+	 * The number is `complaintNumber`'s `x-openregister-generated` declaration
+	 * now, taken under a lock inside the create transaction. The retired
+	 * `generateComplaintNumber` counted rows and added one, which fails twice
+	 * over: a deletion hands a live complaint's number to the next one filed,
+	 * and its year filter named `ontvangstdatum`, a key the `complaint` schema
+	 * does not carry, so the count was never scoped to a year at all.
+	 *
+	 * The assertion is on what leaves the service, because that is the only
+	 * place a reintroduced generator could show itself: a number computed here
+	 * and posted would be KEPT by OpenRegister, which keeps a supplied value,
+	 * so the register would look correct and the counter would be wrong.
+	 *
+	 * @return void
+	 */
+	public function testCreateComplaintSendsNoNumberAndReportsTheIssuedOne(): void {
+		$sent = null;
+
+		$objectService = $this->createMock(ComplaintObjectServiceStub::class);
+		$objectService->method('saveObject')->willReturnCallback(
+			static function (array $object, string $register, string $schema, ?string $uuid = null) use (&$sent): array {
+				$sent = $object;
+
+				return array_merge($object, ['id' => 'uuid-1', 'complaintNumber' => 'KL-2026-0042']);
+			}
+		);
+
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturn('dossiq');
+
+		$this->logger->expects($this->once())
+			->method('info')
+			->with($this->stringContains('KL-2026-0042'), $this->anything());
+
+		$created = $this->service->createComplaint([
+			'subject'     => 'Test',
+			'description' => 'Description',
+			'receiptDate' => '2026-03-02',
+		]);
+
+		$this->assertIsArray($sent, 'a control: saveObject must actually have been called');
+		$this->assertArrayNotHasKey(
+			'complaintNumber',
+			$sent,
+			'dossiq must not compute a klachtnummer; the schema declares it and OpenRegister issues it'
+		);
+		$this->assertSame('KL-2026-0042', $created['complaintNumber']);
+
+		// The deadlines still travel, so the assertion above cannot pass merely
+		// because the service stopped writing anything at all.
+		$this->assertSame('2026-03-09', $sent['acknowledgementOfReceiptDeadline']);
+		$this->assertSame('received', $sent['status']);
+	}//end testCreateComplaintSendsNoNumberAndReportsTheIssuedOne()
 
 }//end class

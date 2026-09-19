@@ -17,7 +17,14 @@
  * resulting pair must appear in the query. A new table added with a bare
  * `viewAllRoute` fails here, which is the point.
  *
+ * dashboard-my-work-split (2026-09-13) moved `my-work` / `deadlines` /
+ * `open-cases` off the Dashboard page onto the My Work landing page
+ * (`MyWorkHome`, route `/`). The invariant this file checks is a property of
+ * the widget, not of which page hosts it, so both pages are read here rather
+ * than only `Dashboard`.
+ *
  * @spec openspec/specs/dashboard/spec.md
+ * @spec openspec/specs/my-work-landing/spec.md
  */
 import { describe, expect, it } from 'vitest'
 import manifest from '../../src/manifest.json'
@@ -42,8 +49,11 @@ function flattenFilter(filter) {
 	return out
 }
 
-const dashboard = manifest.pages.find((p) => p.id === 'Dashboard')
-const tables = dashboard.config.widgets.filter(
+const dashboardPageIds = ['Dashboard', 'MyWorkHome']
+const dashboardWidgets = manifest.pages
+	.filter((p) => dashboardPageIds.includes(p.id))
+	.flatMap((p) => p.config.widgets)
+const tables = dashboardWidgets.filter(
 	(w) => w.type === 'object-table' && w.content && w.content.viewAllRoute,
 )
 

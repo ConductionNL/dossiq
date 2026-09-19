@@ -14,7 +14,9 @@
     "l10n:build": "node scripts/build-l10n-js.js",
     "check:l10n-js": "node scripts/build-l10n-js.js --check",
     "check:schema-l10n": "node scripts/check-schema-l10n.js",
+    "check:debt-ratchet": "node scripts/debt-ratchet.js",
     "check:manifest": "node tests/validate-manifest.js",
+    "check:types-e2e": "tsc --noEmit -p tests/e2e/tsconfig.json",
     "test:unit:watch": "vitest",
     "test:l10n": "node tests/l10n/check-l10n.js",
     "test:l10n:write": "node tests/l10n/check-l10n.js --write",
@@ -22,7 +24,7 @@
     "postbuild": "node scripts/check-single-dexie.js",
     "dev": "NODE_ENV=development webpack --config webpack.config.js --progress",
     "watch": "NODE_ENV=development webpack --config webpack.config.js --progress --watch",
-    "lint": "eslint src tests scripts",
+    "lint": "eslint src tests scripts tools",
     "lint-fix": "npm run lint -- --fix",
     "stylelint": "stylelint \"{src,css}/**/*.{vue,scss,css}\"",
     "stylelint-fix": "stylelint 'src/**/*.vue' 'src/**/*.scss' 'src/**/*.css' --fix",
@@ -36,13 +38,13 @@
     "check:dexie": "node scripts/check-single-dexie.js",
     "format": "prettier --check \"**/*.{js,ts,vue,css,scss}\"",
     "format:fix": "prettier --write \"**/*.{js,ts,vue,css,scss}\"",
-    "prepare": "git config core.hooksPath .githooks || true"
+    "prepare": "git config core.hooksPath .githooks || true; git config merge.l10n.name 'l10n catalogue key-wise merge' || true; git config merge.l10n.driver 'node tools/merge-l10n.js %O %A %B %P' || true"
   },
   "browserslist": [
     "extends @nextcloud/browserslist-config"
   ],
   "dependencies": {
-    "@conduction/nextcloud-vue": "^2.48.2",
+    "@conduction/nextcloud-vue": "^3.2.0",
     "@nextcloud/auth": "^2.6.0",
     "@nextcloud/axios": "~2.6.0",
     "@nextcloud/capabilities": "^1.2.1",
