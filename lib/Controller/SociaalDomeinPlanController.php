@@ -55,10 +55,6 @@ use Throwable;
 /**
  * The plan, its goals and interventions, the review and the lookup.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) One plan surface asks for the
- *  plan, its goals, its interventions and its review state in one call, because
- *  four round trips would let the four halves come from four moments.
- *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md
@@ -105,8 +101,6 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The plan.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
@@ -139,8 +133,6 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The stored goal, or the refusal.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
@@ -171,8 +163,6 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The closed goal, or the refusal.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
 	#[NoAdminRequired]
@@ -198,8 +188,6 @@ class SociaalDomeinPlanController extends Controller {
 	 * @param string $planId The gezinsplan uuid.
 	 *
 	 * @return JSONResponse The stored intervention, or the refusal.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
@@ -236,8 +224,6 @@ class SociaalDomeinPlanController extends Controller {
 	 * @param string $planId The gezinsplan uuid.
 	 *
 	 * @return JSONResponse The plan with its review, or the refusal.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-plan-is-reviewed-and-the-review-is-recorded-req-cpn-03
 	 */
@@ -279,8 +265,6 @@ class SociaalDomeinPlanController extends Controller {
 	 *
 	 * @return JSONResponse The grounds.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */
 	#[NoAdminRequired]
@@ -297,8 +281,6 @@ class SociaalDomeinPlanController extends Controller {
 	 * Whether an open case exists in another domain, on a recorded ground.
 	 *
 	 * @return JSONResponse The existence answer, or the refusal.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-another-domain-answers-only-that-a-case-exists-req-xdv-01
 	 */
@@ -336,8 +318,6 @@ class SociaalDomeinPlanController extends Controller {
 	 * @param string $bsn The person.
 	 *
 	 * @return JSONResponse The lookups.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-the-lookup-requires-a-ground-chosen-first-and-logged-req-xdv-02
 	 */

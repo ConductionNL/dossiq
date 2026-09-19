@@ -54,9 +54,7 @@
  *   in besluittype.informatieobjecttypen.
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  *

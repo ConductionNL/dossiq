@@ -115,8 +115,6 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
-	 *
 	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
 	 */
 	public function sendMessage(

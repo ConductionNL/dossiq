@@ -74,8 +74,6 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function index(): JSONResponse {
@@ -110,8 +108,6 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function create(): JSONResponse {
@@ -137,8 +133,6 @@ class KccContactController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
@@ -169,8 +163,6 @@ class KccContactController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
@@ -203,8 +195,6 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function related(string $id): JSONResponse {
@@ -233,8 +223,6 @@ class KccContactController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
 	public function scheduleCallback(): JSONResponse {
@@ -258,8 +246,6 @@ class KccContactController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */
@@ -292,8 +278,6 @@ class KccContactController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-16
 	 */

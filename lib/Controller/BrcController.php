@@ -50,12 +50,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -555,10 +550,6 @@ class BrcController extends ZgwController {
 	 * DRC register with objectType=besluit.
 	 *
 	 * @return JSONResponse
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
 	 */
 	private function createBesluitInformatieObject(): JSONResponse {
 		$objectService = $this->zgwService->getObjectService();
@@ -889,8 +880,6 @@ class BrcController extends ZgwController {
 	 * @param string $uuid The besluit UUID to delete
 	 *
 	 * @return JSONResponse
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 */
 	private function destroyDecision(string $uuid): JSONResponse {
 		$objectService = $this->zgwService->getObjectService();

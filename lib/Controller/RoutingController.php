@@ -92,8 +92,6 @@ class RoutingController extends Controller {
 	 * IGroupManager::isAdmin() and this declaration states it rather than
 	 * contradicting it with @NoAdminRequired.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/role-based-step-routing/tasks.md#T05
 	 */
 	public function reroute(string $id): JSONResponse {

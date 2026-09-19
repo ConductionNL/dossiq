@@ -58,11 +58,6 @@ use Throwable;
  * Reads the admissibility declaration, and ends the case on an inadmissible verdict.
  *
  * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The verdict touches the case
- * type declaration, the case, the close act and the applicant's message,
- * because that is what one verdict does. Splitting it would put half the act in
- * a caller, which is how the judge stops being recorded on the half that failed.
  */
 class AdmissibilityJudgement {
 

@@ -106,8 +106,6 @@ class SetStatusHandler implements ActionHandlerInterface {
 	 *
 	 * @return ActionResult Success with the resolved status, or a named failure.
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {

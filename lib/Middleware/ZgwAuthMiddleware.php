@@ -41,8 +41,6 @@ use Psr\Log\LoggerInterface;
  * checks JWT signature via OpenRegister's AuthorizationService, and verifies
  * the authenticated applicatie has the required scope for the request.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZgwAuthMiddleware extends Middleware {

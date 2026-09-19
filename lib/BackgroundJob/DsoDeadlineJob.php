@@ -339,9 +339,6 @@ class DsoDeadlineJob extends TimedJob {
 	 * Get the ObjectService from the DI container; returns null when unavailable.
 	 *
 	 * @return object|null
-	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
 	 */
 	private function getObjectService(): ?object {
 		try {

@@ -87,8 +87,6 @@ class BagController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/bag-register-adapter/proposal.md
 	 */
 	public function address(): JSONResponse {
@@ -145,8 +143,6 @@ class BagController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/bag-register-adapter/proposal.md
 	 */
 	public function pand(string $id): JSONResponse {
@@ -161,8 +157,6 @@ class BagController extends Controller {
 	 * @return JSONResponse carrying lookupStatus, address, dormant and extras.
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/bag-register-adapter/proposal.md
 	 */

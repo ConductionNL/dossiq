@@ -223,10 +223,6 @@ class PdokService {
 	 *     lastWarning: array{messageKey:string,status:int}|null,
 	 * }
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
-	 *      over the app-id rename map, and the answer it gives depends on the
-	 *      instance rather than on any state this service holds.
-	 *
 	 * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
 	 */
 	public function getServiceStatus(): array {
@@ -260,10 +256,6 @@ class PdokService {
 	 * reports permanently dormant.
 	 *
 	 * @return bool
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
-	 *      over the app-id rename map; injecting it would add a dependency to
-	 *      say the same thing.
 	 */
 	private function isFlagActive(): bool {
 		$appId = FleetAppId::resolve($this->appManager, self::INTEGRIQ_APP);

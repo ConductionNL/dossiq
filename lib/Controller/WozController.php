@@ -84,8 +84,6 @@ class WozController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function value(): JSONResponse {
@@ -183,8 +181,6 @@ class WozController extends Controller {
 	 * @return JSONResponse carrying lookupStatus, wozObject, dormant and extras.
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */

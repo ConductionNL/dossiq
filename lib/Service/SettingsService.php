@@ -229,9 +229,6 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?object {
@@ -270,8 +267,6 @@ class SettingsService {
 	 *
 	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 *
 	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
 	 */
 	public function getObjectGrantResolver(): ?object {
@@ -309,9 +304,6 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function getFileService(): ?object {
@@ -344,9 +336,6 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ApprovalService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getApprovalService(): ?object {
@@ -375,9 +364,6 @@ class SettingsService {
 	 * @param string $class Fully-qualified OpenRegister class name
 	 *
 	 * @return object|null The resolved service, or null when unavailable
-	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
 	 *
 	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */

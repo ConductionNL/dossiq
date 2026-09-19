@@ -60,11 +60,6 @@ use Throwable;
 /**
  * Validate, migrate, write and re-arm: one case onto another case type.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The act spans the blueprint,
- *  the engine run and the terms, and those are three services. Splitting it
- *  would put the order of writes in D-2 in more than one file, which is the
- *  one property that must stay readable in a single place.
- *
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md

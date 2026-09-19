@@ -77,8 +77,6 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return DataDownloadResponse|JSONResponse
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
@@ -134,8 +132,6 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
@@ -166,8 +162,6 @@ class CaseDefinitionController extends Controller {
 	 * Import a case definition package.
 	 *
 	 * @return JSONResponse
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -218,8 +212,6 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/zaaktype-copy/tasks.md#T06
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
@@ -251,8 +243,6 @@ class CaseDefinitionController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
@@ -283,8 +273,6 @@ class CaseDefinitionController extends Controller {
 	 * @param string $id The case type id to delete.
 	 *
 	 * @return JSONResponse
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/zaaktype-copy/tasks.md#T07
 	 */
