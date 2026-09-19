@@ -132,9 +132,10 @@ consults for the day a date lands on, after this change.
 | `lib/Service/Custody/CaseTakeoverRequest.php` | 299 | business | | the answer period a handler has before a takeover request escalates. An internal service clock, not a term the applicant is owed, so it counts calendar days on purpose and reaches no calendar: the escalation is about how long the request has sat, and a weekend it sat through is time it sat |
 | `lib/Service/Term/DependentTermOffer.php` | 228 | statutory | allowlisted | the end date a dependent-term offer PROPOSES, `endDateCurrent + N days`, which a handler then approves. It is a statutory end date and it does not reach the calendar, so an offer can propose a Saturday. Owned by `dependent-term-follows-predecessor`; the one-line fix is to route it through `TermijnTimerService::rollTermEndFor()`, in that change rather than in a build fix |
 | `lib/Service/Termijn/WorkingDayRoll.php` | 196 | neither | itself | not date arithmetic of its own: it ASKS the engine calendar (`SlaCalculator::add()` of zero business days, which matched the `->add(` pattern) for the first working moment at or after an instant. This file is the calendar accessor the intake start uses; it holds no list, decides no policy, and since #2951 it does not read `rollToWorkingDay` either, because `TermijnTimerService::rollEnabled()` is the one place that decides |
+| `lib/Service/Termijn/TermEndRoll.php` | 221 | neither | itself | not date arithmetic of its own: it ASKS the engine calendar (`SlaCalculator::add()` of zero business days, which matched the `->add(` pattern) to roll a statutory end date off a weekend or a holiday. This is the Algemene termijnenwet roll, split out of `TermijnTimerService` so the admin screen can ask the roll whether a calendar answers without asking the timer service. The computation did not change when it moved, and the file it moved out of already carried this verdict |
 | `lib/Service/WorkingDayCalculator.php` | 170, 204 | neither | itself | the calendar. It is the fallback the three sites use when the engine is absent, and the only holiday list dossiq is allowed to hold |
 
-## Two rows added after the reading
+## Rows added after the reading
 
 `lib/BackgroundJob/AcknowledgementDispatchJob.php` and
 `lib/Listener/AcknowledgementOnCreateListener.php` did not exist at
@@ -143,6 +144,11 @@ consults for the day a date lands on, after this change.
 `IJobList`, not on a date. They carry the verdict `neither` for the reason
 this file already names: two of the five patterns cannot be anchored to a
 date type. The counts below describe the reading, not the table.
+
+`lib/Service/Termijn/TermEndRoll.php` is the third. It did not exist at
+`16f00124a` either: the roll moved there out of `lib/Service/TermijnTimerService.php`
+when that class went over its complexity ceiling. Its row carries the verdict
+the file it left already carried, because the call is the same call.
 
 ## What the table is not
 

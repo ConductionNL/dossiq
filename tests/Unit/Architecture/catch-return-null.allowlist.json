@@ -317,14 +317,14 @@
       "reason": "`getEmailLinkService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
-      "file": "lib/Service/CaseMergeService.php",
+      "file": "lib/Service/Cases/CaseMergeStore.php",
       "method": "readCase",
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`readCase()` answers `return null` when the case behind a merge cannot be read; the catch logs at warning naming the case uuid. Null means \"the case is not there to merge\", which `requestMerge()` turns into a RefusedException the controller translates. The rules this change enforces are refusals, not this: a case already merged away, a case merging into itself and a case type that forbids it all throw."
     },
     {
-      "file": "lib/Service/CaseMergeService.php",
+      "file": "lib/Service/Cases/CaseMergeStore.php",
       "method": "rowsFor",
       "occurrence": 1,
       "class": "degradation",
@@ -359,11 +359,11 @@
       "reason": "`getCaseIdForShare()` answers `return null` when the read fails; the catch logs at debug (\"CaseSharingService: getCaseIdForShare failed\"), so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/CaseTransferService.php",
-      "method": "findTransferByIdempotencyKey",
+      "file": "lib/Service/Transfer/FederatedIdempotency.php",
+      "method": "findByKey",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`findTransferByIdempotencyKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`findByKey()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer. It was `CaseTransferService::findTransferByIdempotencyKey()` until the idempotency key got its own class; the entry moved with the catch rather than being added, so the ceiling does not rise for a catch that already existed."
     },
     {
       "file": "lib/Service/CaseTransferService.php",
@@ -527,7 +527,7 @@
       "reason": "`instant()` answers `return null` for a stored takeover moment that cannot be read. The escalation clock then treats the request as undated rather than as raised at a moment nobody wrote, which is what would make it escalate on invented evidence."
     },
     {
-      "file": "lib/Service/Custody/CaseTakeoverRequest.php",
+      "file": "lib/Service/Custody/TakeoverStore.php",
       "method": "rows",
       "occurrence": 1,
       "class": "degradation",
