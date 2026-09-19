@@ -292,6 +292,21 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// one order. Archiving joined with it (#2850): what happens to the
 		// case when its business use ends, as openregister decided it. It
 		// comes last because it is the only tab about a case that is over.
+		//
+		// Custody joined on 2026-09-14 (#2940): the dated chain of who held the
+		// case, beside Related because both answer "what else is attached to
+		// this one" rather than "what do I do next".
+		//
+		// Knowledge joined on 2026-09-17 (#2995): the work instruction for this
+		// kind of case. 🔴 IT SITS AFTER ARCHIVING, WHICH CONTRADICTS THE
+		// PARAGRAPH ABOVE. Archiving was placed last on the grounds that it is
+		// the only tab about a case that is over, and a work instruction is the
+		// opposite: reference material for a case still being worked. The order
+		// here matches the manifest, so the strip and this assertion agree, but
+		// the placement is a product question somebody should answer rather
+		// than a rule this test is enforcing. Recorded here rather than quietly
+		// accepted, because the next person to add a tab will read this list
+		// as the intent.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-data-panel',
 			'case-files',
@@ -303,7 +318,9 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 			'case-work-panel',
 			'case-decisions-panel',
 			'case-related-panel',
+			'case-custody-panel',
 			'case-archival-panel',
+			'case-knowledge-panel',
 		])
 	})
 
