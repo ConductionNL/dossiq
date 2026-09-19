@@ -26,6 +26,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TenantBillingService
+ * @uses \OCA\Dossiq\Service\ShillinqIntegrationService
  */
 class TenantBillingServiceTest extends TestCase {
 	private TenantBillingService $svc;

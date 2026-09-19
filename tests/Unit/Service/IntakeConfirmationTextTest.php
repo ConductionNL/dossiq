@@ -50,6 +50,7 @@ use ReflectionClass;
  *
  * @covers \OCA\Dossiq\Service\TermijnNotificationService::renderTemplate
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
+ * @uses \OCA\Dossiq\Service\TermijnNotificationService
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  */

@@ -43,6 +43,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CasePlanStringMigrationTest extends TestCase {
 

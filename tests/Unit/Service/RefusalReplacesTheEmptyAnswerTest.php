@@ -56,6 +56,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Support\RefusesWhenIndeterminate
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Routing\AreaRouting
  */
 class RefusalReplacesTheEmptyAnswerTest extends TestCase {
 	/**

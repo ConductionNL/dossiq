@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Status\DerivedStatusService
  * @uses \OCA\Dossiq\Service\Status\StatusDeclaration
  * @uses \OCA\Dossiq\Service\Status\StatusDwellService
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  *
  * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  */

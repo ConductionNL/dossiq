@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
  * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  */
 class InformatieobjectMetadataWriteTest extends TestCase {
 

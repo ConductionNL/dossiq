@@ -26,6 +26,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\EmailArchivalService
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  */
 class InboundSenderIsAPartyTest extends TestCase {
 	private const PARTIES = [

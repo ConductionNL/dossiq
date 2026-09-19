@@ -38,6 +38,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Actions\CreateDocumentHandler
  * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
  * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
+ * @uses \OCA\Dossiq\Service\Actions\ActionResult
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore
  */
 class LetterNamesItsAddresseeTest extends TestCase {
 

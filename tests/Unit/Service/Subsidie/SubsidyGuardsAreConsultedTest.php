@@ -73,6 +73,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Subsidie\StaatssteunClassifier
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Subsidie\BeschikkingService
+ * @uses \OCA\Dossiq\Service\Subsidie\SubsidieService
  *
  * @spec openspec/specs/subsidieverlening-keten/spec.md
  */

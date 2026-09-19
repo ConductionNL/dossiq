@@ -41,6 +41,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class TermijnRearmTest extends TestCase {
 	use MakesCaseDateNormaliser;

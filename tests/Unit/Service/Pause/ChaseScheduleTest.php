@@ -32,6 +32,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Pause\ChaseSchedule
  * @covers \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class ChaseScheduleTest extends TestCase {
 	use MakesCaseDateNormaliser;

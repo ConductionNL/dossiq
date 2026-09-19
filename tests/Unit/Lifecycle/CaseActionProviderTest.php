@@ -64,6 +64,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * @uses \OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway
  * @uses \OCA\Dossiq\Service\Cases\ExternalHome
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
+ * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate
  */
 class CaseActionProviderTest extends TestCase {
 	use MakesStatusDeclarations;

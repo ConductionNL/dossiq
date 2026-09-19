@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class ShippedDeclarationsOpenRegisterAcceptsTest extends TestCase {
 

@@ -59,6 +59,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Routing\RoutingStrategyInterface
  * @uses \OCA\Dossiq\Service\Routing\StrategyRegistry
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\RoleResolverService
  *
  * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
  */
