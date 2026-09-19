@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
+use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 use OCP\IGroupManager;
 
 /**
@@ -66,13 +67,13 @@ class TaskDeclarationValidator {
 	 * @param ActionHandlerRegistry $handlers    The registry an effect names a handler from.
 	 * @param IGroupManager         $groups      Resolves a candidate group.
 	 * @param TaskDeclaration       $declaration Normalises one step's block.
-	 * @param TaskDeclarationReader $steps       Decodes a definition's steps.
+	 * @param WorkflowJsonProperty  $steps       Decodes a definition's steps.
 	 */
 	public function __construct(
 		private readonly ActionHandlerRegistry $handlers,
 		private readonly IGroupManager $groups,
 		private readonly TaskDeclaration $declaration,
-		private readonly TaskDeclarationReader $steps,
+		private readonly WorkflowJsonProperty $steps,
 	) {
 	}//end __construct()
 
