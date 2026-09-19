@@ -30,6 +30,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { randomInt } from 'node:crypto'
 import { OWNS_INSTANCE, SHARED_INSTANCE_FLAG } from '../base-url.ts'
 import { occPurge } from './occ.ts'
 import { isStaleResidue, residueMinAgeMs, sweepsAllResidue } from './residue.ts'
@@ -51,7 +52,7 @@ export const FIXTURE_PREFIX = 'E2EZAAK-'
  * field so list/detail assertions and afterAll cleanup can target exactly
  * the rows this run created (never another run's or real demo data).
  */
-export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${Math.floor(Math.random() * 1e4)}`
+export const RUN_PREFIX = `${FIXTURE_PREFIX}${Date.now().toString(36)}-${randomInt(1e4)}`
 
 /**
  * Every object id this run created, by schema. THE delete key for teardown.
@@ -674,7 +675,7 @@ export async function seedCase(
 	fields: Record<string, unknown> & { title: string; caseType: string },
 ): Promise<any> {
 	return createObject(api, token, 'case', {
-		identifier: `${RUN_PREFIX}-${Math.floor(Math.random() * 1e4)}`,
+		identifier: `${RUN_PREFIX}-${randomInt(1e4)}`,
 		// THE TWO FACTS, NOT THE DERIVED VALUE. `case.priority` is derived from
 		// impact and urgency on every save, so a fixture that seeded a priority
 		// directly would have it silently replaced and would stop meaning
