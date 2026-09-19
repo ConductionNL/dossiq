@@ -26,6 +26,7 @@ import App from './App.vue'
 import { registerCaseSections } from './components/case/registerCaseSections.js'
 import customComponents from './customComponents.js'
 import appIcons from './icons.js'
+import logger from './logger.js'
 import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
 import pinia from './pinia.js'
@@ -78,9 +79,8 @@ registerCaseSections()
 try {
 	registerTranslations()
 } catch (e) {
-	// Non-fatal — lib translations fall back to English source.
-	// eslint-disable-next-line no-console
-	console.warn('[dossiq] registerTranslations failed; falling back to English', e)
+	// Non-fatal, lib translations fall back to English source.
+	logger.warn('registerTranslations failed; falling back to English', { error: e })
 }
 
 // Fire-and-forget translation load. Some Nextcloud installs (including
