@@ -35,6 +35,9 @@ use InvalidArgumentException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseEmailMatchService;
 use OCA\Dossiq\Service\CaseMergeService;
+use OCA\Dossiq\Service\Cases\CaseMergeRelink;
+use OCA\Dossiq\Service\Cases\CaseMergeRule;
+use OCA\Dossiq\Service\Cases\CaseMergeStore;
 use OCA\Dossiq\Service\Email\CaseEmailMatchPreferences;
 use OCA\Dossiq\Service\Email\CaseNumberRecognizer;
 use OCA\Dossiq\Service\Email\MailMessageSource;
@@ -57,6 +60,9 @@ use Stringable;
  * @covers \OCA\Dossiq\Service\Email\CaseNumberRecognizer
  * @covers \OCA\Dossiq\Service\Email\CaseEmailMatchPreferences
  * @uses \OCA\Dossiq\Service\CaseMergeService
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeRelink
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeRule
+ * @uses \OCA\Dossiq\Service\Cases\CaseMergeStore
  */
 class CaseEmailMatchServiceTest extends TestCase {
 
@@ -587,6 +593,11 @@ class CaseEmailMatchServiceTest extends TestCase {
 			logger: $logger
 		);
 
+		// REAL merge collaborators over the SAME settings double, so a survivor
+		// lookup still reads the rows this test stored.
+		$mergeStore = new CaseMergeStore($settings, $logger);
+		$mergeRule = new CaseMergeRule($logger);
+
 		return new CaseEmailMatchService(
 			settingsService: $settings,
 			preferences: $this->preferences,
@@ -598,6 +609,9 @@ class CaseEmailMatchServiceTest extends TestCase {
 			mergeService: new CaseMergeService(
 				settingsService: $settings,
 				termijnService: $this->createMock(TermijnService::class),
+				store: $mergeStore,
+				rule: $mergeRule,
+				relink: new CaseMergeRelink($mergeRule, $mergeStore),
 				logger: $logger
 			)
 		);
