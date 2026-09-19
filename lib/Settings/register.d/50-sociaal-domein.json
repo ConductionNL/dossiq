@@ -18,7 +18,7 @@
                         "description": "Vaste zaaktype-identifier voor WMO-melding"
                     },
                     "caseNumber": {
-                        "title": "Case Number",
+                        "title": "Case number",
                         "type": "string",
                         "description": "Zaakidentifier in formaat zaak-{jaar}-wmo-{5-cijferig}"
                     },
@@ -166,7 +166,7 @@
                                 "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
                             },
                             "justification": {
-                                "title": "Legal Basis",
+                                "title": "Legal basis",
                                 "type": "string",
                                 "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
                             },
@@ -318,7 +318,7 @@
                         "description": "Vaste zaaktype-identifier voor Jeugdwet-melding"
                     },
                     "caseNumber": {
-                        "title": "Case Number",
+                        "title": "Case number",
                         "type": "string",
                         "description": "Zaakidentifier in formaat zaak-{jaar}-jeugd-{5-cijferig}"
                     },
@@ -458,7 +458,7 @@
                                 "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
                             },
                             "justification": {
-                                "title": "Legal Basis",
+                                "title": "Legal basis",
                                 "type": "string",
                                 "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
                             },
@@ -627,7 +627,7 @@
                 "required": ["plan", "title", "metWhen"],
                 "properties": {
                     "plan": {
-                        "title": "Family Plan",
+                        "title": "Family plan",
                         "type": "string",
                         "description": "Referentie naar het gezinsplan"
                     },
@@ -677,7 +677,7 @@
                 "required": ["plan", "title", "provider"],
                 "properties": {
                     "plan": {
-                        "title": "Family Plan",
+                        "title": "Family plan",
                         "type": "string",
                         "description": "Referentie naar het gezinsplan"
                     },
@@ -707,7 +707,7 @@
                         "description": "De naam zoals die bij het opslaan bekend was, alleen om te tonen. De verwijzing blijft de bron."
                     },
                     "startDate": {
-                        "title": "Start Date",
+                        "title": "Start date",
                         "type": "string",
                         "format": "date",
                         "description": "Startdatum"
@@ -843,7 +843,7 @@
                         "description": "Vaste zaaktype-identifier voor bijstandsaanvraag"
                     },
                     "caseNumber": {
-                        "title": "Case Number",
+                        "title": "Case number",
                         "type": "string",
                         "description": "Zaakidentifier in formaat zaak-{jaar}-pw-{5-cijferig}"
                     },
@@ -1012,7 +1012,7 @@
                                 "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
                             },
                             "justification": {
-                                "title": "Legal Basis",
+                                "title": "Legal basis",
                                 "type": "string",
                                 "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
                             },
@@ -1072,7 +1072,7 @@
                         "description": "Nextcloud user id van de klantmanager"
                     },
                     "startDate": {
-                        "title": "Start Date",
+                        "title": "Start date",
                         "type": "string",
                         "format": "date",
                         "description": "Startdatum van het traject"
@@ -1106,13 +1106,13 @@
                                     "type": "string"
                                 },
                                 "startDate": {
-                                    "title": "Start Date",
+                                    "title": "Start date",
                                     "description": "Start date of this instrument.",
                                     "type": "string",
                                     "format": "date"
                                 },
                                 "endDate": {
-                                    "title": "End Date",
+                                    "title": "End date",
                                     "description": "End date of this instrument.",
                                     "type": "string",
                                     "format": "date"
@@ -1280,7 +1280,7 @@
                         "description": "Auto-flag: true zodra een art. 9 categorie is geselecteerd"
                     },
                     "justification": {
-                        "title": "Legal Basis",
+                        "title": "Legal basis",
                         "type": "string",
                         "description": "AVG art. 9.2 uitzonderingsgrond-code (bijv. artikel-9-2-h-avg voor gezondheidszorg/maatschappelijk werk)"
                     },

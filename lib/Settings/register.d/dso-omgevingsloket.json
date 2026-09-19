@@ -19,7 +19,7 @@
           },
           "procedureType": {
             "type": "string",
-            "title": "Procedure Type",
+            "title": "Procedure type",
             "enum": ["reguliere", "uitgebreide"],
             "description": "DSO procedure type: reguliere (8 wk) or uitgebreide (26 wk)",
             "visible": false
@@ -39,7 +39,7 @@
           },
           "collaborationRequests": {
             "type": "array",
-            "title": "Collaboration Requests",
+            "title": "Collaboration requests",
             "items": { "type": "string" },
             "description": "UUIDs of linked samenwerkverzoek objects",
             "visible": false

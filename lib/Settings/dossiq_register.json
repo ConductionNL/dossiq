@@ -87,7 +87,7 @@
                     "processingDeadline": {
                         "type": "string",
                         "description": "ISO 8601 duration for the processing deadline (e.g. P30D)",
-                        "title": "Processing Deadline"
+                        "title": "Processing deadline"
                     },
                     "processingDeadlineDate": {
                         "type": "string",
@@ -233,13 +233,13 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this case type is valid",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     },
                     "validUntil": {
                         "type": "string",
                         "format": "date",
                         "description": "Date until which this case type is valid (null = indefinite)",
-                        "title": "Valid Until"
+                        "title": "Valid until"
                     },
                     "origin": {
                         "type": "string",
@@ -262,12 +262,12 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Whether the processing deadline can be extended",
-                        "title": "Extension Allowed"
+                        "title": "Extension allowed"
                     },
                     "extensionPeriod": {
                         "type": "string",
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
-                        "title": "Extension Period"
+                        "title": "Extension period"
                     },
                     "maxSuspensionDays": {
                         "type": "integer",
@@ -329,7 +329,7 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Whether publication of the decision is required",
-                        "title": "Publication Required"
+                        "title": "Publication required"
                     },
                     "internalOrExternal": {
                         "type": "string",
@@ -343,7 +343,7 @@
                     "handlerAction": {
                         "type": "string",
                         "description": "Action performed by the handler",
-                        "title": "Handler Action"
+                        "title": "Handler action"
                     },
                     "productsOrServices": {
                         "type": "array",
@@ -363,7 +363,7 @@
                     "referenceProcess": {
                         "type": "string",
                         "description": "Reference process definition (JSON-encoded object)",
-                        "title": "Reference Process"
+                        "title": "Reference process"
                     },
                     "responsible": {
                         "type": "string",
@@ -434,7 +434,7 @@
                             "caseType": "@objectId"
                         },
                         "description": "The default route through this case type: the workflow a case follows when it is not given one of its own. A case type may carry several routes, and this names the one new cases take. When unset, a case falls through to the case type's only active workflow. A case keeps the workflow it was bound to, even after a newer version is published (see case.workflowTemplate and case.workflowVersion).",
-                        "title": "Workflow Definition"
+                        "title": "Workflow definition"
                     },
                     "layerIds": {
                         "type": "array",
@@ -700,10 +700,10 @@
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.6.0",
+                "version": "1.7.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
-                "title": "Status Type",
+                "title": "Status type",
                 "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). V1.5 additive: a status declares which case fields it requires, hides and locks (fieldRules), published onto the case schema for OpenRegister to enforce. V1.6 additive: a status may declare the words the applicant reads for it (publicLabel, publicDescription); declare neither and the applicant reads the name, as before. A status that declares none of the five behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, it has no maximum, it asks nothing of any field, and the applicant reads its name. See openspec/changes/what-a-status-declares and openspec/changes/citizen-status-labels.",
                 "type": "object",
                 "required": [
@@ -996,10 +996,10 @@
             "resultType": {
                 "slug": "resultType",
                 "icon": "FlagOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "ResultaatType",
-                "title": "Result Type",
+                "title": "Result type",
                 "description": "Case outcome type with archival rules",
                 "type": "object",
                 "required": [
@@ -1063,10 +1063,10 @@
             "roleType": {
                 "slug": "roleType",
                 "icon": "BadgeAccountOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "RolType",
-                "title": "Role Type",
+                "title": "Role type",
                 "description": "Participant role type definition; optionally scoped to a case type (generic roles like applicant/handler apply across case types)",
                 "type": "object",
                 "required": [
@@ -1120,10 +1120,10 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.4.0",
+                "version": "1.5.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
-                "title": "Property Definition",
+                "title": "Property definition",
                 "description": "Custom field definition for a case type",
                 "type": "object",
                 "required": [
@@ -1267,17 +1267,17 @@
                     "defaultValue": {
                         "type": "string",
                         "description": "Default value for this property",
-                        "title": "Default Value"
+                        "title": "Default value"
                     }
                 }
             },
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
-                "title": "Document Type",
+                "title": "Document type",
                 "description": "Document type requirement for a case type",
                 "type": "object",
                 "required": [
@@ -1350,23 +1350,23 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this document type is valid",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     },
                     "validUntil": {
                         "type": "string",
                         "format": "date",
                         "description": "Date until which this document type is valid",
-                        "title": "Valid Until"
+                        "title": "Valid until"
                     }
                 }
             },
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
-                "title": "Decision Type",
+                "title": "Decision type",
                 "description": "Decision type definition for a case type",
                 "type": "object",
                 "required": [
@@ -1408,7 +1408,7 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Whether this decision type requires publication",
-                        "title": "Publication Required"
+                        "title": "Publication required"
                     },
                     "caseTypes": {
                         "type": "array",
@@ -1430,13 +1430,13 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this decision type is valid",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     },
                     "validUntil": {
                         "type": "string",
                         "format": "date",
                         "description": "Date until which this decision type is valid",
-                        "title": "Valid Until"
+                        "title": "Valid until"
                     }
                 }
             },
@@ -2705,7 +2705,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was completed",
-                        "title": "End Date",
+                        "title": "End date",
                         "order": 12
                     },
                     "plannedEndDate": {
@@ -3093,7 +3093,7 @@
                         "type": "string",
                         "description": "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.",
                         "visible": false,
-                        "title": "Related Cases"
+                        "title": "Related cases"
                     },
                     "geometry": {
                         "type": "string",
@@ -3105,7 +3105,7 @@
                         "type": "string",
                         "description": "History of status changes (JSON-encoded array)",
                         "visible": false,
-                        "title": "Status History"
+                        "title": "Status history"
                     },
                     "casePlanState": {
                         "type": "string",
@@ -3211,7 +3211,7 @@
                         "format": "uri",
                         "description": "URL reference to the communication channel",
                         "visible": false,
-                        "title": "Communication Channel"
+                        "title": "Communication channel"
                     },
                     "workflowTemplate": {
                         "type": "string",
@@ -3221,7 +3221,7 @@
                             "caseType": "@object.caseType"
                         },
                         "description": "Reference to the bound workflow template",
-                        "title": "Workflow Template"
+                        "title": "Workflow template"
                     },
                     "workflowVersion": {
                         "type": "integer",
@@ -3263,7 +3263,7 @@
                         "type": "string",
                         "description": "JSON-encoded array of samenwerkverzoek UUIDs linked to this zaak",
                         "visible": false,
-                        "title": "Collaboration Requests"
+                        "title": "Collaboration requests"
                     },
                     "qualityScore": {
                         "type": "number",
@@ -3687,7 +3687,7 @@
                         "format": "uuid",
                         "$ref": "roleType",
                         "description": "Reference to the role type",
-                        "title": "Role Type"
+                        "title": "Role type"
                     },
                     "case": {
                         "type": "string",
@@ -3722,7 +3722,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
-                        "title": "Delegate Until"
+                        "title": "Delegate until"
                     },
                     "weight": {
                         "type": "number",
@@ -3779,7 +3779,7 @@
                         "format": "uuid",
                         "$ref": "resultType",
                         "description": "Reference to the result type",
-                        "title": "Result Type"
+                        "title": "Result type"
                     },
                     "description": {
                         "type": "string",
@@ -3791,10 +3791,10 @@
             "statusRecord": {
                 "slug": "statusRecord",
                 "icon": "ProgressClock",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Event",
                 "x-zgw-equivalent": "Status",
-                "title": "Status Record",
+                "title": "Status record",
                 "description": "A status transition record for a case",
                 "type": "object",
                 "required": [
@@ -3815,7 +3815,7 @@
                         "format": "uuid",
                         "$ref": "statusType",
                         "description": "Reference to the target status type (toStatus)",
-                        "title": "Status Type"
+                        "title": "Status type"
                     },
                     "description": {
                         "type": "string",
@@ -3847,7 +3847,7 @@
                                 },
                                 "passed": {
                                     "type": "boolean",
-                                    "title": "Passed",
+                                    "title": "passed",
                                     "description": "Whether the guard evaluation passed"
                                 },
                                 "details": {
@@ -3872,7 +3872,7 @@
                                 },
                                 "ok": {
                                     "type": "boolean",
-                                    "title": "Ok",
+                                    "title": "OK",
                                     "description": "Whether the action dispatch succeeded"
                                 },
                                 "error": {
@@ -3934,7 +3934,7 @@
                         "format": "uuid",
                         "$ref": "decisionType",
                         "description": "Reference to the decision type",
-                        "title": "Decision Type"
+                        "title": "Decision type"
                     },
                     "responsibleOrganisation": {
                         "type": "string",
@@ -3957,7 +3957,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the decision expires",
-                        "title": "Expiry Date"
+                        "title": "Expiry date"
                     },
                     "publicationDate": {
                         "type": "string",
@@ -4010,7 +4010,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the document was created",
-                        "title": "Creation Date"
+                        "title": "Creation date"
                     },
                     "title": {
                         "type": "string",
@@ -4091,7 +4091,7 @@
                         "format": "uuid",
                         "$ref": "documentType",
                         "description": "Reference to the document type",
-                        "title": "Document Type"
+                        "title": "Document type"
                     },
                     "locked": {
                         "type": "boolean",
@@ -4191,7 +4191,7 @@
                             "decision"
                         ],
                         "description": "Type of the related object",
-                        "title": "Object Type"
+                        "title": "Object type"
                     }
                 }
             },
@@ -4281,7 +4281,7 @@
                         "format": "uuid",
                         "$ref": "caseType",
                         "description": "Reference to the case type",
-                        "title": "Case Type Reference"
+                        "title": "Case type reference"
                     },
                     "informatieobjecttype": {
                         "type": "string",
@@ -4344,7 +4344,7 @@
                         "format": "uuid",
                         "$ref": "propertyDefinition",
                         "description": "Reference to the property definition (eigenschap)",
-                        "title": "Property Definition"
+                        "title": "Property definition"
                     },
                     "value": {
                         "type": "string",
@@ -4454,7 +4454,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Registration date",
-                        "title": "Registration Date"
+                        "title": "Registration date"
                     }
                 }
             },
@@ -4526,7 +4526,7 @@
                     "objectType": {
                         "type": "string",
                         "description": "Type of the external object",
-                        "title": "Object Type",
+                        "title": "Object type",
                         "facetable": true
                     },
                     "objectIdentification": {
@@ -4662,7 +4662,7 @@
                     "receiveDate": {
                         "type": "string",
                         "format": "date",
-                        "description": "Date received",
+                        "description": "Date Received",
                         "title": "Receive Date"
                     },
                     "sendDate": {
@@ -4708,12 +4708,12 @@
                     "startDate": {
                         "type": "string",
                         "description": "Start date of the usage rights",
-                        "title": "Start Date"
+                        "title": "Start date"
                     },
                     "endDate": {
                         "type": "string",
                         "description": "End date of the usage rights",
-                        "title": "End Date"
+                        "title": "End date"
                     },
                     "conditionsDescription": {
                         "type": "string",
@@ -4725,10 +4725,10 @@
             "workflowTemplate": {
                 "slug": "workflowTemplate",
                 "icon": "SitemapOutline",
-                "version": "1.3.0",
+                "version": "1.4.0",
                 "x-schema-org": "schema:HowTo",
                 "x-cmmn-equivalent": "CasePlanModel",
-                "title": "Workflow Template",
+                "title": "Workflow template",
                 "description": "A workflow definition for a case type: defines process steps, status transitions, guards, and automatic actions. V1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec). V1.2 additive: `variant` names which route through the case type this workflow describes, so one case type can carry several routes with one active workflow each; absent variant is the route `standaard`, which is every workflow that predates the property (see workflow-variants spec).",
                 "type": "object",
                 "required": [
@@ -4782,7 +4782,7 @@
                         ],
                         "default": "draft",
                         "description": "Lifecycle state of this definition. Authoritative going forward; isDraft/isActive remain for backwards compatibility. draft = editable, cannot back new cases. published = immutable, can back new cases (one active per caseType). deprecated = immutable, cannot back new cases, existing cases keep using it.",
-                        "title": "Lifecycle Status"
+                        "title": "Lifecycle status"
                     },
                     "steps": {
                         "type": "string",
@@ -4951,7 +4951,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the bezwaarschrift was received (start of the AWB 7:10 lid 1 termijn)",
-                        "title": "Receipt Date"
+                        "title": "Receipt date"
                     },
                     "adjournedOn": {
                         "type": "string",
@@ -4963,7 +4963,7 @@
                         "type": "integer",
                         "default": 0,
                         "description": "Verdaging in days (0 = no verdaging; 42 = standard 6-week extension)",
-                        "title": "Extension Period"
+                        "title": "Extension period"
                     },
                     "suspensionStart": {
                         "type": "string",
@@ -5010,7 +5010,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Statutory deadline for the beslissing op bezwaar: computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)",
-                        "title": "Decision Deadline"
+                        "title": "Decision deadline"
                     }
                 },
                 "searchable": true,
@@ -5627,7 +5627,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the advice was issued",
-                        "title": "Advice Date"
+                        "title": "Advice date"
                     },
                     "adviceType": {
                         "type": "string",
@@ -5730,7 +5730,7 @@
                     "followsAdvice": {
                         "type": "boolean",
                         "description": "Whether the decision follows the committee's advice",
-                        "title": "Follows Advice"
+                        "title": "Follows advice"
                     },
                     "deviationReason": {
                         "type": "string",
@@ -5771,7 +5771,7 @@
                         "format": "uuid",
                         "$ref": "role",
                         "description": "The person/body that made the decision",
-                        "title": "Decision Maker"
+                        "title": "Decision maker"
                     },
                     "decisionDocument": {
                         "type": "string",
@@ -5826,7 +5826,7 @@
                     "legalBasis": {
                         "type": "string",
                         "description": "Awb article(s) and/or sectoral wettelijke grondslag the decision rests on",
-                        "title": "Legal Basis"
+                        "title": "Legal basis"
                     },
                     "advisoryOpinion": {
                         "type": "string",
@@ -5838,7 +5838,7 @@
                     "followsAdvice": {
                         "type": "boolean",
                         "description": "Whether this decision follows the BAC advisory opinion",
-                        "title": "Follows Advice"
+                        "title": "Follows advice"
                     },
                     "deviationRationale": {
                         "type": "string",
@@ -5971,7 +5971,7 @@
                         "format": "uuid",
                         "$ref": "role",
                         "description": "Bestuursorgaan or mandated official; derived from mandate config, never from request body",
-                        "title": "Decision Maker"
+                        "title": "Decision maker"
                     },
                     "decisionDocument": {
                         "type": "string",
@@ -5982,7 +5982,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Set on transition to published; once set the bezwaarDecision is immutable",
-                        "title": "Published At"
+                        "title": "Published at"
                     },
                     "notifiedRecipients": {
                         "type": "array",
@@ -6451,7 +6451,7 @@
                         "type": "string",
                         "maxLength": 64,
                         "description": "BRK kadastrale aanduiding (e.g. AMR00-G-1234)",
-                        "title": "Parcel ID"
+                        "title": "Parcel id"
                     },
                     "accuracyRadius": {
                         "type": "number",
@@ -6653,12 +6653,12 @@
                         "format": "uuid",
                         "$ref": "case",
                         "description": "Reference to the parent case UUID",
-                        "title": "Parent Case"
+                        "title": "Parent case"
                     },
                     "adviceAuthority": {
                         "type": "string",
                         "description": "Department or advisory body being consulted",
-                        "title": "Advisory Body"
+                        "title": "Advisory body"
                     },
                     "advisoryBodyId": {
                         "type": "string",
@@ -6681,7 +6681,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Deadline for response",
-                        "title": "Response Deadline"
+                        "title": "Response deadline"
                     },
                     "priority": {
                         "type": "string",
@@ -6934,8 +6934,8 @@
             "advisoryBody": {
                 "slug": "advisoryBody",
                 "icon": "OfficeBuildingOutline",
-                "version": "1.0.0",
-                "title": "Advisory Body",
+                "version": "1.1.0",
+                "title": "Advisory body",
                 "description": "Registry of departments and external advisory bodies that can receive consultations",
                 "type": "object",
                 "required": [
@@ -6961,7 +6961,7 @@
                     "defaultGroup": {
                         "type": "string",
                         "description": "Nextcloud group ID for department-based consultation assignment",
-                        "title": "Default Group"
+                        "title": "Default group"
                     },
                     "email": {
                         "type": "string",
@@ -6988,9 +6988,9 @@
             "adviesAanvraag": {
                 "slug": "adviesAanvraag",
                 "icon": "CommentQuestionOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:AskAction",
-                "title": "Advice Request",
+                "title": "Advice request",
                 "description": "A request for internal or external advice on a case, with deadline tracking",
                 "type": "object",
                 "required": [
@@ -7057,7 +7057,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Timestamp when the advice was received",
-                        "title": "Received At"
+                        "title": "Received at"
                     },
                     "questions": {
                         "type": "string",
@@ -7188,7 +7188,7 @@
                     "overrideReason": {
                         "type": "string",
                         "description": "Documented reasoning if the LHS suggestion was overridden",
-                        "title": "Override Reason"
+                        "title": "Override reason"
                     }
                 },
                 "configuration": {
@@ -7310,7 +7310,7 @@
                                 },
                                 "actorType": {
                                     "type": "string",
-                                    "title": "Actor Type",
+                                    "title": "Actor type",
                                     "description": "Actor type axis value for this matrix cell"
                                 },
                                 "intervention": {
@@ -7436,7 +7436,7 @@
                             "recidivist"
                         ],
                         "description": "Actor type of the violator (LHS actorType axis)",
-                        "title": "Actor Type"
+                        "title": "Actor type"
                     },
                     "matrixVersion": {
                         "type": "integer",
@@ -7584,7 +7584,7 @@
                                     "type": "boolean",
                                     "default": false,
                                     "description": "Whether a photo is required (especially on failure)",
-                                    "title": "Photo Required"
+                                    "title": "Photo required"
                                 },
                                 "options": {
                                     "type": "array",
@@ -7597,11 +7597,11 @@
                                 "helpText": {
                                     "type": "string",
                                     "description": "Guidance text for the inspector",
-                                    "title": "Help Text"
+                                    "title": "Help text"
                                 }
                             }
                         },
-                        "title": "Items"
+                        "title": "items"
                     }
                 },
                 "configuration": {
@@ -7737,7 +7737,7 @@
                                 }
                             }
                         },
-                        "title": "Items"
+                        "title": "items"
                     },
                     "photos": {
                         "type": "array",
@@ -7859,7 +7859,7 @@
                                             "helpText": {
                                                 "type": "string",
                                                 "description": "Optional inspector guidance",
-                                                "title": "Help Text"
+                                                "title": "Help text"
                                             },
                                             "responseType": {
                                                 "type": "string",
@@ -7889,7 +7889,7 @@
                                                 ],
                                                 "default": "nooit",
                                                 "description": "Photo requirement gate",
-                                                "title": "Photo Required"
+                                                "title": "Photo required"
                                             },
                                             "numericRange": {
                                                 "type": "object",
@@ -7902,7 +7902,7 @@
                                                     },
                                                     "max": {
                                                         "type": "number",
-                                                        "title": "Max",
+                                                        "title": "max",
                                                         "description": "Maximum acceptable numeric value for this measurement item"
                                                     },
                                                     "unit": {
@@ -7953,7 +7953,7 @@
                                             }
                                         }
                                     },
-                                    "title": "Items"
+                                    "title": "items"
                                 }
                             }
                         },
@@ -8011,7 +8011,7 @@
                         "type": "integer",
                         "minimum": 1,
                         "description": "Template version captured at run start",
-                        "title": "Template Version"
+                        "title": "Template version"
                     },
                     "templateSnapshot": {
                         "type": "object",
@@ -8039,7 +8039,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the run was submitted",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "submittedAt": {
                         "type": "string",
@@ -8239,7 +8239,7 @@
                         "type": "string",
                         "maxLength": 20,
                         "description": "Dutch Chamber of Commerce (KvK) number",
-                        "title": "KvK Number"
+                        "title": "KvK number"
                     },
                     "status": {
                         "type": "string",
@@ -8430,7 +8430,7 @@
                             "partner"
                         ],
                         "description": "Type of share",
-                        "title": "Share Type"
+                        "title": "Share type"
                     },
                     "partnerId": {
                         "type": "string",
@@ -8440,13 +8440,13 @@
                     "permissionLevel": {
                         "type": "string",
                         "description": "Permission level slug (e.g. bekijken, bekijken_reageren, bekijken_bijdragen)",
-                        "title": "Permission Level"
+                        "title": "Permission level"
                     },
                     "expiresAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Expiration datetime in ISO 8601",
-                        "title": "Expires At"
+                        "title": "Expires at"
                     },
                     "password": {
                         "type": "string",
@@ -8490,7 +8490,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Revocation datetime in ISO 8601",
-                        "title": "Revoked At"
+                        "title": "Revoked at"
                     },
                     "revokedBy": {
                         "type": "string",
@@ -8541,7 +8541,7 @@
                     "remoteCloudId": {
                         "type": "string",
                         "description": "Federated target address (slug@host / NC cloud id)",
-                        "title": "Remote Cloud ID"
+                        "title": "Remote cloud ID"
                     },
                     "sharedFields": {
                         "type": "array",
@@ -8568,7 +8568,7 @@
                         "type": "string",
                         "default": "bekijken",
                         "description": "Permission level slug for the remote org's read access",
-                        "title": "Permission Level"
+                        "title": "Permission level"
                     },
                     "federationShareId": {
                         "type": "integer",
@@ -8595,7 +8595,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Revocation datetime in ISO 8601",
-                        "title": "Revoked At"
+                        "title": "Revoked at"
                     },
                     "revokedBy": {
                         "type": "string",
@@ -8644,7 +8644,7 @@
                                         "remote"
                                     ],
                                     "description": "Whether the actor is a local user on this Nextcloud instance or a remote user on the federated partner instance",
-                                    "title": "Actor Type"
+                                    "title": "Actor type"
                                 },
                                 "cloudId": {
                                     "type": "string",
@@ -8823,7 +8823,7 @@
                     "targetOrganization": {
                         "type": "string",
                         "description": "Target partner organisation UUID",
-                        "title": "Target Organization"
+                        "title": "Target organization"
                     },
                     "handoverScope": {
                         "type": "string",
@@ -8860,7 +8860,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Requested transfer date (ISO 8601)",
-                        "title": "Requested Date"
+                        "title": "Requested date"
                     },
                     "status": {
                         "type": "string",
@@ -8882,12 +8882,12 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the transfer was completed (ISO 8601)",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "remoteCloudId": {
                         "type": "string",
                         "description": "Federated target address (slug@host); set only when this transfer crosses instances",
-                        "title": "Remote Cloud ID"
+                        "title": "Remote cloud ID"
                     },
                     "federationShareId": {
                         "type": "integer",
@@ -8965,7 +8965,7 @@
                                         "remote"
                                     ],
                                     "description": "Whether the actor is a local user on this Nextcloud instance or a remote user on the federated partner instance",
-                                    "title": "Actor Type"
+                                    "title": "Actor type"
                                 },
                                 "cloudId": {
                                     "type": "string",
@@ -9167,7 +9167,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Server timestamp when the council referred the bezwaar to the committee",
-                        "title": "Assigned At"
+                        "title": "Assigned at"
                     },
                     "deadline": {
                         "type": "string",
@@ -9323,7 +9323,7 @@
                             },
                             "phone": {
                                 "type": "string",
-                                "description": "Phone number",
+                                "description": "Phone Number",
                                 "title": "Phone Number"
                             },
                             "bsn": {
@@ -9350,7 +9350,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the complaint was received (Awb deadline calculation basis)",
-                        "title": "Receipt Date"
+                        "title": "Receipt date"
                     },
                     "receiptChannel": {
                         "type": "string",
@@ -9742,7 +9742,7 @@
                     "defaultHandler": {
                         "type": "string",
                         "description": "Default handler: NC user ID or group ID prefixed with 'group:'",
-                        "title": "Default Handler"
+                        "title": "Default handler"
                     },
                     "slaOverride": {
                         "type": "integer",
@@ -10153,7 +10153,7 @@
                         "type": "string",
                         "maxLength": 20,
                         "description": "Dutch Chamber of Commerce (KvK) number: natural key",
-                        "title": "KvK Number"
+                        "title": "KvK number"
                     },
                     "legalName": {
                         "type": "string",
@@ -10432,13 +10432,13 @@
                     "startDate": {
                         "type": "string",
                         "format": "date",
-                        "title": "Start Date",
+                        "title": "Start date",
                         "description": "Date the contract becomes effective"
                     },
                     "endDate": {
                         "type": "string",
                         "format": "date",
-                        "title": "End Date",
+                        "title": "End date",
                         "description": "Date the contract expires"
                     },
                     "value": {
@@ -10531,7 +10531,7 @@
                     "dueDate": {
                         "type": "string",
                         "format": "date",
-                        "title": "Due Date",
+                        "title": "Due date",
                         "description": "Date by which the invoice must be paid"
                     },
                     "expectedPaymentDate": {
@@ -10616,7 +10616,7 @@
                     "sentAt": {
                         "type": "string",
                         "format": "date-time",
-                        "title": "Sent At",
+                        "title": "Sent at",
                         "description": "Timestamp when this message was sent"
                     }
                 }
@@ -10662,7 +10662,7 @@
                     },
                     "complianceScore": {
                         "type": "number",
-                        "title": "Compliance Score",
+                        "title": "Compliance score",
                         "description": "Composite compliance score (0–100) based on contract KPIs"
                     },
                     "benchmark": {
@@ -10725,13 +10725,13 @@
                     "completedBy": {
                         "type": "string",
                         "description": "NC user ID who completed the step",
-                        "title": "Completed By"
+                        "title": "Completed by"
                     },
                     "completedAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Completion timestamp",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "blockedReason": {
                         "type": "string",
@@ -10743,9 +10743,9 @@
             "emailTemplate": {
                 "slug": "emailTemplate",
                 "icon": "EmailOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-equivalent": "schema:DigitalDocument",
-                "title": "Email Template",
+                "title": "Email template",
                 "description": "Per-zaaktype email template with placeholder variables; version-bumped on edit (case-email-integration spec).",
                 "type": "object",
                 "required": [
@@ -10795,15 +10795,15 @@
                         "format": "uuid",
                         "$ref": "emailTemplate",
                         "description": "Reference to the prior version object (audit chain)",
-                        "title": "Previous Version"
+                        "title": "Previous version"
                     }
                 }
             },
             "adviceRequest": {
                 "slug": "adviceRequest",
                 "icon": "MessageTextOutline",
-                "version": "1.0.0",
-                "title": "Advice Request",
+                "version": "1.1.0",
+                "title": "Advice request",
                 "description": "A request for advice from an internal or external adviser on a specific case. Tracks the full lifecycle from open to received or cancelled.",
                 "type": "object",
                 "required": [
@@ -10825,7 +10825,7 @@
                     "requestedBy": {
                         "type": "string",
                         "description": "UID of the user who submitted the advice request.",
-                        "title": "Requested By"
+                        "title": "Requested by"
                     },
                     "advisor": {
                         "type": "string",
@@ -10872,8 +10872,8 @@
             "checklistItem": {
                 "slug": "checklistItem",
                 "icon": "CheckboxOutline",
-                "version": "1.0.0",
-                "title": "Checklist Item",
+                "version": "1.1.0",
+                "title": "Checklist item",
                 "description": "A single question or observation point within an inspection checklist. Supports boolean, enum, text, and photo answer types.",
                 "type": "object",
                 "required": [
@@ -10947,7 +10947,7 @@
                         "format": "uuid",
                         "$ref": "caseType",
                         "description": "The case type this checklist applies to.",
-                        "title": "Case Type Reference"
+                        "title": "Case type reference"
                     },
                     "items": {
                         "type": "array",
@@ -10955,7 +10955,7 @@
                             "$ref": "checklistItem"
                         },
                         "description": "Ordered list of checklist items (questions) that make up this template.",
-                        "title": "Items"
+                        "title": "items"
                     },
                     "active": {
                         "type": "boolean",
@@ -10967,7 +10967,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this version of the checklist is valid.",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     }
                 }
             },
@@ -11002,13 +11002,13 @@
                     "completedBy": {
                         "type": "string",
                         "description": "UID of the inspector who completed the checklist.",
-                        "title": "Completed By"
+                        "title": "Completed by"
                     },
                     "completedAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Timestamp when the inspection run was finalised.",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "answers": {
                         "type": "array",
