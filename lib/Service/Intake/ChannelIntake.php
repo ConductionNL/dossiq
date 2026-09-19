@@ -251,6 +251,48 @@ class ChannelIntake {
 			return '';
 		}
 
+		$object = $this->caseObjectFor(caseTypeId: $caseTypeId, message: $message, payload: $payload);
+
+		try {
+			$created = $this->runAsSystemIfAvailable(
+				objectService: $objectService,
+				operation: fn (): mixed => $objectService->saveObject(
+					object: $object,
+					register: $register,
+					schema: $caseSchema,
+				)
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'ChannelIntake: could not open a case for a routed message',
+				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
+			);
+			return '';
+		}
+
+		$row = $this->objectAsArray(value: $created);
+		$caseId = (string)($row['@self']['id'] ?? ($row['id'] ?? ''));
+		if ($caseId === '') {
+			$this->logger->error(
+				'ChannelIntake: the case was written but answered no id, so the message cannot be linked to it',
+				['caseType' => $caseTypeId]
+			);
+			return '';
+		}
+
+		return $caseId;
+	}//end write()
+
+	/**
+	 * The case a routed message opens, before it is written.
+	 *
+	 * @param string               $caseTypeId The case type the message routed to.
+	 * @param array<string, mixed> $message    The message as the channel delivered it.
+	 * @param array<string, mixed> $payload    What the channel parsed out of it.
+	 *
+	 * @return array<string, mixed> The case object.
+	 */
+	private function caseObjectFor(string $caseTypeId, array $message, array $payload): array {
 		$object = [
 			'title' => $this->titleFor(message: $message, payload: $payload),
 			'caseType' => $caseTypeId,
@@ -299,36 +341,8 @@ class ChannelIntake {
 		if ($initial !== '') {
 			$object['status'] = $initial;
 		}
-
-		try {
-			$created = $this->runAsSystemIfAvailable(
-				objectService: $objectService,
-				operation: fn (): mixed => $objectService->saveObject(
-					object: $object,
-					register: $register,
-					schema: $caseSchema,
-				)
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'ChannelIntake: could not open a case for a routed message',
-				['caseType' => $caseTypeId, 'error' => $e->getMessage()]
-			);
-			return '';
-		}
-
-		$row = $this->objectAsArray(value: $created);
-		$caseId = (string)($row['@self']['id'] ?? ($row['id'] ?? ''));
-		if ($caseId === '') {
-			$this->logger->error(
-				'ChannelIntake: the case was written but answered no id, so the message cannot be linked to it',
-				['caseType' => $caseTypeId]
-			);
-			return '';
-		}
-
-		return $caseId;
-	}//end write()
+		return $object;
+	}//end caseObjectFor()
 
 	/**
 	 * The case type the rule mapped, when this instance has it.

@@ -260,22 +260,7 @@ class CaseRebindService {
 		array $properties,
 		string $actorUid,
 	): array {
-		if ($this->mayRebind(uid: $actorUid) === false) {
-			throw new RefusedException(
-				rule: 'rebind-is-for-coordinators',
-				sentence: 'Only a case coordinator may change the type of a running case.',
-				status: RefusedException::STATUS_FORBIDDEN,
-			);
-		}
-
-		$reason = trim($reason);
-		if ($reason === '') {
-			throw new RefusedException(
-				rule: 'rebind-needs-a-reason',
-				sentence: 'Say why this case is moving to another case type.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$reason = $this->assertMayRebind(actorUid: $actorUid, reason: $reason);
 
 		$case = $this->readCase(caseId: $caseId);
 		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
@@ -291,19 +276,7 @@ class CaseRebindService {
 			targetCaseTypeId: $targetCaseTypeId,
 			targetStatusId: $targetStatusId
 		);
-		if ($missing !== []) {
-			$pronoun = 'them';
-			if (count($missing) === 1) {
-				$pronoun = 'it';
-			}
-
-			throw new RefusedException(
-				rule: 'rebind-missing-required-properties',
-				sentence: 'The target case type requires ' . implode(', ', $missing)
-					. ' in that status, and this case does not carry ' . $pronoun . '.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
+		$this->assertNothingMissing(missing: $missing);
 
 		// D-2 step 2, BEFORE any write: a run that refuses to move leaves a
 		// case whose blueprint and whose process disagree.
@@ -359,6 +332,68 @@ class CaseRebindService {
 			'terms' => $terms,
 		];
 	}//end rebind()
+
+	/**
+	 * Refuse a rebind nobody may make, or one nobody explained.
+	 *
+	 * @param string $actorUid Who is asking.
+	 * @param string $reason   Why the case is moving.
+	 *
+	 * @return string The reason, trimmed.
+	 *
+	 * @throws RefusedException When the caller may not rebind, or named no reason.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	private function assertMayRebind(string $actorUid, string $reason): string {
+		if ($this->mayRebind(uid: $actorUid) === false) {
+			throw new RefusedException(
+				rule: 'rebind-is-for-coordinators',
+				sentence: 'Only a case coordinator may change the type of a running case.',
+				status: RefusedException::STATUS_FORBIDDEN,
+			);
+		}
+
+		$reason = trim($reason);
+		if ($reason === '') {
+			throw new RefusedException(
+				rule: 'rebind-needs-a-reason',
+				sentence: 'Say why this case is moving to another case type.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
+		}
+
+		return $reason;
+	}//end assertMayRebind()
+
+	/**
+	 * Refuse a rebind the case does not carry the target's required fields for.
+	 *
+	 * @param array<int, string> $missing The fields the target requires and the case lacks.
+	 *
+	 * @return void
+	 *
+	 * @throws RefusedException When anything is missing.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	private function assertNothingMissing(array $missing): void {
+		if ($missing === []) {
+			return;
+		}
+
+		$pronoun = 'them';
+		if (count($missing) === 1) {
+			$pronoun = 'it';
+		}
+
+		throw new RefusedException(
+			rule: 'rebind-missing-required-properties',
+			sentence: 'The target case type requires ' . implode(', ', $missing)
+				. ' in that status, and this case does not carry ' . $pronoun . '.',
+			status: RefusedException::STATUS_UNPROCESSABLE,
+		);
+	}//end assertNothingMissing()
 
 	/**
 	 * Refuse a target that is absent, a draft, or the case's own type.

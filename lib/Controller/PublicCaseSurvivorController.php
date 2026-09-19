@@ -204,19 +204,30 @@ class PublicCaseSurvivorController extends Controller {
 			return null;
 		}
 
-		if (is_array($rendered) === true) {
-			return $rendered;
+		return $this->asArrayOrNull(value: $rendered);
+	}//end renderPublicly()
+
+	/**
+	 * A rendered entity as an array, or null when it is any other shape.
+	 *
+	 * @param mixed $value What `renderEntity()` answered.
+	 *
+	 * @return array<string, mixed>|null The array, or null.
+	 */
+	private function asArrayOrNull(mixed $value): ?array {
+		if (is_array($value) === true) {
+			return $value;
 		}
 
-		if (is_object($rendered) === true && method_exists($rendered, 'jsonSerialize') === true) {
-			$serialized = $rendered->jsonSerialize();
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$serialized = $value->jsonSerialize();
 			if (is_array($serialized) === true) {
 				return $serialized;
 			}
 		}
 
 		return null;
-	}//end renderPublicly()
+	}//end asArrayOrNull()
 
 	/**
 	 * The one answer every failure gets.

@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseDefinitionExportService;
+use OCA\Dossiq\Service\CaseDefinition\PackageWriter;
 use OCA\Dossiq\Service\CaseDefinitionImportService;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -217,7 +218,12 @@ class CaseDefinitionPortabilityTest extends TestCase {
 			static fn (string $key, string $default = ''): string => ($key === 'register' ? 'dossiq' : $key)
 		);
 
-		return new CaseDefinitionImportService(new NullLogger(), $settings);
+		// A REAL writer over the SAME settings double. What this test observes
+		// did not move when the writer was split out: only the wiring line did.
+		return new CaseDefinitionImportService(
+			new NullLogger(),
+			new PackageWriter(new NullLogger(), $settings),
+		);
 	}//end importer()
 
 	/**

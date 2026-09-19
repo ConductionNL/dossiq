@@ -209,17 +209,7 @@ class EvidenceMetadataService {
 		?array $caseAddress = null,
 		?array $gpsReading = null,
 	): array {
-		if ($type === 'photo' && isset($extra['byteSize']) === true
-			&& $this->isPhotoWithinTarget(byteSize: (int)$extra['byteSize']) === false
-		) {
-			throw new InvalidArgumentException('Photo size exceeds 2 MB compression target');
-		}
-
-		if ($type === 'voice_memo' && isset($extra['durationSeconds']) === true
-			&& $this->isVoiceMemoWithinLimit(durationSeconds: (int)$extra['durationSeconds']) === false
-		) {
-			throw new InvalidArgumentException('Voice memo duration exceeds 5-minute limit');
-		}
+		$this->refuseCaptureOverItsLimit(type: $type, extra: $extra);
 
 		$gps = $this->classifyGps(reading: $gpsReading, caseAddress: $caseAddress);
 
@@ -260,4 +250,34 @@ class EvidenceMetadataService {
 
 		return $payload;
 	}//end buildEvidencePayload()
+
+	/**
+	 * Refuse a capture that is over the limit declared for its kind.
+	 *
+	 * A photo over the compression target and a memo over five minutes are
+	 * different things to fix, so they carry different sentences: one message
+	 * over both helps neither.
+	 *
+	 * @param string               $type  The kind of capture.
+	 * @param array<string, mixed> $extra What the device sent with it.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When the capture is over its limit.
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function refuseCaptureOverItsLimit(string $type, array $extra): void {
+		if ($type === 'photo' && isset($extra['byteSize']) === true
+			&& $this->isPhotoWithinTarget(byteSize: (int)$extra['byteSize']) === false
+		) {
+			throw new InvalidArgumentException('Photo size exceeds 2 MB compression target');
+		}
+
+		if ($type === 'voice_memo' && isset($extra['durationSeconds']) === true
+			&& $this->isVoiceMemoWithinLimit(durationSeconds: (int)$extra['durationSeconds']) === false
+		) {
+			throw new InvalidArgumentException('Voice memo duration exceeds 5-minute limit');
+		}
+	}//end refuseCaptureOverItsLimit()
 }//end class

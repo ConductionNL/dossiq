@@ -148,17 +148,9 @@ class CaseCustodyQuery {
 
 		$overlapping = [];
 		foreach ($rows as $row) {
-			$holdingStart = $this->instant(value: (string)($row['from'] ?? ''));
-			if ($holdingStart === null || $holdingStart > $windowEnd) {
-				continue;
+			if ($this->overlaps(holding: $row, windowStart: $windowStart, windowEnd: $windowEnd) === true) {
+				$overlapping[] = $row;
 			}
-
-			$holdingEnd = $this->instant(value: (string)($row['until'] ?? ''));
-			if ($holdingEnd !== null && $holdingEnd < $windowStart) {
-				continue;
-			}
-
-			$overlapping[] = $row;
 		}
 
 		usort(
@@ -170,6 +162,31 @@ class CaseCustodyQuery {
 
 		return $overlapping;
 	}//end heldBy()
+
+	/**
+	 * Whether one holding overlaps the window that was asked about.
+	 *
+	 * An open holding, the one with no `until`, reaches into the window from
+	 * whenever it started, which is why an absent end is not read as "ended".
+	 *
+	 * @param array<string, mixed> $holding     The holding as it was read.
+	 * @param DateTimeImmutable    $windowStart The start of the window.
+	 * @param DateTimeImmutable    $windowEnd   The end of the window.
+	 *
+	 * @return bool True when the holding falls inside the window.
+	 *
+	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
+	 */
+	private function overlaps(array $holding, DateTimeImmutable $windowStart, DateTimeImmutable $windowEnd): bool {
+		$holdingStart = $this->instant(value: (string)($holding['from'] ?? ''));
+		if ($holdingStart === null || $holdingStart > $windowEnd) {
+			return false;
+		}
+
+		$holdingEnd = $this->instant(value: (string)($holding['until'] ?? ''));
+
+		return ($holdingEnd === null || $holdingEnd >= $windowStart);
+	}//end overlaps()
 
 	/**
 	 * A moment, or null when the value is empty or unreadable.

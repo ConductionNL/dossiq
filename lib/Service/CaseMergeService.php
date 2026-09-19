@@ -261,28 +261,11 @@ class CaseMergeService {
 	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
 	 */
 	public function requestMerge(string $mergedId, string $survivorId, string $reason, string $actor): array {
-		if ($mergedId === '' || $survivorId === '' || $mergedId === $survivorId) {
-			return ['refused' => 'same-case'];
-		}
+		$merger = $this->settingsService->getOpenRegisterClass(class: self::MERGE_SERVICE_CLASS);
 
-		$source = $this->readCase(caseId: $mergedId);
-		$survivor = $this->readCase(caseId: $survivorId);
-		if ($source === null || $survivor === null) {
-			return ['refused' => 'unknown-case'];
-		}
-
-		$refusal = $this->refusalFor(case: $source);
+		$refusal = $this->mergeRefusal(mergedId: $mergedId, survivorId: $survivorId, merger: $merger);
 		if ($refusal !== '') {
 			return ['refused' => $refusal];
-		}
-
-		if ($this->referencedId(value: ($survivor['mergedInto'] ?? null)) !== '') {
-			return ['refused' => 'survivor-already-merged'];
-		}
-
-		$merger = $this->settingsService->getOpenRegisterClass(class: self::MERGE_SERVICE_CLASS);
-		if ($merger === null || method_exists($merger, 'executeMerge') === false) {
-			return ['refused' => 'platform-unavailable'];
 		}
 
 		try {
@@ -296,6 +279,68 @@ class CaseMergeService {
 
 		return ['operation' => (array)$operation];
 	}//end requestMerge()
+
+	/**
+	 * The reason a merge is refused, or '' when it may go ahead.
+	 *
+	 * Every refusal is a slug rather than a sentence, because the caller turns
+	 * it into the one a handler reads and the timeline stores the slug.
+	 *
+	 * @param string $mergedId   The case being merged away.
+	 * @param string $survivorId The case it would merge into.
+	 * @param mixed  $merger     OpenRegister's merge service, or null when it is absent.
+	 *
+	 * @return string The refusal slug, or ''.
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 */
+	private function mergeRefusal(string $mergedId, string $survivorId, mixed $merger): string {
+		if ($mergedId === '' || $survivorId === '' || $mergedId === $survivorId) {
+			return 'same-case';
+		}
+
+		$source = $this->readCase(caseId: $mergedId);
+		$survivor = $this->readCase(caseId: $survivorId);
+		if ($source === null || $survivor === null) {
+			return 'unknown-case';
+		}
+
+		$refusal = $this->refusalFor(case: $source);
+		if ($refusal !== '') {
+			return $refusal;
+		}
+
+		if ($this->referencedId(value: ($survivor['mergedInto'] ?? null)) !== '') {
+			return 'survivor-already-merged';
+		}
+
+		if ($this->canExecuteMerge(merger: $merger) === false) {
+			return 'platform-unavailable';
+		}
+
+		return '';
+	}//end mergeRefusal()
+
+	/**
+	 * Whether OpenRegister's merge service is here and answers to `executeMerge`.
+	 *
+	 * A duck-typed lookup against a class that is not installed answers null,
+	 * and one against a class that moved answers an object without the method.
+	 * Both are the platform being unavailable, and neither is an error here.
+	 *
+	 * @param mixed $merger Whatever the class lookup answered.
+	 *
+	 * @return bool True when the merge can be handed over.
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-two-cases-merge-into-one-through-the-platform-req-cm-37
+	 */
+	private function canExecuteMerge(mixed $merger): bool {
+		if ($merger === null) {
+			return false;
+		}
+
+		return method_exists($merger, 'executeMerge');
+	}//end canExecuteMerge()
 
 	/**
 	 * Apply dossiq's consequences of a merge.

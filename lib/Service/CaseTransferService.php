@@ -126,25 +126,19 @@ class CaseTransferService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
 
-		$idempotencyKey = null;
-		if ($remoteCloudId !== null && $remoteCloudId !== '') {
-			$shareService = $this->gateway->federationShareService();
-			if ($shareService === null) {
-				return ['error' => 'Federated case transfer requires the OpenRegister federation leaf'];
-			}
-
-			$idempotencyKey = hash('sha256', $caseId . '|' . $targetOrganization . '|' . $remoteCloudId);
-
-			$existing = $this->findTransferByIdempotencyKey(
-				idempotencyKey: $idempotencyKey,
-				register: (int)$register,
-				schema: (int)$schema,
-				objectService: $objectService,
-			);
-			if ($existing !== null) {
-				return $existing;
-			}
+		$precheck = $this->federatedPrecheck(
+			remoteCloudId: $remoteCloudId,
+			caseId: $caseId,
+			targetOrganization: $targetOrganization,
+			register: (int)$register,
+			schema: (int)$schema,
+			objectService: $objectService,
+		);
+		if ($precheck['answer'] !== null) {
+			return $precheck['answer'];
 		}
+
+		$idempotencyKey = $precheck['key'];
 
 		$now = (new DateTime())->format('c');
 
@@ -194,6 +188,55 @@ class CaseTransferService {
 
 		return $resultData;
 	}//end initiateTransfer()
+
+	/**
+	 * The idempotency key a federated hand-off needs, and the answer when there is one already.
+	 *
+	 * A hand-off that has already been initiated for this case, target and
+	 * remote is answered with the transfer that exists rather than a second
+	 * one. A local hand-off needs no key and has nothing to look up.
+	 *
+	 * @param string|null $remoteCloudId      The remote, or null for a local hand-off.
+	 * @param string      $caseId             The case.
+	 * @param string      $targetOrganization Who is receiving it.
+	 * @param int         $register           The register transfers live in.
+	 * @param int         $schema             The transfer schema.
+	 * @param object      $objectService      The OpenRegister object service.
+	 *
+	 * @return array{key: string|null, answer: array<string, mixed>|null} The key, and the
+	 *         answer to give straight back when there is one.
+	 */
+	private function federatedPrecheck(
+		?string $remoteCloudId,
+		string $caseId,
+		string $targetOrganization,
+		int $register,
+		int $schema,
+		object $objectService,
+	): array {
+		if ($remoteCloudId === null || $remoteCloudId === '') {
+			return ['key' => null, 'answer' => null];
+		}
+
+		if ($this->gateway->federationShareService() === null) {
+			return [
+				'key' => null,
+				'answer' => ['error' => 'Federated case transfer requires the OpenRegister federation leaf'],
+			];
+		}
+
+		$idempotencyKey = hash('sha256', $caseId . '|' . $targetOrganization . '|' . $remoteCloudId);
+
+		return [
+			'key' => $idempotencyKey,
+			'answer' => $this->findTransferByIdempotencyKey(
+				idempotencyKey: $idempotencyKey,
+				register: $register,
+				schema: $schema,
+				objectService: $objectService,
+			),
+		];
+	}//end federatedPrecheck()
 
 	/**
 	 * Build the initial (pending) transfer object payload with its first
@@ -351,25 +394,17 @@ class CaseTransferService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
 
-		$transfer = $objectService->find($transferId, register: (int)$register, schema: (int)$schema);
-		if ($transfer === null) {
-			return ['error' => 'Transfer not found'];
-		}
-
-		$transferData = (array)$transfer;
-		if (is_object($transfer) === true) {
-			$transferData = $transfer->jsonSerialize();
-		}
-
-		$currentStatus = (string)($transferData['status'] ?? '');
-		if ($currentStatus === $targetStatus) {
-			// Idempotent replay: same call already applied, return as-is.
+		$transferData = $this->pendingTransfer(
+			objectService: $objectService,
+			transferId: $transferId,
+			targetStatus: $targetStatus,
+			register: (int)$register,
+			schema: (int)$schema,
+		);
+		if (($transferData['status'] ?? '') !== 'pending') {
+			// Not found, an idempotent replay, or a conflicting state: whichever
+			// it is, `pendingTransfer()` has already shaped the answer.
 			return $transferData;
-		}
-
-		if ($currentStatus !== 'pending') {
-			// Ambiguous/conflicting state (e.g. accept after reject) — refuse loudly.
-			return ['error' => 'Transfer is not in a state that can be ' . $targetStatus . ' (current status: ' . $currentStatus . ')'];
 		}
 
 		$caseId = (string)($transferData['caseId'] ?? '');
@@ -395,16 +430,13 @@ class CaseTransferService {
 		// chain write failed, and a chain with a hole reads as an answer. This
 		// way the failure is that the transfer stays pending, which is visible.
 		if ($targetStatus === 'accepted') {
-			try {
-				$this->custody->move(
-					caseId: $caseId,
-					organisationUnit: (string)($transferData['targetOrganization'] ?? ''),
-					handler: '',
-					reason: (string)($transferData['reason'] ?? ''),
-					movedBy: ($remoteCloudId ?? (string)($transferData['initiatedBy'] ?? '')),
-				);
-			} catch (RefusedException $e) {
-				return ['error' => $e->getSentence(), 'rule' => $e->getRule()];
+			$refusal = $this->moveCustody(
+				caseId: $caseId,
+				transferData: $transferData,
+				remoteCloudId: $remoteCloudId,
+			);
+			if ($refusal !== null) {
+				return $refusal;
 			}
 		}
 
@@ -439,6 +471,79 @@ class CaseTransferService {
 
 		return $result->jsonSerialize();
 	}//end completeTransfer()
+
+	/**
+	 * The transfer as it stands, or the answer to give when it cannot be completed.
+	 *
+	 * A transfer already at the target status is an idempotent replay and is
+	 * answered as it stands. Any other status is a conflicting state, such as an
+	 * accept after a reject, and is refused loudly. The caller tells the three
+	 * apart by whether what comes back is still `pending`.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $transferId    The transfer.
+	 * @param string $targetStatus  The status being moved to.
+	 * @param int    $register      The register transfers live in.
+	 * @param int    $schema        The transfer schema.
+	 *
+	 * @return array<string, mixed> The pending transfer, or the answer to return.
+	 */
+	private function pendingTransfer(
+		object $objectService,
+		string $transferId,
+		string $targetStatus,
+		int $register,
+		int $schema,
+	): array {
+		$transfer = $objectService->find($transferId, register: $register, schema: $schema);
+		if ($transfer === null) {
+			return ['error' => 'Transfer not found'];
+		}
+
+		$transferData = (array)$transfer;
+		if (is_object($transfer) === true) {
+			$transferData = $transfer->jsonSerialize();
+		}
+
+		$currentStatus = (string)($transferData['status'] ?? '');
+		if ($currentStatus === $targetStatus) {
+			return $transferData;
+		}
+
+		if ($currentStatus !== 'pending') {
+			return [
+				'error' => 'Transfer is not in a state that can be ' . $targetStatus
+					. ' (current status: ' . $currentStatus . ')',
+			];
+		}
+
+		return $transferData;
+	}//end pendingTransfer()
+
+	/**
+	 * Hand the case over on the custody chain, or say why it did not move.
+	 *
+	 * @param string               $caseId        The case.
+	 * @param array<string, mixed> $transferData  The transfer as it stands.
+	 * @param string|null          $remoteCloudId The remote, when the call came from one.
+	 *
+	 * @return array<string, mixed>|null The refusal, or null when the case moved.
+	 */
+	private function moveCustody(string $caseId, array $transferData, ?string $remoteCloudId): ?array {
+		try {
+			$this->custody->move(
+				caseId: $caseId,
+				organisationUnit: (string)($transferData['targetOrganization'] ?? ''),
+				handler: '',
+				reason: (string)($transferData['reason'] ?? ''),
+				movedBy: ($remoteCloudId ?? (string)($transferData['initiatedBy'] ?? '')),
+			);
+		} catch (RefusedException $e) {
+			return ['error' => $e->getSentence(), 'rule' => $e->getRule()];
+		}
+
+		return null;
+	}//end moveCustody()
 
 	/**
 	 * Resolve the custody-audit actor type for a completion event.

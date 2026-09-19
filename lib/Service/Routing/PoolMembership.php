@@ -191,17 +191,7 @@ class PoolMembership {
 			return array_map(static fn (array $member): string => $member['participant'], $members);
 		}
 
-		$smallest = null;
-		foreach ($members as $member) {
-			if ($member['weight'] <= 0.0) {
-				continue;
-			}
-
-			if ($smallest === null || $member['weight'] < $smallest) {
-				$smallest = $member['weight'];
-			}
-		}
-
+		$smallest = $this->smallestWeight(members: $members);
 		if ($smallest === null) {
 			// Every member is at zero: nobody in this pool takes new work.
 			// Answered as an empty rotation so the caller surfaces it, the
@@ -217,6 +207,49 @@ class PoolMembership {
 			}
 		}
 
+		return $this->dealSlots(slots: $slots);
+	}//end rotation()
+
+	/**
+	 * The smallest weight anybody in the pool carries, or null when nobody does.
+	 *
+	 * @param array<int, array<string, mixed>> $members The pool members.
+	 *
+	 * @return float|null The smallest weight above zero, or null when every member is at zero.
+	 *
+	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 */
+	private function smallestWeight(array $members): ?float {
+		$smallest = null;
+		foreach ($members as $member) {
+			if ($member['weight'] <= 0.0) {
+				continue;
+			}
+
+			if ($smallest === null || $member['weight'] < $smallest) {
+				$smallest = $member['weight'];
+			}
+		}
+
+		return $smallest;
+	}//end smallestWeight()
+
+	/**
+	 * Deal the slots out one round at a time, so the rotation interleaves.
+	 *
+	 * A member with three slots takes every third turn rather than three turns
+	 * in a row, which is what makes a weighted pool read as a rota and not as a
+	 * queue of blocks.
+	 *
+	 * @param array<string, int> $slots How many turns each participant gets.
+	 *
+	 * @return array<int, string> The rotation.
+	 *
+	 * @psalm-return list<string>
+	 *
+	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-a-pool-member-carries-a-weight-the-strategies-read-req-rtp-01
+	 */
+	private function dealSlots(array $slots): array {
 		$rotation = [];
 		while ($slots !== []) {
 			foreach ($slots as $participant => $remaining) {
@@ -232,7 +265,7 @@ class PoolMembership {
 		}
 
 		return $rotation;
-	}//end rotation()
+	}//end dealSlots()
 
 	/**
 	 * The load one member carries per unit of weight.
