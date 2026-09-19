@@ -41,10 +41,10 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TermijnTimerService
+ * @covers \OCA\Dossiq\Service\Termijn\TermEndRoll
  *
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
- * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
  */
 class TermijnTimerRollTest extends TestCase {
 	use MakesCaseDateNormaliser;

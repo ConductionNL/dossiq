@@ -263,23 +263,25 @@ class TermDefinitions {
 	 * falsehood the suppression was covering up is gone rather than hidden.
 	 * Two suppressions came off this class when it arrived.
 	 *
-	 * A negative duration is subtracted rather than encoded as `P-5D`, which
-	 * `DateInterval` refuses to parse.
+	 * `abs()` IS THE OLD BEHAVIOUR, NOT A NEW OPINION. A term duration is a
+	 * positive number of days and nothing declares a negative one, but the
+	 * call this replaced answered `modify('+-3 days')` for -3, which PHP
+	 * parses as PLUS three: measured on 8.3.6, -3 and -10 from 1 March 2026
+	 * gave 4 March and 11 March. `DateInterval` refuses `P-3D` outright, so
+	 * the choice was between reproducing that and quietly changing it. This
+	 * reproduces it, because a refactor that removes a suppression should
+	 * move no date. Deciding what a negative duration OUGHT to mean belongs
+	 * to the change that lets one be declared.
 	 *
 	 * @param DateTimeImmutable $start The day to count from.
-	 * @param int               $days  The number of calendar days, which may be negative.
+	 * @param int               $days  The declared number of calendar days.
 	 *
 	 * @return DateTimeImmutable The counted date.
 	 *
 	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
 	 */
 	private static function plusDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
-		$interval = new DateInterval('P' . abs($days) . 'D');
-		if ($days < 0) {
-			return $start->sub($interval);
-		}
-
-		return $start->add($interval);
+		return $start->add(new DateInterval('P' . abs($days) . 'D'));
 	}//end plusDays()
 
 	/**
