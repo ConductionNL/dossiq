@@ -40,6 +40,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\CaseTransferService;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -163,7 +164,22 @@ class CaseSharingController extends Controller {
 		);
 
 		if (isset($share['error']) === true) {
-			return new JSONResponse(['success' => false, 'error' => $share['error']], Http::STATUS_BAD_GATEWAY);
+			// A 502 says the app upstream broke. When this instance simply
+			// never mapped the case share schema, nothing upstream broke and
+			// naming OpenRegister sends the reader to the wrong app. 503 with
+			// the message the service wrote says what is missing and who
+			// fixes it.
+			$status = Http::STATUS_BAD_GATEWAY;
+			if (($share['reason'] ?? '') === CaseLinkShares::REASON_NOT_CONFIGURED) {
+				$status = Http::STATUS_SERVICE_UNAVAILABLE;
+			}
+
+			$body = ['success' => false, 'error' => $share['error']];
+			if (isset($share['linksNotRevoked']) === true) {
+				$body['linksNotRevoked'] = $share['linksNotRevoked'];
+			}
+
+			return new JSONResponse($body, $status);
 		}
 
 		return new JSONResponse(['success' => true, 'share' => $share['share'], 'url' => $share['url']]);
