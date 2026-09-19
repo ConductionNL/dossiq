@@ -75,9 +75,9 @@ describe('every e2e waitUntil is a value Playwright accepts', () => {
 		expect(
 			offenders,
 			'Playwright throws on an unaccepted waitUntil before the test body '
-			+ 'runs, so these scenarios cannot pass or fail anywhere. To pass the '
-			+ 'measured page-load budget, pass PAGE_LOAD as the whole options '
-			+ `object: page.goto(url, PAGE_LOAD). Offenders:\n${offenders.join('\n')}`,
+				+ 'runs, so these scenarios cannot pass or fail anywhere. To pass the '
+				+ 'measured page-load budget, pass PAGE_LOAD as the whole options '
+				+ `object: page.goto(url, PAGE_LOAD). Offenders:\n${offenders.join('\n')}`,
 		).toEqual([])
 	})
 })
