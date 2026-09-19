@@ -66,7 +66,7 @@
           "rollToWorkingDay": {
             "type": "boolean",
             "title": "Roll to the next ordinary day",
-            "description": "When on, a term whose end date falls on a Saturday, Sunday or recognised holiday ends on the next ordinary day instead, as the Algemene termijnenwet requires. The days it moves over are the organisation calendar's, not a list dossiq keeps. On by default, because Awt art. 1 applies by law and not by configuration: the switch exists to turn the roll OFF for a term the Awt does not govern, which is the same reading TermijnTimerService::rollEnabled() has always had for a definition that carries no flag.",
+            "description": "When on, a term whose end date falls on a Saturday, Sunday or recognised holiday ends on the next ordinary day instead, as the Algemene termijnenwet requires. The days it moves over are the organisation calendar's, not a list dossiq keeps. On by default, because Awt art. 1 applies by law and not by configuration: the switch exists to turn the roll OFF for a term the Awt does not govern, which is the same reading TermEndRoll::rollEnabled() has always had for a definition that carries no flag.",
             "default": true
           },
           "extensionCapacity": {
