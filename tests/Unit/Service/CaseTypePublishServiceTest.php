@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeReachability;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
 use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -186,13 +187,20 @@ class CaseTypePublishServiceTest extends TestCase {
 
 		return new CaseTypePublishService(
 			settingsService: $settings,
-			caseTypeResolver: new CaseTypeResolver(store: $store),
 			store: $store,
-			acknowledgement: new CaseTypeAcknowledgement(),
-			unreadTriggers: new UnreadTriggerService(),
-			admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
-			remedy: new RemedyClauseDeclaration(),
-			handling: new CaseTypeHandling(),
+			// A REAL checks object over the SAME store and resolver the
+			// assertions read through. Only the wiring lines moved when the
+			// findings and warnings were split out.
+			checks: new PublicationChecks(
+				caseTypeResolver: new CaseTypeResolver(store: $store),
+				store: $store,
+				acknowledgement: new CaseTypeAcknowledgement(),
+				unreadTriggers: new UnreadTriggerService(),
+				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+				remedy: new RemedyClauseDeclaration(),
+				handling: new CaseTypeHandling(),
+				reachability: new CaseTypeReachability(),
+			),
 			fieldRules: new CaseStateFieldRuleProjector(
 				store: $store,
 				declaration: new StatusFieldRuleDeclaration(),
@@ -208,7 +216,6 @@ class CaseTypePublishServiceTest extends TestCase {
 				time: $this->clock(),
 				logger: new NullLogger(),
 			),
-			reachability: new CaseTypeReachability(),
 			logger: new NullLogger(),
 		);
 	}//end service()

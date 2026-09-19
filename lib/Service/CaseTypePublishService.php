@@ -40,11 +40,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
-use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
-use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
-use OCA\Dossiq\Service\CaseType\CaseTypeReachability;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
-use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
+use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -61,41 +58,27 @@ class CaseTypePublishService {
 	 * Constructor.
 	 *
 	 * @param SettingsService         $settingsService  Bridge to OpenRegister + config.
-	 * @param CaseTypeResolver        $caseTypeResolver The effective blueprint.
-	 * @param CaseTypeStore           $store            Reads for the resolver's schemas.
-	 * @param CaseTypeAcknowledgement $acknowledgement  What this type declares about confirming receipt.
-	 * @param UnreadTriggerService    $unreadTriggers   What this type declares about what makes a case unread.
-	 * @param AdmissibilityJudgement  $admissibility    Whether intake ends with a verdict, and what it closes on.
-	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
-	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
+	 * @param CaseTypeStore           $store            The app's one case type reader.
+	 * @param PublicationChecks       $checks           What stands between this draft and being published.
 	 * @param CaseStateFieldRuleProjector $fieldRules   What each status asks of the fields on the case.
 	 * @param CaseFieldRoleProjector  $fieldRoles       What each role may see and change on the case.
 	 * @param CaseTypeVersionWindow   $window           When a version starts and stops being offered.
-	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
 	 * @param LoggerInterface         $logger           The logger.
 	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Constructor DI, and the
-	 *  eleventh collaborator is the reachability walk. Each one answers a
-	 *  different question publishing has to ask before or during the one write
-	 *  it owns: is the draft valid, can a case actually run through it, what
-	 *  does it warn about, what do its statuses and roles declare, and which
-	 *  version is in force from when. Moving the window out to the caller would
-	 *  split that write across two layers, and a publish that half-ran is the
-	 *  failure this class exists to prevent.
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Constructor DI. Eight
+	 *  collaborators moved to {@see PublicationChecks} with the questions that
+	 *  asked them; these six are the write itself. The window stays here rather
+	 *  than moving out to the caller, because splitting it off would spread one
+	 *  write across two layers, and a publish that half-ran is the failure this
+	 *  class exists to prevent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly CaseTypeResolver $caseTypeResolver,
 		private readonly CaseTypeStore $store,
-		private readonly CaseTypeAcknowledgement $acknowledgement,
-		private readonly UnreadTriggerService $unreadTriggers,
-		private readonly AdmissibilityJudgement $admissibility,
-		private readonly RemedyClauseDeclaration $remedy,
-		private readonly CaseTypeHandling $handling,
+		private readonly PublicationChecks $checks,
 		private readonly CaseStateFieldRuleProjector $fieldRules,
 		private readonly CaseFieldRoleProjector $fieldRoles,
 		private readonly CaseTypeVersionWindow $window,
-		private readonly CaseTypeReachability $reachability,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -118,23 +101,7 @@ class CaseTypePublishService {
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */
 	public function warnings(string $caseTypeId): array {
-		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
-		if ($caseType === []) {
-			return [];
-		}
-
-		return array_merge(
-			$this->acknowledgement->publicationWarnings(caseType: $caseType),
-			$this->unreadTriggers->publicationWarnings(caseType: $caseType),
-			// Decision outcomes on the case: a case type that judges
-			// admissibility with no result to close on, or closes an
-			// inadmissible aanvraag without telling the applicant.
-			$this->admissibility->publicationWarnings(caseType: $caseType),
-			// A case type whose decisions declare no remedy. Its besluit would
-			// print no bezwaarclausule, which is a decision going out without
-			// saying how to object to it.
-			$this->remedy->publicationWarnings(caseType: $caseType)
-		);
+		return $this->checks->warnings(caseTypeId: $caseTypeId);
 	}//end warnings()
 
 	/**
@@ -151,173 +118,8 @@ class CaseTypePublishService {
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
 	public function validate(string $caseTypeId): array {
-		$caseType = $this->caseTypeResolver->effectiveCaseType(caseTypeId: $caseTypeId);
-		if ($caseType === []) {
-			return ['This case type could not be read.'];
-		}
-
-		$findings = [];
-		$statuses = $this->caseTypeResolver->statusTypesFor(caseTypeId: $caseTypeId);
-
-		if ($statuses === []) {
-			$findings[] = 'Give the case type at least one status.';
-		}
-
-		if ($statuses !== [] && $this->hasFinalStatus(statuses: $statuses) === false) {
-			$findings[] = 'Mark one of the statuses as the final one, so a case can close.';
-		}
-
-		if ($statuses !== [] && $this->initialStatusIsOwn(caseType: $caseType, statuses: $statuses) === false) {
-			$findings[] = 'Pick the status a new case of this type starts in.';
-		}
-
-		if (trim((string)($caseType['title'] ?? '')) === '') {
-			$findings[] = 'Give the case type a title.';
-		}
-
-		$cycle = $this->cycleFinding(caseTypeId: $caseTypeId, caseType: $caseType);
-		if ($cycle !== '') {
-			$findings[] = $cycle;
-		}
-
-		return array_merge(
-			$findings,
-			$this->handlingFindings(caseType: $caseType),
-			$this->reachabilityFindings(caseTypeId: $caseTypeId, caseType: $caseType, statuses: $statuses)
-		);
+		return $this->checks->validate(caseTypeId: $caseTypeId);
 	}//end validate()
-
-	/**
-	 * What this case type's moves could never reach.
-	 *
-	 * 🔑 THE ONE MOMENT THIS CAN BE ASKED. A workflow template is written
-	 * straight to OpenRegister by the authoring page, so no dossiq code runs
-	 * when a move is saved; publication is the write dossiq owns, and it is the
-	 * act that makes the lifecycle live. Asking here is what keeps a move that
-	 * nothing can fire, and a status nothing leads to, from reaching a desk.
-	 *
-	 * Extracted from `validate()` for the reason `handlingFindings()` was: that
-	 * method's complexity has a ceiling the analyser enforces.
-	 *
-	 * @param string                           $caseTypeId The type being published.
-	 * @param array<string, mixed>             $caseType   Its effective row.
-	 * @param array<int, array<string, mixed>> $statuses   Its resolved statuses.
-	 *
-	 * @return array<int, string> The findings, empty when everything is reachable.
-	 *
-	 * @spec openspec/specs/case-type-publish-validation/spec.md
-	 */
-	private function reachabilityFindings(string $caseTypeId, array $caseType, array $statuses): array {
-		$template = $this->activeTemplate(caseTypeId: $caseTypeId);
-		if ($template === []) {
-			return [];
-		}
-
-		$declared = [];
-		foreach ($statuses as $status) {
-			$id = $this->store->rowId(row: $status);
-			if ($id === '') {
-				continue;
-			}
-
-			$title = trim((string)($status['name'] ?? ($status['title'] ?? '')));
-			if ($title === '') {
-				$title = $id;
-			}
-
-			$declared[$id] = [
-				'title' => $title,
-				'final' => in_array(($status['isFinal'] ?? false), [true, 1, '1', 'true'], true),
-			];
-		}
-
-		return $this->reachability->findings(
-			statuses: $declared,
-			initial: $this->store->referenceId(value: ($caseType['initialStatus'] ?? '')),
-			moves: $this->moves(template: $template)
-		);
-	}//end reachabilityFindings()
-
-	/**
-	 * The transitions on a template row, whichever way OpenRegister stored them.
-	 *
-	 * A template read straight off the store can carry `transitions` as a JSON
-	 * string, because that is how the authoring page writes it. Treating the
-	 * string as an empty list would make every finding here silently disappear
-	 * on exactly the case types that have the most moves.
-	 *
-	 * @param array<string, mixed> $template The active workflow template row.
-	 *
-	 * @return array<int, array<string, mixed>> The transitions.
-	 */
-	private function moves(array $template): array {
-		$raw = ($template['transitions'] ?? []);
-		if (is_string($raw) === true) {
-			$raw = json_decode($raw, true);
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
-
-		return array_values(array_filter($raw, 'is_array'));
-	}//end moves()
-
-	/**
-	 * The findings the handling block produces, if it produces any.
-	 *
-	 * A switch declared on a case type and read by nothing is a promise the
-	 * product does not keep, and it is invisible until somebody relies on it.
-	 * Extracted from `validate()` rather than inlined, so that method's
-	 * complexity stays inside the threshold the analyser enforces.
-	 *
-	 * @param array<string, mixed> $caseType The effective case type row.
-	 *
-	 * @return array<int, string> The findings, empty when every switch is read.
-	 *
-	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
-	 */
-	private function handlingFindings(array $caseType): array {
-		$findings = [];
-		foreach ($this->handling->unreadSwitches(caseType: $caseType) as $switch) {
-			$findings[] = ('Nothing reads the handling switch "' . $switch . '". Remove it, or name a switch that is read.');
-		}
-
-		return $findings;
-	}//end handlingFindings()
-
-	/**
-	 * The finding a looping parent chain produces, if it loops.
-	 *
-	 * 🔴 THIS IS THE ONLY PLACE DOSSIQ CAN REFUSE A CYCLE. The spec words the
-	 * refusal as "on save", and dossiq does not own the save: a case type is
-	 * written straight to OpenRegister's object API by the page, and no dossiq
-	 * code runs in between. Publishing is the one write dossiq does own, so it
-	 * is where a type whose chain returns to itself is stopped. `chainFor()`
-	 * degrades safely on a chain already stored that way — it stops rather
-	 * than looping — so a mis-saved type stays readable while it is unpublished.
-	 *
-	 * @param string               $caseTypeId The type being published.
-	 * @param array<string, mixed> $caseType   Its effective row.
-	 *
-	 * @return string The finding, or '' when the chain is sound.
-	 *
-	 * @spec openspec/specs/case-types/spec.md
-	 */
-	private function cycleFinding(string $caseTypeId, array $caseType): string {
-		$parent = $this->store->referenceId(value: ($caseType['parentCaseType'] ?? ''));
-		if ($parent === '') {
-			return '';
-		}
-
-		try {
-			$this->caseTypeResolver->assertNoCycle(caseTypeId: $caseTypeId, parentCaseTypeId: $parent);
-		} catch (Throwable $e) {
-			return $e->getMessage();
-		}
-
-		return '';
-	}//end cycleFinding()
 
 	/**
 	 * Publish a draft case type.
@@ -416,7 +218,7 @@ class CaseTypePublishService {
 	 * @return integer|null The published template's version, or null when there is none.
 	 */
 	private function publishActiveTemplate(string $caseTypeId, string $changeNote): ?int {
-		$template = $this->activeTemplate(caseTypeId: $caseTypeId);
+		$template = $this->store->activeTemplate(caseTypeId: $caseTypeId);
 		if ($template === []) {
 			return null;
 		}
@@ -433,74 +235,6 @@ class CaseTypePublishService {
 
 		return (int)($template['version'] ?? 1);
 	}//end publishActiveTemplate()
-
-	/**
-	 * The case type's active workflow template.
-	 *
-	 * @param string $caseTypeId CaseType UUID.
-	 *
-	 * @return array<string, mixed> The template, or an empty array when there is none.
-	 */
-	private function activeTemplate(string $caseTypeId): array {
-		$rows = $this->store->rowsOfType(schemaKey: 'workflow_template_schema', caseTypeId: $caseTypeId);
-
-		$fallback = [];
-		foreach ($rows as $row) {
-			if (($row['isActive'] ?? false) === true) {
-				return $row;
-			}
-
-			if ($fallback === []) {
-				$fallback = $row;
-			}
-		}
-
-		return $fallback;
-	}//end activeTemplate()
-
-	/**
-	 * Whether one of the statuses closes a case.
-	 *
-	 * @param array<int, array<string, mixed>> $statuses The resolved statuses.
-	 *
-	 * @return boolean True when at least one is final.
-	 */
-	private function hasFinalStatus(array $statuses): bool {
-		foreach ($statuses as $status) {
-			if (in_array(($status['isFinal'] ?? false), [true, 1, '1', 'true'], true) === true) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end hasFinalStatus()
-
-	/**
-	 * Whether the type's initial status is one of the statuses it resolves to.
-	 *
-	 * An initial status pointing at a status the type does not have is worse
-	 * than none: a new case is filed into a status its own lifecycle cannot
-	 * move it out of.
-	 *
-	 * @param array<string, mixed>             $caseType The effective case type.
-	 * @param array<int, array<string, mixed>> $statuses The resolved statuses.
-	 *
-	 * @return boolean True when the initial status resolves.
-	 */
-	private function initialStatusIsOwn(array $caseType, array $statuses): bool {
-		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
-		if ($initial === '') {
-			return false;
-		}
-
-		foreach ($statuses as $status) {
-			if ($this->store->rowId(row: $status) === $initial) {
-				return true;
-			}
-		}
-
-		return false;
-	}//end initialStatusIsOwn()
 
 	/**
 	 * Write one object back to its configured schema.

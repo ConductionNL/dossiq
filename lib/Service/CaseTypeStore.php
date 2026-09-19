@@ -102,6 +102,41 @@ class CaseTypeStore {
 	}//end rowsOfType()
 
 	/**
+	 * The case type's active workflow template.
+	 *
+	 * Here rather than on a caller because two of them ask: publishing writes
+	 * the template out, and the publication checks walk its moves to find what
+	 * nothing can reach. Both asked {@see self::rowsOfType()} and picked the
+	 * same row the same way, and two readings of "which template is active" is
+	 * how a publish and its own validation come to read different workflows.
+	 *
+	 * A type with templates but none marked active answers the first one, which
+	 * is what an unmarked set has always meant here.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<string, mixed> The template, or an empty array when there is none.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function activeTemplate(string $caseTypeId): array {
+		$rows = $this->rowsOfType(schemaKey: 'workflow_template_schema', caseTypeId: $caseTypeId);
+
+		$fallback = [];
+		foreach ($rows as $row) {
+			if (($row['isActive'] ?? false) === true) {
+				return $row;
+			}
+
+			if ($fallback === []) {
+				$fallback = $row;
+			}
+		}
+
+		return $fallback;
+	}//end activeTemplate()
+
+	/**
 	 * Every case type sharing one identifier: the version chain.
 	 *
 	 * ZGW's `identificatie` is what makes two rows versions of one zaaktype, so
