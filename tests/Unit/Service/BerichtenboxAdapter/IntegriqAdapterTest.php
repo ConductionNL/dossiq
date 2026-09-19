@@ -44,6 +44,7 @@ use Psr\Log\LoggerInterface;
  * Tests that the adapter reaches integriq and refuses rather than simulating.
  *
  * @covers \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class IntegriqAdapterTest extends TestCase {
 	/**

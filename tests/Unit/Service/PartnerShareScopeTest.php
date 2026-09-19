@@ -124,6 +124,7 @@ final class PssShareStore {
  * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
  * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
+ * @uses \OCA\Dossiq\Service\CaseSharingService
  *
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */

@@ -52,6 +52,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Email\CaseEmailRepository
  * @uses \OCA\Dossiq\Service\EmailTemplateService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseEmailService
  */
 class SendFromTemplateRefusesTest extends TestCase {
 

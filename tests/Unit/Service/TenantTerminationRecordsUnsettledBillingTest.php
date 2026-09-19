@@ -65,6 +65,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TenantAuditTrailService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TenantBillingService
+ * @uses \OCA\Dossiq\Service\TenantSaasService
  *
  * @spec openspec/specs/tenant-lifecycle/spec.md#requirement-tenant-termination-and-data-archival-req-008-b
  */

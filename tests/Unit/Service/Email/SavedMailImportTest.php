@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\Email\SavedMailImport
  * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class SavedMailImportTest extends TestCase {
 	/**

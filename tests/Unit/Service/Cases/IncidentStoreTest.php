@@ -55,6 +55,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
  */

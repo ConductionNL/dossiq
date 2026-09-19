@@ -45,6 +45,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class PauseChaseServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -105,6 +105,7 @@ class NotAnAdapter {
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
  */
 class AdapterHonestyTest extends TestCase {
 

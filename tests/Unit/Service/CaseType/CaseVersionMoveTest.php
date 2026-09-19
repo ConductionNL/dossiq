@@ -49,6 +49,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseVersionMoveTest extends TestCase {
 

@@ -61,6 +61,7 @@ use TypeError;
  * @covers \OCA\Dossiq\Lifecycle\CaseActionProvider
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses \OCA\Dossiq\Service\Cases\ExternalHome
+ * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate
  */
 class CaseActionProviderExecuteTest extends TestCase {
 

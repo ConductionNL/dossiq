@@ -78,6 +78,7 @@ final class CcbCaseStore extends InMemoryRegister {
  * @covers \OCA\Dossiq\Repair\BackfillCaseCustody
  * @uses \OCA\Dossiq\Service\Custody\CaseCustodyChain
  * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  *
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */
