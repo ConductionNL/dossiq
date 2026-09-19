@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Cases;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Cases\CaseSplitExecutor;
 use OCA\Dossiq\Service\Cases\CaseSplitPlan;
+use OCA\Dossiq\Service\Cases\CaseSplitStore;
 use OCA\Dossiq\Service\Cases\CaseSplitPolicy;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -184,6 +185,9 @@ class CaseSplitDivisiblePartsTest extends TestCase {
 			policy: new CaseSplitPolicy(),
 			plan: new CaseSplitPlan(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			// A REAL store over the SAME settings double the assertions read
+			// through. Only the wiring line moved when it was split out.
+			store: new CaseSplitStore($settings),
 		);
 	}//end executor()
 }//end class
