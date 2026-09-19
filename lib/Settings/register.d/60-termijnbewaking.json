@@ -18,7 +18,7 @@
         "icon": "TimerOutline",
         "version": "1.2.0",
         "x-schema-org": "schema:DefinedTerm",
-        "title": "Termijn Definitie",
+        "title": "Term definition",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
         "type": "object",
         "required": [
@@ -206,7 +206,7 @@
         "icon": "TimerSandFull",
         "version": "1.2.0",
         "x-schema-org": "schema:Action",
-        "title": "Termijn Instance",
+        "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
         "type": "object",
         "x-notes": "`deadlineDefinition` left the required list in 1.1.0. Four kinds of clock are instances of this schema now, and only the statutory one materialises from a TermijnDefinitie: a planned end, an internal target and a phase term are declared on the case type and the status type. Keeping the reference required would have forced a made-up definition id onto three of the four kinds, which is worse than an absent reference because a made-up id resolves to nothing while claiming to resolve.",
@@ -408,7 +408,7 @@
         "icon": "ScriptText",
         "version": "1.1.0",
         "x-schema-org": "schema:Event",
-        "title": "Termijn Gebeurtenis",
+        "title": "Term event",
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
         "type": "object",
         "required": [
