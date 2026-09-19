@@ -698,6 +698,9 @@ class BrcController extends ZgwController {
 	 * @param string $decisionUrl The besluit URL to match OIOs against
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function deleteOiosForDecision(string $decisionUrl): void {
 		$objectService = $this->zgwService->getObjectService();
@@ -826,6 +829,9 @@ class BrcController extends ZgwController {
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function deleteOioByDecisionAndIo(string $decisionUrl, string $ioUrl): void {
 		$objectService = $this->zgwService->getObjectService();

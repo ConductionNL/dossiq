@@ -123,6 +123,9 @@ class ZgwMappingController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::isSearchable() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function update(string $resourceKey): JSONResponse {

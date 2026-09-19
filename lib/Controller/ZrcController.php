@@ -1969,6 +1969,9 @@ class ZrcController extends ZgwController {
 	 * @param string $zaakUuid The zaak UUID
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function setIndicationGebruiksrechtOnClose(string $zaakUuid): void {
 		try {
@@ -2505,6 +2508,9 @@ class ZrcController extends ZgwController {
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function syncDeleteObjectInformatieObject(string $caseUrl, string $ioUrl): void {
 		try {

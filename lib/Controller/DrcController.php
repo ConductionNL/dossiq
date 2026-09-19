@@ -1171,6 +1171,9 @@ class DrcController extends ZgwController {
 	 * @param string $eioUuid The EIO UUID
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function cascadeDeleteGebruiksrechten(string $eioUuid): void {
 		$objectService = $this->zgwService->getObjectService();
@@ -1287,6 +1290,9 @@ class DrcController extends ZgwController {
 	 * @param string $eioUuid The EIO UUID
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function checkAndClearIndicationGebruiksrecht(string $eioUuid): void {
 		$objectService = $this->zgwService->getObjectService();

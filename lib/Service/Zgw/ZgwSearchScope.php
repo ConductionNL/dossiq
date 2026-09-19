@@ -79,8 +79,8 @@ final class ZgwSearchScope {
 			return null;
 		}
 
-		$register = self::toObjectStoreId($mappingConfig['sourceRegister'] ?? null);
-		$schema = self::toObjectStoreId($mappingConfig['sourceSchema'] ?? null);
+		$register = self::toObjectStoreId(reference: ($mappingConfig['sourceRegister'] ?? null));
+		$schema = self::toObjectStoreId(reference: ($mappingConfig['sourceSchema'] ?? null));
 		if ($register === null || $schema === null) {
 			return null;
 		}
