@@ -54,6 +54,8 @@ import {
 	seedCase,
 	seedFlowTask,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
+import { expectRefused, NOT_LOGGED_IN } from './helpers/refusals.ts'
 
 /** The kind every reminder carries. One spelling, `src/utils/reminderHelpers.js`. */
 const REMINDER_KIND = 'reminder'
@@ -73,7 +75,13 @@ test.describe('REQ-TASK-020 a reminder is a task with a kind', () => {
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
-		anonymous = await playwright.request.newContext({ baseURL })
+		// 🔴 NOT `newContext({ baseURL })` AGAIN. That is the same call as the
+		// line above, and the line above is signed in: `getRequestToken`
+		// throws unless the dashboard carries a non-empty request token, and
+		// Nextcloud's login page carries an empty one. So this used to be a
+		// second admin session, and the 201 it reported below carried
+		// `createdBy: "admin"`.
+		anonymous = await anonymousContext(playwright, String(baseURL))
 		token = await getRequestToken(api)
 
 		// Whoever this run signed in as. The reminder is assigned to them and
@@ -176,13 +184,17 @@ test.describe('REQ-TASK-020 a reminder is a task with a kind', () => {
 			},
 		})
 
-		// 401 without a session, 403 when the instance answers that way, 412
-		// on the missing request token. Any of the three is a refusal; a 201
-		// is a stranger writing on an employee's work list.
-		expect(
-			[401, 403, 412],
-			`anonymous create answered ${attempted.status()}: ${await attempted.text()}`,
-		).toContain(attempted.status())
+		// THE MEASURED ANSWER, not "anything 4xx". A credential-free curl on
+		// this endpoint answers
+		// `401 {"message":"Current user is not logged in"}`, so that is what
+		// is asserted: the status AND the reason. `res.ok() === false` also
+		// passes on the 500 a broken route answers and on the 404 a typo
+		// answers, neither of which is this permission.
+		await expectRefused(
+			attempted,
+			NOT_LOGGED_IN,
+			'a stranger creating a reminder on a colleague',
+		)
 	})
 
 	test('completing the reminder takes it off the case', async () => {

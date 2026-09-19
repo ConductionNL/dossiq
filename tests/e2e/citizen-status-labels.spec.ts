@@ -53,6 +53,7 @@ import {
 	showObject,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
 
 /** dossiq's own share surface, where a link is minted. */
 const SHARES = '/index.php/apps/dossiq/api/shares'
@@ -144,7 +145,15 @@ test.describe('A status says to the applicant what the author wrote for them', (
 		await context.close()
 		// No session and no request token. An authenticated read of the public
 		// route would pass even if the link granted nothing at all.
-		anonymous = await playwright.request.newContext({ baseURL })
+		//
+		// 🔴 THAT COMMENT WAS TRUE OF THE INTENT AND FALSE OF THE CODE. The
+		// call was `newContext({ baseURL })`, which inherits `use.storageState`
+		// from playwright.config.ts, and that names the admin's captured
+		// session. So every "the applicant reads" assertion below was the
+		// admin reading, and the two `expect(body).not.toContain(...)` lines
+		// were checked against a body served to somebody entitled to all of
+		// it. `anonymousContext` builds what the comment describes.
+		anonymous = await anonymousContext(playwright, String(baseURL))
 		token = await getRequestToken(api)
 
 		// PUBLISHED: `case.caseType` filters on `isDraft: false`.

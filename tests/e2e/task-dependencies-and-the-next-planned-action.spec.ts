@@ -50,6 +50,8 @@ import {
 	seedCase,
 	showObject,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
+import { expectRefused, REFUSED_ANONYMOUS } from './helpers/refusals.ts'
 
 /** dossiq's own routes for the planned action. */
 const PLANNED_BASE = `/index.php/apps/${REGISTER}/api/cases`
@@ -246,15 +248,22 @@ test.describe('The case says what happens next', () => {
 		})
 		const id = objectId(action)
 
-		const anonymous = await playwright.request.newContext({ baseURL })
+		// 🔴 A CALLER THAT HAS NEVER SIGNED IN. `newContext({ baseURL })`
+		// inherits `use.storageState`, which is the admin's captured session,
+		// so "the ungranted principal" used to be an admin who may complete
+		// the action: the write would have LANDED, and the assertion on the
+		// record below would then have been the one to fail, blaming the
+		// route rather than the fixture.
+		const anonymous = await anonymousContext(playwright, String(baseURL))
 		const response = await anonymous.post(
 			`${PLANNED_BASE}/${caseId}/planned-actions/${id}/complete`,
 			{},
 		)
-		expect(
-			response.ok(),
-			`an ungranted principal must not complete an action, got ${response.status()}`,
-		).toBeFalsy()
+		await expectRefused(
+			response,
+			REFUSED_ANONYMOUS,
+			'an ungranted principal completing a planned action',
+		)
 		await anonymous.dispose()
 
 		// The refusal is asserted on the RECORD too, not only on the status.

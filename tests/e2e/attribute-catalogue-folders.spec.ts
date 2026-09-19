@@ -50,6 +50,8 @@ import {
 	RUN_PREFIX,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
+import { anonymousContext } from './helpers/principals.ts'
+import { expectRefused, NOT_FOUND } from './helpers/refusals.ts'
 
 /** The two categories this run authors, and the one it deliberately leaves off. */
 const ADDRESS = `${RUN_PREFIX} Address`
@@ -278,14 +280,25 @@ test.describe('The attribute catalogue is in folders', () => {
 		// from the risk-level probe in markers-and-assessments: there, a 401
 		// would have proved the wrong thing, because the case itself was meant
 		// to be readable.
-		const anonymous = await playwright.request.newContext({ baseURL })
+		//
+		// 🔴 AND IT HAS TO BE BUILT, NOT ASSUMED. `newContext({ baseURL })`
+		// inherits `use.storageState` from playwright.config.ts, which is the
+		// admin's captured session, so the context this probe used to build
+		// was an admin and the refusal it asserted could never have arrived.
+		const anonymous = await anonymousContext(playwright, String(baseURL))
 		const response = await anonymous.get(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/propertyDefinition/${seeded[POSTCODE]}`,
 		)
-		expect(
-			response.ok(),
-			`an anonymous reader must not read an attribute, got ${response.status()}`,
-		).toBeFalsy()
+
+		// 404, NOT MERELY "not ok". OpenRegister answers a caller with no
+		// session `404 {"error":"Not Found"}` here rather than 403, because a
+		// 403 would confirm the row exists. Asserting the status and the word
+		// is what separates that deliberate answer from a broken route.
+		await expectRefused(
+			response,
+			NOT_FOUND,
+			'an anonymous reader reading an attribute',
+		)
 		expect(await response.text()).not.toContain(POSTCODE)
 		await anonymous.dispose()
 	})

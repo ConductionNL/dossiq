@@ -51,6 +51,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
 
 /** OpenRegister's own API, which owns the timeline. */
 const OR = '/index.php/apps/openregister/api'
@@ -123,7 +124,14 @@ test.describe('REQ-PC-10 an outsider sees the public entries and no others', () 
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
-		anonymous = await playwright.request.newContext({ baseURL })
+		// 🔴 THE OUTSIDER HAS TO BE ONE. The file header says `anonymous`
+		// never signs in, but the call was identical to the line above, which
+		// inherits `use.storageState` from playwright.config.ts and is the
+		// admin's captured session. So "the outsider sees only the public
+		// entries" was the admin reading a case they may read in full, and
+		// every `not.toContain` below was asserted over a body served to
+		// somebody entitled to all of it.
+		anonymous = await anonymousContext(playwright, String(baseURL))
 		token = await getRequestToken(api)
 
 		const caseType = await ensureCaseType(api, token)

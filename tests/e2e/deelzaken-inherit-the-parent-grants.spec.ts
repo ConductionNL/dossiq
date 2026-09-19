@@ -50,6 +50,8 @@ import {
 	updateObject,
 } from './helpers/fixtures.ts'
 import { dismissSupportDialog, PAGE_LOAD } from './helpers/nav.ts'
+import { anonymousContext } from './helpers/principals.ts'
+import { expectRefused, REFUSED_ANONYMOUS } from './helpers/refusals.ts'
 
 /** OpenRegister's schema store, where the declaration has to have landed. */
 const SCHEMAS_BASE = '/index.php/apps/openregister/api/schemas'
@@ -189,15 +191,22 @@ test.describe('A deelzaak inherits its parent grants', () => {
 		// principal, and the write is the verb that must never widen. A
 		// refusal here is a real result; the title is not read back for a
 		// change, it is read back to prove the write did not land.
-		const anonymous = await playwright.request.newContext({ baseURL })
+		//
+		// 🔴 AND IT IS BUILT AS ONE. `newContext({ baseURL })` inherits
+		// `use.storageState` from playwright.config.ts, which names the
+		// admin's captured session, so "the ungranted principal" was the
+		// admin: the write it attempted would have SUCCEEDED, and the
+		// assertion below reported a working guard as a hole.
+		const anonymous = await anonymousContext(playwright, String(baseURL))
 		const response = await anonymous.put(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/case/${grandchildId}`,
 			{ data: { title: `${RUN_PREFIX} rewritten by nobody` } },
 		)
-		expect(
-			response.ok(),
-			`an ungranted principal must not write the deelzaak, got ${response.status()}`,
-		).toBeFalsy()
+		await expectRefused(
+			response,
+			REFUSED_ANONYMOUS,
+			'an ungranted principal writing the deelzaak',
+		)
 		await anonymous.dispose()
 
 		const unchanged = await showObject(api, 'case', grandchildId)
