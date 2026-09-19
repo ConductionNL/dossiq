@@ -23,6 +23,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Term;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Term\FirstResponseOutcome;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -109,7 +110,7 @@ class FirstResponseOutcomeTest extends TestCase {
 			caseId: 'case-1',
 			due: new DateTimeImmutable('2026-09-09T17:00:00+02:00'),
 			sent: new DateTimeImmutable('2026-09-14T09:00:00+02:00'),
-			working: false
+			countingMode: WorkingDayRoll::MODE_CALENDAR_DAYS
 		);
 
 		$this->assertSame(4, $recorded['overrunDays']);

@@ -94,21 +94,7 @@ class FileRequestService {
 		// in one caller is a check the next caller does not have.
 		$partyUuid = $this->indicators->partyUuidOf(link: $person);
 
-		// EITHER REFUSAL STOPS IT. `PartyRefusalReader` joins pipelinq's
-		// blocking answer to the one this app already read out of OpenRegister,
-		// and pipelinq's label wins the sentence when both refuse because it
-		// carries the vocabulary an administrator maintains. With pipelinq
-		// absent the reader answers on OpenRegister alone, which is exactly
-		// what this call site did before.
-		$refusal = null;
-		if ($this->refusals !== null) {
-			$verdict = $this->refusals->maySendTo(partyUuid: $partyUuid);
-			if ($verdict['refused'] === true) {
-				$refusal = $verdict['indicator'];
-			}
-		} else {
-			$refusal = $this->indicators->sendRefusalFor(partyUuid: $partyUuid);
-		}
+		$refusal = $this->refusalFor(partyUuid: $partyUuid);
 
 		if ($refusal !== null && $refusal !== '') {
 			throw new RuntimeException(
@@ -156,6 +142,35 @@ class FileRequestService {
 			'expiresAt' => $expires->format('Y-m-d'),
 		];
 	}//end request()
+
+	/**
+	 * The indicator refusing a send to this party, or null when nothing refuses.
+	 *
+	 * EITHER REFUSAL STOPS IT. `PartyRefusalReader` joins pipelinq's blocking
+	 * answer to the one this app already read out of OpenRegister, and
+	 * pipelinq's label wins the sentence when both refuse because it carries
+	 * the vocabulary an administrator maintains. With pipelinq absent the
+	 * reader is not there, and the answer comes from OpenRegister alone, which
+	 * is exactly what this call site did before.
+	 *
+	 * @param string $partyUuid The party the request would go to.
+	 *
+	 * @return string|null The refusing indicator, or null.
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 */
+	private function refusalFor(string $partyUuid): ?string {
+		if ($this->refusals === null) {
+			return $this->indicators->sendRefusalFor(partyUuid: $partyUuid);
+		}
+
+		$verdict = $this->refusals->maySendTo(partyUuid: $partyUuid);
+		if ($verdict['refused'] === true) {
+			return $verdict['indicator'];
+		}
+
+		return null;
+	}//end refusalFor()
 
 	/**
 	 * How many days a request stands: what the caller asked, within a year.
