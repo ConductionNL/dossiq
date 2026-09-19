@@ -89,7 +89,7 @@ class CaseSplitController extends Controller {
 	 *
 	 * @return JSONResponse The new case and what moved, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	#[NoAdminRequired]
 	public function split(string $caseId): JSONResponse {

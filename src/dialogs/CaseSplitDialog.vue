@@ -376,7 +376,7 @@ export default {
 		 * Ask the server to split, and keep the dialog open on a refusal.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-splits-by-moving-what-was-chosen-req-spl-01
+		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 		 */
 		async confirm() {
 			if (!this.canConfirm || this.targetCaseId === '') {

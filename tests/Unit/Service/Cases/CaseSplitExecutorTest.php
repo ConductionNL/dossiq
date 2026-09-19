@@ -97,7 +97,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function testTheChosenDocumentsLeaveTheOriginal(): void {
 		$answer = $this->executor()->split(
@@ -124,7 +124,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function testTheOriginalRecordsWhatLeftIt(): void {
 		$answer = $this->executor()->split(
@@ -154,7 +154,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function testAPartyRelevantToBothHalvesStaysOnBoth(): void {
 		$answer = $this->executor()->split(
@@ -181,7 +181,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-46
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
 	 */
 	public function testTheCaseTypesRefusalIsThePolicysOwnSentence(): void {
 		$this->store->seed(
@@ -221,7 +221,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function testMovingATaskIsRefusedWithItsReason(): void {
 		try {
@@ -250,7 +250,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function testAnIdOnAnotherCaseIsNotMoved(): void {
 		$this->store->seed(schema: 'case', uuid: 'case-2', row: ['title' => 'Andermans zaak', 'caseType' => 'ct-1']);
@@ -276,7 +276,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function testASplitThatDividesNothingIsRefused(): void {
 		try {
@@ -298,7 +298,7 @@ class CaseSplitExecutorTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function testTheNewCaseNamesTheOriginal(): void {
 		$answer = $this->executor()->split(

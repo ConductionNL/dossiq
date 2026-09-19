@@ -78,7 +78,7 @@ class CaseSplitPlan {
 	 * } What to repoint, what to record on the original, what was refused as
 	 *   not this case's, and the relation to write.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function forSelection(string $sourceId, string $newId, array $chosen): array {
 		$moves = [];
@@ -152,7 +152,7 @@ class CaseSplitPlan {
 	 *
 	 * @return string The note, '' when nothing moved.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function noteFor(array $references, string $newNumber): string {
 		if ($references === []) {

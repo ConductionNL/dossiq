@@ -67,7 +67,7 @@ class CaseSplitPolicy {
 	 *
 	 * @return array<int, string> The parts this type allows, in a stable order.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-46
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
 	 */
 	public function allowedFor(?array $caseType): array {
 		$declared = ($caseType[self::DECLARATION] ?? null);
@@ -95,7 +95,7 @@ class CaseSplitPolicy {
 	 *
 	 * @return string The refusal, '' when the split may go ahead.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-46
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
 	 */
 	public function whyRefused(array $selected, ?array $caseType): string {
 		$allowed = $this->allowedFor(caseType: $caseType);

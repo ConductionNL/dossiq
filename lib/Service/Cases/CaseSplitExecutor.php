@@ -153,7 +153,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the case cannot be read, the case type refuses, or the write fails.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	public function split(string $caseId, string $title, array $chosen, string $actor): array {
 		$caseId = trim($caseId);
@@ -230,7 +230,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException Carrying the policy's own sentence.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-46
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-type-declares-what-a-split-may-divide-req-cm-52
 	 */
 	private function refuseSelection(array $chosen, ?array $caseType): void {
 		$selected = [];
@@ -439,7 +439,7 @@ class CaseSplitExecutor {
 	 *
 	 * @throws RefusedException When the write is refused.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-45
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-split-divides-a-case-rather-than-duplicating-it-req-cm-50
 	 */
 	private function openSecondCase(array $source, string $title, string $actor): array {
 		$sourceId = $this->uuidOf(row: $source);

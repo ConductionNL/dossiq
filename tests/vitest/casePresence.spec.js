@@ -22,7 +22,11 @@
  * pages. A shift applied by id over the whole manifest rewrites some other
  * page's grid and reports a confident success. This is what catches it.
  *
- * @spec openspec/changes/object-presence/specs/realtime-updates/spec.md
+ * @spec exclude The presence mechanism belongs to OpenRegister and is specified
+ * there, not here (competitor-parity-2026-09 Q2.31). What this file asserts is
+ * the dossiq side of it, which is manifest wiring rather than behaviour: that
+ * the case page places the library's own `presence` widget and that this app
+ * ships no component of its own for it.
  */
 
 import fs from 'fs'

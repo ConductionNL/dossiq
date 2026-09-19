@@ -111,7 +111,7 @@ class IncidentStore {
 	 *
 	 * @throws RefusedException When the report is incomplete or cannot be written.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function record(
 		string $caseId,
@@ -154,7 +154,7 @@ class IncidentStore {
 	 *
 	 * @return array<int, array<string, mixed>> The incidents.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function on(string $caseId): array {
 		$caseId = trim($caseId);
@@ -178,7 +178,7 @@ class IncidentStore {
 	 *
 	 * @return array<int, array<string, mixed>> The incidents, in event order.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function ownedBy(string $userId): array {
 		$userId = trim($userId);
@@ -212,7 +212,7 @@ class IncidentStore {
 	 *
 	 * @return array<string, int> The counts, keyed by case.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function openCountsFor(array $caseIds): array {
 		$wanted = [];
@@ -256,7 +256,7 @@ class IncidentStore {
 	 *
 	 * @throws RefusedException When the incident is unknown or cannot be written.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function assign(string $incidentId, string $assignee): array {
 		$incident = $this->require(incidentId: $incidentId);
@@ -285,7 +285,7 @@ class IncidentStore {
 	 *
 	 * @throws RefusedException When the incident is unknown, the outcome is empty, or the write fails.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function settle(string $incidentId, string $outcome): array {
 		$outcome = trim($outcome);
@@ -314,7 +314,7 @@ class IncidentStore {
 	 *
 	 * @return int|null The delay in days, or null when either moment is missing.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function recordingDelayDays(array $incident): ?int {
 		return $this->record->recordingDelayDays(incident: $incident);

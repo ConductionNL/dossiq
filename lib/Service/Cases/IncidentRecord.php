@@ -88,7 +88,7 @@ class IncidentRecord {
 	 *
 	 * @return array<int, array<string, mixed>> The incidents, in event order.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function inEventOrder(array $incidents): array {
 		$rows = array_values(array_filter($incidents, static fn ($row): bool => is_array($row)));
@@ -117,7 +117,7 @@ class IncidentRecord {
 	 *
 	 * @return int|null The delay in days, or null when either moment is missing.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function recordingDelayDays(array $incident): ?int {
 		$event = $this->parse(value: (string)($incident['eventDate'] ?? ''));
@@ -152,7 +152,7 @@ class IncidentRecord {
 	 *
 	 * @return int The count.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function openCount(array $incidents): int {
 		$open = 0;
@@ -181,7 +181,7 @@ class IncidentRecord {
 	 *
 	 * @return array<string, mixed> The fields to write on the INCIDENT.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function handoverChange(array $incident, string $assignee): array {
 		$change = ['assignee' => trim($assignee)];

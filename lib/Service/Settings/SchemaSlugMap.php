@@ -72,7 +72,7 @@ class SchemaSlugMap {
 		'caseDocument' => 'case_document_schema',
 		'caseObject' => 'case_object_schema',
 		// One dated event inside a case, with its own owner
-		// (splitting-a-case-and-its-incidents REQ-CM-47). A schema with no key
+		// (splitting-a-case-and-its-incidents REQ-CM-53). A schema with no key
 		// here resolves to nothing and every read of it answers an empty list,
 		// which reads exactly like a case with no incidents.
 		//

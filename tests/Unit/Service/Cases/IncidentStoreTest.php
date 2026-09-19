@@ -86,7 +86,7 @@ class IncidentStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function testTheReportsReadInEventOrder(): void {
 		$incidents = $this->incidents();
@@ -116,7 +116,7 @@ class IncidentStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function testAReportIsOpenUntilItIsSettled(): void {
 		$incidents = $this->incidents();
@@ -140,7 +140,7 @@ class IncidentStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	public function testAnIncompleteReportIsRefused(): void {
 		$incidents = $this->incidents();
@@ -167,7 +167,7 @@ class IncidentStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function testAssigningAReportLeavesTheCaseWhereItIs(): void {
 		$incidents = $this->incidents();
@@ -196,7 +196,7 @@ class IncidentStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function testASettledReportLeavesTheInspectorsList(): void {
 		$incidents = $this->incidents();
@@ -239,7 +239,7 @@ class IncidentStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function testFiveCasesHoldNineOpenReports(): void {
 		$spread = ['case-1' => 1, 'case-2' => 2, 'case-3' => 2, 'case-4' => 3, 'case-5' => 1];
@@ -280,7 +280,7 @@ class IncidentStoreTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	public function testAReportSomebodyIsWorkingStillCounts(): void {
 		$this->store->seed(

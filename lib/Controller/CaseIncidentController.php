@@ -90,7 +90,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The incidents, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	#[NoAdminRequired]
 	public function index(string $caseId): JSONResponse {
@@ -117,7 +117,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The stored incident, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	#[NoAdminRequired]
 	public function record(string $caseId): JSONResponse {
@@ -158,7 +158,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The stored incident, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-48
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-an-incident-carries-its-own-hand-off-req-cm-54
 	 */
 	#[NoAdminRequired]
 	public function assign(string $caseId, string $incidentId): JSONResponse {
@@ -186,7 +186,7 @@ class CaseIncidentController extends Controller {
 	 *
 	 * @return JSONResponse The stored incident, or the refusal.
 	 *
-	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-47
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
 	#[NoAdminRequired]
 	public function settle(string $caseId, string $incidentId): JSONResponse {

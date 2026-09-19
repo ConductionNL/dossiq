@@ -42,7 +42,11 @@ use OCP\EventDispatcher\Event;
 /**
  * Typed cross-app command: "this message arrived, is it yours?".
  *
- * @spec openspec/changes/mail-intake-creates-cases/specs/mail-intake/spec.md#requirement-a-received-message-is-offered-to-the-owning-app-as-a-typed-event-req-mail-003
+ * @spec exclude A declaration-only mirror of another app's event contract, not
+ * behaviour of this one: the requirement it serves is integriq's mail intake,
+ * which is specified in integriq's own repo and not here, and the dossiq side
+ * it lets the analysers see is specified in
+ * openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md.
  */
 class MessageReceivedEvent extends Event {
 
