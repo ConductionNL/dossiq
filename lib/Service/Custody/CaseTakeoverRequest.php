@@ -38,7 +38,6 @@ namespace OCA\Dossiq\Service\Custody;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use Psr\Log\LoggerInterface;
@@ -113,7 +112,6 @@ class CaseTakeoverRequest {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService   $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param CaseCustodyChain  $custody         The chain the answer writes into.
 	 * @param EngineTaskGateway $tasks           Carries the request to the holder.
 	 * @param LoggerInterface   $logger          Records every request and every answer.
@@ -122,7 +120,6 @@ class CaseTakeoverRequest {
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
 		private readonly CaseCustodyChain $custody,
 		private readonly EngineTaskGateway $tasks,
 		private readonly LoggerInterface $logger,

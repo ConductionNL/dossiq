@@ -85,18 +85,17 @@ class TermijnRearmTest extends TestCase {
 			},
 		);
 
-		// The one date path, injected rather than left to default. Without it
-		// `startOf()` answers null and the successor silently starts today
-		// instead of on the day the case was received, which is a statutory
-		// date moving because a test built the service with two arguments.
 		$terms = new TermijnService(
 			$settings,
-			new NullLogger(),
-			null,
-			null,
-			$this->caseDates()
+			new NullLogger()
 		);
 
+		// THE ONE DATE PATH, injected rather than left to default. Without it
+		// `startOf()` answers null and the successor silently starts today
+		// instead of on the day the case was received, which is a statutory
+		// date moving because a test built the re-arm with three arguments.
+		// It is the re-arm's dependency now, not the term service's: the two
+		// methods that read a date moved here with the re-arm.
 		$this->service = new TermRearm(
 			terms: $terms,
 			settingsService: $settings,
