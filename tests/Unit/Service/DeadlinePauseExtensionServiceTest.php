@@ -48,6 +48,9 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Term\ThresholdShares
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
 	use MakesCaseDateNormaliser;

@@ -95,6 +95,9 @@ interface StatusStoreObjectServiceStub {
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\TermKind
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class StatusAndTermEventsOnTheTimelineTest extends TestCase {
 

@@ -100,6 +100,7 @@ interface ChannelIntakeObjectServiceStub {
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\Intake\MessageFacts
  */
 class IntakeMessageRoutedListenerTest extends TestCase {
 
