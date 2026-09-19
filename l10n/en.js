@@ -3847,6 +3847,7 @@ OC.L10N.register(
         "Motivation for {doc}": "Motivation for {doc}",
         "Motivation is required (art. 7:12 Awb)": "Motivation is required (art. 7:12 Awb)",
         "Motivering": "Reasoning",
+        "Move an end date off a closed day. A term ending on a weekend or a public holiday moves to the next ordinary day. The organisation calendar decides which days are closed. Leave this on unless the Algemene termijnenwet (Awt) does not govern this term.": "Move an end date off a closed day. A term ending on a weekend or a public holiday moves to the next ordinary day. The organisation calendar decides which days are closed. Leave this on unless the Algemene termijnenwet (Awt) does not govern this term.",
         "Move the case": "Move the case",
         "Move the case: {label}": "Move the case: {label}",
         "Move to another status": "Move to another status",

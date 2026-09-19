@@ -66,12 +66,6 @@ class PublicationChecks {
 	 * @param RemedyClauseDeclaration $remedy           The remedy open against this case type's decisions.
 	 * @param CaseTypeHandling        $handling         The one reader of the handling switches.
 	 * @param CaseTypeReachability    $reachability     What this type's moves can and cannot reach.
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Constructor DI. Each one
-	 *  answers a different question the publish has to ask before the one write
-	 *  it owns: is the draft valid, can a case actually run through it, and
-	 *  what does it warn about. They came here together out of
-	 *  CaseTypePublishService, where they sat beside the write itself.
 	 */
 	public function __construct(
 		private readonly CaseTypeResolver $caseTypeResolver,

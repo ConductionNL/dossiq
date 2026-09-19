@@ -3858,6 +3858,7 @@
         "Motivation for {doc}": "Motivering voor {doc}",
         "Motivation is required (art. 7:12 Awb)": "Motivering is verplicht (art. 7:12 Awb)",
         "Motivering": "Motivering",
+        "Move an end date off a closed day. A term ending on a weekend or a public holiday moves to the next ordinary day. The organisation calendar decides which days are closed. Leave this on unless the Algemene termijnenwet (Awt) does not govern this term.": "Verplaats een einddatum van een gesloten dag af. Een termijn die op een weekend of een feestdag eindigt, schuift door naar de eerstvolgende gewone dag. De organisatiekalender bepaalt welke dagen gesloten zijn. Laat dit aan staan, tenzij de Algemene termijnenwet (Awt) niet over deze termijn gaat.",
         "Move the case": "Verplaats de zaak",
         "Move the case: {label}": "Zaak verplaatsen: {label}",
         "Move to another status": "Naar een andere status",

@@ -151,29 +151,27 @@ class TermijnTimerService {
 	private TermEndRoll $ends;
 
 	/**
-	 * Roll a computed end date onto the first ordinary day, when the term rolls.
+	 * Roll a computed end date onto the first ordinary day.
+	 *
+	 * Always rolls. A term that may or may not roll goes through
+	 * {@see rollTermEndFor()}, which reads the declared flag and calls this
+	 * only when the term carries it.
 	 *
 	 * @param DateTimeImmutable $date         The computed end date.
-	 * @param bool              $roll         Whether the term declares the roll.
 	 * @param string|null       $calendarSlug The calendar named on the term, when any.
 	 * @param string|null       $organisation The subject's organisation, when any.
 	 *
 	 * @return DateTimeImmutable The day the term actually ends on.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The declared roll flag, passed
-	 *  through to {@see TermEndRoll::rollTermEnd()}. See that method.
-	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function rollTermEnd(
 		DateTimeImmutable $date,
-		bool $roll = true,
 		?string $calendarSlug = null,
 		?string $organisation = null,
 	): DateTimeImmutable {
 		return $this->ends->rollTermEnd(
 			date: $date,
-			roll: $roll,
 			calendarSlug: $calendarSlug,
 			organisation: $organisation,
 		);

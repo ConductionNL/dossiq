@@ -24,7 +24,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/case-type-portability/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use ZipArchive;
 /**
  * Deploys the workflow templates a package carries.
  *
- * @spec openspec/specs/case-type-portability/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class WorkflowDeployer {
 

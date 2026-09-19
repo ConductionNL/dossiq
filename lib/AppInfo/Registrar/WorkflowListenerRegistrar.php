@@ -36,24 +36,12 @@ use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
 use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
-use OCA\Dossiq\Listener\TaskCompletionEffectsListener;
-use OCA\Dossiq\Listener\TaskCompletionResumeListener;
-use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
  * Registers the termijnbewaking and decision-outcome listeners.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Naming classes IS this class's
- *  job. Its only method is one `registerEventListener()` call per listener, so
- *  its coupling is the count of listeners dossiq attaches to OpenRegister's
- *  events and nothing else: it holds no state, reaches through none of them and
- *  calls no method on any of them. Splitting it would leave two registrars that
- *  each know half the wiring, which is how a listener stops registering without
- *  anything failing, and that silent stop is the failure this file's own
- *  comments are about.
  *
  * @psalm-suppress UnusedClass
  *
@@ -88,8 +76,14 @@ class WorkflowListenerRegistrar {
 	public function register(IRegistrationContext $context): void {
 		$this->registerTermListeners(context: $context);
 		$this->registerDecisionListeners(context: $context);
-		$this->registerHumanStepListeners(context: $context);
 		$this->registerCasePlanListeners(context: $context);
+
+		// The task-completion listeners are their own registrar: they answer
+		// to the flow engine rather than to termijnbewaking or to a decision,
+		// and they fail in their own way. Called from here rather than from
+		// ListenerRegistrar because a human step IS part of the workflow, so
+		// this is where a reader looks for it.
+		(new TaskListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**
@@ -223,51 +217,4 @@ class WorkflowListenerRegistrar {
 			$context->registerEventListener(event: $event, listener: DecisionConcludedListener::class);
 		}
 	}//end registerDecisionListeners()
-
-	/**
-	 * Register the listener that resumes a run when its task is completed.
-	 *
-	 * A task is an OpenRegister `Task` row owned by the flow engine, and the
-	 * engine announces its own terminality: `TaskService` dispatches
-	 * `TaskTerminalEvent` once the terminal write has committed.
-	 *
-	 * Registered unconditionally: unlike the decision events, `TaskTerminalEvent`
-	 * is OpenRegister's own and OpenRegister is a hard dependency of this app.
-	 * The class ships from openregister v2.0.13 onward (openregister#3269), and
-	 * `FlowRunSignalService::signalAs()`, which the listener signals through,
-	 * from openregister#3332.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/task-management/spec.md
-	 */
-	private function registerHumanStepListeners(IRegistrationContext $context): void {
-		// The ENGINE's terminal event, not an object update. Tasks are
-		// OpenRegister `Task` rows now, so nothing writes a `caseTask` object
-		// and an ObjectUpdatedEvent listener would never fire again: the run
-		// would only resume on DossiqAskPersonNode's 30-minute heartbeat, and
-		// a wedge that recovers half an hour late still reads as a wedge.
-		$context->registerEventListener(
-			event: TaskTerminalEvent::class,
-			listener: TaskCompletionResumeListener::class
-		);
-
-		// The SAME event, a second listener, deliberately. Resuming the run a
-		// task was blocking and doing what the case type declared completing
-		// it does are two different jobs with two different failure modes: a
-		// refused signal is an authorization answer, a failed effect is a
-		// letter that was not sent. One listener doing both would have to
-		// decide which failure silences the other.
-		//
-		// It listens rather than living in the completion call because a task
-		// can be completed from the case page, the task page, the inbox or
-		// OpenRegister's own API, and dossiq is in the path of only the first.
-		$context->registerEventListener(
-			event: TaskTerminalEvent::class,
-			listener: TaskCompletionEffectsListener::class
-		);
-
-	}//end registerHumanStepListeners()
 }//end class
