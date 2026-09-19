@@ -117,6 +117,7 @@ class CaseTakeoverRequest {
 	 * @param CaseCustodyChain  $custody         The chain the answer writes into.
 	 * @param EngineTaskGateway $tasks           Carries the request to the holder.
 	 * @param LoggerInterface   $logger          Records every request and every answer.
+	 * @param TakeoverStore     $store           Where the records and the cases are kept.
 	 *
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
 	 */
@@ -125,6 +126,7 @@ class CaseTakeoverRequest {
 		private readonly CaseCustodyChain $custody,
 		private readonly EngineTaskGateway $tasks,
 		private readonly LoggerInterface $logger,
+		private readonly TakeoverStore $store,
 	) {
 	}//end __construct()
 
@@ -154,7 +156,7 @@ class CaseTakeoverRequest {
 			);
 		}
 
-		$case = $this->requireCase(caseId: $caseId);
+		$case = $this->store->requireCase(caseId: $caseId);
 		$holder = trim((string)($case['assignee'] ?? ''));
 		$unit = trim((string)($case['assignedGroup'] ?? ''));
 
@@ -173,7 +175,7 @@ class CaseTakeoverRequest {
 		}
 
 		$now = (new DateTimeImmutable())->format('c');
-		$record = $this->write(
+		$record = $this->store->write(
 			record: [
 				'caseId' => $caseId,
 				'requestedBy' => $requestedBy,
@@ -188,7 +190,7 @@ class CaseTakeoverRequest {
 
 		$record['taskId'] = $this->raiseTask(record: $record, case: $case);
 		if ($record['taskId'] !== '') {
-			$record = $this->write(record: $record, uuid: $this->uuidOf(row: $record));
+			$record = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
 		}
 
 		$this->logger->info(
@@ -225,14 +227,14 @@ class CaseTakeoverRequest {
 			movedBy: trim($acceptedBy),
 		);
 
-		$case = $this->requireCase(caseId: $caseId);
-		$this->writeCase(case: $case, changes: ['assignee' => $asker]);
+		$case = $this->store->requireCase(caseId: $caseId);
+		$this->store->writeCase(case: $case, changes: ['assignee' => $asker]);
 
 		$record['status'] = 'accepted';
 		$record['answeredBy'] = trim($acceptedBy);
 		$record['answeredAt'] = (new DateTimeImmutable())->format('c');
 
-		return $this->write(record: $record, uuid: $this->uuidOf(row: $record));
+		return $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
 	}//end accept()
 
 	/**
@@ -269,7 +271,7 @@ class CaseTakeoverRequest {
 			['caseId' => ($record['caseId'] ?? ''), 'refusedBy' => $refusedBy],
 		);
 
-		return $this->write(record: $record, uuid: $this->uuidOf(row: $record));
+		return $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
 	}//end refuse()
 
 	/**
@@ -303,7 +305,7 @@ class CaseTakeoverRequest {
 
 			$record['status'] = 'escalated';
 			$record['escalatedAt'] = $moment->format('c');
-			$escalated[] = $this->write(record: $record, uuid: $this->uuidOf(row: $record));
+			$escalated[] = $this->store->write(record: $record, uuid: $this->store->uuidOf(row: $record));
 
 			$unit = trim((string)($record['holdingUnit'] ?? ''));
 			$taskId = trim((string)($record['taskId'] ?? ''));
@@ -330,7 +332,7 @@ class CaseTakeoverRequest {
 			return [];
 		}
 
-		$rows = $this->rows(filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE]);
+		$rows = $this->store->rows(filters: ['caseId' => $caseId, '_limit' => self::PAGE_SIZE]);
 		usort(
 			$rows,
 			static function (array $left, array $right): int {
@@ -347,7 +349,7 @@ class CaseTakeoverRequest {
 	 * @return array<int, array<string, mixed>> The pending requests.
 	 */
 	private function pending(): array {
-		return $this->rows(filters: ['status' => 'pending', '_limit' => self::PAGE_SIZE]);
+		return $this->store->rows(filters: ['status' => 'pending', '_limit' => self::PAGE_SIZE]);
 	}//end pending()
 
 	/**
@@ -359,7 +361,7 @@ class CaseTakeoverRequest {
 	 */
 	private function answerPeriodDays(string $caseId): int {
 		try {
-			$case = $this->requireCase(caseId: $caseId);
+			$case = $this->store->requireCase(caseId: $caseId);
 		} catch (RefusedException $e) {
 			return self::DEFAULT_ANSWER_DAYS;
 		}
@@ -370,11 +372,11 @@ class CaseTakeoverRequest {
 		}
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 			$caseType = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_type_schema'),
+				schema: $this->store->schema(key: 'case_type_schema'),
 				id: $caseTypeId,
 			);
 		} catch (Throwable $e) {
@@ -405,7 +407,7 @@ class CaseTakeoverRequest {
 		try {
 			return $this->tasks->mirrorImport(
 				task: [
-					'id' => $this->uuidOf(row: $record),
+					'id' => $this->store->uuidOf(row: $record),
 					'title' => $title,
 					'description' => trim((string)($record['reason'] ?? '')),
 					'status' => 'available',
@@ -441,11 +443,11 @@ class CaseTakeoverRequest {
 		$takeoverId = trim($takeoverId);
 
 		try {
-			[$objectService, $register] = $this->context();
+			[$objectService, $register] = $this->store->context();
 			$record = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'case_takeover_schema'),
+				schema: $this->store->schema(key: 'case_takeover_schema'),
 				id: $takeoverId,
 			);
 		} catch (Throwable $e) {
@@ -477,156 +479,10 @@ class CaseTakeoverRequest {
 		return $record;
 	}//end requireOpenRequest()
 
-	/**
-	 * The stored case, or a refusal.
-	 *
-	 * @param string $caseId The case uuid.
-	 *
-	 * @return array<string, mixed> The case.
-	 *
-	 * @throws RefusedException When it cannot be read.
-	 */
-	private function requireCase(string $caseId): array {
-		try {
-			[$objectService, $register] = $this->context();
-			$case = $this->findObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				id: trim($caseId),
-			);
-		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so nothing was asked.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
 
-		if ($case === null) {
-			throw new RefusedException(
-				rule: self::CASE_UNREADABLE,
-				sentence: 'We could not read that case, so nothing was asked.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
 
-		return $case;
-	}//end requireCase()
 
-	/**
-	 * Apply changes to the stored case.
-	 *
-	 * @param array<string, mixed> $case    The case as it was read.
-	 * @param array<string, mixed> $changes The fields to write.
-	 *
-	 * @return void
-	 */
-	private function writeCase(array $case, array $changes): void {
-		$caseId = $this->uuidOf(row: $case);
-		if ($caseId === '' || $changes === []) {
-			return;
-		}
 
-		$payload = array_merge($case, $changes);
-		unset($payload['@self'], $payload['id'], $payload['uuid']);
-
-		try {
-			[$objectService, $register] = $this->context();
-			$objectService->saveObject(
-				object: $payload,
-				register: $register,
-				schema: $this->schema(key: 'case_schema'),
-				uuid: $caseId,
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Dossiq takeover: the case seat could not be written',
-				['caseId' => $caseId, 'exception' => $e->getMessage()],
-			);
-		}
-	}//end writeCase()
-
-	/**
-	 * Read takeover rows under a filter.
-	 *
-	 * @param array<string, mixed> $filters The filters.
-	 *
-	 * @return array<int, array<string, mixed>> The rows.
-	 */
-	private function rows(array $filters): array {
-		try {
-			[$objectService, $register] = $this->context();
-
-			return $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_takeover_schema'),
-				filters: $filters,
-			);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq takeover: the requests could not be read',
-				['exception' => $e->getMessage()],
-			);
-
-			return [];
-		}
-	}//end rows()
-
-	/**
-	 * Store a request, new or existing.
-	 *
-	 * @param array<string, mixed> $record The request.
-	 * @param string|null          $uuid   The uuid to update, or null to create.
-	 *
-	 * @return array<string, mixed> The stored request.
-	 *
-	 * @throws RefusedException When it could not be stored.
-	 */
-	private function write(array $record, ?string $uuid): array {
-		unset($record['@self'], $record['id'], $record['uuid']);
-
-		try {
-			[$objectService, $register] = $this->context();
-			$saved = $this->saveObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $this->schema(key: 'case_takeover_schema'),
-				object: $record,
-				uuid: $uuid,
-			);
-		} catch (Throwable $e) {
-			throw new RefusedException(
-				rule: self::UNWRITABLE,
-				sentence: 'The request could not be recorded, so nobody was asked.',
-				status: RefusedException::STATUS_INDETERMINATE,
-				previous: $e,
-			);
-		}
-
-		if ($saved === null) {
-			throw new RefusedException(
-				rule: self::UNWRITABLE,
-				sentence: 'The request could not be recorded, so nobody was asked.',
-				status: RefusedException::STATUS_INDETERMINATE,
-			);
-		}
-
-		return $saved;
-	}//end write()
-
-	/**
-	 * The uuid of a stored row, however the register spelled it.
-	 *
-	 * @param array<string, mixed> $row The row.
-	 *
-	 * @return string The uuid, or an empty string.
-	 */
-	private function uuidOf(array $row): string {
-		return trim((string)($row['id'] ?? ($row['uuid'] ?? '')));
-	}//end uuidOf()
 
 	/**
 	 * A moment, or null when the value is empty or unreadable.
@@ -648,42 +504,5 @@ class CaseTakeoverRequest {
 		}
 	}//end instant()
 
-	/**
-	 * The object service and the register, or an exception.
-	 *
-	 * @return array{0: object, 1: string} The service and the register.
-	 *
-	 * @throws RuntimeException When OpenRegister is absent or unconfigured.
-	 */
-	private function context(): array {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		if ($register === '') {
-			throw new RuntimeException('Dossier register not configured');
-		}
-
-		return [$objectService, $register];
-	}//end context()
-
-	/**
-	 * A configured schema, or an exception naming the key.
-	 *
-	 * @param string $key The configuration key.
-	 *
-	 * @return string The schema id or slug.
-	 *
-	 * @throws RuntimeException When the key is unset.
-	 */
-	private function schema(string $key): string {
-		$schema = $this->settingsService->getConfigValue($key);
-		if ($schema === '') {
-			throw new RuntimeException('Dossiq schema ' . $key . ' not configured');
-		}
-
-		return $schema;
-	}//end schema()
 }//end class
