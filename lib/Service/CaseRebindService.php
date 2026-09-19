@@ -53,6 +53,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCP\IGroupManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -65,6 +66,8 @@ use Throwable;
  * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
  */
 class CaseRebindService {
+
+	use RefusesWhenIndeterminate;
 
 	/**
 	 * The one group that may rebind a running case (D-3).
@@ -708,7 +711,7 @@ class CaseRebindService {
 		try {
 			$found = $objectService->find($caseId, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			throw RefusedException::indeterminate(
+			$this->refuseIndeterminate(
 				rule: 'case-unreadable',
 				sentence: 'This case could not be read, so it was not rebound.',
 				previous: $e,
@@ -743,7 +746,7 @@ class CaseRebindService {
 		try {
 			$objectService->updateObject($register, $schema, $caseId, $case);
 		} catch (Throwable $e) {
-			throw RefusedException::indeterminate(
+			$this->refuseIndeterminate(
 				rule: 'rebind-not-written',
 				sentence: 'The case was not rebound, because the change could not be saved.',
 				previous: $e,
@@ -764,9 +767,10 @@ class CaseRebindService {
 		$schema = (string)$this->settingsService->getConfigValue('case_schema');
 
 		if ($objectService === null || $register === '' || $schema === '') {
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'case-store-unavailable',
 				sentence: 'The case register could not be reached, so nothing was rebound.',
+				status: RefusedException::STATUS_INDETERMINATE,
 			);
 		}
 

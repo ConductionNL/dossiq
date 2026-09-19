@@ -41,6 +41,7 @@ namespace OCA\Dossiq\Service\Term;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -88,19 +89,25 @@ class FirstResponseOutcome {
 	 * @param string            $caseId   The case.
 	 * @param DateTimeImmutable $due      When the first response was promised.
 	 * @param DateTimeImmutable $sent     When it actually went out.
-	 * @param bool              $working  Whether the term counts working days.
+	 * @param string            $countingMode Whether the term counts working or calendar days,
+	 *                                        as {@see WorkingDayRoll::MODE_WORKING_DAYS}.
 	 *
 	 * @return array{status: string, overrunDays: int} What was recorded.
 	 *
 	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
 	 */
-	public function record(string $caseId, DateTimeImmutable $due, DateTimeImmutable $sent, bool $working = true): array {
+	public function record(
+		string $caseId,
+		DateTimeImmutable $due,
+		DateTimeImmutable $sent,
+		string $countingMode = WorkingDayRoll::MODE_WORKING_DAYS,
+	): array {
 		$overrun = 0;
 		$status = self::MET;
 
 		if ($sent > $due) {
 			$status = self::MISSED;
-			$overrun = $this->overrunBetween(due: $due, sent: $sent, working: $working);
+			$overrun = $this->overrunBetween(due: $due, sent: $sent, countingMode: $countingMode);
 		}
 
 		$this->write(
@@ -229,12 +236,12 @@ class FirstResponseOutcome {
 	 *
 	 * @param DateTimeImmutable $due     When it was promised.
 	 * @param DateTimeImmutable $sent    When it went out.
-	 * @param bool              $working Whether the term counts working days.
+	 * @param string            $countingMode Whether the term counts working or calendar days.
 	 *
 	 * @return int The overrun.
 	 */
-	private function overrunBetween(DateTimeImmutable $due, DateTimeImmutable $sent, bool $working): int {
-		if ($working === false) {
+	private function overrunBetween(DateTimeImmutable $due, DateTimeImmutable $sent, string $countingMode): int {
+		if ($countingMode !== WorkingDayRoll::MODE_WORKING_DAYS) {
 			return (int)$due->diff($sent)->days;
 		}
 

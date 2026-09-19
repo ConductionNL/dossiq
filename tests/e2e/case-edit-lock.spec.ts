@@ -48,6 +48,14 @@ import {
 /** The case both handlers reach for. */
 let contestedCase = ''
 
+/**
+ * The throwaway case type `beforeAll` seeds, shared by every case this suite
+ * makes. It used to be a local in `beforeAll`, so the control case below was
+ * seeded with no case type at all and OpenRegister refused it with
+ * "The required property (caseType) is missing".
+ */
+let caseTypeId = ''
+
 /** The second handler, who is not the admin. */
 const OTHER_USER = process.env.E2E_USER_NAME || 'e2euser'
 const OTHER_PASS = process.env.E2E_USER_PASS || 'e2e-user-pass'
@@ -67,7 +75,7 @@ test.describe('An edit takes the lock, and the next handler is told whose it is'
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 
-		const caseType = objectId(
+		caseTypeId = objectId(
 			await createObject(api, token, 'caseType', {
 				title: `${RUN_PREFIX} vergunning`,
 				identifier: `${RUN_PREFIX.toLowerCase()}-lock`,
@@ -80,7 +88,7 @@ test.describe('An edit takes the lock, and the next handler is told whose it is'
 		contestedCase = objectId(
 			await seedCase(api, token, {
 				title: `${RUN_PREFIX} betwiste zaak`,
-				caseType,
+				caseType: caseTypeId,
 			}),
 		)
 
@@ -220,7 +228,10 @@ test.describe('An edit takes the lock, and the next handler is told whose it is'
 		const token = await getRequestToken(api)
 
 		const untouched = objectId(
-			await seedCase(api, token, { title: `${RUN_PREFIX} rustige zaak` }),
+			await seedCase(api, token, {
+				title: `${RUN_PREFIX} rustige zaak`,
+				caseType: caseTypeId,
+			}),
 		)
 
 		const read = await showObject(api, 'case', untouched)

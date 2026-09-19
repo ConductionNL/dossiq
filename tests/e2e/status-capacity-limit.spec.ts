@@ -126,7 +126,7 @@ test.describe('A status that holds a limit', () => {
 
 	test.afterAll(async ({ request }) => {
 		await api?.dispose()
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	// @e2e openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md#scenario-the-status-type-stores-the-limit

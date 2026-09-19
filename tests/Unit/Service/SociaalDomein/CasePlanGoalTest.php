@@ -89,7 +89,7 @@ class CasePlanGoalTest extends TestCase {
 
 		self::assertSame('open', $saved['state']);
 		self::assertSame('', $saved['migratedFrom']);
-		self::assertCount(1, $this->goals->of(planId: 'plan-1'));
+		self::assertCount(1, $this->goals->ofPlan(planId: 'plan-1'));
 	}//end testAGoalThatCanBeEvaluatedIsSaved()
 
 	/**
@@ -152,7 +152,7 @@ class CasePlanGoalTest extends TestCase {
 			goalId: (string)$saved['id'],
 			state: 'met',
 			observation: 'Sem is sinds 6 januari elke dag op school geweest',
-			on: '2026-02-09',
+			onDate: '2026-02-09',
 		);
 
 		self::assertSame('met', $closed['state']);
@@ -223,6 +223,6 @@ class CasePlanGoalTest extends TestCase {
 
 		$this->expectException(RefusedException::class);
 		$this->expectExceptionMessage('sociaal_domein_unreadable');
-		$this->goals->of(planId: 'plan-1');
+		$this->goals->ofPlan(planId: 'plan-1');
 	}//end testAnUnreadableStoreRefusesRatherThanAnsweringEmpty()
 }//end class

@@ -1,0 +1,49 @@
+{
+	// TYPE CHECKING FOR THE E2E SUITE.
+	//
+	// WHY THIS FILE EXISTS. Until now nothing ran `tsc` anywhere in this
+	// repository, so the 137 TypeScript spec files under `tests/e2e/` were
+	// transpiled by Playwright and never checked. A spec that calls a helper
+	// with the wrong arguments is therefore syntactically fine, builds fine,
+	// and fails at RUNTIME as an HTTP 400 from OpenRegister that names a
+	// property rather than the call that omitted it. The live examples:
+	//
+	//   create case            -> 400 The required property (caseType) is missing
+	//   create statusType      -> 400 Property 'caseType' should match format 'uuid' but '' does not
+	//
+	// Those are `seedCase(api, token, { title })` call sites. `seedCase`
+	// declares `caseType` as required and has done for a long time; there was
+	// simply no compiler to say so. `npm run check:types-e2e` is that compiler,
+	// and it runs on every pull request as a Frontend Check leg.
+	//
+	// WHY `noImplicitAny` IS OFF. With it on this suite reports 108 errors
+	// instead of 57, and the extra 51 are all untyped callback parameters over
+	// OpenRegister's envelope shapes. That is a real debt and a good next
+	// ratchet step, but it is a different change: turning it on in the same
+	// commit that introduces the gate would bury the argument-shape errors the
+	// gate exists to catch. Every other `strict` check is on.
+	"compilerOptions": {
+		"target": "ES2022",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"module": "ESNext",
+		// Playwright resolves the suite's `./helpers/fixtures.ts` specifiers
+		// itself, so the checker has to accept a `.ts` extension in an import.
+		// That option is only legal alongside `noEmit`, which is what this
+		// config does anyway: nothing here is compiled, only read.
+		"moduleResolution": "bundler",
+		"allowImportingTsExtensions": true,
+		"resolveJsonModule": true,
+		"allowJs": true,
+		// `becomes-visible.js` is a helper with no annotations. Checking it
+		// would report its own shape, not a caller's mistake.
+		"checkJs": false,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"forceConsistentCasingInFileNames": true,
+		"strict": true,
+		"noImplicitAny": false,
+		"types": ["node"]
+	},
+	"include": ["**/*.ts", "**/*.js"]
+}

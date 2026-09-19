@@ -238,6 +238,13 @@ class WorkingClock {
 	 * @param DateTimeInterface $to   The end.
 	 *
 	 * @return float The days.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `DateTimeImmutable::createFromInterface()`
+	 *  is php's own conversion between two shapes of the same value, not a
+	 *  collaborator. There is nothing here to inject or replace: the alternative
+	 *  is reformatting the instant through a string and reparsing it, which is
+	 *  how a timezone gets lost. The calendar this method actually depends on is
+	 *  `$this->days`, which is injected.
 	 */
 	private function degradedWorkingDays(DateTimeInterface $from, DateTimeInterface $to): float {
 		return (float)$this->days->countWorkingDays(

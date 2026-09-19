@@ -181,9 +181,8 @@ class AreaRouting {
 			}
 		}
 
-		if ($held === []) {
-			$reason = 'This case holds no area, so the case type\'s fallback was used.';
-		} else {
+		$reason = 'This case holds no area, so the case type\'s fallback was used.';
+		if ($held !== []) {
 			$reason = sprintf(
 				'No team is declared for %s, so the case type\'s fallback was used.',
 				implode(', ', $held)

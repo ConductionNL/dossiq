@@ -51,7 +51,7 @@ test.describe('scan verdict on the row', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	// @e2e openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md#no-scanner-no-claim

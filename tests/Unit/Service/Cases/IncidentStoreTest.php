@@ -101,7 +101,7 @@ class IncidentStoreTest extends TestCase {
 		$incidents->record(caseId: 'case-1', eventDate: '2026-06-14T09:00:00+02:00', description: 'Juni', reporter: 'wijkagent');
 		$incidents->record(caseId: 'case-1', eventDate: '2026-03-21T09:00:00+01:00', description: 'Maart', reporter: 'melder');
 
-		$listed = $incidents->on(caseId: 'case-1');
+		$listed = $incidents->onCase(caseId: 'case-1');
 
 		self::assertSame(['Maart', 'Juni', 'September'], array_column($listed, 'description'));
 		self::assertSame(['melder', 'wijkagent', 'buurman'], array_column($listed, 'reporter'));

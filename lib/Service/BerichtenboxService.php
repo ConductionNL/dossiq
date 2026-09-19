@@ -179,7 +179,9 @@ class BerichtenboxService {
 				'Dossiq: digital post was not sent',
 				['caseId' => $caseId, 'reason' => (string)($result['error'] ?? '')]
 			);
-		} else {
+		}
+
+		if ($refused === false) {
 			$this->logger->info(
 				'Dossiq: Berichtenbox message sent',
 				[
@@ -216,6 +218,14 @@ class BerichtenboxService {
 	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
 	 *
 	 * @return bool True when a stored message was updated.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$simulated` decides nothing.
+	 *  It is written straight onto the stored message as `simulated` and is never
+	 *  read in a condition anywhere in this method, so there is no second
+	 *  responsibility to split out: a `recordSimulatedDeliveryStatus()` twin
+	 *  would be this method again with one literal changed. The value is data
+	 *  about which binding handled the letter, which is exactly what a handler
+	 *  reading the message needs to see.
 	 *
 	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
 	 */

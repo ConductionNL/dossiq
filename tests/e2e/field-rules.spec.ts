@@ -251,7 +251,7 @@ test.describe('field rules per role', () => {
 	test.afterAll(async ({ request }) => {
 		await handlerApi?.dispose()
 		await officerApi?.dispose()
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	test('the officer keeps the field and the handler does not receive it', async () => {

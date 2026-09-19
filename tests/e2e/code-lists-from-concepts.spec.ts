@@ -55,7 +55,7 @@ test.describe('code lists from concepts', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	/**
@@ -105,8 +105,7 @@ test.describe('code lists from concepts', () => {
 	 * @return The stored definition.
 	 */
 	async function storedDefinition(request, name: string) {
-		const token = await getRequestToken(request)
-		const rows = await listObjects(request, token, 'propertyDefinition', {
+		const rows = await listObjects(request, 'propertyDefinition', {
 			caseType: caseTypeId,
 		})
 		const stored = rows.find((row: any) => row.name === name)

@@ -114,8 +114,8 @@ class SociaalDomeinPlanController extends Controller {
 			return new JSONResponse(
 				[
 					'plan' => $plan,
-					'goals' => $this->goals->of(planId: $planId),
-					'interventions' => $this->interventions->of(planId: $planId),
+					'goals' => $this->goals->ofPlan(planId: $planId),
+					'interventions' => $this->interventions->ofPlan(planId: $planId),
 					'dueForReview' => $this->review->isDue(plan: $plan),
 				]
 			);

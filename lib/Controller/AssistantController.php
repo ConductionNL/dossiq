@@ -148,7 +148,7 @@ class AssistantController extends Controller {
 		$caseType = (array)$this->request->getParam('caseType', []);
 		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeatures::SURFACE_CASE);
 
-		$declared = $this->aiFeatures->on(caseType: $caseType, surface: $surface);
+		$declared = $this->aiFeatures->onSurface(caseType: $caseType, surface: $surface);
 		if ($declared === []) {
 			// Nothing declared for this surface: answer locally and send
 			// nothing anywhere.

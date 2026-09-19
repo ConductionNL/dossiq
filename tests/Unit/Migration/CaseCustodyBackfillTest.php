@@ -221,7 +221,7 @@ class CaseCustodyBackfillTest extends TestCase {
 			handler: 'sofie',
 			reason: 'Handhaving',
 			movedBy: 'jan',
-			at: '2026-04-12T14:30:00+02:00',
+			movedAt: '2026-04-12T14:30:00+02:00',
 		);
 
 		$this->step()->run($this->createMock(originalClassName: IOutput::class));
