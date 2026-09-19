@@ -47,6 +47,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Listener\MilestoneDependencyCycleListener
  * @covers \OCA\Dossiq\Service\Settings\SchemaScopeResolver
  * @uses   \OCA\Dossiq\Service\Milestone\MilestoneSchedule
+ * @uses   \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class MilestoneDependencyCycleListenerTest extends TestCase {
 
