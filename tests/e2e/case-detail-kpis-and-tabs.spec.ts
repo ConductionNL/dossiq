@@ -47,7 +47,7 @@ import {
 import { dismissSupportDialog, trackDossiqErrors } from './helpers/nav.ts'
 
 /**
- * The NINE tabs the strip holds, in order.
+ * The THIRTEEN tabs the strip holds, in order.
  *
  * These are exact strings and not locale alternatives, unlike almost every
  * other title this spec matches. A tab label is not translated: it is read
@@ -71,12 +71,16 @@ const TAB_LABELS = [
 	'Data',
 	'Files',
 	'Notes',
+	'Timeline',
 	'People',
 	'Communication',
 	'Email',
 	'Work',
 	'Decisions',
 	'Related',
+	'Custody',
+	'Archiving',
+	'Knowledge',
 ]
 
 /**
@@ -558,8 +562,8 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		}
 	})
 
-	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-nine-tabs-and-no-more
-	test('the strip holds exactly nine tabs, in order, and no more', async ({
+	// @e2e openspec/specs/case-dashboard-view/spec.md#the-strip-holds-thirteen-tabs-and-no-more
+	test('the strip holds exactly thirteen tabs, in order, and no more', async ({
 		page,
 	}) => {
 		// THE NUMBER IS THE FEATURE. The strip grew from ten tabs to fourteen
@@ -724,7 +728,7 @@ test.describe('Case detail — KPI row, tabbed panels, right column', () => {
 		page,
 	}) => {
 		// A control nested in role="tablist" is announced as one of the tabs, so
-		// a reader counting nine tabs would hear ten.
+		// a reader counting thirteen tabs would hear fourteen.
 		await page.goto(`/apps/${REGISTER}/cases/${caseId}`)
 		await expect(page.locator('.cn-detail-page')).toBeVisible({
 			timeout: 30_000,
