@@ -104,12 +104,14 @@ class ChannelIntake {
 	 * @param IntakeLog           $log             The surface, and the duplicate ledger.
 	 * @param CaseDateNormaliser  $dates           The one path a date is written by.
 	 * @param LoggerInterface     $logger          Logger.
+	 * @param MessageFacts        $facts           What a routed message says about itself.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IntakeLog $log,
 		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
+		private readonly MessageFacts $facts,
 	) {
 	}//end __construct()
 
@@ -218,8 +220,8 @@ class ChannelIntake {
 		$this->log->recordChannelMessage(
 			channel: $channel,
 			channelMessageId: $externalId,
-			sender: $this->correspondent(message: $message),
-			subject: $this->titleFor(message: $message, payload: $targetPayload),
+			sender: $this->facts->correspondent(message: $message),
+			subject: $this->facts->titleFor(message: $message, payload: $targetPayload),
 			outcome: IntakeLog::OUTCOME_CASE,
 			reason: 'Opened by routing rule "' . $ruleName . '".',
 			caseId: $caseId
@@ -294,13 +296,13 @@ class ChannelIntake {
 	 */
 	private function caseObjectFor(string $caseTypeId, array $message, array $payload): array {
 		$object = [
-			'title' => $this->titleFor(message: $message, payload: $payload),
+			'title' => $this->facts->titleFor(message: $message, payload: $payload),
 			'caseType' => $caseTypeId,
 			'intakeChannel' => trim((string)($message['channelId'] ?? '')),
 			// The statutory clock starts the day it came in. `deadline` is
 			// dateAdd(startDate, caseType.processingDeadline), so a startDate
 			// left out means no deadline at all.
-			'startDate' => $this->receivedDate(message: $message),
+			'startDate' => $this->facts->receivedDate(message: $message),
 		];
 
 		foreach (self::ACCEPTED_FIELDS as $field) {
@@ -328,7 +330,7 @@ class ChannelIntake {
 		// PERSON RECORD IS CREATED: a handle that wrote in once is not a
 		// citizen record, and resolving one to a party dossiq holds is a
 		// lookup this change does not do.
-		$correspondent = $this->correspondent(message: $message);
+		$correspondent = $this->facts->correspondent(message: $message);
 		if (($object['initiatorSourceId'] ?? '') === '' && $correspondent !== '') {
 			$object['initiatorSourceId'] = $correspondent;
 			$object['initiatorType'] = 'contact';
@@ -435,93 +437,15 @@ class ChannelIntake {
 		$this->log->recordChannelMessage(
 			channel: $channel,
 			channelMessageId: $externalId,
-			sender: $this->correspondent(message: $message),
-			subject: $this->titleFor(message: $message, payload: []),
+			sender: $this->facts->correspondent(message: $message),
+			subject: $this->facts->titleFor(message: $message, payload: []),
 			outcome: IntakeLog::OUTCOME_REFUSED,
 			reason: $reason
 		);
 	}//end refuse()
 
-	/**
-	 * A one-line name for the message.
-	 *
-	 * @param array<string, mixed> $message The message.
-	 * @param array<string, mixed> $payload The rule's mapped payload.
-	 *
-	 * @return string The title.
-	 */
-	private function titleFor(array $message, array $payload): string {
-		$mapped = ($payload['title'] ?? null);
-		if (is_scalar($mapped) === true && trim((string)$mapped) !== '') {
-			return mb_substr(trim((string)$mapped), 0, 255);
-		}
 
-		$text = trim((string)($message['text'] ?? ''));
-		if ($text === '') {
-			return self::UNTITLED;
-		}
 
-		$firstLine = trim((string)(preg_split('/\R/', $text)[0] ?? ''));
-
-		if ($firstLine === '') {
-			return self::UNTITLED;
-		}
-
-		return mb_substr($firstLine, 0, 120);
-	}//end titleFor()
-
-	/**
-	 * Who wrote, as the channel gave them.
-	 *
-	 * 🔴 NO PERSON RECORD IS CREATED HERE. A telephone number that wrote in
-	 * once is not a citizen record, and a register filling up with them is
-	 * worse than a case naming a string.
-	 *
-	 * @param array<string, mixed> $message The message.
-	 *
-	 * @return string The correspondent, or ''.
-	 */
-	private function correspondent(array $message): string {
-		$correspondent = ($message['correspondent'] ?? null);
-		if (is_scalar($correspondent) === true) {
-			return trim((string)$correspondent);
-		}
-
-		if (is_array($correspondent) === false) {
-			return '';
-		}
-
-		foreach (['address', 'handle', 'id', 'name'] as $key) {
-			$value = ($correspondent[$key] ?? null);
-			if (is_scalar($value) === true && trim((string)$value) !== '') {
-				return trim((string)$value);
-			}
-		}
-
-		return '';
-	}//end correspondent()
-
-	/**
-	 * The day the message came in, as `Y-m-d`.
-	 *
-	 * Read through {@see CaseDateNormaliser}, which is the one path a date is
-	 * written by. A private parser here would be a second rule for what a date
-	 * is, and the statutory clock starts on this value: an instant read in the
-	 * process time zone rather than the administered one moves a deadline by a
-	 * day between two servers.
-	 *
-	 * An unreadable stamp falls back to today rather than refusing. The
-	 * message did arrive; the day it says so is the channel's to get right.
-	 *
-	 * @param array<string, mixed> $message The message.
-	 *
-	 * @return string The date.
-	 */
-	private function receivedDate(array $message): string {
-		$received = $this->dates->toCalendarDateOrNull(value: ($message['receivedAt'] ?? null));
-
-		return ($received ?? $this->dates->today()->format('Y-m-d'));
-	}//end receivedDate()
 
 	/**
 	 * Coerce whatever the object service answered into an array.
