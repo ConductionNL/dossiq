@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -709,11 +710,23 @@ class BrcController extends ZgwController {
 			return;
 		}
 
+		// An unsearchable scope answers with an empty page and no error
+		// ({@see ZgwSearchScope}), so the besluit goes and every OIO that
+		// pointed at it survives as an orphan. Name it instead.
+		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
+		if ($oioScope === null) {
+			$this->zgwService->getLogger()->error(
+				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
+				. 'so the OIOs of ' . $decisionUrl . ' are being left behind as orphans'
+			);
+			return;
+		}
+
 		try {
 			$query = $objectService->buildSearchQuery(
 				requestParams: ['object' => $decisionUrl],
-				register: $oioMappingConfig['sourceRegister'],
-				schema: $oioMappingConfig['sourceSchema']
+				register: $oioScope->register,
+				schema: $oioScope->schema
 			);
 			$result = $objectService->searchObjectsPaginated(query: $query);
 
@@ -825,14 +838,23 @@ class BrcController extends ZgwController {
 			return;
 		}
 
+		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
+		if ($oioScope === null) {
+			$this->zgwService->getLogger()->error(
+				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
+				. 'so the OIO for ' . $ioUrl . ' is being left behind as an orphan'
+			);
+			return;
+		}
+
 		try {
 			$query = $objectService->buildSearchQuery(
 				requestParams: [
 					'object' => $decisionUrl,
 					'document' => $ioUrl,
 				],
-				register: $oioMappingConfig['sourceRegister'],
-				schema: $oioMappingConfig['sourceSchema']
+				register: $oioScope->register,
+				schema: $oioScope->schema
 			);
 			$result = $objectService->searchObjectsPaginated(query: $query);
 
