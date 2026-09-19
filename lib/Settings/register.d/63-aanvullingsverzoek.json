@@ -69,12 +69,16 @@
           "summary": {
             "type": "string",
             "title": "Summary",
-            "description": "One line naming what this request is about, so a list of requests reads without opening each one."
+            "description": "One line naming what this request is about, so a list of requests reads without opening each one.",
+            "matchType": "fulltext",
+            "inputControl": "text"
           },
           "party": {
             "type": "string",
             "title": "Party asked",
-            "description": "Who was asked. The applicant on most cases, but a gemachtigde where one is on the case."
+            "description": "Who was asked. The applicant on most cases, but a gemachtigde where one is on the case.",
+            "matchType": "fuzzy",
+            "inputControl": "text"
           },
           "recipient": {
             "type": "string",
@@ -90,7 +94,9 @@
           "rationale": {
             "type": "string",
             "title": "Why",
-            "description": "Why the case cannot be decided without this, in the handler's own words. A note beside the typed reason, never instead of it."
+            "description": "Why the case cannot be decided without this, in the handler's own words. A note beside the typed reason, never instead of it.",
+            "matchType": "fulltext",
+            "inputControl": "text"
           },
           "missingItems": {
             "type": "array",
@@ -189,11 +195,7 @@
             "description": "How many days the applicant was given, which is the same number the term was suspended by."
           }
         },
-        "searchable": [
-          "summary",
-          "rationale",
-          "party"
-        ]
+        "searchable": true
       },
       "case": {
         "properties": {
