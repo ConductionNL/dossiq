@@ -29,10 +29,18 @@
  * citizen's right of reply.
  *
  * WHAT IT DOES NOT DO. It does not decide WHETHER to roll. That is
- * `deadlineDefinition.rollToWorkingDay`, off by default, because the default
- * is a legal question: Awt art. 3 names the recognised holidays and somebody
- * qualified has to confirm the list against these case types before every
- * Algemene termijnenwet term starts moving.
+ * `deadlineDefinition.rollToWorkingDay`, read in one place,
+ * {@see \OCA\Dossiq\Service\TermijnTimerService::rollEnabled()}. A definition
+ * that does not carry the flag gets the roll, because Awt art. 1 applies by
+ * law and not by configuration; the flag switches it OFF for a term the Awt
+ * does not govern.
+ *
+ * The list the roll moves over is no longer a question waiting on somebody
+ * qualified. Awt art. 3 names the recognised holidays, and WHICH of them this
+ * organisation keeps is administered in OpenRegister, beside the working
+ * weekdays and the opening hours, on a screen an administrator can read. That
+ * is why the roll is on: a default that nobody could change was a legal risk,
+ * and a default somebody administers is a decision.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Termijn
@@ -54,6 +62,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Dossiq\Service\SettingsService;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -174,6 +183,83 @@ class WorkingDayRoll {
 
 		return ($this->calculator !== null && $this->calendar !== null);
 	}//end isAvailable()
+
+	/**
+	 * Whether the administered calendar works this day.
+	 *
+	 * THE READER THE REST OF THE APP WAS MISSING. `WorkingDayRoll` already
+	 * resolved the organisation's calendar for the statutory roll, and every
+	 * other caller in the app went on asking `WorkingDayCalculator`'s built-in
+	 * Dutch list instead: a complaint deadline, a KCC callback and a chase
+	 * schedule all counted an administered closure day as a working day, and
+	 * every one of them produced a plausible date. The calendar is one fact,
+	 * so there is one way to ask it.
+	 *
+	 * @param DateTimeInterface $moment Any instant on the day.
+	 *
+	 * @return boolean|null True or false from the calendar, or null when no
+	 *                      calendar is answering and the caller must degrade.
+	 *
+	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function worksOn(DateTimeInterface $moment): ?bool {
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return (bool)$this->calendar->isWorkingDay($moment);
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar refused a working-day question',
+				['error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+	}//end worksOn()
+
+	/**
+	 * The ISO weekdays the administered calendar works.
+	 *
+	 * Asked apart from {@see worksOn()} because the two answer different
+	 * questions: a Saturday and a closure day are both non-working, and a
+	 * surface that says "this fell in the weekend" about Koningsdag is wrong
+	 * in a way the date alone cannot show.
+	 *
+	 * @return array<int, int>|null The ISO weekdays, or null when no calendar
+	 *                              is answering.
+	 *
+	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	public function workingWeekdays(): ?array {
+		if ($this->isAvailable() === false) {
+			return null;
+		}
+
+		// Duck-typed, like every other call into the engine: an older
+		// OpenRegister resolves the calendar without exposing its weekdays,
+		// and answering null there is degrading rather than fatal.
+		if (method_exists($this->calendar, 'getWorkingWeekdays') === false) {
+			return null;
+		}
+
+		try {
+			$weekdays = $this->calendar->getWorkingWeekdays();
+			if (is_array($weekdays) === false || $weekdays === []) {
+				return null;
+			}
+
+			return array_map(static fn ($iso): int => (int)$iso, array_values($weekdays));
+		} catch (Throwable $e) {
+			$this->logger?->warning(
+				'Dossiq termijn: the organisation calendar refused its working weekdays',
+				['error' => $e->getMessage()],
+			);
+
+			return null;
+		}
+	}//end workingWeekdays()
 
 	/**
 	 * A date this many days after the one given, counted in one mode.
