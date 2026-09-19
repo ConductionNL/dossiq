@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseRebindService;
+use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
@@ -43,6 +44,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Service\CaseRebindService
  *
+ * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -155,14 +157,19 @@ class CaseRebindServiceTest extends TestCase {
 				=> ($isCoordinator === true && $group === CaseRebindService::COORDINATOR_GROUP)
 		);
 
+		$resolver = new CaseTypeResolver(store: $store);
+
 		return new CaseRebindService(
 			settingsService: $settings,
 			store: $store,
-			resolver: new CaseTypeResolver(store: $store),
+			resolver: $resolver,
 			engine: $this->engine(refusal: $engineRefusal),
 			terms: $this->terms(),
 			slugs: $this->createMock(CaseTypeSlugResolver::class),
-			groupManager: $groups,
+			// A REAL gate over the SAME store, resolver and group double the
+			// assertions read through. Only the wiring line moved when the
+			// refusals were split out.
+			gate: new CaseRebindGate(store: $store, resolver: $resolver, groupManager: $groups),
 			logger: new NullLogger(),
 		);
 	}//end service()
