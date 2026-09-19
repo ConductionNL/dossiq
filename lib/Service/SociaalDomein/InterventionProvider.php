@@ -176,6 +176,20 @@ class InterventionProvider {
 			return null;
 		}
 
+		return $this->partyIn(listing: $listing, reference: $reference);
+	}//end resolve()
+
+	/**
+	 * The party a listing holds under this reference, or null.
+	 *
+	 * @param mixed  $listing   Whatever the contact service answered.
+	 * @param string $reference The contact reference being looked for.
+	 *
+	 * @return array<string, mixed>|null The party, or null when the listing does not hold it.
+	 *
+	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
+	 */
+	private function partyIn(mixed $listing, string $reference): ?array {
 		$rows = [];
 		if (is_array($listing) === true && is_array(($listing['results'] ?? null)) === true) {
 			$rows = $listing['results'];
@@ -194,5 +208,5 @@ class InterventionProvider {
 		}
 
 		return null;
-	}//end resolve()
+	}//end partyIn()
 }//end class
