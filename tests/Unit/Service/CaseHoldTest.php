@@ -22,8 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Lifecycle\CaseHoldActs;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
@@ -70,6 +70,13 @@ class CaseHoldTest extends TestCase {
 	private CaseHoldActs $holds;
 
 	/**
+	 * The one clock both halves of this test read.
+	 *
+	 * @var CaseDateNormaliser
+	 */
+	private CaseDateNormaliser $dates;
+
+	/**
 	 * An open case with a statutory term already running.
 	 *
 	 * @return void
@@ -97,22 +104,31 @@ class CaseHoldTest extends TestCase {
 		$session = $this->createMock(originalClassName: IUserSession::class);
 		$session->method('getUser')->willReturn($user);
 
+		$this->dates = $this->caseDatesFrozenAt();
+
 		$this->holds = new CaseHoldActs(
 			store: $this->store,
 			journal: new CaseJournal(userSession: $session),
-			dates: $this->caseDates(),
+			dates: $this->dates,
 		);
 	}//end setUp()
 
 	/**
 	 * A date some days from today, so the test does not expire.
 	 *
+	 * Today is the normaliser's today, not PHP's. Those are two different days
+	 * for the two hours a night between 22:00 UTC and midnight in Amsterdam,
+	 * and on 2026-09-19 at 22:18 UTC the control below read held=false because
+	 * `+1 day` in the process zone had already become today in the
+	 * administered one. Asking the subject's own clock removes the window, and
+	 * the frozen instant keeps the test sitting inside it on purpose.
+	 *
 	 * @param string $offset A relative date expression.
 	 *
 	 * @return string The date as Y-m-d.
 	 */
 	private function day(string $offset): string {
-		return (new DateTimeImmutable('today'))->modify($offset)->format('Y-m-d');
+		return $this->dates->today()->modify($offset)->format('Y-m-d');
 	}//end day()
 
 	/**

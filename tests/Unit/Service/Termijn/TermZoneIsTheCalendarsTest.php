@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantConfigurationService;
 use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -44,6 +45,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\TenantContext
  */
 class TermZoneIsTheCalendarsTest extends TestCase {
+	// The clock is a seam here too: this suite is about which zone wins,
+	// not about which day it is.
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * Build a normaliser with a tenant zone and an optional engine calendar.
 	 *
@@ -70,6 +75,7 @@ class TermZoneIsTheCalendarsTest extends TestCase {
 			tenantConfiguration: $config,
 			settingsService: $settings,
 			logger: $this->createMock(LoggerInterface::class),
+			time: $this->clockFixedAt(instant: self::CLOCK_AT_THE_DAY_BOUNDARY),
 		);
 	}
 

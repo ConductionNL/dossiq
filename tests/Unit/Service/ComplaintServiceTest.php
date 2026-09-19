@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\ComplaintService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\WorkingDayCalculator;
@@ -109,6 +110,13 @@ class ComplaintServiceTest extends TestCase {
 	private ComplaintService $service;
 
 	/**
+	 * The one clock both the service and the fixtures below read.
+	 *
+	 * @var CaseDateNormaliser
+	 */
+	private CaseDateNormaliser $dates;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
@@ -117,11 +125,13 @@ class ComplaintServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
+		$this->dates = $this->caseDatesFrozenAt();
+
 		$this->service = new ComplaintService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			workingDays: new WorkingDayCalculator(),
-			dates: $this->caseDates(),
+			dates: $this->dates,
 		);
 	}//end setUp()
 
@@ -464,7 +474,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetDeadlineAlertsGroupsOverdueAndWarning(): void {
-		$today = new \DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$this->withComplaints(
 			rows: [
 				['id' => 'overdue', 'afhandelDeadline' => $today->modify('-1 day')->format('Y-m-d')],
@@ -496,7 +506,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetDeadlineAlertsHonoursTheWarningWindow(): void {
-		$today = new \DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$this->withComplaints(
 			rows: [
 				['id' => 'in-ten-days', 'afhandelDeadline' => $today->modify('+10 days')->format('Y-m-d')],
