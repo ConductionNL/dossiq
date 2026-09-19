@@ -10,14 +10,17 @@
  * built from the caseType records, so the layout rides the record's `x-index`
  * block and a municipality edits it where it edits the case type.
  *
- * 🔴 EXPECTED RED UNTIL THE LIBRARY PUBLISHES. Measured 2026-09-18: the
- * installed `@conduction/nextcloud-vue` 3.2.0 and the newest published 3.3.0
- * carry no `src/utils/scopeListLayout.js` and no scope resolution in
- * `CnIndexPage`. Both sit on nextcloud-vue `parity/round2` (#1213) and in no
- * release. Under those versions the header does not change when a folder is
- * picked, which is the state this spec exists to tell apart from the feature
- * working, so it is written to fail loudly rather than be skipped into a
- * silence nobody would notice clearing.
+ * THE LIBRARY PUBLISHED, SO THIS RUNS FOR REAL. It was written on 2026-09-18 to
+ * be red: the installed `@conduction/nextcloud-vue` 3.2.0 and the newest
+ * published 3.3.0 carry no `src/utils/scopeListLayout.js` and no scope
+ * resolution in `CnIndexPage`, and both sat on nextcloud-vue `parity/round2`
+ * (#1213) and in no release. 3.4.0 ships `src/utils/scopeListLayout.js` and
+ * calls `resolveScopeLayout` from `CnIndexPage`, read out of the published
+ * tarball on 2026-09-19, and this app's lockfile moved to it in the same commit
+ * as this paragraph. Under the older versions the header does not change when a
+ * folder is picked, which is the state this spec exists to tell apart from the
+ * feature working, so it stays written to fail loudly rather than be skipped
+ * into a silence nobody would notice clearing.
  *
  * 🔴 THE DECLARATION IS ASSERTED AGAINST THE LIVE RECORD, NOT THE SEED FILE.
  * `x-index` has to be a declared property of `caseType` or OpenRegister's

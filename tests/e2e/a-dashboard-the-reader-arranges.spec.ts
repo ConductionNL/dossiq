@@ -9,16 +9,19 @@
  * the manifest, so geometry becomes the reader's while membership stays the
  * administrator's. This app declares the key and adds no code path.
  *
- * 🔴 EXPECTED RED UNTIL THE LIBRARY PUBLISHES. Measured 2026-09-18 against the
- * installed `@conduction/nextcloud-vue` 3.2.0 and the newest published 3.3.0:
- * neither carries `mergeUserLayout`, the `dashboardLayouts` store plugin,
- * `listUserAddableWidgetTypes` or `userWidgetPresets`. All of it sits on
- * nextcloud-vue `parity/round2` (#1209) and in no release. A page carrying
- * `userLayout` under a library that does not read it renders exactly the page
- * that never mentioned the key, and says nothing — which is the one state this
- * spec exists to tell apart from the feature working. So it is written to
- * drive the real surface and to be red, loudly, until the release lands,
- * rather than skipped into silence where nobody would notice it clearing.
+ * THE LIBRARY PUBLISHED, SO THIS RUNS FOR REAL. It was written on 2026-09-18 to
+ * be red: neither the installed `@conduction/nextcloud-vue` 3.2.0 nor the newest
+ * published 3.3.0 carried `mergeUserLayout`, the `dashboardLayouts` store
+ * plugin, `listUserAddableWidgetTypes` or `userWidgetPresets`. All of it sat on
+ * nextcloud-vue `parity/round2` (#1209) and in no release. 3.4.0 ships the four
+ * of them, read out of the published tarball on 2026-09-19, and this app's
+ * lockfile moved to it in the same commit as this paragraph. What the spec
+ * drives is unchanged, because the reason it was written this way has not
+ * changed: a page carrying `userLayout` under a library that does not read the
+ * key renders exactly the page that never mentioned it and says nothing, which
+ * is the one state this spec exists to tell apart from the feature working. So
+ * it stays on the real surface rather than skipped into a silence where nobody
+ * would notice it clearing.
  *
  * 🔴 THIS IS ONE USER, BECAUSE A BROWSER IS ONE USER. The spec's first
  * scenario is written about two handlers, and the half that needs two is the
