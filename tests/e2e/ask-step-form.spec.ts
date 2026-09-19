@@ -122,7 +122,11 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
 	for (const id of created) {
-		await removeFlow(api, token, id)
+		// No runs to read back: this suite only saves flow DECLARATIONS and
+		// never starts one. The argument is explicit rather than defaulted,
+		// so a suite that does make runs cannot skip its own leak check by
+		// leaving it out.
+		await removeFlow(api, token, id, [])
 	}
 	await api.dispose()
 })

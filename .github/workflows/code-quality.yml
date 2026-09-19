@@ -444,7 +444,20 @@ jobs:
       # So the only way to add static-analysis debt here is to add a
       # suppression, and until now that cost nothing and showed up nowhere.
       # The number a reviewer looks at did not move. This makes it move.
-      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js", "check:debt-ratchet"]'
+      # `check:types-e2e` is `tsc --noEmit` over `tests/e2e/**`, and before it
+      # there was NO TypeScript compiler anywhere in this repository. The e2e
+      # suite is 137 .ts spec files; Playwright transpiles them and checks
+      # nothing, so a spec that calls a fixture helper with the wrong arguments
+      # is caught by OpenRegister at runtime, as a 400 that names a property
+      # rather than the call. `seedCase(api, token, { title })` produced
+      # "The required property (caseType) is missing" that way. Measured on
+      # `development` when this leg was added: 57 errors, all of them real
+      # calls, none of them a type-system quibble. The leg goes here rather
+      # than into `npm run lint` because `Vue Quality (ESLint)` is scoped to
+      # lint rules and a compiler failure buried in it reads as a style
+      # finding. It is its own job, "Frontend Check (check:types-e2e)", and it
+      # runs on every pull request.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js", "check:debt-ratchet", "check:types-e2e"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
       # `enable-hydra-gates` defaults to FALSE, so this tier had never executed

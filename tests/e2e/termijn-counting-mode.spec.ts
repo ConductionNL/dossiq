@@ -37,7 +37,13 @@ test.describe('A term declares how it counts', () => {
 		const api = await playwright.request.newContext({ baseURL })
 		const token = await getRequestToken(api)
 		const caseType = await ensureCaseType(api, token)
-		const slug = String(caseType.slug ?? caseType.identifier ?? '')
+		// The slug, not the uuid: `deadlineDefinition.caseType` is declared a
+		// plain string naming the zaaktype. This used to read
+		// `caseType.slug ?? caseType.identifier ?? ''` off a helper that
+		// returned neither, so both definitions were written with an empty
+		// binding and refused with "The required property (caseType) is
+		// missing".
+		const slug = caseType.identifier
 
 		const define = async (key: string, countingMode: string) => {
 			const row = await createObject(api, token, 'deadlineDefinition', {

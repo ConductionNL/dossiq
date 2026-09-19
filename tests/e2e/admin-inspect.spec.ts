@@ -125,7 +125,7 @@ test.describe('Inspect, on a case page', () => {
 
 	test.afterAll(async ({ request }) => {
 		await handlerApi?.dispose()
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	// @e2e openspec/changes/admin-inspect-entry/specs/case-management/spec.md#scenario-raw-data-shows-the-stored-case

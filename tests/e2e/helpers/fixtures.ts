@@ -665,28 +665,52 @@ export async function ensureTeam(
  * the transition engine. If none exists we seed a throwaway one tagged with
  * RUN_PREFIX so cleanup removes it.
  *
+ * 🔴 `identifier` IS PART OF THE RETURN, and it was missing.
+ * `case.caseType` wants the uuid, so `id` was all most callers needed. But
+ * `deadlineDefinition.caseType` is declared a plain SLUG string ("Zaaktype
+ * slug this definition binds to"), and the two specs that write one reached
+ * for `caseType.slug ?? caseType.identifier ?? ''` on a return value that
+ * declared neither. Both terms were `undefined`, so both specs sent the empty
+ * string and OpenRegister answered
+ * `400 The required property (caseType) is missing` in `beforeAll`. Nothing
+ * caught it, because nothing type-checked the suite; `npm run check:types-e2e`
+ * now does, and reports it as "Property 'slug' does not exist".
+ *
+ * The fallback is the object id rather than the empty string. An adopted case
+ * type that carries no identifier still has a stable, unique key to bind a
+ * definition to, and a binding key that cannot be empty is the property the
+ * old expression lacked.
+ *
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
 export async function ensureCaseType(
 	api: APIRequestContext,
 	token: string,
-): Promise<{ id: string; name: string; seeded: boolean }> {
+): Promise<{
+	id: string
+	name: string
+	identifier: string
+	seeded: boolean
+}> {
 	const existing = await adoptableCaseTypes(api)
 	if (existing.length > 0) {
 		const ct = existing[0]
+		const id = objectId(ct)
 		return {
-			id: objectId(ct),
+			id,
 			name: String(ct.title ?? ct.name ?? 'caseType'),
+			identifier: String(ct.identifier ?? ct.slug ?? id),
 			seeded: false,
 		}
 	}
 	// Live caseType schema requires `title` (+ identifier), not `name`.
 	const suffix = nextFixtureSuffix()
 	const name = `${RUN_PREFIX} CaseType ${suffix}`
+	const identifier = `${RUN_PREFIX.toLowerCase()}-casetype-${suffix}`
 	const ct = await createObject(api, token, 'caseType', {
 		title: name,
-		identifier: `${RUN_PREFIX.toLowerCase()}-casetype-${suffix}`,
+		identifier,
 		description: 'Throwaway caseType seeded by the dossiq deep e2e layer.',
 		// PUBLISHED, NOT DRAFT. `case.caseType` carries
 		// `x-relation-filter: {isDraft: false}` and the caseType schema defaults
@@ -694,7 +718,7 @@ export async function ensureCaseType(
 		// appears in the New case picker.
 		isDraft: false,
 	})
-	return { id: objectId(ct), name, seeded: true }
+	return { id: objectId(ct), name, identifier, seeded: true }
 }
 
 /**

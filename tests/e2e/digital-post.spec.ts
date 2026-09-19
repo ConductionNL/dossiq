@@ -62,7 +62,7 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	// @e2e openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md#the-compose-dialog-opens-from-the-case
