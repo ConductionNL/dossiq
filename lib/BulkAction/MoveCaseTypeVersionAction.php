@@ -192,9 +192,6 @@ class MoveCaseTypeVersionAction implements BulkActionInterface {
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) One executor for the
-	 * rehearsal and the commit is the design property of the bulk job.
-	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
 	 */
 	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {

@@ -43,9 +43,7 @@
  * - zrc-022: Zetten Zaak.archiefstatus
  * - zrc-023: Vernietigen van zaken (cascade delete, in ZrcController)
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.CyclomaticComplexity)
  * @SuppressWarnings(PHPMD.NPathComplexity)
  */
@@ -1077,8 +1075,6 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * @return array The filtered zaken array
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */

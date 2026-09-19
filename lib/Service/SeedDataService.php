@@ -37,8 +37,6 @@ use Psr\Log\LoggerInterface;
 /**
  * Service for seeding bezwaar/beroep case types and related configuration.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister service access
- *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class SeedDataService {
@@ -208,8 +206,6 @@ class SeedDataService {
 	 * @param string $workflowSchema The workflow template schema UUID
 	 *
 	 * @return array Counts of created and skipped objects
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all schema IDs are needed
 	 */
 	private function seedCaseType(
 		object $objectService,

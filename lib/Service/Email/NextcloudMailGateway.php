@@ -57,9 +57,6 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the coupling is the point:
- *  it is gathered here so no other class carries any of it.
- *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — the complexity is the price of

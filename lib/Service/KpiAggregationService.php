@@ -55,8 +55,6 @@ use Psr\Log\LoggerInterface;
 /**
  * Dashboard KPI aggregation.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister service access
- *
  * @spec openspec/specs/dashboard/spec.md#REQ-DASH-001
  */
 class KpiAggregationService {

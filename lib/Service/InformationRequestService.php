@@ -57,7 +57,6 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-pause-extension/spec.md
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
  * nothing to inject. Making it an instance would add a constructor dependency

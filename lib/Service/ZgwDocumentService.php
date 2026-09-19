@@ -17,8 +17,6 @@
  *
  * @link https://conduction.nl
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
