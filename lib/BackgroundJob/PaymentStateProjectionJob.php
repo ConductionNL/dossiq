@@ -137,44 +137,13 @@ class PaymentStateProjectionJob extends TimedJob {
 
 		$written = 0;
 		foreach ($cases as $case) {
-			$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
-			if ($caseId === '') {
-				continue;
-			}
-
-			$projection = $this->payments->stateOf(caseId: $caseId);
-
-			// A read that failed writes NOTHING. Stamping `stale` over a case
-			// would replace the last state anybody knew with the news that the
-			// sweep had a bad hour, and the list would empty out every time
-			// shillinq restarted. The gate reads live, so nothing depends on
-			// this row being fresh.
-			if ($projection['paymentState'] === CasePaymentState::STALE) {
-				continue;
-			}
-
-			if ((string)($case['paymentState'] ?? '') === $projection['paymentState']) {
-				// Unchanged. Writing the timestamp alone would be a version of
-				// every open case every hour, for a fact that did not move.
-				continue;
-			}
-
-			try {
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: $register,
-					schema: $schema,
-					id: $caseId,
-					changes: $projection,
-				);
-				$written++;
-			} catch (Throwable $e) {
-				// One case that cannot be written must not end the sweep.
-				$this->logger->warning(
-					'PaymentStateProjectionJob: one case could not be refreshed',
-					['caseId' => $caseId, 'exception' => $e->getMessage()],
-				);
-			}//end try
+			$refreshed = $this->refreshCase(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				case: $case,
+			);
+			$written += (int)$refreshed;
 		}
 
 		if ($written > 0) {
@@ -184,4 +153,57 @@ class PaymentStateProjectionJob extends TimedJob {
 			);
 		}
 	}//end run()
+
+	/**
+	 * Refresh the payment state of one case, and say whether anything was written.
+	 *
+	 * @param object               $objectService The OpenRegister object service.
+	 * @param string               $register      The register the cases live in.
+	 * @param string               $schema        The case schema.
+	 * @param array<string, mixed> $case          The case as the sweep read it.
+	 *
+	 * @return bool True when the case was rewritten.
+	 */
+	private function refreshCase(object $objectService, string $register, string $schema, array $case): bool {
+		$caseId = (string)($case['id'] ?? ($case['@self']['id'] ?? ''));
+		if ($caseId === '') {
+			return false;
+		}
+
+		$projection = $this->payments->stateOf(caseId: $caseId);
+
+		// A read that failed writes NOTHING. Stamping `stale` over a case would
+		// replace the last state anybody knew with the news that the sweep had a
+		// bad hour, and the list would empty out every time shillinq restarted.
+		// The gate reads live, so nothing depends on this row being fresh.
+		if ($projection['paymentState'] === CasePaymentState::STALE) {
+			return false;
+		}
+
+		if ((string)($case['paymentState'] ?? '') === $projection['paymentState']) {
+			// Unchanged. Writing the timestamp alone would be a version of every
+			// open case every hour, for a fact that did not move.
+			return false;
+		}
+
+		try {
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $caseId,
+				changes: $projection,
+			);
+		} catch (Throwable $e) {
+			// One case that cannot be written must not end the sweep.
+			$this->logger->warning(
+				'PaymentStateProjectionJob: one case could not be refreshed',
+				['caseId' => $caseId, 'exception' => $e->getMessage()],
+			);
+
+			return false;
+		}//end try
+
+		return true;
+	}//end refreshCase()
 }//end class

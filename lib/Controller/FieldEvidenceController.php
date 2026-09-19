@@ -57,6 +57,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -112,11 +113,8 @@ class FieldEvidenceController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$objectService = $this->settings->getObjectService();
-		$register = $this->settings->getConfigValue('register');
-		$evidenceSchema = $this->settings->getConfigValue('field_evidence_schema');
-		$inspectionSchema = $this->settings->getConfigValue('field_inspection_schema');
-		if ($objectService === null || $register === '' || $evidenceSchema === '' || $inspectionSchema === '') {
+		$scope = $this->evidenceScope();
+		if ($scope === null) {
 			// 503 and not 500: the instance has not finished importing the
 			// offline register. That is an operator's job and a temporary
 			// state, and telling a device it made a bad request would have it
@@ -126,6 +124,8 @@ class FieldEvidenceController extends Controller {
 				Http::STATUS_SERVICE_UNAVAILABLE,
 			);
 		}
+
+		[$objectService, $register, $evidenceSchema, $inspectionSchema] = $scope;
 
 		$inspection = $this->findObjectAsArray(
 			objectService: $objectService,
@@ -138,10 +138,7 @@ class FieldEvidenceController extends Controller {
 		// An inspection nobody can find and one on somebody else's case get the
 		// SAME answer. Distinguishing them tells an outsider which inspection
 		// ids exist.
-		if ($inspection === null
-			|| $caseId === ''
-			|| $this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
-		) {
+		if ($this->mayCapture(inspection: $inspection, caseId: $caseId, user: $user) === false) {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -172,6 +169,51 @@ class FieldEvidenceController extends Controller {
 
 		return new JSONResponse($this->queueTranscriptionIfSpoken(stored: $stored));
 	}//end capture()
+
+	/**
+	 * The object service and the three ids evidence is written against.
+	 *
+	 * @return array{0: object, 1: string, 2: string, 3: string}|null The service,
+	 *         the register, the evidence schema and the inspection schema, or null
+	 *         when the offline register has not been imported on this instance.
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function evidenceScope(): ?array {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue('register');
+		$evidenceSchema = $this->settings->getConfigValue('field_evidence_schema');
+		$inspectionSchema = $this->settings->getConfigValue('field_inspection_schema');
+
+		if ($objectService === null || $register === '' || $evidenceSchema === '' || $inspectionSchema === '') {
+			return null;
+		}
+
+		return [$objectService, $register, $evidenceSchema, $inspectionSchema];
+	}//end evidenceScope()
+
+	/**
+	 * Whether this caller may add evidence to this inspection.
+	 *
+	 * An inspection nobody can find and one on somebody else's case get the
+	 * SAME answer. Distinguishing them tells an outsider which inspection ids
+	 * exist.
+	 *
+	 * @param array<string, mixed>|null $inspection The inspection, or null.
+	 * @param string                    $caseId     The case it names.
+	 * @param IUser                     $user       The caller.
+	 *
+	 * @return bool True when the capture may be written.
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function mayCapture(?array $inspection, string $caseId, IUser $user): bool {
+		if ($inspection === null || $caseId === '') {
+			return false;
+		}
+
+		return $this->accessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user);
+	}//end mayCapture()
 
 	/**
 	 * Queue a voice memo to be transcribed, and leave anything else alone.

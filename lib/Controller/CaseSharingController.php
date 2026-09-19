@@ -107,42 +107,12 @@ class CaseSharingController extends Controller {
 		}
 
 		if ($shareType === 'partner') {
-			$partnerId = $this->request->getParam('partnerId');
-			if (empty($partnerId) === true) {
-				return new JSONResponse(
-					['success' => false, 'error' => 'partnerId is required for partner shares'],
-					400
-				);
-			}
-
-			$partnerShare = $this->caseSharingService->createPartnerShare(
-				$caseId,
-				$partnerId,
-				$permissionLevel,
-				$user->getUID(),
+			return $this->partnerShare(
+				caseId: $caseId,
+				permissionLevel: (string)$permissionLevel,
+				createdBy: $user->getUID(),
 			);
-
-			if (isset($partnerShare['error']) === true) {
-				// A REFUSAL IS NOT AN UPSTREAM FAILURE. 502 says OpenRegister
-				// broke; a missing or lapsed consent is this instance deciding,
-				// correctly, that the case does not leave. The rule slug is
-				// carried so the caller can tell the two apart and say which of
-				// case, receiver or period was the one that did not match.
-				if (isset($partnerShare['rule']) === true && $partnerShare['rule'] !== '') {
-					return new JSONResponse(
-						['success' => false, 'error' => $partnerShare['error'], 'rule' => $partnerShare['rule']],
-						Http::STATUS_CONFLICT
-					);
-				}
-
-				return new JSONResponse(
-					['success' => false, 'error' => $partnerShare['error']],
-					Http::STATUS_BAD_GATEWAY
-				);
-			}
-
-			return new JSONResponse(['success' => true, 'share' => $partnerShare]);
-		}//end if
+		}
 
 		// A public case link is an OpenRegister access link (#3817). It owns
 		// the anchor, the expiry, the password check and the revoke; dossiq
@@ -169,6 +139,55 @@ class CaseSharingController extends Controller {
 
 		return new JSONResponse(['success' => true, 'share' => $share['share'], 'url' => $share['url']]);
 	}//end createShare()
+
+	/**
+	 * Share a case with a partner organisation, or say why it did not leave.
+	 *
+	 * @param string $caseId          The case.
+	 * @param string $permissionLevel What the partner may do.
+	 * @param string $createdBy       Who is sharing it.
+	 *
+	 * @return JSONResponse The share, or the refusal.
+	 *
+	 * @spec openspec/specs/case-sharing/spec.md
+	 */
+	private function partnerShare(string $caseId, string $permissionLevel, string $createdBy): JSONResponse {
+		$partnerId = $this->request->getParam('partnerId');
+		if (empty($partnerId) === true) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'partnerId is required for partner shares'],
+				400
+			);
+		}
+
+		$partnerShare = $this->caseSharingService->createPartnerShare(
+			$caseId,
+			$partnerId,
+			$permissionLevel,
+			$createdBy,
+		);
+
+		if (isset($partnerShare['error']) === false) {
+			return new JSONResponse(['success' => true, 'share' => $partnerShare]);
+		}
+
+		// A REFUSAL IS NOT AN UPSTREAM FAILURE. 502 says OpenRegister broke; a
+		// missing or lapsed consent is this instance deciding, correctly, that
+		// the case does not leave. The rule slug is carried so the caller can
+		// tell the two apart and say which of case, receiver or period was the
+		// one that did not match.
+		if (isset($partnerShare['rule']) === true && $partnerShare['rule'] !== '') {
+			return new JSONResponse(
+				['success' => false, 'error' => $partnerShare['error'], 'rule' => $partnerShare['rule']],
+				Http::STATUS_CONFLICT
+			);
+		}
+
+		return new JSONResponse(
+			['success' => false, 'error' => $partnerShare['error']],
+			Http::STATUS_BAD_GATEWAY
+		);
+	}//end partnerShare()
 
 	/**
 	 * The answer when a link share was not minted.

@@ -137,13 +137,7 @@ class PartyKindConsumer {
 	public function declareAcceptance(string $caseType, array $kinds): array {
 		$target = $this->targetFor(caseType: $caseType);
 
-		$ordered = [];
-		foreach ($kinds as $kind) {
-			$kind = trim((string)$kind);
-			if ($kind !== '' && in_array($kind, $ordered, true) === false) {
-				$ordered[] = $kind;
-			}
-		}
+		$ordered = $this->orderedKinds(kinds: $kinds);
 
 		if ($ordered === []) {
 			return ['declared' => false, 'target' => $target, 'reason' => 'no kinds were named'];
@@ -166,34 +160,7 @@ class PartyKindConsumer {
 		}
 
 		try {
-			$existing = $this->existingAcceptanceId(objectService: $objectService, target: $target);
-
-			if ($existing === null) {
-				// A FIRST declaration is a create, and a create's payload IS
-				// the whole object, so a plain save is correct here.
-				$objectService->saveObject(
-					object: ['recordType' => $target, 'kinds' => $ordered],
-					register: self::PIPELINQ_REGISTER,
-					schema: self::ACCEPTANCE_SCHEMA,
-				);
-			}
-
-			if ($existing !== null) {
-				// 🔴 A RE-DECLARATION IS A PATCH, NEVER A SAVE WITH A UUID.
-				// `saveObject()` with a uuid REPLACES the stored object, so
-				// handing it these two fields would delete every other field
-				// pipelinq holds on that row — silently, and on somebody
-				// else's data, which is why this is the first of the six
-				// repairs and not the last. The row belongs to pipelinq; we
-				// only ever change the part we declared.
-				$this->patchObjectAsArray(
-					objectService: $objectService,
-					register: self::PIPELINQ_REGISTER,
-					schema: self::ACCEPTANCE_SCHEMA,
-					id: $existing,
-					changes: ['recordType' => $target, 'kinds' => $ordered],
-				);
-			}
+			$this->writeAcceptance(objectService: $objectService, target: $target, ordered: $ordered);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Dossiq pipelinq: a case type could not declare which party kinds it accepts, so the '
@@ -206,6 +173,66 @@ class PartyKindConsumer {
 
 		return ['declared' => true, 'target' => $target, 'reason' => ''];
 	}//end declareAcceptance()
+
+	/**
+	 * The named kinds, trimmed, without blanks and without repeats.
+	 *
+	 * @param array<int, mixed> $kinds The kinds as the caller named them.
+	 *
+	 * @return array<int, string> The kinds, in the order they were first named.
+	 *
+	 * @psalm-return list<string>
+	 */
+	private function orderedKinds(array $kinds): array {
+		$ordered = [];
+		foreach ($kinds as $kind) {
+			$kind = trim((string)$kind);
+			if ($kind !== '' && in_array($kind, $ordered, true) === false) {
+				$ordered[] = $kind;
+			}
+		}
+
+		return $ordered;
+	}//end orderedKinds()
+
+	/**
+	 * Write the acceptance for a target: a create the first time, a patch after.
+	 *
+	 * @param object             $objectService The OpenRegister object service.
+	 * @param string             $target        The record type the acceptance is for.
+	 * @param array<int, string> $ordered       The kinds being declared.
+	 *
+	 * @return void
+	 */
+	private function writeAcceptance(object $objectService, string $target, array $ordered): void {
+		$existing = $this->existingAcceptanceId(objectService: $objectService, target: $target);
+
+		if ($existing === null) {
+			// A FIRST declaration is a create, and a create's payload IS
+			// the whole object, so a plain save is correct here.
+			$objectService->saveObject(
+				object: ['recordType' => $target, 'kinds' => $ordered],
+				register: self::PIPELINQ_REGISTER,
+				schema: self::ACCEPTANCE_SCHEMA,
+			);
+
+			return;
+		}
+
+		// 🔴 A RE-DECLARATION IS A PATCH, NEVER A SAVE WITH A UUID.
+		// `saveObject()` with a uuid REPLACES the stored object, so handing it
+		// these two fields would delete every other field pipelinq holds on
+		// that row, silently, and on somebody else's data, which is why this is
+		// the first of the six repairs and not the last. The row belongs to
+		// pipelinq; we only ever change the part we declared.
+		$this->patchObjectAsArray(
+			objectService: $objectService,
+			register: self::PIPELINQ_REGISTER,
+			schema: self::ACCEPTANCE_SCHEMA,
+			id: $existing,
+			changes: ['recordType' => $target, 'kinds' => $ordered],
+		);
+	}//end writeAcceptance()
 
 	/**
 	 * The uuid of the acceptance already written for a target, or null.

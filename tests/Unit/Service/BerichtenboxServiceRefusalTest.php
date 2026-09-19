@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
+use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxService;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -176,7 +177,11 @@ class BerichtenboxServiceRefusalTest extends TestCase {
 				->onlyMethods(['resolve'])
 				->getMock(),
 			$this->adapter,
-			$this->timeline
+			// A REAL journal wrapping the SAME CaseTimeline double. The
+			// assertions below still watch `$this->timeline`, so what this test
+			// observes did not move when the journal was split out of the
+			// service: only the wiring line did.
+			new BerichtenboxJournal($this->timeline)
 		);
 	}//end service()
 

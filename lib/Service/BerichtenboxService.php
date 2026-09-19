@@ -29,10 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +51,7 @@ class BerichtenboxService {
 	 * @param LoggerInterface $logger The logger.
 	 * @param OwningCaseResolver $owningCase Resolves a message's owning case.
 	 * @param BerichtenboxAdapterInterface $adapter The transport this instance has.
-	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
+	 * @param BerichtenboxJournal $journal What a send leaves behind for a reader.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
@@ -61,7 +60,7 @@ class BerichtenboxService {
 		private LoggerInterface $logger,
 		private readonly OwningCaseResolver $owningCase,
 		private readonly BerichtenboxAdapterInterface $adapter,
-		private readonly CaseTimeline $timeline,
+		private readonly BerichtenboxJournal $journal,
 	) {
 	}//end __construct()
 
@@ -126,24 +125,15 @@ class BerichtenboxService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-		$messageData = [
-			'caseId' => $caseId,
-			'bsn' => $bsn,
-			'subject' => $subject,
-			'body' => $body,
-			'berichtTypeCode' => $typeCode,
-			'attachmentFileId' => $attachmentFileId,
-			'externalMessageId' => $result['messageId'] ?? null,
-			'status' => $result['status'] ?? 'sent',
-			'sentAt' => $result['sentAt'] ?? (new DateTime())->format('c'),
-		];
-
-		if ($refused === true) {
-			$messageData['status'] = 'refused';
-			$messageData['externalMessageId'] = null;
-			$messageData['lastError'] = (string)($result['error'] ?? '');
-			$messageData['sentAt'] = null;
-		}
+		$messageData = $this->journal->messageRecord(
+			caseId: $caseId,
+			bsn: $bsn,
+			subject: $subject,
+			body: $body,
+			typeCode: $typeCode,
+			attachmentFileId: $attachmentFileId,
+			result: $result,
+		);
 
 		$saved = $objectService->saveObject(
 			object: $messageData,
@@ -151,45 +141,9 @@ class BerichtenboxService {
 			schema: (int)$schema,
 		);
 
-		// PUBLIC, and deliberately WITHOUT the BSN. The recipient already has
-		// the message; the identifier they were addressed by is not part of
-		// what happened on the case, and a public entry is the last place to
-		// put one.
-		$sentence = $subject;
-		$visibility = CaseTimeline::PUBLIC_ENTRY;
-		if ($refused === true) {
-			$sentence = ($subject . ' -- not sent: ' . (string)($result['error'] ?? ''));
-			$visibility = CaseTimeline::INTERNAL;
-		}
+		$this->journal->recordSend(caseId: $caseId, subject: $subject, result: $result, messageData: $messageData);
 
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: $sentence,
-			fields: [
-				'subject' => $subject,
-				'messageId' => (string)($result['messageId'] ?? ''),
-				'status' => (string)($messageData['status']),
-			],
-			visibility: $visibility,
-		);
-
-		if ($refused === true) {
-			$this->logger->warning(
-				'Dossiq: digital post was not sent',
-				['caseId' => $caseId, 'reason' => (string)($result['error'] ?? '')]
-			);
-		}
-
-		if ($refused === false) {
-			$this->logger->info(
-				'Dossiq: Berichtenbox message sent',
-				[
-					'caseId' => $caseId,
-					'messageId' => $result['messageId'] ?? '',
-				]
-			);
-		}
+		$this->logSendOutcome(caseId: $caseId, result: $result);
 
 		$stored = $saved->jsonSerialize();
 		if ($refused === true) {
@@ -202,6 +156,35 @@ class BerichtenboxService {
 
 		return $stored;
 	}//end sendMessage()
+
+
+
+	/**
+	 * Log what became of the send, at the level the outcome deserves.
+	 *
+	 * @param string               $caseId The case.
+	 * @param array<string, mixed> $result What the adapter answered.
+	 *
+	 * @return void
+	 */
+	private function logSendOutcome(string $caseId, array $result): void {
+		if ((($result['refused'] ?? false) === true)) {
+			$this->logger->warning(
+				'Dossiq: digital post was not sent',
+				['caseId' => $caseId, 'reason' => (string)($result['error'] ?? '')]
+			);
+
+			return;
+		}
+
+		$this->logger->info(
+			'Dossiq: Berichtenbox message sent',
+			[
+				'caseId' => $caseId,
+				'messageId' => $result['messageId'] ?? '',
+			]
+		);
+	}//end logSendOutcome()
 
 	/**
 	 * Record what became of a letter integriq is tracking.
@@ -247,28 +230,13 @@ class BerichtenboxService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-		$matches = $objectService->findAll(
-			[
-				'filters' => [
-					'register' => (int)$register,
-					'schema' => (int)$schema,
-					'externalMessageId' => $externalMessageId,
-				],
-			],
+		$data = $this->storedMessage(
+			objectService: $objectService,
+			externalMessageId: $externalMessageId,
+			register: (int)$register,
+			schema: (int)$schema,
 		);
-
-		if ($matches === []) {
-			// Integriq tracks messages for every app on the instance. One we
-			// did not send is not ours to record, and it is not an error.
-			return false;
-		}
-
-		$data = $matches[0];
-		if (is_object($data) === true && method_exists($data, 'jsonSerialize') === true) {
-			$data = $data->jsonSerialize();
-		}
-
-		if (is_array($data) === false) {
+		if ($data === null) {
 			return false;
 		}
 
@@ -281,53 +249,63 @@ class BerichtenboxService {
 
 		$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
 
-		$caseId = (string)($data['caseId'] ?? '');
-		if ($caseId !== '') {
-			$this->timeline->record(
-				caseId: $caseId,
-				kind: TimelineKinds::PORTAL_MESSAGE,
-				message: $this->statusSentence(subject: (string)($data['subject'] ?? ''), status: $status, lastError: $lastError),
-				fields: [
-					'subject' => (string)($data['subject'] ?? ''),
-					'messageId' => $externalMessageId,
-					'status' => $status,
-				],
-				// INTERNAL: a delivery receipt is about our sending, not about
-				// what the citizen was told, and the portal already shows them
-				// the message itself.
-				visibility: CaseTimeline::INTERNAL,
-			);
-		}
+		$this->journal->recordStatus(
+			data: $data,
+			externalMessageId: $externalMessageId,
+			status: $status,
+			lastError: $lastError,
+		);
 
 		return true;
 	}//end recordDeliveryStatus()
 
 	/**
-	 * The sentence a status change writes on the timeline.
+	 * The stored message integriq is tracking under this external id, as an array.
 	 *
-	 * A failure NAMES the reason. "Delivery failed" on its own leaves a
-	 * handler with nothing to act on, which is how a citizen goes unnotified
-	 * while the case says something happened.
+	 * Integriq tracks messages for every app on the instance. One we did not
+	 * send is not ours to record, and it is not an error, so an absent row and
+	 * a row in a shape this cannot read both answer null.
 	 *
-	 * @param string $subject   The letter's subject.
-	 * @param string $status    The status it moved to.
-	 * @param string $lastError The provider's reason, when it failed.
+	 * @param object $objectService     The OpenRegister object service.
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 * @param int    $register          The register the messages live in.
+	 * @param int    $schema            The message schema.
 	 *
-	 * @return string The sentence.
+	 * @return array<string, mixed>|null The stored message, or null.
 	 */
-	private function statusSentence(string $subject, string $status, string $lastError): string {
-		if ($status === 'failed') {
-			$reason = $lastError;
-			if ($reason === '') {
-				$reason = 'the provider gave no reason';
-			}
+	private function storedMessage(
+		object $objectService,
+		string $externalMessageId,
+		int $register,
+		int $schema,
+	): ?array {
+		$matches = $objectService->findAll(
+			[
+				'filters' => [
+					'register' => $register,
+					'schema' => $schema,
+					'externalMessageId' => $externalMessageId,
+				],
+			],
+		);
 
-
-			return $subject . ' -- not delivered: ' . $reason;
+		if ($matches === []) {
+			return null;
 		}
 
-		return $subject . ' -- ' . $status;
-	}//end statusSentence()
+		$data = $matches[0];
+		if (is_object($data) === true && method_exists($data, 'jsonSerialize') === true) {
+			$data = $data->jsonSerialize();
+		}
+
+		if (is_array($data) === false) {
+			return null;
+		}
+
+		return $data;
+	}//end storedMessage()
+
+
 
 	/**
 	 * Get sent messages for a case.
