@@ -30,12 +30,14 @@ The system SHALL expose three `@NoAdminRequired` JSON endpoints on `Berichtenbox
 
 #### Scenario: Poll read status
 
-- WHEN a user calls `poll/{messageId}`
+- WHEN a caller issues `GET /api/berichtenbox/messages/{messageId}`, the route named `berichtenbox#poll`
 - THEN the controller SHALL return `{success: true, message: <updated record>}` reflecting the current read status
+- AND the browser SHALL NOT call it: `src/services/berichtenboxApi.js` exposes `sendMessage` and `listMessages` only, because read status reaches the record by event through `DigitalPostDeliveredListener` rather than by a poll a handler triggers
 
 #### Notes
 
 - All three endpoints are `@NoAdminRequired` — they rely on case-level access checks performed downstream.
+- The poll scenario used to read `poll/{messageId}`, which was never a route. When #627 routed the controller it chose `GET /api/berichtenbox/messages/{messageId}`, and the wording here was left behind. `src/services/berichtenboxApi.js` had been written from the old wording and posted to the path that did not exist. Corrected 2026-09-19, with `tests/vitest/berichtenboxApiRoutes.spec.js` reading the client against `appinfo/routes.php` so the same drift cannot go unseen again.
 
 ### REQ-002: BSN 11-proef + plain-text message validation
 

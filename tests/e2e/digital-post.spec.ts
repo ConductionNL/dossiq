@@ -134,4 +134,31 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 
 		expect([401, 403, 412]).toContain(response.status())
 	})
+
+	// @e2e openspec/specs/berichtenbox-integration/spec.md#scenario-poll-read-status
+	test('read status lives at the declared route, and refuses a stranger', async ({
+		request,
+	}) => {
+		// Two halves, and the first is the one that would have caught the
+		// defect this test was written for. `berichtenboxApi.js` posted to
+		// `/api/berichtenbox/poll/{id}`, which no route answers, so the path
+		// 404s however the caller is authenticated. The real route is
+		// `GET /api/berichtenbox/messages/{id}`, named `berichtenbox#poll`.
+		const gone = await request.post(
+			'/apps/dossiq/api/berichtenbox/poll/does-not-matter',
+			{ failOnStatusCode: false },
+		)
+		expect(gone.status()).toBe(404)
+
+		// The declared route, probed by the least privileged principal: an
+		// anonymous caller with no session and no request token. Read status
+		// is correspondence with a named citizen, so the refusal is the
+		// requirement. It must not be a 404, which would say the same thing
+		// about a route that exists and one that does not.
+		const refused = await request.get(
+			'/apps/dossiq/api/berichtenbox/messages/00000000-0000-0000-0000-000000000000',
+			{ failOnStatusCode: false },
+		)
+		expect([401, 403, 412]).toContain(refused.status())
+	})
 })
