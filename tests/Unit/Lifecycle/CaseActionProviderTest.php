@@ -60,6 +60,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * Maps dossiq's transitions onto OpenRegister's published actions.
  *
  * @covers \OCA\Dossiq\Lifecycle\CaseActionProvider
+ * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Service\StatusTransitionService
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway

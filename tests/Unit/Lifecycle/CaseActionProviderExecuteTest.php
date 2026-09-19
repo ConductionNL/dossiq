@@ -60,6 +60,7 @@ use TypeError;
  * Maps the transition engine's write outcome onto OpenRegister's contract.
  *
  * @covers \OCA\Dossiq\Lifecycle\CaseActionProvider
+ * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses \OCA\Dossiq\Service\Cases\ExternalHome
  * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate

@@ -47,6 +47,7 @@ use RuntimeException;
  * The declaration, and what it does to the lifecycle menu.
  *
  * @covers \OCA\Dossiq\Service\Cases\ExternalHome
+ * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Lifecycle\CaseActionProvider
  * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate
  *

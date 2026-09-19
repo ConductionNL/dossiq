@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
@@ -43,7 +44,6 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -63,6 +63,8 @@ class ZaakdossierController extends Controller {
 	 * @param IUserSession $userSession The user session.
 	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
 	 *        so a document in an unfinished route cannot be made final.
+	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
+	 *        before a bulk transition writes anything, and the metadata run that reports per id.
 	 */
 	public function __construct(
 		string $appName,
@@ -72,6 +74,7 @@ class ZaakdossierController extends Controller {
 		private readonly DossierUploadHandler $uploadHandler,
 		private readonly IUserSession $userSession,
 		private readonly DocumentApprovalClearance $approvals,
+		private readonly BulkDocumentActions $bulk,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -407,7 +410,7 @@ class ZaakdossierController extends Controller {
 		$newStatus = (string)$this->request->getParam('status', '');
 
 		// Per-object clearance gate before any mutation.
-		if ($this->allReadable(user: $user, ids: $ids) === false) {
+		if ($this->bulk->allReadable(user: $user, ids: $ids) === false) {
 			return new JSONResponse(
 				['error' => 'Insufficient clearance for one or more selected documents'],
 				Http::STATUS_FORBIDDEN,
@@ -437,55 +440,9 @@ class ZaakdossierController extends Controller {
 		$ids = (array)$this->request->getParam('ids', []);
 		$metadata = (array)$this->request->getParam('metadata', []);
 
-		$results = [];
-		foreach ($ids as $id) {
-			$results[] = $this->updateOneMetadata(user: $user, id: (string)$id, metadata: $metadata);
-		}
-
-		return new JSONResponse(['results' => $results]);
+		return new JSONResponse(
+			['results' => $this->bulk->updateAll(user: $user, ids: $ids, metadata: $metadata)]
+		);
 	}//end bulkUpdateMetadata()
 
-	/**
-	 * Update one informatieobject's metadata inside a bulk run.
-	 *
-	 * @param IUser $user The requesting user.
-	 * @param string $id The informatieobject UUID.
-	 * @param array<string, mixed> $metadata The metadata to apply.
-	 *
-	 * @return array<string, mixed> The per-id result entry.
-	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-	 */
-	private function updateOneMetadata(IUser $user, string $id, array $metadata): array {
-		if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
-			return ['id' => $id, 'success' => false, 'error' => 'Insufficient clearance'];
-		}
-
-		try {
-			$this->fileService->updateMetadata(infoObjectId: $id, metadata: $metadata);
-			return ['id' => $id, 'success' => true];
-		} catch (\Throwable $e) {
-			return ['id' => $id, 'success' => false, 'error' => $e->getMessage()];
-		}
-	}//end updateOneMetadata()
-
-	/**
-	 * Whether every listed informatieobject is readable by the user.
-	 *
-	 * @param IUser $user The requesting user.
-	 * @param array<int,mixed> $ids The informatieobject UUIDs.
-	 *
-	 * @return bool True when all ids pass the clearance gate.
-	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-	 */
-	private function allReadable(IUser $user, array $ids): bool {
-		foreach ($ids as $id) {
-			if ($this->reader->guardReadable(user: $user, infoObjectId: (string)$id) !== null) {
-				return false;
-			}
-		}
-
-		return true;
-	}//end allReadable()
 }//end class

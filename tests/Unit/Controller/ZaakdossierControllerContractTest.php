@@ -46,12 +46,14 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
 use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 
 /**
  * Wire-contract tests for ZaakdossierController.
  *
  * @covers \OCA\Dossiq\Controller\ZaakdossierController
+ * @uses \OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions
  */
 class ZaakdossierControllerContractTest extends TestCase {
 
@@ -132,6 +134,13 @@ class ZaakdossierControllerContractTest extends TestCase {
 			uploadHandler: $this->uploadHandler,
 			userSession: $this->userSession,
 			approvals: $this->approvals,
+			// A REAL bulk actions object over the SAME reader and dossier
+			// service the assertions read through. Only the wiring line moved
+			// when one act over many documents was split out.
+			bulk: new BulkDocumentActions(
+				reader: $this->reader,
+				fileService: $this->fileService,
+			),
 		);
 	}//end setUp()
 
