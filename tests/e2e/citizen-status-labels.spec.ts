@@ -92,7 +92,12 @@ const links: Array<{ linkId: string; caseId: string }> = []
  * @return The anchor.
  */
 function anchorOf(url: string): string {
-	return url.split('/').filter((part) => part !== '').pop() ?? ''
+	return (
+		url
+			.split('/')
+			.filter((part) => part !== '')
+			.pop() ?? ''
+	)
 }
 
 /**
@@ -203,10 +208,9 @@ test.describe('A status says to the applicant what the author wrote for them', (
 		// be readable, and the sweep below is about to remove the cases.
 		for (const { linkId, caseId } of links) {
 			await api
-				.delete(
-					`${LINKS}/${linkId}?caseId=${encodeURIComponent(caseId)}`,
-					{ headers: { requesttoken: token } },
-				)
+				.delete(`${LINKS}/${linkId}?caseId=${encodeURIComponent(caseId)}`, {
+					headers: { requesttoken: token },
+				})
 				.catch(() => undefined)
 		}
 		await cleanupRunObjects(api, token)
@@ -263,9 +267,7 @@ test.describe('A status says to the applicant what the author wrote for them', (
 		expect(held.status(), await held.text()).toBe(200)
 
 		const served = await held.json()
-		expect(String(served.subject.statusPublicLabel)).toBe(
-			seeded.unlabelledName,
-		)
+		expect(String(served.subject.statusPublicLabel)).toBe(seeded.unlabelledName)
 
 		// 🔴 AND NOTHING WHERE THE DESCRIPTION WOULD GO. The internal
 		// description is written for a colleague. A fallback there would

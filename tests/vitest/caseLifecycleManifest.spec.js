@@ -184,9 +184,7 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		const between = layout.filter(
 			(c) => c.gridY >= tileRows && c.gridY < panels.gridY,
 		)
-		const rows = [...new Set(between.map((c) => c.gridY))].sort(
-			(a, b) => a - b,
-		)
+		const rows = [...new Set(between.map((c) => c.gridY))].sort((a, b) => a - b)
 		expect(
 			rows.map((y) =>
 				between
@@ -309,12 +307,8 @@ describe('CaseDetail: one menu holds every lifecycle act', () => {
 		// Asserted on the ENTRY, not on the name. The name still appears, in
 		// the menu's own note recording what was retired and why, and a
 		// substring test would have called that a registration.
-		expect(registrySource).not.toMatch(
-			/\n\tCaseLifecycleActionDialog: \{/,
-		)
-		expect(registrySource).not.toContain(
-			"import CaseLifecycleActionDialog from",
-		)
+		expect(registrySource).not.toMatch(/\n\tCaseLifecycleActionDialog: \{/)
+		expect(registrySource).not.toContain('import CaseLifecycleActionDialog from')
 	})
 })
 
