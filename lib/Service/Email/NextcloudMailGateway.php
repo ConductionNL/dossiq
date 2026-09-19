@@ -469,26 +469,31 @@ class NextcloudMailGateway implements MailGatewayInterface {
 			return null;
 		}
 
-		if (method_exists($event, 'getAccount') === false || method_exists($event, 'getMailbox') === false) {
-			return null;
-		}
-
-		try {
-			$account = $event->getAccount();
-			$mailbox = $event->getMailbox();
-			$rows = [];
-			if (method_exists($event, 'getMessages') === true) {
-				$rows = $event->getMessages();
-			}
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq: a Mail synchronisation event could not be read',
-				['error' => $e->getMessage()]
-			);
-			return null;
-		}
+		// The getters are reached through `call()`, by NAME, and not written
+		// as `$event->getAccount()`.
+		//
+		// `is_a()` with the constant class-string narrows `$event` to
+		// OCA\Mail\Events\NewMessagesSynchronized. That class ships in
+		// Nextcloud Mail, which is an optional runtime dependency this app
+		// deliberately carries no hard link to, so it is absent from the
+		// analysis tree and every named getter reads as a call on an unknown
+		// class. `call()` takes a plain `object` plus a method name, which is
+		// the same indirection the account, mailbox and message entities
+		// already go through further down, and it brings the `method_exists`
+		// guard and the throw handling with it.
+		$account = $this->call(entity: $event, method: 'getAccount', fallback: null);
+		$mailbox = $this->call(entity: $event, method: 'getMailbox', fallback: null);
+		$rows = $this->call(entity: $event, method: 'getMessages', fallback: []);
 
 		if (is_object($account) === false || is_object($mailbox) === false) {
+			// A Mail release that moved the event's shape arrives here, and so
+			// does a getter that threw. Both mean the run ends with no
+			// messages, which is indistinguishable from a quiet mailbox unless
+			// it is said out loud.
+			$this->logger->warning(
+				'Dossiq: a Mail synchronisation event could not be read',
+				['event' => get_class($event)]
+			);
 			return null;
 		}
 
