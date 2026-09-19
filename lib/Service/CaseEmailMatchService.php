@@ -195,8 +195,6 @@ class CaseEmailMatchService {
 	 * @param int   $accountId Their configured Mail account.
 	 *
 	 * @return array{objectService: object, linkService: object, pattern: string, register: string, schema: string}|string
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) One flat guard per precondition, each an early refusal.
 	 */
 	private function prepareRun(IUser $owner, int $accountId): array|string {
 		if ($this->messages->ownsAccount(accountId: $accountId, userId: $owner->getUID()) === false) {

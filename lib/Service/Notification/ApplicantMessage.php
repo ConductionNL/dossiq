@@ -53,12 +53,6 @@ use Throwable;
  * Sends the message one declared moment owes the applicant, and says what happened.
  *
  * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Five collaborators, because
- * sending one letter to a citizen is five things: is it declared, who is the
- * addressee, which clock does it quote, who routes it, and what does the case
- * file say afterwards. Folding them into a parameter object would hide the list
- * rather than shorten it.
  */
 class ApplicantMessage {
 

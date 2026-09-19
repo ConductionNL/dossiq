@@ -91,8 +91,6 @@ class AcknowledgementController extends Controller {
 	 *
 	 * @return JSONResponse `{duty: object}`.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */
 	#[NoAdminRequired]
@@ -133,8 +131,6 @@ class AcknowledgementController extends Controller {
 	 * @param string $caseId The case UUID.
 	 *
 	 * @return JSONResponse `{duty: object}`, or the refusal.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */

@@ -65,11 +65,6 @@ use Throwable;
  *  a named constructor, not a service call. It holds no state and exists so a
  *  caller cannot build a refusal with the wrong status on it.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — the fan-out reaches the case
- *  type, the register and the relation because opening a case in a department and
- *  tying it to its siblings is what it does; each collaborator knows only its own
- *  half.
- *
  * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
  */
 class IntakeFanOut {

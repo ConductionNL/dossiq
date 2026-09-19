@@ -1057,7 +1057,6 @@ class ZrcController extends ZgwController {
 	 * @return JSONResponse|null A 400 response if validation fails, null if valid
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $isPatch reserved for partial-update validation
 	 *
 	 * @psalm-suppress UnusedParam — $isPatch reserved for partial-update validation

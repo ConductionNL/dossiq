@@ -232,9 +232,6 @@ class FirstResponseOutcome {
 	 * @param bool              $working Whether the term counts working days.
 	 *
 	 * @return int The overrun.
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The counting mode is the
-	 *   term's declaration, not a decision this method makes.
 	 */
 	private function overrunBetween(DateTimeImmutable $due, DateTimeImmutable $sent, bool $working): int {
 		if ($working === false) {

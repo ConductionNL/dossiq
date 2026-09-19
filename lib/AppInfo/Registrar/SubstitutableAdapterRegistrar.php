@@ -198,8 +198,6 @@ class SubstitutableAdapterRegistrar {
 	 *
 	 * @return string The translated sentence.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
-	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private static function templateFallbackReason(ContainerInterface $container): string {

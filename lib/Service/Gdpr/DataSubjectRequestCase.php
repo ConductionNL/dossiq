@@ -61,8 +61,6 @@ use OCA\Dossiq\Service\Transitions\FourEyesRule;
  *
  * @psalm-suppress UnusedClass Injected into DataSubjectRequestController.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The case, the platform, the chain and the timeline.
- *
  * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 class DataSubjectRequestCase {

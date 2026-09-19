@@ -97,8 +97,6 @@ class CaseRebindController extends Controller {
 	 *
 	 * @return JSONResponse Whether they may.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
 	 */
 	#[NoAdminRequired]
@@ -126,8 +124,6 @@ class CaseRebindController extends Controller {
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return JSONResponse The options, with the preview when a target is named.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
 	 */
@@ -168,8 +164,6 @@ class CaseRebindController extends Controller {
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return JSONResponse What was applied, or the refusal naming the rule.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
 	 */

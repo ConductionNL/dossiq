@@ -57,7 +57,6 @@ use RuntimeException;
  * recording a conversational assistant exchange, and reading the trail back —
  * lives in {@see \OCA\Dossiq\Service\Ai\AiAuditService}.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md

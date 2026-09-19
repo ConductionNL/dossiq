@@ -44,10 +44,6 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — aggregates CRUD,
- * the aanvraag status machine, voorschot/verplichting validation and
- * termijn math for the subsidy domain.
- *
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
 class SubsidieService {
