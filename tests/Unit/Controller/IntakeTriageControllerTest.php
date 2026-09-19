@@ -128,6 +128,13 @@ final class IntakeTriageControllerTest extends TestCase {
 	private IntakeLog $log;
 
 	/**
+	 * The admissibility judgement.
+	 *
+	 * @var AdmissibilityJudgement&MockObject
+	 */
+	private AdmissibilityJudgement $admissibility;
+
+	/**
 	 * Build collaborators for a caller who holds the intake role.
 	 *
 	 * @return void
@@ -150,6 +157,7 @@ final class IntakeTriageControllerTest extends TestCase {
 		$this->sleep = $this->createMock(TriageSleep::class);
 		$this->fanOut = $this->createMock(IntakeFanOut::class);
 		$this->log = $this->createMock(IntakeLog::class);
+		$this->admissibility = $this->createMock(AdmissibilityJudgement::class);
 	}//end setUp()
 
 	/**
@@ -204,7 +212,7 @@ final class IntakeTriageControllerTest extends TestCase {
 				logger: new NullLogger()
 			),
 			refusal: $this->refusal,
-			admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+			admissibility: $this->admissibility,
 			sleep: $this->sleep,
 			fanOut: $this->fanOut,
 			log: $this->log,
@@ -499,4 +507,84 @@ final class IntakeTriageControllerTest extends TestCase {
 		$this->assertSame(expected: 'Onderhoud', actual: $body['failed'][0]['destination']);
 		$this->assertArrayNotHasKey(key: 'relationHasNoInverse', array: $body);
 	}//end testTheFanOutReportsTheFailedDestinationBesideTheCreated()
+	/**
+	 * An anonymous caller cannot judge admissibility.
+	 *
+	 * Contract coverage for `intakeTriage#judgeAdmissibility` (gate-25). The
+	 * unauthenticated arm is 401 and the unauthorised arm is 403, and the two
+	 * are different answers on purpose: a client that has no session should
+	 * log in, a client that has one should not retry.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRefusesAnAnonymousCallerWith401(): void {
+		$response = $this->controller(signedIn: false)
+			->judgeAdmissibility(caseId: 'case-1', verdict: 'ontvankelijk', reason: 'compleet');
+
+		self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testJudgeAdmissibilityRefusesAnAnonymousCallerWith401()
+
+	/**
+	 * A caller who may not write the case is refused before the service is asked.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRefusesACallerWhoMayNotWriteTheCase(): void {
+		$this->mayMutate = false;
+		$this->admissibility->expects(self::never())->method('judge');
+
+		$response = $this->controller()
+			->judgeAdmissibility(caseId: 'case-1', verdict: 'ontvankelijk', reason: 'compleet');
+
+		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		self::assertSame('not-authorized', $response->getData()['error']);
+	}//end testJudgeAdmissibilityRefusesACallerWhoMayNotWriteTheCase()
+
+	/**
+	 * A verdict is recorded against the SESSION user, not a parameter.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRecordsTheVerdictAgainstTheSessionUser(): void {
+		$seen = [];
+		$this->admissibility->method('judge')->willReturnCallback(
+			static function (string $caseId, string $verdict, string $reason, string $judgedBy) use (&$seen): array {
+				$seen = compact('caseId', 'verdict', 'reason', 'judgedBy');
+				return ($seen + ['recordedAt' => '2026-09-19T10:00:00+02:00']);
+			}
+		);
+
+		$response = $this->controller()->judgeAdmissibility(
+			caseId: 'case-1',
+			verdict: 'niet-ontvankelijk',
+			reason: 'De aanvraag is te laat ingediend.',
+		);
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame('niet-ontvankelijk', $seen['verdict']);
+		self::assertSame('De aanvraag is te laat ingediend.', $seen['reason']);
+		// WHO JUDGED comes from the session. A verdict anybody can attribute to
+		// anybody is not a verdict.
+		self::assertSame('jdevries', $seen['judgedBy']);
+	}//end testJudgeAdmissibilityRecordsTheVerdictAgainstTheSessionUser()
+
+	/**
+	 * A refused verdict keeps the refusal's own status and rule.
+	 *
+	 * @return void
+	 */
+	public function testJudgeAdmissibilityRelaysTheRefusalsOwnStatus(): void {
+		$this->admissibility->method('judge')->willThrowException(
+			new RefusedException(
+				rule: 'admissibility-verdict-unknown',
+				sentence: 'Say whether the aanvraag is ontvankelijk or niet-ontvankelijk.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			)
+		);
+
+		$response = $this->controller()->judgeAdmissibility(caseId: 'case-1', verdict: 'misschien');
+
+		self::assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
+		self::assertSame('admissibility-verdict-unknown', $response->getData()['error']);
+	}//end testJudgeAdmissibilityRelaysTheRefusalsOwnStatus()
 }//end class

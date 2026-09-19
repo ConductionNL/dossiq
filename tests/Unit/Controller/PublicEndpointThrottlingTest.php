@@ -45,6 +45,11 @@ use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\Attribute\UserRateLimit;
+use OCA\Dossiq\Service\CaseMergeService;
+use OCA\Dossiq\Service\SettingsService;
+use OCP\AppFramework\Http;
+use OCP\IRequest;
+use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use ReflectionMethod;
@@ -187,4 +192,50 @@ class PublicEndpointThrottlingTest extends TestCase {
 		sort($classes);
 		return $classes;
 	}//end controllerClasses()
+
+	/**
+	 * The uniform 404 is the same answer for every way of failing.
+	 *
+	 * Contract coverage for `publicCaseSurvivor#survivor` (gate-25), and the
+	 * other half of the throttling above: the CEILING stops a sweep going
+	 * fast, and the UNIFORM 404 stops a sweep learning anything from the
+	 * answers it does get. Both are needed. A 404 for an unknown token and a
+	 * 403 for a known-but-unmerged one would turn this endpoint into an oracle
+	 * for which tokens exist, at any rate at all.
+	 *
+	 * @return void
+	 */
+	public function testEveryWayOfFailingGetsTheSameUniform404(): void {
+		$settings = $this->createMock(SettingsService::class);
+		// No token service resolvable: the token cannot be read at all.
+		$settings->method('getOpenRegisterClass')->willReturn(null);
+		$settings->method('getObjectService')->willReturn(null);
+		$settings->method('getConfigValue')->willReturn('');
+
+		$merge = $this->createMock(CaseMergeService::class);
+		$merge->expects(self::never())->method('resolveSurvivor');
+
+		$controller = new PublicCaseSurvivorController(
+			appName: 'dossiq',
+			request: $this->createMock(IRequest::class),
+			mergeService: $merge,
+			settingsService: $settings,
+			logger: $this->createMock(LoggerInterface::class),
+		);
+
+		foreach (['', 'not-a-token', str_repeat('a', 64)] as $token) {
+			$response = $controller->survivor(token: $token);
+
+			self::assertSame(
+				Http::STATUS_NOT_FOUND,
+				$response->getStatus(),
+				'token ' . var_export($token, true) . ' must get the uniform 404'
+			);
+			self::assertSame(
+				['message' => 'Not Found'],
+				$response->getData(),
+				'the body must not differ between failures either'
+			);
+		}
+	}//end testEveryWayOfFailingGetsTheSameUniform404()
 }//end class
