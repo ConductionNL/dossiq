@@ -51,7 +51,16 @@ describe('the binding is declared on the definition', () => {
 	})
 
 	it('moves its schema version, or no instance reconciles the new key', () => {
-		expect(propertyDefinition.version).toBe('1.4.0')
+		// 🔑 AT OR ABOVE, NOT EQUAL TO. What matters is that the version moved
+		// past the one shipped before `conceptScheme` existed, so the importer
+		// reconciles the new key. Pinning the literal made every LATER bump
+		// fail a test about `conceptScheme` for a reason that has nothing to
+		// do with it, which is what a sentence-casing pass then did.
+		const [major, minor] = propertyDefinition.version.split('.').map(Number)
+		expect(
+			major > 1 || (major === 1 && minor >= 4),
+			`propertyDefinition is at ${propertyDefinition.version}, which is before the 1.4.0 that introduced conceptScheme`,
+		).toBe(true)
 	})
 
 	/**

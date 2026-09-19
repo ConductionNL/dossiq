@@ -564,20 +564,20 @@
         "digest": "50df35a4a04866611fbef27917993fca0e2f8d6ffaa9d4e5e12281c65d764ad6"
     },
     "lib/Settings/dossiq_register.json::adviceRequest": {
-        "version": "1.0.0",
-        "digest": "b6096f3cf38b6fba552c43a8b262cb151fe8acce3a5d52ac6289480cf712301b"
+        "version": "1.1.0",
+        "digest": "fd90d87e57a7484f854d70884ad7a2d9ee5480ddf9a15fcfc731e8ef655b4d87"
     },
     "lib/Settings/dossiq_register.json::adviceResponse": {
         "version": "1.0.0",
         "digest": "edd9cdf3cc68af790e7d2927f968b276ef3acaa3e17bdb9b745302958e99daa3"
     },
     "lib/Settings/dossiq_register.json::adviesAanvraag": {
-        "version": "1.1.0",
-        "digest": "dd52f95b9b3490db3d3082e4290af235775cc3927e691dafb15756248142fe06"
+        "version": "1.2.0",
+        "digest": "9bf77da0d9040cee20f572242a57f89219e95e434fbbf0e7bdcb602f7a6d2802"
     },
     "lib/Settings/dossiq_register.json::advisoryBody": {
-        "version": "1.0.0",
-        "digest": "c8bf5c50530cd9f3d12e8220fed4f21fa56ac9ad70d3fed70ce477a71a1a7c44"
+        "version": "1.1.0",
+        "digest": "15df00dbe29f7296bccc8312d037f550705f56b8405a18fc81f92d88b4e36c70"
     },
     "lib/Settings/dossiq_register.json::advisoryReport": {
         "version": "1.0.0",
@@ -668,8 +668,8 @@
         "digest": "04f5dced3feb46a84c08827545040a7f1d4427a6bd4fbcb805da9777483eb35f"
     },
     "lib/Settings/dossiq_register.json::checklistItem": {
-        "version": "1.0.0",
-        "digest": "cfcef99e4a6ce4dde7bb7dce981f8ae7c9474598261255b951aa28c980d3c732"
+        "version": "1.1.0",
+        "digest": "79e2472388c4e046973c8fa362e4d364c0a82fc53c5ab115dd574b8c1a5f5414"
     },
     "lib/Settings/dossiq_register.json::complaint": {
         "version": "1.2.0",
@@ -700,8 +700,8 @@
         "digest": "d8501c84a869642dba62842ca92ef532b12106d6c650db1deb6c820753ec6233"
     },
     "lib/Settings/dossiq_register.json::decisionType": {
-        "version": "1.1.0",
-        "digest": "e97d00ca66bb47450b7907ba88d90bb001474e140a784ec45064a515f4e91aff"
+        "version": "1.2.0",
+        "digest": "27457f7a9c9407e0dec6b8c5695f5bf35dc7c0b179441dacec99ad7bde1fc640"
     },
     "lib/Settings/dossiq_register.json::dispatch": {
         "version": "1.0.0",
@@ -716,16 +716,16 @@
         "digest": "4cdc26dda2e514572762d8284b1253873afcd0e4c5eb033b0810457af7f7b13d"
     },
     "lib/Settings/dossiq_register.json::documentType": {
-        "version": "1.1.0",
-        "digest": "3bc2803a233961d5fd04d5022ec1270eab45fe11d87b83d28f33df11a9304613"
+        "version": "1.2.0",
+        "digest": "540df38bdd4a2b4fe6074229071958ec6b59de870a3743c77056f3763986e31f"
     },
     "lib/Settings/dossiq_register.json::dossiqIntegration": {
         "version": "1.3.0",
         "digest": "273df9c2393be4f2f861dfdad3a725c8cc4fbf4345c91665fc1bf8085b25c3d7"
     },
     "lib/Settings/dossiq_register.json::emailTemplate": {
-        "version": "1.0.0",
-        "digest": "dc601376d2400d0effd0ac3c74666a5d2b143a4ddf2cf2abc0a9cdd9764ac9a2"
+        "version": "1.1.0",
+        "digest": "cecf0bc6bf5ad6d4b7bb44c11e8e7228eeb4601d502cf0a3512871cb98a7c8ed"
     },
     "lib/Settings/dossiq_register.json::handhavingsactie": {
         "version": "1.1.0",
@@ -800,32 +800,32 @@
         "digest": "534086a61ec06bd26b058b529829a422fd14face6bc64a70d084c27bac137498"
     },
     "lib/Settings/dossiq_register.json::propertyDefinition": {
-        "version": "1.4.0",
-        "digest": "aac11a7692cd3d8f69bf3f6e070258b1cdf01db4bd79d90d8423f3a787bbebee"
+        "version": "1.5.0",
+        "digest": "3c2170a71bc564ff97ae284c06128eec481db434c5ef21271e6a6f15be6b43c3"
     },
     "lib/Settings/dossiq_register.json::result": {
         "version": "1.0.0",
         "digest": "c34a1da55dc891a8c2b39ae5d5697c2eb6b2a2cba56de377c09486276c1d3882"
     },
     "lib/Settings/dossiq_register.json::resultType": {
-        "version": "1.0.0",
-        "digest": "818680e212ae64f4e59df12a782ad3114dca841059dcec0f7a04ec5ce16c8e86"
+        "version": "1.1.0",
+        "digest": "687edf5d15d2765bbdb7296a527b2ed31ecd57579140181954c5a1d83400ab97"
     },
     "lib/Settings/dossiq_register.json::role": {
         "version": "1.2.0",
         "digest": "944cebb794641dbe66310d6a82f936aa2d3fbd113d2ff9a2b3ef7dbef8410cf2"
     },
     "lib/Settings/dossiq_register.json::roleType": {
-        "version": "1.2.0",
-        "digest": "27fc66750a6c774c5a2006f389a238d75070e7ea567639db5aadbaab6684d9a5"
+        "version": "1.3.0",
+        "digest": "7e926214fc0292f056c386735f2afeb32fe9c211133857406fdc354bae15f61d"
     },
     "lib/Settings/dossiq_register.json::statusRecord": {
-        "version": "1.2.0",
-        "digest": "d0f1718459d69859f1ee6b884beb6a23de4b6b465e43e1e49f42f04961a5baee"
+        "version": "1.3.0",
+        "digest": "172c5e4ca93c27c973888d0575f9e6dace80bb212ec7ccd085eebbd4308c1830"
     },
     "lib/Settings/dossiq_register.json::statusType": {
-        "version": "1.6.0",
-        "digest": "65a7af0be25d9202235524cfcc7c5c6859d80d6960bf38600b1eb48428cc8046"
+        "version": "1.7.0",
+        "digest": "5e6f97cd4991628ad3e8794b9981ac6e495671c4092c4a9fd271aed615f012de"
     },
     "lib/Settings/dossiq_register.json::supplier": {
         "version": "1.1.0",
@@ -888,8 +888,8 @@
         "digest": "7f08c287ad6668be34d494c21f06b3e421a01ee2c3322fdee49e9e03aa93dce0"
     },
     "lib/Settings/dossiq_register.json::workflowTemplate": {
-        "version": "1.3.0",
-        "digest": "c93de92fdb8cd5440d814c59f9f16d1a59f540296a13f4fd0cb9f5719ca1c328"
+        "version": "1.4.0",
+        "digest": "5955e845877b172fc26bb2f550b48a70a547e2f1ce0a139c3af0ec10520bc4ce"
     },
     "lib/Settings/dossiq_register.json::zaaktypeInformatieobjecttype": {
         "version": "1.0.0",
@@ -936,8 +936,8 @@
         "digest": "5b479a24a0aaf66c82dfe3e6eafbb13c7381efe6438fd49b07bcecf4470260c2"
     },
     "lib/Settings/register.d/30-kcc.json::routingRule": {
-        "version": "1.0.0",
-        "digest": "1d74bf9829383cfab6dfbbc2d8d205febf986564cd24cd62beccc42c7514fff3"
+        "version": "1.1.0",
+        "digest": "ee17cf6e2426d26983f0021f025bc8321cae34e7ac231f776fe90df63078a6c6"
     },
     "lib/Settings/register.d/36-mail-intake.json::caseType": {
         "version": "",
@@ -1048,8 +1048,8 @@
         "digest": "726c6d430a6c4fcac4c7ab9774ca423994b85915a807447222a5b91371fa726a"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldEvidence": {
-        "version": "1.1.0",
-        "digest": "bc12cb9a90417b683b791ea579bca9dcb2ade3538d77db930ac56bf546ffaa7b"
+        "version": "1.2.0",
+        "digest": "3fa7da71830d85a0b155f92cbbd0a4a788d73da5c4822c7beff3a285f0463055"
     },
     "lib/Settings/register.d/40-mobiel-inspectie-offline.json::fieldInspection": {
         "version": "1.1.0",

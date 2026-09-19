@@ -88,8 +88,8 @@
             "routingRule": {
                 "slug": "routingRule",
                 "icon": "SignDirection",
-                "version": "1.0.0",
-                "title": "Routing Rule",
+                "version": "1.1.0",
+                "title": "Routing rule",
                 "description": "KCC keyword/context routing rule that assigns a contact moment to a team and domain.",
                 "type": "object",
                 "required": ["name"],
@@ -169,7 +169,7 @@
                         "description": "Channels the agent can handle (phone, email, chat, ...)"
                     },
                     "currentStatus": {
-                        "title": "Current Status",
+                        "title": "Current status",
                         "type": "string",
                         "enum": ["available", "busy", "break", "after_call_wrap", "offline"],
                         "default": "offline",

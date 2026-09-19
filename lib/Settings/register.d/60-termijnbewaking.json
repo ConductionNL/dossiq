@@ -36,7 +36,7 @@
           },
           "legalBasis": {
             "type": "string",
-            "title": "Legal Basis",
+            "title": "Legal basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'Wabo 3.9')",
             "maxLength": 255
           },
@@ -189,14 +189,14 @@
           "validFrom": {
             "type": "string",
             "format": "date",
-            "title": "Valid From",
+            "title": "Valid from",
             "description": "Definition takes effect on this date",
             "facetable": true
           },
           "validUntil": {
             "type": "string",
             "format": "date",
-            "title": "Valid Until",
+            "title": "Valid until",
             "description": "Definition stops applying on this date; null = current version"
           }
         }
@@ -259,7 +259,7 @@
           "startDate": {
             "type": "string",
             "format": "date-time",
-            "title": "Start Date",
+            "title": "Start date",
             "description": "When the deadline started running"
           },
           "endDateCalculated": {
@@ -466,7 +466,7 @@
           },
           "basis": {
             "type": "string",
-            "title": "Legal Basis",
+            "title": "Legal basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'AWB 4:14 lid 1')"
           },
           "rationale": {
@@ -509,7 +509,7 @@
           "receiptDate": {
             "type": "string",
             "format": "date",
-            "title": "Receipt Date",
+            "title": "Receipt date",
             "description": "Date the notice arrived"
           },
           "notificationChannel": {
@@ -571,7 +571,7 @@
           "startDate": {
             "type": "string",
             "format": "date",
-            "title": "Start Date",
+            "title": "Start date",
             "description": "First accrual day (= ontvangstDatum + 14d grace, unless regime overrides)"
           },
           "currentDag": {
@@ -675,7 +675,7 @@
           },
           "legalBasis": {
             "type": "string",
-            "title": "Legal Basis",
+            "title": "Legal basis",
             "description": "Legal basis (defaults to 'AWB 4:17')",
             "default": "AWB 4:17",
             "maxLength": 255

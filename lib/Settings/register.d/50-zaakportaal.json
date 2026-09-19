@@ -37,7 +37,7 @@
                         "description": "Pseudonymous subject reference of the sender (BSN/KvK hash), never the raw BSN. Used for IDOR scoping."
                     },
                     "senderName": {
-                        "title": "Sender Name",
+                        "title": "Sender name",
                         "type": "string",
                         "description": "Display name of the sender."
                     },
@@ -69,7 +69,7 @@
                         "description": "Direction of the message."
                     },
                     "sentAt": {
-                        "title": "Sent On",
+                        "title": "Sent on",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the message was sent."
@@ -187,7 +187,7 @@
                         "description": "When the request was submitted."
                     },
                     "withinTerm": {
-                        "title": "Within Deadline",
+                        "title": "Within deadline",
                         "type": "boolean",
                         "description": "Whether the request was filed within the statutory deadline."
                     },
@@ -238,7 +238,7 @@
                         "description": "Whether email notifications are active."
                     },
                     "emailAddress": {
-                        "title": "Email Address",
+                        "title": "Email address",
                         "type": "string",
                         "description": "The notification email address."
                     },

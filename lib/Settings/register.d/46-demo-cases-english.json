@@ -31,7 +31,7 @@
 
 			{
 				"@self": { "register": "dossiq", "schema": "caseType", "slug": "grant-application-type" },
-				"title": "Grant Application",
+				"title": "Grant application",
 				"identifier": "grant-application",
 				"description": "Applications for public grants and subsidies (Förderantrag).",
 				"purpose": "Handling applications for public grants and subsidies.",
