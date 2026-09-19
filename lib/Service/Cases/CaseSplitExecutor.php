@@ -278,7 +278,7 @@ class CaseSplitExecutor {
 	 */
 	private function rowsFor(string $caseId, array $chosen): array {
 		$rows = [];
-		foreach (self::PART_SOURCES as $part => $source) {
+		foreach (array_keys(self::PART_SOURCES) as $part) {
 			$found = $this->rowsForPart(
 				caseId: $caseId,
 				part: $part,

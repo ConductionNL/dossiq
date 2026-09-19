@@ -115,8 +115,6 @@ class CaseDefinitionExportService {
 	 *
 	 * @throws \RuntimeException If export fails.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function exportCaseDefinition(

@@ -92,8 +92,6 @@ class CaseTypeController extends Controller {
 	 *
 	 * @return JSONResponse The blueprint, or 404 when the type is unreadable.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/specs/case-types/spec.md
 	 */
 	#[NoAdminRequired]
@@ -128,8 +126,6 @@ class CaseTypeController extends Controller {
 	 * @param string $id The case type id.
 	 *
 	 * @return JSONResponse The outcome.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/specs/zaaktype-versioning/spec.md
 	 */
@@ -171,8 +167,6 @@ class CaseTypeController extends Controller {
 	 * @param string $id The case type id.
 	 *
 	 * @return JSONResponse `{findings: string[], warnings: string[]}`.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */

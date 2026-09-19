@@ -342,10 +342,6 @@ class CaseReassignmentService {
 	 *
 	 * @return array<string, mixed> The job, or an empty array when there was nothing to move.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Carried through from
-	 * `releaseCaseload()`, where the flag is the difference between the two
-	 * gestures rather than a mode switch.
-	 *
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	private function handOverCases(

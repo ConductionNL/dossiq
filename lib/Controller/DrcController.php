@@ -46,7 +46,6 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)

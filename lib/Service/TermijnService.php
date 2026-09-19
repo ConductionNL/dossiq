@@ -47,8 +47,6 @@ use RuntimeException;
  * Server-authoritative TermijnInstance lifecycle.
  *
  * @spec openspec/specs/termijnbewaking-schemas/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class TermijnService {
 	use SearchesObjects;

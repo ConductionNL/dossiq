@@ -186,8 +186,6 @@ class LifecycleCasesAction implements BulkActionInterface {
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) One executor for the
-	 * rehearsal and the commit is the design property of D-1.
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The lifecycle service
 	 * reads the acting user from the session; the job runs as that user.
 	 *

@@ -169,9 +169,6 @@ class ReassignCasesAction implements BulkActionInterface {
 	 *
 	 * @return BulkActionResult What happened, or what would.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) One executor for the
-	 * rehearsal and the commit is the design property of D-1.
-	 *
 	 * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
 	 */
 	public function apply(ObjectEntity $object, array $parameters, bool $commit, ?IUser $actor = null): BulkActionResult {

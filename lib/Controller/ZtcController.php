@@ -44,7 +44,6 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
  * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
@@ -580,9 +579,6 @@ class ZtcController extends ZgwController {
 	 * @param array $data The outbound-mapped response data.
 	 *
 	 * @return array The enriched response data with cross-reference URLs.
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 */
 	private function enrichCrossReferences(string $resource, array $data): array {
 		$objectService = $this->zgwService->getObjectService();
@@ -1069,7 +1065,6 @@ class ZtcController extends ZgwController {
 	 * @return array The filtered response data.
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 */
 	private function filterValidUrls(string $resource, array $data): array {
 		$fieldConfigs = self::URL_FILTER_FIELDS[$resource] ?? [];

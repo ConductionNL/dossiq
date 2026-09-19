@@ -117,8 +117,6 @@ class CaseDefinitionImportService {
 	 *
 	 * @return array{valid: bool, errors: string[], warnings: string[], manifest: ?array<string, mixed>, conflicts: array<string, mixed>}
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function validatePackage(string $zipPath): array {
@@ -194,8 +192,6 @@ class CaseDefinitionImportService {
 	 * @return array{success: bool, message: string, components: array<string, array{status: string, message: string}>}
 	 *
 	 * @throws \RuntimeException If import fails.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */

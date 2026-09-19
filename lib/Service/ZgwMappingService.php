@@ -35,8 +35,6 @@ use Psr\Log\LoggerInterface;
  * Stores mapping configuration as JSON in IAppConfig under keys like
  * `zgw_mapping_zaak`, `zgw_mapping_zaaktype`, etc.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
- *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwMappingService {

@@ -105,8 +105,6 @@ class SavedMailImport {
 	 * @return array{outcome: string, reason: string, subject: string, from: string, receivedAt: string}
 	 *         What happened, and what was read.
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
-	 *
 	 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
 	 */
 	public function import(string $caseId, string $fileName, string $raw): array {

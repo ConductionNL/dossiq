@@ -80,8 +80,6 @@ use Throwable;
 /**
  * Retires the `dossiq.demo` schema fork and restores the register's identity.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Needs OpenRegister's schema, register and deletion services.
- *
  * @spec exclude No canonical spec covers repairing the damage of a defective
  *  demo import. Pointing this at the first-time-setup spec would report
  *  conformance to a requirement that says nothing about the fork.

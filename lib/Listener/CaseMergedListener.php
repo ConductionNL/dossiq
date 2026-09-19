@@ -102,9 +102,6 @@ class CaseMergedListener implements IEventListener {
 	 * @param bool   $isReversal True when the platform reversed the merge.
 	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The event says which
-	 *   direction it is; this method does not decide it.
 	 */
 	private function apply(string $mergedId, string $survivorId, bool $isReversal): void {
 		try {

@@ -76,11 +76,6 @@ use UnexpectedValueException;
  *
  * @spec openspec/changes/requestdecision-recovers-a-missed-conclusion/specs/case-flow-human-steps/spec.md
  * @spec openspec/specs/case-flow-human-steps/spec.md
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The node speaks OpenRegister's
- *     whole suspend/resume vocabulary (suspension, resume slot, run context,
- *     signal key) AND dossiq's cross-app decision seam. Splitting a class to
- *     shed an import would separate the raise from the wait it exists to pair.
  */
 class DossiqRequestDecisionNode implements IFlowNode {
 
