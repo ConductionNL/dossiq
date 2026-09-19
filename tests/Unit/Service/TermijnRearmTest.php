@@ -38,6 +38,9 @@ use Psr\Log\NullLogger;
  * Re-arming a running term against another case type's definition.
  *
  * @covers \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class TermijnRearmTest extends TestCase {
 	use MakesCaseDateNormaliser;

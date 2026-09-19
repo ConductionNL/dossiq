@@ -51,6 +51,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the planned action chain.
  *
  * @covers \OCA\Dossiq\Service\PlannedAction\PlannedActionChain
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class PlannedActionChainTest extends TestCase {
 

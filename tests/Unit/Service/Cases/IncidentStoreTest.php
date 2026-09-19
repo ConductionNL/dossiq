@@ -53,6 +53,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @covers \OCA\Dossiq\Service\Cases\IncidentStore
  * @uses \OCA\Dossiq\Service\Cases\IncidentRecord
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
  */

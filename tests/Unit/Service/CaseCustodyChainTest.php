@@ -49,6 +49,10 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * Opening, closing and reading holdings.
  *
  * @covers \OCA\Dossiq\Service\Custody\CaseCustodyChain
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Tests\Support\InMemoryRegister
+ * @uses \OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */

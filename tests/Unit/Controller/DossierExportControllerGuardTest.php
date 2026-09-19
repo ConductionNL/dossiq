@@ -46,6 +46,8 @@ use Psr\Log\LoggerInterface;
  * Tests that a caller unrelated to the case gets a status and no plan.
  *
  * @covers \OCA\Dossiq\Controller\DossierExportController
+ * @uses \OCA\Dossiq\Service\BeroepDossierExport
+ * @uses \OCA\Dossiq\Service\CaseAccessGuard
  */
 class DossierExportControllerGuardTest extends TestCase {
 	/**

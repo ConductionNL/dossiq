@@ -70,6 +70,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Controller\FieldEvidenceController
  * @uses \OCA\Dossiq\Service\EvidenceMetadataService
  * @uses \OCA\Dossiq\Service\TranscriptionService
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
  */

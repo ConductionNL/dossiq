@@ -44,6 +44,9 @@ use PHPUnit\Framework\TestCase;
  * The limit, the boundary, and the ways it must not bite.
  *
  * @covers \OCA\Dossiq\Service\Transitions\CapacityGuard
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Transitions\CaseTypeReader
+ * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  */
 class CapacityGuardTest extends TestCase {
 

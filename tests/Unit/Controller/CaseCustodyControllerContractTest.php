@@ -55,6 +55,9 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for CaseCustodyController.
  *
  * @covers \OCA\Dossiq\Controller\CaseCustodyController
+ * @uses \OCA\Dossiq\Service\CaseAccessGuard
+ * @uses \OCA\Dossiq\Service\Custody\CaseCustodyChain
+ * @uses \OCA\Dossiq\Service\Custody\CaseCustodyQuery
  */
 class CaseCustodyControllerContractTest extends TestCase {
 

@@ -44,6 +44,9 @@ use Psr\Log\LoggerInterface;
  * Whether the case may be handed on, and what the consent lets the receiver see.
  *
  * @covers \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Tests\Support\InMemoryRegister
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */

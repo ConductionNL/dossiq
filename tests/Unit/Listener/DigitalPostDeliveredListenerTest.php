@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  * Tests that every status integriq reports reaches the case.
  *
  * @covers \OCA\Dossiq\Listener\DigitalPostDeliveredListener
+ * @uses \OCA\Dossiq\Service\BerichtenboxService
  */
 class DigitalPostDeliveredListenerTest extends TestCase {
 	/**

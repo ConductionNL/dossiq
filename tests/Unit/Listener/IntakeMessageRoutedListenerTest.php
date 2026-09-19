@@ -94,6 +94,11 @@ interface ChannelIntakeObjectServiceStub {
  *
  * @covers \OCA\Dossiq\Listener\IntakeMessageRoutedListener
  * @covers \OCA\Dossiq\Service\Intake\ChannelIntake
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Email\IntakeLog
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class IntakeMessageRoutedListenerTest extends TestCase {
 

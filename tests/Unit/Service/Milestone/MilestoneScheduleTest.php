@@ -48,6 +48,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the milestone timeline.
  *
  * @covers \OCA\Dossiq\Service\Milestone\MilestoneSchedule
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class MilestoneScheduleTest extends TestCase {
 

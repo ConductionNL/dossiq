@@ -56,6 +56,10 @@ use RuntimeException;
  * What the upgrade does with a contributed case type.
  *
  * @covers \OCA\Dossiq\Repair\SeedContributedCaseTypes
+ * @uses \OCA\Dossiq\Contribution\CaseTypeContributionRegistry
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Tests\Support\InMemoryRegister
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/specs/case-types/spec.md
  */

@@ -40,6 +40,7 @@ use Psr\Log\NullLogger;
  * The layout answer the page reads.
  *
  * @covers \OCA\Dossiq\Service\Dashboard\DashboardWidgetScope
+ * @uses \OCA\Dossiq\Service\Dashboard\WidgetRoles
  */
 class WidgetVisibilityMapTest extends TestCase {
 

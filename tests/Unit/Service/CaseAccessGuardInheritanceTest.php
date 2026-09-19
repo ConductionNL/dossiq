@@ -58,6 +58,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the seam between dossiq's guard and the platform's grants.
  *
  * @covers \OCA\Dossiq\Service\CaseAccessGuard
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class CaseAccessGuardInheritanceTest extends TestCase {
 

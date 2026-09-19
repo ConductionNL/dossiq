@@ -43,6 +43,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPlan
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitPolicy
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class CaseSplitDivisiblePartsTest extends TestCase {
 	/**

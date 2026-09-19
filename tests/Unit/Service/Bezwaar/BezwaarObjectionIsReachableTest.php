@@ -53,6 +53,8 @@ use PHPUnit\Framework\TestCase;
  * The door onto the creation hook.
  *
  * @covers \OCA\Dossiq\Controller\BezwaarObjectionController
+ * @uses \OCA\Dossiq\Service\Bezwaar\BezwaarCreationHook
+ * @uses \OCA\Dossiq\Service\CaseAccessGuard
  *
  * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */

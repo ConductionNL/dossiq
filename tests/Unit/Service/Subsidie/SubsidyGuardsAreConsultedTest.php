@@ -71,6 +71,7 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\Service\Subsidie\BeschikkingService::createDraft
  * @uses \OCA\Dossiq\Service\Subsidie\CofinancieringValidator
  * @uses \OCA\Dossiq\Service\Subsidie\StaatssteunClassifier
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/specs/subsidieverlening-keten/spec.md
  */

@@ -35,6 +35,7 @@ use PHPUnit\Framework\TestCase;
  * The roll asks the engine, and never moves a date backwards.
  *
  * @covers \OCA\Dossiq\Service\Termijn\WorkingDayRoll
+ * @uses \OCA\Dossiq\Service\SettingsService
  */
 class WorkingDayRollTest extends TestCase {
 	/**

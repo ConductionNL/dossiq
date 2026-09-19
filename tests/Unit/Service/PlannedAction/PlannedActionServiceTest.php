@@ -48,6 +48,10 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the planned action service.
  *
  * @covers \OCA\Dossiq\Service\PlannedAction\PlannedActionService
+ * @uses \OCA\Dossiq\Service\PlannedAction\PlannedActionChain
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class PlannedActionServiceTest extends TestCase {
 

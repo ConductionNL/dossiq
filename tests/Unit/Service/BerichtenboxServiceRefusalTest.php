@@ -47,6 +47,10 @@ use Psr\Log\LoggerInterface;
  * Tests that a refused letter is recorded as not sent, with the reason.
  *
  * @covers \OCA\Dossiq\Service\BerichtenboxService
+ * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Support\OwningCaseResolver
+ * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  */
 class BerichtenboxServiceRefusalTest extends TestCase {
 	/**

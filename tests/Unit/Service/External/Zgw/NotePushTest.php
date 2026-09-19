@@ -42,6 +42,10 @@ use Psr\Log\LoggerInterface;
  * Tests what travels, what stays, and what the case says about it.
  *
  * @covers \OCA\Dossiq\Service\External\Zgw\NotePush
+ * @uses \OCA\Dossiq\Service\External\Zgw\NoteEnvelope
+ * @uses \OCA\Dossiq\Service\External\Zgw\ZgwExternalAdapterInterface
+ * @uses \OCA\Dossiq\Service\External\Zgw\ZgwPushResult
+ * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
  */
 class NotePushTest extends TestCase {
 	/**

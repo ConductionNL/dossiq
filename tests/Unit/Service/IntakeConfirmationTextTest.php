@@ -49,6 +49,7 @@ use ReflectionClass;
  * The ontvangstbevestiging, and what the citizen may be told.
  *
  * @covers \OCA\Dossiq\Service\TermijnNotificationService::renderTemplate
+ * @uses \OCA\Dossiq\Portal\PortalContributionProvider
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  */

@@ -53,6 +53,9 @@ use Psr\Log\LoggerInterface;
  * Wire-contract tests for DeadlineReportingController.
  *
  * @covers \OCA\Dossiq\Controller\DeadlineReportingController
+ * @uses \OCA\Dossiq\Service\DeadlineReportingService
+ * @uses \OCA\Dossiq\Service\Reporting\ReportingAudience
+ * @uses \OCA\Dossiq\Service\Term\FirstResponseOutcome
  */
 class DeadlineReportingControllerContractTest extends TestCase {
 

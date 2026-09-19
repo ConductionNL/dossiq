@@ -35,6 +35,7 @@ use RuntimeException;
  * The working clock, its degraded posture, and the names of both.
  *
  * @covers \OCA\Dossiq\Service\ProcessMining\WorkingClock
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  */
 class WorkingClockTest extends TestCase {
 	/**

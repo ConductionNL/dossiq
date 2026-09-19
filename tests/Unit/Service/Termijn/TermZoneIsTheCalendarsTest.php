@@ -39,6 +39,9 @@ use Psr\Log\LoggerInterface;
  * The engine calendar's zone wins over the tenant's.
  *
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\TenantConfigurationService
+ * @uses \OCA\Dossiq\Service\TenantContext
  */
 class TermZoneIsTheCalendarsTest extends TestCase {
 	/**

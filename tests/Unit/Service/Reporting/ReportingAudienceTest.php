@@ -33,6 +33,7 @@ use ReflectionClass;
  * The gate a fleet-wide report asks before it answers.
  *
  * @covers \OCA\Dossiq\Service\Reporting\ReportingAudience
+ * @uses \OCA\Dossiq\Controller\ProcessMiningController
  */
 class ReportingAudienceTest extends TestCase {
 

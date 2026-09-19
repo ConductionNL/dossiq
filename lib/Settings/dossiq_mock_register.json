@@ -25518,51 +25518,6 @@
         "owner": "s.elhaddad",
         "plannedFor": "2026-05-04",
         "state": "cancelled"
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiq-dossiq-integration-1"
-        },
-        "key": "zgw",
-        "title": "ZGW API",
-        "description": "Zaken, documenten en catalogi via de ZGW standaard.",
-        "status": "configured",
-        "statusMessage": "Verbonden met de zaakregistratie.",
-        "checkedAt": "2026-09-18T07:00:00+02:00",
-        "settingsUrl": "/settings/admin/dossiq#zgw",
-        "order": 1
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiq-dossiq-integration-2"
-        },
-        "key": "berichtenbox",
-        "title": "Berichtenbox",
-        "description": "Digitale post aan burgers via MijnOverheid.",
-        "status": "unconfigured",
-        "statusMessage": "Nog geen aansluitnummer ingevuld.",
-        "checkedAt": "2026-09-18T07:00:00+02:00",
-        "settingsUrl": "/settings/admin/dossiq#berichtenbox",
-        "order": 2
-      },
-      {
-        "@self": {
-          "register": "dossiq",
-          "schema": "dossiqIntegration",
-          "slug": "dossiq-dossiq-integration-3"
-        },
-        "key": "brp",
-        "title": "BRP bevraging",
-        "description": "Persoonsgegevens uit de basisregistratie.",
-        "status": "error",
-        "statusMessage": "De bevraging antwoordde met een verlopen certificaat.",
-        "checkedAt": "2026-09-18T07:00:00+02:00",
-        "settingsUrl": "/settings/admin/dossiq#brp",
-        "order": 3
       }
     ]
   }

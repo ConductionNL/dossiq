@@ -65,6 +65,13 @@ use Psr\Log\LoggerInterface;
  * Wire-contract tests for SociaalDomeinPlanController.
  *
  * @covers \OCA\Dossiq\Controller\SociaalDomeinPlanController
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\SociaalDomein\CasePlanGoals
+ * @uses \OCA\Dossiq\Service\SociaalDomein\CasePlanInterventions
+ * @uses \OCA\Dossiq\Service\SociaalDomein\CasePlanReview
+ * @uses \OCA\Dossiq\Service\SociaalDomein\CrossDomainExistence
+ * @uses \OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore
+ * @uses \OCA\Dossiq\Controller\Support\TranslatesRefusals
  */
 class SociaalDomeinPlanControllerContractTest extends TestCase {
 

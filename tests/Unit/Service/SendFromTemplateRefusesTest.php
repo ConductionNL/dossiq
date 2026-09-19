@@ -50,6 +50,8 @@ use PHPUnit\Framework\TestCase;
  * The two vocabularies, and the refusal.
  *
  * @covers \OCA\Dossiq\Service\Email\CaseEmailRepository
+ * @uses \OCA\Dossiq\Service\EmailTemplateService
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class SendFromTemplateRefusesTest extends TestCase {
 

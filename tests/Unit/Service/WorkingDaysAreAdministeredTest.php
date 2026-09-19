@@ -53,6 +53,7 @@ use PHPUnit\Framework\TestCase;
  * The calculator answers from the administered calendar when one answers.
  *
  * @covers \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Termijn\WorkingDayRoll
  */
 class WorkingDaysAreAdministeredTest extends TestCase {
 	/**

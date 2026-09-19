@@ -33,6 +33,8 @@ use RuntimeException;
  * The audit sink for a citizen lookup.
  *
  * @covers \OCA\Dossiq\Service\Kcc\CitizenLookupRecorder
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  */
 class CitizenLookupRecorderTest extends TestCase {
 

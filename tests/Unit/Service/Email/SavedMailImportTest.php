@@ -40,6 +40,7 @@ use Psr\Log\LoggerInterface;
  * Tests that the file is read by integriq or kept with a reason.
  *
  * @covers \OCA\Dossiq\Service\Email\SavedMailImport
+ * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
  */
 class SavedMailImportTest extends TestCase {
 	/**

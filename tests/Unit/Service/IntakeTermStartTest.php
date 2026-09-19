@@ -54,6 +54,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Intake\IntakeTermStart
  * @covers \OCA\Dossiq\Service\Termijn\WorkingDayRoll::firstWorkingMomentAtOrAfter
+ * @uses \OCA\Dossiq\Service\SettingsService
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  */

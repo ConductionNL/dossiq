@@ -53,6 +53,7 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  *
  * @covers \OCA\Dossiq\Service\Custody\CaseCustodyQuery
  * @uses \OCA\Dossiq\Service\Custody\CaseCustodyChain
+ * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  *
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */
