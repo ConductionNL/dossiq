@@ -475,7 +475,20 @@ class SettingsService {
 				'configured' => $configuredCount,
 				'result' => $importResult,
 			];
-		} catch (\Exception $e) {
+		} catch (\Throwable $e) {
+			// 🔴 `\Throwable`, NOT `\Exception`. A declaration this app ships
+			// that OpenRegister's entity setters refuse arrives here as a
+			// `TypeError`, which is an `\Error` and not an `\Exception`, so a
+			// `catch (\Exception)` lets it out of the controller and the
+			// caller reads HTTP 500 with a Nextcloud error page. Measured
+			// 2026-09-19 on a live instance: one fragment declared
+			// `searchable` as an array of property names, OpenRegister's
+			// `Schema::setSearchable(bool)` raised a TypeError, and
+			// `POST /api/settings/load` answered 500. The seed then fell back
+			// to the importer that cannot merge `register.d`, so every schema
+			// this app declares in a fragment was absent and none of the
+			// `*_schema` config keys was ever written. A 500 says nothing
+			// about which declaration is wrong; the shape below names it.
 			$this->logger->error(
 				'Dossiq: Configuration import failed',
 				['exception' => $e->getMessage()]

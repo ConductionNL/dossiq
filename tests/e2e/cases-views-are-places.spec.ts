@@ -90,7 +90,7 @@ test.describe('a saved view of the cases is a place', () => {
 		trackDossiqErrors(page)
 		const viewId = await createView('Te laat')
 
-		await page.goto(`${CASES_URL}/views/${viewId}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${CASES_URL}/views/${viewId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		// The page renders the view's list, and the address still names the
@@ -107,7 +107,7 @@ test.describe('a saved view of the cases is a place', () => {
 			presentation: { viewType: 'cards' },
 		})
 
-		await page.goto(`${CASES_URL}/views/${viewId}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${CASES_URL}/views/${viewId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('radio', { name: /^(Table|Tabel)$/ }).click()
 
@@ -122,7 +122,7 @@ test.describe('a saved view of the cases is a place', () => {
 		trackDossiqErrors(page)
 		const viewId = await createView('Oude link')
 
-		await page.goto(`${CASES_URL}?view=${viewId}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${CASES_URL}?view=${viewId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		await expect
@@ -137,7 +137,7 @@ test.describe('a saved view of the cases is a place', () => {
 		const name = `${RUN_PREFIX} Vastgezet`
 		await createView('Vastgezet')
 
-		await page.goto(CASES_URL, { waitUntil: PAGE_LOAD })
+		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		const topLevelBefore = await page
 			.getByRole('navigation')
@@ -149,7 +149,7 @@ test.describe('a saved view of the cases is a place', () => {
 			.getByTestId('cn-saved-views-pin')
 			.filter({ hasText: name })
 			.click()
-		await page.reload({ waitUntil: PAGE_LOAD })
+		await page.reload(PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const entry = page.getByRole('navigation').getByRole('link', { name })
@@ -163,7 +163,7 @@ test.describe('a saved view of the cases is a place', () => {
 
 	test('shows no view entry at all before anybody pins one', async ({ page }) => {
 		trackDossiqErrors(page)
-		await page.goto(CASES_URL, { waitUntil: PAGE_LOAD })
+		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		// The navigation on an install where nobody pinned anything is the
@@ -184,7 +184,7 @@ test.describe('a saved view of the cases is a place', () => {
 			headers: { requesttoken: token },
 		})
 
-		await page.goto(`${CASES_URL}/views/${viewId}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${CASES_URL}/views/${viewId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		// Named, because an empty list and a view that has gone look the same
@@ -202,9 +202,7 @@ test.describe('a saved view of the cases is a place', () => {
 		// state rather than the list.
 		const context = await browser.newContext({ storageState: undefined })
 		const page = await context.newPage()
-		const response = await page.goto(`${CASES_URL}/views/${viewId}`, {
-			waitUntil: PAGE_LOAD,
-		})
+		const response = await page.goto(`${CASES_URL}/views/${viewId}`, PAGE_LOAD)
 
 		expect(response?.status()).not.toBe(200)
 		await context.close()

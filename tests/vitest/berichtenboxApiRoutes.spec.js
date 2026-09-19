@@ -69,8 +69,8 @@ function clientCalls() {
  * @return {Array<{verb: string, path: string, name: string}>} The routes.
  */
 function declaredRoutes() {
-	const pattern
-		= /'name'\s*=>\s*'(berichtenbox#[a-zA-Z]+)'.*?'url'\s*=>\s*'([^']+)'.*?'verb'\s*=>\s*'([A-Z]+)'/g
+	const pattern =
+		/'name'\s*=>\s*'(berichtenbox#[a-zA-Z]+)'.*?'url'\s*=>\s*'([^']+)'.*?'verb'\s*=>\s*'([A-Z]+)'/g
 	const found = []
 	let match = pattern.exec(routesSource)
 	while (match !== null) {

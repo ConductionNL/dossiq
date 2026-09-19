@@ -205,6 +205,35 @@ class CaseSharingService {
 		);
 
 		if (isset($stored['error']) === true) {
+			// 🔴 THE LINK IS ALREADY LIVE AT THIS POINT. `mintCaseLink()` runs
+			// before the record is written, so a failed write used to leave a
+			// published access link on the case with no row pointing at it:
+			// invisible in the sharing tab, unrevokable there, and the caller
+			// told the share failed. Measured 2026-09-19 on a live instance,
+			// where `case_share_schema` was unwritten and every attempt to
+			// share a case published a link and answered 502.
+			//
+			// So the mint is undone before the refusal is returned, and the
+			// ids OpenRegister would not pull are named rather than dropped.
+			$refused = $this->linkShares->revokeMinted(
+				link: $link,
+				documents: $documents,
+				userId: $createdBy
+			);
+
+			$this->logger->error(
+				'Dossiq: a case share could not be recorded, so its links were withdrawn',
+				[
+					'caseId' => $caseId,
+					'error' => $stored['error'],
+					'linksNotRevoked' => $refused,
+				]
+			);
+
+			if ($refused !== []) {
+				$stored['linksNotRevoked'] = $refused;
+			}
+
 			return $stored;
 		}
 

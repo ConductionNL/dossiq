@@ -43,7 +43,7 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 			}
 		})
 
-		await page.goto(DASHBOARD_URL, { waitUntil: PAGE_LOAD })
+		await page.goto(DASHBOARD_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect
 			.poll(() => payloads.length, { timeout: 15_000 })
@@ -59,7 +59,7 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 		page,
 	}) => {
 		trackDossiqErrors(page)
-		await page.goto(DASHBOARD_URL, { waitUntil: PAGE_LOAD })
+		await page.goto(DASHBOARD_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		// The tiles a handler is entitled to are all there.
@@ -90,7 +90,7 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 			}
 		})
 
-		await page.goto(`${DASHBOARD_URL}doorlooptijd`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${DASHBOARD_URL}doorlooptijd`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		for (const payload of payloads) {
@@ -122,7 +122,7 @@ test.describe('a restricted tile is absent, and so is its figure', () => {
 			await route.fulfill({ response, body: JSON.stringify(body) })
 		})
 
-		await page.goto(DASHBOARD_URL, { waitUntil: PAGE_LOAD })
+		await page.goto(DASHBOARD_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		await expect(page.getByText(/SLA Compliance/i)).toHaveCount(0)

@@ -271,10 +271,25 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$resumed = $this->pauseService->resumeAfterPauze($id, $resumeAt);
 
 		// Dossiq case-data side: base end +14 at pause, -10 unused at
-		// resume, net +4 = start + 60, landed on the next day the
-		// administered calendar works (Awb 1:1 Algemene termijnenwet), so
-		// the assertion holds on the runs where start + 60 is a weekend.
-		$expected = $this->firstWorkingDayFrom($start->modify('+60 days'))->format('Y-m-d');
+		// resume, net +4.
+		//
+		// 🔑 THE BASE END IS THE ROLLED ONE, AND THE NET IS ADDED TO THAT.
+		// `createTermijnInstance` already put start + 56 on the next
+		// working day (Awt art. 1) and stored it, and both the pause
+		// arithmetic and the armed timer's budget read that stored date.
+		//
+		// The expectation used to be re-derived from `start` as
+		// `roll(start + 60)`, which skips that first roll. Swept over 400
+		// consecutive start dates, `roll(start + 60)` disagrees with what
+		// the service computes on 114 of them, and every one of the 114 is
+		// a Saturday or a Sunday start. Anchored on `today`, that is a
+		// test whose result is the day of the week it ran on. The two
+		// models this fixture actually compares, the case-data chain and
+		// the engine's consumed-budget projection, agree on all 400.
+		//
+		// So the expectation is taken from the term the service created.
+		$base = new DateTimeImmutable((string)$instance['endDateCalculated']);
+		$expected = $this->firstWorkingDayFrom($base->modify('+4 days'))->format('Y-m-d');
 		self::assertSame($expected, $resumed['endDateCurrent']);
 
 		// Engine side: suspend was evidenced with the Awb basis, and the

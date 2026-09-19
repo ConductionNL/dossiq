@@ -557,10 +557,7 @@ test.describe('A status is authored on the page, and what was authored runs', ()
 		// is how the author is shown the fallback without it being written to
 		// the row. A copied value would be indistinguishable from a chosen one
 		// on the next save.
-		await expect(label).toHaveAttribute(
-			'placeholder',
-			`${RUN_PREFIX} Toetsing`,
-		)
+		await expect(label).toHaveAttribute('placeholder', `${RUN_PREFIX} Toetsing`)
 		await expect(label).toHaveValue('')
 
 		await label.fill('We beoordelen uw aanvraag')

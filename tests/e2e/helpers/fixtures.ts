@@ -625,6 +625,41 @@ export async function adoptableCaseTypes(api: APIRequestContext): Promise<any[]>
 }
 
 /**
+ * Seed one team and return the uuid `case.assignedGroup` wants.
+ *
+ * 🔴 A TEAM NAME IS NOT A TEAM. `case.assignedGroup` is declared
+ * `{"type":"string","format":"uuid","$ref":"organisatieRol"}`, and the Cases
+ * index reads `assignedGroup.roleName` off the expanded reference. A fixture
+ * that handed it the word `vergunningen` got
+ * `400 Property 'assignedGroup' should match format 'uuid'`, in beforeAll,
+ * and every test in the file died there without reaching an assertion. Six
+ * custody scenarios and five handover scenarios were lost that way.
+ *
+ * Each call seeds its own row, tagged with RUN_PREFIX so `cleanupRunObjects`
+ * removes it.
+ *
+ * @param api        Authenticated request context.
+ * @param token      CSRF request-token.
+ * @param department The department the team belongs to, in words.
+ * @return The organisatieRol uuid and the name it shows under.
+ */
+export async function ensureTeam(
+	api: APIRequestContext,
+	token: string,
+	department: string,
+): Promise<{ id: string; name: string }> {
+	const name = `${RUN_PREFIX} ${department}`
+	const team = await createObject(api, token, 'organisatieRol', {
+		roleName: name,
+		roleType: 'ambtelijk',
+		department,
+		team: department,
+	})
+
+	return { id: objectId(team), name }
+}
+
+/**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with

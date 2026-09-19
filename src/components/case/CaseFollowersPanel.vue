@@ -53,10 +53,7 @@
 			v-else-if="followers.length === 0"
 			:name="t('dossiq', 'Nobody follows this case yet')"
 			:description="
-				t(
-					'dossiq',
-					'Follow it to hear about it without taking it over.',
-				)
+				t('dossiq', 'Follow it to hear about it without taking it over.')
 			" />
 
 		<ul v-else class="case-followers__list">

@@ -2553,6 +2553,8 @@
                         "visible": false
                     },
                     "statusPublicLabel": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
                         "type": "string",
                         "readOnly": true,
                         "description": "What the applicant reads for the status this case sits in.",
@@ -2560,6 +2562,8 @@
                         "title": "Status, as the applicant reads it"
                     },
                     "statusPublicDescription": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
                         "type": "string",
                         "readOnly": true,
                         "description": "What the applicant is told the current status means.",
@@ -2982,6 +2986,8 @@
                         "order": 24
                     },
                     "firstResponseStatus": {
+                        "matchType": "exact",
+                        "inputControl": "select",
                         "type": "string",
                         "enum": [
                             "pending",
@@ -2995,6 +3001,8 @@
                         "order": 28
                     },
                     "firstResponseOverrunDays": {
+                        "matchType": "range",
+                        "inputControl": "range",
                         "type": "integer",
                         "minimum": 0,
                         "readOnly": true,
@@ -3004,6 +3012,8 @@
                         "order": 29
                     },
                     "firstResponseAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
                         "type": "string",
                         "format": "date-time",
                         "readOnly": true,
@@ -3012,6 +3022,8 @@
                         "order": 30
                     },
                     "mergedInto": {
+                        "matchType": "exact",
+                        "inputControl": "select",
                         "type": "string",
                         "format": "uuid",
                         "$ref": "case",
@@ -3043,6 +3055,8 @@
                         }
                     },
                     "mergeState": {
+                        "matchType": "exact",
+                        "inputControl": "select",
                         "type": "string",
                         "enum": [
                             "active",
@@ -3055,6 +3069,7 @@
                         "description": "Whether this case is still its own case. The OpenRegister merge engine writes this field and reads it back, which is why it is a plain value of its own and not the ending act: the engine compares it as a string and refuses a survivor that is not active. An absent value reads as active, so every case written before merging existed stays mergeable."
                     },
                     "duplicateOverrideOf": {
+                        "inputControl": "multiselect",
                         "type": "array",
                         "readOnly": true,
                         "title": "Filed over",
@@ -3067,6 +3082,8 @@
                         }
                     },
                     "duplicateOverrideReason": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
                         "type": "string",
                         "readOnly": true,
                         "title": "Filed over a duplicate warning",
@@ -3330,12 +3347,16 @@
                         "visible": false
                     },
                     "splitFrom": {
+                        "matchType": "exact",
+                        "inputControl": "text",
                         "type": "string",
                         "title": "Split from",
                         "description": "The case this one was split off. Written on the new case beside the typed relation, because a relation answers `relatedCases` and a filter over the case list needs a plain field.",
                         "facetable": true
                     },
                     "splitInto": {
+                        "matchType": "exact",
+                        "inputControl": "text",
                         "type": "string",
                         "title": "Split into",
                         "description": "The case this one was split into. A split MOVES material rather than copying it, so without this the original file reads as though the missing documents were never there.",
@@ -3378,6 +3399,8 @@
                         "description": "One row per item a split moved off this case: what it was, where it went and when. `CaseSplitPlan::forSelection()` produces these and until now the schema had nowhere to store them. Written rather than derived, because the item itself no longer names this case once it has moved, so nothing could reconstruct what left."
                     },
                     "splitNote": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
                         "type": "string",
                         "title": "Split note",
                         "description": "The one line `CaseSplitPlan::noteFor()` writes about a split: what went where, in a sentence. One note and not one per item, because twenty lines would bury the act that produced them."
@@ -3534,6 +3557,7 @@
                         "visible": false
                     },
                     "blockingCases": {
+                        "inputControl": "multiselect",
                         "type": "array",
                         "title": "Waits on",
                         "description": "Cases this one waits on. A vergunning that cannot be decided until a bezwaar is, for instance: when the case it waits on has its term extended or paused, the handler of this case is offered the same move. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"blokkeert\" through OpenRegister's /used.",
@@ -3562,6 +3586,8 @@
                         }
                     },
                     "paymentState": {
+                        "matchType": "exact",
+                        "inputControl": "select",
                         "type": "string",
                         "enum": [
                             "notRequired",
@@ -3576,6 +3602,8 @@
                         "readOnly": true
                     },
                     "paymentStateCheckedAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the payment state was last read from shillinq. A state with no timestamp cannot be told apart from one that stopped updating in March, and the second one is what people make decisions on.",
@@ -3583,12 +3611,16 @@
                         "readOnly": true
                     },
                     "contract": {
+                        "matchType": "exact",
+                        "inputControl": "text",
                         "type": "string",
                         "description": "The shillinq contract this case is handled under, as a reference. dossiq copies no term, no cost and no renewal date: a copied term goes stale and then alerts on the wrong date. The contract lists its own cases through shillinq's `linkedObjects`, and the alert before it lapses is shillinq's too.",
                         "title": "Contract",
                         "facetable": true
                     },
                     "receivedAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
                         "type": "string",
                         "format": "date-time",
                         "title": "Received at",
@@ -3596,6 +3628,8 @@
                         "facetable": true
                     },
                     "termStartsAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
                         "type": "string",
                         "format": "date-time",
                         "title": "Term starts at",
@@ -3603,24 +3637,31 @@
                         "facetable": true
                     },
                     "receivedOutsideWorkingHours": {
+                        "inputControl": "boolean",
                         "type": "boolean",
                         "title": "Received outside working hours",
                         "description": "True when the request arrived when the municipality was closed, so the clock started later than the moment the applicant pressed send. Derivable from the two moments and stored anyway, because it is what a report filters on and what the ontvangstbevestiging branches on. Absent, rather than false, on a case the working calendar could not place: an unanswered calendar does not know whether the week was open.",
                         "facetable": true
                     },
                     "district": {
+                        "matchType": "exact",
+                        "inputControl": "select",
                         "type": "string",
                         "description": "The wijk this case's address falls in, resolved once when the address is set rather than on every routing decision: resolving per query makes routing depend on an external service being up, and an unresolvable boundary would then read as a case with no area. Held here so a routing rule and a list filter can read the same value.",
                         "title": "District",
                         "facetable": true
                     },
                     "neighbourhood": {
+                        "matchType": "exact",
+                        "inputControl": "select",
                         "type": "string",
                         "description": "The buurt this case's address falls in, resolved with the district and from the same answer.",
                         "title": "Neighbourhood",
                         "facetable": true
                     },
                     "areaResolvedAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the area was resolved. Boundaries change, and a municipality may redraw its own division, so a value on a case can only be explained beside the moment it was read.",
@@ -3628,12 +3669,15 @@
                         "readOnly": true
                     },
                     "areaSource": {
+                        "matchType": "exact",
+                        "inputControl": "select",
                         "type": "string",
                         "description": "The boundary set the area was read from, so the value can be explained by the boundaries in force at the time. Today that is PDOK's locatieserver through `PdokService`; when integriq publishes the `pdok-geo-boundaries` connection (ADR-019) this names that connection instead.",
                         "title": "Area source",
                         "readOnly": true
                     },
                     "areaFallbackUsed": {
+                        "inputControl": "boolean",
                         "type": "boolean",
                         "default": false,
                         "description": "Whether this case was routed by the case type's fallback because its address fell in no administered boundary. Addresses do: new developments, water, an address abroad, a case with no address at all. The flag is what keeps that from looking like routing that silently did nothing.",
@@ -3641,6 +3685,8 @@
                         "readOnly": true
                     },
                     "areaAddressId": {
+                        "matchType": "exact",
+                        "inputControl": "text",
                         "type": "string",
                         "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
                         "title": "Area address id",

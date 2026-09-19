@@ -944,8 +944,8 @@
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/36-mail-intake.json::mailIntakeEntry": {
-        "version": "",
-        "digest": "f7b84be562898cd28d314880f0b1a36b845b37f4b25492ad3c165f874aee7e64"
+        "version": "1.0.0",
+        "digest": "eade782a53a71dc88b595291c1bdb7d13c4b5bd90324bac4a0d09e01f602ab18"
     },
     "lib/Settings/register.d/36-ontvangstbevestiging.json::case": {
         "version": "",
@@ -1256,8 +1256,8 @@
         "digest": "f9f08f80d8f50d5b696aacb64af1cf94758b7568f2e5738eaf1e277511baf2e7"
     },
     "lib/Settings/register.d/63-aanvullingsverzoek.json::aanvullingsverzoek": {
-        "version": "1.0.0",
-        "digest": "4a94d957d923ce675b11ffd00ac06929ef277688cd93e5708019eccd30404a7c"
+        "version": "1.1.0",
+        "digest": "fe6897b98056b78a473540627acc331bd6479b61b754245a938b92b8f80dcecd"
     },
     "lib/Settings/register.d/63-aanvullingsverzoek.json::case": {
         "version": "",
