@@ -80,6 +80,15 @@ class IntakeTermStartListener implements IEventListener {
 	 *
 	 * @return void
 	 *
+	 * @listener-placement inline correctness — the stamp is what the citizen is
+	 * told their term is, and it is read the instant the case exists: by the
+	 * acknowledgement, by the term list and by the case page. Deferring it to a
+	 * queue opens a window in which a case has no `termStartsAt`, and a case
+	 * with no clock does not read as "not yet stamped", it reads as a case with
+	 * no term. The work is bounded and it happens at most once per case: the
+	 * payload is already in hand, `isStamped()` returns early on every replay,
+	 * and what is left is one write.
+	 *
 	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-a-case-records-when-it-arrived-and-when-its-clock-starts-req-term-040
 	 */
 	public function handle(Event $event): void {

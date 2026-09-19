@@ -162,22 +162,26 @@
               "properties": {
                 "message": {
                   "type": "string",
-                  "title": "Message"
+                  "title": "Message",
+                  "description": "What the escalation says when this rung is reached."
                 },
                 "days": {
                   "type": "integer",
                   "title": "Days before the end",
-                  "minimum": 0
+                  "minimum": 0,
+                  "description": "How many days before the end of the term this rung fires. Set this or a share, not both."
                 },
                 "share": {
                   "type": "number",
                   "title": "Share of the term elapsed",
                   "minimum": 0,
-                  "maximum": 1
+                  "maximum": 1,
+                  "description": "How much of the term must have elapsed before this rung fires, as a fraction between 0 and 1. Resolved to a date when the timer is armed."
                 },
                 "priority": {
                   "type": "string",
-                  "title": "Priority"
+                  "title": "Priority",
+                  "description": "The priority the case takes when this rung fires."
                 }
               }
             }
@@ -361,32 +365,39 @@
             "properties": {
               "caseType": {
                 "type": "string",
-                "title": "Case type"
+                "title": "Case type",
+                "description": "The case type the term was resolved for."
               },
               "organisation": {
                 "type": "string",
-                "title": "Organisation"
+                "title": "Organisation",
+                "description": "The organisation the term was resolved for."
               },
               "service": {
                 "type": "string",
-                "title": "Service"
+                "title": "Service",
+                "description": "The service the term was resolved for."
               },
               "priority": {
                 "type": "string",
-                "title": "Priority"
+                "title": "Priority",
+                "description": "The priority the term was resolved for."
               },
               "durationDays": {
                 "type": "integer",
-                "title": "Duration in days"
+                "title": "Duration in days",
+                "description": "How many days the resolved term runs for."
               },
               "deadlineDefinition": {
                 "type": "string",
-                "title": "Definition"
+                "title": "Definition",
+                "description": "The definition that produced this term."
               },
               "resolvedAt": {
                 "type": "string",
                 "format": "date-time",
-                "title": "Resolved on"
+                "title": "Resolved on",
+                "description": "The moment the term was resolved."
               }
             }
           }

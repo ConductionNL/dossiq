@@ -26,13 +26,15 @@
                   "properties": {
                     "key": {
                       "type": "string",
-                      "title": "Field"
+                      "title": "Field",
+                      "description": "The field the list is ordered on."
                     },
                     "order": {
                       "type": "string",
                       "title": "Direction",
                       "enum": ["asc", "desc"],
-                      "default": "asc"
+                      "default": "asc",
+                      "description": "Ascending or descending."
                     }
                   },
                   "required": ["key"]

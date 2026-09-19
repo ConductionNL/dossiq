@@ -3031,11 +3031,13 @@
                             "properties": {
                                 "schema": {
                                     "type": "string",
-                                    "title": "Schema"
+                                    "title": "Schema",
+                                    "description": "The slug of the schema the moved row belongs to, so a reversal knows what it is putting back."
                                 },
                                 "id": {
                                     "type": "string",
-                                    "title": "Row"
+                                    "title": "Row",
+                                    "description": "The id of the row that moved to the survivor."
                                 }
                             }
                         }
@@ -3346,24 +3348,29 @@
                             "properties": {
                                 "part": {
                                     "type": "string",
-                                    "title": "Part"
+                                    "title": "Part",
+                                    "description": "What kind of thing moved: a document, a party or a task."
                                 },
                                 "id": {
                                     "type": "string",
-                                    "title": "Id"
+                                    "title": "Id",
+                                    "description": "The id of the item that moved."
                                 },
                                 "label": {
                                     "type": "string",
-                                    "title": "Label"
+                                    "title": "Label",
+                                    "description": "What the item was called when it moved, kept here because the item itself may be renamed afterwards."
                                 },
                                 "movedTo": {
                                     "type": "string",
-                                    "title": "Moved to"
+                                    "title": "Moved to",
+                                    "description": "The case it moved to."
                                 },
                                 "movedAt": {
                                     "type": "string",
                                     "format": "date-time",
-                                    "title": "Moved at"
+                                    "title": "Moved at",
+                                    "description": "The moment it moved."
                                 }
                             }
                         },
