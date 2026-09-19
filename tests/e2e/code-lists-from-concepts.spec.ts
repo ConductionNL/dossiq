@@ -105,7 +105,6 @@ test.describe('code lists from concepts', () => {
 	 * @return The stored definition.
 	 */
 	async function storedDefinition(request, name: string) {
-		const token = await getRequestToken(request)
 		const rows = await listObjects(request, 'propertyDefinition', {
 			caseType: caseTypeId,
 		})

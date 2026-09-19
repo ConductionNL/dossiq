@@ -104,7 +104,6 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('#pd-add-items').selectOption('string')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
 			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
@@ -122,7 +121,6 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('#pd-add-type').selectOption('file')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
 			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
@@ -140,7 +138,6 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('#pd-add-format').selectOption('markdown')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
 			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
@@ -163,7 +160,6 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('.pd-fields__field--small input').nth(1).fill('10')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
 			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
@@ -201,7 +197,6 @@ test.describe('case type field vocabulary', () => {
 			timeout: 30_000,
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
 			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
@@ -229,7 +224,6 @@ test.describe('case type field vocabulary', () => {
 				.fill('{"op":"multiply","left":"aantal","right":"tarief"}')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
 			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
@@ -258,7 +252,6 @@ test.describe('case type field vocabulary', () => {
 				.fill('bag')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
 			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
