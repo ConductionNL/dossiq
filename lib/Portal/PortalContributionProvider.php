@@ -403,148 +403,169 @@ class PortalContributionProvider {
 	private function citizenContribution(): array {
 		return [
 			'label' => 'Dossiq',
-			'collections' => [
-				[
-					'id' => 'mijnZaken',
-					'register' => self::REGISTER,
-					'schema' => 'case',
-					'scopeField' => 'portalSubject',
-					'label' => 'Mijn zaken',
-					'listable' => true,
-					'minTrust' => 'low',
-					'fields' => self::CITIZEN_CASE_FIELDS,
-					// The case detail carries what has happened on it. The
-					// contract names the method rather than embedding the
-					// entries, because the manifest is built once per subject
-					// and a timeline is read once per case.
-					'timeline' => [
-						'label' => 'Wat er is gebeurd',
-						'provider' => 'caseTimeline',
-					],
-				],
-				[
-					'id' => 'berichten',
-					'kind' => 'inbox',
-					'register' => self::REGISTER,
-					'schema' => 'portaalBericht',
-					'scopeField' => 'recipientRef',
-					'label' => 'Berichten',
-					'listable' => true,
-					'minTrust' => 'low',
-					'fields' => [
-						'caseReference',
-						'senderType',
-						'senderName',
-						'subject',
-						'content',
-						'attachments',
-						'direction',
-						'sentAt',
-						'readByRecipientAt',
-					],
-				],
-				[
-					'id' => 'verzoeken',
-					'register' => self::REGISTER,
-					'schema' => 'portaalVerzoek',
-					'scopeField' => 'submitterRef',
-					'label' => 'Mijn verzoeken',
-					'listable' => true,
-					'minTrust' => 'low',
-					'fields' => [
-						'kind',
-						'category',
-						'subject',
-						'rationale',
-						'reference',
-						'status',
-						'submittedAt',
-						'deadline',
-						'withinTerm',
-					],
-				],
-			],
-			'actions' => [
-				[
-					'id' => 'createKlacht',
-					'type' => 'create',
-					'label' => 'Een klacht indienen',
-					'register' => self::REGISTER,
-					'schema' => 'portaalVerzoek',
-					'scopeField' => 'submitterRef',
-					'minTrust' => 'low',
-					'fields' => [
-						'kind',
-						'category',
-						'subject',
-						'rationale',
-						'attachments',
-					],
-				],
-				[
-					'id' => 'createBezwaar',
-					'type' => 'create',
-					'label' => 'Bezwaar maken',
-					'register' => self::REGISTER,
-					'schema' => 'portaalVerzoek',
-					'scopeField' => 'submitterRef',
-					'minTrust' => 'low',
-					'fields' => [
-						'subject',
-						'rationale',
-						'attachments',
-						'againstCaseId',
-					],
-					// The kind is not the citizen's to choose. A bezwaar and a
-					// klacht run different statutory clocks, and a form that
-					// let the sender pick would let one arrive dressed as the
-					// other.
-					'defaults' => ['kind' => 'bezwaarschrift'],
-					'crossRefs' => [
-						'againstCaseId' => [
-							'register' => self::REGISTER,
-							'schema' => 'case',
-							'scopeField' => 'portalSubject',
-							'required' => true,
-						],
-					],
-				],
-				[
-					'id' => 'replyToMessage',
-					'type' => 'create',
-					'label' => 'Antwoorden',
-					'register' => self::REGISTER,
-					'schema' => 'portaalBericht',
-					// The citizen is the SENDER of a reply, so the reply is
-					// scoped by who sent it. The inbox above is scoped by who
-					// received it, which is the same person seen from the
-					// other end.
-					'scopeField' => 'senderRef',
-					'minTrust' => 'low',
-					'fields' => [
-						'subject',
-						'content',
-						'attachments',
-						'caseId',
-					],
-					'defaults' => [
-						'direction' => 'citizen_to_handler',
-						'senderType' => 'burger',
-					],
-					'crossRefs' => [
-						'caseId' => [
-							'register' => self::REGISTER,
-							'schema' => 'case',
-							'scopeField' => 'portalSubject',
-							'required' => true,
-						],
-					],
-				],
-			],
+			'collections' => $this->citizenCollections(),
+			'actions' => $this->citizenActions(),
 			'notifications' => [],
 		];
-
 	}//end citizenContribution()
+
+	/**
+	 * The collections a citizen may list, and what each one is scoped by.
+	 *
+	 * @return array<int, array<string, mixed>> The collections.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function citizenCollections(): array {
+		return [
+			[
+				'id' => 'mijnZaken',
+				'register' => self::REGISTER,
+				'schema' => 'case',
+				'scopeField' => 'portalSubject',
+				'label' => 'Mijn zaken',
+				'listable' => true,
+				'minTrust' => 'low',
+				'fields' => self::CITIZEN_CASE_FIELDS,
+				// The case detail carries what has happened on it. The
+				// contract names the method rather than embedding the
+				// entries, because the manifest is built once per subject
+				// and a timeline is read once per case.
+				'timeline' => [
+					'label' => 'Wat er is gebeurd',
+					'provider' => 'caseTimeline',
+				],
+			],
+			[
+				'id' => 'berichten',
+				'kind' => 'inbox',
+				'register' => self::REGISTER,
+				'schema' => 'portaalBericht',
+				'scopeField' => 'recipientRef',
+				'label' => 'Berichten',
+				'listable' => true,
+				'minTrust' => 'low',
+				'fields' => [
+					'caseReference',
+					'senderType',
+					'senderName',
+					'subject',
+					'content',
+					'attachments',
+					'direction',
+					'sentAt',
+					'readByRecipientAt',
+				],
+			],
+			[
+				'id' => 'verzoeken',
+				'register' => self::REGISTER,
+				'schema' => 'portaalVerzoek',
+				'scopeField' => 'submitterRef',
+				'label' => 'Mijn verzoeken',
+				'listable' => true,
+				'minTrust' => 'low',
+				'fields' => [
+					'kind',
+					'category',
+					'subject',
+					'rationale',
+					'reference',
+					'status',
+					'submittedAt',
+					'deadline',
+					'withinTerm',
+				],
+			],
+		];
+	}//end citizenCollections()
+
+	/**
+	 * The things a citizen may start from the portal.
+	 *
+	 * @return array<int, array<string, mixed>> The actions.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function citizenActions(): array {
+		return [
+			[
+				'id' => 'createKlacht',
+				'type' => 'create',
+				'label' => 'Een klacht indienen',
+				'register' => self::REGISTER,
+				'schema' => 'portaalVerzoek',
+				'scopeField' => 'submitterRef',
+				'minTrust' => 'low',
+				'fields' => [
+					'kind',
+					'category',
+					'subject',
+					'rationale',
+					'attachments',
+				],
+			],
+			[
+				'id' => 'createBezwaar',
+				'type' => 'create',
+				'label' => 'Bezwaar maken',
+				'register' => self::REGISTER,
+				'schema' => 'portaalVerzoek',
+				'scopeField' => 'submitterRef',
+				'minTrust' => 'low',
+				'fields' => [
+					'subject',
+					'rationale',
+					'attachments',
+					'againstCaseId',
+				],
+				// The kind is not the citizen's to choose. A bezwaar and a
+				// klacht run different statutory clocks, and a form that
+				// let the sender pick would let one arrive dressed as the
+				// other.
+				'defaults' => ['kind' => 'bezwaarschrift'],
+				'crossRefs' => [
+					'againstCaseId' => [
+						'register' => self::REGISTER,
+						'schema' => 'case',
+						'scopeField' => 'portalSubject',
+						'required' => true,
+					],
+				],
+			],
+			[
+				'id' => 'replyToMessage',
+				'type' => 'create',
+				'label' => 'Antwoorden',
+				'register' => self::REGISTER,
+				'schema' => 'portaalBericht',
+				// The citizen is the SENDER of a reply, so the reply is
+				// scoped by who sent it. The inbox above is scoped by who
+				// received it, which is the same person seen from the
+				// other end.
+				'scopeField' => 'senderRef',
+				'minTrust' => 'low',
+				'fields' => [
+					'subject',
+					'content',
+					'attachments',
+					'caseId',
+				],
+				'defaults' => [
+					'direction' => 'citizen_to_handler',
+					'senderType' => 'burger',
+				],
+				'crossRefs' => [
+					'caseId' => [
+						'register' => self::REGISTER,
+						'schema' => 'case',
+						'scopeField' => 'portalSubject',
+						'required' => true,
+					],
+				],
+			],
+		];
+	}//end citizenActions()
 
 	/**
 	 * Manifest for the `inspector` audience (an EXTERNAL field inspector).

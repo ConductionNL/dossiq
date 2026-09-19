@@ -206,27 +206,41 @@ class CapacityGuard implements GuardEvaluatorInterface {
 			return null;
 		}
 
-		$rows = [];
-		if (is_array($result) === true) {
-			$rows = ($result['results'] ?? $result);
-		}
-
-		if (is_array($rows) === false) {
+		$rows = $this->rowsOf(result: $result);
+		if ($rows === null) {
 			return null;
 		}
 
 		$counted = 0;
 		foreach ($rows as $row) {
 			$id = $this->idOf(case: $this->arrayOf(row: $row));
-			if ($id !== '' && $id === $excluding) {
-				continue;
+			if ($id !== $excluding || $id === '') {
+				$counted++;
 			}
-
-			$counted++;
 		}
 
 		return $counted;
 	}//end countIn()
+
+	/**
+	 * The rows a findAll answer holds, whichever shape it came back in.
+	 *
+	 * @param mixed $result Whatever the object service answered.
+	 *
+	 * @return array<int|string, mixed>|null The rows, or null when there are none to read.
+	 */
+	private function rowsOf(mixed $result): ?array {
+		if (is_array($result) === false) {
+			return null;
+		}
+
+		$rows = ($result['results'] ?? $result);
+		if (is_array($rows) === false) {
+			return null;
+		}
+
+		return $rows;
+	}//end rowsOf()
 
 	/**
 	 * A case's id, whichever key the row carries it under.

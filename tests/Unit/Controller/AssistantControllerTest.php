@@ -275,7 +275,7 @@ class AssistantControllerTest extends TestCase {
 		$this->stubParams(['caseType' => ['id' => 'ct-1'], 'surface' => 'case']);
 
 		$declared = $this->createMock(CaseTypeAiFeatures::class);
-		$declared->method('on')->willReturn([]);
+		$declared->method('onSurface')->willReturn([]);
 
 		$client = $this->createMock(HermiqAiFeatureClient::class);
 		$client->expects(self::never())->method('featureResidency');
@@ -298,7 +298,7 @@ class AssistantControllerTest extends TestCase {
 		$this->stubParams(['caseType' => ['id' => 'ct-1'], 'surface' => 'case']);
 
 		$declared = $this->createMock(CaseTypeAiFeatures::class);
-		$declared->method('on')->willReturn(['summarise', 'classify']);
+		$declared->method('onSurface')->willReturn(['summarise', 'classify']);
 
 		$client = $this->createMock(HermiqAiFeatureClient::class);
 		$client->method('featureResidency')->willReturn(

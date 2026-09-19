@@ -152,27 +152,19 @@ class CaseTransferConsentGate {
 			);
 		}
 
-		$lapsedOn = '';
-		$withdrawn = false;
-		foreach ($candidates as $consent) {
-			if (($consent['withdrawn'] ?? false) === true) {
-				$withdrawn = true;
-				continue;
-			}
-
-			$grantedOn = $this->instant(value: (string)($consent['grantedDate'] ?? ''));
-			if ($grantedOn !== null && $grantedOn > $moment) {
-				continue;
-			}
-
-			$expiresOn = $this->instant(value: (string)($consent['validTo'] ?? ''));
-			if ($expiresOn !== null && $expiresOn < $moment) {
-				$lapsedOn = (string)$consent['validTo'];
-				continue;
-			}
-
-			return $this->verdict(allowed: true, rule: '', sentence: '', consent: $consent, crosses: $crosses);
+		$scan = $this->scanConsents(candidates: $candidates, moment: $moment);
+		if ($scan['covering'] !== null) {
+			return $this->verdict(
+				allowed: true,
+				rule: '',
+				sentence: '',
+				consent: $scan['covering'],
+				crosses: $crosses,
+			);
 		}
+
+		$lapsedOn = $scan['lapsedOn'];
+		$withdrawn = $scan['withdrawn'];
 
 		if ($lapsedOn !== '') {
 			return $this->verdict(
@@ -202,6 +194,49 @@ class CaseTransferConsentGate {
 			crosses: $crosses,
 		);
 	}//end assess()
+
+	/**
+	 * Read the recorded consents once, and say what they amount to.
+	 *
+	 * The first consent that covers the moment wins and is answered as
+	 * `covering`. When none does, what the others were is what decides the
+	 * sentence: a consent that ran out says so with its date, and a withdrawal
+	 * says so in its own words, because "there is no consent" is the wrong
+	 * thing to tell a handler about a consent somebody deliberately took back.
+	 *
+	 * @param array<int, array<string, mixed>> $candidates The recorded consents.
+	 * @param DateTimeImmutable                $moment     The moment being asked about.
+	 *
+	 * @return array{covering: array<string, mixed>|null, lapsedOn: string, withdrawn: bool} What they amount to.
+	 *
+	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md#requirement-a-hand-off-across-organisations-needs-recorded-consent-req-cst-01
+	 */
+	private function scanConsents(array $candidates, DateTimeImmutable $moment): array {
+		$lapsedOn = '';
+		$withdrawn = false;
+
+		foreach ($candidates as $consent) {
+			if (($consent['withdrawn'] ?? false) === true) {
+				$withdrawn = true;
+				continue;
+			}
+
+			$grantedOn = $this->instant(value: (string)($consent['grantedDate'] ?? ''));
+			if ($grantedOn !== null && $grantedOn > $moment) {
+				continue;
+			}
+
+			$expiresOn = $this->instant(value: (string)($consent['validTo'] ?? ''));
+			if ($expiresOn !== null && $expiresOn < $moment) {
+				$lapsedOn = (string)$consent['validTo'];
+				continue;
+			}
+
+			return ['covering' => $consent, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
+		}
+
+		return ['covering' => null, 'lapsedOn' => $lapsedOn, 'withdrawn' => $withdrawn];
+	}//end scanConsents()
 
 	/**
 	 * Whether the hand-off leaves the organisation.

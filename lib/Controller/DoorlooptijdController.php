@@ -87,16 +87,9 @@ class DoorlooptijdController extends Controller {
 		$period = $this->request->getParam('period', '12m');
 		$atRiskRaw = $this->request->getParam('atRiskDays', 5);
 
-		if ($caseType !== null && is_string($caseType) === false) {
-			return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
-		}
-
-		if (is_string($period) === false || preg_match('/^\d+m$/', $period) !== 1) {
-			return new JSONResponse(['message' => 'period must look like 12m'], Http::STATUS_BAD_REQUEST);
-		}
-
-		if (is_numeric($atRiskRaw) === false) {
-			return new JSONResponse(['message' => 'atRiskDays must be a number'], Http::STATUS_BAD_REQUEST);
+		$refusal = $this->badRequest(caseType: $caseType, period: $period, atRiskRaw: $atRiskRaw);
+		if ($refusal !== null) {
+			return $refusal;
 		}
 
 		$params = [
@@ -109,4 +102,31 @@ class DoorlooptijdController extends Controller {
 
 		return new JSONResponse($this->leadTimeService->getMetrics(params: $params));
 	}//end metrics()
+
+	/**
+	 * The refusal a malformed query earns, or null when it reads.
+	 *
+	 * @param mixed $caseType  The case type filter as it arrived.
+	 * @param mixed $period    The period as it arrived.
+	 * @param mixed $atRiskRaw The at-risk window as it arrived.
+	 *
+	 * @return JSONResponse|null The refusal, or null.
+	 *
+	 * @spec openspec/specs/reporting-and-metrics/spec.md
+	 */
+	private function badRequest(mixed $caseType, mixed $period, mixed $atRiskRaw): ?JSONResponse {
+		if ($caseType !== null && is_string($caseType) === false) {
+			return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if (is_string($period) === false || preg_match('/^\d+m$/', $period) !== 1) {
+			return new JSONResponse(['message' => 'period must look like 12m'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if (is_numeric($atRiskRaw) === false) {
+			return new JSONResponse(['message' => 'atRiskDays must be a number'], Http::STATUS_BAD_REQUEST);
+		}
+
+		return null;
+	}//end badRequest()
 }//end class

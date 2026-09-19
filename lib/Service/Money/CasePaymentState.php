@@ -154,20 +154,50 @@ class CasePaymentState {
 			return self::NOT_REQUIRED;
 		}
 
-		// The whole list is read before anything is decided, because returning
-		// on the first interesting row made the answer depend on the ORDER the
-		// leaf happened to send. A case with one unpaid request and one
-		// unreadable one read `outstanding` or `stale` by luck of the sort.
+		$tally = $this->tally(requests: $requests);
+
+		// Outstanding outranks unreadable. A request nobody has paid is a fact
+		// that holds whatever the row beside it says, and it is the one a
+		// handler can act on. Unreadable outranks every settled answer: this
+		// app cannot call a case paid while part of its record is unreadable.
+		if ($tally['anyOutstanding'] === true) {
+			return self::OUTSTANDING;
+		}
+
+		if ($tally['anyUnreadable'] === true) {
+			return self::STALE;
+		}
+
+		if ($tally['waivedOnly'] === true) {
+			return self::WAIVED;
+		}
+
+		return self::PAID;
+	}//end fromRequests()
+
+	/**
+	 * Read the whole list once, and say what it holds.
+	 *
+	 * The whole list is read before anything is decided, because returning on
+	 * the first interesting row made the answer depend on the ORDER the leaf
+	 * happened to send: a case with one unpaid request and one unreadable one
+	 * read `outstanding` or `stale` by luck of the sort.
+	 *
+	 * @param array<int, mixed> $requests The payment requests as the leaf sent them.
+	 *
+	 * @return array{waivedOnly: bool, anyOutstanding: bool, anyUnreadable: bool} What the list holds.
+	 */
+	private function tally(array $requests): array {
 		$waivedOnly = true;
 		$anyOutstanding = false;
 		$anyUnreadable = false;
 
 		foreach ($requests as $request) {
 			if (is_array($request) === false) {
-				// Skipping it was worse than it looks: a case whose ONLY
-				// request was unparseable fell through to the waiver branch
-				// and read `waived`, which opens the gate and says a person
-				// decided to let the money go. Nobody decided anything.
+				// Skipping it was worse than it looks: a case whose ONLY request
+				// was unparseable fell through to the waiver branch and read
+				// `waived`, which opens the gate and says a person decided to let
+				// the money go. Nobody decided anything.
 				$anyUnreadable = true;
 				continue;
 			}
@@ -188,24 +218,12 @@ class CasePaymentState {
 			}
 		}
 
-		// Outstanding outranks unreadable. A request nobody has paid is a fact
-		// that holds whatever the row beside it says, and it is the one a
-		// handler can act on. Unreadable outranks every settled answer: this
-		// app cannot call a case paid while part of its record is unreadable.
-		if ($anyOutstanding === true) {
-			return self::OUTSTANDING;
-		}
-
-		if ($anyUnreadable === true) {
-			return self::STALE;
-		}
-
-		if ($waivedOnly === true) {
-			return self::WAIVED;
-		}
-
-		return self::PAID;
-	}//end fromRequests()
+		return [
+			'waivedOnly' => $waivedOnly,
+			'anyOutstanding' => $anyOutstanding,
+			'anyUnreadable' => $anyUnreadable,
+		];
+	}//end tally()
 
 	/**
 	 * Whether a settled request was settled by letting the money go.

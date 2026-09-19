@@ -808,24 +808,41 @@ class TermijnService {
 			return;
 		}
 
-		$calculated = (string)($successor['endDateCalculated'] ?? '');
-		$current = $calculated;
-		if ($calculated !== '' && $days !== 0) {
-			$sign = '-';
-			if ($days >= 0) {
-				$sign = '+';
-			}
-
-			$current = (new DateTimeImmutable($calculated))
-				->modify($sign . abs($days) . ' days')
-				->format('Y-m-d');
-		}
+		$current = $this->shifted(
+			calculated: (string)($successor['endDateCalculated'] ?? ''),
+			days: $days,
+		);
 
 		$this->updateTermijnInstance(
 			termInstanceId: $successorId,
 			patch: ['endDateCurrent' => $current, 'countExtensions' => $extensions]
 		);
 	}//end replay()
+
+	/**
+	 * A calculated end date moved by the days the carried events are worth.
+	 *
+	 * @param string $calculated The calculated end date, `Y-m-d`, or '' when there is none.
+	 * @param int    $days       The days to move it by, which may be negative.
+	 *
+	 * @return string The moved date, or the calculated one when there is nothing to move.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	private function shifted(string $calculated, int $days): string {
+		if ($calculated === '' || $days === 0) {
+			return $calculated;
+		}
+
+		$sign = '-';
+		if ($days >= 0) {
+			$sign = '+';
+		}
+
+		return (new DateTimeImmutable($calculated))
+			->modify($sign . abs($days) . ' days')
+			->format('Y-m-d');
+	}//end shifted()
 
 	/**
 	 * The events of one instance that change how long it runs.
