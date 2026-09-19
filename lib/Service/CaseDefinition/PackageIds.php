@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/case-type-portability/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use ZipArchive;
 /**
  * Every identifier a case definition package carries.
  *
- * @spec openspec/specs/case-type-portability/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 class PackageIds {
 

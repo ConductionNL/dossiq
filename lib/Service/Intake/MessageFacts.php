@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/intake-and-routing/spec.md
+ * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 /**
  * What a routed message says about itself.
  *
- * @spec openspec/specs/intake-and-routing/spec.md
+ * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
  */
 class MessageFacts {
 	/**

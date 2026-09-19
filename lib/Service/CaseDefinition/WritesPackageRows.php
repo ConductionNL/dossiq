@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/specs/case-type-portability/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * The row primitives both package writers share.
  *
- * @spec openspec/specs/case-type-portability/spec.md
+ * @spec openspec/specs/case-types/spec.md
  */
 trait WritesPackageRows {
 
