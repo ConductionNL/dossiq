@@ -12,7 +12,7 @@
       "aanvullingsverzoek": {
         "slug": "aanvullingsverzoek",
         "icon": "FileQuestionOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Action",
         "title": "Aanvullingsverzoek",
         "description": "A request to an applicant to complete their submission, under Awb 4:5. It names the party asked, what is missing, who asked, when, and the date the hersteltermijn ends. It stays readable after it is answered, and after it expires unanswered.",
