@@ -248,7 +248,7 @@ class IncidentStoreTest extends TestCase {
 			for ($i = 0; $i < $count; $i++) {
 				$n++;
 				$this->store->seed(
-					schema: 'incident',
+					schema: 'caseIncident',
 					uuid: 'incident-' . $n,
 					row: ['case' => $caseId, 'state' => 'open', 'eventDate' => '2026-03-01', 'description' => 'Melding ' . $n],
 				);
@@ -256,7 +256,7 @@ class IncidentStoreTest extends TestCase {
 		}
 
 		$this->store->seed(
-			schema: 'incident',
+			schema: 'caseIncident',
 			uuid: 'settled-1',
 			row: ['case' => 'case-6', 'state' => 'afgehandeld', 'eventDate' => '2026-03-01'],
 		);
@@ -284,7 +284,7 @@ class IncidentStoreTest extends TestCase {
 	 */
 	public function testAReportSomebodyIsWorkingStillCounts(): void {
 		$this->store->seed(
-			schema: 'incident',
+			schema: 'caseIncident',
 			uuid: 'working-1',
 			row: ['case' => 'case-1', 'state' => 'in-behandeling', 'eventDate' => '2026-03-01'],
 		);
@@ -307,7 +307,7 @@ class IncidentStoreTest extends TestCase {
 		$settings->method('getObjectService')->willReturn($this->store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key, string $default = ''): string {
-				$map = ['register' => 'dossiq', 'case_schema' => 'case', 'incident_schema' => 'incident'];
+				$map = ['register' => 'dossiq', 'case_schema' => 'case', 'case_incident_schema' => 'caseIncident'];
 
 				return ($map[$key] ?? $default);
 			}

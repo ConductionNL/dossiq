@@ -50,7 +50,7 @@ let caseId = ''
  * @param recordedAt When it was written up.
  */
 async function recordIncident(key: string, eventDate: string, recordedAt: string) {
-	return await createObject(api, token, 'incident', {
+	return await createObject(api, token, 'caseIncident', {
 		case: caseId,
 		description: `${RUN_PREFIX} ${key}`,
 		eventDate,
@@ -125,7 +125,7 @@ test.describe('a case holds several dated incidents', () => {
 			},
 		)
 
-		const incident = await showObject(api, token, 'incident', incidentId)
+		const incident = await showObject(api, token, 'caseIncident', incidentId)
 		const after = await showObject(api, token, 'case', caseId)
 
 		expect(incident.assignee).toBe('inspecteur')
@@ -141,7 +141,7 @@ test.describe('a case holds several dated incidents', () => {
 			'2026-05-01T10:00:00+02:00',
 		)
 
-		const incident = await showObject(api, token, 'incident', incidentId)
+		const incident = await showObject(api, token, 'caseIncident', incidentId)
 
 		// A deelzaak has its own number, its own term and its own decision. An
 		// incident has none of those, and giving it one would start a

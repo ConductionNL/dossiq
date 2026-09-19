@@ -71,7 +71,7 @@ class ConfigKeys {
 		'case_property_schema',
 		'case_document_schema',
 		'case_object_schema',
-		'incident_schema',
+		'case_incident_schema',
 		'customer_contact_schema',
 		'decision_document_schema',
 		'dispatch_schema',

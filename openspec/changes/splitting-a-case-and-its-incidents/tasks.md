@@ -29,7 +29,7 @@ Tier: V1. Kind: code. Size M. Rows 2.35 and 2.45.
   not allow is refused, and the refusal names the rule AND what may still be
   divided (ADR-050). A handler told only what they may not do guesses at the
   rest, and the guess is usually "nothing".
-- [x] 2.1 The `incident` schema: the event date, the recording moment, the
+- [x] 2.1 The `caseIncident` schema: the event date, the recording moment, the
   reporter, the description, its own owner, the state and the outcome (D-4,
   D-6). Defined AND carried by the register AND keyed in `SchemaSlugMap`,
   which are three things: a schema the register does not carry is refused on

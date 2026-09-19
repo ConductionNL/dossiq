@@ -4346,12 +4346,12 @@
                     }
                 }
             },
-            "incident": {
-                "slug": "incident",
+            "caseIncident": {
+                "slug": "caseIncident",
                 "icon": "AlertOutline",
                 "version": "1.0.0",
-                "title": "Incident",
-                "description": "One dated event inside a case, with its own reporter, its own owner and its own outcome. NOT a sub-case: a deelzaak has its own number, its own term and its own decision, and giving every repeat report a beslistermijn it does not have is exactly the mistake this avoids (splitting-a-case-and-its-incidents D-4).",
+                "title": "Case incident",
+                "description": "One dated event inside a case, with its own reporter, its own owner and its own outcome. NOT a sub-case: a deelzaak has its own number, its own term and its own decision, and giving every repeat report a beslistermijn it does not have is exactly the mistake this avoids (splitting-a-case-and-its-incidents D-4). The slug is qualified because slugs are global on a shared OpenRegister and hermiq owns the bare `incident`, which is an AI-agent lifecycle record and a different thing entirely.",
                 "type": "object",
                 "properties": {
                     "case": {
@@ -11347,7 +11347,7 @@
                     "caseProperty",
                     "caseDocument",
                     "caseObject",
-                    "incident",
+                    "caseIncident",
                     "customerContact",
                     "decisionDocument",
                     "dispatch",

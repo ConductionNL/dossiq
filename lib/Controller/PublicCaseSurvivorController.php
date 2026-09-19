@@ -43,6 +43,7 @@ use OCA\Dossiq\Service\CaseMergeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -89,8 +90,17 @@ class PublicCaseSurvivorController extends Controller {
 	 *
 	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
 	 */
+	// The ceiling is the control that matters here. The only thing an
+	// anonymous caller brings is the token, so without a cap the token space
+	// is enumerable at whatever rate the network allows. Ten a minute per
+	// address leaves a real "track your case" link comfortable and makes
+	// guessing pointless. Brute-force protection is deliberately NOT used:
+	// this endpoint answers the same uniform 404 to a VALID token naming an
+	// unmerged case, so throttling on 404 would punish legitimate callers
+	// for a correct answer.
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 10, period: 60)]
 	public function survivor(string $token): JSONResponse {
 		$resolved = $this->resolveToken(token: $token);
 		$objectId = (string)($resolved['object']['id'] ?? '');

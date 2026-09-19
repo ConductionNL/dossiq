@@ -40,7 +40,7 @@ describe('the case lists its incidents', () => {
 	})
 
 	it('reads the incident schema, not cases', () => {
-		expect(incidents.content.schema).toBe('incident')
+		expect(incidents.content.schema).toBe('caseIncident')
 		expect(incidents.content.filter).toEqual({ case: '@objectId' })
 	})
 

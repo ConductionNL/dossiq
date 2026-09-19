@@ -635,6 +635,10 @@
         "version": "1.0.0",
         "digest": "c23d88cf0e7f4fd4acdbf7a5204a604416c80b0a172ece0d48d28d0f0c938aab"
     },
+    "lib/Settings/dossiq_register.json::caseIncident": {
+        "version": "1.0.0",
+        "digest": "692311a01167edfcb6b57b4a682d51695f3f98b371dec2a7d274c76b29840c8e"
+    },
     "lib/Settings/dossiq_register.json::caseObject": {
         "version": "1.2.0",
         "digest": "17b4cb42d93eb6af6d02f0800ff10ecf36ac03eda6b5b223fa79ccca47d2c622"
@@ -734,10 +738,6 @@
     "lib/Settings/dossiq_register.json::hearingSession": {
         "version": "1.2.0",
         "digest": "eb07f4e4dad1d9ac8e47633ff6234e4b866ba71445151a23c8c34c2221e0593e"
-    },
-    "lib/Settings/dossiq_register.json::incident": {
-        "version": "1.0.0",
-        "digest": "e0989984de39facac95ed45d166316310287af938f5f55103bf60015bb00e158"
     },
     "lib/Settings/dossiq_register.json::inspectieChecklist": {
         "version": "1.1.0",

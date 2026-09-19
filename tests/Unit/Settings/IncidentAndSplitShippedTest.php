@@ -83,9 +83,9 @@ class IncidentAndSplitShippedTest extends TestCase {
 	public function testTheIncidentSchemaIsDefinedAndCarried(): void {
 		$register = $this->register();
 
-		$this->assertArrayHasKey('incident', $register['components']['schemas']);
+		$this->assertArrayHasKey('caseIncident', $register['components']['schemas']);
 		$this->assertContains(
-			'incident',
+			'caseIncident',
 			$register['components']['registers']['dossiq']['schemas'],
 			'a schema the register does not carry is refused on every read and write'
 		);
@@ -97,7 +97,7 @@ class IncidentAndSplitShippedTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheIncidentCarriesBothMomentsAndItsOwnOwner(): void {
-		$properties = $this->register()['components']['schemas']['incident']['properties'];
+		$properties = $this->register()['components']['schemas']['caseIncident']['properties'];
 
 		foreach (['case', 'eventDate', 'recordedAt', 'reporter', 'description', 'assignee', 'state', 'outcome'] as $field) {
 			$this->assertArrayHasKey($field, $properties, sprintf('incident.%s is missing', $field));

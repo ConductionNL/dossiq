@@ -335,7 +335,7 @@ class IncidentStore {
 			$incident = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'incident_schema'),
+				schema: $this->schema(key: 'case_incident_schema'),
 				id: trim($incidentId),
 			);
 		} catch (Throwable $e) {
@@ -372,7 +372,7 @@ class IncidentStore {
 			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'incident_schema'),
+				schema: $this->schema(key: 'case_incident_schema'),
 				filters: $filters,
 			);
 		} catch (Throwable $e) {
@@ -403,7 +403,7 @@ class IncidentStore {
 			$saved = $this->saveObjectAsArray(
 				objectService: $objectService,
 				register: $register,
-				schema: $this->schema(key: 'incident_schema'),
+				schema: $this->schema(key: 'case_incident_schema'),
 				object: $incident,
 				uuid: $uuid,
 			);
