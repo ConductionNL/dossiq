@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
+use OCA\Dossiq\Lifecycle\CaseActionList;
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
@@ -100,12 +101,18 @@ class CaseActionProviderExecuteTest extends TestCase {
 	private function providerOver(StatusTransitionService $engine): CaseActionProvider {
 		return new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->createMock(CaseResultWriter::class),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $this->createMock(CasePaymentReader::class),
-			caseTypes: $this->createMock(CaseTypeReader::class),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->createMock(CaseResultWriter::class),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerOver()
