@@ -98,7 +98,7 @@ test.describe('a case holds several dated incidents', () => {
 			'2026-09-30T16:00:00+02:00',
 		)
 
-		await page.goto(`${APP_URL}cases/${caseId}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${APP_URL}cases/${caseId}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page.getByRole('tab', { name: /^(Work|Werk)$/ }).click()
 

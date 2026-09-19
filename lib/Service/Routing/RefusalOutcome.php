@@ -209,13 +209,22 @@ class RefusalOutcome {
 		// a refused case a handler cannot find is the lost case this whole
 		// outcome exists to prevent, and search reads the same rows the list
 		// does.
-		$this->write(
-			caseId: $caseId,
-			changes: [
-				self::CASE_FIELD => $record,
-				'assignedGroup' => $destination['department'],
-			]
-		);
+		// 🔴 `assignedGroup` IS A UUID REFERENCE, NOT A DEPARTMENT NAME. It is
+		// declared `format: uuid, $ref: organisatieRol` on the case schema,
+		// and `refusalDestination.department` is a plain department name. This
+		// line used to write one into the other, so OpenRegister refused the
+		// save and the whole refusal came back 503: on any case type that
+		// declares where a refused case goes, refusing was impossible. The
+		// team is resolved from the declared department and role, and when
+		// nothing resolves the refusal is still RECORDED, just unassigned. A
+		// refused case a handler can find beats a refusal that did not happen.
+		$changes = [self::CASE_FIELD => $record];
+		$team = $this->teamFor(destination: $destination);
+		if ($team !== '') {
+			$changes['assignedGroup'] = $team;
+		}
+
+		$this->write(caseId: $caseId, changes: $changes);
 
 		return $record;
 	}//end refuse()
@@ -255,6 +264,75 @@ class RefusalOutcome {
 	}//end caseTypeIdOf()
 
 	/**
+	 * The `organisatieRol` a declared refusal destination names.
+	 *
+	 * The destination is a department and a role, in words an administrator
+	 * typed on the case type. `case.assignedGroup` is a uuid reference to an
+	 * `organisatieRol`, so the two have to be joined rather than copied. The
+	 * join is on `department` plus `roleName`, which are the same two words
+	 * the destination declares.
+	 *
+	 * Returns an empty string when the register is unconfigured, when nothing
+	 * matches, or when the search throws. Every one of those means the case
+	 * is refused and left unassigned, which is the recoverable outcome: an
+	 * administrator assigns it, and the refusal record already says where it
+	 * was meant to go.
+	 *
+	 * @param array{department: string, role: string} $destination The declared destination.
+	 *
+	 * @return string The team uuid, or '' when none resolves.
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 */
+	private function teamFor(array $destination): string {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'organisatie_rol_schema');
+
+		if ($objectService === null || $register === '' || $schema === '') {
+			return '';
+		}
+
+		try {
+			$rows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				filters: [
+					'department' => $destination['department'],
+					'roleName' => $destination['role'],
+					'_limit' => 1,
+				],
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Dossiq refusal: could not resolve the team for {department}/{role}',
+				[
+					'department' => $destination['department'],
+					'role' => $destination['role'],
+					'reason' => $e->getMessage(),
+				],
+			);
+
+			return '';
+		}
+
+		foreach ($rows as $row) {
+			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+			if ($id !== '') {
+				return $id;
+			}
+		}
+
+		$this->logger->warning(
+			'Dossiq refusal: no organisatieRol answers to {department}/{role}, so the refused case is unassigned',
+			['department' => $destination['department'], 'role' => $destination['role']],
+		);
+
+		return '';
+	}//end teamFor()
+
+	/**
 	 * Read one case.
 	 *
 	 * @param string $caseId The case UUID.
@@ -263,6 +341,7 @@ class RefusalOutcome {
 	 *
 	 * @throws RefusedException When the register is configured but the read fails.
 	 */
+
 	private function readCase(string $caseId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = $this->settingsService->getConfigValue(key: 'register');

@@ -143,9 +143,7 @@ test.describe('@spec REQ-TERM-041 what the applicant is told', () => {
 	}) => {
 		const stamped = await filedAt(SUNDAY, 'confirmation says so')
 
-		await page.goto(`/apps/${REGISTER}/cases/${objectId(stamped)}`, {
-			waitUntil: PAGE_LOAD,
-		})
+		await page.goto(`/apps/${REGISTER}/cases/${objectId(stamped)}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		await page

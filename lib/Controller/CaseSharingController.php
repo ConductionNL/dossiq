@@ -40,6 +40,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\CaseTransferService;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -163,11 +164,48 @@ class CaseSharingController extends Controller {
 		);
 
 		if (isset($share['error']) === true) {
-			return new JSONResponse(['success' => false, 'error' => $share['error']], Http::STATUS_BAD_GATEWAY);
+			return $this->refusedMint(share: $share);
 		}
 
 		return new JSONResponse(['success' => true, 'share' => $share['share'], 'url' => $share['url']]);
 	}//end createShare()
+
+	/**
+	 * The answer when a link share was not minted.
+	 *
+	 * A 502 says the app upstream broke. When this instance simply never
+	 * mapped the case share schema, nothing upstream broke and naming
+	 * OpenRegister sends the reader to the wrong app. 503 with the message the
+	 * service wrote says what is missing and who fixes it.
+	 *
+	 * `linksNotRevoked` is carried when a link was minted, the record failed,
+	 * and OpenRegister then refused to withdraw the link. A share reported as
+	 * failed whose link still opens is the worst of the three outcomes, so the
+	 * caller is told which ids are still live rather than left to find out.
+	 *
+	 * Extracted rather than written inline: `createShare()` already sat over
+	 * phpmd's cyclomatic and NPath thresholds on `development`, and these two
+	 * branches took it over the method-length threshold as well.
+	 *
+	 * @param array<string, mixed> $share What the sharing service answered.
+	 *
+	 * @return JSONResponse The refusal.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function refusedMint(array $share): JSONResponse {
+		$status = Http::STATUS_BAD_GATEWAY;
+		if (($share['reason'] ?? '') === CaseLinkShares::REASON_NOT_CONFIGURED) {
+			$status = Http::STATUS_SERVICE_UNAVAILABLE;
+		}
+
+		$body = ['success' => false, 'error' => $share['error']];
+		if (isset($share['linksNotRevoked']) === true) {
+			$body['linksNotRevoked'] = $share['linksNotRevoked'];
+		}
+
+		return new JSONResponse($body, $status);
+	}//end refusedMint()
 
 	/**
 	 * Read a request parameter that may arrive as a list or as a

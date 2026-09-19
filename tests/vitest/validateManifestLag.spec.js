@@ -4,11 +4,11 @@
 /**
  * A library lag is not a defect in this manifest, and a defect is not a lag.
  *
- * 🔴 THE FAILURE THIS FILE EXISTS FOR IS A BLANKET EXCUSE. `check:manifest` now
+ * 🔴 THE FAILURE THIS FILE EXISTS FOR IS A BLANKET EXCUSE. `check:manifest`
  * tells the two apart, and the tempting way to write that is a list of keys to
  * forgive, or a search for the property name anywhere in the newer schema.
- * Both would have waved through the one REAL error this change found:
- * `_note` is declared on a dozen shapes in schema 2.34.0 and refused on
+ * Both would have waved through the one REAL error the mechanism found:
+ * `_note` is declared on a dozen shapes in this schema and refused on
  * `$defs/action`, so a name search calls a genuine defect a lag and the build
  * goes green over it.
  *
@@ -19,6 +19,20 @@
  *
  * So the classifier resolves the INSTANCE PATH to a definition and asks whether
  * that shape declares the property. These tests are what keep it that way.
+ *
+ * 🔑 THE LAG IS OVER, AND THAT IS WHY THIS FILE CHANGED. `@conduction/
+ * nextcloud-vue` 3.4.0 ships schema 2.37.0, which declares `savedViewPlaces`,
+ * so the installed schema has caught up and then overtaken the copy this repo
+ * vendored at 2.34.0. The classifier retires itself by design, exactly as its
+ * own note said it would: an error is forgiven only while the vendored schema
+ * declares a property the installed one does not, and now none does.
+ *
+ * 🔴 A STALE VENDORED COPY FORGIVES A REMOVAL. Once the installed schema is
+ * the NEWER of the two, a property the library has since DROPPED is still
+ * declared in the vendored copy, and the classifier would read a genuine
+ * breaking change as a lag and pass the build. So the vendored copy is kept
+ * at or ahead of the installed one, and that is asserted below rather than
+ * remembered.
  */
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
@@ -69,23 +83,49 @@ function validate(manifest) {
 	}
 }
 
-describe('the vendored schema is newer than the installed one', () => {
-	it('is what makes the classification possible at all', () => {
+/**
+ * Compare two dotted versions.
+ *
+ * @param {string} left  The left version.
+ * @param {string} right The right version.
+ * @return {number} Negative when left is older, 0 when equal, positive when newer.
+ */
+function compareVersions(left, right) {
+	const a = String(left).split('.').map(Number)
+	const b = String(right).split('.').map(Number)
+	for (let i = 0; i < Math.max(a.length, b.length); i++) {
+		const diff = (a[i] || 0) - (b[i] || 0)
+		if (diff !== 0) {
+			return diff
+		}
+	}
+	return 0
+}
+
+describe('the vendored schema never falls behind the installed one', () => {
+	it('is at or ahead of the installed schema, so nothing is forgiven wrongly', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
 
-		// If these ever match, there is no lag to classify and the whole
-		// mechanism is inert. It would then pass on everything, silently,
-		// which is the shape this suite exists to refuse.
-		expect(vendored.version).not.toBe(installed.version)
+		// Behind, the classifier forgives a property the library REMOVED, and
+		// a breaking change reads as a lag. Ahead or level, it can only
+		// forgive a property the library has not shipped yet, which is what
+		// it is for. So this is the direction that matters, not equality.
+		expect(
+			compareVersions(vendored.version, installed.version),
+			`vendored ${vendored.version} is behind installed ${installed.version}: re-vendor tests/schemas/app-manifest-v2.schema.json from node_modules`,
+		).toBeGreaterThanOrEqual(0)
 	})
 
-	it('declares the page key the installed one refuses', () => {
+	it('has the page key whose release ended the lag', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
 
+		// `savedViewPlaces` is the property the whole mechanism was built
+		// around. The installed library now declares it, which is what
+		// retired the lag, and the vendored copy must not have lost it.
 		expect(vendored.$defs.page.properties).toHaveProperty('savedViewPlaces')
-		expect(installed.$defs.page.properties).not.toHaveProperty('savedViewPlaces')
+		expect(installed.$defs.page.properties).toHaveProperty('savedViewPlaces')
 	})
 
 	it('refuses `_note` on an action in BOTH, which is why that error is real', () => {
@@ -105,11 +145,17 @@ describe('check:manifest tells a lag from a defect', () => {
 	// SPAWNS the validator, and Ajv compiling the manifest schema over a
 	// 62-page manifest is several seconds of real work per run. The default
 	// was already being cleared by a margin that shrank with the manifest.
-	it('the shipped manifest passes, because its only errors are the lag', () => {
+	it('the shipped manifest passes with nothing forgiven', () => {
 		const out = execFileSync('node', [VALIDATOR], { encoding: 'utf8' })
 
 		expect(out).toContain('PASS')
-		expect(out).toContain('pending a library release')
+
+		// It used to assert the opposite: that the output NAMED a forgiven
+		// error. Now that the release has landed there is nothing to forgive,
+		// and a manifest that passes on its own merits is the stronger
+		// result. Asserting the absence keeps it that way: a new lag has to
+		// be looked at rather than inherited.
+		expect(out).not.toContain('pending a library release')
 	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {

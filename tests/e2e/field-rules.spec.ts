@@ -87,8 +87,7 @@ const FIELD_ROLE_RULES = [
 		rule: 'hidden',
 		groups: [RESTRICTED_GROUP],
 		heldBy: [HOLDING_GROUP],
-		reason:
-			'The quality officer scores the handling, so the handler does not read their own score.',
+		reason: 'The quality officer scores the handling, so the handler does not read their own score.',
 	},
 	{
 		field: READ_ONLY_FIELD,
