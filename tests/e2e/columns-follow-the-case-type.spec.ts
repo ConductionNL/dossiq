@@ -135,7 +135,7 @@ test.describe('a case type carries its own columns', () => {
 			.not.toContain('Decision date')
 	})
 
-	// @e2e openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-bezwaar-orders-by-its-hearing-date
+	// @e2e openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-handhavingszaak-orders-by-its-decision-date
 	test('a case type that orders by its own date leads with the latest one', async ({
 		page,
 	}) => {

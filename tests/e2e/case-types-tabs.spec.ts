@@ -196,7 +196,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	 * on nobody else's, so none of them is passing by looking at the wrong
 	 * panel.
 	 */
-	// @e2e openspec/specs/case-types/spec.md#ct-15a-tab-layout
+	// @e2e openspec/specs/case-types/spec.md#scenario-ct-15a-tab-layout
 	test('the case type detail shows the six named tabs, General active, Save on top', async ({
 		page,
 	}) => {
@@ -248,7 +248,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	 * `.case-type-detail .case-type-detail__tab-content getByText(/Archive action/i)`.
 	 * CT-15a and CT-15e stayed green.
 	 */
-	// @e2e openspec/specs/case-types/spec.md#ct-15d-results-tab-content-v1
+	// @e2e openspec/specs/case-types/spec.md#scenario-ct-15d-results-tab-content-v1
 	test('the Results tab lists result types with archive action and retention', async ({
 		page,
 	}) => {
@@ -282,7 +282,7 @@ test.describe('Case-types admin — 7-tab integration shell', () => {
 	 * Red on "the Roles tab must show Generic role", element(s) not found,
 	 * scoped to the open panel. CT-15a and CT-15d stayed green.
 	 */
-	// @e2e openspec/specs/case-types/spec.md#ct-15e-roles-tab-content-v1
+	// @e2e openspec/specs/case-types/spec.md#scenario-ct-15e-roles-tab-content-v1
 	test('the Roles tab lists role types with name and generic role', async ({
 		page,
 	}) => {

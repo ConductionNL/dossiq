@@ -139,7 +139,7 @@ test.describe('The leaf declarations, as Open Register stored them', () => {
 		expect(offered).toEqual(['case', 'complaint'])
 	})
 
-	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-deliberation-room-from-the-case
+	// @e2e openspec/changes/leaf-integrations/specs/leaf-integrations/spec.md#scenario-a-conversation-can-be-linked-to-a-case
 	test('the case carries the talk and deck leaves', async ({ request }) => {
 		const schemas = await storedSchemas(request)
 		const types = linkedTypes(schemas, 'case')
