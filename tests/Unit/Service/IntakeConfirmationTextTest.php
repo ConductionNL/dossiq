@@ -49,6 +49,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Dossiq\Service\Termijn\TermLetters::render
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
+ * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  */
