@@ -116,8 +116,8 @@ class CaseTransferService {
 		$verdict = $this->consent->assess(
 			caseId: $caseId,
 			sourceOrganisation: $sourceOrganization,
-			receivingOrganisation: $targetOrganization,
-			at: $requestedDate,
+			receivingOrg: $targetOrganization,
+			atDate: $requestedDate,
 		);
 		if ($verdict['allowed'] === false) {
 			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];

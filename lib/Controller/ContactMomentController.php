@@ -62,7 +62,7 @@ class ContactMomentController extends Controller {
 	 * @param BurgerIdentificationService $burgerService The burger identification service.
 	 * @param IUserSession $userSession The user session.
 	 * @param CitizenLookupGuard $citizenLookupGuard The citizen-lookup role guard.
-	 * @param CitizenLookupRecorder $citizenLookupRecorder Writes one audit row per
+	 * @param CitizenLookupRecorder $lookupRecorder Writes one audit row per
 	 *        lookup attempt, refusals included, because the refusal is what catches
 	 *        enumeration.
 	 */
@@ -76,7 +76,7 @@ class ContactMomentController extends Controller {
 		private readonly BurgerIdentificationService $burgerService,
 		private readonly IUserSession $userSession,
 		private readonly CitizenLookupGuard $citizenLookupGuard,
-		private readonly CitizenLookupRecorder $citizenLookupRecorder,
+		private readonly CitizenLookupRecorder $lookupRecorder,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -111,7 +111,7 @@ class ContactMomentController extends Controller {
 	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function refuseLookup(string $uid, string $burgerId): JSONResponse {
-		$this->citizenLookupRecorder->record(
+		$this->lookupRecorder->record(
 			employeeId: $uid,
 			subjectId: $burgerId,
 			allowed: false,
@@ -133,7 +133,7 @@ class ContactMomentController extends Controller {
 	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function recordLookup(\OCP\IUser $user, string $burgerId): void {
-		$this->citizenLookupRecorder->record(
+		$this->lookupRecorder->record(
 			employeeId: $user->getUID(),
 			subjectId: $burgerId,
 			allowed: true,

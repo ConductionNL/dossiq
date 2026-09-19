@@ -93,7 +93,7 @@ class CaseCustodyQueryTest extends TestCase {
 			handler: 'sofie',
 			reason: 'Handhaving',
 			movedBy: 'jan',
-			at: '2026-03-10T10:00:00+01:00',
+			movedAt: '2026-03-10T10:00:00+01:00',
 		);
 		$chain->move(
 			caseId: 'case-1',
@@ -101,7 +101,7 @@ class CaseCustodyQueryTest extends TestCase {
 			handler: '',
 			reason: 'Bezwaar',
 			movedBy: 'sofie',
-			at: '2026-06-01T10:00:00+02:00',
+			movedAt: '2026-06-01T10:00:00+02:00',
 		);
 	}//end setUp()
 
@@ -113,7 +113,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testWhoHeldTheCaseInMarchIsOneAnswer(): void {
-		$holding = $this->query()->holderOn(caseId: 'case-1', on: '2026-03-15T12:00:00+01:00');
+		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2026-03-15T12:00:00+01:00');
 
 		self::assertNotNull($holding, 'A date inside the case\'s life always has a holder.');
 		self::assertSame('toezicht', $holding['organisationUnit']);
@@ -128,7 +128,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheTransferDateBelongsToTheUnitThatTookTheCase(): void {
-		$holding = $this->query()->holderOn(caseId: 'case-1', on: '2026-03-10T10:00:00+01:00');
+		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2026-03-10T10:00:00+01:00');
 
 		self::assertNotNull($holding);
 		self::assertSame(
@@ -146,7 +146,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testADateBeforeTheCaseHasNoHolder(): void {
-		self::assertNull($this->query()->holderOn(caseId: 'case-1', on: '2025-12-31T23:59:59+01:00'));
+		self::assertNull($this->query()->holderOn(caseId: 'case-1', asOf: '2025-12-31T23:59:59+01:00'));
 	}//end testADateBeforeTheCaseHasNoHolder()
 
 	/**
@@ -157,7 +157,7 @@ class CaseCustodyQueryTest extends TestCase {
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
 	public function testTheOpenHoldingAnswersTheFuture(): void {
-		$holding = $this->query()->holderOn(caseId: 'case-1', on: '2027-01-01T00:00:00+01:00');
+		$holding = $this->query()->holderOn(caseId: 'case-1', asOf: '2027-01-01T00:00:00+01:00');
 
 		self::assertNotNull($holding);
 		self::assertSame('juridisch', $holding['organisationUnit']);

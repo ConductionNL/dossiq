@@ -220,7 +220,7 @@ class CaseTakeoverRequestTest extends TestCase {
 		$takeovers->request(caseId: 'case-1', requestedBy: 'sofie', reason: 'Mijn wijk');
 		$takeovers->request(caseId: 'case-1', requestedBy: 'els', reason: 'Ik ken het gezin');
 
-		$requests = $takeovers->on(caseId: 'case-1');
+		$requests = $takeovers->onCase(caseId: 'case-1');
 
 		self::assertCount(2, $requests);
 		self::assertSame(

@@ -96,7 +96,7 @@ class CasePlanInterventions {
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
-	public function of(string $planId, string $today = ''): array {
+	public function ofPlan(string $planId, string $today = ''): array {
 		if (trim($planId) === '') {
 			return [];
 		}
@@ -117,7 +117,7 @@ class CasePlanInterventions {
 		}
 
 		return $rows;
-	}//end of()
+	}//end ofPlan()
 
 	/**
 	 * Whether this intervention's target date has passed with it still open.

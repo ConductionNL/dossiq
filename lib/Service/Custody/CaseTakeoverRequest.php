@@ -324,7 +324,7 @@ class CaseTakeoverRequest {
 	 *
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
-	public function on(string $caseId): array {
+	public function onCase(string $caseId): array {
 		$caseId = trim($caseId);
 		if ($caseId === '') {
 			return [];
@@ -339,7 +339,7 @@ class CaseTakeoverRequest {
 		);
 
 		return $rows;
-	}//end on()
+	}//end onCase()
 
 	/**
 	 * The requests nobody has answered yet.

@@ -139,7 +139,7 @@ class TermResolution {
 	 * @return array<int, array<string, mixed>> The candidates of that kind.
 	 */
 	private function ofKind(array $rows, string $kind): array {
-		$of = [];
+		$matching = [];
 		foreach ($rows as $row) {
 			$declared = trim((string)($row['kind'] ?? ''));
 			if ($declared === '') {
@@ -147,11 +147,11 @@ class TermResolution {
 			}
 
 			if ($declared === $kind) {
-				$of[] = $row;
+				$matching[] = $row;
 			}
 		}
 
-		return $of;
+		return $matching;
 	}//end ofKind()
 
 	/**

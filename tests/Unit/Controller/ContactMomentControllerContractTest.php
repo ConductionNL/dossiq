@@ -130,7 +130,7 @@ class ContactMomentControllerContractTest extends TestCase {
 			burgerService: $this->createMock(BurgerIdentificationService::class),
 			userSession: $this->userSession,
 			citizenLookupGuard: $this->createMock(CitizenLookupGuard::class),
-			citizenLookupRecorder: $this->createMock(CitizenLookupRecorder::class),
+			lookupRecorder: $this->createMock(CitizenLookupRecorder::class),
 		);
 	}//end setUp()
 
