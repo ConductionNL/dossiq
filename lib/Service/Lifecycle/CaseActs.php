@@ -47,6 +47,17 @@ use OCP\IUserSession;
 /**
  * One seam over the six classes that own the acts on a case.
  *
+ * @SuppressWarnings(PHPMD.TooManyPublicMethods) The ten acts ARE the surface,
+ *  and one seam over them is what this class is for. The work behind each one
+ *  already lives in its own class: CaseEndingActs, CaseHoldActs, DraftCaseActs,
+ *  CaseIncompleteness and CaseArchiveState. Splitting the seam would put the
+ *  decomposition back on the caller, who would then have to know which half of
+ *  a case's lifecycle an act belongs to before it could ask for it.
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) Eleven constructor arguments
+ *  because there are eleven act classes to front. Every one is a collaborator
+ *  this class delegates to and holds no other state; grouping them would invent
+ *  a middle layer whose only job is to be shorter to write down.
+ *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 class CaseActs {
