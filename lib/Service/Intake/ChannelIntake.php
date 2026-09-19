@@ -57,7 +57,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Intake;
 
-use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -95,21 +94,19 @@ class ChannelIntake {
 	 *
 	 * @var string
 	 */
-	private const UNTITLED = 'Bericht via kanaal';
+	public const UNTITLED = 'Bericht via kanaal';
 
 	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService     $settingsService Register and schema resolution.
 	 * @param IntakeLog           $log             The surface, and the duplicate ledger.
-	 * @param CaseDateNormaliser  $dates           The one path a date is written by.
 	 * @param LoggerInterface     $logger          Logger.
 	 * @param MessageFacts        $facts           What a routed message says about itself.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IntakeLog $log,
-		private readonly CaseDateNormaliser $dates,
 		private readonly LoggerInterface $logger,
 		private readonly MessageFacts $facts,
 	) {

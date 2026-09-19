@@ -67,9 +67,9 @@ class TermijnNotificationService {
 	 * @param BerichtenboxRoutingService $router Router (dossiq notification-router).
 	 * @param LoggerInterface $logger Logger.
 	 * @param IJobList|null $jobList Optional job list for async dispatch.
-	 * @param TermLetters|null $letters The wording of every term notification. Left out it is
-	 *        built here, because it has no collaborators of its own and every caller that
-	 *        wired this service before the letters were split out passes four arguments.
+	 * @param TermLetters $letters The wording of every term notification. Defaulted rather than
+	 *        required, because it has no collaborators of its own and every caller that wired
+	 *        this service before the letters were split out passes four arguments.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,

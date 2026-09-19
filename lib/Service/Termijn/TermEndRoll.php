@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Termijn;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermCalendarGuard;
 use OCA\Dossiq\Service\TermijnTimerService;

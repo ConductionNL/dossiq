@@ -71,7 +71,6 @@ class TermijnService {
 	 * @param LoggerInterface $logger Logger.
 	 * @param TermijnTimerService|null $timerService Engine timer mapping (optional while the engine rolls out).
 	 * @param TermEventEntry|null $termEntry The timeline entry a term event writes.
-	 * @param CaseDateNormaliser|null $dates Reads a date off a case in the one place that knows its shapes.
 	 * @param TermDefinitions|null $definitions What a case type's term definitions say, and the end
 	 *        date their duration implies. It took the `roll` parameter's place: counting a term in
 	 *        working days is what a definition's counting mode asks for, so the calendar is reached
@@ -89,7 +88,6 @@ class TermijnService {
 		private readonly LoggerInterface $logger,
 		private readonly ?TermijnTimerService $timerService = null,
 		private readonly ?TermEventEntry $termEntry = null,
-		private readonly ?CaseDateNormaliser $dates = null,
 		?TermDefinitions $definitions = null,
 		?TermInstanceStore $store = null,
 	) {
