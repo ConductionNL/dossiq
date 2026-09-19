@@ -17,6 +17,15 @@
  * `CaseTypeParentCycleListener` records for `parentCaseType`: the refusal
  * existed on the publish path and the Edit dialog walked straight past it.
  *
+ * WHY THE SCHEMA CHECK GOES THROUGH {@see SchemaScopeResolver}. This guard
+ * used to decide whether a write was its business by reading the
+ * `milestone_definition_schema` appconfig key and returning false when the key
+ * was empty. That key is written by the configuration load, so on an instance
+ * whose setup never finished the guard stood aside on every write, silently.
+ * Measured on 2026-09-19: a milestone that waits for itself was stored with a
+ * 201 while the guard was wired and its cycle rule was correct. A missing
+ * config key is now a missing answer rather than a negative one.
+ *
  * WHAT A CYCLE COSTS IF IT IS STORED. `MilestoneSchedule` caps its recursion,
  * so nothing hangs; what happens instead is that the dates inside the loop
  * resolve from whichever item the walk reached first, which is an arbitrary
@@ -44,7 +53,7 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Milestone\MilestoneRepository;
 use OCA\Dossiq\Service\Milestone\MilestoneSchedule;
-use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Settings\SchemaScopeResolver;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
@@ -71,16 +80,30 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	public const ERROR_CODE = 'milestoneDefinition.dependencyCycle';
 
 	/**
+	 * The appconfig key holding the milestone definition schema id.
+	 *
+	 * @var string
+	 */
+	public const SCHEMA_CONFIG_KEY = 'milestone_definition_schema';
+
+	/**
+	 * The schema slug this guard watches.
+	 *
+	 * @var string
+	 */
+	public const SCHEMA_SLUG = 'milestoneDefinition';
+
+	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Schema slug bridge.
+	 * @param SchemaScopeResolver $schemaScope Decides whether a write is ours.
 	 * @param MilestoneRepository $repository Reads the case type's other definitions.
 	 * @param MilestoneSchedule $schedule Owns the cycle rule.
 	 * @param IL10N $l10n Translation service.
 	 * @param LoggerInterface $logger Structured logger.
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
+		private readonly SchemaScopeResolver $schemaScope,
 		private readonly MilestoneRepository $repository,
 		private readonly MilestoneSchedule $schedule,
 		private readonly IL10N $l10n,
@@ -127,6 +150,19 @@ class MilestoneDependencyCycleListener implements IEventListener {
 		if ($payload === null || $this->isMilestoneSchema(object: $payload) === false) {
 			return;
 		}
+
+		$this->refuseCycle(event: $event, payload: $payload);
+	}//end inspect()
+
+	/**
+	 * Refuse the save when the declaration closes a loop.
+	 *
+	 * @param ObjectCreatingEvent|ObjectUpdatingEvent $event The stoppable event.
+	 * @param array<string, mixed> $payload The milestone definition being written.
+	 *
+	 * @return void
+	 */
+	private function refuseCycle(ObjectCreatingEvent|ObjectUpdatingEvent $event, array $payload): void {
 
 		$identifier = trim((string)($payload['identifier'] ?? ''));
 		$caseTypeId = trim((string)($payload['caseType'] ?? ''));
@@ -180,7 +216,7 @@ class MilestoneDependencyCycleListener implements IEventListener {
 			'Dossiq: refused a milestone definition whose dependencies return to itself',
 			['caseType' => $caseTypeId, 'milestone' => $identifier, 'cycle' => $cycle]
 		);
-	}//end inspect()
+	}//end refuseCycle()
 
 	/**
 	 * Read an entity's payload, or null when it cannot be read.
@@ -208,16 +244,58 @@ class MilestoneDependencyCycleListener implements IEventListener {
 	 * @return bool True when this is a milestone definition.
 	 */
 	private function isMilestoneSchema(array $object): bool {
-		$expected = $this->settingsService->getConfigValue('milestone_definition_schema');
-		if ($expected === '') {
+		$scope = $this->schemaScope->classify(
+			payload: $object,
+			configKey: self::SCHEMA_CONFIG_KEY,
+			slug: self::SCHEMA_SLUG
+		);
+
+		if ($scope === SchemaScopeResolver::IN_SCOPE) {
+			return true;
+		}
+
+		if ($scope === SchemaScopeResolver::OUT_OF_SCOPE) {
 			return false;
 		}
 
-		$candidate = (string)($object['@self']['schema'] ?? ($object['schema'] ?? ''));
+		// UNDECIDED: the configuration load never wrote the key AND the slug
+		// does not resolve, so nothing outside the payload can name the schema.
+		// The guard used to read that as "not mine" and stand aside, which is
+		// how a milestone that waits for itself came to be stored with a 201.
+		// It reads the payload instead. The three fields below are the
+		// milestone definition's own shape: no other Dossiq schema carries
+		// `dependsOn` beside an `identifier` and a `caseType`. A false positive
+		// costs a write that declares a dependency loop, which is refused
+		// whoever wrote it; a false negative costs the guard.
+		if ($this->looksLikeMilestoneDefinition(object: $object) === false) {
+			return false;
+		}
 
-		return $candidate !== '' && (
-			$candidate === $expected
-			|| str_ends_with($candidate, '/' . $expected)
+		$this->logger->warning(
+			'Dossiq: checking a milestone dependency cycle on the payload alone, '
+			. 'because the milestone schema is not configured on this instance',
+			['configKey' => self::SCHEMA_CONFIG_KEY, 'slug' => self::SCHEMA_SLUG]
 		);
+
+		return true;
 	}//end isMilestoneSchema()
+
+	/**
+	 * Whether a payload has the shape of a milestone definition.
+	 *
+	 * Read ONLY when nothing else can name the schema. It is deliberately
+	 * narrow: all three fields together, and `dependsOn` a list.
+	 *
+	 * @param array<string, mixed> $object The object payload.
+	 *
+	 * @return bool True when the payload declares milestone dependencies.
+	 */
+	private function looksLikeMilestoneDefinition(array $object): bool {
+		if (is_array(($object['dependsOn'] ?? null)) === false) {
+			return false;
+		}
+
+		return trim((string)($object['identifier'] ?? '')) !== ''
+			&& trim((string)($object['caseType'] ?? '')) !== '';
+	}//end looksLikeMilestoneDefinition()
 }//end class
