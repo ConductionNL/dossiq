@@ -32,6 +32,7 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureCaseType,
 	getRequestToken,
 	REGISTER,
 	RUN_PREFIX,
@@ -41,6 +42,15 @@ import {
 
 let api: APIRequestContext
 let token: string
+
+/**
+ * The case type every case here is of. `case.caseType` is required, so each
+ * `seedCase` below used to answer `400 The required property (caseType) is
+ * missing` and no routing decision in this file was ever made. Routing is
+ * decided by the pool, the weight, the team and the district, none of which
+ * this file varies by case type, so one adopted type serves all of them.
+ */
+let caseTypeId = ''
 
 function ROUTE_API(caseId: string) {
 	return `/index.php/apps/${REGISTER}/api/case/${caseId}/route`
@@ -66,6 +76,7 @@ async function bindMember(participant: string, weight: number, team = '') {
 test.beforeAll(async ({ playwright, baseURL }) => {
 	api = await playwright.request.newContext({ baseURL })
 	token = await getRequestToken(api)
+	caseTypeId = (await ensureCaseType(api, token)).id
 })
 
 test.afterAll(async () => {
@@ -82,6 +93,7 @@ test.describe('work is divided in proportion to what each member is there for', 
 		for (let i = 0; i < 14; i++) {
 			const caseId = await seedCase(api, token, {
 				title: `${RUN_PREFIX} Verdeling ${i}`,
+				caseType: caseTypeId,
 			})
 			const answer = await api.post(ROUTE_API(caseId), {
 				headers: { requesttoken: token },
@@ -106,6 +118,7 @@ test.describe('a rule may name a position inside a team', () => {
 		for (let i = 0; i < 4; i++) {
 			const caseId = await seedCase(api, token, {
 				title: `${RUN_PREFIX} Team ${i}`,
+				caseType: caseTypeId,
 			})
 			const answer = await api.post(ROUTE_API(caseId), {
 				headers: { requesttoken: token },
@@ -128,6 +141,7 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 	test('a case at an address in wijk Zuid routes to the team declared for it', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Zuid`,
+			caseType: caseTypeId,
 			district: 'Zuid',
 		})
 
@@ -148,6 +162,7 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 	test('correcting the address re-resolves the area', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Verhuisd`,
+			caseType: caseTypeId,
 			district: 'Zuid',
 		})
 
@@ -159,13 +174,14 @@ test.describe('the case holds the area it is in, and routing reads it', () => {
 			},
 		)
 
-		const stored = await showObject(api, token, 'case', caseId)
+		const stored = await showObject(api, 'case', caseId)
 		expect(stored.district).toBe('Noord')
 	})
 
 	test('an address outside every boundary routes by the fallback and says so', async () => {
 		const caseId = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Buiten de grenzen`,
+			caseType: caseTypeId,
 		})
 
 		const answer = await api.post(ROUTE_API(caseId), {

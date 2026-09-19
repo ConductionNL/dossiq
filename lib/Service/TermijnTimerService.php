@@ -157,6 +157,14 @@ class TermijnTimerService {
 	 * @return string|null The armed timer uuid, or null when the engine is unavailable.
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) `TermijnService::countingModeOf()` is a
+	 *  pure function of the array handed to it: no state, no collaborators, and
+	 *  nothing resolved implicitly, so the hidden dependency this rule exists to
+	 *  catch is not present. Reading `countingMode` here instead would put the
+	 *  rule that decides calendar against working days in two places, and the two
+	 *  disagreeing is how a ten day term silently becomes fourteen. Injecting
+	 *  TermijnService is not open either: it already depends on this class.
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string {
 		$instanceId = (string)($instance['id'] ?? '');

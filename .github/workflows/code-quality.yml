@@ -305,6 +305,43 @@ jobs:
       # size. A missing bundle returns HTTP 200 `text/html` (the Nextcloud error
       # page through index.php), never a 404, so a status-code check alone would
       # read the exact failure this input was disabled for as a success.
+      #
+      # ── The Quality Report is not the E2E tier ────────────────────────────
+      #
+      # THERE IS NO `e2e-promotion-only` KEY HERE, AND ADDING ONE WOULD BE A
+      # MISTAKE. Read this before you touch the E2E inputs to make the Quality
+      # Report go green.
+      #
+      # The shared workflow runs Playwright on the promotion path and on
+      # demand, not on ordinary `development` traffic. That is
+      # ConductionNL/.github#768, merged 2026-09-13. The input is
+      # `e2e-promotion-only`, it lives in the shared workflow, and it defaults
+      # to true, so no app repo sets it. Every one of the 21 apps inherits the
+      # same behaviour.
+      #
+      # The E2E job therefore reports `skipped` on every push to
+      # `development`, and the Quality Report's test-tier census READS THAT AS
+      # A VERDICT rather than as a gap. #768 changed the census in the same
+      # commit, which is the part worth knowing: a tier that skips with NO
+      # stated reason still fails the report, so skipping without one would
+      # have moved the red instead of removing it. The `changes` job emits the
+      # reason next to the boolean, and the census prints it.
+      #
+      # Measured rather than assumed, because the census line reads like a
+      # complaint and has been mistaken for one. In dossiq run 35449832129 the
+      # Quality Report's step 13, "a test job that was ENABLED but never ran
+      # has no verdict", has conclusion `success`, and its log ends "Every
+      # enabled test job produced a verdict." That run is red on step 12,
+      # "fail when any upstream job failed", which is a different sentence
+      # about a different thing. opencatalogi run 35445823235 is green overall
+      # and prints the same Playwright census line word for word.
+      #
+      # So when the Quality Report is red, read WHICH STEP failed before
+      # changing anything here. Step 12 is an aggregator: it is naming the
+      # upstream jobs, and the fix is in those jobs. Setting
+      # `e2e-promotion-only: false` would turn all three shards back on for
+      # every `development` push, cost about 45 minutes a run, and leave the
+      # failure exactly where it was.
       enable-playwright: true
       # Double duty in the shared workflow: it is both the directory the
       # "Validate Playwright tests exist" step counts *.spec.ts in, AND the
@@ -444,7 +481,20 @@ jobs:
       # So the only way to add static-analysis debt here is to add a
       # suppression, and until now that cost nothing and showed up nowhere.
       # The number a reviewer looks at did not move. This makes it move.
-      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js", "check:debt-ratchet"]'
+      # `check:types-e2e` is `tsc --noEmit` over `tests/e2e/**`, and before it
+      # there was NO TypeScript compiler anywhere in this repository. The e2e
+      # suite is 137 .ts spec files; Playwright transpiles them and checks
+      # nothing, so a spec that calls a fixture helper with the wrong arguments
+      # is caught by OpenRegister at runtime, as a 400 that names a property
+      # rather than the call. `seedCase(api, token, { title })` produced
+      # "The required property (caseType) is missing" that way. Measured on
+      # `development` when this leg was added: 57 errors, all of them real
+      # calls, none of them a type-system quibble. The leg goes here rather
+      # than into `npm run lint` because `Vue Quality (ESLint)` is scoped to
+      # lint rules and a compiler failure buried in it reads as a style
+      # finding. It is its own job, "Frontend Check (check:types-e2e)", and it
+      # runs on every pull request.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n", "format", "check:schema-l10n", "check:l10n-js", "check:debt-ratchet", "check:types-e2e"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
       # `enable-hydra-gates` defaults to FALSE, so this tier had never executed

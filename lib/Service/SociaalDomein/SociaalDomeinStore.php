@@ -43,6 +43,7 @@ namespace OCA\Dossiq\Service\SociaalDomein;
 
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -56,6 +57,7 @@ use Throwable;
  */
 class SociaalDomeinStore {
 
+	use RefusesWhenIndeterminate;
 	use SearchesObjects;
 
 	/**
@@ -145,7 +147,7 @@ class SociaalDomeinStore {
 				['error' => $e->getMessage()]
 			);
 
-			throw RefusedException::indeterminate(
+			$this->refuseIndeterminate(
 				rule: 'sociaal-domein-unreadable',
 				sentence: 'The social domain register could not be read, so nothing is being shown rather than an empty plan.',
 				previous: $e,
@@ -180,7 +182,7 @@ class SociaalDomeinStore {
 				id: $id
 			);
 		} catch (Throwable $e) {
-			throw RefusedException::indeterminate(
+			$this->refuseIndeterminate(
 				rule: 'sociaal-domein-unreadable',
 				sentence: 'That record of the social domain register could not be read.',
 				previous: $e,
@@ -217,7 +219,7 @@ class SociaalDomeinStore {
 				uuid: $uuid
 			);
 		} catch (Throwable $e) {
-			throw RefusedException::indeterminate(
+			$this->refuseIndeterminate(
 				rule: 'sociaal-domein-not-written',
 				sentence: 'That change to the social domain register could not be saved.',
 				previous: $e,
@@ -228,9 +230,10 @@ class SociaalDomeinStore {
 			// 🔴 NOT A SILENT NULL. `saveObjectAsArray` answers null when the
 			// store hands back a shape it cannot read, and a caller that took
 			// that as "nothing to do" would report a goal it never wrote.
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'sociaal-domein-not-written',
 				sentence: 'That change to the social domain register could not be saved.',
+				status: RefusedException::STATUS_INDETERMINATE,
 			);
 		}
 
@@ -247,9 +250,10 @@ class SociaalDomeinStore {
 	private function objectService(): object {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			throw RefusedException::indeterminate(
+			throw new RefusedException(
 				rule: 'sociaal-domein-store-unavailable',
 				sentence: 'The social domain register could not be reached.',
+				status: RefusedException::STATUS_INDETERMINATE,
 			);
 		}
 

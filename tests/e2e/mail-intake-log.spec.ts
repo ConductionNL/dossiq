@@ -49,7 +49,7 @@ test.describe('a handler files a logged message on a case they pick', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	// @e2e openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md#a-wrongly-matched-message-is-moved-to-the-right-case

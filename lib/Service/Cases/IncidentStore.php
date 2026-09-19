@@ -156,7 +156,7 @@ class IncidentStore {
 	 *
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md#requirement-a-case-holds-several-dated-incidents-req-cm-53
 	 */
-	public function on(string $caseId): array {
+	public function onCase(string $caseId): array {
 		$caseId = trim($caseId);
 		if ($caseId === '') {
 			return [];
@@ -165,7 +165,7 @@ class IncidentStore {
 		return $this->record->inEventOrder(
 			incidents: $this->rows(filters: ['case' => $caseId, '_limit' => self::PAGE_SIZE]),
 		);
-	}//end on()
+	}//end onCase()
 
 	/**
 	 * The open incidents one person is working.

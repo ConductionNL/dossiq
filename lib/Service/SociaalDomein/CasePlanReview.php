@@ -100,7 +100,7 @@ class CasePlanReview {
 	 * @param string             $reviewedBy     Who reviewed it.
 	 * @param array<int, string> $changes        What changed, in sentences.
 	 * @param string             $nextReviewDate The new review date, or '' to leave it.
-	 * @param string             $on             The day of the review, or '' for today.
+	 * @param string             $onDate         The day of the review, or '' for today.
 	 *
 	 * @return array<string, mixed> The plan, with the review on it.
 	 *
@@ -113,10 +113,10 @@ class CasePlanReview {
 		string $reviewedBy,
 		array $changes,
 		string $nextReviewDate = '',
-		string $on = '',
+		string $onDate = '',
 	): array {
-		if ($on === '') {
-			$on = (new DateTimeImmutable())->format('Y-m-d');
+		if ($onDate === '') {
+			$onDate = (new DateTimeImmutable())->format('Y-m-d');
 		}
 
 		$plan = $this->store->read(schema: self::SCHEMA, id: $planId);
@@ -156,7 +156,7 @@ class CasePlanReview {
 		$reviews = $this->reviewsOf(plan: $plan);
 		$reviews[] = [
 			'reviewedBy' => trim($reviewedBy),
-			'reviewDate' => $on,
+			'reviewDate' => $onDate,
 			'changes' => $written,
 			'nextReviewDate' => $nextReviewDate,
 		];

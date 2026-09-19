@@ -82,13 +82,13 @@ class CasePlanGoals {
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
-	public function of(string $planId): array {
+	public function ofPlan(string $planId): array {
 		if (trim($planId) === '') {
 			return [];
 		}
 
 		return $this->store->rows(schema: self::SCHEMA, filters: ['plan' => $planId]);
-	}//end of()
+	}//end ofPlan()
 
 	/**
 	 * Save a goal, refusing one that names nothing measurable.
@@ -148,7 +148,7 @@ class CasePlanGoals {
 	 * @param string $goalId      The goal uuid.
 	 * @param string $state       `met`, `not-met` or `withdrawn`.
 	 * @param string $observation What was seen.
-	 * @param string $on          The day, `Y-m-d`, or '' for today.
+	 * @param string $onDate      The day, `Y-m-d`, or '' for today.
 	 *
 	 * @return array<string, mixed> The closed goal.
 	 *
@@ -156,7 +156,7 @@ class CasePlanGoals {
 	 *
 	 * @spec openspec/changes/the-social-domain-plan-and-its-grounds/specs/dossiq-sociaal-domein-jeugdwet/spec.md#requirement-a-case-plan-holds-interventions-with-a-goal-a-provider-and-dates-req-cpn-01
 	 */
-	public function close(string $goalId, string $state, string $observation, string $on = ''): array {
+	public function close(string $goalId, string $state, string $observation, string $onDate = ''): array {
 		$goal = $this->store->read(schema: self::SCHEMA, id: $goalId);
 		if ($goal === null) {
 			throw new RefusedException(
@@ -186,11 +186,11 @@ class CasePlanGoals {
 
 		$goal['state'] = $state;
 		$goal['closedObservation'] = $observation;
-		if ($on === '') {
-			$on = (new DateTimeImmutable())->format('Y-m-d');
+		if ($onDate === '') {
+			$onDate = (new DateTimeImmutable())->format('Y-m-d');
 		}
 
-		$goal['closedDate'] = $on;
+		$goal['closedDate'] = $onDate;
 
 		return $this->store->write(schema: self::SCHEMA, object: $goal);
 	}//end close()

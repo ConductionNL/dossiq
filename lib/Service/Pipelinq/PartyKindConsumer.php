@@ -176,7 +176,9 @@ class PartyKindConsumer {
 					register: self::PIPELINQ_REGISTER,
 					schema: self::ACCEPTANCE_SCHEMA,
 				);
-			} else {
+			}
+
+			if ($existing !== null) {
 				// 🔴 A RE-DECLARATION IS A PATCH, NEVER A SAVE WITH A UUID.
 				// `saveObject()` with a uuid REPLACES the stored object, so
 				// handing it these two fields would delete every other field

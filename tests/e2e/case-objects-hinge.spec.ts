@@ -39,12 +39,14 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureCaseType,
 	getRequestToken,
 	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
 	showObject,
+	updateObject,
 } from './helpers/fixtures.ts'
 import { PAGE_LOAD } from './helpers/nav.ts'
 
@@ -65,7 +67,11 @@ test.describe('Objects as the hinge between cases', () => {
 
 		// The thing the case is about: an object with a title, a status and a
 		// point, in the mock register rather than in dossiq's own.
-		const target = await createObject(request, token, REGISTER, 'object', {
+		// `createObject` already addresses the `dossiq` register, so the
+		// register is not an argument. Passing it shifted every later one:
+		// the schema became "dossiq", the payload became the schema, and the
+		// real payload was dropped.
+		const target = await createObject(request, token, 'object', {
 			name: `${RUN_PREFIX} Pand Kerkstraat 1`,
 			status: 'in gebruik',
 			'@self': {
@@ -83,13 +89,15 @@ test.describe('Objects as the hinge between cases', () => {
 		})
 		objectUuid = objectId(target)
 
+		const caseType = await ensureCaseType(request, token)
 		caseId = objectId(
 			await seedCase(request, token, {
 				title: `${RUN_PREFIX} Handhaving Kerkstraat`,
+				caseType: caseType.id,
 			}),
 		)
 
-		const link = await createObject(request, token, 'dossiq', 'caseObject', {
+		const link = await createObject(request, token, 'caseObject', {
 			case: caseId,
 			objectType: 'pand',
 			objectIdentification: '0363010000000001',
@@ -112,18 +120,16 @@ test.describe('Objects as the hinge between cases', () => {
 
 		// A lens holds the path. Renaming the object in its own register moves
 		// what the case shows, and writes nothing on the case.
-		const before = await showObject(request, 'dossiq', 'caseObject', linkId)
-		await createObject(
-			request,
-			token,
-			REGISTER,
-			'object',
-			{
-				name: `${RUN_PREFIX} Pand Kerkstraat 1a`,
-				status: 'in gebruik',
-			},
-			objectUuid,
-		)
+		const before = await showObject(request, 'caseObject', linkId)
+		// A RENAME IS AN UPDATE. This was a `createObject` with a register in
+		// front and an object id behind, which `createObject` accepts neither
+		// of: it would have created a SECOND object rather than renaming the
+		// one the case points at, and the assertion below would then compare
+		// the case against a record nothing links to.
+		await updateObject(request, token, 'object', objectUuid, {
+			name: `${RUN_PREFIX} Pand Kerkstraat 1a`,
+			status: 'in gebruik',
+		})
 
 		await page.reload(PAGE_LOAD)
 		await page.getByRole('tab', { name: 'Related' }).click()
@@ -131,12 +137,12 @@ test.describe('Objects as the hinge between cases', () => {
 			page.getByText(`${RUN_PREFIX} Pand Kerkstraat 1a`),
 		).toBeVisible()
 
-		const after = await showObject(request, 'dossiq', 'caseObject', linkId)
+		const after = await showObject(request, 'caseObject', linkId)
 		expect(after['@self'].updated).toBe(before['@self'].updated)
 	})
 
 	test('refuses a write that names a lens property', async ({ request }) => {
-		const read = await showObject(request, 'dossiq', 'caseObject', linkId)
+		const read = await showObject(request, 'caseObject', linkId)
 		const response = await request.put(
 			`${OR}/objects/dossiq/caseObject/${linkId}`,
 			{
@@ -190,18 +196,12 @@ test.describe('Objects as the hinge between cases', () => {
 	test('inherits the object geometry onto the case location, marked inherited', async ({
 		request,
 	}) => {
-		const location = await createObject(
-			request,
-			token,
-			'dossiq',
-			'case-location',
-			{
-				case: caseId,
-				label: `${RUN_PREFIX} Inspectielocatie`,
-				source: 'bag',
-				linkedObject: `${OR}/objects/${REGISTER}/object/${objectUuid}`,
-			},
-		)
+		const location = await createObject(request, token, 'case-location', {
+			case: caseId,
+			label: `${RUN_PREFIX} Inspectielocatie`,
+			source: 'bag',
+			linkedObject: `${OR}/objects/${REGISTER}/object/${objectUuid}`,
+		})
 
 		const response = await request.get(
 			`${OR}/objects/dossiq/case-location/${objectId(location)}/geo-features`,

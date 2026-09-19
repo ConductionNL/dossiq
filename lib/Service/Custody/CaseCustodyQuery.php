@@ -76,14 +76,14 @@ class CaseCustodyQuery {
 	 * the one that ended does not, so a transfer date never returns two units.
 	 *
 	 * @param string $caseId The case.
-	 * @param string $on     The moment, in anything DateTimeImmutable reads.
+	 * @param string $asOf   The moment, in anything DateTimeImmutable reads.
 	 *
 	 * @return array<string, mixed>|null The holding.
 	 *
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-case-ownership-is-a-dated-chain-of-holdings-req-cus-01
 	 */
-	public function holderOn(string $caseId, string $on): ?array {
-		$moment = $this->instant(value: $on);
+	public function holderOn(string $caseId, string $asOf): ?array {
+		$moment = $this->instant(value: $asOf);
 		if ($moment === null) {
 			return null;
 		}

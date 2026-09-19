@@ -115,7 +115,7 @@ class ContactMomentControllerAuthorizationTest extends TestCase {
 			burgerService: $this->burgerService,
 			userSession: $this->userSession,
 			citizenLookupGuard: $guard,
-			citizenLookupRecorder: $this->createMock(CitizenLookupRecorder::class),
+			lookupRecorder: $this->createMock(CitizenLookupRecorder::class),
 		);
 	}//end controllerWithGuard()
 

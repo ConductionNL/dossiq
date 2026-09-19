@@ -89,8 +89,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-1',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: 'zorgpartner-bv',
-			at: '2026-05-01',
+			receivingOrg: 'zorgpartner-bv',
+			atDate: '2026-05-01',
 		);
 
 		self::assertFalse($verdict['allowed'], 'Without a consent, the hand-off does not happen.');
@@ -115,8 +115,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-1',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: 'zorgpartner-bv',
-			at: '2026-05-01',
+			receivingOrg: 'zorgpartner-bv',
+			atDate: '2026-05-01',
 		);
 
 		self::assertTrue($verdict['allowed']);
@@ -137,8 +137,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-1',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: 'zorgpartner-bv',
-			at: '2026-05-01',
+			receivingOrg: 'zorgpartner-bv',
+			atDate: '2026-05-01',
 		);
 
 		self::assertFalse($verdict['allowed']);
@@ -159,8 +159,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-1',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: 'zorgpartner-bv',
-			at: '2026-05-01',
+			receivingOrg: 'zorgpartner-bv',
+			atDate: '2026-05-01',
 		);
 
 		self::assertFalse($verdict['allowed']);
@@ -178,8 +178,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-1',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: 'gemeente-delft',
-			at: '2026-05-01',
+			receivingOrg: 'gemeente-delft',
+			atDate: '2026-05-01',
 		);
 
 		self::assertTrue($verdict['allowed'], 'A move inside one organisation is not a disclosure.');
@@ -209,8 +209,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-2',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: 'gemeente-delft',
-			at: '2026-05-01',
+			receivingOrg: 'gemeente-delft',
+			atDate: '2026-05-01',
 		);
 
 		self::assertFalse($verdict['allowed'], 'A Jeugdwet file and a parking permit are not the same question.');
@@ -230,8 +230,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-1',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: '',
-			at: '2026-05-01',
+			receivingOrg: '',
+			atDate: '2026-05-01',
 		);
 
 		self::assertFalse($verdict['allowed']);
@@ -251,8 +251,8 @@ class CaseTransferConsentGateTest extends TestCase {
 		$verdict = $this->gate()->assess(
 			caseId: 'case-1',
 			sourceOrganisation: 'gemeente-delft',
-			receivingOrganisation: 'zorgpartner-bv',
-			at: '2026-05-01',
+			receivingOrg: 'zorgpartner-bv',
+			atDate: '2026-05-01',
 		);
 
 		self::assertFalse($verdict['allowed']);

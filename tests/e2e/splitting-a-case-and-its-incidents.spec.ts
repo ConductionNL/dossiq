@@ -28,6 +28,7 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureCaseType,
 	getRequestToken,
 	REGISTER,
 	RUN_PREFIX,
@@ -41,6 +42,14 @@ const APP_URL = `/apps/${REGISTER}/`
 let api: APIRequestContext
 let token: string
 let caseId = ''
+
+/**
+ * The case type both halves of the split are of. `case.caseType` is required,
+ * so both `seedCase` calls here answered `400 The required property (caseType)
+ * is missing` and nothing in this file ran. A split moves rows between two
+ * cases of the SAME type, so one adopted type serves both.
+ */
+let caseTypeId = ''
 
 /**
  * Record one incident on the case.
@@ -63,8 +72,10 @@ async function recordIncident(key: string, eventDate: string, recordedAt: string
 test.beforeAll(async ({ playwright, baseURL }) => {
 	api = await playwright.request.newContext({ baseURL })
 	token = await getRequestToken(api)
+	caseTypeId = (await ensureCaseType(api, token)).id
 	caseId = await seedCase(api, token, {
 		title: `${RUN_PREFIX} Adres met meldingen`,
+		caseType: caseTypeId,
 		assignee: 'admin',
 	})
 })
@@ -115,7 +126,7 @@ test.describe('a case holds several dated incidents', () => {
 			'2026-04-01T10:00:00+02:00',
 			'2026-04-01T10:00:00+02:00',
 		)
-		const before = await showObject(api, token, 'case', caseId)
+		const before = await showObject(api, 'case', caseId)
 
 		await api.put(
 			`/index.php/apps/openregister/api/objects/dossiq/incident/${incidentId}`,
@@ -125,8 +136,8 @@ test.describe('a case holds several dated incidents', () => {
 			},
 		)
 
-		const incident = await showObject(api, token, 'caseIncident', incidentId)
-		const after = await showObject(api, token, 'case', caseId)
+		const incident = await showObject(api, 'caseIncident', incidentId)
+		const after = await showObject(api, 'case', caseId)
 
 		expect(incident.assignee).toBe('inspecteur')
 		// The case is exactly where it was. This is the assertion the whole
@@ -141,7 +152,7 @@ test.describe('a case holds several dated incidents', () => {
 			'2026-05-01T10:00:00+02:00',
 		)
 
-		const incident = await showObject(api, token, 'caseIncident', incidentId)
+		const incident = await showObject(api, 'caseIncident', incidentId)
 
 		// A deelzaak has its own number, its own term and its own decision. An
 		// incident has none of those, and giving it one would start a
@@ -159,6 +170,7 @@ test.describe('a split moves rather than duplicates', () => {
 		// document, which is the state this change exists to end.
 		const other = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Tweede helft`,
+			caseType: caseTypeId,
 		})
 		const link = await createObject(api, token, 'caseDocument', {
 			case: caseId,
@@ -173,7 +185,7 @@ test.describe('a split moves rather than duplicates', () => {
 			},
 		)
 
-		const moved = await showObject(api, token, 'caseDocument', link)
+		const moved = await showObject(api, 'caseDocument', link)
 
 		expect(moved.case).toBe(other)
 		expect(moved.case).not.toBe(caseId)
@@ -190,7 +202,7 @@ test.describe('a case type bounds what a split may divide', () => {
 			splittableParts: ['parties', 'tasks'],
 		})
 
-		const stored = await showObject(api, token, 'caseType', caseType)
+		const stored = await showObject(api, 'caseType', caseType)
 
 		expect(stored.splittableParts).toEqual(['parties', 'tasks'])
 		expect(stored.splittableParts).not.toContain('documents')

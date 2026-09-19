@@ -184,7 +184,7 @@ class InterventionProviderTest extends TestCase {
 			]
 		);
 
-		$read = $service->of(planId: 'plan-1', today: '2026-06-01');
+		$read = $service->ofPlan(planId: 'plan-1', today: '2026-06-01');
 
 		self::assertCount(1, $read);
 		self::assertSame('Jeugdzorg Midden', $read[0]['providerParty']['displayName']);
@@ -211,7 +211,7 @@ class InterventionProviderTest extends TestCase {
 			]
 		);
 
-		$read = $service->of(planId: 'plan-1', today: '2026-06-01');
+		$read = $service->ofPlan(planId: 'plan-1', today: '2026-06-01');
 
 		self::assertNull($read[0]['providerParty']);
 		// The stored display name is still there, so the plan says something.
@@ -235,7 +235,7 @@ class InterventionProviderTest extends TestCase {
 			]
 		);
 
-		$read = $service->of(planId: 'plan-1', today: '2026-06-01');
+		$read = $service->ofPlan(planId: 'plan-1', today: '2026-06-01');
 
 		self::assertTrue($read[0]['overdue']);
 	}//end testAnOpenInterventionPastItsTargetDateIsOverdue()
@@ -286,7 +286,7 @@ class InterventionProviderTest extends TestCase {
 			);
 		}
 
-		$read = $service->of(planId: 'plan-1', today: '2026-06-01');
+		$read = $service->ofPlan(planId: 'plan-1', today: '2026-06-01');
 
 		self::assertCount(2, $read);
 		self::assertSame(['goal-1', 'goal-1'], array_column($read, 'goal'));

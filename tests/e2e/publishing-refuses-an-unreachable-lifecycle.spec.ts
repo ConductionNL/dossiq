@@ -33,6 +33,8 @@ import {
 	seedStateMachine,
 	updateObject,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
+import { expectRefused, REFUSED_ANONYMOUS } from './helpers/refusals.ts'
 
 /**
  * The admin-only route the Publish dialog reads its findings from.
@@ -283,14 +285,20 @@ test.describe('publishing refuses an unreachable lifecycle', () => {
 		// The least privileged principal that should be refused. The findings
 		// enumerate what is misconfigured on every case type in the install, so
 		// the route is admin-only and an anonymous caller must not read it.
-		const anonymous = await playwright.request.newContext({
-			baseURL,
-			storageState: { cookies: [], origins: [] },
-		})
+		// The empty jar was already here and was already right. What was
+		// missing is the other half: `res.ok() === false` is every 4xx AND
+		// every 5xx, so this passed on the 500 a broken route answers and on
+		// the 404 a typo in `validateUrl` answers. The refusal is now asserted
+		// by its status and by the reason it names.
+		const anonymous = await anonymousContext(playwright, String(baseURL))
 		try {
 			const res = await anonymous.get(validateUrl(m.caseTypeId))
 
-			expect(res.ok(), `anonymous read succeeded: ${res.status()}`).toBeFalsy()
+			await expectRefused(
+				res,
+				REFUSED_ANONYMOUS,
+				'an anonymous caller reading the lifecycle findings',
+			)
 		} finally {
 			await anonymous.dispose()
 		}

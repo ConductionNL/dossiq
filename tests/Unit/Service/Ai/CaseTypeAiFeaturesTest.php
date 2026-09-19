@@ -35,8 +35,8 @@ class CaseTypeAiFeaturesTest extends TestCase {
 	public function testADeclaredFeatureIsOfferedOnItsSurface(): void {
 		$caseType = ['aiFeatures' => ['summarise' => 'case', 'classify' => 'intake']];
 
-		$this->assertSame(['summarise'], $this->features->on(caseType: $caseType, surface: 'case'));
-		$this->assertSame(['classify'], $this->features->on(caseType: $caseType, surface: 'intake'));
+		$this->assertSame(['summarise'], $this->features->onSurface(caseType: $caseType, surface: 'case'));
+		$this->assertSame(['classify'], $this->features->onSurface(caseType: $caseType, surface: 'intake'));
 	}//end testADeclaredFeatureIsOfferedOnItsSurface()
 
 	/**
@@ -49,7 +49,7 @@ class CaseTypeAiFeaturesTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUndeclaredCaseTypeOffersNothingAndAsksNothing(): void {
-		$this->assertSame([], $this->features->on(caseType: [], surface: 'case'));
+		$this->assertSame([], $this->features->onSurface(caseType: [], surface: 'case'));
 		$this->assertFalse($this->features->anyDeclared(caseType: []));
 	}//end testAnUndeclaredCaseTypeOffersNothingAndAsksNothing()
 
@@ -65,8 +65,8 @@ class CaseTypeAiFeaturesTest extends TestCase {
 	public function testNoneIsDeclaredAndStillOffersNothing(): void {
 		$caseType = ['aiFeatures' => ['summarise' => 'none']];
 
-		$this->assertSame([], $this->features->on(caseType: $caseType, surface: 'case'));
-		$this->assertSame([], $this->features->on(caseType: $caseType, surface: 'none'));
+		$this->assertSame([], $this->features->onSurface(caseType: $caseType, surface: 'case'));
+		$this->assertSame([], $this->features->onSurface(caseType: $caseType, surface: 'none'));
 		$this->assertFalse($this->features->anyDeclared(caseType: $caseType), 'nothing is placed, so nothing is asked');
 		$this->assertSame(['summarise' => 'none'], $this->features->declared(caseType: $caseType));
 	}//end testNoneIsDeclaredAndStillOffersNothing()
@@ -83,7 +83,7 @@ class CaseTypeAiFeaturesTest extends TestCase {
 	public function testAnUnknownSurfaceIsDroppedRatherThanGuessed(): void {
 		$caseType = ['aiFeatures' => ['summarise' => 'sidebar', 'classify' => 'case']];
 
-		$this->assertSame(['classify'], $this->features->on(caseType: $caseType, surface: 'case'));
+		$this->assertSame(['classify'], $this->features->onSurface(caseType: $caseType, surface: 'case'));
 		$this->assertSame(['classify' => 'case'], $this->features->declared(caseType: $caseType));
 	}//end testAnUnknownSurfaceIsDroppedRatherThanGuessed()
 
@@ -99,8 +99,8 @@ class CaseTypeAiFeaturesTest extends TestCase {
 		$declaring = ['aiFeatures' => ['summarise' => 'case']];
 		$silent = ['aiFeatures' => []];
 
-		$this->assertSame(['summarise'], $this->features->on(caseType: $declaring, surface: 'case'));
-		$this->assertSame([], $this->features->on(caseType: $silent, surface: 'case'));
+		$this->assertSame(['summarise'], $this->features->onSurface(caseType: $declaring, surface: 'case'));
+		$this->assertSame([], $this->features->onSurface(caseType: $silent, surface: 'case'));
 	}//end testOneCaseTypesDeclarationIsNotAnothers()
 
 	/**

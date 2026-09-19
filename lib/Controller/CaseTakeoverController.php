@@ -185,15 +185,15 @@ class CaseTakeoverController extends Controller {
 	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md#requirement-a-colleague-may-ask-the-holder-for-a-case-req-cus-02
 	 */
 	#[NoAdminRequired]
-	public function on(string $caseId): JSONResponse {
+	public function onCase(string $caseId): JSONResponse {
 		if ($this->readerOf(caseId: $caseId) === null) {
 			return $this->notYours();
 		}
 
-		$requests = $this->takeovers->on(caseId: $caseId);
+		$requests = $this->takeovers->onCase(caseId: $caseId);
 
 		return new JSONResponse(['caseId' => $caseId, 'requests' => $requests, 'total' => count($requests)]);
-	}//end on()
+	}//end onCase()
 
 	/**
 	 * The caller, when they may read this case.
