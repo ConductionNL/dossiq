@@ -70,6 +70,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Ai\AiEndpointGuard
  * @uses \OCA\Dossiq\Service\Ai\AiModelIdentity
  * @uses \OCA\Dossiq\Service\Ai\AiPromptFactory
+ * @uses   \OCA\Dossiq\Service\Ai\AiPiiRedactor
  */
 class AiSettingsControllerShapeTest extends TestCase {
 
