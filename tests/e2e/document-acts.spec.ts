@@ -52,7 +52,7 @@ test.describe('document acts reach a surface', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#versions-opens-on-the-file-the-row-named

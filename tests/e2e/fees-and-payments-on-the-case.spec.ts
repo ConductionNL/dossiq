@@ -34,7 +34,10 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
+	createObject,
+	ensureCaseType,
 	getRequestToken,
+	objectId,
 	REGISTER,
 	RUN_PREFIX,
 	seedCase,
@@ -50,6 +53,23 @@ let token: string
 
 /** The case ids this spec seeded, for the transition probes. */
 const cases: Record<string, string> = {}
+
+/**
+ * THE TWO CASE TYPES THIS SPEC IS ABOUT, and it used to name neither.
+ *
+ * `case.caseType` is required, so every `seedCase` here answered
+ * `400 The required property (caseType) is missing` and the whole file died
+ * in its first test. The type check added in this change is what names it.
+ *
+ * They are two types and not one because the tests below mean two different
+ * things by a case type. `feeCaseType` is an instance type the fee schedule
+ * is published against, which is why it is ADOPTED rather than seeded: a type
+ * this run invents has no schedule anywhere. `freeCaseType` is seeded
+ * precisely so that nothing published a fee for it, which is the whole
+ * subject of "raises nothing at all".
+ */
+let feeCaseType = ''
+let freeCaseType = ''
 
 /**
  * Raise the leges for one case through shillinq, for the given intake channel.
@@ -75,6 +95,16 @@ async function raiseLeges(caseId: string, intakeChannel: string) {
 test.beforeAll(async ({ playwright, baseURL }) => {
 	api = await playwright.request.newContext({ baseURL })
 	token = await getRequestToken(api)
+
+	feeCaseType = (await ensureCaseType(api, token)).id
+	freeCaseType = objectId(
+		await createObject(api, token, 'caseType', {
+			title: `${RUN_PREFIX} Melding`,
+			identifier: `${RUN_PREFIX.toLowerCase()}-melding`,
+			description: 'Throwaway caseType with no published fee schedule.',
+			isDraft: false,
+		}),
+	)
 })
 
 test.afterAll(async () => {
@@ -86,10 +116,12 @@ test.describe('a case type declares its fee, per intake channel', () => {
 	test('the balie and the portal raise their own amounts', async () => {
 		cases.desk = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Balie aanvraag`,
+			caseType: feeCaseType,
 			intakeChannel: 'balie',
 		})
 		cases.web = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Portaal aanvraag`,
+			caseType: feeCaseType,
 			intakeChannel: 'website',
 		})
 
@@ -109,6 +141,7 @@ test.describe('a case type declares its fee, per intake channel', () => {
 	test('a case type with no published fee raises nothing at all', async () => {
 		const free = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Melding`,
+			caseType: freeCaseType,
 			intakeChannel: 'website',
 		})
 		const answer = await raiseLeges(free, 'web')
@@ -215,6 +248,7 @@ test.describe('the case type decides whether an unpaid case proceeds', () => {
 	test('a melding does not wait for money', async () => {
 		const melding = await seedCase(api, token, {
 			title: `${RUN_PREFIX} Melding openbare ruimte`,
+			caseType: freeCaseType,
 		})
 		const answer = await api.post(
 			`/index.php/apps/${REGISTER}/api/case/${melding}/transition`,

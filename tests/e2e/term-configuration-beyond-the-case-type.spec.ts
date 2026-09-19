@@ -45,7 +45,13 @@ test.describe('A term is more than one number on one case type', () => {
 		const token = await getRequestToken(api)
 		const caseType = await ensureCaseType(api, token)
 		caseTypeId = caseType.id
-		caseTypeSlug = String(caseType.slug ?? caseType.identifier ?? '')
+		// The slug, not the uuid: `deadlineDefinition.caseType` is declared a
+		// plain string naming the zaaktype, unlike `case.caseType`. This used
+		// to read `caseType.slug ?? caseType.identifier ?? ''` off a helper
+		// that returned neither, so every definition here was written with an
+		// empty binding and refused with "The required property (caseType) is
+		// missing".
+		caseTypeSlug = caseType.identifier
 
 		const define = async (key: string, fields: Record<string, unknown>) => {
 			const row = await createObject(api, token, 'deadlineDefinition', {

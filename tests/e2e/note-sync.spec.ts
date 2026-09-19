@@ -54,7 +54,7 @@ test.describe('a case note reaches the neighbouring register, or says why not', 
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	// @e2e openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md#a-refused-push-leaves-the-outcome-recorded-as-failed
