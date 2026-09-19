@@ -55,6 +55,10 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\RoleResolverService::resolve
  * @uses \OCA\Dossiq\Service\Routing\AreaRouting
+ * @uses \OCA\Dossiq\Service\Routing\RoleDelegationResolver
+ * @uses \OCA\Dossiq\Service\Routing\RoutingStrategyInterface
+ * @uses \OCA\Dossiq\Service\Routing\StrategyRegistry
+ * @uses \OCA\Dossiq\Service\SettingsService
  *
  * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md
  */

@@ -44,6 +44,7 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Dossiq\Service\SociaalDomein\SociaalDomeinStore
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\SettingsService
  */
 class CrossDomainExistenceTest extends TestCase {
 

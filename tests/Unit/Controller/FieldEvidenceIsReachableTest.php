@@ -71,6 +71,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\EvidenceMetadataService
  * @uses \OCA\Dossiq\Service\TranscriptionService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseAccessGuard
+ * @uses \OCA\Dossiq\Service\SettingsService
  *
  * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
  */

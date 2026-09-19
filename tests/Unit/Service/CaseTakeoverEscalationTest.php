@@ -47,6 +47,8 @@ use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
  * @covers \OCA\Dossiq\Service\Custody\CaseTakeoverRequest
  * @uses \OCA\Dossiq\Service\Custody\CaseCustodyChain
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskGateway
  *
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
  */

@@ -118,6 +118,12 @@ final class PssShareStore {
  *
  * @covers \OCA\Dossiq\Service\CaseSharingService::createPartnerShare
  * @uses \OCA\Dossiq\Service\Custody\CaseTransferConsentGate
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Sharing\CaseAccessLinkService
+ * @uses \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
+ * @uses \OCA\Dossiq\Service\Sharing\CaseLinkShares
+ * @uses \OCA\Dossiq\Service\Sharing\FederatedCaseShareService
+ * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
  *
  * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
  */

@@ -46,6 +46,10 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseTypeSlugResolver
+ * @uses \OCA\Dossiq\Service\CaseType\EngineRunMigration
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\TermijnService
  */
 class CaseRebindServiceTest extends TestCase {
 

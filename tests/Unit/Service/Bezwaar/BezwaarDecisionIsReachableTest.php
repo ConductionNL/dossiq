@@ -61,6 +61,7 @@ use ReflectionClass;
  *
  * @covers \OCA\Dossiq\Controller\BezwaarDecisionController
  * @uses \OCA\Dossiq\Service\Bezwaar\DecisionService
+ * @uses \OCA\Dossiq\Service\CaseAccessGuard
  *
  * @spec openspec/specs/bezwaar-decision/spec.md
  */

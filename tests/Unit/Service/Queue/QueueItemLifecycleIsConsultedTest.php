@@ -146,6 +146,9 @@ class LifecycleFakeSource implements QueueSource {
  * @uses \OCA\Dossiq\Service\Queue\QueueViewPreferences
  * @uses \OCA\Dossiq\Service\WorkQueueService
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Queue\QueueSource
+ * @uses \OCA\Dossiq\Service\SettingsService
+ * @uses \OCA\Dossiq\Service\Task\EngineTaskInbox
  *
  * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
  */

@@ -61,6 +61,9 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\External\Bag\PdokBagAdapter
  * @uses \OCA\Dossiq\Service\External\Bag\BagLookupResult
  * @uses \OCA\Dossiq\Service\External\Bag\BagResponseMapper
+ * @uses \OCA\Dossiq\Service\External\Bag\BagAdapterInterface
+ * @uses \OCA\Dossiq\Service\Pdok\PdokBagService
+ * @uses \OCA\Dossiq\Service\Pdok\PdokLocatieserverService
  *
  * @spec openspec/specs/pdok-integration/spec.md
  */
