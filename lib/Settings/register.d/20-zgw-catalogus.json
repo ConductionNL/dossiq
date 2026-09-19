@@ -28,7 +28,7 @@
                         "minLength": 1,
                         "maxLength": 5,
                         "pattern": "^[A-Z]{1,5}$",
-                        "title": "Domein",
+                        "title": "Domain",
                         "description": "Short domain code of the catalogue, one to five capitals. ZGW filters catalogussen on this together with rsin."
                     },
                     "rsin": {

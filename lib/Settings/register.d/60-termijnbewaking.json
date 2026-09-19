@@ -16,7 +16,7 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "x-schema-org": "schema:DefinedTerm",
         "title": "Term definition",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
@@ -204,7 +204,7 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.2.0",
+        "version": "1.3.0",
         "x-schema-org": "schema:Action",
         "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
@@ -406,7 +406,7 @@
       "termijnGebeurtenis": {
         "slug": "termijnGebeurtenis",
         "icon": "ScriptText",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Event",
         "title": "Term event",
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
@@ -489,9 +489,9 @@
       "noticeOfDefault": {
         "slug": "noticeOfDefault",
         "icon": "EmailAlert",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Message",
-        "title": "Ingebrekestelling",
+        "title": "Notice of default",
         "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
         "type": "object",
         "required": [

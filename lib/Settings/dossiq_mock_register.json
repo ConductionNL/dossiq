@@ -781,7 +781,7 @@
       "avgIncident": {
         "slug": "avgIncident",
         "icon": "AlertOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "GDPR incident",
         "description": "Datalek-incident registratie met AP-meldbeoordeling (AVG art. 33, 72-uurs meldplicht). OpenRegister-backed.",
         "type": "object",
@@ -1004,8 +1004,8 @@
       "belplan": {
         "slug": "belplan",
         "icon": "PhoneForward",
-        "version": "1.0.0",
-        "title": "Belplan",
+        "version": "1.1.0",
+        "title": "Call plan",
         "description": "Routing rules for inbound telephony, datagedreven on keuzemenu, vaardigheid matching and wachtrij-overflow.",
         "type": "object",
         "required": [
@@ -2188,47 +2188,47 @@
             "properties": {
               "givenNames": {
                 "type": "string",
-                "title": "Voornamen",
+                "title": "First names",
                 "description": "Given names of the person."
               },
               "namePrefix": {
                 "type": "string",
-                "title": "Voorvoegsel",
+                "title": "Name prefix",
                 "description": "Surname prefix (tussenvoegsel), e.g. 'de' or 'van'."
               },
               "surname": {
                 "type": "string",
-                "title": "Geslachtsnaam",
+                "title": "Last name",
                 "description": "Family name of the person."
               }
             }
           },
           "birth": {
             "type": "object",
-            "title": "Geboorte",
+            "title": "Birth",
             "description": "Birth block per Haal Centraal naming.",
             "properties": {
               "date": {
                 "type": "string",
                 "format": "date",
-                "title": "Geboortedatum",
+                "title": "Date of birth",
                 "description": "Date of birth (ISO 8601)."
               }
             }
           },
           "residence": {
             "type": "object",
-            "title": "Verblijfplaats",
+            "title": "Residence",
             "description": "Residence block per Haal Centraal naming (straat, huisnummer, postcode, woonplaats).",
             "properties": {
               "street": {
                 "type": "string",
-                "title": "Straat",
+                "title": "Street",
                 "description": "Street name of the residence."
               },
               "houseNumber": {
                 "type": "integer",
-                "title": "Huisnummer",
+                "title": "House number",
                 "description": "House number of the residence."
               },
               "postcode": {
@@ -2238,7 +2238,7 @@
               },
               "city": {
                 "type": "string",
-                "title": "Woonplaats",
+                "title": "City",
                 "description": "City/town of the residence."
               }
             }
@@ -5334,7 +5334,7 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:DefinedTerm",
         "title": "Term definition",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
@@ -5431,7 +5431,7 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Action",
         "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
@@ -6212,8 +6212,8 @@
       "doorverbinding": {
         "slug": "doorverbinding",
         "icon": "PhoneForward",
-        "version": "1.0.0",
-        "title": "Doorverbinding",
+        "version": "1.1.0",
+        "title": "Call transfer",
         "description": "A warm transfer with immutable context-overdracht snapshot to a specialist.",
         "type": "object",
         "required": [
@@ -6425,7 +6425,7 @@
       "gdprClassification": {
         "slug": "gdprClassification",
         "icon": "ShieldLockOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "GDPR classification",
         "description": "Verplicht value-type embedded in elke sociaal-domein zaak. Legt categorieën bijzondere persoonsgegevens (AVG art. 9), rechtvaardiging, bewaartermijn en toegangsbeperking vast. Zaak kan niet worden opgeslagen zonder dit blok.",
         "type": "object",
@@ -6499,7 +6499,7 @@
       "gezinsplan": {
         "slug": "gezinsplan",
         "icon": "FileTreeOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Family plan",
         "description": "Jeugdwet gezinsplan met doelen, trajecten, evaluaties en expliciete toestemming per gezinslid (16+ jeugdige tekent zelfstandig). OpenRegister-backed.",
         "type": "object",
@@ -7039,7 +7039,7 @@
       "indicatiestelling": {
         "slug": "indicatiestelling",
         "icon": "ClipboardPulseOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Needs assessment",
         "description": "WMO-assessment record met geadviseerde ondersteuningsvorm, omvang en duur. OpenRegister-backed.",
         "type": "object",
@@ -8265,7 +8265,7 @@
       "jeugdwetZaak": {
         "slug": "jeugdwetZaak",
         "icon": "HumanMaleChild",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Youth act case",
         "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
         "type": "object",
@@ -8734,12 +8734,12 @@
             "properties": {
               "streetName": {
                 "type": "string",
-                "title": "Straatnaam",
+                "title": "Street name",
                 "description": "Street name of the bezoekadres."
               },
               "houseNumber": {
                 "type": "integer",
-                "title": "Huisnummer",
+                "title": "House number",
                 "description": "House number of the bezoekadres."
               },
               "postcode": {
@@ -9354,9 +9354,9 @@
       "mandateArrangement": {
         "slug": "mandateArrangement",
         "icon": "AccountTieOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Legislation",
-        "title": "Mandaatregeling",
+        "title": "Mandate regulation",
         "description": "Defines which approval levels (niveau) may sign which decision types up to which bedrag (Awb 10:3-10:12). Point-in-time: the regeling-id + version is captured on the beschikking at akkoord.",
         "type": "object",
         "required": [
@@ -9747,7 +9747,7 @@
       "mdoOverleg": {
         "slug": "mdoOverleg",
         "icon": "AccountGroupOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Multidisciplinary consultation",
         "description": "Multidisciplinair overleg met expliciete toestemmingsregistratie per externe deelnemer; verslag wordt geanonimiseerd bij ontbrekende toestemming. OpenRegister-backed.",
         "type": "object",
@@ -10043,9 +10043,9 @@
       "noticeOfDefault": {
         "slug": "noticeOfDefault",
         "icon": "EmailAlert",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Message",
-        "title": "Ingebrekestelling",
+        "title": "Notice of default",
         "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
         "type": "object",
         "required": [
@@ -10710,7 +10710,7 @@
       "participatiewetZaak": {
         "slug": "participatiewetZaak",
         "icon": "BriefcaseAccountOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Participation act case",
         "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
         "type": "object",
@@ -11351,7 +11351,7 @@
       "portaalVerzoek": {
         "slug": "portaalVerzoek",
         "icon": "FileDocumentEditOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Action",
         "title": "Portal request",
         "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Dossiq.",
@@ -11552,7 +11552,7 @@
       "reIntegratieTraject": {
         "slug": "reIntegratieTraject",
         "icon": "StairsUp",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "title": "Return to work trajectory",
         "description": "Participatiewet re-integratietraject met instrumenten (loonkostensubsidie, scholing, jobcoaching), tegenprestatie en vrijstellingen. OpenRegister-backed.",
         "type": "object",
@@ -12002,7 +12002,7 @@
       "sociaalDomeinAuditLog": {
         "slug": "sociaalDomeinAuditLog",
         "icon": "FileEyeOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Social domain audit log",
         "description": "Immutable audit-log van elke leesactie op bijzondere persoonsgegevens, ter ondersteuning van inzageverzoeken (AVG art. 15) en FG-audits. Append-only; wordt nooit gemuteerd. V1.1 additief: een raadpleging kan over een BURGER gaan in plaats van over een zaak, dus subjectId is toegevoegd en caseId is niet langer verplicht. Elke bestaande rij blijft geldig en elke bestaande schrijver blijft werken.",
         "type": "object",
@@ -12492,8 +12492,8 @@
       "subsidieBeoordeling": {
         "slug": "subsidieBeoordeling",
         "icon": "ClipboardCheckOutline",
-        "version": "1.0.0",
-        "title": "Subsidiebeoordeling",
+        "version": "1.1.0",
+        "title": "Grant assessment",
         "description": "Assessment record for a grant application.",
         "type": "object",
         "required": [
@@ -12703,9 +12703,9 @@
       "subsidieRegeling": {
         "slug": "subsidieRegeling",
         "icon": "FileDocumentMultipleOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:GovernmentService",
-        "title": "Subsidieregeling",
+        "title": "Grant scheme",
         "description": "DEPRECATED: superseded by caseType plus its propertyDefinition records (openspec/changes/subsidieregeling-is-a-casetype). Retained for ONE release so MigrateSubsidieRegelingToCaseType can still resolve and read these objects: a schema the register no longer carries returns zero rows, and a migration that reads nothing reports the same success as one that had nothing to do. Remove once the migration has run everywhere. Policy-level definition of a grant program (AWB titel 4.2 / VNG ASV).",
         "type": "object",
         "required": [
@@ -12794,8 +12794,8 @@
       "subsidieUitvoering": {
         "slug": "subsidieUitvoering",
         "icon": "ProgressClock",
-        "version": "1.0.0",
-        "title": "Subsidie-uitvoering",
+        "version": "1.1.0",
+        "title": "Grant execution",
         "description": "Ongoing execution phase of a grant.",
         "type": "object",
         "required": [
@@ -14121,7 +14121,7 @@
       "termijnGebeurtenis": {
         "slug": "termijnGebeurtenis",
         "icon": "ScriptText",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Event",
         "title": "Term event",
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
@@ -14287,7 +14287,7 @@
       "toestemming": {
         "slug": "toestemming",
         "icon": "HandshakeOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Consent",
         "description": "Expliciete, herroepbare toestemming voor gegevensdeling met externe partijen (AVG art. 6/9). OpenRegister-backed; gedeeld door alle sociaal-domein zaaktypes.",
         "type": "object",
@@ -14421,7 +14421,7 @@
       "wmoZaak": {
         "slug": "wmoZaak",
         "icon": "HumanWheelchair",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Social support act case",
         "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
         "type": "object",

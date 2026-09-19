@@ -78,8 +78,8 @@
             "belplan": {
                 "slug": "belplan",
                 "icon": "PhoneForward",
-                "version": "1.0.0",
-                "title": "Belplan",
+                "version": "1.1.0",
+                "title": "Call plan",
                 "description": "Routing rules for inbound telephony, datagedreven on keuzemenu, vaardigheid matching and wachtrij-overflow.",
                 "type": "object",
                 "required": ["name"],
@@ -114,8 +114,8 @@
             "doorverbinding": {
                 "slug": "doorverbinding",
                 "icon": "PhoneForward",
-                "version": "1.0.0",
-                "title": "Doorverbinding",
+                "version": "1.1.0",
+                "title": "Call transfer",
                 "description": "A warm transfer with immutable context-overdracht snapshot to a specialist.",
                 "type": "object",
                 "required": ["interactionId", "fromEmployeeId"],

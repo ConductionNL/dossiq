@@ -78,7 +78,7 @@ class SensitiveFieldsDeclaredTest extends TestCase {
 	 *
 	 * @var array<string, string>
 	 */
-	private const VERSIONS = [
+	private const VERSION_FLOORS = [
 		'brpPerson' => '1.2.0',
 		'wmoZaak' => '1.1.0',
 		'jeugdwetZaak' => '1.1.0',
@@ -172,7 +172,15 @@ class SensitiveFieldsDeclaredTest extends TestCase {
 	}//end testTheMockRegisterCarriesTheSameRules()
 
 	/**
-	 * Each guarded schema's version moved, so OpenRegister imports the rules.
+	 * Each guarded schema's version is at or above the one that carried the
+	 * rules, so OpenRegister imports them.
+	 *
+	 * A FLOOR AND NOT AN EQUALITY. The version this pinned was the version the
+	 * rules landed on, and pinning it made every later edit to one of these
+	 * eight schemas fail here as well, which is a treadmill rather than a
+	 * guard: a title translated into English moved seven of them at once. The
+	 * rules themselves are asserted by the two tests above, so all this one
+	 * owes is that the number moved past the pre-guard version and never back.
 	 *
 	 * @return void
 	 *
@@ -182,9 +190,17 @@ class SensitiveFieldsDeclaredTest extends TestCase {
 		$schemas = $this->merged['components']['schemas'];
 		$mock = $this->mock['components']['schemas'];
 
-		foreach (self::VERSIONS as $schema => $version) {
-			$this->assertSame($version, (string)($schemas[$schema]['version'] ?? ''), $schema);
-			$this->assertSame($version, (string)($mock[$schema]['version'] ?? ''), 'mock ' . $schema);
+		foreach (self::VERSION_FLOORS as $schema => $floor) {
+			$this->assertGreaterThanOrEqual(
+				0,
+				version_compare((string)($schemas[$schema]['version'] ?? ''), $floor),
+				$schema . ' must be at or above ' . $floor
+			);
+			$this->assertGreaterThanOrEqual(
+				0,
+				version_compare((string)($mock[$schema]['version'] ?? ''), $floor),
+				'mock ' . $schema . ' must be at or above ' . $floor
+			);
 		}
 	}//end testEveryGuardedSchemaMovedItsVersion()
 
