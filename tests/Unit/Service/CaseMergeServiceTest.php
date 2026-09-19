@@ -21,6 +21,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseMergeService;
+use OCA\Dossiq\Service\Cases\CaseMergeRelink;
+use OCA\Dossiq\Service\Cases\CaseMergeRule;
+use OCA\Dossiq\Service\Cases\CaseMergeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -268,9 +271,17 @@ class CaseMergeServiceTest extends TestCase {
 		);
 		$settings->method('getObjectService')->willReturn($this->objects);
 
+		// REAL collaborators over the SAME settings double the assertions read
+		// through. Only the wiring lines moved when they were split out.
+		$store = new CaseMergeStore($settings, new NullLogger());
+		$rule = new CaseMergeRule(new NullLogger());
+
 		return new CaseMergeService(
 			settingsService: $settings,
 			termijnService: $this->terms,
+			store: $store,
+			rule: $rule,
+			relink: new CaseMergeRelink($rule, $store),
 			logger: new NullLogger()
 		);
 	}//end service()

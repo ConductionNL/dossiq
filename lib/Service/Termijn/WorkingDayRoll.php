@@ -30,7 +30,7 @@
  *
  * WHAT IT DOES NOT DO. It does not decide WHETHER to roll. That is
  * `deadlineDefinition.rollToWorkingDay`, read in one place,
- * {@see \OCA\Dossiq\Service\TermijnTimerService::rollEnabled()}. A definition
+ * {@see \OCA\Dossiq\Service\Termijn\TermEndRoll::rollEnabled()}. A definition
  * that does not carry the flag gets the roll, because Awt art. 1 applies by
  * law and not by configuration; the flag switches it OFF for a term the Awt
  * does not govern.
@@ -76,7 +76,7 @@ class WorkingDayRoll {
 	/*
 	 * 🔴 THIS CLASS DOES NOT READ `rollToWorkingDay`, AND THAT IS THE FIX.
 	 *
-	 * It briefly did, alongside `TermijnTimerService::rollEnabled()`, and the
+	 * It briefly did, alongside `TermEndRoll::rollEnabled()`, and the
 	 * two disagreed: an absent flag read here as OFF and there as ON, because
 	 * Awt art. 1 applies by law and not by configuration. One case could then
 	 * get two different end dates depending on which path reached it, and

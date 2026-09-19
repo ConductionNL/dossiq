@@ -67,6 +67,15 @@ final class QueueItem implements JsonSerializable {
 	 *
 	 * @return void
 	 *
+	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) This is a record, not a
+	 *  method. Every parameter is a promoted readonly property and the class has
+	 *  no behaviour beyond serialising itself, so there is no responsibility here
+	 *  to split: the ten arguments ARE the ten things a queue item is. The two
+	 *  ways to get under the limit both cost more than they save. Grouping them
+	 *  into sub-objects would invent shapes nothing else reads, and taking an
+	 *  array would drop the types and the defaults that stop a source passing the
+	 *  subject where the route goes.
+	 *
 	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
 	 */
 	public function __construct(

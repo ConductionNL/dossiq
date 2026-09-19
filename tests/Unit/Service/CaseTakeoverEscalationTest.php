@@ -34,6 +34,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Custody\CaseCustodyChain;
 use OCA\Dossiq\Service\Custody\CaseTakeoverRequest;
+use OCA\Dossiq\Service\Custody\TakeoverStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskGateway;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
@@ -207,6 +208,12 @@ class CaseTakeoverEscalationTest extends TestCase {
 			),
 			tasks: $engine,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			// A REAL store over the SAME settings double the assertions read
+			// through. Only the wiring line moved when it was split out.
+			store: new TakeoverStore(
+				$this->settings(),
+				$this->createMock(originalClassName: LoggerInterface::class),
+			),
 		);
 	}//end takeovers()
 

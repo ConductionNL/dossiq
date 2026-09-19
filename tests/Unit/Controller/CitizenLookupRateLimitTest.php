@@ -126,7 +126,13 @@ class CitizenLookupRateLimitTest extends TestCase {
 			$start = (int)$method->getStartLine();
 			$end = (int)$method->getEndLine();
 			$body = implode('', array_slice($source, $start - 1, ($end - $start) + 1));
-			if (str_contains($body, 'isCitizenLookupAllowed') === true) {
+			// THE MARKER IS THE CALL, AND THE CALL MOVED. The guard and the
+			// recorder became one collaborator, `GuardedCitizenLookup`, so the
+			// question a lookup asks is now `$this->lookups->isAllowed()`. The
+			// old marker matched nothing and the sweep derived an EMPTY list,
+			// which is a sweep that can never find the endpoint it exists to
+			// find. A sweep that matches nothing is not a sweep that passed.
+			if (str_contains($body, 'lookups->isAllowed') === true) {
 				$guarded[] = $method->getName();
 			}
 		}

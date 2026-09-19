@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
+use OCA\Dossiq\Lifecycle\CaseActionList;
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
@@ -59,6 +60,7 @@ use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
  * Maps dossiq's transitions onto OpenRegister's published actions.
  *
  * @covers \OCA\Dossiq\Lifecycle\CaseActionProvider
+ * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Service\StatusTransitionService
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway
@@ -110,12 +112,18 @@ class CaseActionProviderTest extends TestCase {
 
 		return new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->resultWriterClosingOn(finalStatuses: $finalStatuses),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $this->createMock(CasePaymentReader::class),
-			caseTypes: $this->createMock(CaseTypeReader::class),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->resultWriterClosingOn(finalStatuses: $finalStatuses),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerAnswering()
@@ -351,12 +359,18 @@ class CaseActionProviderTest extends TestCase {
 
 		$provider = new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $this->createMock(CasePaymentReader::class),
-			caseTypes: $this->createMock(CaseTypeReader::class),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -387,12 +401,18 @@ class CaseActionProviderTest extends TestCase {
 
 		$provider = new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $this->createMock(CasePaymentReader::class),
-			caseTypes: $this->createMock(CaseTypeReader::class),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -487,7 +507,6 @@ class CaseActionProviderTest extends TestCase {
 
 		$provider = new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->grantsAnswering(
 				provenance: [
 					'update' => [
@@ -500,9 +519,16 @@ class CaseActionProviderTest extends TestCase {
 				]
 			),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $this->createMock(CasePaymentReader::class),
-			caseTypes: $this->createMock(CaseTypeReader::class),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -543,16 +569,22 @@ class CaseActionProviderTest extends TestCase {
 
 		$provider = new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->grantsAnswering(
 				provenance: [
 					'update' => ['action' => 'update', 'granted' => true, 'source' => 'role', 'role' => 'behandelaar'],
 				]
 			),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $this->createMock(CasePaymentReader::class),
-			caseTypes: $this->createMock(CaseTypeReader::class),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
@@ -595,12 +627,18 @@ class CaseActionProviderTest extends TestCase {
 
 		$provider = new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
 			grants: $this->grantsAnswering(provenance: null),
 			externalHome: new ExternalHome(),
-			unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
-			payments: $this->createMock(CasePaymentReader::class),
-			caseTypes: $this->createMock(CaseTypeReader::class),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->resultWriterClosingOn(finalStatuses: []),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 

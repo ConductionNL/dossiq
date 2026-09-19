@@ -37,6 +37,7 @@ use OCA\Dossiq\Service\BurgerIdentificationService;
 use OCA\Dossiq\Service\CaseVoorbladService;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCA\Dossiq\Service\Kcc\CitizenLookupRecorder;
+use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\DoorverbindingService;
 use OCA\Dossiq\Service\QuickActionService;
@@ -114,8 +115,12 @@ class ContactMomentControllerAuthorizationTest extends TestCase {
 			transferService: $this->transferService,
 			burgerService: $this->burgerService,
 			userSession: $this->userSession,
-			citizenLookupGuard: $guard,
-			lookupRecorder: $this->createMock(CitizenLookupRecorder::class),
+			// A REAL GuardedCitizenLookup over the SAME guard double the
+			// assertions below are about. Only the wiring line moved.
+			lookups: new GuardedCitizenLookup(
+				$guard,
+				$this->createMock(CitizenLookupRecorder::class),
+			),
 		);
 	}//end controllerWithGuard()
 

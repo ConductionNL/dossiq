@@ -37,11 +37,10 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
+use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
-use OCP\ICache;
-use OCP\ICacheFactory;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -64,23 +63,11 @@ class RoleResolverService {
 	public const STRATEGY_OR_SET = 'or-set';
 
 	/**
-	 * APCu cache TTL (seconds) for resolver results.
-	 */
-	private const CACHE_TTL = 60;
-
-	/**
-	 * The local cache instance (APCu when available).
-	 *
-	 * @var ICache
-	 */
-	private ICache $cache;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param StrategyRegistry $registry Strategy registry
 	 * @param SettingsService $settingsService Bridge to ObjectService + config
-	 * @param ICacheFactory $cacheFactory Cache factory
+	 * @param RoleResolutionCache $cache What a rule last resolved to against a case
 	 * @param RoleDelegationResolver $delegation Active-window delegate substitution
 	 * @param AreaRouting $area Turns the area held on a case into the team a rule routes to
 	 * @param LoggerInterface $logger Logger
@@ -88,12 +75,11 @@ class RoleResolverService {
 	public function __construct(
 		private readonly StrategyRegistry $registry,
 		private readonly SettingsService $settingsService,
-		ICacheFactory $cacheFactory,
+		private readonly RoleResolutionCache $cache,
 		private readonly RoleDelegationResolver $delegation,
 		private readonly AreaRouting $area,
 		private readonly LoggerInterface $logger,
 	) {
-		$this->cache = $cacheFactory->createLocal(Application::APP_ID . '_routing');
 	}//end __construct()
 
 	/**
@@ -165,19 +151,9 @@ class RoleResolverService {
 		}
 
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		$cacheKey = $this->cacheKey(rule: $rule, caseId: $caseId);
-		$cacheHit = null;
-		if ($caseId !== '') {
-			$cacheHit = $this->cache->get($cacheKey);
-		}
-
-		if (is_array($cacheHit) === true) {
-			return array_values(
-				array_map(
-					static fn ($value): string => (string)$value,
-					$cacheHit,
-				)
-			);
+		$remembered = $this->cache->get(rule: $rule, caseId: $caseId);
+		if ($remembered !== null) {
+			return $remembered;
 		}
 
 		$roles = $this->loadCaseRoles(caseId: $caseId);
@@ -201,9 +177,7 @@ class RoleResolverService {
 
 		$resolved = $this->delegation->apply(participants: $primary, roles: $roles);
 
-		if ($caseId !== '') {
-			$this->cache->set($cacheKey, $resolved, self::CACHE_TTL);
-		}
+		$this->cache->remember(rule: $rule, caseId: $caseId, members: $resolved);
 
 		if ($resolved === []) {
 			$this->logger->info(
@@ -313,28 +287,8 @@ class RoleResolverService {
 	 * @spec openspec/specs/role-based-step-routing/spec.md
 	 */
 	public function invalidateCache(string $caseId): void {
-		if ($caseId === '') {
-			return;
-		}
-
-		// We cannot enumerate keys on ICache, so clear the whole local segment.
-		// Acceptable: the cache is per-app, the segment is namespaced and
-		// resolver hits are rebuilt within 60s anyway.
-		$this->cache->clear();
+		$this->cache->forget(caseId: $caseId);
 	}//end invalidateCache()
-
-	/**
-	 * Build a cache key from rule + caseId.
-	 *
-	 * @param array<string, mixed> $rule The rule
-	 * @param string $caseId The case id
-	 *
-	 * @return string
-	 */
-	private function cacheKey(array $rule, string $caseId): string {
-		$hash = md5(serialize($rule));
-		return sprintf('rrs.%s.%s', $hash, $caseId);
-	}//end cacheKey()
 
 	/**
 	 * Load the role records bound to a case via ObjectService.

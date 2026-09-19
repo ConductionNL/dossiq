@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnService::rearmForDefinition().
+ * Unit tests for TermRearm::forDefinition().
  *
  * 🔴 THE FIXTURE PAIR OF DESIGN D-2, AND IT IS THE WHOLE POINT OF THE METHOD.
  * A rebind moves no statutory clock: the case was received on a day, and the
@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Termijn\TermRearm;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +38,10 @@ use Psr\Log\NullLogger;
 /**
  * Re-arming a running term against another case type's definition.
  *
- * @covers \OCA\Dossiq\Service\TermijnService
+ * @covers \OCA\Dossiq\Service\Termijn\TermRearm
+ * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
@@ -54,11 +58,11 @@ class TermijnRearmTest extends TestCase {
 	private FakeTermijnStore $objects;
 
 	/**
-	 * The service under test.
+	 * The re-arm under test.
 	 *
-	 * @var TermijnService
+	 * @var TermRearm
 	 */
-	private TermijnService $service;
+	private TermRearm $service;
 
 	/**
 	 * A 56-day definition on the old case type and an 84-day one on the new.
@@ -85,12 +89,19 @@ class TermijnRearmTest extends TestCase {
 		// `startOf()` answers null and the successor silently starts today
 		// instead of on the day the case was received, which is a statutory
 		// date moving because a test built the service with two arguments.
-		$this->service = new TermijnService(
+		$terms = new TermijnService(
 			$settings,
 			new NullLogger(),
 			null,
 			null,
 			$this->caseDates()
+		);
+
+		$this->service = new TermRearm(
+			terms: $terms,
+			settingsService: $settings,
+			logger: new NullLogger(),
+			dates: $this->caseDates(),
 		);
 
 		$this->objects->seed('deadlineDefinition', [
@@ -156,7 +167,7 @@ class TermijnRearmTest extends TestCase {
 	public function testTheSuccessorKeepsTheStartAndCarriesTheExtension(): void {
 		$this->seedRunningTerm();
 
-		$outcome = $this->service->rearmForDefinition(
+		$outcome = $this->service->forDefinition(
 			caseId: 'case-1',
 			caseTypeSlug: 'omgevingsvergunning-uitgebreid',
 			reason: 'Verkeerd ingeboekt bij intake',
@@ -196,7 +207,7 @@ class TermijnRearmTest extends TestCase {
 	public function testTheOldTermIsClosedAndSaysWhy(): void {
 		$instanceId = $this->seedRunningTerm();
 
-		$this->service->rearmForDefinition(
+		$this->service->forDefinition(
 			caseId: 'case-1',
 			caseTypeSlug: 'omgevingsvergunning-uitgebreid',
 			reason: 'Verkeerd ingeboekt bij intake',
@@ -227,7 +238,7 @@ class TermijnRearmTest extends TestCase {
 	public function testTheCarriedExtensionIsRecordedOnTheSuccessor(): void {
 		$this->seedRunningTerm();
 
-		$this->service->rearmForDefinition(
+		$this->service->forDefinition(
 			caseId: 'case-1',
 			caseTypeSlug: 'omgevingsvergunning-uitgebreid',
 			reason: 'Verkeerd ingeboekt bij intake',
@@ -258,7 +269,7 @@ class TermijnRearmTest extends TestCase {
 	public function testATargetWithoutADefinitionKeepsTheRunningTerm(): void {
 		$instanceId = $this->seedRunningTerm();
 
-		$outcome = $this->service->rearmForDefinition(
+		$outcome = $this->service->forDefinition(
 			caseId: 'case-1',
 			caseTypeSlug: 'sloopmelding',
 			reason: 'Verkeerd ingeboekt bij intake',
@@ -276,7 +287,7 @@ class TermijnRearmTest extends TestCase {
 	 * @return void
 	 */
 	public function testACaseWithNoRunningTermIsANoOp(): void {
-		$outcome = $this->service->rearmForDefinition(
+		$outcome = $this->service->forDefinition(
 			caseId: 'case-1',
 			caseTypeSlug: 'omgevingsvergunning-uitgebreid',
 			reason: 'Verkeerd ingeboekt bij intake',

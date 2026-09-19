@@ -46,6 +46,7 @@ use OCA\Dossiq\Service\BurgerIdentificationService;
 use OCA\Dossiq\Service\CaseVoorbladService;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCA\Dossiq\Service\Kcc\CitizenLookupRecorder;
+use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\DoorverbindingService;
 use OCA\Dossiq\Service\QuickActionService;
@@ -129,8 +130,13 @@ class ContactMomentControllerContractTest extends TestCase {
 			transferService: $this->transferService,
 			burgerService: $this->createMock(BurgerIdentificationService::class),
 			userSession: $this->userSession,
-			citizenLookupGuard: $this->createMock(CitizenLookupGuard::class),
-			lookupRecorder: $this->createMock(CitizenLookupRecorder::class),
+			// A REAL GuardedCitizenLookup over the SAME two doubles. What this
+			// test observes did not move when the pair was joined: only the
+			// wiring line did.
+			lookups: new GuardedCitizenLookup(
+				$this->createMock(CitizenLookupGuard::class),
+				$this->createMock(CitizenLookupRecorder::class),
+			),
 		);
 	}//end setUp()
 

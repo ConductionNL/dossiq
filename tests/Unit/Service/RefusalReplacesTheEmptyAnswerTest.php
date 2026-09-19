@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\MandaatCheckService;
 use OCA\Dossiq\Service\RoleResolverService;
 use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
+use OCA\Dossiq\Service\Routing\RoleResolutionCache;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
 use OCA\Dossiq\Service\SettingsService;
@@ -57,6 +58,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\TenantAuthenticationService
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Routing\AreaRouting
+ * @uses \OCA\Dossiq\Service\Routing\RoleResolutionCache
  */
 class RefusalReplacesTheEmptyAnswerTest extends TestCase {
 	/**
@@ -300,7 +302,10 @@ class RefusalReplacesTheEmptyAnswerTest extends TestCase {
 		return new RoleResolverService(
 			registry: $registry,
 			settingsService: $this->findAllSettings(throws: $throws),
-			cacheFactory: $cacheFactory,
+			// A REAL cache over the SAME factory double, which answers a miss,
+			// so every resolve in this suite still runs the strategy. Only the
+			// wiring line moved when the cache was split out.
+			cache: new RoleResolutionCache($cacheFactory),
 			delegation: $delegation,
 			// The REAL rewriter, not a double: it answers conservatively for a
 			// rule with no area map, so this suite's subject is unchanged, and

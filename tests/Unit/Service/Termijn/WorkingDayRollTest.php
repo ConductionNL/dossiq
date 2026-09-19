@@ -65,7 +65,7 @@ class WorkingDayRollTest extends TestCase {
 	/**
 	 * This class no longer reads the roll flag, and must not read it again.
 	 *
-	 * It briefly did, beside `TermijnTimerService::rollEnabled()`, and the two
+	 * It briefly did, beside `TermEndRoll::rollEnabled()`, and the two
 	 * disagreed about an ABSENT flag: off here, on there, because Awt art. 1
 	 * applies by law and not by configuration. One case could then get two
 	 * different end dates depending on which path reached it, and both looked
@@ -85,7 +85,7 @@ class WorkingDayRollTest extends TestCase {
 		$this->assertDoesNotMatchRegularExpression(
 			'/\\[\\s*\x27rollToWorkingDay\x27|\\[\\s*"rollToWorkingDay"/',
 			(string)file_get_contents(__DIR__.'/../../../../lib/Service/Termijn/WorkingDayRoll.php'),
-			'the flag is read by TermijnTimerService::rollEnabled() and nowhere else'
+			'the flag is read by TermEndRoll::rollEnabled() and nowhere else'
 		);
 	}
 
