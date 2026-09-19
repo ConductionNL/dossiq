@@ -54,6 +54,7 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\Termijn\TermRearm;
 use OCP\IGroupManager;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -89,7 +90,7 @@ class CaseRebindService {
 	 * @param CaseTypeStore      $store           The app's one case type reader.
 	 * @param CaseTypeResolver   $resolver        Statuses and properties of one case type.
 	 * @param EngineRunMigration $engine          The seam that moves the flow run.
-	 * @param TermijnService     $terms           The terms, for the re-arm.
+	 * @param TermRearm          $terms           The re-arm of a case's running terms.
 	 * @param CaseTypeSlugResolver $slugs         Case type uuid to the slug term definitions are keyed by.
 	 * @param IGroupManager      $groupManager    Group membership, for D-3.
 	 * @param LoggerInterface    $logger          The logger.
@@ -99,7 +100,7 @@ class CaseRebindService {
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeResolver $resolver,
 		private readonly EngineRunMigration $engine,
-		private readonly TermijnService $terms,
+		private readonly TermRearm $terms,
 		private readonly CaseTypeSlugResolver $slugs,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
@@ -305,7 +306,7 @@ class CaseRebindService {
 		// nothing and reports a clean zero, which is the silent half of this
 		// act. {@see CaseTypeSlugResolver::toSlug()} passes a slug through
 		// unchanged and refuses to guess at a uuid it cannot resolve.
-		$terms = $this->terms->rearmForDefinition(
+		$terms = $this->terms->forDefinition(
 			caseId: $caseId,
 			caseTypeSlug: $this->slugs->toSlug(reference: $targetCaseTypeId),
 			reason: $reason

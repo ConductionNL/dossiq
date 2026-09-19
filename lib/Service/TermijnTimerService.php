@@ -39,6 +39,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Term\ThresholdShares;
+use OCA\Dossiq\Service\Termijn\TermDefinitions;
 use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCA\Dossiq\Service\Termijn\WorkingDayRoll;
 use Psr\Log\LoggerInterface;
@@ -232,13 +233,15 @@ class TermijnTimerService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
 	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) `TermijnService::countingModeOf()` is a
+	 * @SuppressWarnings(PHPMD.StaticAccess) `TermDefinitions::countingModeOf()` is a
 	 *  pure function of the array handed to it: no state, no collaborators, and
 	 *  nothing resolved implicitly, so the hidden dependency this rule exists to
 	 *  catch is not present. Reading `countingMode` here instead would put the
 	 *  rule that decides calendar against working days in two places, and the two
-	 *  disagreeing is how a ten day term silently becomes fourteen. Injecting
-	 *  TermijnService is not open either: it already depends on this class.
+	 *  disagreeing is how a ten day term silently becomes fourteen. It was
+	 *  `TermijnService::countingModeOf()` until the definitions got their own
+	 *  class; injecting either is still not open, because TermijnService already
+	 *  depends on this one.
 	 */
 	public function armBeslistermijn(array $instance, array $definitie): ?string {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -251,7 +254,7 @@ class TermijnTimerService {
 		// value counted in calendar days under `unit: businessDays` would give
 		// a ten working day term fourteen working days, which is two weeks the
 		// case is not entitled to, so the unit never moves without the value.
-		$mode = TermijnService::countingModeOf(definitie: $definitie);
+		$mode = TermDefinitions::countingModeOf(definitie: $definitie);
 		$slaUnit = WorkingDayRoll::UNIT_CALENDAR_DAYS;
 		if ($mode === WorkingDayRoll::MODE_WORKING_DAYS) {
 			$slaUnit = WorkingDayRoll::UNIT_BUSINESS_DAYS;

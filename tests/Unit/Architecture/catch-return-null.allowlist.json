@@ -1570,39 +1570,39 @@
       "reason": "`worksOn()` is declared `?bool` and its null IS the documented answer: \"no calendar is answering and the caller must degrade\". When OpenRegister's working-calendar throws, the catch logs at warning naming the refused question and returns that null, and WorkingDayCalculator then decides from dossiq's built-in holiday list. Converting this to a throw would make one calendar outage fatal to every deadline the thirteen callers compute, which is strictly worse than a term resolved from the built-in list. Asserted by WorkingDaysAreAdministeredTest::testASilentCalendarFallsBackRatherThanAnsweringNull."
     },
     {
-      "file": "lib/Service/TermijnService.php",
+      "file": "lib/Service/Termijn/TermRearm.php",
       "method": "carriedEvents",
       "occurrence": 1,
       "class": "degradation",
       "reason": "`carriedEvents()` reads the events carried on a term instance through OpenRegister. Without it the term still has its dates and its status; only its history is silent, and the panel says nothing rather than refusing to draw."
     },
     {
-      "file": "lib/Service/TermijnService.php",
-      "method": "definitionsFor",
+      "file": "lib/Service/Termijn/TermDefinitions.php",
+      "method": "allActiveFor",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`definitionsFor()` answers `return []` when the read fails; the catch logs at warning (\"TermijnService.definitionsFor lookup failed\"), so a failed read and a case type with no definition are the same answer. This is the SAME catch the entry named `getTermijnDefinitie#1` covered: `term-configuration-beyond-the-case-type` split the read out so several definitions can be resolved between, and the method moved with it. The entry moved rather than being added, so the ceiling does not rise for a catch that already existed."
+      "reason": "`allActiveFor()` answers `return []` when the read fails; the catch logs at warning (\"TermDefinitions.allActiveFor lookup failed\"), so a failed read and a case type with no definition are the same answer. It was `TermijnService::definitionsFor()` until the definitions got their own class, and `getTermijnDefinitie#1` before that. The entry moved with the catch each time rather than being added, so the ceiling does not rise for a catch that already existed."
     },
     {
-      "file": "lib/Service/TermijnService.php",
-      "method": "getTermijnInstance",
+      "file": "lib/Service/Termijn/TermInstanceStore.php",
+      "method": "read",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`getTermijnInstance()` answers `return null` when the read fails; the catch logs at warning (\"TermijnService.getTermijnInstance failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`read()` answers `return null` when the lookup fails; the catch logs at warning (\"TermInstanceStore.read failed\"), so a failed lookup and an absent record are the same answer. It was `TermijnService::getTermijnInstance()` until the term instance store was split out; the entry moved with the catch rather than being added."
     },
     {
-      "file": "lib/Service/TermijnService.php",
-      "method": "getTermijnInstanceForZaak",
+      "file": "lib/Service/Termijn/TermInstanceStore.php",
+      "method": "latestForCase",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`getTermijnInstanceForZaak()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
+      "reason": "`latestForCase()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer. It was `TermijnService::getTermijnInstanceForZaak()` until the term instance store was split out; the entry moved with the catch rather than being added."
     },
     {
-      "file": "lib/Service/TermijnService.php",
+      "file": "lib/Service/Termijn/TermInstanceStore.php",
       "method": "save",
       "occurrence": 1,
       "class": "read-miss",
-      "reason": "`save()` answers `return null` when the read fails; the catch logs at error (\"TermijnService persist failed\"), so a failed read and an absent record are the same answer."
+      "reason": "`save()` answers `return null` when the write fails; the catch logs at error (\"TermInstanceStore persist failed\"), so a refused write and an absent record are the same answer. It was `TermijnService::save()` until the term instance store was split out; the entry moved with the catch rather than being added."
     },
     {
       "file": "lib/Service/TermijnTimerService.php",

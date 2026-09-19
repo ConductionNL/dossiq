@@ -33,7 +33,7 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\TermijnService;
+use OCA\Dossiq\Service\Termijn\TermRearm;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -49,7 +49,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeSlugResolver
  * @uses \OCA\Dossiq\Service\CaseType\EngineRunMigration
  * @uses \OCA\Dossiq\Service\SettingsService
- * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Termijn\TermRearm
  */
 class CaseRebindServiceTest extends TestCase {
 
@@ -230,17 +230,17 @@ class CaseRebindServiceTest extends TestCase {
 	}//end engine()
 
 	/**
-	 * The term service, recording what it was asked to re-arm.
+	 * The re-arm, recording what it was asked to re-arm.
 	 *
-	 * @return TermijnService The double.
+	 * @return TermRearm The double.
 	 */
-	private function terms(): TermijnService {
-		$terms = $this->getMockBuilder(TermijnService::class)
+	private function terms(): TermRearm {
+		$terms = $this->getMockBuilder(TermRearm::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['rearmForDefinition'])
+			->onlyMethods(['forDefinition'])
 			->getMock();
 
-		$terms->method('rearmForDefinition')->willReturn(['rearmed' => 1, 'kept' => 0, 'note' => '']);
+		$terms->method('forDefinition')->willReturn(['rearmed' => 1, 'kept' => 0, 'note' => '']);
 
 		return $terms;
 	}//end terms()
