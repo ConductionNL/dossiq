@@ -51,6 +51,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the citizen-lookup guard on ContactMomentController.
  *
  * @covers \OCA\Dossiq\Controller\ContactMomentController
+ * @uses \OCA\Dossiq\Service\Kcc\GuardedCitizenLookup
  */
 class ContactMomentControllerAuthorizationTest extends TestCase {
 

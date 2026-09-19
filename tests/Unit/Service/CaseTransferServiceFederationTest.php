@@ -224,6 +224,7 @@ final class CtfFakeFederatedShareMapper {
  *
  * @uses \OCA\Dossiq\Service\Transfer\TransferRegisterGateway
  * @uses \OCA\Dossiq\Service\Transfer\TransferShareBroker
+ * @uses \OCA\Dossiq\Service\Transfer\FederatedIdempotency
  */
 class CaseTransferServiceFederationTest extends TestCase {
 	private CtfFakeObjectService $objects;

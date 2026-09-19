@@ -62,6 +62,7 @@ use RuntimeException;
  * Wire-contract tests for ContactMomentController.
  *
  * @covers \OCA\Dossiq\Controller\ContactMomentController
+ * @uses \OCA\Dossiq\Service\Kcc\GuardedCitizenLookup
  */
 class ContactMomentControllerContractTest extends TestCase {
 
