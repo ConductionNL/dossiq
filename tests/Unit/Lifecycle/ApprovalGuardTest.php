@@ -288,24 +288,6 @@ class ApprovalGuardTest extends TestCase {
 	}//end testAnUngatedActIsLetThroughWithoutAskingDecidiq()
 
 	/**
-	 * The write path refuses with the same verdict the menu drew.
-	 *
-	 * @return void
-	 */
-	public function testRequireApprovedThrowsTheVerdictAsARefusal(): void {
-		$gate = $this->gateOver(answer: $this->concludedAs(status: 'pending'));
-
-		try {
-			$gate->requireApproved(case: $this->caseWaiting(), act: self::ACT, userId: 'behandelaar');
-			self::fail(message: 'An act gated by an open approval must be refused on the write path too.');
-		} catch (RefusedException $refusal) {
-			self::assertSame(expected: ApprovalGate::RULE_OUTSTANDING, actual: $refusal->getRule());
-			self::assertStringContainsString(needle: 'Approval by the teamleider', haystack: $refusal->getSentence());
-			self::assertSame(expected: RefusedException::STATUS_UNPROCESSABLE, actual: $refusal->getStatus());
-		}
-	}//end testRequireApprovedThrowsTheVerdictAsARefusal()
-
-	/**
 	 * A registry with the approval evaluator wired, over a real checklist pass.
 	 *
 	 * @param ApprovalGuard|null $approvals The evaluator, or null for an old wiring.

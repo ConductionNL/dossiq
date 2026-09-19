@@ -149,52 +149,12 @@
 			</template>
 		</div>
 
-		<NcDialog
+		<MailIntakeFileOnCaseDialog
 			v-if="filing !== null"
-			:name="t('dossiq', 'File this message on a case')"
-			size="normal"
-			@closing="filing = null">
-			<div class="intake-log-file-on-case">
-				<NcNoteCard v-if="filing.case" type="info">
-					{{
-						t(
-							'dossiq',
-							'The matcher filed this message on {case}. Filing it elsewhere records that you overrode it; it changes no matching rule.',
-							{ case: filing.case },
-						)
-					}}
-				</NcNoteCard>
-
-				<NcTextField
-					:modelValue="fileOnCaseId"
-					:label="t('dossiq', 'Case')"
-					data-testid="intake-log-case-id"
-					@update:modelValue="(v) => (fileOnCaseId = v)" />
-
-				<NcTextField
-					:modelValue="fileOnCaseReason"
-					:label="t('dossiq', 'Why this case')"
-					data-testid="intake-log-file-reason"
-					@update:modelValue="(v) => (fileOnCaseReason = v)" />
-
-				<NcNoteCard v-if="fileOnCaseError" type="error">
-					{{ fileOnCaseError }}
-				</NcNoteCard>
-
-				<div class="intake-log-file-on-case__actions">
-					<NcButton
-						variant="primary"
-						:disabled="filingBusy || !fileOnCaseId || !fileOnCaseReason"
-						data-testid="intake-log-file-confirm"
-						@click="confirmFileOnCase">
-						{{ t('dossiq', 'File it here') }}
-					</NcButton>
-					<NcButton @click="filing = null">
-						{{ t('dossiq', 'Cancel') }}
-					</NcButton>
-				</div>
-			</div>
-		</NcDialog>
+			:entry="filing"
+			:entryId="entryId(filing)"
+			@close="filing = null"
+			@filed="onFiled" />
 	</NcAppContent>
 </template>
 
@@ -203,13 +163,13 @@ import { generateUrl } from '@nextcloud/router'
 import {
 	NcAppContent,
 	NcButton,
-	NcDialog,
 	NcEmptyContent,
 	NcLoadingIcon,
 	NcNoteCard,
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import MailIntakeFileOnCaseDialog from '../../dialogs/MailIntakeFileOnCaseDialog.vue'
 
 /**
  * The intake log as a surface rather than a log file.
@@ -232,8 +192,8 @@ export default {
 	name: 'MailIntakeLogView',
 	components: {
 		NcAppContent,
+		MailIntakeFileOnCaseDialog,
 		NcButton,
-		NcDialog,
 		NcEmptyContent,
 		NcLoadingIcon,
 		NcNoteCard,
@@ -250,12 +210,9 @@ export default {
 			junkRules: [],
 			sender: '',
 			outcome: '',
-			// The entry a handler is filing by hand, or null.
+			// The entry a handler is filing by hand, or null. The fields,
+			// the refusal and the write live in the dialog itself.
 			filing: null,
-			fileOnCaseId: '',
-			fileOnCaseReason: '',
-			fileOnCaseError: '',
-			filingBusy: false,
 		}
 	},
 
@@ -378,75 +335,17 @@ export default {
 		 */
 		openFileOnCase(entry) {
 			this.filing = entry
-			// PRE-FILLED WITH WHERE IT IS, not blank: the common gesture is
-			// correcting a match, and a handler who has to retype the right
-			// case beside a field that forgot the wrong one cannot see what
-			// they are changing.
-			this.fileOnCaseId = String(entry.case || '')
-			this.fileOnCaseReason = ''
-			this.fileOnCaseError = ''
 		},
 
 		/**
-		 * File the message on the case the handler picked.
-		 *
-		 * The reason is REQUIRED by the endpoint, and the button is disabled
-		 * without one, so the refusal is visible before the click rather than
-		 * after it. This records ONE person's correction of ONE message; it
-		 * changes no matching rule.
+		 * The dialog filed the message: close it and re-read the log.
 		 *
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
 		 */
-		async confirmFileOnCase() {
-			if (this.filing === null) {
-				return
-			}
-			this.filingBusy = true
-			this.fileOnCaseError = ''
-			try {
-				const response = await fetch(
-					generateUrl(
-						`/apps/dossiq/api/mail-intake/log/${this.entryId(this.filing)}/file-on-case`,
-					),
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-						},
-						body: JSON.stringify({
-							caseId: this.fileOnCaseId,
-							reason: this.fileOnCaseReason,
-						}),
-					},
-				)
-
-				// 🔴 A RESPONSE IS NOT A RESULT. The endpoint answers 403 for a
-				// case this caller may not read, and closing the dialog on it
-				// would tell the handler the message moved when it did not.
-				if (!response.ok) {
-					const body = await response.json().catch(() => ({}))
-					this.fileOnCaseError =
-						body.message === 'Not authorized'
-							? t(
-									'dossiq',
-									'You cannot read that case, so the message was not filed on it.',
-								)
-							: t(
-									'dossiq',
-									'The message was not filed. Check the case number.',
-								)
-					return
-				}
-
-				this.filing = null
-				await this.reload()
-			} catch {
-				this.fileOnCaseError = t('dossiq', 'The message was not filed.')
-			} finally {
-				this.filingBusy = false
-			}
+		async onFiled() {
+			this.filing = null
+			await this.reload()
 		},
 
 		async release(entry) {

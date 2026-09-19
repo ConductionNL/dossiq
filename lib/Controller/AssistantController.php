@@ -123,6 +123,13 @@ class AssistantController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
+	 * @no-admin-idor-exempt There is no object to scope to. This method fetches
+	 * nothing by id: the case TYPE declaration arrives in the request body and
+	 * is read locally, and what comes back from hermiq is a global residency
+	 * map that is the same for every caller. No stored case, document or party
+	 * is read, so there is no per-object owner to check and a guard here would
+	 * be checking a permission on nothing.
+	 *
 	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-provider-and-the-place-are-read-from-hermiq-never-set-in-dossiq-req-aic-02
 	 */
 	public function aiFeatures(): JSONResponse {

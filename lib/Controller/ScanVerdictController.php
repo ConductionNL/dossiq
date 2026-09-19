@@ -71,7 +71,7 @@ class ScanVerdictController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		if ($this->reachable(uid: $user->getUID(), fileId: $fileId) === false) {
+		if ($this->mayAccessFile(uid: $user->getUID(), fileId: $fileId) === false) {
 			return new JSONResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -88,7 +88,7 @@ class ScanVerdictController extends Controller {
 	 *
 	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
 	 */
-	private function reachable(string $uid, int $fileId): bool {
+	private function mayAccessFile(string $uid, int $fileId): bool {
 		if ($fileId <= 0) {
 			return false;
 		}
@@ -99,5 +99,5 @@ class ScanVerdictController extends Controller {
 		} catch (\Throwable) {
 			return false;
 		}
-	}//end reachable()
+	}//end mayAccessFile()
 }//end class

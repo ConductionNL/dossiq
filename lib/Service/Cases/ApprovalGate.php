@@ -116,10 +116,11 @@ class ApprovalGate {
 	 * The verdict on one act of one case.
 	 *
 	 * NEVER THROWS, so the menu and the write path can share it. The menu draws
-	 * a refused act disabled with `sentence`; the write path turns the same
-	 * verdict into a {@see RefusedException} through
-	 * {@see self::requireApproved()}. One decision, two renderings, and no way
-	 * for the button and the endpoint to disagree.
+	 * a refused act disabled with `sentence`; the write path is
+	 * {@see \OCA\Dossiq\Service\Transitions\ApprovalGuard::evaluate()}, which
+	 * turns this same verdict into a failing `GuardResult` and is registered in
+	 * `GuardRegistry` under the approval-gate key. One decision, two renderings,
+	 * and no way for the button and the endpoint to disagree.
 	 *
 	 * @param array<string, mixed> $case   The stored case payload.
 	 * @param string               $act    The act being asked about.
@@ -162,32 +163,6 @@ class ApprovalGate {
 
 		return $this->verdictFromDecidiq(gate: $gate, reference: $reference, userId: $userId);
 	}//end verdictFor()
-
-	/**
-	 * Refuse a gated act whose approval is not granted.
-	 *
-	 * @param array<string, mixed> $case   The stored case payload.
-	 * @param string               $act    The act being performed.
-	 * @param string               $userId Who is performing it.
-	 *
-	 * @return void
-	 *
-	 * @throws RefusedException When the approval is outstanding, refused or unreadable.
-	 *
-	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md#requirement-a-case-is-gated-by-the-approval-outcome-decidiq-walks-req-dec-01
-	 */
-	public function requireApproved(array $case, string $act, string $userId): void {
-		$verdict = $this->verdictFor(case: $case, act: $act, userId: $userId);
-		if ($verdict['allowed'] === true) {
-			return;
-		}
-
-		throw new RefusedException(
-			rule: $verdict['rule'],
-			sentence: $verdict['sentence'],
-			status: $verdict['status'],
-		);
-	}//end requireApproved()
 
 	/**
 	 * What this case is waiting for, and on whom.
