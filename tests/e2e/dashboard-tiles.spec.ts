@@ -667,7 +667,7 @@ test.describe('Dashboard tiles', () => {
 		// assertion nobody has watched fail is decoration, and the title clause
 		// catches this break and that one both.
 		//
-		// @e2e openspec/specs/dashboard/spec.md#dash-005d-my-work-item-click-navigates-to-detail
+		// @e2e openspec/specs/dashboard/spec.md#scenario-dash-005d-my-work-item-click-navigates-to-detail
 		test('clicking a My work row opens that task on the task detail page', async ({
 			page,
 		}) => {

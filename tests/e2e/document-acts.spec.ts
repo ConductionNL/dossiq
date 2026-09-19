@@ -75,7 +75,7 @@ test.describe('document acts reach a surface', () => {
 		expect(fileName.length).toBeGreaterThan(0)
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#two-files-are-marked-final-in-one-act
+	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#scenario-a-file-is-marked-final-from-its-row
 	test('a file is marked final from its row', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page.getByRole('tab', { name: /Files/ }).first().click()

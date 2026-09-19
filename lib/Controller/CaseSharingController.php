@@ -149,7 +149,7 @@ class CaseSharingController extends Controller {
 	 *
 	 * @return JSONResponse The share, or the refusal.
 	 *
-	 * @spec openspec/specs/case-sharing/spec.md
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-partner-organisation-handover-is-out-of-scope-for-the-shares-leaf
 	 */
 	private function partnerShare(string $caseId, string $permissionLevel, string $createdBy): JSONResponse {
 		$partnerId = $this->request->getParam('partnerId');

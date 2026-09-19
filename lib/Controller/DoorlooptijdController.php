@@ -112,7 +112,7 @@ class DoorlooptijdController extends Controller {
 	 *
 	 * @return JSONResponse|null The refusal, or null.
 	 *
-	 * @spec openspec/specs/reporting-and-metrics/spec.md
+	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
 	 */
 	private function badRequest(mixed $caseType, mixed $period, mixed $atRiskRaw): ?JSONResponse {
 		if ($caseType !== null && is_string($caseType) === false) {
