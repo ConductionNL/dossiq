@@ -143,6 +143,7 @@ import Gauge from 'vue-material-design-icons/Gauge.vue'
 import GaugeFull from 'vue-material-design-icons/GaugeFull.vue'
 import Gavel from 'vue-material-design-icons/Gavel.vue'
 import GestureTapButton from 'vue-material-design-icons/GestureTapButton.vue'
+import HandBackRightOutline from 'vue-material-design-icons/HandBackRightOutline.vue'
 import HandHeartOutline from 'vue-material-design-icons/HandHeartOutline.vue'
 import HandshakeOutline from 'vue-material-design-icons/HandshakeOutline.vue'
 import Headset from 'vue-material-design-icons/Headset.vue'
@@ -211,6 +212,7 @@ import TableLarge from 'vue-material-design-icons/TableLarge.vue'
 import TableSettings from 'vue-material-design-icons/TableSettings.vue'
 import TagMultiple from 'vue-material-design-icons/TagMultiple.vue'
 import TagOutline from 'vue-material-design-icons/TagOutline.vue'
+import TargetVariant from 'vue-material-design-icons/TargetVariant.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
 import TimerSandFull from 'vue-material-design-icons/TimerSandFull.vue'
@@ -354,6 +356,7 @@ export default {
 	GaugeFull,
 	Gavel,
 	GestureTapButton,
+	HandBackRightOutline,
 	HandHeartOutline,
 	HandshakeOutline,
 	Headset,
@@ -422,6 +425,7 @@ export default {
 	TableSettings,
 	TagMultiple,
 	TagOutline,
+	TargetVariant,
 	Timeline,
 	TimerOutline,
 	TimerSandFull,

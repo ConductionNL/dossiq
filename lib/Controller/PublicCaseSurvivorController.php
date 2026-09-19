@@ -84,20 +84,21 @@ class PublicCaseSurvivorController extends Controller {
 	/**
 	 * The surviving case behind this token, when the case it names was merged.
 	 *
+	 * The ceiling is the control that matters here. The only thing an
+	 * anonymous caller brings is the token, so without a cap the token space
+	 * is enumerable at whatever rate the network allows. Ten a minute per
+	 * address leaves a real "track your case" link comfortable and makes
+	 * guessing pointless. Brute-force protection is deliberately NOT used:
+	 * this endpoint answers the same uniform 404 to a VALID token naming an
+	 * unmerged case, so throttling on 404 would punish legitimate callers
+	 * for a correct answer.
+	 *
 	 * @param string $token The public "track your case" token.
 	 *
 	 * @return JSONResponse The survivor's public projection, or a uniform 404.
 	 *
 	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
 	 */
-	// The ceiling is the control that matters here. The only thing an
-	// anonymous caller brings is the token, so without a cap the token space
-	// is enumerable at whatever rate the network allows. Ten a minute per
-	// address leaves a real "track your case" link comfortable and makes
-	// guessing pointless. Brute-force protection is deliberately NOT used:
-	// this endpoint answers the same uniform 404 to a VALID token naming an
-	// unmerged case, so throttling on 404 would punish legitimate callers
-	// for a correct answer.
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 10, period: 60)]
