@@ -33,8 +33,10 @@
 
 import type { APIRequestContext } from '@playwright/test'
 
-import { expect, request as playwrightRequest, test } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { getRequestToken, REGISTER, RUN_PREFIX } from './helpers/fixtures.ts'
+import { unprivilegedContext } from './helpers/principals.ts'
+import { expectRefused, NO_PERMISSION } from './helpers/refusals.ts'
 
 /** The app's own API, which is the door a handler's action goes through. */
 const APP_API = `/index.php/apps/${REGISTER}`
@@ -97,20 +99,25 @@ test.describe('The working week is the administered one', () => {
 
 	// @e2e openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md#every-working-day-answer-reads-the-administered-calendar
 	test('an ordinary user cannot change the calendar everyone is counted against', async ({
+		playwright,
 		baseURL,
 	}) => {
 		// The least privileged principal that should be refused. The calendar
 		// decides statutory deadlines for every case on the instance, and the
 		// working-calendar schema grants create and update to admin alone. A
 		// permission asserted only as an admin success is not asserted.
-		const asUser = await playwrightRequest.newContext({
-			baseURL,
-			httpCredentials: {
-				username: process.env.NC_USER ?? 'user1',
-				password: process.env.NC_USER_PASSWORD ?? 'user1',
-			},
-			extraHTTPHeaders: { 'OCS-APIRequest': 'true' },
-		})
+		//
+		// 🔴 AND IT HAS TO BE AN ACCOUNT THAT EXISTS. This reached for
+		// `NC_USER ?? 'user1'`, and `user1` is nobody: `ci-seed.sh` provisions
+		// `E2E_USER_NAME` (default `e2euser`) and then refuses to continue
+		// unless that account holds no admin group. So the 4xx asserted below
+		// was "no such user", which reads exactly the same as the "this user
+		// may not" it was meant to prove, and would have read the same with no
+		// permission check at all. `unprivilegedContext` is the seeded
+		// ordinary account, and it also brings an EMPTY cookie jar: without
+		// one the admin's captured session rides along beside the basic
+		// credentials and Nextcloud answers from the session.
+		const asUser = await unprivilegedContext(playwright, String(baseURL))
 
 		const refused = await asUser.post(
 			'/index.php/apps/openregister/api/objects/flow-timers/working-calendar',
@@ -125,10 +132,17 @@ test.describe('The working week is the administered one', () => {
 			},
 		)
 
-		expect(
-			refused.status(),
-			'an ordinary user writing a working calendar would move every deadline on the instance',
-		).toBeGreaterThanOrEqual(400)
+		// THE MEASURED ANSWER. OpenRegister refuses this write with
+		// `403 {"error":"User '<uid>' does not have permission to 'create'
+		// objects in schema 'Working calendar'"}`, and the assertion names
+		// both the status and the reason. `>= 400` also passes on the 401 a
+		// missing account answers, which is the failure this test was
+		// actually reporting.
+		await expectRefused(
+			refused,
+			NO_PERMISSION,
+			'an ordinary user writing the working calendar every deadline is counted against',
+		)
 
 		await asUser.dispose()
 	})

@@ -43,6 +43,7 @@ import {
 	RUN_PREFIX,
 	seedCase,
 } from './helpers/fixtures.ts'
+import { anonymousContext } from './helpers/principals.ts'
 
 /** dossiq's own share surface, where a link is minted. */
 const SHARES = '/index.php/apps/dossiq/api/shares'
@@ -93,7 +94,13 @@ test.describe('A case share is an access link', () => {
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
-		anonymous = await playwright.request.newContext({ baseURL })
+		// 🔴 A REAL OUTSIDER, OR THE 200 BELOW PROVES NOTHING. This was the
+		// same `newContext({ baseURL })` call as the line above, which
+		// inherits the admin's captured `storageState`, so "the outsider can
+		// open the link" was the admin opening a case they could already
+		// read, and "the read-only link refuses a comment" was checked
+		// against a principal the link never governs.
+		anonymous = await anonymousContext(playwright, String(baseURL))
 		token = await getRequestToken(api)
 		const caseType = await ensureCaseType(api, token)
 		const seeded = await seedCase(api, token, {
@@ -239,5 +246,11 @@ test.describe('A case share is an access link', () => {
 		})
 
 		expect(refused.status(), await refused.text()).toBe(403)
+
+		// AND THE COMMENT DID NOT LAND. A 403 written after the write is a
+		// refusal in name only, and the status alone cannot tell the two
+		// apart.
+		const reread = await anonymous.get(`${PUBLIC_LINKS}/${anchor}`)
+		expect(await reread.text()).not.toContain('should not land')
 	})
 })
