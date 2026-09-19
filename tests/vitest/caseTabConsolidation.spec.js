@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The case page holds ELEVEN tabs, and keeps holding eleven.
+ * The case page holds THIRTEEN tabs, and keeps holding thirteen.
  *
  * The strip grew from ten tabs to fourteen over one programme while the app
  * menu held at four, because the menu had a stated ceiling and the strip had
@@ -74,6 +74,7 @@ const tabs = () => widget('case-panels').content.tabs
  *                       left the SIDEBAR
  *   9 -> 10 2026-09-15  the Archiving tab arrived with #2850
  *   10 -> 11 2026-09-16 the Timeline tab arrived with #2846
+ *   11 -> 13 2026-09-19 Custody arrived with #2940 and Knowledge with #2995
  *
  * The second move is not the growth this ceiling guards against. Nothing was
  * added to the page: the sidebar lost exactly the three tabs the strip gained
@@ -89,10 +90,23 @@ const tabs = () => widget('case-panels').content.tabs
  * came in with this file left at nine, so the strip and the ceiling disagreed
  * and the suite was red on development until these lines were edited. That is
  * the mechanism working, two PRs late.
+ *
+ * The fifth move is growth too, and Ruben took it on 2026-09-19 with both
+ * tabs already on the strip and this file still red at eleven. Custody is who
+ * has held the case and who is asking for it, which no other tab answers: the
+ * timeline says what changed, not who was accountable while it changed.
+ * Knowledge is the work instruction for this kind of case, drawn from the
+ * collectives leaf, and it belongs beside the case rather than in a second
+ * app a handler has to go and find. Neither folds into an existing tab
+ * without burying it, so the ceiling moves to thirteen instead.
+ *
+ * Thirteen is a decision, not a surrender. A fourteenth tab still reddens
+ * this line, and whoever wants it writes down here what it answers that the
+ * thirteen do not. That is the whole job of the number.
  */
-const TAB_CEILING = 11
+const TAB_CEILING = 13
 
-/** The eleven labels, in the order a handler reads them. */
+/** The thirteen labels, in the order a handler reads them. */
 const EXPECTED_TABS = [
 	['case-data-panel', 'Data'],
 	['case-files', 'Files'],
@@ -104,7 +118,9 @@ const EXPECTED_TABS = [
 	['case-work-panel', 'Work'],
 	['case-decisions-panel', 'Decisions'],
 	['case-related-panel', 'Related'],
+	['case-custody-panel', 'Custody'],
 	['case-archival-panel', 'Archiving'],
+	['case-knowledge-panel', 'Knowledge'],
 ]
 
 /**
@@ -162,7 +178,7 @@ describe('the case page tab strip', () => {
 		expect(tabs()).toHaveLength(TAB_CEILING)
 	})
 
-	it('names the eleven tabs, in order', () => {
+	it('names the thirteen tabs, in order', () => {
 		expect(tabs().map((tab) => [tab.widgetId, tab.label])).toEqual(EXPECTED_TABS)
 	})
 
@@ -257,11 +273,19 @@ describe('the surfaces that read in exactly one chrome', () => {
 		// end, the internal target and the phase term. It has no strip
 		// counterpart either. The strip says what happened; this says what is
 		// still owed and by when.
+		//
+		// `avg` arrived with data-subject-requests-drive-the-platform: what
+		// the platform reported about this case's data subject, and the acts
+		// dossiq drives on it. It is declared on every case and reads its own
+		// empty state when the case is not a data subject request, so it has
+		// no strip counterpart and duplicates nothing. Saying so here is the
+		// price of the tab, and it is the price on purpose.
 		expect(caseDetail().sidebar.tabs.map((tab) => tab.id)).toEqual([
 			'audit',
 			'terms',
 			'access',
 			'sharing',
+			'avg',
 			'tags',
 		])
 	})
@@ -311,13 +335,30 @@ describe('the container type this change depends on', () => {
 			// widget inside a tab panel, so the tab drew nothing while this
 			// test stayed green. It is keyed by TYPE now, like the five above.
 			'case-archival-panel': 'case-archival-pane',
+			// Custody arrived with #2940: who has held this case, and who is
+			// asking for it. Keyed by TYPE for the same reason as the six
+			// above, and a custom pane rather than a data widget because a
+			// holding is only meaningful as a JOIN between the moment one
+			// ended and the moment the next began; a row of values per
+			// holding would look complete on a chain with a gap in it.
+			'case-custody-panel': 'case-custody-pane',
+		}
+
+		// The tabs the LIBRARY draws from another app's leaf. Files was the
+		// first and Knowledge (#2995, the collectives leaf) the second, so the
+		// exception is a map rather than one id: each has to name the leaf it
+		// draws, because an `integration` widget with no `integrationId`
+		// renders an empty tab and logs nothing.
+		const LEAVES = {
+			'case-files': 'files',
+			'case-knowledge-panel': 'collectives',
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 
 		for (const { widgetId } of tabs()) {
-			if (widgetId === 'case-files') {
+			if (LEAVES[widgetId]) {
 				expect(widget(widgetId).type).toBe('integration')
-				expect(widget(widgetId).integrationId).toBe('files')
+				expect(widget(widgetId).integrationId).toBe(LEAVES[widgetId])
 				continue
 			}
 			if (PANES[widgetId]) {

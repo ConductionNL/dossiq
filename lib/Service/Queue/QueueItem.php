@@ -55,6 +55,15 @@ final class QueueItem implements JsonSerializable {
 	 *                                 Last in the list on purpose: every existing caller keeps
 	 *                                 working unchanged, and only a source that knows the answer
 	 *                                 passes one.
+	 * @param array       $subject     The subject row as its mechanism answers it NOW, or empty
+	 *                                 when the source did not read one. `QueueItemLifecycle` needs
+	 *                                 it to say whether the item still stands, and it is carried on
+	 *                                 the item rather than fetched again because the source has just
+	 *                                 read it: fetching it twice would double the reads behind every
+	 *                                 queue and could disagree with itself between the two.
+	 *                                 EMPTY IS NOT "GONE". A source that passes nothing is saying it
+	 *                                 does not know, and the queue leaves its items alone; only a
+	 *                                 source that DID read the subject can have its items dropped.
 	 *
 	 * @return void
 	 *
@@ -70,6 +79,7 @@ final class QueueItem implements JsonSerializable {
 		public readonly ?string $coveredFor = null,
 		public readonly array $route = [],
 		public readonly array $waiting = [],
+		public readonly array $subject = [],
 	) {
 	}//end __construct()
 

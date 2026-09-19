@@ -390,13 +390,6 @@ class DsoControllerTest extends TestCase {
 	private SettingsService $settingsService;
 
 	/**
-	 * The DsoLvAuthService mock.
-	 *
-	 * @var \OCA\Dossiq\Service\DsoLvAuthService|MockObject
-	 */
-	private \OCA\Dossiq\Service\DsoLvAuthService $lvAuthService;
-
-	/**
 	 * The IEventDispatcher mock.
 	 *
 	 * @var IEventDispatcher|MockObject
@@ -431,7 +424,6 @@ class DsoControllerTest extends TestCase {
 		$this->samenwerkService = $this->createMock(SamenwerkverzoekService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->settingsService = $this->createMock(SettingsService::class);
-		$this->lvAuthService = $this->createMock(\OCA\Dossiq\Service\DsoLvAuthService::class);
 		$this->eventDispatcher = $this->createMock(IEventDispatcher::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 

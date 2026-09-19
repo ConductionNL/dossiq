@@ -71,6 +71,15 @@ class SchemaSlugMap {
 		'caseProperty' => 'case_property_schema',
 		'caseDocument' => 'case_document_schema',
 		'caseObject' => 'case_object_schema',
+		// One dated event inside a case, with its own owner
+		// (splitting-a-case-and-its-incidents REQ-CM-53). A schema with no key
+		// here resolves to nothing and every read of it answers an empty list,
+		// which reads exactly like a case with no incidents.
+		//
+		// QUALIFIED ON PURPOSE. Slugs are global on a shared OpenRegister and
+		// hermiq declares the bare `incident` for an AI-agent lifecycle
+		// record. Two apps on one word means either definition can answer.
+		'caseIncident' => 'case_incident_schema',
 		'customerContact' => 'customer_contact_schema',
 		// One row per message the mailbox processed (inbound-mail-filters).
 		'mailIntakeEntry' => 'mail_intake_entry_schema',
@@ -104,6 +113,17 @@ class SchemaSlugMap {
 		'partnerOrganization' => 'partner_organization_schema',
 		'sharePermissionLevel' => 'share_permission_level_schema',
 		'casetransfer' => 'case_transfer_schema',
+		// The dated chain of holdings, and the pull that asks for one. Both are
+		// custody-and-handover-of-a-case: the chain answers who held the case
+		// in March, which the transfer record cannot, and the takeover is the
+		// request the holder answers.
+		'caseCustody' => 'case_custody_schema',
+		'caseTakeover' => 'case_takeover_schema',
+		// The sociaal-domein consent. Declared in `register.d/50-sociaal-domein.json`
+		// since that fragment shipped and never mapped, so no service could
+		// resolve it and the hand-off gate had nothing to read. Mapping it is
+		// what turns a declared record into an enforced precondition (D-5).
+		'toestemming' => 'consent_schema',
 		'caseFederatedShare' => 'case_federated_share_schema',
 		'caseFederatedActivity' => 'case_federated_activity_schema',
 		'automaticAction' => 'automatic_action_schema',
@@ -217,6 +237,14 @@ class SchemaSlugMap {
 		// (mandaat-matrix) and was never mapped, so no service could resolve
 		// it; the domain copy is the first caller that needs to.
 		'caseTypeGroup' => 'case_type_group_schema',
+		// Mobiel-inspectie-offline. NEITHER WAS MAPPED, AND THAT ALONE MADE
+		// the capability unreachable: `TranscriptionService::persist()` reads
+		// `field_evidence_schema`, a key nothing configured, and returned the
+		// record unchanged rather than writing it. A reconciler that is never
+		// asked for a slug leaves its key empty, and an empty key is read here
+		// as "not configured on this instance", which is silence.
+		'fieldInspection' => 'field_inspection_schema',
+		'fieldEvidence' => 'field_evidence_schema',
 	];
 
 	/**
@@ -273,6 +301,24 @@ class SchemaSlugMap {
 		// same reason `x-openregister-read-state` is: an absent block is not
 		// an inert default, it is a different answer.
 		'x-openregister-dedup',
+		// What happens when two cases become one. OpenRegister's MergeService
+		// reads this block off `Schema::getConfiguration()`, and an absent
+		// block is not an inert default: the reversal window falls back to the
+		// service default, so a merge an instance believes it can still undo
+		// may already be past undoing. Same reason as the dedup key above.
+		'x-openregister-merge',
+		// Which edge a grant travels down. OpenRegister resolves an inherited
+		// grant from `Schema::getConfiguration()` and from nowhere else, and
+		// an unknown configuration key is DROPPED on import in silence, so an
+		// instance that never received this block answers that a deelzaak is
+		// closed to somebody who holds the parent. That failure is invisible
+		// from both ends: dossiq declared the edge, OpenRegister reports no
+		// inheritance, and neither says the declaration never arrived. It is
+		// listed here for the same reason `x-openregister-dedup` is, with one
+		// difference worth stating: a dropped dedup block gives a wrong
+		// answer about duplicates, and a dropped hierarchy block gives a wrong
+		// answer about who may open a dossier.
+		'x-openregister-hierarchy',
 	];
 
 	/**

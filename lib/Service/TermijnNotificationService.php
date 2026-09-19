@@ -32,10 +32,12 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Burger notification template renderer + dispatcher.
@@ -51,6 +53,12 @@ class TermijnNotificationService {
 		'hersteltermijn-request',
 		'hersteltermijn-reminder',
 		'doorzending',
+		// The aanvraag was judged niet-ontvankelijk at intake and the case
+		// closed on that result. The
+		// applicant is told through the case type's declared moment, so this
+		// is a template beside the others rather than a message a service
+		// writes for itself.
+		'niet-ontvankelijk',
 	];
 
 	/**
@@ -241,6 +249,11 @@ class TermijnNotificationService {
 				$subject = $rendered['subject'];
 				$body = $rendered['body'];
 				break;
+			case 'niet-ontvankelijk':
+				$rendered = $this->inadmissible(case: $case, locale: $locale, context: $context);
+				$subject = $rendered['subject'];
+				$body = $rendered['body'];
+				break;
 			case 'dwangsom-payment':
 				$amountCents = (int)($context['bedragCents'] ?? 0);
 				$amountEur = number_format($amountCents / 100, 2, ',', '.');
@@ -397,6 +410,8 @@ class TermijnNotificationService {
 			return $this->acknowledgementWaiting(english: $english);
 		}
 
+		$start = $this->termStartLines(context: $context, english: false);
+
 		if ($english === true) {
 			return $this->acknowledgementInEnglish(
 				case: $case,
@@ -404,6 +419,7 @@ class TermijnNotificationService {
 				hasTerm: $hasTerm,
 				subjectOf: $subjectOf,
 				contact: $contact,
+				start: $this->termStartLines(context: $context, english: true),
 			);
 		}
 
@@ -428,12 +444,81 @@ class TermijnNotificationService {
 			'body' => "Beste aanvrager,\n\n"
 				. 'Wij hebben uw aanvraag' . $waarover
 				. ' ontvangen en geregistreerd onder kenmerk ' . $case . ".\n"
+				. $start
 				. $termijn
 				. "U volgt deze zaak via het burgerportaal.\n"
 				. $waar
 				. "\nMet vriendelijke groet",
 		];
 	}//end acknowledgement()
+
+	/**
+	 * When the request arrived, and when its clock started.
+	 *
+	 * 🔴 THE EXPLANATION APPEARS ONLY WHEN IT IS NEEDED (D-4). A request filed
+	 * on a Tuesday morning gets three dates and no sentence, because there is
+	 * nothing to explain: the clock started when they pressed send. A request
+	 * filed on a Sunday gets the same three plus one sentence. An explanation
+	 * on every confirmation teaches people to stop reading them, and then the
+	 * one that mattered goes unread too.
+	 *
+	 * 🔴 AN UNSTAMPED CASE GETS NO LINES AT ALL, rather than a line saying the
+	 * term starts today. The stamp is absent exactly when the working calendar
+	 * could not be reached, and inventing a start there would put a date in
+	 * front of a citizen that the term does not count from.
+	 *
+	 * @param array<string, mixed> $context The render context.
+	 * @param bool                 $english Whether the reader asked for English.
+	 *
+	 * @return string The lines, ending in a newline, or an empty string.
+	 *
+	 * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md#requirement-the-intake-confirmation-says-when-the-clock-starts-req-term-041
+	 */
+	private function termStartLines(array $context, bool $english): string {
+		$received = $this->dayOf(value: (string)($context['receivedAt'] ?? ''));
+		$starts = $this->dayOf(value: (string)($context['termStartsAt'] ?? ''));
+		if ($received === '' || $starts === '') {
+			return '';
+		}
+
+		$outside = (($context['receivedOutsideWorkingHours'] ?? false) === true);
+
+		if ($english === true) {
+			$lines = 'We received it on ' . $received . ' and the decision period starts on ' . $starts . ".\n";
+			if ($outside === true) {
+				$lines .= "Your request arrived when we were closed, so the period starts on the first working day after it.\n";
+			}
+
+			return $lines;
+		}
+
+		$lines = 'Wij hebben uw aanvraag ontvangen op ' . $received . ' en de beslistermijn start op ' . $starts . ".\n";
+		if ($outside === true) {
+			$lines .= "Uw aanvraag kwam binnen buiten onze openingstijden, daarom start de termijn op de eerstvolgende werkdag.\n";
+		}
+
+		return $lines;
+	}//end termStartLines()
+
+	/**
+	 * One stored moment as a day a person reads.
+	 *
+	 * @param string $value The stored ISO 8601 moment.
+	 *
+	 * @return string The day, or an empty string when there is none to read.
+	 */
+	private function dayOf(string $value): string {
+		$value = trim($value);
+		if ($value === '') {
+			return '';
+		}
+
+		try {
+			return (new DateTimeImmutable($value))->format('d-m-Y');
+		} catch (Throwable $e) {
+			return '';
+		}
+	}//end dayOf()
 
 	/**
 	 * The doorzending, Awb 2:3.
@@ -484,6 +569,56 @@ class TermijnNotificationService {
 	}//end doorzending()
 
 	/**
+	 * The letter saying the aanvraag was not taken into consideration.
+	 *
+	 * 🔴 IT SAYS WHY AND IT SAYS WHAT NOW. A niet-ontvankelijkverklaring is a
+	 * besluit, so the applicant may object to it. A letter that only announces
+	 * the verdict leaves them with no idea that they can, which is how a
+	 * bezwaartermijn runs out on somebody who would have used it.
+	 *
+	 * NOT RUN THROUGH `IL10N`, for the reason the acknowledgement records:
+	 * `IL10N` serves the interface language of the signed-in reader, and the
+	 * reader here is a citizen with no Nextcloud session.
+	 *
+	 * @param string               $case    The case kenmerk.
+	 * @param string               $locale  The declared language.
+	 * @param array<string, mixed> $context The reason and the remedy, when there is one.
+	 *
+	 * @return array{subject:string, body:string} The rendered message.
+	 *
+	 * @spec openspec/changes/decision-outcomes-on-the-case/specs/besluitvorming-leaf/spec.md
+	 */
+	private function inadmissible(string $case, string $locale, array $context): array {
+		$reason = trim((string)($context['reason'] ?? ''));
+		if ($reason === '') {
+			$reason = 'Uw aanvraag voldoet niet aan de eisen om in behandeling te worden genomen.';
+			if ($locale === 'en') {
+				$reason = 'Your application does not meet the conditions for us to consider it.';
+			}
+		}
+
+		if ($locale === 'en') {
+			return [
+				'subject' => 'We are not considering your application ' . $case,
+				'body' => "Dear applicant,\n\n"
+					. 'We are not taking your application ' . $case . " into consideration.\n"
+					. $reason . "\n"
+					. "You can object to this decision. The letter says where and within how long.\n"
+					. "\nKind regards",
+			];
+		}
+
+		return [
+			'subject' => 'Uw aanvraag ' . $case . ' is niet-ontvankelijk',
+			'body' => "Beste aanvrager,\n\n"
+				. 'Wij nemen uw aanvraag ' . $case . " niet in behandeling.\n"
+				. $reason . "\n"
+				. "U kunt bezwaar maken tegen dit besluit. In de brief staat waar en binnen welke termijn.\n"
+				. "\nMet vriendelijke groet",
+		];
+	}//end inadmissible()
+
+	/**
 	 * The acknowledgement in English.
 	 *
 	 * Split from its Dutch twin so neither has to be read through the other.
@@ -494,6 +629,8 @@ class TermijnNotificationService {
 	 * @param boolean $hasTerm   Whether a statutory term applies at all.
 	 * @param string  $subjectOf What the application is about, when it is known.
 	 * @param string  $contact   Who to contact, when the case type names somebody.
+	 * @param string  $start     When the term started counting, named only when it is
+	 *                           not the moment the application arrived.
 	 *
 	 * @return array{subject:string, body:string} The rendered message.
 	 *
@@ -505,6 +642,7 @@ class TermijnNotificationService {
 		bool $hasTerm,
 		string $subjectOf,
 		string $contact,
+		string $start = '',
 	): array {
 		$term = "No statutory decision period applies to this application.\n";
 		if ($hasTerm === true) {
@@ -527,6 +665,7 @@ class TermijnNotificationService {
 			'body' => "Dear applicant,\n\n"
 				. 'We have received your application' . $about
 				. ' and registered it under reference ' . $case . ".\n"
+				. $start
 				. $term
 				. "You can follow this case in the citizen portal.\n"
 				. $where

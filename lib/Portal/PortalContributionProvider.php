@@ -61,7 +61,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Portal;
 
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+use Throwable;
 
 /**
  * Declares what an external Portaliq subject may see and do in Dossiq.
@@ -120,7 +122,71 @@ class PortalContributionProvider {
 		'startDate',
 		'endDate',
 		'deadline',
+		// WHEN THE CLOCK STARTS, not only when it ends. A case filed on a
+		// Sunday evening does not start counting on Sunday evening, and until
+		// these three were on this list nothing anywhere told the person who
+		// filed it: they counted eight weeks from the moment they pressed send
+		// and the municipality counted eight weeks from Monday
+		// (intake-says-when-the-term-starts, row Q8.21). The portal projects a
+		// case down to this list and the ontvangstbevestiging quotes it back,
+		// so adding them here is what puts the answer on BOTH surfaces from
+		// one definition.
+		'receivedAt',
+		'termStartsAt',
+		'receivedOutsideWorkingHours',
 	];
+
+	/**
+	 * Constructor.
+	 *
+	 * THE ONE DEPENDENCY, AND WHY IT IS OPTIONAL. Portaliq discovers this
+	 * class by FQCN and may build it with `new`, so a required constructor
+	 * argument would make the provider undiscoverable on exactly the
+	 * instances it exists to serve. Defaulting to null keeps `new
+	 * PortalContributionProvider()` working: the manifest below is still pure
+	 * data, and only {@see self::caseTimeline()} needs the reader.
+	 *
+	 * @param CaseTimeline|null $timeline The one reader of the public feed, or null.
+	 */
+	public function __construct(
+		private readonly ?CaseTimeline $timeline = null,
+	) {
+	}//end __construct()
+
+	/**
+	 * The public entries on one case, as the portal's case timeline.
+	 *
+	 * THE PROVIDER DOES NOT DECIDE WHAT IS PUBLIC. It asks
+	 * {@see CaseTimeline::publicEntries()}, which is the same call
+	 * `#PublicStatus` makes, so the portal and the status page cannot come to
+	 * show different histories of the same case. A provider that filtered for
+	 * itself would be the second reader this design exists to avoid.
+	 *
+	 * @param string $caseId The case the subject is looking at.
+	 *
+	 * @return array<int, array<string, mixed>> The public entries, newest first.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function caseTimeline(string $caseId): array {
+		if ($this->timeline === null) {
+			return [];
+		}
+
+		try {
+			return $this->timeline->publicEntries(caseId: $caseId);
+		} catch (Throwable $e) {
+			// THE BOUNDARY OWNS THIS DECISION, AND IT IS MADE ONCE. The reader
+			// logs at warning and rethrows rather than reporting an empty
+			// timeline it did not establish. Here, at the edge of a foreign
+			// app that renders our contribution, a timeline that could not be
+			// read must cost the citizen the history and not the page. The
+			// null branch above answers the same empty list for the same
+			// reason, so the two absences a portal can meet are handled in one
+			// place instead of two.
+			return [];
+		}
+	}//end caseTimeline()
 
 	/**
 	 * The audiences this provider contributes to (contract v2, preferred).
@@ -197,8 +263,9 @@ class PortalContributionProvider {
 	/**
 	 * Manifest for the `supplier` audience (unchanged from the v1 provider).
 	 *
-	 * The supplier's tenders, contracts, invoices and message inbox, all scoped
-	 * by the DEFAULT subjectRef == the record's `supplierRef`. Portaliq reads
+	 * The supplier's tenders, contracts, invoices, performance figures and
+	 * message inbox, all scoped by the DEFAULT subjectRef == the record's
+	 * `supplierRef`. Portaliq reads
 	 * them RBAC-scoped to the subject; Dossiq exposes no portal endpoints of
 	 * its own here.
 	 *
@@ -235,6 +302,21 @@ class PortalContributionProvider {
 					'listable' => true,
 				],
 				[
+					// The supplier's own performance figures. `supplierKpi`
+					// shipped with the portal's schema foundation and no
+					// surface, so an instance computed a supplier's payment
+					// record and showed it to nobody, least of all the
+					// supplier it was about. Scoped by `supplierRef` like
+					// every collection here, so a supplier reads their own
+					// row and no one else's.
+					'id' => 'performance',
+					'register' => self::REGISTER,
+					'schema' => 'supplierKpi',
+					'scopeField' => 'supplierRef',
+					'label' => 'Prestaties',
+					'listable' => true,
+				],
+				[
 					'id' => 'messages',
 					'kind' => 'inbox',
 					'register' => self::REGISTER,
@@ -268,13 +350,27 @@ class PortalContributionProvider {
 	 *  - `verzoeken` (`portaalVerzoek`, scope `submitterRef`) — the citizen's own
 	 *    requests/complaints/objections and their lifecycle status.
 	 *
-	 * One safe create ships: `createKlacht` (a standalone complaint) stamps
-	 * `submitterRef` == subjectRef; it whitelists only the citizen's own content
-	 * (no case cross-reference), so it can never grant access to another party's
-	 * case. The bezwaar (objection) create is DEFERRED — it needs a client
-	 * `tegenZaakId` cross-reference + AWB deadline validation the flat writer
-	 * cannot verify (write-IDOR, portaliq#16); so is the message reply (needs a
-	 * verified case/thread linkage). See design.md "Deferred creates".
+	 * Three creates ship. `createKlacht` (a standalone complaint) stamps
+	 * `submitterRef` == subjectRef and whitelists only the citizen's own
+	 * content, so it can never name another party's case at all.
+	 *
+	 * `createBezwaar` and `replyToMessage` DO name a case, and both declare it
+	 * as a `crossRefs` reference to the citizen's own cases. Portaliq resolves
+	 * that reference through the same scoped read it uses to show the citizen
+	 * one of their cases, before anything is written, and refuses the whole
+	 * write with 403 `cross_ref_refused` when it does not resolve. That guard
+	 * is what these two were deferred on; without it a uuid in the body was
+	 * accepted as typed.
+	 *
+	 * Neither lets the sender choose what the write IS. The `kind` of a bezwaar
+	 * and the `direction` of a reply come from `defaults`, stamped server-side
+	 * over the whitelisted body: a bezwaar and a klacht run different statutory
+	 * clocks, and a form that let the sender pick would let one arrive dressed
+	 * as the other.
+	 *
+	 * `againstDecisionId` stays OUT of the bezwaar's whitelist. A decision
+	 * carries no portal scope of its own, so no reference to one can be guarded
+	 * yet; the case it belongs to can be, and is.
 	 *
 	 * minTrust is `low` (Portaliq's password edge); raise to `substantial` once
 	 * the DigiD broker lands and cases carry Wdo-level assurance.
@@ -317,6 +413,14 @@ class PortalContributionProvider {
 					'listable' => true,
 					'minTrust' => 'low',
 					'fields' => self::CITIZEN_CASE_FIELDS,
+					// The case detail carries what has happened on it. The
+					// contract names the method rather than embedding the
+					// entries, because the manifest is built once per subject
+					// and a timeline is read once per case.
+					'timeline' => [
+						'label' => 'Wat er is gebeurd',
+						'provider' => 'caseTimeline',
+					],
 				],
 				[
 					'id' => 'berichten',
@@ -377,6 +481,65 @@ class PortalContributionProvider {
 						'attachments',
 					],
 				],
+				[
+					'id' => 'createBezwaar',
+					'type' => 'create',
+					'label' => 'Bezwaar maken',
+					'register' => self::REGISTER,
+					'schema' => 'portaalVerzoek',
+					'scopeField' => 'submitterRef',
+					'minTrust' => 'low',
+					'fields' => [
+						'subject',
+						'rationale',
+						'attachments',
+						'againstCaseId',
+					],
+					// The kind is not the citizen's to choose. A bezwaar and a
+					// klacht run different statutory clocks, and a form that
+					// let the sender pick would let one arrive dressed as the
+					// other.
+					'defaults' => ['kind' => 'bezwaarschrift'],
+					'crossRefs' => [
+						'againstCaseId' => [
+							'register' => self::REGISTER,
+							'schema' => 'case',
+							'scopeField' => 'portalSubject',
+							'required' => true,
+						],
+					],
+				],
+				[
+					'id' => 'replyToMessage',
+					'type' => 'create',
+					'label' => 'Antwoorden',
+					'register' => self::REGISTER,
+					'schema' => 'portaalBericht',
+					// The citizen is the SENDER of a reply, so the reply is
+					// scoped by who sent it. The inbox above is scoped by who
+					// received it, which is the same person seen from the
+					// other end.
+					'scopeField' => 'senderRef',
+					'minTrust' => 'low',
+					'fields' => [
+						'subject',
+						'content',
+						'attachments',
+						'caseId',
+					],
+					'defaults' => [
+						'direction' => 'citizen_to_handler',
+						'senderType' => 'burger',
+					],
+					'crossRefs' => [
+						'caseId' => [
+							'register' => self::REGISTER,
+							'schema' => 'case',
+							'scopeField' => 'portalSubject',
+							'required' => true,
+						],
+					],
+				],
 			],
 			'notifications' => [],
 		];
@@ -399,10 +562,13 @@ class PortalContributionProvider {
 	 *  - `checklistRuns` (`inspectionChecklistRun`, scope `assignedInspectorRef`)
 	 *    — their checklist runs and lifecycle/result state.
 	 *
-	 * No create action: submitting a run needs client `case`/`template`
-	 * cross-references the flat writer cannot verify against the inspector's
-	 * assignment (write-IDOR, portaliq#16), so the submit is DEFERRED — it
-	 * re-adds once Portaliq validates create-body cross-refs. See design.md.
+	 * One write ships: `submitChecklistRun`. It is an UPDATE on a run the
+	 * inspector is already assigned, not a create, and that is what removes the
+	 * write-IDOR the submit was deferred over rather than guarding it. The old
+	 * shape had the client send `case` and `template`, which the flat writer
+	 * could not verify against the assignment; this one accepts neither. What
+	 * arrives is the inspector's own answers, and the status is stamped by the
+	 * server through `set`, so a run cannot be submitted as anything else.
 	 *
 	 * minTrust is `low` (Portaliq's password edge) pending an inspector identity
 	 * broker.
@@ -456,7 +622,29 @@ class PortalContributionProvider {
 					],
 				],
 			],
-			'actions' => [],
+			'actions' => [
+				[
+					'id' => 'submitChecklistRun',
+					'type' => 'update',
+					'label' => 'Checklist indienen',
+					'register' => self::REGISTER,
+					'schema' => 'inspectionChecklistRun',
+					'scopeField' => 'assignedInspectorRef',
+					'minTrust' => 'low',
+					'fields' => [
+						'responses',
+						'overallResult',
+						'followUpType',
+						'photos',
+						'completedAt',
+						'status',
+					],
+					// The transition is the server's. `status` is whitelisted only
+					// so this may write it; the value comes from here and never from
+					// the request.
+					'set' => ['status' => 'submitted'],
+				],
+			],
 			'notifications' => [],
 		];
 

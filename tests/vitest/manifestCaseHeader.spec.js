@@ -73,7 +73,19 @@ describe('CaseDetail — the case number under the title (task 1.1)', () => {
 		// EndOfDay, the screen that closes the day against what they opened
 		// in it. Neither is a lens on an existing page: both cross stores no
 		// index page can name.
-		expect(manifest.pages).toHaveLength(53)
+		// 53 -> 54: `attribute-catalogue-folders` adds PropertyDefinitions,
+		// the attribute catalogue. It is a page rather than a lens because an
+		// attribute with no case type is shared across every one of them, so
+		// there is no existing index it could be a filter over.
+		// 54 -> 62: eight registers that shipped with stored data and no page
+		// to read it on. `the-two-schemas-holding-personal-data` (#2958) adds
+		// SupplierUsers and AvgIncidents, `the-offline-inspection-schemas`
+		// (#2959) adds FieldEvidence, OfflineSyncQueue and
+		// OfflineSyncConflicts, and `the-last-sociaal-domein-schemas` (#2961)
+		// adds Indicatiestellingen, MdoOverleggen and ReIntegratieTrajecten.
+		// Each is a page and not a lens for the same reason the four above
+		// are: there is no existing index any of them could be a filter over.
+		expect(manifest.pages).toHaveLength(62)
 		expect(
 			manifest.menu.filter((entry) => entry.route === 'Cases'),
 		).toHaveLength(1)
@@ -280,6 +292,21 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 		// one order. Archiving joined with it (#2850): what happens to the
 		// case when its business use ends, as openregister decided it. It
 		// comes last because it is the only tab about a case that is over.
+		//
+		// Custody joined on 2026-09-14 (#2940): the dated chain of who held the
+		// case, beside Related because both answer "what else is attached to
+		// this one" rather than "what do I do next".
+		//
+		// Knowledge joined on 2026-09-17 (#2995): the work instruction for this
+		// kind of case. 🔴 IT SITS AFTER ARCHIVING, WHICH CONTRADICTS THE
+		// PARAGRAPH ABOVE. Archiving was placed last on the grounds that it is
+		// the only tab about a case that is over, and a work instruction is the
+		// opposite: reference material for a case still being worked. The order
+		// here matches the manifest, so the strip and this assertion agree, but
+		// the placement is a product question somebody should answer rather
+		// than a rule this test is enforcing. Recorded here rather than quietly
+		// accepted, because the next person to add a tab will read this list
+		// as the intent.
 		expect(tabs().map((tab) => tab.widgetId)).toEqual([
 			'case-data-panel',
 			'case-files',
@@ -291,7 +318,9 @@ describe('CaseDetail — the tab strip reads in work order (task 4.1)', () => {
 			'case-work-panel',
 			'case-decisions-panel',
 			'case-related-panel',
+			'case-custody-panel',
 			'case-archival-panel',
+			'case-knowledge-panel',
 		])
 	})
 

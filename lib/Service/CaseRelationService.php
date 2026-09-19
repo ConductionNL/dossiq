@@ -66,7 +66,20 @@ class CaseRelationService {
 	 *
 	 * @var array<int, string>
 	 */
-	public const RELATION_TYPES = ['vervolg', 'subject', 'bijdrage', 'samenhang'];
+	public const RELATION_TYPES = ['vervolg', 'subject', 'bijdrage', 'samenhang', 'waitsOn'];
+
+	/**
+	 * A case waits on another case, and that other case blocks it.
+	 *
+	 * The pair carries a consequence the other four do not: a term that moves
+	 * on the case being waited on is offered to the handler of the case
+	 * waiting. Named here because the listener that makes the offer asks this
+	 * service which links are of this kind, and a literal in two files is a
+	 * literal that gets changed in one.
+	 *
+	 * @var string
+	 */
+	public const RELATION_WAITS_ON = 'waitsOn';
 
 	/**
 	 * The one peer relation that genuinely reads the same from both ends.

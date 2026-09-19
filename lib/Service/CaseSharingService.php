@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
@@ -88,6 +89,7 @@ class CaseSharingService {
 	 * @param CaseAccessLinkService $accessLinks Public access links over the case
 	 * @param CaseLinkShares $linkShares The share records those links are stored on
 	 * @param FederatedCaseShareService $federatedShares Cross-org (OCM) case shares
+	 * @param CaseTransferConsentGate $consent Whether this case may reach this partner at all
 	 * @param LoggerInterface $logger The logger
 	 *
 	 * @return void
@@ -99,6 +101,7 @@ class CaseSharingService {
 		private CaseAccessLinkService $accessLinks,
 		private CaseLinkShares $linkShares,
 		private FederatedCaseShareService $federatedShares,
+		private CaseTransferConsentGate $consent,
 		private LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -231,6 +234,21 @@ class CaseSharingService {
 			return ['error' => 'OpenRegister is not available'];
 		}
 
+		// 🔴 NO SHARE WITHOUT A SCOPE (REQ-CST-02). A partner share crosses the
+		// organisation boundary by definition, so the consent gate always runs
+		// here, and the scope the consent names is written onto the share in
+		// the same act. Recording a scope that nothing carries is the defect
+		// row 13.28 names; asking the gate twice and writing whichever answer
+		// came back second is how the refusal and the share end up disagreeing.
+		$verdict = $this->consent->assess(
+			caseId: $caseId,
+			sourceOrganisation: '',
+			receivingOrganisation: $partnerId,
+		);
+		if ($verdict['allowed'] === false) {
+			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
+		}
+
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('case_share_schema');
 
@@ -244,6 +262,9 @@ class CaseSharingService {
 			'partnerId' => $partnerId,
 			'permissionLevel' => $permissionLevel,
 			'createdBy' => $createdBy,
+			'consentId' => trim((string)($verdict['consent']['id'] ?? ($verdict['consent']['uuid'] ?? ''))),
+			'consentScope' => $verdict['scope'],
+			'consentUntil' => $verdict['until'],
 		];
 
 		$result = $objectService->saveObject(

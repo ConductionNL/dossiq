@@ -75,6 +75,19 @@ describe('every mechanism reaches the queue by declaring itself', () => {
 			'MentionSource',
 			'CoveredWorkSource',
 			'PlannedItemSource',
+			// task-dependencies-and-the-next-planned-action, row 3.28. A
+			// planned action with an owner and a date is work waiting on a
+			// named person, which is what this queue is for, and it was the
+			// only such mechanism that did not appear here: the case said
+			// what happened next and the person who had to do it found out by
+			// opening the case.
+			'PlannedActionSource',
+			// the-doors-onto-the-split-and-the-incidents, #2957. An incident
+			// raised on a case is a report handed to a named inspector, and
+			// until it was declared here it reached nobody's queue: the
+			// record existed and the person who had to act on it found out by
+			// opening the case.
+			'OpenIncidentSource',
 		])
 	})
 

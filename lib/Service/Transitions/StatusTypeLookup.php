@@ -75,6 +75,29 @@ class StatusTypeLookup {
 	}//end nameFor()
 
 	/**
+	 * The words a status is announced in, or '' when it is not announced.
+	 *
+	 * NOT THE SAME QUESTION AS {@see StatusPublicLabels::publicLabelOf()}, and
+	 * the difference is the whole point. That one answers "what does the
+	 * applicant read for this status" and falls back to the administered name,
+	 * which is right for a page that has already decided to show the status.
+	 * This one answers "is this status announced at all", and a fallback would
+	 * make every status announced the moment a case type forgot to fill a
+	 * public label in. The empty string here is a decision, not a gap.
+	 *
+	 * @param string $statusTypeId StatusType UUID.
+	 *
+	 * @return string The public label, or '' when the status is not announced.
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function announcedLabelOf(string $statusTypeId): string {
+		$statusType = $this->rowFor(statusTypeId: $statusTypeId);
+
+		return trim((string)($statusType['publicLabel'] ?? ''));
+	}//end announcedLabelOf()
+
+	/**
 	 * The whole statusType row, for the callers that need more than its name.
 	 *
 	 * The checklist a status brings with it is read here rather than through a
@@ -135,7 +158,7 @@ class StatusTypeLookup {
 	 * WHY A ROLE AND NOT A NAME. A shipped flow cannot carry a statusType uuid,
 	 * so it named the status instead — and a name is not an identifier either:
 	 *
-	 * - `statusType.name` is declared `x-translatable`, so the same status is
+	 * - `statusType.name` is declared `translatable`, so the same status is
 	 *   "In behandeling" on one instance and "In progress" on another. A flow
 	 *   matching a literal is broken by translation alone.
 	 * - Every case type spells its working phase differently and all of them are

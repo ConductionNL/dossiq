@@ -120,6 +120,11 @@
 								class="case-access-tab__hint"
 								>{{ roleHint(row) }}</span
 							>
+							<span
+								v-if="inheritedHint(row)"
+								class="case-access-tab__hint case-access-tab__inherited"
+								>{{ inheritedHint(row) }}</span
+							>
 							<span v-if="row.until" class="case-access-tab__hint">{{
 								endsHint(row)
 							}}</span>
@@ -207,9 +212,7 @@
 				</template>
 			</section>
 
-			<section
-				v-if="fieldRows.length"
-				class="case-access-tab__fields">
+			<section v-if="fieldRows.length" class="case-access-tab__fields">
 				<h4>{{ t('dossiq', 'Which fields each role reads') }}</h4>
 				<p class="case-access-tab__hint">
 					{{
@@ -243,9 +246,11 @@
 							</td>
 							<td>
 								{{ sentenceFor(row) }}
-								<span v-if="row.reason" class="case-access-tab__hint">{{
-									row.reason
-								}}</span>
+								<span
+									v-if="row.reason"
+									class="case-access-tab__hint"
+									>{{ row.reason }}</span
+								>
 							</td>
 						</tr>
 					</tbody>
@@ -527,6 +532,33 @@ export default {
 		},
 
 		/**
+		 * Which case handed this rule down (row Q13.23, D-4).
+		 *
+		 * The grant is not on the case in front of the reader, so a handler
+		 * who wants it gone has to be told where to go. The id is rendered
+		 * inside a sentence that says what it is, never bare: a uuid standing
+		 * on its own in a column headed Where it comes from reads as a broken
+		 * label rather than as an answer.
+		 *
+		 * @param {object} row One row.
+		 *
+		 * @return {string} The sentence, or an empty string when nothing was inherited.
+		 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+		 */
+		inheritedHint(row) {
+			if (!row?.inheritedFrom) {
+				return ''
+			}
+			return t(
+				'dossiq',
+				'Granted on case {case}, which this one hangs under',
+				{
+					case: row.inheritedFrom,
+				},
+			)
+		},
+
+		/**
 		 * When a grant stops answering, as OpenRegister wrote it.
 		 *
 		 * 🔑 THE DATE IS PRINTED, NOT JUDGED. Saying "expired" here would need a
@@ -597,6 +629,7 @@ export default {
 				'staged-deny': t('dossiq', 'A rule that will refuse'),
 				'default-open': t('dossiq', 'No rule, so it is open'),
 				none: t('dossiq', 'No rule grants it'),
+				inherited: t('dossiq', 'A grant on a case this one hangs under'),
 			}
 			return labels[source] || source
 		},

@@ -81,7 +81,7 @@ keeping open is prose.
 - What the split may divide is declared per case type, so a case type whose
   documents may not be separated says so once instead of relying on the
   handler.
-- An `incident` schema on the case: a date, a reporter, a description, an
+- A `caseIncident` schema on the case: a date, a reporter, a description, an
   owner of its own, a state and an outcome. Several of them on one case.
 - An incident carries its own hand-off, so the June report can sit with a
   different handler from the March one while the case stays with one owner.

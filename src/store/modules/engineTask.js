@@ -340,6 +340,11 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				['assignee', 'assignee'],
 				['dueDate', 'dueAt'],
 				['priority', 'priority'],
+				// What sort of work this is, as the surface that made it named
+				// it. The engine carries and indexes it and attaches no
+				// behaviour to any value, so `reminder` is a label the Tasks
+				// index can facet on and nothing else treats specially.
+				['kind', 'kind'],
 			]) {
 				const value = String(task[from] ?? '').trim()
 				if (value !== '') {

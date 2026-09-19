@@ -73,6 +73,33 @@ final class TermKind {
 	public const PHASE = 'phase';
 
 	/**
+	 * The promise that you hear from us within so many days.
+	 *
+	 * A first response is a term like any other, which is exactly why it is a
+	 * kind here rather than a second mechanism beside the four. It used to
+	 * exist for complaints alone, computed from a private constant in
+	 * `ComplaintService`, so the promise every service desk makes was kept for
+	 * one case type and measured for none.
+	 *
+	 * @var string
+	 */
+	public const FIRST_RESPONSE = 'firstResponse';
+
+	/**
+	 * The clock a decision's remedy runs on, started when the decision is sent.
+	 *
+	 * Its own kind and not a phase term, because it is not a phase: it starts
+	 * when the besluit goes out and it runs against the DECISION, not against
+	 * the work. Modelled as a phase it would enter the phase strip and the
+	 * progress figure, and a closed case would read as unfinished for six
+	 * weeks. It is what makes "is this decision still open to bezwaar"
+	 * answerable from the case without arithmetic.
+	 *
+	 * @var string
+	 */
+	public const REMEDY = 'remedy';
+
+	/**
 	 * Every kind, in the order a case page reads them.
 	 *
 	 * @var array<int, string>
@@ -82,6 +109,8 @@ final class TermKind {
 		self::PLANNED,
 		self::INTERNAL,
 		self::PHASE,
+		self::FIRST_RESPONSE,
+		self::REMEDY,
 	];
 
 	/**

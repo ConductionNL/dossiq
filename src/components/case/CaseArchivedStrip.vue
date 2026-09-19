@@ -34,7 +34,10 @@
 			<p class="case-archived__headline" data-testid="case-archived-headline">
 				{{ headline }}
 			</p>
-			<p v-if="reason" class="case-archived__reason" data-testid="case-archived-reason">
+			<p
+				v-if="reason"
+				class="case-archived__reason"
+				data-testid="case-archived-reason">
 				{{ reason }}
 			</p>
 		</div>

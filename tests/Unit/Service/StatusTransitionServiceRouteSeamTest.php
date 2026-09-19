@@ -367,8 +367,14 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		$this->service->getAvailableTransitions(caseId: 'case-1', userId: 'alice');
 
 		self::assertSame(
-			['statusChecklist'],
+			['statusChecklist', 'statusCapacity'],
 			array_map(static fn (array $guard): string => (string)$guard['type'], $seen)
 		);
+
+		// The capacity guard carries the TARGET, which is the one thing it
+		// cannot read off the case: the case still holds the status it is
+		// leaving. A guard entry appended without it passes everything,
+		// silently, which is the same green as a status that had room.
+		self::assertSame('st-behandeling', $seen[1]['toStatus']);
 	}//end testEveryTransitionIsCheckedAgainstTheStatusChecklist()
 }//end class

@@ -42,6 +42,8 @@ use OCA\Dossiq\Service\Queue\Source\CoordinatorSeatSource;
 use OCA\Dossiq\Service\Queue\Source\CoveredWorkSource;
 use OCA\Dossiq\Service\Queue\Source\EngineTaskSource;
 use OCA\Dossiq\Service\Queue\Source\MentionSource;
+use OCA\Dossiq\Service\Queue\Source\OpenIncidentSource;
+use OCA\Dossiq\Service\Queue\Source\PlannedActionSource;
 use OCA\Dossiq\Service\Queue\Source\PlannedItemSource;
 use Psr\Container\ContainerInterface;
 use Throwable;
@@ -66,6 +68,8 @@ class QueueSourceCatalogue {
 		MentionSource::class,
 		CoveredWorkSource::class,
 		PlannedItemSource::class,
+		PlannedActionSource::class,
+		OpenIncidentSource::class,
 	];
 
 	/**

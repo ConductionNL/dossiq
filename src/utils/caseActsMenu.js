@@ -170,7 +170,7 @@ function endingEntries(acts) {
 		// the platform answers with a shrug rather than a refusal, so nothing
 		// on screen would say what had happened. Finish and Abort stay: they
 		// are refused by their own guards, each with a sentence.
-		return (ending.act !== 'archive' || archived === false)
+		return ending.act !== 'archive' || archived === false
 	}).map((ending) => {
 		const verdict = verdicts.find((row) => String(row?.act ?? '') === ending.act)
 
@@ -222,7 +222,8 @@ function archiveStateEntries(acts) {
 			kind: 'state',
 			id: 'unarchive',
 			label: 'Restore from the archive',
-			explainer: 'The case comes back into the working lists and can be edited again.',
+			explainer:
+				'The case comes back into the working lists and can be edited again.',
 			// Restoring asks the same role archiving does, so the verdict on
 			// `archive` is the verdict on this. An absent verdict disables it
 			// and says so, exactly as the ending acts do: this one writes an

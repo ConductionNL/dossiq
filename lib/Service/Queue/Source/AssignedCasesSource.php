@@ -134,7 +134,8 @@ class AssignedCasesSource extends RegisterBackedSource {
 				dueAt: $this->dateOf(row: $row, key: 'deadline'),
 				coveredFor: null,
 				route: ['name' => 'CaseDetail', 'params' => ['id' => $id]],
-				waiting: $this->waitingFactsOf(row: $row)
+				waiting: $this->waitingFactsOf(row: $row),
+				subject: $row
 			);
 		}
 

@@ -89,7 +89,10 @@ test.describe('a document names its correspondents', () => {
 			const linked = await api.post(
 				`${PARTIES_BASE}/objects/${REGISTER}/case/${caseId}/parties`,
 				{
-					headers: { requesttoken: token, 'Content-Type': 'application/json' },
+					headers: {
+						requesttoken: token,
+						'Content-Type': 'application/json',
+					},
 					data: { partyUuid: party, role },
 				},
 			)
@@ -117,8 +120,8 @@ test.describe('a document names its correspondents', () => {
 		// THE ASSERTION. The stored document names the PARTY.
 		const listed = await api.get(`${DOSSIER_BASE}/${caseId}/dossier`)
 		expect(listed.ok(), await listed.text()).toBeTruthy()
-		const document = (await listed.json()).informatieobjecten.find(
-			(row: any) => String(row.title || '').startsWith(RUN_PREFIX),
+		const document = (await listed.json()).informatieobjecten.find((row: any) =>
+			String(row.title || '').startsWith(RUN_PREFIX),
 		)
 		expect(document, 'the letter this run filed is in the dossier').toBeTruthy()
 		expect(document.recipients).toEqual([addresseeId])
@@ -134,8 +137,8 @@ test.describe('a document names its correspondents', () => {
 			`${DOSSIER_BASE}/${caseId}/dossier?correspondent=${addresseeId}`,
 		)
 		expect(
-			(await narrowed.json()).informatieobjecten.some(
-				(row: any) => String(row.title || '').startsWith(RUN_PREFIX),
+			(await narrowed.json()).informatieobjecten.some((row: any) =>
+				String(row.title || '').startsWith(RUN_PREFIX),
 			),
 		).toBeTruthy()
 

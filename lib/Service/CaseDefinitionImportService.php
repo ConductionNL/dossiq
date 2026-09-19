@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use ZipArchive;
 
 /**
@@ -50,12 +51,62 @@ class CaseDefinitionImportService {
 	private const REQUIRED_FILES = ['manifest.json'];
 
 	/**
+	 * The strategy that leaves an object this instance already has alone.
+	 *
+	 * @var string
+	 */
+	private const STRATEGY_SKIP = 'skip';
+
+	/**
+	 * The settings key naming the schema each exported collection is written to.
+	 *
+	 * The keys are the collection names the export writes, so the two services
+	 * agree by construction: a collection the export invents and the import
+	 * does not know is REFUSED by name rather than dropped, which is the whole
+	 * difference between an import and a count.
+	 *
+	 * @var array<string, string>
+	 */
+	private const COLLECTION_SCHEMAS = [
+		'caseType' => 'case_type_schema',
+		'propertyDefinitions' => 'property_definition_schema',
+		'statusTypes' => 'status_type_schema',
+		'roleTypes' => 'role_type_schema',
+		'documentTypes' => 'document_type_schema',
+		'resultTypes' => 'result_type_schema',
+	];
+
+	/**
+	 * The collections each component carries, in write order.
+	 *
+	 * `caseType` is written first inside `schema`, because every other row
+	 * carries a `caseType` back-reference and a row written against a case
+	 * type that does not exist yet is a reference no reader can follow.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private const COMPONENT_COLLECTIONS = [
+		'schema' => ['caseType', 'propertyDefinitions'],
+		'statuses' => ['statusTypes'],
+		'permissions' => ['roleTypes'],
+		'documents' => ['documentTypes'],
+		'metadata' => ['resultTypes'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param LoggerInterface $logger The logger instance.
+	 * @param SettingsService $settings The register and schema names, and the
+	 *                                  OpenRegister object service this writes
+	 *                                  through. dossiq stores nothing of its
+	 *                                  own here: the objects are OpenRegister's
+	 *                                  and are written the way the rest of the
+	 *                                  app writes them (ADR-022).
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
+		private readonly SettingsService $settings,
 	) {
 	}//end __construct()
 
@@ -216,11 +267,26 @@ class CaseDefinitionImportService {
 	/**
 	 * Import a single component from the ZIP archive.
 	 *
+	 * 🔴 THIS USED TO REPORT SUCCESS HAVING WRITTEN NOTHING. It read the JSON,
+	 * logged a line and returned `status: 'success'` under a comment saying
+	 * "In a full implementation, this would create/update OpenRegister
+	 * objects". An administrator moving a case type from acceptance to
+	 * production got a green dialog and an empty instance, which is worse than
+	 * an error, because an error would have been acted on.
+	 *
+	 * 🔑 ALL OR NOTHING, PER COMPONENT. The rows of one component are written
+	 * and the ids kept; a write that fails takes the whole component with it
+	 * and deletes what this run had already written for it. A half-imported
+	 * case type — statuses without the case type they belong to, roles
+	 * pointing at nothing — is a state nobody can read and nobody asked for.
+	 *
 	 * @param \ZipArchive $zip The opened ZIP archive.
 	 * @param string $component The component name.
 	 * @param string $strategy The conflict resolution strategy.
 	 *
-	 * @return array{status: string, message: string}
+	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
+	 *
+	 * @spec openspec/changes/case-definition-export-is-real/specs/case-types/spec.md
 	 */
 	private function importComponent(
 		\ZipArchive $zip,
@@ -228,7 +294,7 @@ class CaseDefinitionImportService {
 		string $strategy,
 	): array {
 		if ($component === 'workflows') {
-			return $this->importWorkflows(zip: $zip);
+			return $this->importWorkflows(zip: $zip, strategy: $strategy);
 		}
 
 		$content = $zip->getFromName($component . '.json');
@@ -240,57 +306,432 @@ class CaseDefinitionImportService {
 		}
 
 		$data = json_decode($content, true);
-		if ($data === null) {
+		if (is_array($data) === false) {
 			return [
 				'status' => 'error',
 				'message' => "Invalid JSON in {$component}.json",
 			];
 		}
 
-		// In a full implementation, this would create/update OpenRegister objects.
-		// For now, store the fact that the component was imported.
+		$collections = (self::COMPONENT_COLLECTIONS[$component] ?? []);
+		if ($collections === []) {
+			return [
+				'status' => 'error',
+				'message' => "Component '{$component}' names no collection this import knows how to write.",
+			];
+		}
+
+		return $this->writeCollections(
+			component: $component,
+			data: $data,
+			collections: $collections,
+			strategy: $strategy
+		);
+	}//end importComponent()
+
+
+	/**
+	 * Write the collections of one component, or none of them.
+	 *
+	 * @param string $component The component name, for the messages.
+	 * @param array<string, mixed> $data The decoded component file.
+	 * @param array<int, string> $collections The collections to write, in order.
+	 * @param string $strategy The conflict resolution strategy.
+	 *
+	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
+	 */
+	private function writeCollections(string $component, array $data, array $collections, string $strategy): array {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		if ($objectService === null || $register === '') {
+			return [
+				'status' => 'error',
+				'message' => "Component '{$component}' was not written: this instance has no OpenRegister register configured.",
+			];
+		}
+
+		$created = [];
+		$replaced = [];
+		$skipped = [];
+
+		try {
+			foreach ($collections as $collection) {
+				$schema = $this->settings->getConfigValue(key: self::COLLECTION_SCHEMAS[$collection]);
+				if ($schema === '') {
+					throw new RuntimeException(
+						"No schema is configured for '{$collection}', so its rows cannot be written."
+					);
+				}
+
+				foreach ($this->rowsOf(data: $data, collection: $collection) as $row) {
+					// 🔑 THE PACKAGE'S ID IS KEPT. Every child row carries a
+					// `caseType` back-reference by id, so minting a new id for
+					// the case type would leave every status, role and document
+					// type pointing at nothing. A CONFLICT is this instance
+					// already holding that id, which is a different question
+					// from the package carrying one.
+					$packageId = $this->existingId(row: $row);
+					$conflict = ($packageId !== '' && $this->holds(
+						objectService: $objectService,
+						register: $register,
+						schema: $schema,
+						id: $packageId
+					) === true);
+
+					if ($conflict === true && $strategy === self::STRATEGY_SKIP) {
+						$skipped[] = $packageId;
+						continue;
+					}
+
+					$rowUuid = null;
+					if ($packageId !== '') {
+						$rowUuid = $packageId;
+					}
+
+					$stored = $objectService->saveObject(
+						$this->withoutMetadata(row: $row),
+						register: $register,
+						schema: $schema,
+						uuid: $rowUuid
+					);
+
+					$id = $this->storedId(stored: $stored);
+					if ($conflict === true) {
+						$replaced[] = $id;
+						continue;
+					}
+
+					$created[] = $id;
+				}
+			}//end foreach
+		} catch (\Throwable $e) {
+			// The component is all or nothing: what this run wrote for it goes
+			// back out, so a failed import leaves no half case type behind.
+			$this->rollBack(objectService: $objectService, register: $register, ids: $created);
+
+			return [
+				'status' => 'error',
+				'message' => "Component '{$component}' was not imported: " . $e->getMessage(),
+			];
+		}//end try
+
+		if ($created === [] && $replaced === [] && $skipped === []) {
+			// 🔴 NOTHING WRITTEN IS NOT A SUCCESS. This is the exact line the
+			// old code got wrong, and the one REQ-CT-42 is about.
+			return [
+				'status' => 'error',
+				'message' => "Component '{$component}' held no rows this import could write.",
+			];
+		}
+
+		if ($created === [] && $replaced === []) {
+			// Everything was already here and the caller asked to leave it
+			// alone. That is not a write and must not read as one.
+			return [
+				'status' => 'skipped',
+				'message' => "Component '{$component}': " . count($skipped) . ' row(s) already present, left alone.',
+				'created' => [],
+				'replaced' => [],
+			];
+		}
+
 		$this->logger->info(
-			'Imported component {component} with strategy {strategy}',
+			'Imported component {component} with strategy {strategy}: {created} created, {replaced} replaced',
 			[
 				'component' => $component,
 				'strategy' => $strategy,
+				'created' => count($created),
+				'replaced' => count($replaced),
 			]
 		);
 
 		return [
 			'status' => 'success',
-			'message' => "Component '{$component}' imported successfully",
+			'message' => "Component '{$component}': " . count($created) . ' created, ' . count($replaced) . ' replaced',
+			'created' => $created,
+			'replaced' => $replaced,
 		];
-	}//end importComponent()
+	}//end writeCollections()
+
+
+	/**
+	 * The rows of one collection, whichever shape the package carries.
+	 *
+	 * `caseType` is one object rather than a list, so it is wrapped; every
+	 * other collection is a list.
+	 *
+	 * @param array<string, mixed> $data The decoded component file.
+	 * @param string $collection The collection name.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	private function rowsOf(array $data, string $collection): array {
+		$value = ($data[$collection] ?? null);
+		if (is_array($value) === false || $value === []) {
+			return [];
+		}
+
+		if (array_is_list($value) === false) {
+			return [$value];
+		}
+
+		return array_values(array_filter($value, 'is_array'));
+	}//end rowsOf()
+
+
+	/**
+	 * Whether this instance already holds the object the package names.
+	 *
+	 * A read that RAISES is answered false, and that is deliberate: a miss and
+	 * an unreadable store both mean "write it", and the write is what refuses
+	 * if the store is genuinely broken. Answering true on a failed read would
+	 * skip a row the instance does not have.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register slug.
+	 * @param string $schema The schema slug.
+	 * @param string $id The object id the package carries.
+	 *
+	 * @return boolean True when the object is already here.
+	 */
+	private function holds(object $objectService, string $register, string $schema, string $id): bool {
+		try {
+			$found = $objectService->find($id, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			return false;
+		}
+
+		return ($found !== null && $found !== [] && $found !== false);
+	}//end holds()
+
+
+	/**
+	 * The id an incoming row already carries, if any.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string The id, or the empty string.
+	 */
+	private function existingId(array $row): string {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === true) {
+			$id = trim((string)($self['uuid'] ?? $self['id'] ?? ''));
+			if ($id !== '') {
+				return $id;
+			}
+		}
+
+		return trim((string)($row['id'] ?? ''));
+	}//end existingId()
+
+
+	/**
+	 * The row as it goes to the store, without OpenRegister's own metadata.
+	 *
+	 * `@self` is the store's, not the case type's: writing it back would write
+	 * the exporting instance's register, schema and organisation ids onto a
+	 * row in a different instance, and every one of them would be wrong.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return array<string, mixed> The payload.
+	 */
+	private function withoutMetadata(array $row): array {
+		unset($row['@self'], $row['id']);
+
+		return $row;
+	}//end withoutMetadata()
+
+
+	/**
+	 * The id of a row the store just wrote.
+	 *
+	 * @param mixed $stored Whatever the store answered.
+	 *
+	 * @return string The id, or the empty string.
+	 */
+	private function storedId(mixed $stored): string {
+		if (is_object($stored) === true && method_exists($stored, 'getUuid') === true) {
+			return trim((string)$stored->getUuid());
+		}
+
+		if (is_object($stored) === true && method_exists($stored, 'jsonSerialize') === true) {
+			$stored = $stored->jsonSerialize();
+		}
+
+		if (is_array($stored) === true) {
+			$self = ($stored['@self'] ?? []);
+			if (is_array($self) === true && trim((string)($self['uuid'] ?? '')) !== '') {
+				return trim((string)$self['uuid']);
+			}
+
+			return trim((string)($stored['id'] ?? ''));
+		}
+
+		return '';
+	}//end storedId()
+
+
+	/**
+	 * Take back the rows this run created for a component that then failed.
+	 *
+	 * Best effort, and it says so in the log rather than in the response: a
+	 * roll-back that itself fails must not turn one error into two, and the
+	 * response the administrator reads is already `error`.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $register The register slug.
+	 * @param array<int, string> $ids The ids to remove.
+	 *
+	 * @return void
+	 */
+	private function rollBack(object $objectService, string $register, array $ids): void {
+		foreach ($ids as $id) {
+			if ($id === '') {
+				continue;
+			}
+
+			try {
+				$objectService->deleteObject($id, register: $register);
+			} catch (\Throwable $e) {
+				$this->logger->error(
+					'Could not roll back imported object {id}: {error}',
+					['id' => $id, 'error' => $e->getMessage()]
+				);
+			}
+		}
+	}//end rollBack()
+
 
 	/**
 	 * Import workflow files from the ZIP archive.
 	 *
-	 * Workflow files are enumerated and counted only; there is no conflict to
-	 * resolve on this path, so — unlike the other components — it takes no
-	 * conflict-resolution strategy.
+	 * 🔴 THIS USED TO COUNT FILES AND CALL IT AN IMPORT. It answered "Imported
+	 * 3 workflow(s)" having deployed none. Counting is not importing, and a
+	 * count reported as a success is the reason an administrator trusted an
+	 * empty instance.
 	 *
 	 * @param \ZipArchive $zip The opened ZIP archive.
+	 * @param string $strategy The conflict resolution strategy.
 	 *
-	 * @return array{status: string, message: string}
+	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
+	 *
+	 * @spec openspec/changes/case-definition-export-is-real/specs/case-types/spec.md
 	 */
-	private function importWorkflows(\ZipArchive $zip): array {
-		$workflowCount = 0;
+	private function importWorkflows(\ZipArchive $zip, string $strategy): array {
+		$objectService = $this->settings->getObjectService();
+		$register = $this->settings->getConfigValue(key: 'register');
+		$schema = $this->settings->getConfigValue(key: 'workflow_template_schema');
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [
+				'status' => 'error',
+				'message' => 'Workflows were not deployed: this instance has no workflow template schema configured.',
+			];
+		}
 
+		$entries = [];
 		for ($i = 0; $i < $zip->numFiles; $i++) {
 			$name = $zip->getNameIndex($i);
-			if ($name !== false && str_starts_with($name, 'workflows/') === true && str_ends_with($name, '.json') === true) {
-				$content = $zip->getFromIndex($i);
-				if ($content !== false) {
-					// In a full implementation, deploy via n8n API.
-					$workflowCount++;
-				}
+			if ($name === false || str_starts_with($name, 'workflows/') === false || str_ends_with($name, '.json') === false) {
+				continue;
 			}
+
+			$entries[$name] = $zip->getFromIndex($i);
+		}
+
+		if ($entries === []) {
+			return [
+				'status' => 'skipped',
+				'message' => 'The package carries no workflows.',
+			];
+		}
+
+		$created = [];
+		$replaced = [];
+		$skipped = [];
+
+		foreach ($entries as $name => $content) {
+			if ($content === false) {
+				$this->rollBack(objectService: $objectService, register: $register, ids: $created);
+
+				return [
+					'status' => 'error',
+					'message' => "Workflow '{$name}' could not be read from the archive.",
+				];
+			}
+
+			$template = json_decode((string)$content, true);
+			if (is_array($template) === false) {
+				$this->rollBack(objectService: $objectService, register: $register, ids: $created);
+
+				return [
+					'status' => 'error',
+					'message' => "Workflow '{$name}' is not valid JSON.",
+				];
+			}
+
+			$packageId = $this->existingId(row: $template);
+			$conflict = ($packageId !== '' && $this->holds(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $packageId
+			) === true);
+
+			if ($conflict === true && $strategy === self::STRATEGY_SKIP) {
+				$skipped[] = $packageId;
+				continue;
+			}
+
+			try {
+				$templateUuid = null;
+				if ($packageId !== '') {
+					$templateUuid = $packageId;
+				}
+
+				$stored = $objectService->saveObject(
+					$this->withoutMetadata(row: $template),
+					register: $register,
+					schema: $schema,
+					uuid: $templateUuid
+				);
+			} catch (\Throwable $e) {
+				$this->rollBack(objectService: $objectService, register: $register, ids: $created);
+
+				return [
+					'status' => 'error',
+					'message' => "Workflow '{$name}' could not be deployed: " . $e->getMessage(),
+				];
+			}
+
+			$id = $this->storedId(stored: $stored);
+			if ($conflict === true) {
+				$replaced[] = $id;
+				continue;
+			}
+
+			$created[] = $id;
+		}//end foreach
+
+		if ($created === [] && $replaced === [] && $skipped === []) {
+			return [
+				'status' => 'error',
+				'message' => 'No workflow in the package was deployed.',
+			];
+		}
+
+		if ($created === [] && $replaced === []) {
+			return [
+				'status' => 'skipped',
+				'message' => count($skipped) . ' workflow(s) already present, left alone.',
+			];
 		}
 
 		return [
 			'status' => 'success',
-			'message' => "Imported {$workflowCount} workflow(s)",
+			'message' => count($created) . ' workflow(s) deployed, ' . count($replaced) . ' replaced',
+			'created' => $created,
+			'replaced' => $replaced,
 		];
 	}//end importWorkflows()
 
@@ -363,7 +804,10 @@ class CaseDefinitionImportService {
 
 		$errors = array_merge($errors, $this->validateComponentJson(zip: $zip, components: $components));
 
-		$warnings = array_merge($warnings, $this->buildDependencyWarnings(dependencies: $dependencies));
+		$warnings = array_merge(
+			$warnings,
+			$this->buildDependencyWarnings(zip: $zip, components: $components, dependencies: $dependencies)
+		);
 
 		return [
 			'errors' => $errors,
@@ -473,22 +917,116 @@ class CaseDefinitionImportService {
 	}//end validateComponentJson()
 
 	/**
-	 * Build the "verify in target environment" warning for each declared dependency.
+	 * Warn about every declared dependency the package does not itself carry.
 	 *
+	 * 🔴 THIS USED TO WARN ABOUT EVERY DEPENDENCY, by name `unknown` and type
+	 * `unknown`, under a comment saying a full implementation would check
+	 * whether it exists. A warning on every ref is a warning on none: an
+	 * administrator reading forty identical lines stops reading them, and the
+	 * one ref that actually dangles is in the middle of them.
+	 *
+	 * The check is PACKAGE-LOCAL and deliberately so. A ref the package
+	 * carries a row for resolves by definition once the import has run. A ref
+	 * it does not carry is one the target instance has to already hold, and
+	 * that is the one worth naming.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 * @param array<mixed> $components The components declared in the manifest.
 	 * @param array<mixed> $dependencies The dependencies declared in the manifest.
 	 *
-	 * @return string[] One warning per dependency.
+	 * @return string[] One warning per unresolvable dependency.
 	 */
-	private function buildDependencyWarnings(array $dependencies): array {
+	private function buildDependencyWarnings(\ZipArchive $zip, array $components, array $dependencies): array {
+		$carried = $this->idsCarriedBy(zip: $zip, components: $components);
 		$warnings = [];
 
-		foreach ($dependencies as $dep) {
-			$depType = $dep['type'] ?? 'unknown';
-			$depName = $dep['name'] ?? 'unknown';
-			// In a full implementation, check if the dependency exists in OpenRegister.
-			$warnings[] = "Dependency '{$depName}' (type: {$depType}) should be verified in target environment";
+		foreach ($dependencies as $dependency) {
+			// Both shapes: a plain ref, and the `{type, name}` entry older
+			// packages carry. An entry in neither shape is named as it stands
+			// rather than reported as `unknown`, which said nothing.
+			$ref = $dependency;
+			if (is_array($dependency) === true) {
+				$ref = ($dependency['id'] ?? $dependency['name'] ?? '');
+			}
+
+			$ref = trim((string)$ref);
+			if ($ref === '' || in_array($ref, $carried, true) === true) {
+				continue;
+			}
+
+			$warnings[] = "Dependency '{$ref}' is referenced by this package but not carried in it, "
+				. 'so the target instance has to hold it already.';
 		}
 
 		return $warnings;
 	}//end buildDependencyWarnings()
+
+
+	/**
+	 * Every object id the package's component files carry.
+	 *
+	 * @param \ZipArchive $zip The opened ZIP archive.
+	 * @param array<mixed> $components The components declared in the manifest.
+	 *
+	 * @return array<int, string> The ids.
+	 */
+	private function idsCarriedBy(\ZipArchive $zip, array $components): array {
+		$ids = [];
+
+		foreach ($components as $component) {
+			$content = $zip->getFromName((string)$component . '.json');
+			if ($content === false) {
+				continue;
+			}
+
+			$data = json_decode((string)$content, true);
+			if (is_array($data) === false) {
+				continue;
+			}
+
+			$this->collectIds(value: $data, ids: $ids);
+		}
+
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			$name = $zip->getNameIndex($i);
+			if ($name === false || str_starts_with($name, 'workflows/') === false) {
+				continue;
+			}
+
+			$data = json_decode((string)$zip->getFromIndex($i), true);
+			if (is_array($data) === true) {
+				$this->collectIds(value: $data, ids: $ids);
+			}
+		}
+
+		return array_values(array_unique($ids));
+	}//end idsCarriedBy()
+
+
+	/**
+	 * Collect every `id` and `@self.uuid` a decoded structure carries.
+	 *
+	 * @param mixed $value The decoded structure.
+	 * @param array<int, string> $ids Collected ids, appended in place.
+	 *
+	 * @return void
+	 */
+	private function collectIds(mixed $value, array &$ids): void {
+		if (is_array($value) === false) {
+			return;
+		}
+
+		foreach (['id', 'uuid'] as $key) {
+			$candidate = ($value[$key] ?? null);
+			if (is_string($candidate) === true && trim($candidate) !== '') {
+				$ids[] = trim($candidate);
+			}
+		}
+
+		foreach ($value as $entry) {
+			if (is_array($entry) === true) {
+				$this->collectIds(value: $entry, ids: $ids);
+			}
+		}
+	}//end collectIds()
 }//end class

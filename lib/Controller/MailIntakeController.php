@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Email\BounceAction;
+use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Email\Filters\FilterPipeline;
 use OCA\Dossiq\Service\Email\Filters\FilterVerdict;
 use OCA\Dossiq\Service\Email\InboundMailIntake;
@@ -98,6 +99,7 @@ class MailIntakeController extends Controller {
 	 * @param InboundMailIntake $intake      The intake path, for a released message.
 	 * @param IUserSession      $userSession The caller.
 	 * @param ITimeFactory      $time        Clock.
+	 * @param CaseAccessGuard   $caseAccessGuard Per-case authorization, for the case a handler picks.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -110,6 +112,7 @@ class MailIntakeController extends Controller {
 		private readonly InboundMailIntake $intake,
 		private readonly IUserSession $userSession,
 		private readonly ITimeFactory $time,
+		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -368,6 +371,105 @@ class MailIntakeController extends Controller {
 
 		return new JSONResponse(['moved' => true, 'entryId' => $result['entryId']]);
 	}//end move()
+
+	/**
+	 * File a logged message on a case a handler picked.
+	 *
+	 * THE AUTOMATIC MATCH KEEPS DECIDING FIRST. This is not a second matcher
+	 * and it changes no rule: it records that ONE person overrode the match on
+	 * ONE message, which is a log line rather than a new rule, so the
+	 * matcher's behaviour does not drift silently per message.
+	 *
+	 * Offered on an entry that became NO case and on one that became the WRONG
+	 * case, because a wrong match is the common reason somebody reaches for
+	 * this. `MailIntakeController::release()` files a message on
+	 * `$entry['case']`, the case the matcher already chose, so a handler who
+	 * knew the message belonged on 2026-114 could do nothing with that
+	 * knowledge before this act existed.
+	 *
+	 * TWO GUARDS, not one. The intake role says who may work the log at all;
+	 * `CaseAccessGuard` says whether THIS caller may see THIS case. Without
+	 * the second, anyone with the intake role could file a message onto any
+	 * case id they cared to guess, and the case would then show a message from
+	 * a citizen to a handler who may not read it.
+	 *
+	 * @param string $entryId The log entry.
+	 * @param string $caseId  The case the handler picked.
+	 * @param string $reason  Why they overrode the match.
+	 *
+	 * @return JSONResponse What happened.
+	 *
+	 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+	 */
+	#[NoAdminRequired]
+	public function fileOnCase(string $entryId, string $caseId = '', string $reason = ''): JSONResponse {
+		$refusal = $this->requireIntakeRole();
+		if ($refusal !== null) {
+			return $refusal;
+		}
+
+		if (trim($caseId) === '') {
+			return new JSONResponse(['message' => 'case_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		if (trim($reason) === '') {
+			// The reason is REQUIRED, and that is a policy rather than
+			// validation theatre. This act overrides a decision the matcher
+			// made, and an override nobody accounted for is an audit finding
+			// waiting to happen.
+			return new JSONResponse(['message' => 'reason_required'], Http::STATUS_BAD_REQUEST);
+		}
+
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: trim($caseId), user: $user) === false) {
+			return new JSONResponse(
+				['message' => 'Not authorized', 'case' => trim($caseId)],
+				Http::STATUS_FORBIDDEN
+			);
+		}
+
+		$entry = $this->entryOrNull(entryId: $entryId);
+		if ($entry === null) {
+			return new JSONResponse(['message' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		$previous = trim((string)($entry['case'] ?? ''));
+
+		$outcome = $this->intake->fileOnCase(
+			message: $this->messageOf(entry: $entry),
+			verdict: FilterVerdict::accept(
+				filterName: 'file-on-case',
+				reason: $reason
+			),
+			results: $this->resultsOf(entry: $entry),
+			caseId: trim($caseId)
+		);
+
+		$this->log->amend(
+			entryId: $entryId,
+			changes: [
+				'outcome' => IntakeLog::OUTCOME_CASE,
+				'case' => trim($caseId),
+				'reason' => $reason,
+				'filedBy' => $this->callerId(),
+				'filedAt' => $this->time->getDateTime()->format(DATE_ATOM),
+				'previousCase' => $previous,
+			]
+		);
+
+		return new JSONResponse(
+			[
+				'filed' => true,
+				'case' => trim($caseId),
+				'previousCase' => $previous,
+				'outcome' => $outcome,
+			]
+		);
+	}//end fileOnCase()
 
 	/**
 	 * Refuse a caller who is not the intake role.

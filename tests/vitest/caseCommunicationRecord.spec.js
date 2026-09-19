@@ -151,6 +151,14 @@ describe('the outbound communication record on the case', () => {
 		).toBeTruthy()
 		expect(widget.type).toBe('data')
 		expect(widget.content.include).toEqual([
+			// the-case-says-when-it-arrived (#2946): the moment the case
+			// arrived, the moment its clock starts, and the flag between them.
+			// They lead the card because the confirmation is only readable
+			// against them: a receipt sent on Monday for a form filed on
+			// Sunday is correct, and says so only if both moments are on it.
+			'receivedAt',
+			'termStartsAt',
+			'receivedOutsideWorkingHours',
 			'acknowledgementDuty',
 			'outboundCommunications',
 		])

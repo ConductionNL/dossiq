@@ -34,9 +34,11 @@ use OCA\Dossiq\Service\CaseVoorbladService;
 use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\DoorverbindingService;
+use OCA\Dossiq\Service\Kcc\CitizenLookupRecorder;
 use OCA\Dossiq\Service\QuickActionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\UserRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -60,6 +62,9 @@ class ContactMomentController extends Controller {
 	 * @param BurgerIdentificationService $burgerService The burger identification service.
 	 * @param IUserSession $userSession The user session.
 	 * @param CitizenLookupGuard $citizenLookupGuard The citizen-lookup role guard.
+	 * @param CitizenLookupRecorder $citizenLookupRecorder Writes one audit row per
+	 *        lookup attempt, refusals included, because the refusal is what catches
+	 *        enumeration.
 	 */
 	public function __construct(
 		string $appName,
@@ -71,9 +76,71 @@ class ContactMomentController extends Controller {
 		private readonly BurgerIdentificationService $burgerService,
 		private readonly IUserSession $userSession,
 		private readonly CitizenLookupGuard $citizenLookupGuard,
+		private readonly CitizenLookupRecorder $citizenLookupRecorder,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
+
+	/**
+	 * How many citizen lookups one account may make in an hour.
+	 *
+	 * Above a call handler's real hour and far below a population walk. A KCC
+	 * agent looks a citizen up once or twice per call, and the werkplek fetches
+	 * the voorblad and the contact list as two calls, so a busy hour sits well
+	 * inside sixty. The BRP holds about 18 million people; at sixty an hour a
+	 * walk takes thirty-four years.
+	 *
+	 * Ten would be defensible on paper and would break the desk on a Monday
+	 * morning, and a limit that breaks the desk is a limit somebody removes.
+	 */
+	public const LOOKUP_LIMIT_PER_HOUR = 60;
+
+	/**
+	 * Refuse the lookup, and record the refusal.
+	 *
+	 * The refusal is the half that catches the enumeration: an account refused
+	 * four hundred times in an afternoon is not a handler who mistyped a BSN.
+	 * Recording it here rather than at each call site is what keeps the two
+	 * from drifting apart.
+	 *
+	 * @param string $uid       The account that was refused.
+	 * @param string $burgerId  The citizen reference it looked with.
+	 *
+	 * @return JSONResponse The 403.
+	 *
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 */
+	private function refuseLookup(string $uid, string $burgerId): JSONResponse {
+		$this->citizenLookupRecorder->record(
+			employeeId: $uid,
+			subjectId: $burgerId,
+			allowed: false,
+			fields: [],
+			ground: 'geen kcc-rol',
+		);
+
+		return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+	}//end refuseLookup()
+
+	/**
+	 * Record a lookup that was answered.
+	 *
+	 * @param \OCP\IUser $user     The caller.
+	 * @param string     $burgerId The citizen reference.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
+	 */
+	private function recordLookup(\OCP\IUser $user, string $burgerId): void {
+		$this->citizenLookupRecorder->record(
+			employeeId: $user->getUID(),
+			subjectId: $burgerId,
+			allowed: true,
+			fields: $this->citizenLookupGuard->revealedFieldsFor(user: $user),
+			ground: 'kcc-rol',
+		);
+	}//end recordLookup()
 
 	/**
 	 * Create a contactmoment and return the case-voorblad for the burger.
@@ -83,7 +150,9 @@ class ContactMomentController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
+	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function create(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
@@ -94,7 +163,10 @@ class ContactMomentController extends Controller {
 		// citizen identifier and returns that citizen's voorblad, so it is the
 		// same exposure as `voorblad()` with a write attached.
 		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+			return $this->refuseLookup(
+				uid: $user->getUID(),
+				burgerId: (string)$this->request->getParam('geidentificeerdeBurgerId', '')
+			);
 		}
 
 		$data = [
@@ -134,9 +206,17 @@ class ContactMomentController extends Controller {
 
 		$voorblad = null;
 		if ($burgerId !== '') {
-			$voorblad = $this->caseVoorbladService->getCaseVoorblad($burgerId);
+			$voorblad = $this->citizenLookupGuard->redactForCaller(
+				user: $user,
+				payload: $this->caseVoorbladService->getCaseVoorblad($burgerId)
+			);
+			$this->recordLookup(user: $user, burgerId: $burgerId);
 		}
 
+		// The contact moment this caller just WROTE is not redacted: they typed
+		// its summary and its caller identification a moment ago, and handing
+		// back a blanked copy of what they just submitted would read as the
+		// write having failed.
 		return new JSONResponse(['contactmoment' => $contactmoment, 'voorblad' => $voorblad]);
 	}//end create()
 
@@ -151,7 +231,9 @@ class ContactMomentController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
+	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function index(string $burgerId = '', int $limit = 50): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
@@ -162,7 +244,7 @@ class ContactMomentController extends Controller {
 		// string; without this the whole contact history of any citizen was
 		// readable by every authenticated account (PROC-IDOR-01).
 		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+			return $this->refuseLookup(uid: $user->getUID(), burgerId: $burgerId);
 		}
 
 		if ($burgerId === '') {
@@ -170,7 +252,17 @@ class ContactMomentController extends Controller {
 		}
 
 		$records = $this->contactMomentService->listForBurger($burgerId, $limit);
-		return new JSONResponse(['contactmomenten' => $records]);
+		$this->recordLookup(user: $user, burgerId: $burgerId);
+
+		// Redacted AFTER the read, because the read is what the record above
+		// describes and because these rows were composed by this app rather
+		// than rendered by OpenRegister, so no property rule has touched them.
+		return new JSONResponse(
+			$this->citizenLookupGuard->redactForCaller(
+				user: $user,
+				payload: ['contactmomenten' => $records]
+			)
+		);
 	}//end index()
 
 	/**
@@ -183,7 +275,9 @@ class ContactMomentController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
+	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function voorblad(string $burgerId = ''): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
@@ -195,14 +289,19 @@ class ContactMomentController extends Controller {
 		// for an unrelated authenticated account before this guard existed
 		// (PROC-IDOR-01) — iterating BSN-shaped ids walked the population.
 		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+			return $this->refuseLookup(uid: $user->getUID(), burgerId: $burgerId);
 		}
 
 		if ($burgerId === '') {
 			return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($this->caseVoorbladService->getCaseVoorblad($burgerId));
+		$voorblad = $this->caseVoorbladService->getCaseVoorblad($burgerId);
+		$this->recordLookup(user: $user, burgerId: $burgerId);
+
+		return new JSONResponse(
+			$this->citizenLookupGuard->redactForCaller(user: $user, payload: $voorblad)
+		);
 	}//end voorblad()
 
 	/**
@@ -250,7 +349,9 @@ class ContactMomentController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
+	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function nieuweZaak(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
@@ -259,7 +360,10 @@ class ContactMomentController extends Controller {
 
 		// Creates a municipal case bound to a caller-supplied citizen id.
 		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+			return $this->refuseLookup(
+				uid: $user->getUID(),
+				burgerId: (string)$this->request->getParam('burgerId', '')
+			);
 		}
 
 		$caseType = (string)$this->request->getParam('caseType', '');
@@ -283,7 +387,9 @@ class ContactMomentController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
+	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function klachtRegistreren(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
@@ -292,7 +398,10 @@ class ContactMomentController extends Controller {
 
 		// Takes an arbitrary `caseId` AND an arbitrary `burgerId`.
 		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+			return $this->refuseLookup(
+				uid: $user->getUID(),
+				burgerId: (string)$this->request->getParam('burgerId', '')
+			);
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');

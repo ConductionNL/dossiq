@@ -34,6 +34,7 @@ use OCA\Dossiq\Exception\NoTermijnDefinitieException;
 use OCA\Dossiq\Service\CaseTermsService;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\ObjectSchemaSlugResolver;
+use OCA\Dossiq\Service\Term\TermResolution;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCP\EventDispatcher\Event;
@@ -59,6 +60,9 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	 *        planned end, the internal target, and the fixed closing date when the case
 	 *        type declares one instead of a lead time. Optional so a container that
 	 *        cannot build it leaves the statutory bind exactly as it was.
+	 * @param TermResolution|null $resolution The case type's own first-response term,
+	 *        which wins over the Awb default when one is declared. Optional for the
+	 *        same reason as the parameter above it.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
@@ -66,8 +70,28 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		private readonly CaseTypeSlugResolver $caseTypeSlugs,
 		private readonly LoggerInterface $logger,
 		private readonly ?CaseTermsService $caseTerms = null,
+		private readonly ?TermResolution $resolution = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The uuid behind a reference, bare or extended.
+	 *
+	 * @param mixed $value The stored value.
+	 *
+	 * @return string The uuid, empty when there is none.
+	 */
+	private function referenced(mixed $value): string {
+		if (is_string($value) === true) {
+			return trim($value);
+		}
+
+		if (is_array($value) === true) {
+			return trim((string)($value['id'] ?? ''));
+		}
+
+		return '';
+	}//end referenced()
 
 	/**
 	 * Handle a case-created event.
@@ -113,8 +137,23 @@ class DeadlineCaseCreatedListener implements IEventListener {
 			return;
 		}
 
+		// Which term this case actually gets. One case type can carry several:
+		// one per participating organisation, per service and per priority,
+		// which is what lets a gemeenschappelijke regeling run one case type
+		// for five municipalities with five agreed norms. The resolution is
+		// made here, where the case's own values are in hand, and is recorded
+		// on the instance so a disputed date can be explained a year later.
+		$resolution = $this->resolution?->resolve(
+			caseType: $caseType,
+			context: [
+				'organisation' => $this->referenced(value: ($payload['competentAuthority'] ?? null)),
+				'service' => $this->referenced(value: ($payload['procedureType'] ?? null)),
+				'priority' => $this->referenced(value: ($payload['priority'] ?? null)),
+			]
+		);
+
 		try {
-			$this->termService->createTermijnInstance($caseId, $caseType);
+			$this->termService->createTermijnInstance($caseId, $caseType, null, $resolution);
 			$this->bindTheOtherClocks(caseId: $caseId, caseTypeRef: $caseTypeRef, payload: $payload);
 		} catch (NoTermijnDefinitieException $e) {
 			// NOT debug. A case that matched no definition at all has no

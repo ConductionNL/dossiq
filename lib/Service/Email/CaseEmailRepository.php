@@ -181,19 +181,66 @@ class CaseEmailRepository {
 	 *
 	 * @spec openspec/specs/case-management/spec.md
 	 */
+	/**
+	 * Spellings this projection answered before it was aligned.
+	 *
+	 * `title` and `startdatum` are in templates authored against the old
+	 * six-key projection, so the map still fills them. They are NOT what the
+	 * editor offers and NOT what a new template should use.
+	 *
+	 * @var array<string, string> Old spelling to the canonical one.
+	 */
+	public const DEPRECATED_ALIASES = [
+		'title' => 'titel',
+		'startdatum' => 'startDate',
+	];
+
+	/**
+	 * The case, flattened to the variable names a template author writes.
+	 *
+	 * @param array<string, mixed> $caseObj The case as OpenRegister stored it.
+	 *
+	 * @return array<string, string> The variables, by the name the editor offers.
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
 	public function flattenCaseVariables(array $caseObj): array {
 		if ($caseObj === []) {
 			return [];
 		}
 
-		return [
+		// 🔴 THE SAME NAMES THE TEMPLATE EDITOR OFFERS, because these render
+		// templates out of the SAME store. `EmailTemplateService` owns the
+		// catalogue an administrator authors against — `titel`, `contactNaam`,
+		// `startDate` — and this projection answered `title`, `startdatum` and
+		// nothing about a contact. A template written in that editor and sent
+		// through `CaseEmailService::sendFromTemplate()` therefore reached the
+		// recipient with `{{titel}}` and `{{contactNaam}}` still in it, which
+		// is the same defect dossiq#2950 fixed in the other renderer.
+		//
+		// The old spellings stay as aliases for the same reason the other
+		// renderer keeps its own: templates written against this projection are
+		// stored on instances and are not ours to rewrite.
+		$map = [
 			'zaakNummer' => $caseObj['identifier'] ?? '',
-			'title' => $caseObj['title'] ?? '',
-			'startdatum' => $caseObj['startDate'] ?? '',
+			'titel' => $caseObj['title'] ?? '',
+			'startDate' => $caseObj['startDate'] ?? '',
+			'endDate' => $caseObj['endDate'] ?? '',
 			'deadline' => $caseObj['deadline'] ?? '',
 			'status' => $caseObj['status'] ?? '',
 			'handler' => $caseObj['assignee'] ?? '',
+			'contactNaam' => ($caseObj['contactName'] ?? ($caseObj['contact']['name'] ?? '')),
+			'contactEmail' => ($caseObj['contactEmail'] ?? ($caseObj['contact']['email'] ?? '')),
+			'contactTelefoon' => ($caseObj['contactPhone'] ?? ($caseObj['contact']['phone'] ?? '')),
+			'zaaktypeNaam' => $caseObj['caseTypeTitle'] ?? '',
+			'zaaktypeOmschrijving' => $caseObj['caseTypeDescription'] ?? '',
 		];
+
+		foreach (self::DEPRECATED_ALIASES as $was => $now) {
+			$map[$was] = $map[$now];
+		}
+
+		return $map;
 	}//end flattenCaseVariables()
 
 	/**

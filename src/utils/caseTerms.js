@@ -178,6 +178,7 @@ export function termRows(terms, t) {
 			tone: termTone(term),
 			sentence: daysLeftSentence(term, t),
 			pause: pauseSentence(term, t),
+			moves: moveLines(term, t),
 		}))
 		.sort((left, right) => rank(left.kind) - rank(right.kind))
 }
@@ -211,4 +212,48 @@ export function needsAttention(progress) {
 function rank(kind) {
 	const index = KIND_ORDER.indexOf(kind)
 	return index === -1 ? KIND_ORDER.length : index
+}
+
+/**
+ * Why this deadline is not the deadline it was, one line per move.
+ *
+ * A date that quietly became another date is the thing a handler cannot see
+ * and an applicant will argue about. The moves the engine recorded travel with
+ * the term, so this only has to phrase them.
+ *
+ * A move with no reason keeps its line and says the reason is missing, rather
+ * than being dropped or given a sentence of ours. A gap in the record is
+ * itself worth seeing: it is the move somebody will be asked about.
+ *
+ * @param {object} term - One term from the server.
+ * @param {(key: string, params?: object) => string} t - The bound translate.
+ *
+ * @return {Array<string>} One sentence per move, oldest first.
+ * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+ */
+export function moveLines(term, t) {
+	if (!Array.isArray(term?.moves)) {
+		return []
+	}
+
+	return term.moves
+		.filter((move) => move && typeof move === 'object')
+		.map((move) => {
+			const to = String(move.to || '').slice(0, 10)
+			const from = String(move.from || '').slice(0, 10)
+			const reason = String(move.reason || '').trim()
+
+			if (from && to) {
+				return reason
+					? t('Moved from {from} to {to}: {reason}', { from, to, reason })
+					: t('Moved from {from} to {to}, with no reason recorded', {
+							from,
+							to,
+						})
+			}
+
+			return reason
+				? t('Moved: {reason}', { reason })
+				: t('Moved, with no reason recorded')
+		})
 }

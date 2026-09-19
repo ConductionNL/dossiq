@@ -44,10 +44,13 @@ use OCA\Dossiq\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\AuditPacketBuilder;
 use OCA\Dossiq\Service\Beschikking\BeschikkingRepository;
 use OCA\Dossiq\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Dossiq\Service\Beschikking\CaseRemedy;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\Beschikking\SigningAdapterInterface;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\People\CoordinatorRequirement;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use RuntimeException;
 
 /**
@@ -82,6 +85,8 @@ class BeschikkingService {
 	 * @param AuditPacketBuilder $auditPacket Verifiable audit-pakket assembly.
 	 * @param BezwaarTermijnScheduler $bezwaarScheduler Awb 6:7 bezwaartermijn scheduling.
 	 * @param CoordinatorRequirement $coordinator The second seat a case type may insist on before signing.
+	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
+	 * @param CaseRemedy $remedy The remedy this case's decisions carry, and the clock they start.
 	 *
 	 * @return void
 	 */
@@ -96,6 +101,8 @@ class BeschikkingService {
 		private readonly AuditPacketBuilder $auditPacket,
 		private readonly BezwaarTermijnScheduler $bezwaarScheduler,
 		private readonly CoordinatorRequirement $coordinator,
+		private readonly CaseTimeline $timeline,
+		private readonly CaseRemedy $remedy,
 	) {
 	}//end __construct()
 
@@ -142,6 +149,15 @@ class BeschikkingService {
 			'addressee' => (array)($overrides['addressee'] ?? []),
 			'decision' => (array)($overrides['decision'] ?? []),
 			'rationale' => ($overrides['rationale'] ?? null),
+			// 🔴 THE CLAUSE COMES FROM THE CASE TYPE, NOT FROM THE TEMPLATE
+			// (REQ-DEC-03). Two case types sharing one template print
+			// different terms, and a change in the law is one configuration
+			// change rather than forty template edits with a guess about
+			// which were missed. A case type that declares no remedy prints
+			// nothing here and is warned about at publication; a default
+			// clause would put a term nobody chose onto a decision somebody
+			// has to act on.
+			'legalRemediesClause' => $this->remedy->clauseFor(caseId: $caseId),
 		];
 
 		$saved = $this->repository->save(decision: $decision);
@@ -298,10 +314,20 @@ class BeschikkingService {
 			throw new RuntimeException('invalid_transition');
 		}
 
+		// The term the CASE TYPE declares, when it declares one, read BEFORE
+		// the besluit is dispatched: a read that fails after the letter went
+		// out would leave a sent decision with no stored term. Falling back to
+		// the scheduler's six weeks keeps every case type that declares nothing
+		// behaving exactly as it did.
+		$declaredDays = $this->remedy->termDaysFor(caseId: (string)($decision['caseId'] ?? ''));
+
 		$dispatch = $this->berichtenbox->routeToBerichtenbox($decision);
 
 		$bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
-		$term = $this->bezwaarScheduler->computeTermijn(bekendmaking: $bekendmaking);
+		$term = $this->bezwaarScheduler->computeTermijn(
+			bekendmaking: $bekendmaking,
+			termDays: $declaredDays,
+		);
 
 		$decision['dispatch'] = $dispatch;
 		$decision['announcementDate'] = $bekendmaking;
@@ -318,6 +344,16 @@ class BeschikkingService {
 			herinnering: $term['herinnering'],
 		);
 
+		// The clock, beside the trigger. The trigger is the scheduling record
+		// that fires a reminder; the term instance is what the CASE answers
+		// "is this decision still open to bezwaar" from, without anybody doing
+		// arithmetic against a date on a document (REQ-DEC-04).
+		$this->remedy->bindTerm(
+			caseId: (string)($decision['caseId'] ?? ''),
+			decisionId: $decisionId,
+			sentOn: new DateTimeImmutable($bekendmaking),
+		);
+
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
@@ -325,8 +361,52 @@ class BeschikkingService {
 			['actor' => $actor, 'actorType' => 'employee', 'trigger' => 'manual'],
 		);
 
+		$this->recordDelivery(decision: $saved, dispatch: $dispatch, decisionId: $decisionId);
+
 		return $saved;
 	}//end verzend()
+
+	/**
+	 * Put the delivered beschikking on the case timeline, for both readers.
+	 *
+	 * PUBLIC BY CONSTRUCTION, NOT BY A TICKED BOX. The applicant is holding
+	 * this letter: it reached their berichtenbox or their doormat, and the six
+	 * weeks they have to object started the day it went. A timeline that showed
+	 * them everything except the decision they are objecting to would be the
+	 * one entry worth hiding least.
+	 *
+	 * The entry carries the channel and the day it went, and nothing about the
+	 * addressee. Who it was sent to is on the beschikking; a public line is the
+	 * last place to repeat it.
+	 *
+	 * @param array<string, mixed> $decision   The saved beschikking.
+	 * @param array<string, mixed> $dispatch   What the routing service answered.
+	 * @param string               $decisionId The beschikking uuid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	private function recordDelivery(array $decision, array $dispatch, string $decisionId): void {
+		$caseId = trim((string)($decision['caseId'] ?? ''));
+		if ($caseId === '') {
+			return;
+		}
+
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::DECISION_SENT,
+			message: 'Beschikking verzonden',
+			fields: [
+				'channel' => (string)($dispatch['notificationChannel'] ?? ''),
+				'sentOn' => (string)($dispatch['sentOn'] ?? ''),
+				'decisionType' => (string)($decision['decisionType'] ?? ''),
+				'reference' => (string)($decision['reference'] ?? ''),
+				'beschikkingId' => $decisionId,
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
+		);
+	}//end recordDelivery()
 
 	/**
 	 * Field-edit a beschikking, honouring the immutability contract. [T11]

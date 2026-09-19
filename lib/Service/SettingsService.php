@@ -251,6 +251,46 @@ class SettingsService {
 	}//end getObjectService()
 
 	/**
+	 * Lazily resolve OpenRegister's per-object grant resolver.
+	 *
+	 * THE ONE THING DOSSIQ CANNOT ANSWER FOR ITSELF. A grant is a real
+	 * Nextcloud share on the object's folder, resolved per request by
+	 * OpenRegister, and since openregister#3873 that resolution walks the
+	 * declared hierarchy: a grant on a parent case answers for its deelzaken.
+	 * Asking this service is how dossiq consumes that instead of keeping a
+	 * second, parallel answer, which is what ADR-022 is about and what
+	 * `deelzaken-inherit-the-parent-grants` D-2 asks for by name.
+	 *
+	 * Same lazy-resolve contract as {@see self::getObjectService()}: an
+	 * optional runtime dependency, resolved at call time rather than
+	 * type-hinted, and callers MUST handle null. A null answer means dossiq
+	 * cannot ask, which every caller here treats as NOT GRANTED — the
+	 * fail-closed direction, and the behaviour dossiq had before inheritance
+	 * existed at all.
+	 *
+	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
+	 *
+	 * @psalm-suppress MixedReturnStatement
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function getObjectGrantResolver(): ?object {
+		if ($this->isOpenRegisterAvailable() === false) {
+			return null;
+		}
+
+		try {
+			return $this->container->get('OCA\OpenRegister\Service\Rbac\ObjectGrantResolver');
+		} catch (\Exception $e) {
+			$this->logger->error(
+				'Dossiq: Could not access OpenRegister ObjectGrantResolver',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end getObjectGrantResolver()
+
+	/**
 	 * Lazily resolve OpenRegister's FileService for in-process file attachment.
 	 *
 	 * ADR-084 publishes `ObjectServiceInterface` — 25 methods — and **none of

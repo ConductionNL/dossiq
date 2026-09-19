@@ -33,6 +33,7 @@ use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Beschikking\MandaatVerifier;
 use OCA\Dossiq\Service\MandaatCheckService;
 use OCA\Dossiq\Service\RoleResolverService;
+use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
@@ -300,6 +301,10 @@ class RefusalReplacesTheEmptyAnswerTest extends TestCase {
 			settingsService: $this->findAllSettings(throws: $throws),
 			cacheFactory: $cacheFactory,
 			delegation: $delegation,
+			// The REAL rewriter, not a double: it answers conservatively for a
+			// rule with no area map, so this suite's subject is unchanged, and
+			// a double would hide the day that stops being true.
+			area: new AreaRouting(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 	}//end roleResolver()

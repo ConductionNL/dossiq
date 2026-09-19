@@ -101,7 +101,11 @@ export function selectedOptions(stored, options) {
 			continue
 		}
 		chosen.push(
-			options.find((option) => option.id === id) || { id, label: id, email: '' },
+			options.find((option) => option.id === id) || {
+				id,
+				label: id,
+				email: '',
+			},
 		)
 	}
 	return chosen

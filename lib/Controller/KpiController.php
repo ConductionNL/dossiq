@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Controller;
 
 use DateTime;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
 use OCA\Dossiq\Service\KpiAggregationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -78,6 +79,7 @@ class KpiController extends Controller {
 	 * @param IUserSession $userSession The user session
 	 * @param KpiAggregationService $kpiAggregation The KPI aggregation service
 	 * @param ICacheFactory $cacheFactory The cache factory
+	 * @param DashboardWidgetScope $widgetScope Narrows the payload to the widgets this reader may see
 	 * @param LoggerInterface $logger Logger
 	 *
 	 * @return void
@@ -87,6 +89,7 @@ class KpiController extends Controller {
 		private IUserSession $userSession,
 		private KpiAggregationService $kpiAggregation,
 		ICacheFactory $cacheFactory,
+		private DashboardWidgetScope $widgetScope,
 		private LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
@@ -120,7 +123,11 @@ class KpiController extends Controller {
 		$cached = $this->cache->get($dataKey);
 		if ($cached !== null && is_array($cached) === true) {
 			$cached['cacheHit'] = true;
-			return new JSONResponse($cached);
+			// Narrowed on the way OUT, never on the way in. The cache is keyed
+			// by user, but a cache that held an already-narrowed payload would
+			// be one group change away from serving a reader the figures they
+			// held yesterday (widget-roles-declared REQ-WRD-02).
+			return new JSONResponse($this->widgetScope->narrowFor(payload: $cached, userId: $userId));
 		}
 
 		$kpis = $this->kpiAggregation->computeKpis($userId);
@@ -133,6 +140,9 @@ class KpiController extends Controller {
 			$this->logger->debug('[KpiController] Cache store failed', ['key' => $dataKey, 'error' => $e->getMessage()]);
 		}
 
-		return new JSONResponse($kpis);
+		// The figures a reader's widgets may not show do not travel to the
+		// browser at all (ADR-004): a tile hidden with a `v-if` still puts its
+		// number in the network tab, which is the defect this closes.
+		return new JSONResponse($this->widgetScope->narrowFor(payload: $kpis, userId: $userId));
 	}//end index()
 }//end class

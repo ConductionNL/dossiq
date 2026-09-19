@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: A case splits by moving what was chosen (REQ-SPL-01)
+### Requirement: A split divides a case rather than duplicating it (REQ-CM-50)
 
 Splitting a case SHALL open a second, separately numbered case and SHALL
 move the documents, parties and tasks the handler chose. A moved item SHALL
@@ -23,7 +23,7 @@ a whole. Splitting SHALL NOT copy the whole file to both cases.
 - **WHEN** the case is split
 - **THEN** the party SHALL be present on both cases with its role intact
 
-### Requirement: The split is related in both directions (REQ-SPL-02)
+### Requirement: The split is related in both directions (REQ-CM-51)
 
 A split SHALL write a typed relation on both cases, so each names the other
 without a query. The relation SHALL be one of the types dossiq already
@@ -36,7 +36,7 @@ stores; a split SHALL NOT invent a private link.
 - **WHEN** either case is opened
 - **THEN** its Related tab SHALL name the other case and say the relation came from a split
 
-### Requirement: A case type declares what a split may divide (REQ-SPL-03)
+### Requirement: A case type declares what a split may divide (REQ-CM-52)
 
 A case type SHALL declare whether documents, parties and tasks may be
 divided, defaulting to all three. A split of something the case type does
@@ -51,9 +51,9 @@ it.
 - **THEN** the attempt SHALL be refused
 - **AND** the refusal SHALL name the case-type rule
 
-### Requirement: A case holds dated incidents with their own owners (REQ-INC-01)
+### Requirement: A case holds several dated incidents (REQ-CM-53)
 
-A case SHALL be able to hold several `incident` records. Each SHALL carry
+A case SHALL be able to hold several `caseIncident` records. Each SHALL carry
 the date of the event, the moment it was recorded, the reporter, a
 description, an owner, a state and an outcome. An incident SHALL NOT carry a
 term or a decision of its own.
@@ -74,7 +74,7 @@ term or a decision of its own.
 - **THEN** it SHALL be ordered by the event date
 - **AND** the recording delay SHALL be visible
 
-### Requirement: An incident hands off without moving the case (REQ-INC-02)
+### Requirement: An incident carries its own hand-off (REQ-CM-54)
 
 An incident SHALL carry its own assignee, and reassigning it SHALL NOT
 change who holds the case. Open incidents SHALL be countable and filterable

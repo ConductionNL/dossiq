@@ -29,8 +29,11 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
+use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeReachability;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -150,6 +153,8 @@ class CaseTypePublishValidationTest extends TestCase {
 			store: $store,
 			acknowledgement: new CaseTypeAcknowledgement(),
 			unreadTriggers: new UnreadTriggerService(),
+			admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+			remedy: new RemedyClauseDeclaration(),
 			handling: new CaseTypeHandling(),
 			fieldRules: new CaseStateFieldRuleProjector(
 				store: $store,
@@ -166,6 +171,7 @@ class CaseTypePublishValidationTest extends TestCase {
 				time: $this->clock(),
 				logger: new NullLogger(),
 			),
+			reachability: new CaseTypeReachability(),
 			logger: new NullLogger(),
 		);
 	}//end service()

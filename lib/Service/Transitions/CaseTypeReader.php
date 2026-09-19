@@ -75,6 +75,41 @@ class CaseTypeReader {
 	}//end read()
 
 	/**
+	 * The payment rule one case type declares, or null when it declares none.
+	 *
+	 * Kept apart from {@see read()} on purpose. That method answers a fixed
+	 * shape the transition engine reads on every move, and widening it would
+	 * make every caller carry a field almost none of them asks about. This one
+	 * is asked only where money is the question.
+	 *
+	 * A case type nobody can read answers null, which {@see UnpaidCaseGate}
+	 * reads as "no payment rule". That is the additive reading and it is
+	 * deliberate: this rule only ever ADDS a refusal, so an unreadable case
+	 * type must leave the app behaving as it did before the rule existed,
+	 * rather than stopping every melding on the instance.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array{paymentRequiredBeforeHandling: bool}|null The rule, or null.
+	 *
+	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 */
+	public function paymentRule(string $caseTypeId): ?array {
+		if ($caseTypeId === '') {
+			return null;
+		}
+
+		$row = $this->findRow(schemaKey: 'case_type_schema', id: $caseTypeId);
+		if ($row === []) {
+			return null;
+		}
+
+		return [
+			'paymentRequiredBeforeHandling' => $this->flag(value: ($row['paymentRequiredBeforeHandling'] ?? false)),
+		];
+	}//end paymentRule()
+
+	/**
 	 * Whether a statusType closes the case it is on.
 	 *
 	 * @param string $statusTypeId StatusType UUID.

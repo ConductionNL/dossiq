@@ -36,8 +36,11 @@ namespace OCA\Dossiq\Lifecycle;
 
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
+use OCA\Dossiq\Service\Money\CasePaymentReader;
+use OCA\Dossiq\Service\Money\UnpaidCaseGate;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
+use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
 use OCA\OpenRegister\Exception\LifecycleSubjectNotFoundException;
@@ -137,6 +140,9 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * @param CaseResultWriter $resultWriter Decides whether a target status closes the case.
 	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
 	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
+	 * @param UnpaidCaseGate $unpaidCases Refuses a move its case type makes wait for payment.
+	 * @param CasePaymentReader $payments What shillinq last said this case owes.
+	 * @param CaseTypeReader $caseTypes Reads the case type behind the case being moved.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
@@ -147,6 +153,9 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		private readonly CaseResultWriter $resultWriter,
 		private readonly OpenRegisterGrantsGateway $grants,
 		private readonly ExternalHome $externalHome,
+		private readonly UnpaidCaseGate $unpaidCases,
+		private readonly CasePaymentReader $payments,
+		private readonly CaseTypeReader $caseTypes,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -247,8 +256,91 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		// the list and come back BLOCKED, carrying the application that holds
 		// the work: an act that vanished would read as a permission problem
 		// and send somebody to the rights matrix for an afternoon.
-		return $this->honourExternalHome(actions: $actions, object: $object);
+		$actions = $this->honourExternalHome(actions: $actions, object: $object);
+
+		// A case whose type requires the leges first (REQ-FEE-04). Blocked
+		// rather than hidden, for the same reason and with the same shape: the
+		// sentence names the rule, so the handler goes to the payment panel
+		// instead of to the rights matrix.
+		return $this->honourPaymentRule(actions: $actions, object: $object);
 	}//end availableActions()
+
+	/**
+	 * Disable the acts on a case whose type says the money comes first.
+	 *
+	 * @param list<array<string, mixed>> $actions The moves as published.
+	 * @param array<string, mixed>       $object  The loaded case payload.
+	 *
+	 * @return list<array<string, mixed>> The moves, blocked when payment is owed.
+	 *
+	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 */
+	private function honourPaymentRule(array $actions, array $object): array {
+		$sentence = $this->whyPaymentBlocks(object: $object);
+		if ($sentence === '') {
+			return $actions;
+		}
+
+		$disabled = [];
+		foreach ($actions as $action) {
+			$action['blocked'] = true;
+			$action['description'] = $sentence;
+			$disabled[] = $action;
+		}
+
+		return $disabled;
+	}//end honourPaymentRule()
+
+	/**
+	 * The payment rule's verdict on this case, as a sentence or an empty string.
+	 *
+	 * @param array<string, mixed> $object The loaded case payload.
+	 *
+	 * @return string The refusal, '' when the money is not in the way.
+	 *
+	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 */
+	private function whyPaymentBlocks(array $object): string {
+		$rule = $this->caseTypes->paymentRule(caseTypeId: $this->caseTypeIdOf(object: $object));
+
+		// THE RULE IS ASKED BEFORE SHILLINQ IS. Most case types cost nothing,
+		// and a case type that does not wait for money must not pay for a
+		// cross-app read on every listing of its acts.
+		if ($this->unpaidCases->requiresPayment(caseType: $rule) === false) {
+			return '';
+		}
+
+		// Live, not the stored projection. The projection is an hour old at
+		// worst and it exists so the case LIST can be filtered; a refusal is a
+		// decision, and a decision made on an hour-old word is a citizen who
+		// paid at the counter this morning being told they have not.
+		$projection = $this->payments->stateOf(caseId: $this->caseIdOf(object: $object));
+
+		return $this->unpaidCases->whyItWaits(case: $projection, caseType: $rule);
+	}//end whyPaymentBlocks()
+
+	/**
+	 * The case type a case names, however the payload carries it.
+	 *
+	 * A reference arrives as a plain uuid on a flat read and as an object on an
+	 * extended one, and reading only the first shape would quietly answer ''
+	 * on every extended payload: the rule would then apply to nothing, with
+	 * nothing to see.
+	 *
+	 * @param array<string, mixed> $object The loaded case payload.
+	 *
+	 * @return string The case type uuid, '' when the case names none.
+	 *
+	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-a-case-type-decides-whether-an-unpaid-case-proceeds-req-fee-04
+	 */
+	private function caseTypeIdOf(array $object): string {
+		$caseType = ($object['caseType'] ?? '');
+		if (is_array($caseType) === true) {
+			$caseType = ($caseType['id'] ?? ($caseType['@self']['id'] ?? ''));
+		}
+
+		return trim((string)$caseType);
+	}//end caseTypeIdOf()
 
 	/**
 	 * Disable the acts that perform work on a case handled elsewhere.
@@ -398,6 +490,16 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		$elsewhere = $this->externalHome->whereTheWorkIs(case: $object);
 		if ($elsewhere !== '') {
 			throw new RuntimeException($elsewhere);
+		}
+
+		// The same enforcement for the payment rule, and for the same reason:
+		// a flag the write path does not check is a suggestion, and the first
+		// client that posts the move anyway hands a case to a handler the
+		// gemeente has not been paid for. Refused as a RuntimeException, which
+		// OpenRegister answers 422 with the sentence in `error` (ADR-050).
+		$unpaid = $this->whyPaymentBlocks(object: $object);
+		if ($unpaid !== '') {
+			throw new RuntimeException($unpaid);
 		}
 
 		try {

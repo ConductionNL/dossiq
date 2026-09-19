@@ -60,6 +60,7 @@ import MailIntakeLogView from './views/intake/MailIntakeLogView.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import PmBottleneckTableWidget from './views/processMining/PmBottleneckTableWidget.vue'
 import PmCaseTypeFilter from './views/processMining/PmCaseTypeFilter.vue'
+import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'
 import PmDwellChartWidget from './views/processMining/PmDwellChartWidget.vue'
 import PmKpiWidget from './views/processMining/PmKpiWidget.vue'
 import PmThroughputChartWidget from './views/processMining/PmThroughputChartWidget.vue'
@@ -91,6 +92,8 @@ import { toggleCaseFavourite } from './utils/caseFavourite.js'
 // Mark a case read or unread from a list row (unread-state-on-the-case).
 // @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md
 import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'
+import { openCaseOfDocument } from './utils/contactDocuments.js'
+import { readFileAsMessage } from './utils/savedMail.js'
 import { readLocationFilters } from './utils/selectionScope.js'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
@@ -343,6 +346,20 @@ export default {
 	// The Integrations page's Add integration header action. A FUNCTION
 	// handler because it leaves the app for integriq's Connections overview.
 	openIntegriqConnections,
+	// The contact and organisation Documents panels' `open-case` row action
+	// (the-contact-360-shows-documents). A FUNCTION handler because the row is
+	// a `dispatch` and the destination is its CASE: `rowRoute` pushes the row's
+	// own id, which would navigate to a case page for a uuid no case has, and
+	// that looks exactly like a deleted case rather than like a bug.
+	openCaseOfDocument,
+	// The case Files tab's `read-as-message` row action
+	// (inbound-messages-consume-integriq). A FUNCTION handler because
+	// CnFilesBrowser's row-action vocabulary is `open-modal` and `handler` and
+	// has no `api-call`, so a declared POST would render a menu item that does
+	// nothing when clicked; and because the browser has NO per-row condition,
+	// so the check that this row is a mail file at all lives in the handler
+	// and answers with a sentence rather than by being absent.
+	readFileAsMessage,
 	MyWorkView, // current-user case index (assignee=uid) in card view — CnIndexPage wrapper
 	// Features & roadmap. Wraps the lib's CnFeaturesAndRoadmapPage (which has
 	// no slots, so `type: "roadmap"` could not carry a third surface) and adds
@@ -377,6 +394,7 @@ export default {
 	PmDwellChartWidget, // dwell time by status (CnChartWidget bar)
 	PmThroughputChartWidget, // weekly throughput (CnChartWidget line)
 	PmBottleneckTableWidget, // bottleneck ranking (ad-hoc row shape, no object-list leaf applies)
+	PmDwellByAssigneeWidget, // the same dwell intervals keyed by who held them (dwell-time-on-the-working-calendar)
 
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,

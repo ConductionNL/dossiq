@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Controller;
 
 use Exception;
 use OCA\Dossiq\Service\Assistant\CaseAssistantService;
+use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
+use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
 use OCP\AppFramework\Controller;
@@ -57,6 +59,8 @@ class AssistantController extends Controller {
 	 * @param IUserSession $userSession Resolves the requesting user.
 	 * @param IL10N $l10n Localization service for translations.
 	 * @param LoggerInterface $logger Structured logger.
+	 * @param CaseTypeAiFeatures|null $aiFeatures Reads what a case type declared.
+	 * @param HermiqAiFeatureClient|null $aiFeatureClient Reads where each declared feature runs.
 	 */
 	public function __construct(
 		string $appName,
@@ -66,6 +70,10 @@ class AssistantController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly IL10N $l10n,
 		private readonly LoggerInterface $logger,
+		// Nullable and last, so every existing construction of this controller
+		// keeps working; the container supplies both.
+		private readonly ?CaseTypeAiFeatures $aiFeatures = null,
+		private readonly ?HermiqAiFeatureClient $aiFeatureClient = null,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -95,6 +103,87 @@ class AssistantController extends Controller {
 
 		return new JSONResponse(['available' => $this->hermiqClient->isAvailable()]);
 	}//end availability()
+
+	/**
+	 * Which AI features a case type offers on a surface, and where each runs.
+	 *
+	 * 🔴 AN UNDECLARED CASE TYPE MAKES NO CALL. The declaration is read first
+	 * and locally, and hermiq is only asked when something was declared, which
+	 * is the difference between a feature that is off and a case that is sent
+	 * somewhere to find out. That is REQ-AIC-01 and it is a privacy rule
+	 * before it is a feature flag.
+	 *
+	 * 🔴 THE PROVIDER AND THE PLACE COME FROM HERMIQ, never from here
+	 * (REQ-AIC-02). dossiq holds no provider, model or residency setting and
+	 * offers no way to set one. A feature hermiq does not answer for is
+	 * reported unavailable, never as local — an unknown residency shown as
+	 * "here" is the one wrong answer this endpoint could give.
+	 *
+	 * @return JSONResponse `{features: [{slug, surface, available, provider, residency}]}`.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @no-admin-idor-exempt There is no object to scope to. This method fetches
+	 * nothing by id: the case TYPE declaration arrives in the request body and
+	 * is read locally, and what comes back from hermiq is a global residency
+	 * map that is the same for every caller. No stored case, document or party
+	 * is read, so there is no per-object owner to check and a guard here would
+	 * be checking a permission on nothing.
+	 *
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-the-provider-and-the-place-are-read-from-hermiq-never-set-in-dossiq-req-aic-02
+	 */
+	public function aiFeatures(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['error' => $this->l10n->t('Authentication required')],
+				Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		if ($this->aiFeatures === null || $this->aiFeatureClient === null) {
+			return new JSONResponse(['features' => []]);
+		}
+
+		$caseType = (array)$this->request->getParam('caseType', []);
+		$surface = (string)$this->request->getParam('surface', CaseTypeAiFeatures::SURFACE_CASE);
+
+		$declared = $this->aiFeatures->on(caseType: $caseType, surface: $surface);
+		if ($declared === []) {
+			// Nothing declared for this surface: answer locally and send
+			// nothing anywhere.
+			return new JSONResponse(['features' => []]);
+		}
+
+		$residency = $this->aiFeatureClient->featureResidency();
+
+		$features = [];
+		foreach ($declared as $slug) {
+			$row = ($residency[$slug] ?? null);
+			if (is_array($row) === false) {
+				// Declared here, unknown to hermiq. Unavailable, and said so
+				// rather than shown with an empty provider that reads as local.
+				$features[] = [
+					'slug' => $slug,
+					'surface' => $surface,
+					'available' => false,
+					'provider' => null,
+					'residency' => null,
+				];
+				continue;
+			}
+
+			$features[] = [
+				'slug' => $slug,
+				'surface' => $surface,
+				'available' => true,
+				'provider' => ($row['provider'] ?? null),
+				'residency' => ($row['residency'] ?? null),
+			];
+		}//end foreach
+
+		return new JSONResponse(['features' => $features]);
+	}//end aiFeatures()
 
 	/**
 	 * Run one conversational turn against a case.

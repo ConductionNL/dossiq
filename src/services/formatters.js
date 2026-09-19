@@ -16,6 +16,8 @@
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
+import { approvalMarkerLabel } from './approvalMarker.js'
+import { scanVerdictLabel } from './scanVerdict.js'
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
@@ -132,6 +134,24 @@ export default {
 	 * @return {string}
 	 */
 	statusTypeName: (value) => lookupRelatedName('statusType', value),
+
+	/**
+	 * What the virus scanner recorded about a document row.
+	 *
+	 * Read, never inferred: the value is whatever `ScanVerdictReader`
+	 * answered, and a row carrying nothing reads Not scanned rather than
+	 * blank, because a blank cell in a Scan column reads as reassurance.
+	 *
+	 * @param {object|string} value The verdict, or the bare state.
+	 * @return {string} The sentence.
+	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 */
+	scanVerdict: (value) => scanVerdictLabel(value),
+	// approval-chain-on-the-document REQ-BVL-005. The value is the marker the
+	// approval-markers endpoint answered for this document, or undefined for a
+	// document nobody routed, which renders NOTHING rather than a word: an
+	// empty marker and "Approved" are different rows.
+	approvalChain: (value) => approvalMarkerLabel(value),
 
 	/**
 	 * Sub-case count badge for a case row in the case list. Returns "N

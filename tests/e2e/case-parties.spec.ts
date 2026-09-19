@@ -53,6 +53,7 @@ const FORM_FIELDS = [
 	'name',
 	'roleType',
 	'participant',
+	'representedParty',
 	'delegate',
 	'delegateUntil',
 	'description',
@@ -637,6 +638,127 @@ test.describe('Case detail — the Parties tab', () => {
 		await expect(
 			parties.first().locator('[data-testid="case-parties-primary"]'),
 		).toHaveCount(1)
+	})
+
+	// --- The generic Gemachtigde role type, row 5.8. ---
+	//
+	// 🔴 NOT YET RUN, for the same reason the two tests above are not: there is
+	// no Playwright runner on the build host. Each one names what would break
+	// it, so the citation can be checked the first time the suite runs.
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e roles-decisions::a-representative-on-a-permit-case
+	//
+	// BREAKS IF: SeedGemachtigdeRoleType stops writing the row, or writes it
+	// with a `caseType`. The seeded case type in this spec declares a handler
+	// and an advisor and NO representative, so a row that names any case type
+	// leaves this list without one. Asserted on the stored rows rather than on
+	// the picker, because a form-field registry entry is not mounted by
+	// nextcloud-vue 3.2.0 yet: what the picker will offer is exactly this list.
+	test('a case type that declares no representative is still offered Gemachtigde', async () => {
+		const rows = await listObjects(api, 'roleType', { _limit: '200' })
+
+		const generic = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.genericRole ?? '') === 'gemachtigde'
+				&& String(row.caseType ?? '') === '',
+		)
+		expect(
+			generic.length,
+			'the seed must leave exactly one role type that names no case type',
+		).toBe(1)
+
+		// The list this case type's Add party form offers: its own seats, then
+		// the generic ones. The representative is in it, and it is not one of
+		// this case type's own rows.
+		const own = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === caseTypeId,
+		)
+		expect(
+			own.some(
+				(row: Record<string, unknown>) =>
+					String(row.genericRole ?? '') === 'gemachtigde',
+			),
+			'the seeded case type must declare no representative of its own',
+		).toBe(false)
+	})
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#bezwaar-keeps-one-gemachtigde
+	// @e2e roles-decisions::bezwaar-keeps-one-gemachtigde
+	//
+	// BREAKS IF: `offeredRoleTypes` stops skipping a generic row whose key the
+	// case type already claims. The seeded row below IS that case: a role type
+	// of this case type keyed `gemachtigde`. Two entries called Gemachtigde,
+	// with nothing on screen to tell them apart, is the failure a handler meets.
+	test('a case type declaring its own Gemachtigde is offered it once', async () => {
+		const own = await createObject(api, token, 'roleType', {
+			name: `${RUN_PREFIX} Gemachtigde eigen`,
+			description: 'Throwaway role type seeded by case-parties.spec.',
+			caseType: caseTypeId,
+			genericRole: 'gemachtigde',
+		})
+		expect(
+			objectId(own),
+			'the own role type must have been created',
+		).toBeTruthy()
+
+		// The offer, computed the way `src/services/roleTypeOptions.js` does:
+		// this case type's own rows, then the generic rows whose key nobody
+		// claimed. The rule is unit-tested in tests/vitest/gemachtigdeRole.spec.js;
+		// what this asserts is that the instance's real rows exercise it, which
+		// a unit test on invented rows cannot say.
+		const rows = await listObjects(api, 'roleType', { _limit: '200' })
+		const mine = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === caseTypeId,
+		)
+		const claimed = new Set(
+			mine
+				.map((row: Record<string, unknown>) => String(row.genericRole ?? ''))
+				.filter((key: string) => key !== ''),
+		)
+		const generic = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === ''
+				&& !claimed.has(String(row.genericRole ?? '')),
+		)
+
+		const representatives = [...mine, ...generic].filter(
+			(row: Record<string, unknown>) =>
+				String(row.genericRole ?? '') === 'gemachtigde',
+		)
+		expect(representatives).toHaveLength(1)
+		// The type's own row wins: it is the one its routing rules point at.
+		expect(objectId(representatives[0])).toBe(objectId(own))
+	})
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#represented-party-is-visible
+	// @e2e roles-decisions::represented-party-is-visible
+	//
+	// BREAKS IF: `role.representedParty` stops being stored (the schema version
+	// did not move, so OpenRegister fast-skipped it and drops the property in
+	// silence), or `representedByMap` starts reading `delegateFrom` again. The
+	// read-back is over the API rather than off the page, because a dropped
+	// property renders exactly like a party who represents nobody.
+	test('a representative names the party they act for, and it is not the delegation window', async () => {
+		const representativeName = `${RUN_PREFIX} gemachtigde role`
+		const created = await createObject(api, token, 'role', {
+			name: representativeName,
+			roleType: advisorTypeId,
+			case: partiesCaseId,
+			participant: `${RUN_PREFIX}-representative`,
+			representedParty: HANDLER_PARTICIPANT,
+		})
+
+		const stored = await showObject(api, 'role', objectId(created))
+		expect(
+			String(stored.representedParty ?? ''),
+			'OpenRegister must have kept representedParty. An empty value here means the role schema version did not move and the property was dropped without a word.',
+		).toBe(HANDLER_PARTICIPANT)
+		// The delegation window is untouched: it is a date, and it is what this
+		// change deliberately did NOT reuse.
+		expect(String(stored.delegateFrom ?? '')).toBe('')
 	})
 
 	// The team half of the change. Nested inside the same describe on purpose:

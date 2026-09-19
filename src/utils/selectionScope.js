@@ -40,6 +40,16 @@ export const SCOPE_RESULT = 'result'
  * stored query straight into `ObjectService::searchObjects()`, the same call
  * the list itself makes.
  *
+ * 🔴 NEITHER IS `_related[…]`, FOR THE SAME REASON. A filter on a case type's
+ * own field narrows the result set exactly as a search term does: it is
+ * openregister's related-row query over the `caseProperty` rows that hang off
+ * each case, and it resolves inside the same `searchObjects()` call. Dropping
+ * it would hand the job every case in the register while the button said
+ * "Select all 43 cases matching this filter". This list is a DENY list, so a
+ * `_related` key already survives; the point of saying so here is that it must
+ * keep surviving, and the test that checks it is what makes adding it to this
+ * list a change somebody has to defend.
+ *
  * @type {Array<string>}
  */
 const NOT_A_FILTER = [

@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
 use OCA\Dossiq\Service\Sharing\CaseLinkShares;
@@ -198,9 +199,36 @@ class CaseSharingServiceFederationTest extends TestCase {
 			accessLinks: $accessLinks,
 			linkShares: new CaseLinkShares($settings, $gateway, $accessLinks, $logger),
 			federatedShares: new FederatedCaseShareService($settings, $gateway, $logger, $audit),
+			consent: self::allowingConsentGate(),
 			logger: $logger,
 		);
 	}//end makeSharingService()
+
+	/**
+	 * A consent gate that lets every partner share through.
+	 *
+	 * Stubbed here because this test's subject is the federated share and the
+	 * access link, not the consent. REQ-CST-01 and REQ-CST-02 are watched
+	 * against a real in-memory register in PartnerShareScopeTest.
+	 *
+	 * @return CaseTransferConsentGate The gate.
+	 */
+	private static function allowingConsentGate(): CaseTransferConsentGate {
+		$gate = self::createStub(CaseTransferConsentGate::class);
+		$gate->method('assess')->willReturn(
+			[
+				'allowed' => true,
+				'rule' => '',
+				'sentence' => '',
+				'consent' => null,
+				'scope' => [],
+				'until' => '',
+				'crossesOrganisation' => true,
+			]
+		);
+
+		return $gate;
+	}//end allowingConsentGate()
 
 	/**
 	 * @return void

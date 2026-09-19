@@ -29,8 +29,11 @@ namespace OCA\Dossiq\AppInfo\Registrar;
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
+use OCA\Dossiq\Service\Money\CasePaymentReader;
+use OCA\Dossiq\Service\Money\UnpaidCaseGate;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
+use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -75,6 +78,15 @@ class LifecycleRegistrar {
 				resultWriter: $container->get(CaseResultWriter::class),
 				grants: $container->get(OpenRegisterGrantsGateway::class),
 				externalHome: $container->get(ExternalHome::class),
+				// The three fees-and-payments-on-the-case (#2930) added to the
+				// provider. They are named here for the same reason the four
+				// above them are: this service is built by hand, so a
+				// dependency added to the constructor and not to this call is
+				// an ArgumentCountError on the available-actions call, which a
+				// reader sees as a case whose timeline is dead.
+				unpaidCases: $container->get(UnpaidCaseGate::class),
+				payments: $container->get(CasePaymentReader::class),
+				caseTypes: $container->get(CaseTypeReader::class),
 				logger: $container->get(LoggerInterface::class),
 			)
 		);

@@ -35,6 +35,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Routing\AreaRouting;
 use OCA\Dossiq\Service\Routing\RoleDelegationResolver;
 use OCA\Dossiq\Service\Routing\RoutingStrategyMissingException;
 use OCA\Dossiq\Service\Routing\StrategyRegistry;
@@ -81,6 +82,7 @@ class RoleResolverService {
 	 * @param SettingsService $settingsService Bridge to ObjectService + config
 	 * @param ICacheFactory $cacheFactory Cache factory
 	 * @param RoleDelegationResolver $delegation Active-window delegate substitution
+	 * @param AreaRouting $area Turns the area held on a case into the team a rule routes to
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
@@ -88,6 +90,7 @@ class RoleResolverService {
 		private readonly SettingsService $settingsService,
 		ICacheFactory $cacheFactory,
 		private readonly RoleDelegationResolver $delegation,
+		private readonly AreaRouting $area,
 		private readonly LoggerInterface $logger,
 	) {
 		$this->cache = $cacheFactory->createLocal(Application::APP_ID . '_routing');
@@ -179,6 +182,14 @@ class RoleResolverService {
 
 		$roles = $this->loadCaseRoles(caseId: $caseId);
 		$strategy = $this->registry->get($strategyName);
+
+		// THE AREA DECIDES THE TEAM BEFORE THE STRATEGY PICKS THE PERSON.
+		// `AreaRouting` shipped with REQ-RTP-04 and nothing called it, so a
+		// rule carrying `areaTeams` routed as though the map were not there
+		// and a case carrying `districtTeam` was ignored. It answers
+		// conservatively: a rule with no map and a case with no team come back
+		// unchanged, so this is a no-op for every rule written before it.
+		$rule = $this->withArea(rule: $rule, case: $case);
 		$primary = $strategy->resolve($rule, $case, $roles);
 
 		$fallback = (string)($rule['fallback'] ?? '');
@@ -208,6 +219,57 @@ class RoleResolverService {
 
 		return $resolved;
 	}//end resolve()
+
+	/**
+	 * The rule as the case's area rewrites it.
+	 *
+	 * 🔴 THE CASE TYPE IS NOT READ HERE, and that is a stated gap rather than
+	 * an oversight. `AreaRouting::resolve()` takes an optional case type for
+	 * one thing only, the `areaFallbackRoleType` a case outside every boundary
+	 * routes to, and this service holds no case-type reader. Passing null means
+	 * an unplaceable case falls back to the rule's own role rather than the
+	 * type's, which is the behaviour of every rule written before REQ-RTP-04.
+	 * The fallback half lands with the resolver that writes `district` onto a
+	 * case, which is still dark for want of an address id the case does not
+	 * carry.
+	 *
+	 * @param array<string, mixed> $rule The routing rule.
+	 * @param array<string, mixed> $case The case, carrying its held area.
+	 *
+	 * @return array<string, mixed> The rule, with the area's team and role on it.
+	 *
+	 * @spec openspec/changes/routing-by-weight-position-and-area/specs/role-based-step-routing/spec.md#requirement-the-case-holds-the-area-it-is-in-and-routing-reads-it-req-rtp-04
+	 */
+	private function withArea(array $rule, array $case): array {
+		$resolved = $this->area->resolve(rule: $rule, case: $case, caseType: null);
+
+		$team = trim((string)$resolved['team']);
+		if ($team !== '') {
+			$rule['team'] = $team;
+		}
+
+		$roleType = trim((string)$resolved['roleType']);
+		if ($roleType !== '') {
+			$rule['roleType'] = $roleType;
+		}
+
+		if ($resolved['fallbackUsed'] === true) {
+			// SAID OUT LOUD. An address that could not be placed routes
+			// somewhere plausible, and without this line the only sign is a
+			// case sitting with a team that has never seen it.
+			$this->logger->info(
+				'Dossiq: a case was routed by the area fallback',
+				[
+					'event' => 'RoleRoutingAreaFallback',
+					'caseId' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
+					'reason' => (string)$resolved['reason'],
+					'app' => Application::APP_ID,
+				],
+			);
+		}
+
+		return $rule;
+	}//end withArea()
 
 	/**
 	 * Whether the given user is permitted to execute against the rule.

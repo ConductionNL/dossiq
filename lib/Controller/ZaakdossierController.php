@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -60,6 +61,8 @@ class ZaakdossierController extends Controller {
 	 * @param InformatieobjectReader $reader The clearance-gated document reader.
 	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
+	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
+	 *        so a document in an unfinished route cannot be made final.
 	 */
 	public function __construct(
 		string $appName,
@@ -68,6 +71,7 @@ class ZaakdossierController extends Controller {
 		private readonly InformatieobjectReader $reader,
 		private readonly DossierUploadHandler $uploadHandler,
 		private readonly IUserSession $userSession,
+		private readonly DocumentApprovalClearance $approvals,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -291,6 +295,63 @@ class ZaakdossierController extends Controller {
 
 		return new JSONResponse($result);
 	}//end updateMetadata()
+
+	/**
+	 * Which of these documents are in an approval route, and at which step.
+	 *
+	 * 🔑 IT IS A READ AND NEVER A COPY. The marker is decidiq's route state,
+	 * asked for at load time. A stored copy on the document would be written
+	 * once and would then disagree with the route the first time somebody
+	 * approved from decidiq's own page, and the row would go on saying "step
+	 * two of three" after the route had finished.
+	 *
+	 * 🔑 ONE CALL FOR THE WHOLE TAB. The Files tab has one row per document, so
+	 * a per-row question is one round trip per row on a case with forty of
+	 * them. The ids come in together and the answers go back together.
+	 *
+	 * 🔴 EVERY ID IS GUARDED. A route's step names a person, and being signed
+	 * in is not permission to read who is holding up somebody else's file, so
+	 * each id goes through the same readability check a single read does and an
+	 * id the caller may not read is DROPPED from the answer rather than
+	 * refused: refusing would turn one unreadable document into a Files tab
+	 * with no markers at all.
+	 *
+	 * @return JSONResponse The markers, keyed by document id.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+	 */
+	public function approvalMarkers(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$raw = (string)$this->request->getParam('ids', '');
+		$ids = array_values(array_filter(array_map('trim', explode(',', $raw))));
+
+		$markers = [];
+		foreach ($ids as $id) {
+			if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
+				continue;
+			}
+
+			$clearance = $this->approvals->forDocument(documentId: $id);
+			if (($clearance['routed'] ?? false) !== true) {
+				continue;
+			}
+
+			$markers[$id] = [
+				'routed' => true,
+				'cleared' => ($clearance['cleared'] ?? false),
+				'waitingOn' => ($clearance['waitingOn'] ?? []),
+				'reason' => $this->approvals->describe(clearance: $clearance),
+			];
+		}
+
+		return new JSONResponse(['markers' => $markers]);
+	}//end approvalMarkers()
 
 	/**
 	 * Transition a single informatieobject's status.

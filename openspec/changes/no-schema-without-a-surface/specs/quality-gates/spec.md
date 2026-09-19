@@ -33,7 +33,17 @@ go down.
 #### Scenario: A retired schema leaves no trace
 @e2e exclude structural; covered by the per-retirement grep recorded in each PR
 
-- **GIVEN** schema `supplierKpi` is retired
+- **GIVEN** a schema is retired
 - **WHEN** `lib/`, `src/` and `tests/` are searched for the slug
 - **THEN** no reference SHALL remain
 - **AND** the mock register SHALL hold no seed with that schema
+
+#### Scenario: A schema promised by a shipped spec is surfaced, not retired
+@e2e exclude structural; covered by the triage table and the allowlist's ownerChange field
+
+- **GIVEN** a schema with no surface whose owning change shipped its storage
+  and its seeds
+- **WHEN** it is triaged
+- **THEN** its fate SHALL be surface, with the owning change named
+- **AND** it SHALL NOT be deleted on the strength of having no reader,
+  because an instance may have been filling it since the change shipped
