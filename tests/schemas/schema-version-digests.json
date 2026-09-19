@@ -720,8 +720,8 @@
         "digest": "3bc2803a233961d5fd04d5022ec1270eab45fe11d87b83d28f33df11a9304613"
     },
     "lib/Settings/dossiq_register.json::dossiqIntegration": {
-        "version": "1.2.0",
-        "digest": "c8d2d956f1b0f1ee16d96f780628f111cb60c757fc17c615018978c5daf3019e"
+        "version": "1.3.0",
+        "digest": "273df9c2393be4f2f861dfdad3a725c8cc4fbf4345c91665fc1bf8085b25c3d7"
     },
     "lib/Settings/dossiq_register.json::emailTemplate": {
         "version": "1.0.0",

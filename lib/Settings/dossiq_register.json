@@ -11080,9 +11080,10 @@
                 },
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "title": "Integration",
                 "x-openregister-catalogue": true,
+                "x-openregister-demo-data": "The rows are a catalogue that register.d seeds, and ImportHandler upserts on register, schema and slug, so a generated demo row ships a second BRP and a second ZGW entry beside the real ones. MockRegisterHasNoSeededCatalogueTest refuses them for that reason. The schema is deprecated as well: nothing writes these rows any more, because the Integrations page reads integriq's app_connection.",
                 "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, and the authorization block is load-bearing rather than decorative. OpenRegister treats an ABSENT block as open. Without one, GET /apps/openregister/api/objects/dossiq/dossiqIntegration answered every row to every authenticated account, measured at ten rows to an account in no groups. The Integrations page is admin-only and #2307 added a router guard, but a router guard stops the page and not the data. All four actions are named on purpose. Once the block is non-empty, OpenRegister fails an unlisted action closed, so naming only read would have moved the write posture too. Every writer is already admin-gated behind AuthorizedAdminSetting, so naming admins on create, update and delete matches what the code does today.",
                 "authorization": {
                     "read": [
