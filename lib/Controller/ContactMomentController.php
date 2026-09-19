@@ -31,10 +31,9 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\BurgerIdentificationService;
 use OCA\Dossiq\Service\CaseVoorbladService;
-use OCA\Dossiq\Service\CitizenLookupGuard;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\DoorverbindingService;
-use OCA\Dossiq\Service\Kcc\CitizenLookupRecorder;
+use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
 use OCA\Dossiq\Service\QuickActionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -61,10 +60,10 @@ class ContactMomentController extends Controller {
 	 * @param DoorverbindingService $transferService The doorverbinding service.
 	 * @param BurgerIdentificationService $burgerService The burger identification service.
 	 * @param IUserSession $userSession The user session.
-	 * @param CitizenLookupGuard $citizenLookupGuard The citizen-lookup role guard.
-	 * @param CitizenLookupRecorder $lookupRecorder Writes one audit row per
-	 *        lookup attempt, refusals included, because the refusal is what catches
-	 *        enumeration.
+	 * @param GuardedCitizenLookup $lookups Who may look a citizen up, and the audit
+	 *        row that says they did. One collaborator rather than two, because the
+	 *        refusal is what catches enumeration and a caller that remembers the
+	 *        guard and forgets the recorder leaves that pattern unrecorded.
 	 */
 	public function __construct(
 		string $appName,
@@ -75,8 +74,7 @@ class ContactMomentController extends Controller {
 		private readonly DoorverbindingService $transferService,
 		private readonly BurgerIdentificationService $burgerService,
 		private readonly IUserSession $userSession,
-		private readonly CitizenLookupGuard $citizenLookupGuard,
-		private readonly CitizenLookupRecorder $lookupRecorder,
+		private readonly GuardedCitizenLookup $lookups,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -111,13 +109,7 @@ class ContactMomentController extends Controller {
 	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function refuseLookup(string $uid, string $burgerId): JSONResponse {
-		$this->lookupRecorder->record(
-			employeeId: $uid,
-			subjectId: $burgerId,
-			allowed: false,
-			fields: [],
-			ground: 'geen kcc-rol',
-		);
+		$this->lookups->recordRefusal(uid: $uid, burgerId: $burgerId);
 
 		return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 	}//end refuseLookup()
@@ -133,13 +125,7 @@ class ContactMomentController extends Controller {
 	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-every-citizen-lookup-is-recorded-refusals-included-req-sec-cl-3
 	 */
 	private function recordLookup(\OCP\IUser $user, string $burgerId): void {
-		$this->lookupRecorder->record(
-			employeeId: $user->getUID(),
-			subjectId: $burgerId,
-			allowed: true,
-			fields: $this->citizenLookupGuard->revealedFieldsFor(user: $user),
-			ground: 'kcc-rol',
-		);
+		$this->lookups->recordAnswer(user: $user, burgerId: $burgerId);
 	}//end recordLookup()
 
 	/**
@@ -162,7 +148,7 @@ class ContactMomentController extends Controller {
 		// This method both writes a contactmoment against a caller-supplied
 		// citizen identifier and returns that citizen's voorblad, so it is the
 		// same exposure as `voorblad()` with a write attached.
-		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+		if ($this->lookups->isAllowed(user: $user) === false) {
 			return $this->refuseLookup(
 				uid: $user->getUID(),
 				burgerId: (string)$this->request->getParam('geidentificeerdeBurgerId', '')
@@ -206,7 +192,7 @@ class ContactMomentController extends Controller {
 
 		$voorblad = null;
 		if ($burgerId !== '') {
-			$voorblad = $this->citizenLookupGuard->redactForCaller(
+			$voorblad = $this->lookups->redactForCaller(
 				user: $user,
 				payload: $this->caseVoorbladService->getCaseVoorblad($burgerId)
 			);
@@ -243,7 +229,7 @@ class ContactMomentController extends Controller {
 		// `$burgerId` is a citizen identifier taken straight off the query
 		// string; without this the whole contact history of any citizen was
 		// readable by every authenticated account (PROC-IDOR-01).
-		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+		if ($this->lookups->isAllowed(user: $user) === false) {
 			return $this->refuseLookup(uid: $user->getUID(), burgerId: $burgerId);
 		}
 
@@ -258,7 +244,7 @@ class ContactMomentController extends Controller {
 		// describes and because these rows were composed by this app rather
 		// than rendered by OpenRegister, so no property rule has touched them.
 		return new JSONResponse(
-			$this->citizenLookupGuard->redactForCaller(
+			$this->lookups->redactForCaller(
 				user: $user,
 				payload: ['contactmomenten' => $records]
 			)
@@ -288,7 +274,7 @@ class ContactMomentController extends Controller {
 		// open cases and recent contact history. Reproduced live at HTTP 200
 		// for an unrelated authenticated account before this guard existed
 		// (PROC-IDOR-01) — iterating BSN-shaped ids walked the population.
-		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+		if ($this->lookups->isAllowed(user: $user) === false) {
 			return $this->refuseLookup(uid: $user->getUID(), burgerId: $burgerId);
 		}
 
@@ -300,7 +286,7 @@ class ContactMomentController extends Controller {
 		$this->recordLookup(user: $user, burgerId: $burgerId);
 
 		return new JSONResponse(
-			$this->citizenLookupGuard->redactForCaller(user: $user, payload: $voorblad)
+			$this->lookups->redactForCaller(user: $user, payload: $voorblad)
 		);
 	}//end voorblad()
 
@@ -359,7 +345,7 @@ class ContactMomentController extends Controller {
 		}
 
 		// Creates a municipal case bound to a caller-supplied citizen id.
-		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+		if ($this->lookups->isAllowed(user: $user) === false) {
 			return $this->refuseLookup(
 				uid: $user->getUID(),
 				burgerId: (string)$this->request->getParam('burgerId', '')
@@ -397,7 +383,7 @@ class ContactMomentController extends Controller {
 		}
 
 		// Takes an arbitrary `caseId` AND an arbitrary `burgerId`.
-		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+		if ($this->lookups->isAllowed(user: $user) === false) {
 			return $this->refuseLookup(
 				uid: $user->getUID(),
 				burgerId: (string)$this->request->getParam('burgerId', '')
