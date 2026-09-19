@@ -280,9 +280,9 @@ test.describe('Following a case', () => {
 		await toggle.click()
 		await expect(toggle).toHaveAttribute('aria-pressed', 'false')
 
-		await expect.poll(async () => await followedIds()).not.toContain(
-			cases.dropped,
-		)
+		await expect
+			.poll(async () => await followedIds())
+			.not.toContain(cases.dropped)
 		expect(await followerUids(cases.dropped)).toEqual([])
 
 		expect(errors).toEqual([])
@@ -300,12 +300,13 @@ test.describe('Following a case', () => {
 		const res = await api.get(`${OR}/schemas/case`, {
 			headers: { requesttoken: token },
 		})
-		expect(res.ok(), `reading the case schema answered ${res.status()}`)
-			.toBeTruthy()
+		expect(
+			res.ok(),
+			`reading the case schema answered ${res.status()}`,
+		).toBeTruthy()
 
 		const schema = await res.json()
-		const rules
-			= schema?.configuration?.['x-openregister-notifications'] ?? {}
+		const rules = schema?.configuration?.['x-openregister-notifications'] ?? {}
 		const rule = rules.caseMovedForItsFollowers
 
 		expect(rule, 'the live case schema addresses no followers').toBeTruthy()
@@ -356,8 +357,8 @@ test.describe('Following a case', () => {
 			})
 
 			const available = await getAvailableTransitions(api, token, caseId)
-			const transitions
-				= available.body?.transitions ?? available.body?.results ?? []
+			const transitions =
+				available.body?.transitions ?? available.body?.results ?? []
 			expect(
 				transitions.length,
 				`no transition is available on ${caseId}`,
@@ -369,8 +370,10 @@ test.describe('Following a case', () => {
 				caseId,
 				transitions[0].id ?? transitions[0].transitionId,
 			)
-			expect(moved.status, `moving ${caseId} answered ${moved.status}`)
-				.toBeLessThan(400)
+			expect(
+				moved.status,
+				`moving ${caseId} answered ${moved.status}`,
+			).toBeLessThan(400)
 		}
 
 		const watchedTitle = (await showObject(api, 'case', watched)).title
@@ -386,8 +389,6 @@ test.describe('Following a case', () => {
 			})
 			.toContain(watchedTitle)
 
-		expect((await notificationSubjects()).join('\n')).not.toContain(
-			ignoredTitle,
-		)
+		expect((await notificationSubjects()).join('\n')).not.toContain(ignoredTitle)
 	})
 })

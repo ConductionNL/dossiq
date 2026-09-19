@@ -38,9 +38,9 @@ describe('publicLabelOf', () => {
 	})
 
 	it('treats a blank label as no label', () => {
-		expect(
-			publicLabelOf({ name: 'In behandeling', publicLabel: '   ' }),
-		).toBe('In behandeling')
+		expect(publicLabelOf({ name: 'In behandeling', publicLabel: '   ' })).toBe(
+			'In behandeling',
+		)
 	})
 
 	it('reads a row with neither as nothing', () => {
@@ -78,9 +78,7 @@ describe('the case carries the answer', () => {
 		}
 
 		expect(labelOnCase(caseRow)).toBe('We check your application')
-		expect(descriptionOnCase(caseRow)).toBe(
-			'You hear from us within two weeks.',
-		)
+		expect(descriptionOnCase(caseRow)).toBe('You hear from us within two weeks.')
 	})
 
 	it('reads a case projected without the fields as nothing to show', () => {

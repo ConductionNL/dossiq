@@ -59,16 +59,13 @@ const register = JSON.parse(
 		'utf8',
 	),
 )
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 
 const page = (id) => manifest.pages.find((p) => p.id === id)
 const caseDetail = page('CaseDetail')
-const caseNotifications
-	= register.components.schemas.case['x-openregister-notifications']
+const caseNotifications =
+	register.components.schemas.case['x-openregister-notifications']
 
 /**
  * Mount the Follow strip over a case payload.
@@ -114,7 +111,8 @@ async function mountPanel() {
 				NcLoadingIcon: { template: '<i class="loading" />' },
 				NcEmptyContent: {
 					props: { name: String, description: String },
-					template: '<div class="empty">{{ name }} {{ description }}</div>',
+					template:
+						'<div class="empty">{{ name }} {{ description }}</div>',
 				},
 			},
 		},
@@ -388,9 +386,7 @@ describe('following is declared on the case page', () => {
 		const people = caseDetail.config.widgets.find(
 			(w) => w.id === 'case-people-panel',
 		)
-		const section = people.content.sections.find(
-			(s) => s.label === 'Followers',
-		)
+		const section = people.content.sections.find((s) => s.label === 'Followers')
 
 		expect(section, 'the Followers section is missing').toBeTruthy()
 		expect(section.widget.type).toBe('case-followers')
@@ -509,9 +505,7 @@ describe('what a follower actually hears', () => {
 	it('adds the followers to the escalation without taking the responders off', () => {
 		// A follower hearing an escalation must not cost the people who have to
 		// act on it their own notification.
-		expect(
-			caseNotifications.caseDeclaredMajor.recipients,
-		).toEqual([
+		expect(caseNotifications.caseDeclaredMajor.recipients).toEqual([
 			{ kind: 'field', field: 'majorResponders' },
 			{ watchers: true },
 		])
