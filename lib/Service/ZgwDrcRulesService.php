@@ -53,8 +53,6 @@
  *   Combination of identificatie + bronorganisatie must be unique.
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 

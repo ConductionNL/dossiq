@@ -31,6 +31,7 @@
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import logger from '../logger.js'
 
 /**
  * Stable key for dossiq's cases-on-map overview (one per app).
@@ -170,8 +171,7 @@ export async function fetchCaseTypeOptions({
 		}
 		return options
 	} catch (err) {
-		// eslint-disable-next-line no-console
-		console.warn('[dossiq] case-type options fetch failed', err)
+		logger.warn('case-type options fetch failed', { error: err })
 		return []
 	}
 }

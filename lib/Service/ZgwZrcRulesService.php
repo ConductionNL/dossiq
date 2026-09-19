@@ -43,9 +43,6 @@
  * - zrc-022: Zetten Zaak.archiefstatus
  * - zrc-023: Vernietigen van zaken (cascade delete, in ZrcController)
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
  */
 
 declare(strict_types=1);

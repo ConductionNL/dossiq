@@ -109,6 +109,7 @@ import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import CalendarClock from 'vue-material-design-icons/CalendarClock.vue'
 import CasePlanFollowUpDialog from '../../dialogs/CasePlanFollowUpDialog.vue'
+import logger from '../../logger.js'
 import { caseActionRefusal, plannedRows } from '../../utils/caseActionsHelpers.js'
 import { relationSections } from '../../utils/caseRelationHelpers.js'
 
@@ -271,13 +272,11 @@ export default {
 				// none, and the first thing anyone had to rule out was a read
 				// that had silently thrown.
 				//
-				// The disable, and the console, follow `CaseNotesTab.vue`: the
-				// app has no logger of its own, and a swallowed read is worse
-				// than a lint exception.
-				// eslint-disable-next-line no-console
-				console.error(
-					`[CasePlannedWidget] could not read the planned follow-ups for case ${id}`,
-					error,
+				// It goes through `src/logger.js`, the app's logger, rather
+				// than a bare console with a lint exception in front of it.
+				logger.error(
+					`could not read the planned follow-ups for case ${id}`,
+					{ error },
 				)
 			}
 		},
@@ -306,11 +305,9 @@ export default {
 
 				// Same rule as the planned read above: a read that throws must
 				// not look like a case with no relations.
-				// eslint-disable-next-line no-console
-				console.error(
-					`[CasePlannedWidget] could not read the typed relations for case ${id}`,
+				logger.error(`could not read the typed relations for case ${id}`, {
 					error,
-				)
+				})
 			}
 		},
 

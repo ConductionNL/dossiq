@@ -36,6 +36,8 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { anonymousContext } from './helpers/principals.ts'
+import { expectRefused, REFUSED_ANONYMOUS } from './helpers/refusals.ts'
 
 /** The report endpoint. */
 const REPORT = '/index.php/apps/dossiq/api/reports/process-mining'
@@ -51,7 +53,11 @@ test.describe('REQ-DT-30 the report says which clock it counted on', () => {
 
 	test.beforeAll(async ({ playwright, baseURL }) => {
 		api = await playwright.request.newContext({ baseURL })
-		anonymous = await playwright.request.newContext({ baseURL })
+		// 🔴 NOT THE SAME CALL TWICE. `newContext({ baseURL })` inherits
+		// `use.storageState` from playwright.config.ts, so both lines used to
+		// build the SAME admin session and the refusal asserted below could
+		// never have arrived.
+		anonymous = await anonymousContext(playwright, String(baseURL))
 	})
 
 	test.afterAll(async () => {
@@ -126,13 +132,14 @@ test.describe('REQ-DT-30 the report says which clock it counted on', () => {
 	test('a stranger with no session cannot read the report', async () => {
 		const attempted = await anonymous.get(`${REPORT}?period=all`)
 
-		// 401 without a session, 403 when the instance answers that way, 412
-		// on the missing request token. A 200 is an organisation's whole case
-		// load, with handler names on it, served to nobody in particular.
-		expect(
-			[401, 403, 412],
-			`anonymous read answered ${attempted.status()}: ${await attempted.text()}`,
-		).toContain(attempted.status())
+		// The status AND the reason. A 200 is an organisation's whole case
+		// load, with handler names on it, served to nobody in particular; a
+		// 4xx that names nothing is equally well a broken route.
+		await expectRefused(
+			attempted,
+			REFUSED_ANONYMOUS,
+			'a stranger reading the process-mining report',
+		)
 	})
 
 	test('the page prints the clock in the column header', async ({ page }) => {

@@ -76,16 +76,26 @@ class TermZoneIsTheCalendarsTest extends TestCase {
 	/**
 	 * The organisation calendar's zone is the one used.
 	 *
-	 * Skipped rather than faked when the engine class is not loadable: the
-	 * normaliser guards on `class_exists` before it asks, so aliasing the name
-	 * would be the only way in, and that is the `WorkingClock` pattern. Here
-	 * the point is the ORDER, which the second test pins from the other side.
+	 * THE ENGINE CLASS IS ALIASED INTO EXISTENCE, which is what `WorkingClock`,
+	 * `WorkingDayRoll` and the intake term start already do for the same seam.
+	 * This test used to skip instead, and the skip was not conditional in
+	 * practice: `OCA\OpenRegister\Service\Flow\Timer\WorkingCalendarService` is
+	 * never on this repository's classpath, so the ORDER this test exists to
+	 * pin was checked nowhere and the run stayed green about it. The normaliser
+	 * guards on `class_exists` before it asks the container, so making the name
+	 * real for this process is the only way to walk the branch that matters.
+	 *
+	 * It runs in its own process, so the alias cannot leak into another test's
+	 * `class_exists()`.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 *
 	 * @return void
 	 */
 	public function testTheCalendarZoneWinsOverTheTenants(): void {
 		if (class_exists(CaseDateNormaliser::ENGINE_CALENDAR_CLASS) === false) {
-			$this->markTestSkipped('the engine calendar class is not on this repository classpath');
+			class_alias(FakeZoneCalendars::class, CaseDateNormaliser::ENGINE_CALENDAR_CLASS);
 		}
 
 		$this->assertSame(

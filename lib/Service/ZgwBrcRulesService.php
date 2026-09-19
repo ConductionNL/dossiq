@@ -54,10 +54,6 @@
  *   in besluittype.informatieobjecttypen.
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
