@@ -48,6 +48,19 @@ class CrossAppListenerRegistrar {
 	 * @return void
 	 */
 	public function register(IRegistrationContext $context): void {
+		$this->registerFlowNodes(context: $context);
+		$this->registerDeliveryListeners(context: $context);
+		$this->registerIntakeListeners(context: $context);
+	}//end register()
+
+	/**
+	 * Offer OpenRegister's flow engine the six things a case can do.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 */
+	private function registerFlowNodes(IRegistrationContext $context): void {
 		// ADR-065: OpenRegister owns the flow engine; dossiq contributes the six
 		// things a case can DO, because every one of OpenRegister's own nineteen
 		// nodes is control-flow or data and none of them acts outward.
@@ -62,7 +75,16 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Flow\DossiqFlowNodeListener::class
 			);
 		}
+	}//end registerFlowNodes()
 
+	/**
+	 * Listen for what became of something this app sent out.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 */
+	private function registerDeliveryListeners(IRegistrationContext $context): void {
 		// ADR-041 delivery seam: integriq concludes a besluit-publication
 		// delivery this app requested (PublicationService) with a terminal
 		// DeliveryConcludedEvent; the listener projects the outcome onto the
@@ -76,7 +98,32 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\DeliveryConcludedListener::class
 			);
 		}
+		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
+		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
+		// tracked message, `failed` and `read` included, so this is how a case
+		// learns that a letter did not arrive rather than going on showing the
+		// last good news anyone heard. FQN string and a `class_exists` guard,
+		// the same as the three above and for the same reason.
+		//
+		// It fails towards doing nothing: a wrong name registers nothing, the
+		// stored message keeps the status the send gave it, and nobody is told
+		// a letter arrived that did not.
+		if (class_exists(\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT,
+				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::class
+			);
+		}
+	}//end registerDeliveryListeners()
 
+	/**
+	 * Listen for work arriving from a form, a channel or a message.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 */
+	private function registerIntakeListeners(IRegistrationContext $context): void {
 		// REQ-LEAF-103 (leaf-integrations): a submission of a form a case type
 		// bound opens a case with the statutory clock already running. `forms`
 		// is optional, and the guard is what keeps an instance without it
@@ -114,24 +161,6 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\IntakeMessageRoutedListener::class
 			);
 		}
-
-		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
-		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
-		// tracked message, `failed` and `read` included, so this is how a case
-		// learns that a letter did not arrive rather than going on showing the
-		// last good news anyone heard. FQN string and a `class_exists` guard,
-		// the same as the three above and for the same reason.
-		//
-		// It fails towards doing nothing: a wrong name registers nothing, the
-		// stored message keeps the status the send gave it, and nobody is told
-		// a letter arrived that did not.
-		if (class_exists(\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT) === true) {
-			$context->registerEventListener(
-				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT,
-				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::class
-			);
-		}
-
 		// REQ: inbound-messages-consume-integriq. Integriq offers every received
 		// message to whichever app owns cases, with a result slot the listener
 		// answers linked, created or declined. Nothing listened for it, so
@@ -154,5 +183,5 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\MessageReceivedListener::class
 			);
 		}
-	}//end register()
+	}//end registerIntakeListeners()
 }//end class
