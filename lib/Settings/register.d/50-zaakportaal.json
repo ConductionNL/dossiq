@@ -85,9 +85,9 @@
             "portaalVerzoek": {
                 "slug": "portaalVerzoek",
                 "icon": "FileDocumentEditOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Action",
-                "title": "Portaal Verzoek",
+                "title": "Portal request",
                 "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Dossiq.",
                 "type": "object",
                 "configuration": {

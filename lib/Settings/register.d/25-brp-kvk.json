@@ -44,47 +44,47 @@
                         "properties": {
                             "givenNames": {
                                 "type": "string",
-                                "title": "Voornamen",
+                                "title": "First names",
                                 "description": "Given names of the person."
                             },
                             "namePrefix": {
                                 "type": "string",
-                                "title": "Voorvoegsel",
+                                "title": "Name prefix",
                                 "description": "Surname prefix (tussenvoegsel), e.g. 'de' or 'van'."
                             },
                             "surname": {
                                 "type": "string",
-                                "title": "Geslachtsnaam",
+                                "title": "Last name",
                                 "description": "Family name of the person."
                             }
                         }
                     },
                     "birth": {
                         "type": "object",
-                        "title": "Geboorte",
+                        "title": "Birth",
                         "description": "Birth block per Haal Centraal naming.",
                         "properties": {
                             "date": {
                                 "type": "string",
                                 "format": "date",
-                                "title": "Geboortedatum",
+                                "title": "Date of birth",
                                 "description": "Date of birth (ISO 8601)."
                             }
                         }
                     },
                     "residence": {
                         "type": "object",
-                        "title": "Verblijfplaats",
+                        "title": "Residence",
                         "description": "Residence block per Haal Centraal naming (straat, huisnummer, postcode, woonplaats).",
                         "properties": {
                             "street": {
                                 "type": "string",
-                                "title": "Straat",
+                                "title": "Street",
                                 "description": "Street name of the residence."
                             },
                             "houseNumber": {
                                 "type": "integer",
-                                "title": "Huisnummer",
+                                "title": "House number",
                                 "description": "House number of the residence."
                             },
                             "postcode": {
@@ -94,7 +94,7 @@
                             },
                             "city": {
                                 "type": "string",
-                                "title": "Woonplaats",
+                                "title": "City",
                                 "description": "City/town of the residence."
                             }
                         }
@@ -170,12 +170,12 @@
                         "properties": {
                             "streetName": {
                                 "type": "string",
-                                "title": "Straatnaam",
+                                "title": "Street name",
                                 "description": "Street name of the bezoekadres."
                             },
                             "houseNumber": {
                                 "type": "integer",
-                                "title": "Huisnummer",
+                                "title": "House number",
                                 "description": "House number of the bezoekadres."
                             },
                             "postcode": {
