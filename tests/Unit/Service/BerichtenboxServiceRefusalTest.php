@@ -52,6 +52,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Support\OwningCaseResolver
  * @uses \OCA\Dossiq\Service\Timeline\CaseTimeline
+ * @uses   \OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal
  */
 class BerichtenboxServiceRefusalTest extends TestCase {
 	/**

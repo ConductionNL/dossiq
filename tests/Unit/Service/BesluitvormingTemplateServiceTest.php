@@ -66,6 +66,7 @@ interface BvwTemplateObjectServiceStub {
  *
  * @uses \OCA\Dossiq\Service\Besluitvorming\TemplateBundleSeeder
  * @uses \OCA\Dossiq\Service\Besluitvorming\WorkflowReferenceResolver
+ * @uses   \OCA\Dossiq\Service\Support\JsonEncodedStringProperties
  */
 class BesluitvormingTemplateServiceTest extends TestCase {
 	/**

@@ -48,6 +48,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Cases\ExternalHome
  * @uses \OCA\Dossiq\Lifecycle\CaseActionProvider
  * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate
+ * @uses   \OCA\Dossiq\Service\Money\CasePaymentState
  *
  * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md
  */

@@ -62,6 +62,7 @@ use TypeError;
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses \OCA\Dossiq\Service\Cases\ExternalHome
  * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate
+ * @uses   \OCA\Dossiq\Service\Money\CasePaymentState
  */
 class CaseActionProviderExecuteTest extends TestCase {
 
