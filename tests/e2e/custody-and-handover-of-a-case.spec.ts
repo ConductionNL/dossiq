@@ -37,6 +37,7 @@ import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
+	ensureTeam,
 	getRequestToken,
 	objectId,
 	REGISTER,
@@ -59,11 +60,23 @@ let api: APIRequestContext
 let token: string
 let caseTypeId = ''
 
+/**
+ * The organisatieRol uuid each named unit resolves to.
+ *
+ * `case.assignedGroup` is a uuid reference, so a unit this file talks about by
+ * name has to exist as a row before a case can be held by it.
+ */
+const teams: Record<string, string> = {}
+
 test.beforeAll(async ({ playwright }) => {
 	api = await playwright.request.newContext()
 	token = await getRequestToken(api)
 	const machine = await seedStateMachine(api, token)
 	caseTypeId = machine.caseTypeId
+
+	for (const unit of ['vergunningen', 'toezicht', 'wijkteam']) {
+		teams[unit] = (await ensureTeam(api, token, unit)).id
+	}
 })
 
 test.afterAll(async () => {
@@ -74,6 +87,11 @@ test.afterAll(async () => {
 /**
  * Seed one case held by a named unit.
  *
+ * The unit is named here and stored as the uuid of its `organisatieRol`,
+ * because that is what `case.assignedGroup` declares. Passing the name
+ * answered `400 Property 'assignedGroup' should match format 'uuid'` in
+ * `beforeAll`, and every test in this file died there.
+ *
  * @param unit The organisation unit that holds it.
  * @param title A short title, prefixed with this run's marker by seedCase.
  */
@@ -81,7 +99,7 @@ async function heldCase(unit: string, title: string): Promise<string> {
 	const created = await seedCase(api, token, {
 		title: `${RUN_PREFIX} ${title}`,
 		caseType: caseTypeId,
-		assignedGroup: unit,
+		assignedGroup: teams[unit],
 	})
 	return objectId(created)
 }
