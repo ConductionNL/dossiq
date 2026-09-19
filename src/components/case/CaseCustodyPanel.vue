@@ -233,6 +233,7 @@ export default {
 			 * chain was never asked for.
 			 *
 			 * @return {void}
+			 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
 			 */
 			handler() {
 				this.load()

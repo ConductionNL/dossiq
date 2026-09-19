@@ -47,6 +47,7 @@ export const SOURCE_GROUP = 'group-default'
  *
  * @param {object} entry - One entry from the platform.
  * @return {string} The id.
+ * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function keyFor(entry) {
 	return `${String(entry?.schema ?? '')}-${String(entry?.notification ?? '')}`
@@ -61,6 +62,7 @@ export function keyFor(entry) {
  *   when the platform has no channel axis.
  *
  * @return {Array<object>} `{ id, label, configured, unconfiguredReason }`.
+ * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function channelsFrom({
 	channels = [],
@@ -93,6 +95,7 @@ export function channelsFrom({
  * @param {(entry: object) => string} [options.label] - What to call one entry on screen.
  *
  * @return {Array<object>} `{ id, label, group, groupLabel, appDefault, immediate }`.
+ * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function eventsFrom({ entries = [], label = (entry) => keyFor(entry) } = {}) {
 	return entries.map((entry) => ({
@@ -135,6 +138,7 @@ function appDefaultOf(entry) {
  * @param {string} [options.channelId] - The column these values sit in.
  *
  * @return {object} `{ groupValues, personalValues, forcedValues, refusals }`.
+ * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {}) {
 	const groupValues = {}
@@ -185,6 +189,7 @@ export function valuesFrom({ entries = [], channelId = SINGLE_CHANNEL_ID } = {})
  * @param {string} [options.singleChannelLabel] - The one column's name.
  *
  * @return {object} The component's props.
+ * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function propsFor({
 	entries = [],
@@ -222,6 +227,8 @@ export function propsFor({
  *
  * @return {?object} `{ schema, notification, enabled, scope }`, or null when
  *   the id is not one this screen made.
+ *
+ * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
  */
 export function writeFor({ eventId, scope = '', value } = {}) {
 	const at = String(eventId ?? '').indexOf('-')

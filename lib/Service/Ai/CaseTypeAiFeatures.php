@@ -87,6 +87,7 @@ class CaseTypeAiFeatures {
 	 * @return array<int, string> The feature slugs, in declaration order.
 	 *
 	 * @psalm-return list<string>
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-a-case-type-declares-which-ai-features-are-on-and-where-they-appear-req-aic-01
 	 */
 	public function on(array $caseType, string $surface): array {
 		$features = [];
@@ -109,6 +110,7 @@ class CaseTypeAiFeatures {
 	 * @param array<string, mixed> $caseType The case type record.
 	 *
 	 * @return bool True when at least one feature is placed on a surface.
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-a-case-type-declares-which-ai-features-are-on-and-where-they-appear-req-aic-01
 	 */
 	public function anyDeclared(array $caseType): bool {
 		foreach ($this->declared(caseType: $caseType) as $surface) {
@@ -131,6 +133,7 @@ class CaseTypeAiFeatures {
 	 * @param array<string, mixed> $caseType The case type record.
 	 *
 	 * @return array<string, string> slug => surface.
+	 * @spec openspec/changes/ai-features-on-the-case-consume-hermiq/specs/ai-features-on-the-case/spec.md#requirement-a-case-type-declares-which-ai-features-are-on-and-where-they-appear-req-aic-01
 	 */
 	public function declared(array $caseType): array {
 		$raw = ($caseType[self::DECLARATION] ?? null);

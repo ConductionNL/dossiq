@@ -179,6 +179,7 @@ export default {
 			 *
 			 * @param {boolean} opened Whether the dialog is showing.
 			 * @return {void}
+			 * @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
 			 */
 			handler(opened) {
 				if (opened === true && this.form.bsn === '') {

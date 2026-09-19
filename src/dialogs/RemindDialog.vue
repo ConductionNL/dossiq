@@ -129,6 +129,12 @@ export default {
 
 	emits: ['close'],
 
+	/**
+	 * The engine task store, which is where a reminder actually lives.
+	 *
+	 * @return {object} The store, exposed to the options API half.
+	 * @spec openspec/changes/case-reminder-as-task/specs/task-management/spec.md
+	 */
 	setup() {
 		return { tasks: useEngineTaskStore() }
 	},

@@ -249,6 +249,7 @@ export default {
 			 * Read what this case holds, and what its type allows.
 			 *
 			 * @return {void}
+			 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 			 */
 			handler() {
 				this.load()
@@ -265,6 +266,7 @@ export default {
 		 * @param {Array<string>} list The list being ticked into.
 		 * @param {string} id The id.
 		 * @return {void}
+		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 		 */
 		toggle(list, id) {
 			const at = list.indexOf(id)
@@ -355,6 +357,7 @@ export default {
 		 * @param {string} schema The schema slug.
 		 * @param {Array<string>} labelFields The fields a label is built from, in order.
 		 * @return {Promise<Array<object>>} The rows.
+		 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 		 */
 		async children(schema, labelFields) {
 			const { data } = await axios.get(

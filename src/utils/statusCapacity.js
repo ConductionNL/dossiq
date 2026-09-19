@@ -23,6 +23,7 @@
  *
  * @param {object} statusType The status type row.
  * @return {number|null} The limit, or null when it carries none.
+ * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
  */
 export function capacityOf(statusType) {
 	const declared = Number(statusType && statusType.capacity)
@@ -36,6 +37,7 @@ export function capacityOf(statusType) {
  * @param {Array} cases The cases the board loaded for the column.
  * @param {string} statusTypeId The concrete status type id.
  * @return {number} The count.
+ * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
  */
 export function countInStatus(cases, statusTypeId) {
 	return (cases || []).filter(
@@ -49,6 +51,7 @@ export function countInStatus(cases, statusTypeId) {
  * @param {object} statusType The status type row.
  * @param {number} count The number of cases in it.
  * @return {boolean} True when it is full.
+ * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
  */
 export function isFull(statusType, count) {
 	const capacity = capacityOf(statusType)
@@ -64,6 +67,7 @@ export function isFull(statusType, count) {
  * @param {number} count The number of cases in the column.
  * @param {number|null} capacity The limit, or null.
  * @return {string} The label.
+ * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
  */
 export function countLabel(count, capacity) {
 	if (capacity === null || !(capacity > 0)) {
@@ -87,6 +91,7 @@ export function countLabel(count, capacity) {
  * @param {Array} cases The cases the board loaded for that column.
  * @param {(text: string, params: object) => string} translate The translator.
  * @return {string} The refusal, or '' when the move may go ahead.
+ * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
  */
 export function capacityRefusal(statusType, cases, translate) {
 	const capacity = capacityOf(statusType)

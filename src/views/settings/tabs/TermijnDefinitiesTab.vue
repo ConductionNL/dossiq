@@ -183,6 +183,17 @@ export default {
 		},
 	},
 
+	/**
+	 * Read the definitions and the working calendar when the tab opens.
+	 *
+	 * BOTH, and not only the definitions: a term is resolved against the
+	 * administered calendar, so a tab showing the definitions beside a
+	 * calendar it never loaded would present two halves of one answer as if
+	 * they agreed.
+	 *
+	 * @return {void}
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
+	 */
 	mounted() {
 		this.load()
 		this.loadCalendar()

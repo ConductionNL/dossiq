@@ -103,6 +103,7 @@ class WidgetRoles {
 	 * @param array<string, mixed> $page One manifest page.
 	 *
 	 * @return array<int, array<string, mixed>> The definitions.
+	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
 	 */
 	public function definitionsOn(array $page): array {
 		$onConfig = [];

@@ -23,6 +23,7 @@ const MAIL_EXTENSIONS = ['.eml', '.msg', '.mbox']
  *
  * @param {object} node The clicked node.
  * @return {boolean} True when the name ends in a mail extension.
+ * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
  */
 export function looksLikeMail(node) {
 	const name = String(node?.basename || node?.fileName || node?.name || '')

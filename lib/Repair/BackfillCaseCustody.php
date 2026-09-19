@@ -140,6 +140,7 @@ class BackfillCaseCustody implements IRepairStep {
 	 * @param IOutput $output        Progress reporting.
 	 *
 	 * @return void
+	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/case-management/spec.md
 	 */
 	public function backfill(object $objectService, string $register, string $caseSchema, IOutput $output): void {
 		$rows = $objectService->findAll(['filters' => ['register' => $register, 'schema' => $caseSchema]]);

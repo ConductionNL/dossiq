@@ -79,6 +79,7 @@ class PartyKindConsumer {
 	 * @param string $caseType The case type's key.
 	 *
 	 * @return string The target.
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
 	 */
 	public function targetFor(string $caseType): string {
 		return self::TARGET_PREFIX . trim($caseType);
@@ -283,6 +284,7 @@ class PartyKindConsumer {
 	 * The two are not merged here, deliberately.
 	 *
 	 * @return array<int, array<string, mixed>> The `linkRoles` entries.
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-a-case-type-declares-which-party-kinds-it-accepts-and-dossiq-ships-no-vocabulary-of-its-own-once-pipelinq-answers-req-plq-04
 	 */
 	public function roles(): array {
 		return $this->vocabulary->roles();

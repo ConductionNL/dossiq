@@ -127,6 +127,7 @@ export function controlFor(definition) {
  * @param {object} [definition] The property definition.
  *
  * @return {string} The id, or an empty string.
+ * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function definitionId(definition) {
 	const self = definition?.['@self']
@@ -143,6 +144,7 @@ export function definitionId(definition) {
  * @param {object} [value] The entered value for one field.
  *
  * @return {boolean} True when the field asks something.
+ * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function isFilled(value) {
 	if (value === undefined || value === null) {

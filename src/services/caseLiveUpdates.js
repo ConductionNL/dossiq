@@ -81,6 +81,7 @@ export function caseIdOfRoute(route) {
 export class CaseLiveSubscription {
 	/**
 	 * @param {object} store The object store (createObjectStore instance).
+	 * @spec openspec/changes/live-updates-on-the-case-page/specs/realtime-updates-ui/spec.md
 	 */
 	constructor(store) {
 		this.store = store

@@ -109,6 +109,7 @@ class CorrespondenceLanguageConsumer {
 	 * @param bool $stated Whether the party stated a preference.
 	 *
 	 * @return string The sentence.
+	 * @spec openspec/changes/parties-and-contact-moments-consume-pipelinq/specs/pipelinq-consumption/spec.md#requirement-the-language-to-write-to-a-party-in-comes-from-the-resolver-with-its-reason-req-plq-06
 	 */
 	public function sentenceFor(string $language, string $rule, bool $stated): string {
 		if ($stated === true) {

@@ -214,6 +214,7 @@ class CaseTransferConsentGate {
 	 * @param string $receivingOrganisation The organisation receiving.
 	 *
 	 * @return bool True when the boundary is crossed.
+	 * @spec openspec/changes/custody-and-handover-of-a-case/specs/dossiq-sociaal-domein-avg-consent/spec.md
 	 */
 	public function crossesOrganisation(string $sourceOrganisation, string $receivingOrganisation): bool {
 		$source = strtolower(trim($sourceOrganisation));

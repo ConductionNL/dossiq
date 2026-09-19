@@ -15,6 +15,7 @@ import { generateUrl } from '@nextcloud/router'
  *
  * @param {object} row One `dispatch` row.
  * @return {string} The case uuid, or the empty string.
+ * @spec openspec/changes/the-contact-360-shows-documents/specs/kcc-klantcontact-integratie/spec.md
  */
 export function caseIdOfDispatch(row) {
 	const value = row && row.case

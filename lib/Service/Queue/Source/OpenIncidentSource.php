@@ -61,6 +61,7 @@ class OpenIncidentSource implements QueueSource {
 	 * The source's machine name.
 	 *
 	 * @return string The name.
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 	 */
 	public function name(): string {
 		return 'openIncidents';
@@ -70,6 +71,7 @@ class OpenIncidentSource implements QueueSource {
 	 * What a person reads this source as.
 	 *
 	 * @return string The label.
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 	 */
 	public function label(): string {
 		return $this->l10n->t('Reports assigned to you');
@@ -79,6 +81,7 @@ class OpenIncidentSource implements QueueSource {
 	 * What takes an item off this queue.
 	 *
 	 * @return string The sentence.
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 	 */
 	public function closesWhen(): string {
 		return $this->l10n->t('The report is settled, or handed to somebody else.');
@@ -88,6 +91,7 @@ class OpenIncidentSource implements QueueSource {
 	 * The mechanisms that put something here.
 	 *
 	 * @return array<int, string> The mechanisms.
+	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 	 */
 	public function mechanisms(): array {
 		return ['incident-assignment'];

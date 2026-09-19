@@ -136,6 +136,7 @@ export default {
 		 *
 		 * @param {boolean} present Whether the item is there.
 		 * @return {string} The class.
+		 * @spec openspec/changes/declared-prerequisites/specs/admin-settings/spec.md
 		 */
 		markClass(present) {
 			return present === true
