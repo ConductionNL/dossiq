@@ -240,7 +240,6 @@ class CaseTakeoverRequestTest extends TestCase {
 	 */
 	private function takeovers(?EngineTaskGateway $engine = null): CaseTakeoverRequest {
 		return new CaseTakeoverRequest(
-			settingsService: $this->settings(),
 			custody: $this->chain(),
 			tasks: ($engine ?? $this->engine),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),

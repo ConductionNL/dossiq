@@ -47,7 +47,6 @@ namespace OCA\Dossiq\Service\Cases;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -121,7 +120,6 @@ class CaseSplitExecutor {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService  $settingsService Bridge to OpenRegister and the configured schemas.
 	 * @param CaseSplitPolicy  $policy          What the case type allows to be divided.
 	 * @param CaseSplitPlan    $plan            Which rows move, and what each leaves behind.
 	 * @param LoggerInterface  $logger          Records every split and every refusal.
@@ -130,7 +128,6 @@ class CaseSplitExecutor {
 	 * @spec openspec/changes/splitting-a-case-and-its-incidents/specs/case-management/spec.md
 	 */
 	public function __construct(
-		private readonly SettingsService $settingsService,
 		private readonly CaseSplitPolicy $policy,
 		private readonly CaseSplitPlan $plan,
 		private readonly LoggerInterface $logger,

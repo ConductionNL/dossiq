@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TenantConfigurationService;
 use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -38,6 +39,10 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class CaseDateNormaliserTest extends TestCase {
+	// The clock is a seam, so the zone assertions below do not change
+	// meaning with the hour they run at.
+	use MakesCaseDateNormaliser;
+
 	/**
 	 * Build a normaliser whose tenant answers the given zone.
 	 *
@@ -67,6 +72,7 @@ class CaseDateNormaliserTest extends TestCase {
 			tenantConfiguration: $config,
 			settingsService: $settings,
 			logger: ($logger ?? $this->createMock(originalClassName: LoggerInterface::class)),
+			time: $this->clockFixedAt(instant: self::CLOCK_AT_THE_DAY_BOUNDARY),
 		);
 	}
 

@@ -200,7 +200,6 @@ class CaseTakeoverEscalationTest extends TestCase {
 		}
 
 		return new CaseTakeoverRequest(
-			settingsService: $this->settings(),
 			custody: new CaseCustodyChain(
 				settingsService: $this->settings(),
 				logger: $this->createMock(originalClassName: LoggerInterface::class),

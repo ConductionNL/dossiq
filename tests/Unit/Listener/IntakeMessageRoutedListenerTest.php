@@ -280,7 +280,6 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		return new ChannelIntake(
 			settingsService: $settings,
 			log: $log,
-			dates: $dates,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			// REAL facts over the SAME date double the assertions read through.
 			// Only the wiring line moved when they were split out.

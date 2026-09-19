@@ -181,7 +181,6 @@ class CaseSplitDivisiblePartsTest extends TestCase {
 		);
 
 		return new CaseSplitExecutor(
-			settingsService: $settings,
 			policy: new CaseSplitPolicy(),
 			plan: new CaseSplitPlan(),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),

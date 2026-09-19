@@ -212,7 +212,6 @@ class CaseTakeoverAnswerTest extends TestCase {
 		$engine->method('mirrorImport')->willReturn('engine-task-1');
 
 		return new CaseTakeoverRequest(
-			settingsService: $this->settings(),
 			custody: $this->chain(),
 			tasks: $engine,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
