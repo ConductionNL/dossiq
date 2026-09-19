@@ -69,15 +69,15 @@ class CaseDefinitionImportService {
 	/**
 	 * Constructor.
 	 *
-	 * @param LoggerInterface $logger The logger instance.
+	 * @param LoggerInterface  $logger    The logger instance.
+	 * @param PackageWriter    $writer    Writes the package's collection rows. dossiq
+	 *                                    stores nothing of its own here: the objects are
+	 *                                    OpenRegister's and are written the way the rest
+	 *                                    of the app writes them (ADR-022), which is why
+	 *                                    the register and schema names now live with the
+	 *                                    writer rather than here.
 	 * @param WorkflowDeployer $workflows Deploys the package's workflow templates.
 	 * @param PackageValidator $validator Reads a package and says what is wrong with it.
-	 * @param PackageWriter   $writer Writes the package's collection rows. dossiq
-	 *                                stores nothing of its own here: the objects are
-	 *                                OpenRegister's and are written the way the rest
-	 *                                of the app writes them (ADR-022), which is why
-	 *                                the register and schema names now live with the
-	 *                                writer rather than here.
 	 */
 	public function __construct(
 		private readonly LoggerInterface $logger,
