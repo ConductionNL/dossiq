@@ -25202,6 +25202,367 @@
         "hersteltermijn": "2026-07-01",
         "state": "expired",
         "pauseDays": 14
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseCustody",
+          "slug": "dossiq-case-custody-1"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "organisationUnit": "team-vergunningen",
+        "handler": "j.devries",
+        "from": "2026-01-12T09:00:00+01:00",
+        "until": "2026-03-02T17:00:00+01:00",
+        "open": false,
+        "reason": "Intake door het vergunningenteam",
+        "movedBy": "systeem",
+        "sequence": 1
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseCustody",
+          "slug": "dossiq-case-custody-2"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "organisationUnit": "team-handhaving",
+        "handler": "m.bakker",
+        "from": "2026-03-02T17:00:00+01:00",
+        "until": "2026-05-18T12:00:00+02:00",
+        "open": false,
+        "reason": "Overgedragen na constatering ter plaatse",
+        "movedBy": "j.devries",
+        "sequence": 2
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseCustody",
+          "slug": "dossiq-case-custody-3"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "organisationUnit": "team-juridische-zaken",
+        "handler": "s.elhaddad",
+        "from": "2026-05-18T12:00:00+02:00",
+        "open": true,
+        "reason": "Bezwaar ingediend, juridische behandeling",
+        "movedBy": "m.bakker",
+        "sequence": 3
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseIncident",
+          "slug": "dossiq-case-incident-1"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "eventDate": "2026-03-14T20:15:00+01:00",
+        "recordedAt": "2026-03-15T08:30:00+01:00",
+        "reporter": "Melding via telefoon, bewoner Kerkstraat 12",
+        "description": "Geluidsoverlast tot laat in de avond.",
+        "assignee": "m.bakker",
+        "state": "afgehandeld",
+        "outcome": "Waarschuwing gegeven"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseIncident",
+          "slug": "dossiq-case-incident-2"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "eventDate": "2026-06-02T22:40:00+02:00",
+        "recordedAt": "2026-06-24T11:05:00+02:00",
+        "reporter": "Melding via het formulier",
+        "description": "Opnieuw geluidsoverlast, drie weken later pas verwerkt.",
+        "assignee": "m.bakker",
+        "state": "in-behandeling",
+        "outcome": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseIncident",
+          "slug": "dossiq-case-incident-3"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "eventDate": "2026-09-08T19:05:00+02:00",
+        "recordedAt": "2026-09-08T19:20:00+02:00",
+        "reporter": "Constatering door toezichthouder",
+        "description": "Derde constatering op hetzelfde adres.",
+        "assignee": "s.elhaddad",
+        "state": "open",
+        "outcome": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTakeover",
+          "slug": "dossiq-case-takeover-1"
+        },
+        "caseId": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "requestedBy": "s.elhaddad",
+        "holder": "m.bakker",
+        "holdingUnit": "team-handhaving",
+        "reason": "Bezwaar ingediend, de zaak hoort bij juridische zaken.",
+        "status": "pending",
+        "requestedAt": "2026-05-18T10:12:00+02:00",
+        "taskId": "task-takeover-1"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTakeover",
+          "slug": "dossiq-case-takeover-2"
+        },
+        "caseId": "9c74e0b8-1a52-4d63-8e19-7b40f2ca6d55",
+        "requestedBy": "m.bakker",
+        "holder": "j.devries",
+        "holdingUnit": "team-vergunningen",
+        "reason": "Handhaving neemt over na constatering.",
+        "status": "accepted",
+        "requestedAt": "2026-03-02T09:30:00+01:00",
+        "answeredBy": "j.devries",
+        "answeredAt": "2026-03-02T16:45:00+01:00",
+        "taskId": "task-takeover-2"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseTakeover",
+          "slug": "dossiq-case-takeover-3"
+        },
+        "caseId": "c05a7e11-6d39-4b82-a4f1-18e3907cb2d4",
+        "requestedBy": "a.jansen",
+        "holder": "s.elhaddad",
+        "holdingUnit": "team-juridische-zaken",
+        "reason": "Verzoek tot overname wegens vakantie.",
+        "status": "refused",
+        "requestedAt": "2026-07-01T08:00:00+02:00",
+        "answeredBy": "s.elhaddad",
+        "answeredAt": "2026-07-01T09:15:00+02:00",
+        "refusalReason": "De hoorzitting staat volgende week en is al met de indiener afgestemd.",
+        "taskId": "task-takeover-3"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "casePlanGoal",
+          "slug": "dossiq-case-plan-goal-1"
+        },
+        "plan": "plan-gezin-1",
+        "title": "Stabiele woonruimte voor het gezin",
+        "metWhen": "Er is een huurovereenkomst op naam van een van de ouders.",
+        "state": "open",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "casePlanGoal",
+          "slug": "dossiq-case-plan-goal-2"
+        },
+        "plan": "plan-gezin-1",
+        "title": "Schoolgang van de oudste weer op gang",
+        "metWhen": "Vier aaneengesloten weken zonder ongeoorloofd verzuim.",
+        "state": "met",
+        "closedObservation": "Sinds 12 mei geen verzuim meer gemeld door school.",
+        "closedDate": "2026-06-10",
+        "migratedFrom": "gezinsplan.goals"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "casePlanGoal",
+          "slug": "dossiq-case-plan-goal-3"
+        },
+        "plan": "plan-gezin-2",
+        "title": "Schuldhulpverlening gestart",
+        "metWhen": "Een intakegesprek bij de schuldhulpverlening heeft plaatsgevonden.",
+        "state": "withdrawn",
+        "closedObservation": "Het gezin is verhuisd naar een andere gemeente.",
+        "closedDate": "2026-04-02",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "intervention",
+          "slug": "dossiq-intervention-1"
+        },
+        "plan": "plan-gezin-1",
+        "goal": "goal-woonruimte",
+        "title": "Ambulante begeleiding thuis",
+        "description": "Wekelijkse begeleiding bij het op orde brengen van de administratie.",
+        "provider": "aanbieder-118",
+        "providerName": "Stichting Thuisbasis",
+        "startDate": "2026-04-01",
+        "targetDate": "2026-10-01",
+        "state": "running",
+        "outcome": "",
+        "migratedFrom": "gezinsplan.deploymentTrajectories"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "intervention",
+          "slug": "dossiq-intervention-2"
+        },
+        "plan": "plan-gezin-1",
+        "goal": "goal-schoolgang",
+        "title": "Inzet leerplichtambtenaar",
+        "description": "Gesprek met school, ouders en de leerplichtambtenaar.",
+        "provider": "aanbieder-004",
+        "providerName": "Bureau Leerplicht",
+        "startDate": "2026-02-17",
+        "targetDate": "2026-06-01",
+        "state": "complete",
+        "outcome": "Verzuim gestopt, dossier gesloten.",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "intervention",
+          "slug": "dossiq-intervention-3"
+        },
+        "plan": "plan-gezin-2",
+        "goal": "goal-schulden",
+        "title": "Budgetcoaching",
+        "description": "Twaalf gesprekken met een budgetcoach.",
+        "provider": "aanbieder-231",
+        "providerName": "Gemeentelijke Kredietbank",
+        "startDate": "2026-03-09",
+        "targetDate": "2026-09-09",
+        "state": "stopped",
+        "outcome": "Gestopt na verhuizing van het gezin.",
+        "migratedFrom": ""
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedActionType",
+          "slug": "dossiq-planned-action-type-1"
+        },
+        "identifier": "controle-ter-plaatse",
+        "label": "Controle ter plaatse",
+        "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
+        "successor": "hercontrole",
+        "successorOffsetWorkingDays": 15,
+        "ownerRole": "toezichthouder"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedActionType",
+          "slug": "dossiq-planned-action-type-2"
+        },
+        "identifier": "hercontrole",
+        "label": "Hercontrole",
+        "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
+        "successor": "voornemen-last",
+        "successorOffsetWorkingDays": 10,
+        "ownerRole": "toezichthouder"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedActionType",
+          "slug": "dossiq-planned-action-type-3"
+        },
+        "identifier": "voornemen-last",
+        "label": "Voornemen last onder dwangsom",
+        "caseType": "5e82b1a7-0c46-4f39-9d21-63af8e047b10",
+        "successorOffsetWorkingDays": 0,
+        "ownerRole": "juridisch-medewerker"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedAction",
+          "slug": "dossiq-planned-action-1"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "actionType": "controle-ter-plaatse",
+        "label": "Controle ter plaatse",
+        "owner": "m.bakker",
+        "plannedFor": "2026-03-20",
+        "state": "completed",
+        "completedAt": "2026-03-20T14:30:00+01:00",
+        "completedBy": "m.bakker"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedAction",
+          "slug": "dossiq-planned-action-2"
+        },
+        "case": "3f1d9c22-8b45-4a1e-9f07-2c6b51d0ae31",
+        "actionType": "hercontrole",
+        "label": "Hercontrole",
+        "owner": "m.bakker",
+        "plannedFor": "2026-04-10",
+        "state": "planned",
+        "plannedFrom": "7d2c48f0-93ab-4e57-b016-5fa9c3218e64"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "plannedAction",
+          "slug": "dossiq-planned-action-3"
+        },
+        "case": "9c74e0b8-1a52-4d63-8e19-7b40f2ca6d55",
+        "actionType": "voornemen-last",
+        "label": "Voornemen last onder dwangsom",
+        "owner": "s.elhaddad",
+        "plannedFor": "2026-05-04",
+        "state": "cancelled"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiq-dossiq-integration-1"
+        },
+        "key": "zgw",
+        "title": "ZGW API",
+        "description": "Zaken, documenten en catalogi via de ZGW standaard.",
+        "status": "configured",
+        "statusMessage": "Verbonden met de zaakregistratie.",
+        "checkedAt": "2026-09-18T07:00:00+02:00",
+        "settingsUrl": "/settings/admin/dossiq#zgw",
+        "order": 1
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiq-dossiq-integration-2"
+        },
+        "key": "berichtenbox",
+        "title": "Berichtenbox",
+        "description": "Digitale post aan burgers via MijnOverheid.",
+        "status": "unconfigured",
+        "statusMessage": "Nog geen aansluitnummer ingevuld.",
+        "checkedAt": "2026-09-18T07:00:00+02:00",
+        "settingsUrl": "/settings/admin/dossiq#berichtenbox",
+        "order": 2
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "dossiqIntegration",
+          "slug": "dossiq-dossiq-integration-3"
+        },
+        "key": "brp",
+        "title": "BRP bevraging",
+        "description": "Persoonsgegevens uit de basisregistratie.",
+        "status": "error",
+        "statusMessage": "De bevraging antwoordde met een verlopen certificaat.",
+        "checkedAt": "2026-09-18T07:00:00+02:00",
+        "settingsUrl": "/settings/admin/dossiq#brp",
+        "order": 3
       }
     ]
   }
