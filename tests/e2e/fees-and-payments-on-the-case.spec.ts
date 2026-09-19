@@ -123,7 +123,7 @@ test.describe('a case type declares its fee, per intake channel', () => {
 		page,
 	}) => {
 		trackDossiqErrors(page)
-		await page.goto(`${APP_URL}cases/${cases.desk}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${APP_URL}cases/${cases.desk}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		// Read from shillinq's panel, which is where the citation lives. A
@@ -143,11 +143,11 @@ test.describe('the payment state is on the case and in the list', () => {
 	}) => {
 		trackDossiqErrors(page)
 
-		await page.goto(`${APP_URL}cases/${cases.desk}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${APP_URL}cases/${cases.desk}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await expect(page.getByText(/Outstanding|Openstaand/)).toBeVisible()
 
-		await page.goto(CASES_URL, { waitUntil: PAGE_LOAD })
+		await page.goto(CASES_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
 		await page
 			.getByRole('tab', { name: /^(Awaiting payment|Wacht op betaling)$/ })
@@ -187,7 +187,7 @@ test.describe('the payment state is on the case and in the list', () => {
 		await page.route('**/leaves/shillinq-payment-requests**', (route) =>
 			route.fulfill({ status: 503, body: '{}' }),
 		)
-		await page.goto(`${APP_URL}cases/${cases.desk}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${APP_URL}cases/${cases.desk}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		await expect(page.getByText(/Paid|Betaald/)).toHaveCount(0)
@@ -234,7 +234,7 @@ test.describe('a case names the contract it was raised under', () => {
 		page,
 	}) => {
 		trackDossiqErrors(page)
-		await page.goto(`${APP_URL}cases/${cases.web}`, { waitUntil: PAGE_LOAD })
+		await page.goto(`${APP_URL}cases/${cases.web}`, PAGE_LOAD)
 		await dismissSupportDialog(page)
 
 		const panel = page.getByRole('region', { name: /Contract/ })
