@@ -1087,25 +1087,25 @@
       "reason": "`resolve()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
-      "file": "lib/Service/SettingsService.php",
-      "method": "getApprovalService",
+      "file": "lib/Service/Settings/OpenRegisterBridge.php",
+      "method": "approvalService",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`getApprovalService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister ApprovalService\") and the caller carries on without it."
+      "reason": "`approvalService()`, which was `SettingsService::getApprovalService()` until the bridge was split out, answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister ApprovalService\") and the caller carries on without it."
     },
     {
-      "file": "lib/Service/SettingsService.php",
-      "method": "getFileService",
+      "file": "lib/Service/Settings/OpenRegisterBridge.php",
+      "method": "fileService",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`getFileService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister FileService\") and the caller carries on without it."
+      "reason": "`fileService()`, which was `SettingsService::getFileService()` until the bridge was split out, answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister FileService\") and the caller carries on without it."
     },
     {
-      "file": "lib/Service/SettingsService.php",
-      "method": "getOpenRegisterClass",
+      "file": "lib/Service/Settings/OpenRegisterBridge.php",
+      "method": "classNamed",
       "occurrence": 1,
       "class": "degradation",
-      "reason": "`getOpenRegisterClass()` answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister class\") and the caller carries on without it."
+      "reason": "`classNamed()`, which was `SettingsService::getOpenRegisterClass()` until the bridge was split out, answers `return null` when its collaborator is absent or unresolvable; the catch logs at error (\"Dossiq: Could not access OpenRegister class\") and the caller carries on without it."
     },
     {
       "file": "lib/Service/Sharing/CaseAccessLinkService.php",
