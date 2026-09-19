@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\TermijnNotificationService
+ * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  *
  * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
  * @uses \OCA\Dossiq\Service\TermijnService

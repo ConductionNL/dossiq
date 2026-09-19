@@ -41,16 +41,14 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Portal\PortalContributionProvider;
-use OCA\Dossiq\Service\TermijnNotificationService;
+use OCA\Dossiq\Service\Termijn\TermLetters;
 use PHPUnit\Framework\TestCase;
-use ReflectionClass;
 
 /**
  * The ontvangstbevestiging, and what the citizen may be told.
  *
- * @covers \OCA\Dossiq\Service\TermijnNotificationService::renderTemplate
+ * @covers \OCA\Dossiq\Service\Termijn\TermLetters::render
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
- * @uses \OCA\Dossiq\Service\TermijnNotificationService
  *
  * @spec openspec/changes/intake-says-when-the-term-starts/specs/burger-notifications/spec.md
  */
@@ -177,9 +175,9 @@ class IntakeConfirmationTextTest extends TestCase {
 	/**
 	 * Render the acknowledgement over one context.
 	 *
-	 * The service is built without its constructor: `renderTemplate()` reads
-	 * no collaborator, and wiring a job list and a logger to assert a string
-	 * would test the container rather than the text.
+	 * Rendered straight off {@see TermLetters}, which is where the wording
+	 * lives and which has no collaborators. This used to build the whole
+	 * notification service without its constructor to reach the same method.
 	 *
 	 * @param string               $locale  The declared language.
 	 * @param array<string, mixed> $context The extra context keys.
@@ -187,9 +185,7 @@ class IntakeConfirmationTextTest extends TestCase {
 	 * @return array{subject: string, body: string, locale: string} The rendered message.
 	 */
 	private function render(string $locale, array $context): array {
-		$service = (new ReflectionClass(TermijnNotificationService::class))->newInstanceWithoutConstructor();
-
-		return $service->renderTemplate(
+		return (new TermLetters())->render(
 			'ontvangstbevestiging',
 			['case' => 'ZAAK-2026-0001', 'endDateCurrent' => '30-04-2026'],
 			array_merge(['locale' => $locale, 'subject' => 'een dakkapel'], $context),
