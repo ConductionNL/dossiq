@@ -81,8 +81,14 @@ class TermEndRoll {
 	 * allowed to keep, and says so in the log. That is the only working-day
 	 * arithmetic left in `lib/`, and it is behind the engine's absence.
 	 *
+	 * 🔑 THIS CALL ALWAYS ROLLS. It took a `bool $roll` until 2026-09-20, and a
+	 * boolean that picks between "do the work" and "hand the argument back" is
+	 * two methods wearing one name. The two are now named: this one rolls, and
+	 * {@see rollTermEndFor()} reads the declared flag and decides whether to
+	 * call it. Nothing is lost, because the flag only ever arrived from
+	 * `rollEnabled()` one line up.
+	 *
 	 * @param DateTimeImmutable $date The computed end date.
-	 * @param bool $roll Whether the term declares the roll; false returns the raw date.
 	 * @param string|null $calendarSlug The calendar named on the term, when any.
 	 * @param string|null $organisation The subject's organisation, when any.
 	 *
@@ -91,20 +97,12 @@ class TermEndRoll {
 	 * @throws RefusedException When the term NAMES a calendar the engine cannot resolve.
 	 *
 	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
-	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — the flag IS the declared
-	 * `deadlineDefinition.rollToWorkingDay`, carried to the one place that reads it.
 	 */
 	public function rollTermEnd(
 		DateTimeImmutable $date,
-		bool $roll = true,
 		?string $calendarSlug = null,
 		?string $organisation = null,
 	): DateTimeImmutable {
-		if ($roll === false) {
-			return $date;
-		}
-
 		return $this->rollOnCalendar(date: $date, calendarSlug: $calendarSlug, organisation: $organisation);
 	}//end rollTermEnd()
 
@@ -132,9 +130,12 @@ class TermEndRoll {
 		?string $calendarSlug = null,
 		?string $organisation = null,
 	): DateTimeImmutable {
+		if ($this->rollEnabled(definitie: $definitie) === false) {
+			return $date;
+		}
+
 		return $this->rollTermEnd(
 			date: $date,
-			roll: $this->rollEnabled(definitie: $definitie),
 			calendarSlug: $calendarSlug,
 			organisation: $organisation
 		);

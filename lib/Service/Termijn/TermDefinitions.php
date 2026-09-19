@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Termijn;
 
+use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnTimerService;
@@ -217,11 +218,6 @@ class TermDefinitions {
 	 * @return DateTimeImmutable The end date, after the Awt roll.
 	 *
 	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
-	 *
-	 * @psalm-suppress FalsableReturnStatement `modify()` is falsable in the
-	 * stub because its argument is an arbitrary string. Here the string is
-	 * built from an int, so the only value that could make it unparseable does
-	 * not exist; PHP 8.3 throws rather than returning false in any case.
 	 */
 	public function endDateFor(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		return $this->rolled(date: $this->counted(start: $start, days: $days, definitie: $definitie), definitie: $definitie);
@@ -235,16 +231,11 @@ class TermDefinitions {
 	 * @param array<string, mixed> $definitie The definition.
 	 *
 	 * @return DateTimeImmutable The counted end date.
-	 *
-	 * @psalm-suppress FalsableReturnStatement `modify()` is falsable in the
-	 * stub because its argument is an arbitrary string. Here the string is
-	 * built from an int, so the only value that could make it unparseable does
-	 * not exist; PHP 8.3 throws rather than returning false in any case.
 	 */
 	private function counted(DateTimeImmutable $start, int $days, array $definitie): DateTimeImmutable {
 		$mode = self::countingModeOf(definitie: $definitie);
 		if ($mode !== WorkingDayRoll::MODE_WORKING_DAYS || $this->roll === null) {
-			return $start->modify('+' . $days . ' days');
+			return self::plusDays(start: $start, days: $days);
 		}
 
 		$computed = $this->roll->endAfter(start: $start, days: $days, mode: $mode);
@@ -258,8 +249,38 @@ class TermDefinitions {
 			['caseType' => (string)($definitie['caseType'] ?? ''), 'days' => $days]
 		);
 
-		return $start->modify('+' . $days . ' days');
+		return self::plusDays(start: $start, days: $days);
 	}//end counted()
+
+	/**
+	 * A number of calendar days after a date.
+	 *
+	 * 🔑 `add()` AND NOT `modify()`, AND THAT IS NOT A STYLE CHOICE.
+	 * `modify()` takes an arbitrary string, so its declared return type is
+	 * `DateTimeImmutable|false` and every call to it needs either a psalm
+	 * suppression for FalsableReturnStatement or a branch on a value that
+	 * cannot occur. `add()` takes a `DateInterval` and returns a date, so the
+	 * falsehood the suppression was covering up is gone rather than hidden.
+	 * Two suppressions came off this class when it arrived.
+	 *
+	 * A negative duration is subtracted rather than encoded as `P-5D`, which
+	 * `DateInterval` refuses to parse.
+	 *
+	 * @param DateTimeImmutable $start The day to count from.
+	 * @param int               $days  The number of calendar days, which may be negative.
+	 *
+	 * @return DateTimeImmutable The counted date.
+	 *
+	 * @spec openspec/changes/counting-mode-per-term/specs/termijnbewaking-schemas/spec.md
+	 */
+	private static function plusDays(DateTimeImmutable $start, int $days): DateTimeImmutable {
+		$interval = new DateInterval('P' . abs($days) . 'D');
+		if ($days < 0) {
+			return $start->sub($interval);
+		}
+
+		return $start->add($interval);
+	}//end plusDays()
 
 	/**
 	 * THE ALGEMENE TERMIJNENWET ROLL. `+N days` on its own lands a third of

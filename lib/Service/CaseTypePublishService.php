@@ -64,13 +64,6 @@ class CaseTypePublishService {
 	 * @param CaseFieldRoleProjector  $fieldRoles       What each role may see and change on the case.
 	 * @param CaseTypeVersionWindow   $window           When a version starts and stops being offered.
 	 * @param LoggerInterface         $logger           The logger.
-	 *
-	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) Constructor DI. Eight
-	 *  collaborators moved to {@see PublicationChecks} with the questions that
-	 *  asked them; these six are the write itself. The window stays here rather
-	 *  than moving out to the caller, because splitting it off would spread one
-	 *  write across two layers, and a publish that half-ran is the failure this
-	 *  class exists to prevent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,

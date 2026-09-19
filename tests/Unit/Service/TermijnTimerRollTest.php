@@ -198,7 +198,6 @@ class TermijnTimerRollTest extends TestCase {
 	public function testTheNamedCalendarAndOrganisationReachTheResolver(): void {
 		$this->service()->rollTermEnd(
 			date: new DateTimeImmutable('2027-03-29'),
-			roll: true,
 			calendarSlug: 'gemeente-amsterdam',
 			organisation: 'org-1'
 		);
@@ -217,12 +216,15 @@ class TermijnTimerRollTest extends TestCase {
 	 */
 	public function testATermWithoutTheRollIsUnchanged(): void {
 		$service = $this->service();
-		$roll = $this->ends()->rollEnabled(definitie: ['rollToWorkingDay' => false]);
+		$definitie = ['rollToWorkingDay' => false];
 
-		self::assertFalse($roll);
+		self::assertFalse($this->ends()->rollEnabled(definitie: $definitie));
 		self::assertSame(
 			'2027-03-29',
-			$service->rollTermEnd(date: new DateTimeImmutable('2027-03-29'), roll: $roll)->format('Y-m-d')
+			$service->rollTermEndFor(
+				date: new DateTimeImmutable('2027-03-29'),
+				definitie: $definitie
+			)->format('Y-m-d')
 		);
 		self::assertSame([], $this->calculator->calls);
 	}

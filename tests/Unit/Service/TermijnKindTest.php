@@ -284,7 +284,6 @@ class TermijnKindTest extends TestCase {
 		try {
 			$timers->rollTermEnd(
 				date: new DateTimeImmutable('2026-09-15'),
-				roll: true,
 				calendarSlug: 'gemeente-rotterdam',
 			);
 			self::fail('A term naming an unresolvable calendar has to refuse.');
@@ -316,7 +315,7 @@ class TermijnKindTest extends TestCase {
 		);
 
 		// 19 September 2026 is a Saturday, so the local calendar rolls it.
-		$rolled = $timers->rollTermEnd(date: new DateTimeImmutable('2026-09-19'), roll: true);
+		$rolled = $timers->rollTermEnd(date: new DateTimeImmutable('2026-09-19'));
 
 		self::assertSame('2026-09-21', $rolled->format('Y-m-d'));
 	}//end testATermNamingNoCalendarStillFallsBack()
