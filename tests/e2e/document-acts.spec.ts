@@ -55,6 +55,21 @@ test.describe('document acts reach a surface', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
+	// 🔴 THE TWO ROW TESTS BELOW HAVE NO FILE TO CLICK ON YET.
+	//
+	// `beforeAll` creates the CASE and nothing puts a document in its
+	// folder, so `cn-files-browser-row` matches nothing and both row tests
+	// fail on their first assertion. `helpers/fixtures.ts` carries no
+	// upload helper to seed one with; adding one means a multipart POST to
+	// /api/cases/{caseId}/dossier, and it is written by whoever first has a
+	// Playwright run to check it against. This is recorded here rather than
+	// left to be discovered, because four tests in a file read as four
+	// covered scenarios to anyone counting.
+	//
+	// The three LOCATORS are fixed and verified against the pinned library
+	// source. The missing seed is the remaining reason this file has never
+	// been green.
+
 	// @e2e openspec/specs/document-zaakdossier/spec.md#versions-opens-on-the-file-the-row-named
 	test('Versions opens on the file the row named', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
