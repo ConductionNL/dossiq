@@ -79,6 +79,17 @@ const PROPFIND_XML = `<?xml version="1.0"?>
 	<d:response><d:href>/dav/versions/admin/versions/42/v2</d:href><d:propstat><d:prop><d:getlastmodified>Tue, 02 Sep 2026 10:00:00 GMT</d:getlastmodified></d:prop></d:propstat></d:response>
 </d:multistatus>`
 
+/**
+ * The same body with the two properties a real Nextcloud sends beside the
+ * moment: the author, in Nextcloud's own namespace rather than DAV:, and
+ * the byte count.
+ */
+const FULL_PROPFIND_XML = `<?xml version="1.0"?>
+<d:multistatus xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns">
+	<d:response><d:href>/dav/versions/admin/versions/42/</d:href></d:response>
+	<d:response><d:href>/dav/versions/admin/versions/42/v1</d:href><d:propstat><d:prop><d:getlastmodified>Mon, 01 Sep 2026 10:00:00 GMT</d:getlastmodified><d:getcontentlength>2048</d:getcontentlength><nc:version-author>bkeeper</nc:version-author></d:prop></d:propstat></d:response>
+</d:multistatus>`
+
 beforeEach(() => {
 	mockRequest.mockReset()
 	mockEmit.mockReset()
@@ -218,5 +229,71 @@ describe('VersionHistoryPanel handed a file id', () => {
 		expect(wrapper.text()).not.toContain('No previous versions')
 		expect(mockRequest).not.toHaveBeenCalled()
 		expect(wrapper.vm.hasNoFile).toBe(true)
+	})
+
+	// REQ-ZAK-020 asks the history to list each version with its moment, its
+	// AUTHOR and its SIZE. Two of the three were never read: `author` was the
+	// literal `''` in the parser, so the template's `|| 'Unknown'` fallback
+	// rendered on every version of every document, and no size was parsed at
+	// all. A field that always renders its fallback looks exactly like a
+	// server that sent nothing.
+	it('reads the author and the size the server sent', async () => {
+		mockRequest.mockResolvedValue({ data: FULL_PROPFIND_XML })
+		const wrapper = mount(VersionHistoryPanel, {
+			props: { open: true, fileId: 42 },
+		})
+		await flushPromises()
+
+		expect(wrapper.vm.versions[0].author).toBe('bkeeper')
+		expect(wrapper.vm.versions[0].size).toBe(2048)
+		// What a reader actually sees, asserted beside the parsed value: a
+		// parser that reads the author into a field no template renders is
+		// the same silence in a different place.
+		expect(wrapper.text()).toContain('bkeeper')
+		expect(wrapper.text()).toContain('2 KB')
+		expect(wrapper.text()).not.toContain('Unknown')
+	})
+
+	it('says Unknown only when the server really sent no author', async () => {
+		// The control for the assertion above: with the original fixture,
+		// which carries neither property, the fallback is correct and the
+		// meta line carries no size at all rather than `0 B`.
+		const wrapper = mount(VersionHistoryPanel, {
+			props: { open: true, fileId: 42 },
+		})
+		await flushPromises()
+
+		expect(wrapper.vm.versions[0].size).toBeNull()
+		expect(wrapper.text()).toContain('Unknown')
+		expect(wrapper.text()).not.toContain('0 B')
+	})
+
+	it('asks the server for the author and the size by name', async () => {
+		// An allprop PROPFIND returns the DAV: live properties and the dead
+		// ones, and `nc:version-author` is in neither set. Parsing a
+		// property nobody requested reads Unknown for ever, and looks
+		// exactly like a server that has no author to give.
+		mockRequest.mockResolvedValue({ data: FULL_PROPFIND_XML })
+		mount(VersionHistoryPanel, { props: { open: true, fileId: 42 } })
+		await flushPromises()
+
+		const sent = mockRequest.mock.calls[0][0]
+		expect(sent.method).toBe('PROPFIND')
+		expect(sent.data).toContain('version-author')
+		expect(sent.data).toContain('http://nextcloud.org/ns')
+		expect(sent.data).toContain('getcontentlength')
+		// The moment was already read, and a named PROPFIND that forgets it
+		// would take it away.
+		expect(sent.data).toContain('getlastmodified')
+	})
+
+	it('scales a byte count to the unit a reader can hold', () => {
+		const wrapper = mount(VersionHistoryPanel, { props: { open: false } })
+		expect(wrapper.vm.formatSize(512)).toBe('512 B')
+		expect(wrapper.vm.formatSize(2048)).toBe('2 KB')
+		expect(wrapper.vm.formatSize(1024 * 1024 * 3.5)).toBe('3.5 MB')
+		// An unsent size is not a zero-byte file.
+		expect(wrapper.vm.formatSize(null)).toBe('')
+		expect(wrapper.vm.formatSize(-1)).toBe('')
 	})
 })
