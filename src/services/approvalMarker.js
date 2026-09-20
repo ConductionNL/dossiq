@@ -16,7 +16,7 @@
  * agreed" are different rows, and folding them together loses the one a
  * handler was looking for.
  *
- * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
  */
 
 import { translate as t } from '@nextcloud/l10n'
@@ -27,7 +27,7 @@ import { translate as t } from '@nextcloud/l10n'
  * @param {object} [marker] The entry for one document, or undefined.
  *
  * @return {string} The text for the row, or an empty string for no marker.
- * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
  */
 export function approvalMarkerLabel(marker) {
 	if (!marker || marker.routed !== true) {
@@ -60,7 +60,7 @@ export function approvalMarkerLabel(marker) {
  * @param {object} [marker] The entry for one document, or undefined.
  *
  * @return {boolean} True when the document is in a route.
- * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
  */
 export function isInApprovalRoute(marker) {
 	return Boolean(marker && marker.routed === true)

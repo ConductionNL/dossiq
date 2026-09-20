@@ -82,7 +82,7 @@ test.afterAll(async () => {
 })
 
 test.describe('the case type carries its work instruction', () => {
-	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
+	// @e2e openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
 	test('the caseType schema on this instance declares knowledgeBasePage', async () => {
 		const res = await api.get(`${SCHEMAS}?_limit=200`, {
 			headers: { requesttoken: token },
@@ -99,7 +99,7 @@ test.describe('the case type carries its work instruction', () => {
 		).toBeTruthy()
 	})
 
-	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
+	// @e2e openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
 	test('a work instruction written on the case type comes back from the register', async () => {
 		await updateObject(api, token, 'caseType', caseTypeId, {
 			knowledgeBasePage: INSTRUCTION_URL,
@@ -111,7 +111,7 @@ test.describe('the case type carries its work instruction', () => {
 		).toBe(INSTRUCTION_URL)
 	})
 
-	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
+	// @e2e openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
 	test('the case type page offers the field to the person who authors the type', async ({
 		page,
 	}) => {
@@ -121,7 +121,7 @@ test.describe('the case type carries its work instruction', () => {
 		await expect(page.getByText('Work instruction')).toBeVisible()
 	})
 
-	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
+	// @e2e openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
 	test('every case of the type shows the instruction, with nobody linking it', async ({
 		page,
 	}) => {
@@ -144,7 +144,7 @@ test.describe('the case type carries its work instruction', () => {
 		await expect(link).toHaveAttribute('href', INSTRUCTION_URL)
 	})
 
-	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-case-type-without-an-instruction-shows-the-cases-own-links
+	// @e2e openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-case-type-without-an-instruction-shows-the-cases-own-links
 	test('a case type with no instruction draws no instruction', async ({
 		page,
 	}) => {
@@ -164,7 +164,7 @@ test.describe('the case type carries its work instruction', () => {
 })
 
 test.describe('the pages render through the leaf, or the tab is absent', () => {
-	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-handler-outside-the-team-does-not-read-the-page
+	// @e2e openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-handler-outside-the-team-does-not-read-the-page
 	test('the Knowledge tab is present exactly when Collectives is', async ({
 		page,
 	}) => {
@@ -199,7 +199,7 @@ test.describe('the pages render through the leaf, or the tab is absent', () => {
 		}
 	})
 
-	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-handler-outside-the-team-does-not-read-the-page
+	// @e2e openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-handler-outside-the-team-does-not-read-the-page
 	test('dossiq shows no page body of its own', async ({ page }) => {
 		test.skip(
 			!collectivesInstalled,

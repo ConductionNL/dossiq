@@ -113,7 +113,7 @@ export default {
 		 * `caseIdOfDispatch` follows for a dispatch's case.
 		 *
 		 * @return {string} The uuid, or the empty string.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		caseTypeId() {
 			const value = this.objectData ? this.objectData.caseType : null
@@ -136,7 +136,7 @@ export default {
 		 * the only reason this panel can render on its first paint.
 		 *
 		 * @return {string} The page, or the empty string.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		inlinedPage() {
 			const value = this.objectData ? this.objectData.caseType : null
@@ -159,7 +159,7 @@ export default {
 		 * cannot produce a scheme nobody asked for.
 		 *
 		 * @return {string} The href, or the empty string when nothing resolves.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		pageHref() {
 			const value = this.page.trim()
@@ -189,7 +189,7 @@ export default {
 		 * Whether this panel draws anything at all.
 		 *
 		 * @return {boolean} True for a resolved page or a failed lookup.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		showsSomething() {
 			return this.failed === true || this.pageHref !== ''
@@ -199,7 +199,7 @@ export default {
 		 * The link's wording.
 		 *
 		 * @return {string} The label.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		linkLabel() {
 			return t('dossiq', 'Read how we handle this kind of case')
@@ -209,7 +209,7 @@ export default {
 		 * What a failed lookup says.
 		 *
 		 * @return {string} The line.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		errorText() {
 			return t(
@@ -222,7 +222,7 @@ export default {
 		 * The retry wording.
 		 *
 		 * @return {string} The label.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		retryLabel() {
 			return t('dossiq', 'Try again')
@@ -236,7 +236,7 @@ export default {
 			 * Look the instruction up again whenever the case type changes.
 			 *
 			 * @return {void}
-			 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+			 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 			 */
 			handler() {
 				this.load()
@@ -249,7 +249,7 @@ export default {
 		 * Resolve the case type's `knowledgeBasePage`.
 		 *
 		 * @return {Promise<void>} Resolves once the panel has its answer.
-		 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 		 */
 		async load() {
 			this.failed = false

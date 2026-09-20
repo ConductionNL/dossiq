@@ -323,7 +323,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
 	 */
 	public function approvalMarkers(): JSONResponse {
 		$user = $this->userSession->getUser();

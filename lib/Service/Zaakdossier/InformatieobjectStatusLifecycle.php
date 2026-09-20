@@ -216,7 +216,7 @@ class InformatieobjectStatusLifecycle {
 	 *
 	 * @throws InvalidArgumentException When a route is still open.
 	 *
-	 * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
 	 */
 	private function requireApprovalCleared(string $infoObjectId, string $newStatus): void {
 		if ($newStatus !== 'final' || $this->approvals === null) {

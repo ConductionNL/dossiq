@@ -75,7 +75,7 @@ import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationP
 import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
 // The work instruction for this kind of case, from the case type's
 // Collectives page, on the case itself.
-// @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+// @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
@@ -540,7 +540,7 @@ const registry = {
 	},
 
 	// --- The work instruction for this kind of case (knowledge-base-on-the-case). ---
-	// @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+	// @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 	'case-work-instruction': {
 		// @custom-widget-ratchet exclude the value lives on the case TYPE and the page is bound to the CASE, and CnDetailPage reads no `extend` (measured: the string does not occur in CnDetailPage.vue of the installed 3.4.0), so a declared widget over a dotted `caseType.knowledgeBasePage` path renders blank while looking configured. Deleted the day a detail page can expand a reference, or the manifest vocabulary has a widget that reads one
 		kind: 'widget',
