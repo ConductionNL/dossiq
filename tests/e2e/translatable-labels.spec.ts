@@ -92,6 +92,7 @@ test.describe('the translation engine sees dossiq labels', () => {
 		await cleanupRunObjects(request, token, ['caseType'])
 	})
 
+	// @e2e openspec/specs/case-configuration-i18n/spec.md#the-engine-sees-the-mark
 	test('caseType.title is in the translation projection', async ({ request }) => {
 		const object = await showWithTranslationMeta(request, 'caseType', caseTypeId)
 

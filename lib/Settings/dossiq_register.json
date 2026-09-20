@@ -46,12 +46,14 @@
                         "maxLength": 255,
                         "description": "Name of this case type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Title"
                     },
                     "description": {
                         "type": "string",
                         "description": "Detailed description of this case type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "identifier": {
@@ -70,18 +72,21 @@
                         "type": "string",
                         "description": "The purpose or goal of this case type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Purpose"
                     },
                     "trigger": {
                         "type": "string",
                         "description": "What triggers the creation of a case of this type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Trigger"
                     },
                     "subject": {
                         "type": "string",
                         "description": "The subject matter of this case type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Subject"
                     },
                     "processingDeadline": {
@@ -717,12 +722,14 @@
                         "maxLength": 255,
                         "description": "Name of this status (e.g. Ontvangen, In behandeling)",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this status phase",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "publicLabel": {
@@ -731,6 +738,7 @@
                         "description": "What the applicant reads for this status. Leave it empty and they read the name.",
                         "x-notes": "The name is written for the handler, and \"Toets register B\" says nothing to the person waiting. The empty fallback to `name` is the whole migration: a case type nobody has annotated keeps reading exactly as it did. ZGW calls this the statustekst, and the ZTC statustype mapping writes it there.",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Public label"
                     },
                     "publicDescription": {
@@ -738,6 +746,7 @@
                         "description": "What the applicant is told this status means. Empty shows no description.",
                         "x-notes": "It never falls back to `description`: that one is written for a colleague and can name an internal check, an internal register or a colleague by role. Showing nothing is the safe default; showing the handler's words to the applicant is a disclosure nobody chose.",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Public description"
                     },
                     "caseType": {
@@ -1012,12 +1021,14 @@
                         "maxLength": 255,
                         "description": "Name of this result type (e.g. Vergunning verleend)",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description/toelichting of this result type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "genericDescription": {
@@ -1078,12 +1089,14 @@
                         "maxLength": 255,
                         "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this role type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "caseType": {
@@ -1294,12 +1307,14 @@
                         "maxLength": 255,
                         "description": "Name of this document type (e.g. Situatietekening)",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this document type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "caseType": {
@@ -1383,12 +1398,14 @@
                         "maxLength": 255,
                         "description": "Name of this decision type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this decision type",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "caseType": {
@@ -6589,6 +6606,7 @@
                         "maxLength": 255,
                         "description": "What is being asked for, in the words the handler reads where the transition would have been. Write it as the thing itself: \"the fire safety inspection\" rather than \"obligation of kind inspection\".",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Title"
                     },
                     "placedOn": {
@@ -9385,6 +9403,7 @@
                         "maxLength": 255,
                         "description": "Short subject of the complaint",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Subject"
                     },
                     "description": {
@@ -9777,12 +9796,14 @@
                         "maxLength": 255,
                         "description": "Category name",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this category",
                         "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "defaultHandler": {
@@ -11380,8 +11401,12 @@
             "dossiq": {
                 "slug": "dossiq",
                 "title": "Dossiq",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "description": "Case management (zaakgericht werken) register for Dossiq: manages case types, status types, cases, tasks, roles, results, and decisions.",
+                "languages": [
+                    "nl",
+                    "en"
+                ],
                 "schemas": [
                     "caseType",
                     "statusType",

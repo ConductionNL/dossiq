@@ -50,7 +50,7 @@ use PHPUnit\Framework\TestCase;
  * configuration. `translatable` is the exception, and an exception nobody
  * asserts is an exception somebody re-breaks.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 class TranslatableLabelsTest extends TestCase {
 
@@ -249,4 +249,186 @@ class TranslatableLabelsTest extends TestCase {
 			. 'A new one here is either a mistake or a change OpenRegister has to make first.'
 		);
 	}//end testMarksBelowTheTopLevelAreKnownAndUnresolved()
+
+	/**
+	 * Every top-level translatable property in every shipped register file.
+	 *
+	 * Returns `<file basename>::<schema>.<property>` keys so a failure names
+	 * the one property that is wrong rather than a count.
+	 *
+	 * @return array<string, array<string, mixed>> The definitions, by key.
+	 */
+	private function topLevelTranslatableProperties(): array {
+		$found = [];
+
+		foreach ($this->registerFiles() as $file) {
+			$decoded = json_decode(file_get_contents($file), true);
+			if (is_array($decoded) === false) {
+				continue;
+			}
+
+			$schemas = ($decoded['components']['schemas'] ?? []);
+			if (is_array($schemas) === false) {
+				continue;
+			}
+
+			foreach ($schemas as $schemaName => $schema) {
+				$properties = ($schema['properties'] ?? []);
+				if (is_array($properties) === false) {
+					continue;
+				}
+
+				foreach ($properties as $property => $definition) {
+					if (is_array($definition) === false) {
+						continue;
+					}
+
+					if (($definition['translatable'] ?? false) === true) {
+						$found[basename($file) . '::' . $schemaName . '.' . $property] = $definition;
+					}
+				}
+			}
+		}
+
+		ksort($found);
+
+		return $found;
+	}//end topLevelTranslatableProperties()
+
+	/**
+	 * A translatable label says which language it was written in.
+	 *
+	 * WHY THIS IS NOT DECORATION EITHER. `sourceLanguage` is the second step
+	 * of `TranslationProjectionService::resolveSourceLanguage()`, read off
+	 * `properties.<property>.sourceLanguage` on the schema. Without it every
+	 * property falls through to the register default, so the projection can
+	 * record no per-property original, and a changed Dutch title cannot mark
+	 * its English translation stale: the rows disagree and neither is flagged.
+	 *
+	 * WHAT THIS TEST DOES NOT PROVE, again. That OpenRegister honours it. The
+	 * e2e spec reads `_meta.languageMeta.<property>.sourceLanguage` back off a
+	 * running instance, which is the half a file assertion cannot do.
+	 *
+	 * @return void
+	 */
+	public function testEveryTranslatableLabelDeclaresItsSourceLanguage(): void {
+		$properties = $this->topLevelTranslatableProperties();
+
+		$this->assertNotSame(
+			[],
+			$properties,
+			'no translatable property was found at all, so this test is asserting nothing'
+		);
+
+		foreach ($properties as $key => $definition) {
+			$this->assertSame(
+				'nl',
+				($definition['sourceLanguage'] ?? null),
+				$key . ' is translatable but declares no sourceLanguage. OpenRegister then '
+				. 'falls back to the register default for it, and a changed Dutch value cannot '
+				. 'mark its translations stale because nothing recorded which side is the original.'
+			);
+		}
+	}//end testEveryTranslatableLabelDeclaresItsSourceLanguage()
+
+	/**
+	 * The register names the languages it serves, Dutch first.
+	 *
+	 * `Register::getDefaultLanguage()` returns `languages[0]` and falls back to
+	 * `nl` when the list is empty, so an empty list and a Dutch-first list
+	 * behave identically today and diverge the moment a second language is
+	 * added. `TranslationHandler` builds the per-property fallback chain by
+	 * walking this list in declared order, so the order is the behaviour.
+	 *
+	 * THE VERSION IS ASSERTED WITH IT, and not out of tidiness.
+	 * `ImportHandler::importRegister()` returns on the version gate WITHOUT
+	 * comparing content — unlike the schema path, which has
+	 * `schemaContentDiffers()` behind it. A `languages` list added under an
+	 * unmoved version reaches no instance that already holds the register, and
+	 * nothing anywhere says so.
+	 *
+	 * @return void
+	 */
+	public function testTheRegisterDeclaresItsLanguagesDutchFirst(): void {
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		$declared = $register['components']['registers']['dossiq'];
+
+		$this->assertSame(
+			['nl', 'en'],
+			($declared['languages'] ?? null),
+			'the register must declare its languages with Dutch first: the first entry is the '
+			. 'default language every translatable property is authored in.'
+		);
+
+		$this->assertTrue(
+			version_compare(($declared['version'] ?? '0.0.0'), '1.3.0', '>='),
+			'the register version must be at least 1.3.0, the version that carries languages. '
+			. 'importRegister() skips on the version gate without comparing content, so a '
+			. 'languages list under an older version reaches no existing instance.'
+		);
+	}//end testTheRegisterDeclaresItsLanguagesDutchFirst()
+
+	/**
+	 * One instance field is marked as a label, and it is known.
+	 *
+	 * `complaint` is the klacht record itself, the sibling of `case`, and its
+	 * `subject` is the citizen's own summary of what went wrong. By REQ-CFI-02
+	 * it is not a label and should not be translatable. It carries the mark
+	 * because the 2026-09-18 sweep matched a property name.
+	 *
+	 * IT IS PINNED RATHER THAN REMOVED, and that is a deliberate call.
+	 * `TranslationHandler::normalizeTranslationsForSave()` wraps a scalar under
+	 * the register default on EVERY save of a translatable property, with or
+	 * without a language header. So every complaint written since the mark
+	 * landed is stored as `subject: {"nl": "…"}`. Dropping the mark stops the
+	 * render path resolving it, and those rows would show an object where the
+	 * subject was. Unmarking it needs a repair step that unwraps them, which is
+	 * its own change; until then the boundary is asserted here so no second one
+	 * joins it quietly.
+	 *
+	 * @return void
+	 */
+	public function testTheOnlyInstanceFieldMarkedAsALabelIsTheKnownOne(): void {
+		$register = json_decode(
+			file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'),
+			true
+		);
+
+		// The schemas that hold what somebody wrote about one record, rather
+		// than a label an administrator authors once for every record.
+		$instanceSchemas = [
+			'case',
+			'task',
+			'complaint',
+			'objection',
+			'decision',
+			'document',
+			'hearing',
+			'advisoryReport',
+		];
+
+		$marked = [];
+		foreach ($instanceSchemas as $schema) {
+			$properties = ($register['components']['schemas'][$schema]['properties'] ?? []);
+			foreach ($properties as $name => $definition) {
+				if (is_array($definition) === true && ($definition['translatable'] ?? false) === true) {
+					$marked[] = $schema . '.' . $name;
+				}
+			}
+		}
+
+		sort($marked);
+
+		$this->assertSame(
+			['complaint.subject'],
+			$marked,
+			'An instance field marked translatable puts a citizen\'s own words through a '
+			. 'translation engine. complaint.subject is the one that already is, and unmarking '
+			. 'it needs a repair step for the rows already wrapped. A second one is a mistake.'
+		);
+	}//end testTheOnlyInstanceFieldMarkedAsALabelIsTheKnownOne()
 }//end class
