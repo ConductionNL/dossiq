@@ -41,6 +41,25 @@ while it is the fallback.
 - **THEN** the message SHALL be recorded as not sent
 - **AND** the reason SHALL say that no provider answered
 
+#### Scenario: An unset digital post source is refused before anything is dispatched
+@e2e exclude a cross-app dispatch that must not happen; covered by IntegriqAdapterTest with the source config empty and the dispatcher expecting no call
+
+- **GIVEN** an instance with integriq installed and no digital post source set
+- **WHEN** a handler sends a letter
+- **THEN** the send SHALL be refused without dispatching anything
+- **AND** the refusal SHALL name the app-config key an administrator sets,
+  because integriq resolves an empty source to nothing before it looks
+  anything up and its own refusal names no key
+
+#### Scenario: The integrations page reports a simulation only when a mock answers
+@e2e exclude a declaration file read at boot by integriq's connection registry; covered by ConnectionsDeclarationTest and tests/vitest/integrationsPage.spec.js
+
+- **GIVEN** an instance that has never set the Berichtenbox adapter key
+- **WHEN** an administrator reads the integrations page
+- **THEN** the Berichtenbox row SHALL NOT read Simulated, because the bound
+  adapter refuses rather than simulating
+- **AND** the row SHALL name the digital post source key that is still missing
+
 #### Scenario: Without integriq the send is refused and names the missing app
 @e2e exclude a missing-app branch that needs integriq uninstalled; covered by the service test with the fleet probe answering false
 
