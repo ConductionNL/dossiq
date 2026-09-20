@@ -286,6 +286,13 @@ export default {
 		},
 	},
 
+	/**
+	 * Replay the route's filter blocks once the bar is on the page.
+	 *
+	 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+	 *
+	 * @return {void}
+	 */
 	mounted() {
 		// A shared link lands with the blocks already on the route, and the
 		// list would otherwise fetch without them: the bar is mounted by the
