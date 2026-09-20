@@ -59,6 +59,17 @@ SHALL have nothing recorded at all. A dormant adapter SHALL record nothing,
 because a marker that reads as a success on an adapter that contacts
 nothing is the failure this rule exists for.
 
+The write on the case SHALL be checked, and a push whose outcome did not
+reach the case SHALL say so in its answer. `CaseTimeline::record()` catches
+its own failures, logs a warning and answers an empty string: no
+OpenRegister, no configured register or case schema, an unreadable case and
+a throwing write are all indistinguishable to a caller that ignores the
+return. So the answer SHALL carry which of three states the case is in,
+`written`, `lost` or `none`, and a `lost` answer SHALL also say it in the
+reason the caller reads. A push that answers failed and records nothing
+leaves a case history that reads tomorrow as though nobody ever tried, which
+is this same defect one day later.
+
 The outcome is recorded on the CASE TIMELINE and not as a field on the
 note, because a note is an OpenRegister comment and dossiq cannot add a
 field to one. The timeline is where every other thing that happened to this
@@ -73,6 +84,26 @@ a nextcloud-vue change.
 - **WHEN** an external note is pushed
 - **THEN** the answer SHALL read failed, with the adapter's reason
 - **AND** the case SHALL record it as failed rather than as sent
+
+#### Scenario: A push the case could not record says so
+@e2e exclude a failure of the timeline write itself, which no instance can be put into on demand; covered by NotePushTest
+
+- **GIVEN** a case bound to an external register
+- **AND** a timeline that cannot write, which it reports by answering nothing
+- **WHEN** an external note is pushed and the register accepts it
+- **THEN** the answer SHALL still read sent
+- **AND** the answer SHALL say the case could not record it, rather than
+  reading as though the case now carries the outcome
+
+#### Scenario: An internal note somebody tried to send leaves a line on the case
+@e2e exclude the same push guard; covered by NotePushTest
+
+- **GIVEN** a case bound to an external register
+- **AND** an internal note on it
+- **WHEN** somebody pushes it
+- **THEN** nothing SHALL be sent
+- **AND** the case SHALL record that the note was kept here, because an
+  answer only the caller's tab saw is an answer nobody finds again
 
 #### Scenario: A dormant adapter writes no marker
 @e2e exclude a configuration branch over a dormant adapter; covered by the push guard test

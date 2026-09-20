@@ -45,7 +45,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -64,7 +64,7 @@ use Throwable;
 /**
  * Sends digital post by asking integriq to send it.
  *
- * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 class IntegriqAdapter implements BerichtenboxAdapterInterface {
 
@@ -115,7 +115,7 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function sendMessage(
 		string $bsn,
@@ -141,10 +141,27 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 			);
 		}
 
+		$sourceId = $this->sourceId();
+		if ($sourceId === '') {
+			// MEASURED from integriq `development` on 2026-09-20:
+			// `DigitalPostService::sourceConfig()` opens with
+			// `if ($sourceId === '') { return null; }`, so an empty source can
+			// never resolve and the send is refused every time. integriq's own
+			// refusal reads `No digital post source is configured under "".
+			// Nothing was sent.`, which names no key an administrator can set.
+			// Refusing here costs a dispatch nobody wanted and says what to do.
+			return $this->refusal(
+				code: 'digital-post-source-unset',
+				reason: 'No integriq digital post source is set, so there is nothing to send over. '
+					. 'Set it with occ config:app:set dossiq ' . self::SOURCE_CONFIG_KEY
+					. ' --value <slug>. Nothing was sent.',
+			);
+		}
+
 		try {
 			$event = new $eventClass(
 				'dossiq',
-				$this->sourceId(),
+				$sourceId,
 				$bsn,
 				$subject,
 				$body,
@@ -188,7 +205,7 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @return array<string, mixed> The status, with `unknown` set.
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function getReadStatus(string $messageId): array {
 		return [
@@ -213,7 +230,7 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @return array<string, mixed> The send result.
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	private function readSlot(object $event): array {
 		if (method_exists($event, 'isHandled') === true && $event->isHandled() === false) {
@@ -285,9 +302,11 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	/**
 	 * The integriq digital post source this instance sends over.
 	 *
-	 * Empty is allowed and is integriq's to refuse: it knows which sources
-	 * exist and dossiq does not, and a guess here would refuse a send integriq
-	 * would have accepted.
+	 * WHICH sources exist is integriq's to say, and dossiq never guesses one.
+	 * That an EMPTY one cannot work is not a guess: integriq's
+	 * `DigitalPostService::sourceConfig()` returns null on the empty string
+	 * before it looks anything up, so the caller refuses on '' rather than
+	 * dispatching a letter that is certain to come back refused.
 	 *
 	 * @return string The configured source id, or ''.
 	 */

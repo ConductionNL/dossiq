@@ -28,6 +28,8 @@
  * to run against, so this is written and tagged, not executed.
  */
 
+import type { Page } from '@playwright/test'
+
 import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
@@ -39,6 +41,25 @@ import {
 } from './helpers/fixtures.ts'
 
 const CASE_TITLE = `${RUN_PREFIX} Digitale post`
+
+/**
+ * Press Send digital post, which lives in the Actions menu and nowhere else.
+ *
+ * 🔴 THERE IS NO BUTTON ON THE BAR. CaseDetail sets no `inlineActions`, and
+ * CnDetailPage hands every entry of `config.headerActions` to a
+ * `display: "menu"` CnActionButtons, which draws them as items of the page's
+ * Actions menu. The library's own comment says why: twelve buttons pushed the
+ * record's title down to a truncated stub. The first draft of this file did
+ * `getByRole('button', { name: 'Send digital post' })` against the bar, which
+ * no menu had opened, so it could never have matched. A test that cannot pass
+ * is the mirror of the dark surface it covers.
+ *
+ * @param page The Playwright page.
+ */
+async function openTheSendAction(page: Page): Promise<void> {
+	await page.locator('[data-testid="cn-detail-page-actions"]').click()
+	await page.locator('[data-testid="cn-action-send-digital-post"]').click()
+}
 
 test.describe('digital post reaches integriq, or says why it did not', () => {
 	test.setTimeout(300_000)
@@ -65,13 +86,12 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md#the-compose-dialog-opens-from-the-case
+	// @e2e openspec/specs/berichtenbox-integration/spec.md#the-compose-dialog-opens-from-the-case
 	test('the compose dialog opens from the case, with the recipient filled in', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
-
-		await page.getByRole('button', { name: 'Send digital post' }).click()
+		await openTheSendAction(page)
 
 		const dialog = page.locator('.compose-dialog')
 		await expect(dialog).toBeVisible({ timeout: 30_000 })
@@ -80,12 +100,12 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		await expect(dialog.locator('input').first()).toHaveValue('123456782')
 	})
 
-	// @e2e openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md#the-refusal-reaches-the-handler-in-full
+	// @e2e openspec/specs/berichtenbox-integration/spec.md#the-refusal-reaches-the-handler-in-full
 	test('a refusal reaches the handler in full, and the dialog stays open', async ({
 		page,
 	}) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
-		await page.getByRole('button', { name: 'Send digital post' }).click()
+		await openTheSendAction(page)
 
 		const dialog = page.locator('.compose-dialog')
 		await expect(dialog).toBeVisible({ timeout: 30_000 })
@@ -103,7 +123,7 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		await expect(note).not.toHaveText(/^Failed to send message$/)
 	})
 
-	// @e2e openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md#a-refusal-is-never-recorded-as-a-delivery
+	// @e2e openspec/specs/berichtenbox-integration/spec.md#a-refusal-is-never-recorded-as-a-delivery
 	test('the case does not report the message as sent', async ({ request }) => {
 		const token = await getRequestToken(request)
 		const response = await request.get(
@@ -119,7 +139,7 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		}
 	})
 
-	// @e2e openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md#the-compose-dialog-opens-from-the-case
+	// @e2e openspec/specs/berichtenbox-integration/spec.md#the-compose-dialog-opens-from-the-case
 	test('a caller who may not change the case cannot send on it', async ({
 		request,
 	}) => {
