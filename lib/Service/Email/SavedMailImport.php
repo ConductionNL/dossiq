@@ -39,7 +39,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -55,7 +55,7 @@ use Throwable;
 /**
  * Hands a saved mail file to integriq's reader and files the message.
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 class SavedMailImport {
 
@@ -105,7 +105,7 @@ class SavedMailImport {
 	 * @return array{outcome: string, reason: string, subject: string, from: string, receivedAt: string}
 	 *         What happened, and what was read.
 	 *
-	 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function import(string $caseId, string $fileName, string $raw): array {
 		if (trim($caseId) === '') {

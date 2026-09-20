@@ -23,7 +23,7 @@ const MAIL_EXTENSIONS = ['.eml', '.msg', '.mbox']
  *
  * @param {object} node The clicked node.
  * @return {boolean} True when the name ends in a mail extension.
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 export function looksLikeMail(node) {
 	const name = String(node?.basename || node?.fileName || node?.name || '')
@@ -67,7 +67,7 @@ function caseIdFromLocation() {
  * @param {...object} args The dispatch arguments; CnFilesBrowser appends the node last.
  * @return {Promise<void>}
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 export async function readFileAsMessage(...args) {
 	let node = null
