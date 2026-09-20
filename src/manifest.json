@@ -2927,11 +2927,35 @@
 					},
 					{
 						"id": "case-knowledge-panel",
-						"type": "integration",
-						"integrationId": "collectives",
+						"type": "case-sections",
 						"title": "Knowledge",
 						"icon": "BookOpenPageVariant",
-						"_note": "knowledge-base-on-the-case, row 11.26. The pages that explain this case, through OpenRegister's `collectives` leaf. dossiq stores no article text and renders no wiki of its own: Collectives owns the page, its history, its versions and its team, and the team is what makes visibility per role, because a collective is scoped to a Nextcloud team and `roleType.ncGroupId` already names the group behind a role. So a handler who may not read a page in Collectives does not read it through a case either, and there is nothing here to enforce or to leak. TYPE `integration` AND NOT A REGISTRY KEY: this page already consumes leaves that way (`case-files`, `case-kpis-hours`, `case-payment-requests`), the leaf descriptor carries its own `requiredApp: \"collectives\"`, and a leaf whose app is absent is never registered, so the tab goes missing rather than drawing an empty knowledge base. `leafTab()` in src/registry.js exists for `component:` SIDEBAR tabs, and adding a second way to place the same leaf on the same page is how two placements drift. `xwiki` is in `case.linkedTypes` beside it for the municipalities that run one; the two are alternatives and neither is required, so only the leaf that is installed registers and only that tab appears."
+						"_note": "knowledge-base-on-the-case, row 11.26. Two sections, because the row asks two questions that have different answers. The FIRST is the work instruction for this KIND of case, which the case type names once and every case of that type shows without anybody linking anything: that is the whole point of the row, and it is rendered by the `case-work-instruction` type because the value lives on the case TYPE while the page is bound to the CASE, and CnDetailPage reads no `extend`, so a declared widget over a dotted `caseType.knowledgeBasePage` path would render blank while looking configured. The SECOND is the pages somebody linked to THIS case, through OpenRegister's `collectives` leaf. dossiq stores no article text and renders no wiki of its own: Collectives owns the page, its history, its versions and its team, and the team is what makes visibility per role, because a collective is scoped to a Nextcloud team and `roleType.ncGroupId` already names the group behind a role. So a handler who may not read a page in Collectives does not read it through a case either, and there is nothing here to enforce or to leak. TYPE `case-sections` AND NOT TWO TABS: one Knowledge tab that holds both is the reader's question, and CaseSectionsWidget drops the heading of a section whose widget drew nothing, so a case type with no instruction shows the linked pages alone rather than an empty block. The leaf keeps its own `requiredApp: \"collectives\"`, so on an instance without the app it is never registered and that section goes missing rather than drawing an empty knowledge base. `xwiki` is in `case.linkedTypes` beside it for the municipalities that run one. MEASURED 2026-09-20: the `xwiki` descriptor ships in the library but is NOT in `leafIntegrations[]`, and OpenRegister registers it only from its own `main.js`, not from the always-on `integration-global` bundle, so it does not resolve on a dossiq page and nothing here places it. That is an openregister row, not a reason to declare a widget that can never render.",
+						"content": {
+							"sections": [
+								{
+									"label": "How we handle this kind of case",
+									"widget": {
+										"id": "case-work-instruction",
+										"type": "case-work-instruction",
+										"title": "How we handle this kind of case",
+										"icon": "BookOpenPageVariant",
+										"_note": "REQ-CKB-01: the work instruction the case type names, on every case of that type, with nobody linking anything per case. A component and not a declared field because the value is one reference away: `CnDetailPage` reads no `extend` (measured against the installed @conduction/nextcloud-vue 3.4.0, where the string does not occur in CnDetailPage.vue), so the case's `caseType` is a bare uuid on the page and a dotted path over it resolves to nothing. It draws a LINK and never the article: dossiq fetches no page body and stores none, so who may read it stays the collective's own business. Nothing renders when the type names no page, and a lookup that FAILED says so with a retry, because a blank panel would read as a case type nobody wrote an instruction for."
+									}
+								},
+								{
+									"label": "Pages linked to this case",
+									"widget": {
+										"id": "case-knowledge-pages",
+										"type": "integration",
+										"integrationId": "collectives",
+										"title": "Pages linked to this case",
+										"icon": "BookOpenPageVariant",
+										"_note": "The pages somebody linked to THIS case, through OpenRegister's `collectives` leaf. Beside the case type's own instruction rather than instead of it: one is what this municipality does with every case of this kind, the other is what somebody found out about this one. The leaf carries its own `requiredApp: \"collectives\"` and a leaf whose app is absent is never registered, so this section goes missing rather than drawing an empty knowledge base."
+									}
+								}
+							]
+						}
 					},
 					{
 						"id": "case-attention",

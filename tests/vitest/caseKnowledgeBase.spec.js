@@ -76,8 +76,18 @@ describe('a case links the pages that explain it', () => {
 			(w) => w.id === 'case-knowledge-panel',
 		)
 		expect(widget, 'the case page has no Knowledge widget').toBeTruthy()
-		expect(widget.type).toBe('integration')
-		expect(widget.integrationId).toBe('collectives')
+		expect(widget.type).toBe('case-sections')
+
+		// The pages the case itself links are STILL the leaf and nothing
+		// dossiq built. The section moved, the ownership did not.
+		const sections = widget.content.sections || []
+		const pages = sections.map((s) => s.widget).find((w) => w?.id === 'case-knowledge-pages')
+		expect(
+			pages,
+			'the linked pages section is gone, so the case can no longer show the pages somebody linked to it',
+		).toBeTruthy()
+		expect(pages.type).toBe('integration')
+		expect(pages.integrationId).toBe('collectives')
 
 		const strip = (detail.config.widgets || []).find(
 			(w) => w.id === 'case-panels',
