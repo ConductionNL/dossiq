@@ -29,12 +29,12 @@
  * @spec openspec/changes/a-dashboard-the-reader-arranges/specs/dashboard/spec.md
  */
 
-import fs from 'fs'
-import path from 'path'
-import { buildQueryString } from '@conduction/nextcloud-vue/src/utils/headers.js'
 import { userWidgetPresets } from '@conduction/nextcloud-vue/src/components/CnWidgetGrid/dashboardWidgetRegistry.js'
+import { buildQueryString } from '@conduction/nextcloud-vue/src/utils/headers.js'
 import { resolveQueryFilters } from '@conduction/nextcloud-vue/src/utils/routeFilters.js'
 import { resolveScopeLayout } from '@conduction/nextcloud-vue/src/utils/scopeListLayout.js'
+import fs from 'fs'
+import path from 'path'
 import { describe, expect, it } from 'vitest'
 import { buildRelatedFilters } from '../../src/utils/caseTypeFieldFilters.js'
 
@@ -105,9 +105,7 @@ describe('row 11.9: a case type layout survives the library that reads it', () =
 
 	it('carries the declared order through as sort keys', () => {
 		const handhaving = seeded.find((caseType) =>
-			caseType['x-index'].defaultSort?.some(
-				(entry) => entry.order === 'desc',
-			),
+			caseType['x-index'].defaultSort?.some((entry) => entry.order === 'desc'),
 		)
 
 		const resolved = resolveScopeLayout({
@@ -169,12 +167,15 @@ describe('row 9.2: the field filters have to leave the browser', () => {
 
 		const parsed = new URLSearchParams(buildQueryString(params).slice(1))
 
-		expect(parsed.get('_related[caseProperty][case][0][propertyDefinition]'))
-			.toBe('pd-1')
-		expect(parsed.get('_related[caseProperty][case][0][value][gte]'))
-			.toBe('100000')
-		expect(parsed.get('_related[caseProperty][case][1][propertyDefinition]'))
-			.toBe('pd-4')
+		expect(
+			parsed.get('_related[caseProperty][case][0][propertyDefinition]'),
+		).toBe('pd-1')
+		expect(parsed.get('_related[caseProperty][case][0][value][gte]')).toBe(
+			'100000',
+		)
+		expect(
+			parsed.get('_related[caseProperty][case][1][propertyDefinition]'),
+		).toBe('pd-4')
 		expect(parsed.get('_related[caseProperty][case][1][value]')).toBe('Noord')
 	})
 
@@ -259,8 +260,9 @@ describe('row 10.1: a dashboard needs more than the one key', () => {
 			// asks for one arrives as a blank card rather than as a refusal.
 			expect(preset.widget.content.register).toBeTruthy()
 			expect(preset.widget.content.schema).toBeTruthy()
-			expect(Object.keys(preset.widget.content.filter).length)
-				.toBeGreaterThan(0)
+			expect(Object.keys(preset.widget.content.filter).length).toBeGreaterThan(
+				0,
+			)
 
 			// And no unresolved token: nothing resolves "my team", so a
 			// preset filtering on one would send the literal string and be a

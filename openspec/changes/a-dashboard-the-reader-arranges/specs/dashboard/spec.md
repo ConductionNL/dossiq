@@ -6,6 +6,16 @@ Every dashboard page in this app SHALL declare `config.userLayout: true`, so
 a user keeps their own arrangement of it without changing what anybody else
 sees.
 
+It SHALL declare `config.appId` beside it. The key on its own does nothing:
+`CnDashboardPage` returns early from both the load and the save unless an app
+id is set, and the manifest renderer passes none of its own, so a page
+carrying only `userLayout` reads and writes no arrangement and looks exactly
+like one that works to a reader who never drags a widget.
+
+It SHALL declare `config.pageId` as well, naming the page. Left out, the
+stored arrangement is keyed on a slug of the page TITLE, so editing a heading
+silently orphans every arrangement anybody had.
+
 The manifest SHALL decide which widgets exist and the user SHALL decide
 where they sit. A widget an administrator removes from the manifest SHALL
 disappear for every user, stored arrangement or not, because an arrangement

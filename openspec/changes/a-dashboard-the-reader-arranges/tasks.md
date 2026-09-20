@@ -56,3 +56,25 @@ nextcloud-vue `dashboard-layout-per-user` (#1209, merged onto
       ConductionNL/nextcloud-vue `a-saved-view-drives-a-widget` ships one.
       This app already declares `savedViewPlaces` on two index pages, so the
       views exist; nothing can render one on a dashboard yet.
+
+## 5. The release landed, and the key was not enough, 2026-09-20
+
+- [x] 5.1 Task 1.1's answer has changed. `@conduction/nextcloud-vue` 3.4.0
+      was published on 2026-09-19 and this repo's lockfile moved to it the
+      same morning. Read out of the installed package rather than assumed:
+      `mergeUserLayout`, the `dashboardLayouts` store plugin,
+      `listUserAddableWidgetTypes` and `userWidgetPresets` are all there,
+      and `userWidgetPresets` returns this page's two presets when handed
+      its real config. So these keys are read by something now.
+- [x] 5.2 🔴 `userLayout: true` ON ITS OWN STORES NOTHING.
+      `CnDashboardPage.loadUserLayout()` and `saveUserLayout()` both open
+      with `if (!this.userLayout || !this.appId)`, and the manifest renderer
+      binds the page's `config` and no app id of its own, so all five
+      dashboards made no layout request and wrote no record. A reader who
+      never drags a widget cannot tell that apart from the feature working,
+      which is why it survived a merge.
+      - The five pages now declare `appId: "dossiq"`, and `pageId` beside
+        it: left out, the record is keyed on a slug of the page TITLE, so
+        editing a heading orphans everybody's arrangement in silence.
+      - Mutation checked: taking `appId` off `Doorlooptijd` reddens
+        "expected undefined to be 'dossiq'".

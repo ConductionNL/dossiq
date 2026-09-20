@@ -86,3 +86,45 @@ Tier: V1. Kind: code. Row 9.2. Consumer half of openregister
       - The teardown names `propertyDefinition` explicitly: it is not in
         `FIXTURE_SCHEMAS`, and a definition left behind is offered as a filter
         on that case type to every handler on the instance, for ever.
+
+## 5. What the first pass got wrong, found 2026-09-20
+
+Both of these were found by asking the code that has to read the
+declaration, not by reading the declaration. Neither would ever have
+raised an error.
+
+- [x] 5.1 The numbered block was spelled
+      `_related[caseProperty][0][case][…]`. openregister's parser reads the
+      schema, then the FOREIGN KEY, and only then counts numbered rows, so
+      that names a foreign key called `0` with a condition called `case`,
+      and `conditionsFor()` refuses the query with "uses operator
+      'propertyDefinition'". Read off
+      `lib/Service/Query/RelatedRowFilterParser.php` on openregister
+      `development`, where the four PRs are now merged. The number moves
+      after the foreign key.
+      - Mutation checked: putting it back reddens
+        `expect(query['_related[caseProperty][case][0][propertyDefinition]'])
+        .toBe('pd-1')` with "expected undefined to be 'pd-1'".
+- [x] 5.2 🔴 NOTHING EVER REACHED THE SERVER. The bar wrote its blocks onto
+      the route query and stopped. `CnIndexPage` turns `$route.query` into
+      fetch filters through `resolveQueryFilters()`, which skips every key
+      beginning with an underscore, so all of them were dropped and the list
+      answered the WHOLE REGISTER under a URL that said it was filtered.
+      That is the failure this change's refusal notice exists to prevent,
+      arriving by the one door where nothing is refused and so nothing is
+      said. Verified against the installed `@conduction/nextcloud-vue`
+      3.4.0, asserted in `tests/vitest/declarationsReachTheLibrary.spec.js`.
+      - The bar now also hands each block to the list through
+        `sidebarState.onFilterChange`, the channel the facet sidebar uses,
+        whose keys `useListView.buildParams()` copies into the request
+        verbatim. The route query stays: it is what a shared link carries
+        and what `readListFilters()` hands a bulk act, and `mounted()`
+        replays it so a deep link is filtered rather than merely addressed.
+      - Mutation checked: dropping the `sendToList` call reddens "the route
+        query alone is dropped by resolveQueryFilters, so a bar that only
+        pushes the URL filters nothing".
+      - FOLLOW-UP, not taken here: the forwarding rule belongs in
+        nextcloud-vue. A `resolveQueryFilters` that let `_related[` through
+        would make the second channel unnecessary, and
+        `tests/vitest/declarationsReachTheLibrary.spec.js` reddens on the
+        release that does it, which is how the next reader will find out.

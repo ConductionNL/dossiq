@@ -95,3 +95,20 @@ Tier: V1. Kind: config. Row 11.9.
   sidebar, the header row changes; pick All types, it changes back.
   - Reads the case type back from OpenRegister first, because reading the
     seed file would report green on a block the mapper dropped.
+
+## 5. The release landed, 2026-09-20
+
+- [x] 5.1 Task 1.1 said there was no version carrying PR 1213. There is
+      now: `@conduction/nextcloud-vue` 3.4.0, published 2026-09-19, and this
+      repo's lockfile moved to it the same morning. `package.json` stays at
+      `^3.2.0`, which already admitted it.
+- [x] 5.2 The declarations are live, and that is asserted rather than
+      assumed. `tests/vitest/declarationsReachTheLibrary.spec.js` feeds each
+      seeded case type's real `x-index` and the Cases page's real
+      `config.columns` to the installed `resolveScopeLayout`, and reads the
+      resolved columns back: all three keep every column they declared, the
+      handhavingszaak keeps its newest-decision-first order, and a column
+      the page does not carry is dropped, which is why the page has to
+      declare every column any case type asks for.
+      - Mutation checked: renaming one seeded column to `vervaldatum`
+        reddens both the manifest test and the resolver test.

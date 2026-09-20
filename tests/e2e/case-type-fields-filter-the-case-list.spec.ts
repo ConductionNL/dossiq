@@ -17,6 +17,14 @@ import type { APIRequestContext } from '@playwright/test'
  * below names a case that must NOT be there, and it is seeded to be there
  * without the filter.
  *
+ * 🔴 THE URL IS NOT THE TRANSPORT, WHICH IS WHY THE DEEP-LINK TESTS BELOW ARE
+ * REAL TESTS. `CnIndexPage` builds its filters with `resolveQueryFilters()`,
+ * which skips the underscore namespace, so a `_related` key in the address
+ * bar is dropped before the fetch. The bar hands each block to the list
+ * through `sidebarState.onFilterChange` as well, and replays the route's
+ * blocks on mount. A run where the address bar carries `_related` and the
+ * list is not narrowed is that hop missing, not openregister refusing.
+ *
  * 🔴 A REFUSAL IS NOT AN EMPTY RESULT. openregister refuses a malformed
  * `_related` block with a sentence rather than running it, but the object
  * store records the refusal and returns `[]`, so `CnIndexPage` draws its empty

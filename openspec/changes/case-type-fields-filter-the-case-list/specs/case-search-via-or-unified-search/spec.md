@@ -31,6 +31,19 @@ merged into one block, because one block asks for a single `caseProperty`
 row that is two property definitions, and no row is that, so the handler
 would get an empty list and no reason for it.
 
+The number SHALL sit after the foreign key, as
+`_related[caseProperty][case][0][…]`. `RelatedRowFilterParser` reads the
+schema, then the foreign key, and only then counts numbered rows, so a
+number one level higher names a foreign key called `0` and the whole query
+is refused.
+
+The blocks SHALL reach the fetch, and the route query alone does not carry
+them. `CnIndexPage` builds its filters with `resolveQueryFilters()`, which
+skips the whole underscore namespace because that namespace is the library's
+own, so a `_related` key written only to the URL is dropped before the
+request is built and the list answers the unfiltered register under an
+address that says it is filtered. Nothing is refused, so nothing is said.
+
 The control offered per definition SHALL follow the definition's own
 `propertyType`: a number is a range, a date is a date range, an enumeration
 backed by `enumValues` is a select, and everything else is text.
