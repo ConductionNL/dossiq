@@ -36,10 +36,11 @@ const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
 const caseDetail = () => manifest.pages.find((page) => page.id === 'CaseDetail')
 
 /** The Export dossier header action. @return {object|undefined} The action. */
-const exportAction = () =>
-	(caseDetail().config.headerActions || []).find(
+function exportAction () {
+  return (caseDetail().config.headerActions || []).find(
 		(action) => action.id === 'export-dossier',
 	)
+}
 
 /**
  * Whether `appinfo/routes.php` answers this app path with this verb.

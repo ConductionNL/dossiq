@@ -25,7 +25,6 @@ import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
 import CnFilesBrowser from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/CnFilesBrowser.vue'
 
 const ROOT = path.resolve(__dirname, '../..')
