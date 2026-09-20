@@ -32,7 +32,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Controller\SavedMailController
  * @uses \OCA\Dossiq\Service\Email\SavedMailImport
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 final class SavedMailControllerTest extends TestCase {
 

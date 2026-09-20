@@ -52,7 +52,7 @@ test.describe('a handler files a logged message on a case they pick', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md#a-wrongly-matched-message-is-moved-to-the-right-case
+	// @e2e openspec/specs/case-email-integration/spec.md#a-wrongly-matched-message-is-moved-to-the-right-case
 	test('the log offers File on a case on every entry', async ({ page }) => {
 		await page.goto('/apps/dossiq/intake/mail-log')
 
@@ -84,7 +84,7 @@ test.describe('a handler files a logged message on a case they pick', () => {
 		).toBeDisabled()
 	})
 
-	// @e2e openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md#a-case-the-caller-may-not-read-is-refused
+	// @e2e openspec/specs/case-email-integration/spec.md#a-case-the-caller-may-not-read-is-refused
 	test('a caller with no session cannot file a message on a case', async ({
 		request,
 	}) => {
@@ -102,7 +102,7 @@ test.describe('a handler files a logged message on a case they pick', () => {
 		expect([401, 403, 412]).toContain(response.status())
 	})
 
-	// @e2e openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md#an-outlook-message-dropped-on-a-case-becomes-readable
+	// @e2e openspec/specs/case-email-integration/spec.md#an-outlook-message-dropped-on-a-case-becomes-readable
 	test('a file that is not a mail file is refused, and no message is filed', async ({
 		request,
 	}) => {

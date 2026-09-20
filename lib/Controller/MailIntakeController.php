@@ -399,7 +399,7 @@ class MailIntakeController extends Controller {
 	 *
 	 * @return JSONResponse What happened.
 	 *
-	 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	#[NoAdminRequired]
 	public function fileOnCase(string $entryId, string $caseId = '', string $reason = ''): JSONResponse {

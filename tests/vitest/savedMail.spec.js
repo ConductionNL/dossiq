@@ -10,7 +10,7 @@
  * asked, and a success toast over one of them would say the case now holds a
  * message it does not.
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 import fs from 'fs'

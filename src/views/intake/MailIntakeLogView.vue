@@ -331,7 +331,7 @@ export default {
 		 *
 		 * @param {object} entry The log entry.
 		 * @return {void}
-		 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		openFileOnCase(entry) {
 			this.filing = entry
@@ -341,7 +341,7 @@ export default {
 		 * The dialog filed the message: close it and re-read the log.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		async onFiled() {
 			this.filing = null

@@ -46,7 +46,7 @@ use OCP\EventDispatcher\Event;
  * behaviour of this one: the requirement it serves is integriq's mail intake,
  * which is specified in integriq's own repo and not here, and the dossiq side
  * it lets the analysers see is specified in
- * openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md.
+ * openspec/specs/case-email-integration/spec.md.
  */
 class MessageReceivedEvent extends Event {
 

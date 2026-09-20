@@ -21,7 +21,7 @@
  * a wrong match, and a blank field beside a matcher that chose 2026-090 asks
  * the handler to remember what they are changing away from.
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 import { mount } from '@vue/test-utils'

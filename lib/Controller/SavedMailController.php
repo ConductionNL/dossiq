@@ -32,7 +32,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 class SavedMailController extends Controller {
 
@@ -101,7 +101,7 @@ class SavedMailController extends Controller {
 	 *
 	 * @return JSONResponse What was read, or why it could not be.
 	 *
-	 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	#[NoAdminRequired]
 	public function read(string $caseId, int $fileId): JSONResponse {

@@ -17,7 +17,7 @@
   caller may not read. Closing on that would tell the handler the message moved
   when it did not, so the refusal is rendered and the dialog stays open.
 
-  @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+  @spec openspec/specs/case-email-integration/spec.md
 -->
 <template>
 	<NcDialog
@@ -126,7 +126,7 @@ export default {
 		 * after it.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+		 * @spec openspec/specs/case-email-integration/spec.md
 		 */
 		async confirm() {
 			this.busy = true

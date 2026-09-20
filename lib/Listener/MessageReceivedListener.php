@@ -49,7 +49,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -69,7 +69,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 class MessageReceivedListener implements IEventListener {
 
@@ -132,7 +132,7 @@ class MessageReceivedListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/inbound-messages-consume-integriq/specs/case-email-integration/spec.md
+	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (method_exists($event, 'setOutcome') === false || method_exists($event, 'getMessage') === false) {
