@@ -44,6 +44,9 @@
 						<span class="dossier-version-panel__meta">
 							{{ formatDate(version.timestamp) }} ·
 							{{ version.author || t('dossiq', 'Unknown') }}
+							<template v-if="formatSize(version.size) !== ''">
+								· {{ formatSize(version.size) }}
+							</template>
 						</span>
 					</div>
 					<div class="dossier-version-panel__actions">
@@ -184,7 +187,7 @@ export default {
 		 * there.
 		 *
 		 * @return {number} The file id, or 0 when neither prop carries one.
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		resolvedFileId() {
 			const fromProp = Number(this.fileId)
@@ -204,7 +207,7 @@ export default {
 		 * identical to a reader.
 		 *
 		 * @return {boolean} True when neither prop named a file.
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		hasNoFile() {
 			return this.resolvedFileId === 0
@@ -235,7 +238,7 @@ export default {
 		 * The sentence the refusal shows, naming the file when one was named.
 		 *
 		 * @return {string} The description.
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		refusalDescription() {
 			if (this.fileName !== '') {
@@ -293,10 +296,27 @@ export default {
 				const url = generateRemoteUrl(
 					`dav/versions/${this.userId}/versions/${this.resolvedFileId}`,
 				)
+				// 🔴 THE PROPERTIES ARE NAMED, NOT LEFT TO ALLPROP. A PROPFIND
+				// with an empty body returns the DAV: live properties and the
+				// dead ones, and Nextcloud's own `nc:` live properties are in
+				// neither set. So the author has to be ASKED for, or it never
+				// arrives and the panel goes on reading Unknown. A property
+				// the server does not know comes back in a 404 propstat,
+				// which the parser simply does not find, so naming one costs
+				// nothing where it is absent.
 				const { data } = await axios.request({
 					method: 'PROPFIND',
 					url,
-					headers: { Depth: '1' },
+					data:
+						'<?xml version="1.0"?>'
+						+ '<d:propfind xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns">'
+						+ '<d:prop>'
+						+ '<d:getlastmodified/>'
+						+ '<d:getcontentlength/>'
+						+ '<nc:version-author/>'
+						+ '</d:prop>'
+						+ '</d:propfind>',
+					headers: { Depth: '1', 'Content-Type': 'application/xml' },
 				})
 				this.versions = this.parseVersions(data)
 			} catch {
@@ -337,11 +357,30 @@ export default {
 				) {
 					return
 				}
+				// 🔴 `author` USED TO BE THE LITERAL `''` HERE, and the template
+				// renders `version.author || 'Unknown'`. So every version of
+				// every document read Unknown, which looks exactly like a
+				// server that did not send an author and is really a field
+				// nobody ever parsed. REQ-ZAK-020 asks for the moment, the
+				// author and the size, and two of the three were never read.
+				//
+				// The author lives in Nextcloud's own namespace, not in DAV:.
+				// A server that does not send it still renders Unknown, which
+				// is now a real absence rather than a hardcoded one.
+				const author = node.getElementsByTagNameNS(
+					'http://nextcloud.org/ns',
+					'version-author',
+				)[0]
+				const size = node.getElementsByTagNameNS(
+					'DAV:',
+					'getcontentlength',
+				)[0]
 				versions.push({
 					id: href.textContent,
 					number: responses.length - index,
 					timestamp: lastModified ? lastModified.textContent : '',
-					author: '',
+					author: author ? author.textContent : '',
+					size: size ? Number(size.textContent) : null,
 				})
 			})
 			return versions
@@ -363,6 +402,32 @@ export default {
 				return dateStr
 			}
 			return d.toLocaleString('nl-NL')
+		},
+
+		/**
+		 * Format a version's byte count for the meta line.
+		 *
+		 * A version whose size the server did not send renders NOTHING
+		 * rather than `0 B`: an unsent size and an empty file are different
+		 * facts, and only one of them is worth a reader's attention.
+		 *
+		 * @param {number|null} bytes The byte count, or null when unsent.
+		 * @return {string} The formatted size, or an empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		formatSize(bytes) {
+			if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) {
+				return ''
+			}
+			const units = ['B', 'KB', 'MB', 'GB', 'TB']
+			let value = bytes
+			let unit = 0
+			while (value >= 1024 && unit < units.length - 1) {
+				value /= 1024
+				unit += 1
+			}
+			const rounded = unit === 0 ? value : Math.round(value * 10) / 10
+			return `${rounded} ${units[unit]}`
 		},
 
 		/**
@@ -390,7 +455,7 @@ export default {
 		 * the versions of any node can still be reached.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		showInFiles() {
 			if (typeof window === 'undefined') {
