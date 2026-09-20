@@ -60,12 +60,19 @@ test.describe('document acts reach a surface', () => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page.getByRole('tab', { name: /Files/ }).first().click()
 
-		const row = page.locator('[data-testid="cn-files-row"]').first()
+		// `cn-files-browser-row`, and the act is reached through the row's
+		// own actions menu. This used to say `cn-files-row` and to RIGHT
+		// CLICK the row: neither exists. CnFilesBrowser renders no
+		// contextmenu handler at all, so the test could never have passed,
+		// which is the mirror of the defect this file covers.
+		const row = page.locator('[data-testid="cn-files-browser-row"]').first()
 		await expect(row).toBeVisible({ timeout: 30_000 })
 		const fileName = await row.innerText()
 
-		await row.click({ button: 'right' })
-		await page.getByText('Versions', { exact: true }).click()
+		await row.locator('.cn-files-browser__col-actions button').first().click()
+		await page
+			.locator('[data-testid="cn-files-browser-host-action-versions"]')
+			.click()
 
 		// The panel is open AND it is about this file: a panel handed no file
 		// says so instead, and the two states must not be confused.
@@ -80,10 +87,12 @@ test.describe('document acts reach a surface', () => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page.getByRole('tab', { name: /Files/ }).first().click()
 
-		const row = page.locator('[data-testid="cn-files-row"]').first()
+		const row = page.locator('[data-testid="cn-files-browser-row"]').first()
 		await expect(row).toBeVisible({ timeout: 30_000 })
-		await row.click({ button: 'right' })
-		await page.getByText('Mark as final', { exact: true }).click()
+		await row.locator('.cn-files-browser__col-actions button').first().click()
+		await page
+			.locator('[data-testid="cn-files-browser-host-action-mark-final"]')
+			.click()
 
 		await page.getByRole('button', { name: /Apply/ }).click()
 
@@ -99,8 +108,14 @@ test.describe('document acts reach a surface', () => {
 	test('a handler downloads the case file', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 
+		// CaseDetail sets no `inlineActions`, so CnDetailPage hands every
+		// header action to a `display: "menu"` CnActionButtons and draws
+		// them as items of its Actions menu. There is no Export dossier
+		// button on the bar to click.
+		await page.locator('[data-testid="cn-detail-page-actions"]').click()
+
 		const download = page.waitForEvent('download', { timeout: 60_000 })
-		await page.getByRole('button', { name: 'Export dossier' }).click()
+		await page.locator('[data-testid="cn-action-export-dossier"]').click()
 		const file = await download
 
 		expect(file.suggestedFilename()).toMatch(/\.zip$/)
