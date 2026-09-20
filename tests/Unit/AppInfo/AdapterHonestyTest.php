@@ -343,8 +343,11 @@ class AdapterHonestyTest extends TestCase {
 
 		// And the Integrations page looks the seams up under keys that resolve
 		// to those same settings, so saving one moves the row it belongs to.
+		// Berichtenbox carries a second key: the adapter is bound by default
+		// now, and what an instance still has to set is the integriq source it
+		// sends over.
 		$this->assertSame(
-			[SubstitutableAdapterRegistrar::BERICHTENBOX_CONFIG_KEY],
+			[IntegriqAdapter::SOURCE_CONFIG_KEY, SubstitutableAdapterRegistrar::BERICHTENBOX_CONFIG_KEY],
 			IntegrationStatusService::SAVE_REQUIRED_KEYS['berichtenbox']
 		);
 		$this->assertSame(

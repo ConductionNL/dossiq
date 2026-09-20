@@ -226,19 +226,35 @@ describe('the connection declaration', () => {
 	})
 
 	// Contract D4 rule 3 (hydra#673) matches the key's value against
-	// `simulatedValues`, default only the empty string. Naming the mock class
-	// in the key binds the mock too, so the list has to carry that class or
-	// the row reads Configured while the mock answers.
-	it('reads Simulated when the key is empty or names the mock class', () => {
+	// `simulatedValues`. Naming the mock class in the key binds the mock too,
+	// so the list has to carry that class or the row reads Configured while
+	// the mock answers.
+	//
+	// The two seams differ about the empty string, and that is deliberate.
+	// An empty `beschikking_template_adapter` still falls back to its mock, so
+	// empty is simulated there. An empty `berichtenbox_adapter` binds
+	// IntegriqAdapter, which refuses rather than simulating, so listing empty
+	// there reported a mock that was not answering.
+	it('reads Simulated only when a mock really answers', () => {
 		expect(byKey.berichtenbox.adapter.simulatedValues).toEqual([
-			'',
 			'OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter',
+			'mock',
 		])
 		expect(byKey.templates.adapter.simulatedValues).toEqual([
 			'',
 			'OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter',
 		])
 		expect(connections.some((c) => 'reportedOnly' in c)).toBe(false)
+	})
+
+	// No admin section writes `digital_post_source`, and integriq refuses a
+	// send over an empty one before it looks anything up. So the row names the
+	// key, the way the BRP row names its own.
+	it('names the digital post source the Berichtenbox row needs', () => {
+		expect(byKey.berichtenbox.requiredConfig).toEqual(['digital_post_source'])
+		expect(byKey.berichtenbox.unconfiguredMessage).toMatch(
+			/digital_post_source/,
+		)
 	})
 
 	it('lets the probed connections arrive as reports', () => {

@@ -82,11 +82,12 @@
             "title": "Berichtenbox",
             "description": "Messages to a citizen's Mijn Overheid Berichtenbox.",
             "order": 110,
-            "requiredConfig": ["berichtenbox_adapter"],
+            "requiredConfig": ["digital_post_source"],
+            "unconfiguredMessage": "Integriq sends these letters, and it needs a source to send them over. Set the source with occ config:app:set dossiq digital_post_source --value <slug>, naming an integriq digital post source. Until then a send is refused, and the case records why.",
             "adapter": {
                 "configKey": "berichtenbox_adapter",
-                "simulatedValues": ["", "OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter"],
-                "simulatedMessage": "A mock adapter answers here. No message reaches Mijn Overheid. Set berichtenbox_adapter to a real adapter class."
+                "simulatedValues": ["OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter", "mock"],
+                "simulatedMessage": "A mock adapter answers here, because berichtenbox_adapter names it. No message reaches Mijn Overheid. Clear the key to get the integriq adapter back, which refuses a send it cannot make."
             }
         },
         {
