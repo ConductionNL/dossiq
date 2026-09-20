@@ -25,7 +25,7 @@
  * inside it, so the number of entries examined is checked too: a regex that
  * stops matching the registry's shape turns this file red instead of green.
  *
- * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 import fs from 'fs'
