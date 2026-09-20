@@ -160,6 +160,7 @@ export default {
 		 * The case type this page is bound to.
 		 *
 		 * @return {string} The route's id.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		caseTypeId() {
 			return String(this.$route?.params?.id ?? '')
@@ -174,6 +175,7 @@ export default {
 		 * data it would not appear at all.
 		 *
 		 * @return {Array<object>} The chips, source language first.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		chips() {
 			return this.languages.map((language) => {
@@ -202,6 +204,7 @@ export default {
 		 * What the source language means for the reader.
 		 *
 		 * @return {string} The one line under the chips.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-a-changed-source-label-marks-its-translations-stale-req-cfi-04
 		 */
 		sourceNote() {
 			return t(
@@ -215,6 +218,7 @@ export default {
 		 * Whether anything is waiting to be saved.
 		 *
 		 * @return {boolean} True when a draft differs from what is stored.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		hasEdits() {
 			return this.properties.some(
@@ -227,6 +231,7 @@ export default {
 	 * Read the case type once the widget is on the page.
 	 *
 	 * @return {Promise<void>}
+	 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 	 */
 	async mounted() {
 		subscribe(PAGE_REFRESH, this.load)
@@ -248,6 +253,7 @@ export default {
 		 *
 		 * @param {string} code The BCP 47 tag.
 		 * @return {string} The display name, or the tag when the browser has none.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-a-case-types-labels-carry-every-language-req-cfi-01
 		 */
 		nameOf(code) {
 			try {
@@ -266,6 +272,7 @@ export default {
 		 *
 		 * @param {string} property The property name.
 		 * @return {string} The title, falling back to the property name.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-a-case-types-labels-carry-every-language-req-cfi-01
 		 */
 		labelOf(property) {
 			return this.titles[property] ?? property
@@ -276,6 +283,7 @@ export default {
 		 *
 		 * @param {string} property The property name.
 		 * @return {string} The stored value, or an empty string.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		storedOf(property) {
 			return this.values?.[property]?.[this.activeLanguage] ?? ''
@@ -286,6 +294,7 @@ export default {
 		 *
 		 * @param {string} property The property name.
 		 * @return {string} The draft value.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		draftOf(property) {
 			const typed = this.drafts?.[this.activeLanguage]?.[property]
@@ -298,6 +307,7 @@ export default {
 		 * @param {string} property The property name.
 		 * @param {string} value The new value.
 		 * @return {void}
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		setDraft(property, value) {
 			const language = this.activeLanguage
@@ -312,6 +322,7 @@ export default {
 		 *
 		 * @param {string} property The property name.
 		 * @return {boolean} True when OpenRegister marked the row outdated.
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-a-changed-source-label-marks-its-translations-stale-req-cfi-04
 		 */
 		isStale(property) {
 			return (
@@ -324,6 +335,7 @@ export default {
 		 * Read the register, the case type and the sidecar.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		async load() {
 			if (!this.caseTypeId) {
@@ -400,6 +412,7 @@ export default {
 		 * Write every edited label back, each as a whole language map.
 		 *
 		 * @return {Promise<void>}
+		 * @spec openspec/specs/case-configuration-i18n/spec.md#requirement-the-case-type-page-edits-its-translations-req-cfi-03
 		 */
 		async save() {
 			this.saving = true
