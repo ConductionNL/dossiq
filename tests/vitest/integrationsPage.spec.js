@@ -252,9 +252,7 @@ describe('the connection declaration', () => {
 	// key, the way the BRP row names its own.
 	it('names the digital post source the Berichtenbox row needs', () => {
 		expect(byKey.berichtenbox.requiredConfig).toEqual(['digital_post_source'])
-		expect(byKey.berichtenbox.unconfiguredMessage).toMatch(
-			/digital_post_source/,
-		)
+		expect(byKey.berichtenbox.unconfiguredMessage).toMatch(/digital_post_source/)
 	})
 
 	it('lets the probed connections arrive as reports', () => {

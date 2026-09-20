@@ -28,8 +28,9 @@
  * to run against, so this is written and tagged, not executed.
  */
 
-import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
+
+import { expect, test } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
