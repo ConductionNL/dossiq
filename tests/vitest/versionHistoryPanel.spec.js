@@ -268,6 +268,25 @@ describe('VersionHistoryPanel handed a file id', () => {
 		expect(wrapper.text()).not.toContain('0 B')
 	})
 
+	it('asks the server for the author and the size by name', async () => {
+		// An allprop PROPFIND returns the DAV: live properties and the dead
+		// ones, and `nc:version-author` is in neither set. Parsing a
+		// property nobody requested reads Unknown for ever, and looks
+		// exactly like a server that has no author to give.
+		mockRequest.mockResolvedValue({ data: FULL_PROPFIND_XML })
+		mount(VersionHistoryPanel, { props: { open: true, fileId: 42 } })
+		await flushPromises()
+
+		const sent = mockRequest.mock.calls[0][0]
+		expect(sent.method).toBe('PROPFIND')
+		expect(sent.data).toContain('version-author')
+		expect(sent.data).toContain('http://nextcloud.org/ns')
+		expect(sent.data).toContain('getcontentlength')
+		// The moment was already read, and a named PROPFIND that forgets it
+		// would take it away.
+		expect(sent.data).toContain('getlastmodified')
+	})
+
 	it('scales a byte count to the unit a reader can hold', () => {
 		const wrapper = mount(VersionHistoryPanel, { props: { open: false } })
 		expect(wrapper.vm.formatSize(512)).toBe('512 B')

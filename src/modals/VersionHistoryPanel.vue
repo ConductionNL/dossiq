@@ -296,10 +296,26 @@ export default {
 				const url = generateRemoteUrl(
 					`dav/versions/${this.userId}/versions/${this.resolvedFileId}`,
 				)
+				// 🔴 THE PROPERTIES ARE NAMED, NOT LEFT TO ALLPROP. A PROPFIND
+				// with an empty body returns the DAV: live properties and the
+				// dead ones, and Nextcloud's own `nc:` live properties are in
+				// neither set. So the author has to be ASKED for, or it never
+				// arrives and the panel goes on reading Unknown. A property
+				// the server does not know comes back in a 404 propstat,
+				// which the parser simply does not find, so naming one costs
+				// nothing where it is absent.
 				const { data } = await axios.request({
 					method: 'PROPFIND',
 					url,
-					headers: { Depth: '1' },
+					data: '<?xml version="1.0"?>'
+						+ '<d:propfind xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns">'
+						+ '<d:prop>'
+						+ '<d:getlastmodified/>'
+						+ '<d:getcontentlength/>'
+						+ '<nc:version-author/>'
+						+ '</d:prop>'
+						+ '</d:propfind>',
+					headers: { 'Depth': '1', 'Content-Type': 'application/xml' },
 				})
 				this.versions = this.parseVersions(data)
 			} catch {
