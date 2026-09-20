@@ -6,23 +6,27 @@
  * its own and computes no translation.
  *
  *   GET   /apps/openregister/api/registers/{register}
- *         — the languages this register serves. `languages[0]` is the source.
+ *         : the languages this register serves. `languages[0]` is the source.
  *   GET   /apps/openregister/api/objects/{register}/{schema}/{id}
  *           ?_translations=all&_translationMeta=true
- *         — every language of every value, plus `_meta.languageMeta`, which
+ *         : every language of every value, plus `_meta.languageMeta`, which
  *           names exactly the properties OpenRegister holds as translatable.
  *   GET   /apps/openregister/api/translations/object/{uuid}?schema={schema}
- *         — the sidecar rows, each with the workflow status of one value.
+ *         : the sidecar rows, each with the workflow status of one value.
  *   PATCH /apps/openregister/api/objects/{register}/{schema}/{id}
- *         — the edited label, as a whole language-keyed object.
+ *         : the edited label, as a whole language-keyed object.
  *
  * 🔑 THE WHOLE LANGUAGE MAP IS WRITTEN, never one language under
- * `X-Translation-Target-Language`. With that header
- * `TranslationHandler::normalizeTranslationsForSave()` builds a FRESH
- * single-key map (`[$targetLanguage => $value]`), so whether the Dutch value
- * survives depends on merge behaviour further down that this client cannot
- * see. A body that is already language keyed is kept verbatim and needs no
- * header, which is the same edit with nothing left to find out.
+ * `X-Translation-Target-Language`. Read on openregister `development`
+ * (6e4d946f3b), `TranslationHandler::normalizeTranslationsForSave()` has
+ * three shapes and the header helps in none of them. A language keyed body
+ * plus the header is shape D, conflicting intent, and throws
+ * `TranslationTargetConflictException`. A bare string plus the header is
+ * shape B, and becomes `[$targetLanguage => $value]`, a fresh single-key map
+ * whose effect on the other languages depends on merge behaviour this client
+ * cannot see. A language keyed body with NO header is kept verbatim, which is
+ * what this sends: the same edit, refused by nothing, with nothing left to
+ * find out.
  *
  * 🔑 THE PROPERTIES COME FROM `_meta.languageMeta`, not from a list kept here.
  * The envelope is built from the schema OpenRegister imported, so a label this

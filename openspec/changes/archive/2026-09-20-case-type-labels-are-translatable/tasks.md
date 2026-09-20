@@ -70,11 +70,16 @@ Tier: V1. Kind: config. Row 11.13.
     non-empty value and never reads its status, so a label the Dutch moved out
     from under still counts as done. REQ-CFI-04 says a stale label is a wrong
     label. The chip reads the sidecar rows and applies that rule.
-  - The PATCH carries the whole language map and not
-    `X-Translation-Target-Language`: that header makes
-    `normalizeTranslationsForSave()` build a fresh single-key map, and whether
-    the Dutch value survives then depends on merge behaviour the browser
-    cannot see.
+  - The PATCH carries the whole language map and NO
+    `X-Translation-Target-Language`. First written here as "that header makes
+    normalizeTranslationsForSave build a fresh single-key map", which is true
+    of only one of its three shapes and not the one this client sends. Read
+    again on openregister `development` (6e4d946f3b): a language keyed body
+    WITH the header is shape D, conflicting intent, and throws
+    `TranslationTargetConflictException`; a bare string with the header is
+    shape B and becomes `[$targetLanguage => $value]`; a language keyed body
+    with no header is kept verbatim. The conclusion did not move, the reason
+    did, and a wrong reason is what the next person acts on.
 - [x] 4.1 `tests/vitest/`: every property this change marks is still marked,
   no property of `case` itself is marked, and `x-translatable` appears
   nowhere in `lib/Settings/`. A case is not a label, and a prefixed key is

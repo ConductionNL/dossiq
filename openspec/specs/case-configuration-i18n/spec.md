@@ -80,11 +80,13 @@ page. The mechanism stays OpenRegister's: the widget reads
 `_meta.languageMeta` for which properties are labels, the translation sidecar
 for their status, and writes back through the objects API.
 
-A write SHALL carry the whole language keyed map for the property. Sending one
-language under `X-Translation-Target-Language` makes
-`normalizeTranslationsForSave()` build a fresh single-key map, and whether the
-other languages survive then depends on merge behaviour the browser cannot
-see.
+A write SHALL carry the whole language keyed map for the property, and SHALL
+NOT send `X-Translation-Target-Language`. `normalizeTranslationsForSave()`
+refuses a language keyed body that arrives with that header
+(`TranslationTargetConflictException`, conflicting intent), and wraps a bare
+string under it into a fresh single-key map whose effect on the other
+languages depends on merge behaviour the browser cannot see. A language keyed
+body with no header is kept verbatim.
 
 The surface SHALL NOT translate anything. `BulkTranslationService` is
 OpenRegister's and a second way to start it does not belong in the app that

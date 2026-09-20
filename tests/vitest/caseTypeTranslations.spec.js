@@ -21,11 +21,12 @@
  * type whose English labels are all out of date, and that is the number a
  * reader acts on.
  *
- * The write carries the WHOLE language map. With
- * `X-Translation-Target-Language` the engine builds a fresh single-key map
- * (`[$targetLanguage => $value]`), so whether the Dutch title survives would
- * depend on merge behaviour the browser cannot see. The assertion below reads
- * the PATCH body and fails if Dutch is not in it.
+ * The write carries the WHOLE language map and no
+ * `X-Translation-Target-Language`. With the header a language keyed body is
+ * refused outright (`TranslationTargetConflictException`), and a bare string
+ * becomes a fresh single-key map whose effect on the other languages depends
+ * on merge behaviour the browser cannot see. The assertion below reads the
+ * PATCH body and fails if Dutch is not in it.
  *
  * @spec openspec/specs/case-configuration-i18n/spec.md
  */
