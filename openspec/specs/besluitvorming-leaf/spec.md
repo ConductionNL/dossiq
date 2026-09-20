@@ -84,7 +84,7 @@ a claim about the document that nobody made.
 **Feature tier**: MVP
 
 #### Scenario: A reviewer works the route from the case
-@e2e tests/e2e/approval-chain-on-the-document.spec.ts
+@e2e exclude no test signs in AS the current actor and approves, so nothing here proves the route advances. The suite covers the bystander's read-only view and the two lock outcomes. Acting on a route is decidiq's own surface and its suite owns it.
 
 - **GIVEN** a case whose concept letter is held in a route of three reviewers, and the signed-in user is the current actor
 - **WHEN** the user opens that document from the Files tab

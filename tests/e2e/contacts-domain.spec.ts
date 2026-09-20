@@ -562,7 +562,7 @@ test.describe('Contacts', () => {
 		await expect(page.getByText('Sent to this contact')).toBeVisible()
 	})
 
-	// @e2e openspec/specs/kcc-klantcontact-integratie/spec.md#a-document-on-nobody-s-behalf-does-not-appear
+	// @e2e openspec/specs/kcc-klantcontact-integratie/spec.md#a-document-on-nobodys-behalf-does-not-appear
 	test('a contact with no documents is told so in a sentence', async ({
 		page,
 	}) => {

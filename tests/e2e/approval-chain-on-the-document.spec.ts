@@ -84,7 +84,7 @@ test.afterAll(async () => {
 })
 
 test.describe('dossiq reads the route and never decides it', () => {
-	// @e2e openspec/specs/besluitvorming-leaf/spec.md#scenario-decidiq-is-not-installed
+	// @e2e openspec/specs/besluitvorming-leaf/spec.md#decidiq-is-not-installed
 	test('the surface says so when decidiq is absent, and the rest of the properties render', async ({
 		page,
 	}) => {
@@ -108,7 +108,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 		).toBeVisible()
 	})
 
-	// @e2e openspec/specs/besluitvorming-leaf/spec.md#scenario-an-open-route-refuses-the-lock
+	// @e2e openspec/specs/besluitvorming-leaf/spec.md#an-open-route-refuses-the-lock
 	test('a document in an open route cannot be made final, and the refusal names the route', async () => {
 		test.skip(
 			!decidiqInstalled,
@@ -143,7 +143,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 		)
 	})
 
-	// @e2e openspec/specs/besluitvorming-leaf/spec.md#scenario-a-document-in-a-route-is-marked-in-the-list
+	// @e2e openspec/specs/besluitvorming-leaf/spec.md#a-document-in-a-route-is-marked-in-the-list
 	test('the Files tab marks the document that is in a route and leaves the others alone', async () => {
 		test.skip(
 			!decidiqInstalled,
@@ -179,7 +179,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 		).toBeUndefined()
 	})
 
-	// @e2e openspec/specs/besluitvorming-leaf/spec.md#scenario-somebody-who-is-not-the-current-actor-sees-the-timeline-only
+	// @e2e openspec/specs/besluitvorming-leaf/spec.md#somebody-who-is-not-the-current-actor-sees-the-timeline-only
 	test('the approval chain renders on the document properties, read only for a bystander', async ({
 		page,
 	}) => {
@@ -204,7 +204,7 @@ test.describe('dossiq reads the route and never decides it', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/specs/besluitvorming-leaf/spec.md#scenario-an-approved-route-offers-the-lock
+	// @e2e openspec/specs/besluitvorming-leaf/spec.md#an-approved-route-offers-the-lock
 	test('a completed route lets the handler make the document final', async () => {
 		test.skip(
 			!decidiqInstalled,
