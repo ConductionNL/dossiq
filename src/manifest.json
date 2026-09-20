@@ -543,8 +543,10 @@
 			"type": "dashboard",
 			"title": "Dashboard",
 			"config": {
-				"_userLayoutNote": "a-dashboard-the-reader-arranges, rows 10.1 and 10.10. `userLayout` hands the GEOMETRY of this page to the reader and keeps MEMBERSHIP with the administrator: CnDashboardPage merges the stored arrangement over the manifest widgets, so a widget taken out of this file disappears for everybody whatever anybody dragged. A page without the key makes no layout request and renders as it always did, which is why declaring it early is safe and why it is also silent: measured 2026-09-18, the published @conduction/nextcloud-vue (3.2.0 installed, 3.3.0 latest) carries neither `mergeUserLayout` nor the dashboardLayouts store plugin, both of which sit on nextcloud-vue `parity/round2` (#1209) and in no release. Until that release lands these two keys are read by nothing, and a reader who never drags a widget cannot tell that apart from the feature working.",
+				"_userLayoutNote": "a-dashboard-the-reader-arranges, rows 10.1 and 10.10. `userLayout` hands the GEOMETRY of this page to the reader and keeps MEMBERSHIP with the administrator: CnDashboardPage merges the stored arrangement over the manifest widgets, so a widget taken out of this file disappears for everybody whatever anybody dragged. A page without the key makes no layout request and renders as it always did. THE KEY IS NOT ENOUGH ON ITS OWN, and that is what this note used to get wrong. `loadUserLayout()` and `saveUserLayout()` both return early unless `appId` is set too, so a page declaring `userLayout` and nothing else reads and writes no arrangement at all, and a reader who never drags a widget cannot tell that apart from the feature working. CnPageRenderer binds this config onto the page component and passes no app id of its own, so the app id is declared here. `pageId` is declared beside it because the fallback slugifies the page TITLE, which would move every readers arrangement the day somebody edits the heading. Measured 2026-09-20 against the installed @conduction/nextcloud-vue 3.4.0, which carries `mergeUserLayout`, the dashboardLayouts store plugin and `userWidgetPresets` (#1209).",
 				"userLayout": true,
+				"appId": "dossiq",
+				"pageId": "Dashboard",
 				"userWidgets": [
 					{
 						"id": "cases-you-follow",
@@ -1102,6 +1104,8 @@
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
 			"config": {
 				"userLayout": true,
+				"appId": "dossiq",
+				"pageId": "MyWorkHome",
 				"description": "Your open tasks, deadlines and open cases",
 				"headerActions": [
 					{
@@ -4312,6 +4316,8 @@
 			"_note": "SLA / processing-time analytics. Was nominally type:dashboard but its config was ONE 12x12 widget whose slot rendered a complete second dashboard with its own <h2> — the dashboard-in-dashboard antipattern (hydra#316). Now five widgets over one shared store (src/store/modules/doorlooptijd.js). The presentational sub-components in views/doorlooptijd/components/ are unchanged; only their host moved.",
 			"config": {
 				"userLayout": true,
+				"appId": "dossiq",
+				"pageId": "Doorlooptijd",
 				"description": "SLA adherence and processing time analysis",
 				"headerActions": [
 					{
@@ -4479,6 +4485,8 @@
 			"_note": "Bottleneck analysis over the case statusRecord history. The figures come from a dedicated ProcessMiningService aggregation endpoint, not a register query, so the widgets are type:custom and read one shared store (src/store/modules/processMining.js) rather than a register/schema binding. The page owns the heading, the period presets and the case-type filter; each widget renders content only — a widget that drew its own page heading would be the dashboard-in-dashboard antipattern (hydra#316).",
 			"config": {
 				"userLayout": true,
+				"appId": "dossiq",
+				"pageId": "ProcessMiningDashboard",
 				"description": "Bottleneck analysis from recorded case status history",
 				"pageFilters": [
 					{
@@ -6092,6 +6100,8 @@
 			"_note": "Deadline-monitoring KPIs plus the quarterly report and annual dwangsom audit. The figures come from /api/termijn/* aggregation endpoints, not a register query, so the widgets are type:custom over one shared store (src/store/modules/termijnDashboard.js). The page owns the heading and the case-type filter; the quarter and year inputs stay inside their own widgets because they scope THAT report, not the page.",
 			"config": {
 				"userLayout": true,
+				"appId": "dossiq",
+				"pageId": "TermijnDashboard",
 				"description": "Deadline compliance, quarterly reporting and the annual dwangsom audit",
 				"widgets": [
 					{

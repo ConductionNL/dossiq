@@ -20,9 +20,15 @@
  *   property on it that points back at the row being searched.
  * - ONE BLOCK IS ONE EXISTENCE CLAUSE: one `caseProperty` row that is both the
  *   named definition AND satisfies the named value test.
- * - TWO CONDITIONS ARE TWO NUMBERED BLOCKS. Merging them into one block asks
- *   for a single row that is two property definitions at once, and no row is,
- *   so the handler gets an empty list and no reason for it.
+ * - TWO CONDITIONS ARE TWO NUMBERED BLOCKS, and the number sits after the
+ *   foreign key:
+ *
+ *       _related[caseProperty][case][0][propertyDefinition]=pd-7
+ *       _related[caseProperty][case][1][propertyDefinition]=pd-9
+ *
+ *   Merging them into one block asks for a single row that is two property
+ *   definitions at once, and no row is, so the handler gets an empty list and
+ *   no reason for it.
  * - A malformed block is REFUSED with a sentence rather than dropped. That
  *   matters here more than anywhere: a dropped filter answers every case in
  *   the register, presented as the answer to a narrow question.
@@ -170,6 +176,15 @@ export function isFilled(value) {
  * block index is only added when there is more than one, because a single
  * unnumbered block is the shape the parser documents.
  *
+ * 🔴 THE INDEX SITS AFTER THE FOREIGN KEY, NOT AFTER THE SCHEMA. It is
+ * `_related[caseProperty][case][0][propertyDefinition]`, which is what
+ * `RelatedRowFilterParser::blocks()` looks for: it reads the schema, then the
+ * foreign key, and only then counts numbered rows. Written the other way round
+ * as `_related[caseProperty][0][case][…]`, the parser reads `0` as the FOREIGN
+ * KEY and `case` as a condition, then refuses the whole query with "uses
+ * operator 'propertyDefinition'". Measured against openregister `development`
+ * on 2026-09-20, where the parser is merged.
+ *
  * @param {Array<object>} [entries] `[{ definitionId, value }]`, in bar order.
  *
  * @return {object} The query keys, ready to merge into the route query.
@@ -187,7 +202,7 @@ export function buildRelatedFilters(entries) {
 	const query = {}
 	filled.forEach((entry, index) => {
 		const block = filled.length === 1 ? '' : `[${index}]`
-		const prefix = `_related[${RELATED_SCHEMA}]${block}[${RELATED_BACKREF}]`
+		const prefix = `_related[${RELATED_SCHEMA}][${RELATED_BACKREF}]${block}`
 
 		query[`${prefix}[propertyDefinition]`] = entry.definitionId
 

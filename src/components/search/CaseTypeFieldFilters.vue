@@ -110,6 +110,15 @@
  * bar's slot for inline refinement controls, which is what a filter bar is, so
  * the bar goes there and carries its own refusal.
  *
+ * 🔴 THE FILTERS TRAVEL TWICE, AND ONLY ONE OF THE TWO REACHES THE SERVER.
+ * The route query is the record: it is what a shared link carries and what
+ * `readListFilters()` hands a whole-result bulk act. The FETCH is reached
+ * through the list's own `onFilterChange`, because `CnIndexPage` builds its
+ * filters with `resolveQueryFilters()`, which skips every `_`-prefixed key.
+ * Writing the route alone leaves the list answering the unfiltered set under
+ * a URL that says it is filtered, which is the exact failure the refusal
+ * notice below exists to prevent, arriving by a quieter door.
+ *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
@@ -138,12 +147,37 @@ export default {
 
 	components: { NcNoteCard },
 
+	inject: {
+		/**
+		 * The index page's sidebar state, which is also the only channel an
+		 * app component has into the list's own fetch.
+		 *
+		 * 🔴 THE ROUTE QUERY ALONE DOES NOT REACH THE SERVER, and that is why
+		 * this inject exists rather than the bar simply writing the URL.
+		 * `CnIndexPage` turns `$route.query` into fetch filters through
+		 * `resolveQueryFilters()`, which SKIPS every key beginning with `_`:
+		 * the underscore namespace is the library's own (`_search`, `_page`,
+		 * `_limit`, `_order`). So a `_related[…]` key written to the route is
+		 * dropped before the request is built, and the list answers the
+		 * UNFILTERED set while the URL says it is filtered. Measured against
+		 * the installed `@conduction/nextcloud-vue` 3.4.0 and asserted in
+		 * `tests/vitest/caseTypeFieldFilters.spec.js`.
+		 *
+		 * `onFilterChange({ key, values })` is the channel the facet sidebar
+		 * already uses, and `useListView.buildParams()` copies its keys into
+		 * the request verbatim, which is what carries the brackets through.
+		 */
+		listSidebarState: { from: 'sidebarState', default: null },
+	},
+
 	data() {
 		return {
 			/** The definitions of the case type currently picked. */
 			definitions: [],
 			/** What the handler has entered, by definition id. */
 			values: {},
+			/** The `_related` keys last handed to the list. */
+			applied: {},
 		}
 	},
 
@@ -250,6 +284,21 @@ export default {
 				this.definitions = await this.loadDefinitions(picked)
 			},
 		},
+	},
+
+	mounted() {
+		// A shared link lands with the blocks already on the route, and the
+		// list would otherwise fetch without them: the bar is mounted by the
+		// page, so nothing else replays them.
+		const query = this.$route?.query || {}
+		const carried = {}
+		relatedKeysIn(query).forEach((key) => {
+			carried[key] = query[key]
+		})
+
+		if (Object.keys(carried).length > 0) {
+			this.$nextTick(() => this.sendToList(carried))
+		}
 	},
 
 	methods: {
@@ -369,7 +418,47 @@ export default {
 				value: this.valueOf(definition),
 			}))
 
-			this.pushQuery(buildRelatedFilters(entries))
+			const related = buildRelatedFilters(entries)
+			this.pushQuery(related)
+			this.sendToList(related)
+		},
+
+		/**
+		 * Hand the compiled blocks to the list, so the fetch carries them.
+		 *
+		 * One `onFilterChange` per key that actually changed, because each one
+		 * refetches: replaying every key on every keystroke would ask the
+		 * server the same question four times. A key that has gone is sent
+		 * with an empty value list, which is how `useListView` is told to drop
+		 * it rather than to filter on the empty string.
+		 *
+		 * @param {object} related The compiled `_related` keys.
+		 * @return {void}
+		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 */
+		sendToList(related) {
+			const onFilterChange = this.listSidebarState?.onFilterChange
+			if (typeof onFilterChange !== 'function') {
+				// The list has not wired its sidebar yet, or this bar is
+				// mounted outside one. The route still records what was asked
+				// for, so nothing is lost silently.
+				return
+			}
+
+			const previous = this.applied
+			Object.keys(previous).forEach((key) => {
+				if (related[key] === undefined) {
+					onFilterChange({ key, values: [] })
+				}
+			})
+
+			Object.entries(related).forEach(([key, value]) => {
+				if (previous[key] !== value) {
+					onFilterChange({ key, values: [String(value)] })
+				}
+			})
+
+			this.applied = { ...related }
 		},
 
 		/**
@@ -380,6 +469,7 @@ export default {
 		 */
 		clearRelated() {
 			this.pushQuery({})
+			this.sendToList({})
 		},
 
 		/**
