@@ -73,6 +73,17 @@ class NotePushTest extends TestCase {
 	private string $reservedType = 'https://catalogi.example/iot/werknotitie';
 
 	/**
+	 * Whether the timeline write lands.
+	 *
+	 * `CaseTimeline::record()` answers `''` and only logs whenever OpenRegister
+	 * is absent, the register or the case schema is unconfigured, the case
+	 * cannot be read, or the write throws. Set this false to be that instance.
+	 *
+	 * @var bool
+	 */
+	private bool $timelineWrites = true;
+
+	/**
 	 * A note that may leave.
 	 *
 	 * @var array<string, mixed>
@@ -107,6 +118,12 @@ class NotePushTest extends TestCase {
 				string $visibility = 'internal',
 				array $relatedCaseIds = [],
 			): string {
+				if ($this->timelineWrites === false) {
+					// What the real one answers when it could not write: an
+					// empty string and a logged warning, nothing louder.
+					return '';
+				}
+
 				$this->recorded[] = [
 					'message' => $message,
 					'fields' => $fields,
@@ -281,5 +298,102 @@ class NotePushTest extends TestCase {
 		$this->assertSame('https://drc.example/eio/9', $outcome['receiverUrl']);
 		$this->assertSame(NotePush::OUTCOME_SENT, $this->recorded[0]['fields']['status']);
 		$this->assertSame('42', $this->recorded[0]['fields']['noteId']);
+		$this->assertSame(NotePush::RECORD_WRITTEN, $outcome['caseRecord']);
 	}//end testASendRecordsItselfAndAnswersTheReceiverUrl()
+
+	/**
+	 * A failure the case could not be told about says so, rather than
+	 * answering as though the case now carries it.
+	 *
+	 * `CaseTimeline::record()` catches its own failures, logs a warning and
+	 * answers an empty string, so a push that ignored the answer would tell
+	 * the caller "failed" and write nothing. Tomorrow the case history reads
+	 * as though nobody ever pushed this note, which is the same evidence loss
+	 * as a note that did not travel looking like one that did.
+	 *
+	 * @return void
+	 */
+	public function testAFailureTheCaseCouldNotRecordSaysSo(): void {
+		$this->timelineWrites = false;
+		$this->adapter->method('isDormant')->willReturn(false);
+		$this->adapter->method('submitDocument')->willReturn(
+			new ZgwPushResult('REJECTED', '', 'corr-1', false, ['rejectionReason' => 'the catalogue refused the type'])
+		);
+
+		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
+
+		$this->assertSame(NotePush::OUTCOME_FAILED, $outcome['outcome']);
+		$this->assertSame(NotePush::RECORD_LOST, $outcome['caseRecord']);
+		// The adapter's own reason still travels, and the lost record is told
+		// beside it rather than instead of it.
+		$this->assertStringContainsString('the catalogue refused the type', $outcome['reason']);
+		$this->assertStringContainsString('The case could not record this', $outcome['reason']);
+		$this->assertSame([], $this->recorded);
+	}//end testAFailureTheCaseCouldNotRecordSaysSo()
+
+	/**
+	 * A note that DID reach the register, on a case that could not be told,
+	 * answers sent and says the history is missing it.
+	 *
+	 * The send is real and is not downgraded: the note is at the neighbouring
+	 * register whatever this instance managed to write down. What the caller
+	 * must not be left with is a sent answer plus a silent hole in the case.
+	 *
+	 * @return void
+	 */
+	public function testASendTheCaseCouldNotRecordStillSaysSo(): void {
+		$this->timelineWrites = false;
+		$this->adapter->method('isDormant')->willReturn(false);
+		$this->adapter->method('submitDocument')->willReturn(
+			new ZgwPushResult('PUSHED', 'https://drc.example/eio/9', 'corr-1', false)
+		);
+
+		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
+
+		$this->assertSame(NotePush::OUTCOME_SENT, $outcome['outcome']);
+		$this->assertSame('https://drc.example/eio/9', $outcome['receiverUrl']);
+		$this->assertSame(NotePush::RECORD_LOST, $outcome['caseRecord']);
+		$this->assertStringContainsString('The case could not record this', $outcome['reason']);
+	}//end testASendTheCaseCouldNotRecordStillSaysSo()
+
+	/**
+	 * An internal note that somebody tried to send leaves a line on the case.
+	 *
+	 * Somebody asked for this note to go out and it stayed. The answer in the
+	 * response is gone the moment the tab closes; the case is where the next
+	 * handler looks for what became of a note.
+	 *
+	 * @return void
+	 */
+	public function testAnInternalNoteSomebodyTriedToSendIsRecorded(): void {
+		$this->adapter->method('isDormant')->willReturn(false);
+		$this->adapter->expects($this->never())->method('submitDocument');
+
+		$internal = array_merge(self::EXTERNAL_NOTE, ['visibility' => 'internal']);
+		$outcome = $this->push()->push('case-1', $internal);
+
+		$this->assertSame(NotePush::OUTCOME_NOT_SENT, $outcome['outcome']);
+		$this->assertSame(NotePush::RECORD_WRITTEN, $outcome['caseRecord']);
+		$this->assertCount(1, $this->recorded);
+		$this->assertSame(NotePush::OUTCOME_NOT_SENT, $this->recorded[0]['fields']['status']);
+		$this->assertSame(CaseTimeline::INTERNAL, $this->recorded[0]['visibility']);
+	}//end testAnInternalNoteSomebodyTriedToSendIsRecorded()
+
+	/**
+	 * A dormant adapter answers that nothing was due, not that a write was
+	 * lost.
+	 *
+	 * The two are opposite states and one shared flag would hide the second
+	 * behind the first on every unbound instance, which is every instance
+	 * until a connector is configured.
+	 *
+	 * @return void
+	 */
+	public function testADormantAdapterAnswersThatNothingWasDue(): void {
+		$this->adapter->method('isDormant')->willReturn(true);
+
+		$outcome = $this->push()->push('case-1', self::EXTERNAL_NOTE);
+
+		$this->assertSame(NotePush::RECORD_NONE, $outcome['caseRecord']);
+	}//end testADormantAdapterAnswersThatNothingWasDue()
 }//end class

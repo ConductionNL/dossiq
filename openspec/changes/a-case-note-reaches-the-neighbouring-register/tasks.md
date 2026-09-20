@@ -58,6 +58,25 @@ Tier: V1. Kind: capability. Row 6.14. Consumes integriq#2070
     a deferred push here means a live adapter did not deliver. Reading it as
     a success would put a sent marker on a note that stayed home, which is
     the single thing this change exists to prevent.
+- [x] 3.3 The write on the case is CHECKED, which it was not.
+  - `CaseTimeline::record()` catches every failure, logs a warning and
+    answers `''`. `NotePush` discarded that answer, so an instance with no
+    OpenRegister, no configured register or case schema, an unreadable case
+    or a throwing write answered `failed` to the caller and wrote nothing on
+    the case. Tomorrow the history reads as though nobody ever pushed the
+    note, which is the same evidence loss as a note that did not travel
+    looking like one that did, one day later.
+  - The answer now carries `caseRecord`: `written`, `lost` or `none`. A
+    `lost` answer says it in the reason as well, because a flag beside an
+    unchanged sentence is a flag nobody reads.
+  - An internal note somebody tried to push is now recorded too. Somebody
+    asked for it to go out and it stayed, and the case is where the next
+    handler looks for that. The dormant branch is untouched: it still
+    records nothing, because a marker on every note of every unbound
+    instance is a marker nobody reads.
+  - unit: two arms on a timeline that cannot write, one on a send and one on
+    a refusal, plus the internal-note record and the dormant `none`.
+    Mutation checked.
 - [x] 3.2 The notes panel marker.
   - **NOT BUILT, and here is the measurement.** A note is an OpenRegister
     COMMENT: storage, the tab and the note's own fields are all in the
