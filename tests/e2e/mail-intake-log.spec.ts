@@ -54,7 +54,22 @@ test.describe('a handler files a logged message on a case they pick', () => {
 
 	// @e2e openspec/specs/case-email-integration/spec.md#a-wrongly-matched-message-is-moved-to-the-right-case
 	test('the log offers File on a case on every entry', async ({ page }) => {
-		await page.goto('/apps/dossiq/intake/mail-log')
+		// `/mail-intake-log`, which is the `route` on the MailIntakeLog page in
+		// src/manifest.d/37-mail-intake.json, under the app root the way every
+		// other page here is reached. This read `/apps/dossiq/intake/mail-log`,
+		// a path no manifest page declares, and the cost of that was not a
+		// failure: the router served no log, the row count was zero, and the
+		// skip below reported "this instance has processed no mail". The test
+		// could never pass and could never fail.
+		await page.goto('/apps/dossiq/mail-intake-log')
+
+		// 🔴 THE PAGE IS ASSERTED BEFORE THE ROWS ARE COUNTED. An empty row
+		// count means one of two different things, and only one of them is a
+		// reason to skip: a mailbox that processed nothing, or a log that
+		// never rendered. Without this line the second reads as the first,
+		// which is exactly what the wrong URL above did for as long as it
+		// shipped.
+		await expect(page.locator('[data-testid="intake-log-sender"]')).toBeVisible()
 
 		// An instance with no processed mail renders the empty state, and that
 		// is a pass for THIS assertion only if the act is absent for the right
