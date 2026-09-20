@@ -27,21 +27,21 @@ The register SHALL declare its own `languages`, source language first, because
 declares none leaves every property on the hardcoded fallback.
 
 #### Scenario: A case type answers in the requested language
-@e2e exclude Backend language negotiation, covered by Newman.
+@e2e exclude OpenRegister behaviour, not dossiq's. Language negotiation on a read is asserted in openregister's own suite; dossiq has no test for it and no Newman collection covering i18n. What dossiq owns is that the mark reaches the engine, which tests/e2e/translatable-labels.spec.ts asserts against a running instance.
 
 - **GIVEN** a case type whose title is stored as Dutch and English
 - **WHEN** it is read with `Accept-Language: en`
 - **THEN** the response SHALL carry the English title
 
 #### Scenario: A missing translation falls back
-@e2e exclude Backend language fallback, covered by PHPUnit.
+@e2e exclude OpenRegister behaviour, not dossiq's. The fallback chain lives in TranslationHandler and is asserted in openregister's own suite, not here.
 
 - **GIVEN** a case type with a Dutch title and no Frisian title
 - **WHEN** it is read with `Accept-Language: fy`
 - **THEN** the response SHALL carry the Dutch title
 
 #### Scenario: Every translatable property names its source language
-@e2e exclude Register declaration, covered by tests/Unit/Settings/TranslatableLabelsTest.php.
+@e2e exclude Shipped configuration, covered by tests/Unit/Settings/TranslatableLabelsTest.php, tests testEveryTranslatableLabelDeclaresItsSourceLanguage and testTheRegisterDeclaresItsLanguagesDutchFirst.
 
 - **WHEN** the shipped register files are checked
 - **THEN** every property declaring `translatable: true` SHALL also declare
@@ -61,7 +61,7 @@ has wrapped every row written since 2026-09-18 into `{"nl": …}`, and unmarking
 it without a repair step would render those stored rows as an object.
 
 #### Scenario: The case schema declares no translatable property
-@e2e exclude Manifest and register validation, covered by PHPUnit.
+@e2e exclude Shipped configuration, covered by tests/Unit/Settings/TranslatableLabelsTest.php, tests testTheCaseItselfIsNotTranslatable and testTheOnlyInstanceFieldMarkedAsALabelIsTheKnownOne.
 
 - **WHEN** the register fragments are checked
 - **THEN** no property of `case` SHALL declare `translatable: true`
@@ -91,7 +91,7 @@ OpenRegister's and a second way to start it does not belong in the app that
 does not own it.
 
 #### Scenario: An admin adds an English title
-@e2e tests/e2e/case-type-labels-are-translatable.spec.ts
+@e2e exclude Frontend widget, covered by tests/vitest/caseTypeTranslations.spec.js, test "writes the whole language map, so the Dutch title survives".
 
 - **GIVEN** a case type with a Dutch title only
 - **WHEN** an admin opens the page, picks English and types a title
@@ -99,14 +99,14 @@ does not own it.
 - **AND** the Dutch title SHALL be unchanged
 
 #### Scenario: The page says what is still missing
-@e2e tests/e2e/case-type-labels-are-translatable.spec.ts
+@e2e exclude Frontend widget, covered by tests/vitest/caseTypeTranslations.spec.js, test "reports one of two when one of two is translated".
 
 - **GIVEN** a case type with two of its four labels translated into English
 - **WHEN** an admin opens the page
 - **THEN** the English chip SHALL report two of four
 
 #### Scenario: The page offers only the labels the engine holds
-@e2e exclude Frontend widget, covered by tests/vitest/caseTypeTranslations.spec.js.
+@e2e exclude Frontend widget, covered by tests/vitest/caseTypeTranslations.spec.js, test "offers only the labels OpenRegister holds as translatable".
 
 - **GIVEN** a case type whose envelope names two translatable properties
 - **WHEN** the page is opened
@@ -128,7 +128,7 @@ out from under still counts as done. The chip applies the rule this
 requirement states, in the widget.
 
 #### Scenario: Editing the Dutch title restales the English one
-@e2e exclude Backend translation status, covered by PHPUnit.
+@e2e exclude Two owners and no single test. OpenRegister flags the derived rows stale in SaveObject::flagOutdatedDerivedTranslations, asserted in its suite. The half dossiq owns is that a stale row does not count, which tests/vitest/caseTypeTranslations.spec.js asserts in "drops a translation back out of the count when the source moves".
 
 - **GIVEN** a case type with a Dutch and an English title, both current
 - **WHEN** the Dutch title is changed
@@ -148,7 +148,7 @@ unlike the schema path, so a list under an unmoved version reaches no instance
 that already holds the register.
 
 #### Scenario: The prefixed key is gone
-@e2e exclude Register declaration, covered by PHPUnit.
+@e2e exclude Shipped configuration, covered by tests/Unit/Settings/TranslatableLabelsTest.php, test testThePrefixedKeyIsGone.
 
 - **WHEN** the register files are checked
 - **THEN** `x-translatable` SHALL appear in none of them

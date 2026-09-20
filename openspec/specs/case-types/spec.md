@@ -1236,7 +1236,7 @@ carry no `caseType` back-reference, so read as rows they answer the empty set
 on every instance.
 
 #### Scenario: A seeded case type exports its statuses
-@e2e exclude Backend export service, covered by PHPUnit.
+@e2e exclude Backend export service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testASeededCaseTypeExportsItsStatuses.
 
 - **GIVEN** a case type with two status types and one transition between them
 - **WHEN** the export runs with the `statuses` component
@@ -1244,7 +1244,7 @@ on every instance.
 - **AND** it SHALL list the transition with its source and target status
 
 #### Scenario: An unknown case type is refused
-@e2e exclude Backend export service, covered by PHPUnit.
+@e2e exclude Backend export service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testAnUnknownCaseTypeIsRefusedBeforeAnythingIsWritten.
 
 - **GIVEN** a case type id that no object answers to
 - **WHEN** the export runs
@@ -1259,7 +1259,7 @@ case type object rather than echoing the requested id, and SHALL fill
 importer can refuse a package whose references it cannot resolve.
 
 #### Scenario: The manifest lists the workflow templates
-@e2e exclude Backend export service, covered by PHPUnit.
+@e2e exclude Backend export service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testTheManifestNamesWhatThePackageCarries.
 
 - **GIVEN** a case type bound to one workflow template
 - **WHEN** the export runs with every component
@@ -1285,7 +1285,7 @@ workflow path, or SHALL return `status: 'error'` naming the entry it could
 not deploy. Counting files SHALL NOT be reported as an import.
 
 #### Scenario: An imported case type exists afterwards
-@e2e exclude Backend import service, covered by PHPUnit.
+@e2e exclude Backend import service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, tests testEveryComponentCarriesRealRows and testAComponentThatWritesNothingIsNotASuccess.
 
 - **GIVEN** an empty register and a package holding one case type with two
   statuses
@@ -1294,7 +1294,7 @@ not deploy. Counting files SHALL NOT be reported as an import.
 - **AND** the response SHALL name the three created ids
 
 #### Scenario: A failed write is reported as an error
-@e2e exclude Backend import service, covered by PHPUnit.
+@e2e exclude Backend import service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testAHalfWrittenComponentIsRolledBack.
 
 - **GIVEN** a package whose `statuses.json` references a case type that is not
   in the package
@@ -1310,7 +1310,7 @@ every exported property, status type, transition, role binding, document type
 and result type.
 
 #### Scenario: Export and import reproduce the case type
-@e2e exclude Backend round trip, covered by PHPUnit.
+@e2e exclude Backend round trip, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testACaseTypeSurvivesARoundTrip.
 
 - **GIVEN** a case type with two statuses, one role, one document type and one
   workflow template
