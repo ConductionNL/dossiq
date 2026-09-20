@@ -307,7 +307,8 @@ export default {
 				const { data } = await axios.request({
 					method: 'PROPFIND',
 					url,
-					data: '<?xml version="1.0"?>'
+					data:
+						'<?xml version="1.0"?>'
 						+ '<d:propfind xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns">'
 						+ '<d:prop>'
 						+ '<d:getlastmodified/>'
@@ -315,7 +316,7 @@ export default {
 						+ '<nc:version-author/>'
 						+ '</d:prop>'
 						+ '</d:propfind>',
-					headers: { 'Depth': '1', 'Content-Type': 'application/xml' },
+					headers: { Depth: '1', 'Content-Type': 'application/xml' },
 				})
 				this.versions = this.parseVersions(data)
 			} catch {
