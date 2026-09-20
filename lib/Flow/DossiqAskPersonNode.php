@@ -317,7 +317,6 @@ class DossiqAskPersonNode implements IFlowNode {
      *                                  be rendered by the person it is for.
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
-     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function validateConfig(array $config): void {
         if (trim((string) ($config['question'] ?? '')) === '') {
