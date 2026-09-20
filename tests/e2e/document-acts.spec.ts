@@ -55,7 +55,7 @@ test.describe('document acts reach a surface', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#versions-opens-on-the-file-the-row-named
+	// @e2e openspec/specs/document-zaakdossier/spec.md#versions-opens-on-the-file-the-row-named
 	test('Versions opens on the file the row named', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page.getByRole('tab', { name: /Files/ }).first().click()
@@ -75,7 +75,7 @@ test.describe('document acts reach a surface', () => {
 		expect(fileName.length).toBeGreaterThan(0)
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#scenario-a-file-is-marked-final-from-its-row
+	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-a-file-is-marked-final-from-its-row
 	test('a file is marked final from its row', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page.getByRole('tab', { name: /Files/ }).first().click()
@@ -95,7 +95,7 @@ test.describe('document acts reach a surface', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
+	// @e2e openspec/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
 	test('a handler downloads the case file', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 
@@ -106,7 +106,7 @@ test.describe('document acts reach a surface', () => {
 		expect(file.suggestedFilename()).toMatch(/\.zip$/)
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
+	// @e2e openspec/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
 	test('a reader with no access to the case gets a status and no bytes', async ({
 		request,
 	}) => {

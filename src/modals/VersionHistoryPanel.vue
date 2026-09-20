@@ -184,7 +184,7 @@ export default {
 		 * there.
 		 *
 		 * @return {number} The file id, or 0 when neither prop carries one.
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		resolvedFileId() {
 			const fromProp = Number(this.fileId)
@@ -204,7 +204,7 @@ export default {
 		 * identical to a reader.
 		 *
 		 * @return {boolean} True when neither prop named a file.
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		hasNoFile() {
 			return this.resolvedFileId === 0
@@ -235,7 +235,7 @@ export default {
 		 * The sentence the refusal shows, naming the file when one was named.
 		 *
 		 * @return {string} The description.
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		refusalDescription() {
 			if (this.fileName !== '') {
@@ -390,7 +390,7 @@ export default {
 		 * the versions of any node can still be reached.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		showInFiles() {
 			if (typeof window === 'undefined') {

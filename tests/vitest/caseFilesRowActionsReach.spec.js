@@ -18,7 +18,7 @@
  * path on purpose: `vitest.config.js` aliases the bare package name to a
  * stub, and a stub cannot answer whether the library renders a row action.
  *
- * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 import { mount } from '@vue/test-utils'

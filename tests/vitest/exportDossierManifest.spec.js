@@ -15,7 +15,7 @@
  * 404s, and a button that fails on click looks the same in a manifest as one
  * that works.
  *
- * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+ * @spec openspec/specs/document-zaakdossier/spec.md
  */
 
 import fs from 'fs'
