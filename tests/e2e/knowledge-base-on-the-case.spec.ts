@@ -120,6 +120,47 @@ test.describe('the case type carries its work instruction', () => {
 
 		await expect(page.getByText('Work instruction')).toBeVisible()
 	})
+
+	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-every-case-of-a-type-shows-its-instruction
+	test('every case of the type shows the instruction, with nobody linking it', async ({
+		page,
+	}) => {
+		await updateObject(api, token, 'caseType', caseTypeId, {
+			knowledgeBasePage: INSTRUCTION_URL,
+		})
+
+		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		await page.getByRole('tab', { name: 'Knowledge' }).click()
+
+		// The CASE links nothing. The link below is the case TYPE's, followed
+		// one reference by CaseWorkInstructionPanel, which is the whole of
+		// REQ-CKB-01 and the half a declared widget could not reach.
+		const link = page.getByTestId('case-work-instruction-link')
+		await expect(
+			link,
+			'the case shows no work instruction although its type names one',
+		).toBeVisible()
+		await expect(link).toHaveAttribute('href', INSTRUCTION_URL)
+	})
+
+	// @e2e openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md#scenario-a-case-type-without-an-instruction-shows-the-cases-own-links
+	test('a case type with no instruction draws no instruction', async ({
+		page,
+	}) => {
+		await updateObject(api, token, 'caseType', caseTypeId, {
+			knowledgeBasePage: '',
+		})
+
+		await page.goto(`/apps/${REGISTER}/#/cases/${caseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		await page.getByRole('tab', { name: 'Knowledge' }).click()
+
+		await expect(
+			page.getByTestId('case-work-instruction-link'),
+			'a case type that names no page drew a link anyway, which points a handler at nothing',
+		).toHaveCount(0)
+	})
 })
 
 test.describe('the pages render through the leaf, or the tab is absent', () => {
@@ -131,15 +172,29 @@ test.describe('the pages render through the leaf, or the tab is absent', () => {
 		await dismissSupportDialog(page)
 
 		const tab = page.getByRole('tab', { name: 'Knowledge' })
+		await expect(tab, 'the case shows no Knowledge tab at all').toBeVisible()
+		await tab.click()
+
+		// 🔴 THE TAB IS NOT THE THING THAT GOES MISSING, and this test used to
+		// say it was. Measured 2026-09-20 in the installed 3.4.0:
+		// CnTabsWidget.resolvedTabs renders a CnTab for every configured entry
+		// that names a widget definition, and CnDetailWidgetHost renders
+		// nothing for an integration the registry does not answer rather than
+		// removing itself. What actually disappears is the SECTION, heading
+		// and all, because CaseSectionsWidget drops the heading of a section
+		// that drew nothing. The tab stays because its other section, the case
+		// type's work instruction, is a dossiq surface that needs no
+		// Collectives.
+		const pages = page.getByText('Pages linked to this case')
 		if (collectivesInstalled) {
 			await expect(
-				tab,
-				'Collectives is installed but the case shows no Knowledge tab',
+				pages,
+				'Collectives is installed but the linked pages section is not drawn',
 			).toBeVisible()
 		} else {
 			await expect(
-				tab,
-				'Collectives is not installed, so the tab must be absent rather than empty',
+				pages,
+				'Collectives is not installed, so the linked pages section must be absent rather than empty',
 			).toHaveCount(0)
 		}
 	})
