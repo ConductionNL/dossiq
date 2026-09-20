@@ -26,13 +26,21 @@ Tier: V1. Kind: config. Row 11.13.
   pair: `sourceLanguage` without `translatable: true` is refused with
   `error.reason: 'sourceLanguage requires translatable: true'`, so a typo
   fails the import rather than passing silently.
-  - THE PREMISE IS WRONG AND THE TASK CANNOT BE DONE AS WRITTEN. No such
-    refusal exists anywhere in openregister on `development`: the string
-    `sourceLanguage requires` appears in no PHP file. `resolveSourceLanguage()`
-    is only ever called for a property already in
+  - THE PREMISE IS WRONG AND THE TASK CANNOT BE DONE AS WRITTEN. The refusal
+    is SPECIFIED in openregister and not IMPLEMENTED. The exact string
+    `sourceLanguage requires translatable: true` appears in
+    `openspec/specs/i18n-source-of-truth/spec.md` and in that change's
+    archive, and in no PHP file in the repository: a code search scoped to
+    PHP returns nothing, and it is absent from all five files on
+    `development` that implement this path (`TranslationHandler`,
+    `TranslationProjectionService`, `Register`, `ImportHandler`,
+    `TranslationMapper`, read at 6e4d946f3b).
+  - `resolveSourceLanguage()` is only ever called for a property already in
     `getTranslatableProperties()`, so a `sourceLanguage` on an unmarked
     property is read by nobody and dropped in silence, which is the same
-    failure mode `x-translatable` had.
+    failure mode `x-translatable` had. This belongs in openregister's
+    backlog, not in this change: dossiq cannot make another app refuse
+    something.
   - What replaces it: the test asserts the PAIR, in both directions. A
     `translatable` without a `sourceLanguage` fails, because the engine would
     fall back to the register default and nothing would record which side was
