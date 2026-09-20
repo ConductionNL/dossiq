@@ -42,7 +42,7 @@
 		<div v-if="failed" class="case-work-instruction__error">
 			<AlertCircleOutline :size="20" />
 			<span>{{ errorText }}</span>
-			<NcButton type="tertiary" @click="load">
+			<NcButton variant="tertiary" @click="load">
 				{{ retryLabel }}
 			</NcButton>
 		</div>
@@ -181,9 +181,7 @@ export default {
 				// Not a URL, so a page path. Leading slashes are stripped so a
 				// pasted `/Handleidingen/Bezwaar` does not become a double
 				// slash the router reads as a host.
-				return generateUrl(
-					'/apps/collectives/' + value.replace(/^\/+/, ''),
-				)
+				return generateUrl('/apps/collectives/' + value.replace(/^\/+/, ''))
 			}
 		},
 

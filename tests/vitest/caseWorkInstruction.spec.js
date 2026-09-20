@@ -137,7 +137,6 @@ describe('the work instruction the case type names', () => {
 
 	it('refuses a scheme nobody asked for', async () => {
 		axios.get.mockResolvedValue({
-			// eslint-disable-next-line no-script-url
 			data: { knowledgeBasePage: 'javascript:alert(1)' },
 		})
 		const wrapper = await mountPanel({ caseType: 'ct-1' })
