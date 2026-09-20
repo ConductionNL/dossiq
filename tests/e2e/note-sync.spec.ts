@@ -82,6 +82,11 @@ test.describe('a case note reaches the neighbouring register, or says why not', 
 		// register is neither a success nor a failure, and a marker for it
 		// would be a marker on every note of every unbound instance.
 		expect(outcome.outcome).toBe('no-register')
+		// `none` and not `lost`: nothing was due on this case, which is the
+		// opposite state to a write that was due and did not land. One shared
+		// flag would hide the second behind the first on every unbound
+		// instance, and every instance is unbound until a connector is set up.
+		expect(outcome.caseRecord).toBe('none')
 	})
 
 	// @e2e openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md#a-note-left-on-the-default-never-leaves
