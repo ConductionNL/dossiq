@@ -29,6 +29,7 @@
  */
 
 import { expect, test } from '@playwright/test'
+import type { Page } from '@playwright/test'
 import {
 	cleanupRunObjects,
 	createObject,
@@ -39,6 +40,25 @@ import {
 } from './helpers/fixtures.ts'
 
 const CASE_TITLE = `${RUN_PREFIX} Digitale post`
+
+/**
+ * Press Send digital post, which lives in the Actions menu and nowhere else.
+ *
+ * 🔴 THERE IS NO BUTTON ON THE BAR. CaseDetail sets no `inlineActions`, and
+ * CnDetailPage hands every entry of `config.headerActions` to a
+ * `display: "menu"` CnActionButtons, which draws them as items of the page's
+ * Actions menu. The library's own comment says why: twelve buttons pushed the
+ * record's title down to a truncated stub. The first draft of this file did
+ * `getByRole('button', { name: 'Send digital post' })` against the bar, which
+ * no menu had opened, so it could never have matched. A test that cannot pass
+ * is the mirror of the dark surface it covers.
+ *
+ * @param page The Playwright page.
+ */
+async function openTheSendAction(page: Page): Promise<void> {
+	await page.locator('[data-testid="cn-detail-page-actions"]').click()
+	await page.locator('[data-testid="cn-action-send-digital-post"]').click()
+}
 
 test.describe('digital post reaches integriq, or says why it did not', () => {
 	test.setTimeout(300_000)
@@ -70,8 +90,7 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		page,
 	}) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
-
-		await page.getByRole('button', { name: 'Send digital post' }).click()
+		await openTheSendAction(page)
 
 		const dialog = page.locator('.compose-dialog')
 		await expect(dialog).toBeVisible({ timeout: 30_000 })
@@ -85,7 +104,7 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		page,
 	}) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
-		await page.getByRole('button', { name: 'Send digital post' }).click()
+		await openTheSendAction(page)
 
 		const dialog = page.locator('.compose-dialog')
 		await expect(dialog).toBeVisible({ timeout: 30_000 })
