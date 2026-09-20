@@ -7,8 +7,6 @@ retrofit: true
 
 ## Purpose
 
-@e2e exclude a backend seam; the one browser gesture it has is covered by tests/e2e/digital-post.spec.ts.
-
 Send a citizen a message in their Mijn Overheid Berichtenbox, list the messages on a case, and follow what became of them. The transport is integriq's. dossiq composes the letter, hands it over through the adapter seam, and records what came back, including a refusal.
 
 ## Requirements
@@ -18,17 +16,20 @@ Send a citizen a message in their Mijn Overheid Berichtenbox, list the messages 
 The system SHALL expose three `@NoAdminRequired` JSON endpoints on `BerichtenboxController` — `send`, `messages`, and `poll` — that route to `BerichtenboxService` for message dispatch, case-scoped message listing, and per-message read-status polling respectively.
 
 #### Scenario: Send a message
+@e2e exclude a REST endpoint with no gesture of its own; asserted in tests/Unit/Controller/BerichtenboxControllerContractTest.php, testSendReturns200WithTheDispatchedMessageRecord
 
 - WHEN a user POSTs to `send` with `caseId`, `bsn`, `subject`, `body`, `berichtTypeCode`, and optional `attachmentFileId`
 - THEN the controller SHALL return HTTP 400 `{success: false, error: 'caseId is required'}` when `caseId` is empty
 - AND it SHALL otherwise delegate to `BerichtenboxService::sendMessage` and return `{success: true, message: <result>}` on success or `{success: false, error: <validation message>}` on validation failure
 
 #### Scenario: List messages for a case
+@e2e exclude a REST endpoint with no gesture of its own; asserted in tests/Unit/Controller/BerichtenboxControllerContractTest.php, testMessagesReturnsTheCorrespondenceForTheNamedCase
 
 - WHEN a user calls `messages` with `caseId`
 - THEN the controller SHALL return `{success: true, messages: [...]}` containing every Berichtenbox message stored in OpenRegister for that case
 
 #### Scenario: Poll read status
+@e2e exclude a REST endpoint with no gesture of its own; asserted in tests/Unit/Controller/BerichtenboxControllerContractTest.php, testPollReturnsTheReadStatusForAnAuthorizedCaller
 
 - WHEN a caller issues `GET /api/berichtenbox/messages/{messageId}`, the route named `berichtenbox#poll`
 - THEN the controller SHALL return `{success: true, message: <updated record>}` reflecting the current read status
@@ -44,16 +45,19 @@ The system SHALL expose three `@NoAdminRequired` JSON endpoints on `Berichtenbox
 The system SHALL validate every outbound Berichtenbox message before dispatch: BSN MUST be a 9-digit string passing the Dutch 11-proef checksum; subject and body MUST be non-empty; body MUST contain no HTML markup.
 
 #### Scenario: Reject invalid BSN
+@e2e exclude server-side input validation with no browser surface; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
 
 - WHEN `sendMessage` is called with a `bsn` that is empty, non-numeric, not 9 digits, or fails the 11-proef
 - THEN the service SHALL return `{error: 'BSN is verplicht voor berichten via Mijn Overheid'}` (empty) or `{error: 'Ongeldig BSN-nummer'}` (invalid checksum) without invoking the adapter
 
 #### Scenario: Reject missing subject or body
+@e2e exclude server-side input validation with no browser surface; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
 
 - WHEN `sendMessage` is called with an empty `subject` or `body`
 - THEN the service SHALL return a validation-error payload (`'Onderwerp is verplicht'` / `'Berichttekst is verplicht'`) without invoking the adapter
 
 #### Scenario: Reject HTML in body
+@e2e exclude server-side input validation with no browser surface; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
 
 - WHEN `sendMessage` is called with a `body` that differs from `strip_tags($body)`
 - THEN the service SHALL return `{error: 'Berichttekst mag alleen platte tekst bevatten'}` without invoking the adapter
@@ -68,6 +72,7 @@ The system SHALL validate every outbound Berichtenbox message before dispatch: B
 The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `sendMessage(bsn, subject, body, typeCode, ?attachment): array` returning at minimum `{messageId, status}`, and `getReadStatus(messageId): array` returning at minimum `{read: bool, readAt: ?datetime}` — so that production Berichtenbox API adapters can be swapped in without touching `BerichtenboxService`.
 
 #### Scenario: The adapter is injected, not built inside the service
+@e2e exclude a container binding read at boot; covered by tests/Unit/AppInfo/AdapterHonestyTest.php, testTheRegistrarBindsBothSeams
 
 - WHEN `BerichtenboxService::sendMessage` or `pollReadStatus` needs to talk to Berichtenbox
 - THEN it SHALL use the `BerichtenboxAdapterInterface` its constructor was given
@@ -107,18 +112,21 @@ The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `s
 When `pollReadStatus(messageId)` is called, the system SHALL look up the stored Berichtenbox message in OpenRegister, call the adapter's `getReadStatus` with the stored `externalMessageId`, update local status to `read` (with `readAt`) when the adapter reports read, and otherwise stamp `readPolledAt` and re-flag status as `unread_flagged` when the message has been unread for 7 or more days.
 
 #### Scenario: Mark message as read
+@e2e exclude a polling path the cron drives, with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
 
 - GIVEN a stored message with a non-empty `externalMessageId`
 - WHEN `pollReadStatus` runs and the adapter returns `{read: true, readAt: <iso8601>}`
 - THEN the service SHALL update the stored object with `status='read'`, `readAt=<adapter value>`, and `readPolledAt=<now>` and persist via `saveObject`
 
 #### Scenario: Flag long-unread message
+@e2e exclude a polling path the cron drives, with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
 
 - GIVEN a stored message with `sentAt` 7+ days ago and adapter `read=false`
 - WHEN `pollReadStatus` runs
 - THEN the service SHALL set `status='unread_flagged'`, stamp `readPolledAt`, and persist; for `< 7` days the status SHALL be left untouched while `readPolledAt` is stamped
 
 #### Scenario: Skip when not yet dispatched
+@e2e exclude a polling path the cron drives, with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
 
 - WHEN the stored message has an empty `externalMessageId`
 - THEN the service SHALL return the record unchanged without contacting the adapter
@@ -133,11 +141,13 @@ When `pollReadStatus(messageId)` is called, the system SHALL look up the stored 
 The system SHALL register a `BerichtenboxReadStatusJob` extending `TimedJob` with an interval of `86400` seconds (daily) that the Nextcloud cron picks up and runs server-side.
 
 #### Scenario: Job interval
+@e2e exclude a TimedJob interval constant with no browser gesture; no unit test reaches it either, and that gap is reported as inherited debt rather than hidden
 
 - WHEN `BerichtenboxReadStatusJob` is constructed
 - THEN its parent `TimedJob` interval SHALL be set to `86400` seconds (24h)
 
 #### Scenario: Run iterates unread messages
+@e2e exclude a cron run with no browser gesture; covered by tests/Unit/BackgroundJob/BerichtenboxReadStatusJobTest.php, testEveryPendingMessageIsPolledByItsUuid
 
 - WHEN the cron triggers `run($argument)`
 - THEN the job SHALL log `'Dossiq: Running Berichtenbox read status poll'` and (future) iterate unread messages calling `BerichtenboxService::pollReadStatus` on each

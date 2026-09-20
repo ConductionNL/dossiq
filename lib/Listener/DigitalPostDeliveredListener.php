@@ -40,7 +40,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -58,7 +58,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 class DigitalPostDeliveredListener implements IEventListener {
 
@@ -90,7 +90,7 @@ class DigitalPostDeliveredListener implements IEventListener {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function handle(Event $event): void {
 		if (method_exists($event, 'getMessageId') === false || method_exists($event, 'getStatus') === false) {

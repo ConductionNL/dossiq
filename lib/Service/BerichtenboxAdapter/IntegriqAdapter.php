@@ -45,7 +45,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -64,7 +64,7 @@ use Throwable;
 /**
  * Sends digital post by asking integriq to send it.
  *
- * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 class IntegriqAdapter implements BerichtenboxAdapterInterface {
 
@@ -115,7 +115,7 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function sendMessage(
 		string $bsn,
@@ -205,7 +205,7 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @return array<string, mixed> The status, with `unknown` set.
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function getReadStatus(string $messageId): array {
 		return [
@@ -230,7 +230,7 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 *
 	 * @return array<string, mixed> The send result.
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	private function readSlot(object $event): array {
 		if (method_exists($event, 'isHandled') === true && $event->isHandled() === false) {
