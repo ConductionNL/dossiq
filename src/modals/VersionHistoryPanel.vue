@@ -44,6 +44,9 @@
 						<span class="dossier-version-panel__meta">
 							{{ formatDate(version.timestamp) }} ·
 							{{ version.author || t('dossiq', 'Unknown') }}
+							<template v-if="formatSize(version.size) !== ''">
+								· {{ formatSize(version.size) }}
+							</template>
 						</span>
 					</div>
 					<div class="dossier-version-panel__actions">
@@ -337,11 +340,30 @@ export default {
 				) {
 					return
 				}
+				// 🔴 `author` USED TO BE THE LITERAL `''` HERE, and the template
+				// renders `version.author || 'Unknown'`. So every version of
+				// every document read Unknown, which looks exactly like a
+				// server that did not send an author and is really a field
+				// nobody ever parsed. REQ-ZAK-020 asks for the moment, the
+				// author and the size, and two of the three were never read.
+				//
+				// The author lives in Nextcloud's own namespace, not in DAV:.
+				// A server that does not send it still renders Unknown, which
+				// is now a real absence rather than a hardcoded one.
+				const author = node.getElementsByTagNameNS(
+					'http://nextcloud.org/ns',
+					'version-author',
+				)[0]
+				const size = node.getElementsByTagNameNS(
+					'DAV:',
+					'getcontentlength',
+				)[0]
 				versions.push({
 					id: href.textContent,
 					number: responses.length - index,
 					timestamp: lastModified ? lastModified.textContent : '',
-					author: '',
+					author: author ? author.textContent : '',
+					size: size ? Number(size.textContent) : null,
 				})
 			})
 			return versions
@@ -363,6 +385,32 @@ export default {
 				return dateStr
 			}
 			return d.toLocaleString('nl-NL')
+		},
+
+		/**
+		 * Format a version's byte count for the meta line.
+		 *
+		 * A version whose size the server did not send renders NOTHING
+		 * rather than `0 B`: an unsent size and an empty file are different
+		 * facts, and only one of them is worth a reader's attention.
+		 *
+		 * @param {number|null} bytes The byte count, or null when unsent.
+		 * @return {string} The formatted size, or an empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		formatSize(bytes) {
+			if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) {
+				return ''
+			}
+			const units = ['B', 'KB', 'MB', 'GB', 'TB']
+			let value = bytes
+			let unit = 0
+			while (value >= 1024 && unit < units.length - 1) {
+				value /= 1024
+				unit += 1
+			}
+			const rounded = unit === 0 ? value : Math.round(value * 10) / 10
+			return `${rounded} ${units[unit]}`
 		},
 
 		/**

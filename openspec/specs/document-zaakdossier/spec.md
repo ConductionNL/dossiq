@@ -345,9 +345,18 @@ informatieobject MUST be skipped.
 The Files tab of a case SHALL offer Versions on every file row, and that
 action SHALL open the version history of the file that was clicked. The
 history SHALL list each version with its moment, its author and its size,
-and SHALL offer view, download and restore on each. dossiq SHALL store no
-version chain of its own: the versions are the platform's, read and
-restored through the Nextcloud Files versions API.
+and SHALL offer download and restore on each. A property the server did
+not send SHALL be shown as absent rather than as a value: an author
+nobody recorded reads Unknown, and a size nobody sent is left off the
+line rather than written as nought bytes.
+
+Opening a version in a viewer is deliberately not required. Download is
+how a reader opens an old version, because the Nextcloud viewer resolves
+a file by its node and a version is not one. A separate View that only
+downloaded would be a second name for one act.
+
+dossiq SHALL store no version chain of its own: the versions are the
+platform's, read and restored through the Nextcloud Files versions API.
 
 #### Scenario: Versions opens on the file the row named
 
