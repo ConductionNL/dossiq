@@ -216,6 +216,7 @@ import TargetVariant from 'vue-material-design-icons/TargetVariant.vue'
 import Timeline from 'vue-material-design-icons/Timeline.vue'
 import TimerOutline from 'vue-material-design-icons/TimerOutline.vue'
 import TimerSandFull from 'vue-material-design-icons/TimerSandFull.vue'
+import Translate from 'vue-material-design-icons/Translate.vue'
 import TrayArrowDown from 'vue-material-design-icons/TrayArrowDown.vue'
 import TrayArrowUp from 'vue-material-design-icons/TrayArrowUp.vue'
 import TrayFull from 'vue-material-design-icons/TrayFull.vue'
@@ -429,6 +430,7 @@ export default {
 	Timeline,
 	TimerOutline,
 	TimerSandFull,
+	Translate,
 	TrayArrowDown,
 	TrayArrowUp,
 	TrayFull,
