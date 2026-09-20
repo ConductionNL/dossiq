@@ -42,7 +42,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/the-ask-step-asks-for-fields/specs/case-flow-human-steps/spec.md
+ * @spec openspec/specs/case-flow-human-steps/spec.md
  */
 
 declare(strict_types=1);
