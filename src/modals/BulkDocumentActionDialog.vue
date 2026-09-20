@@ -311,7 +311,7 @@ export default {
 		 * an endpoint would answer as a miss.
 		 *
 		 * @return {Promise<Array<string>>} The one document id, or an empty list.
-		 * @spec openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md
+		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveFromFileId() {
 			const fileId = Number(this.fileId)
