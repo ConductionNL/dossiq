@@ -53,7 +53,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
@@ -70,7 +70,7 @@ use Throwable;
 /**
  * Pushes one case note to a neighbouring ZGW register, or says why it did not.
  *
- * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class NotePush {
 
@@ -160,7 +160,7 @@ class NotePush {
 	 *
 	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} What happened.
 	 *
-	 * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function push(string $caseId, array $note): array {
 		if ($this->adapter->isDormant() === true) {

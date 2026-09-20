@@ -57,7 +57,7 @@ test.describe('a case note reaches the neighbouring register, or says why not', 
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md#a-refused-push-leaves-the-outcome-recorded-as-failed
+	// @e2e openspec/specs/zgw-api-mapping/spec.md#a-refused-push-leaves-the-outcome-recorded-as-failed
 	test('an unbound case records nothing at all', async ({ request }) => {
 		const token = await getRequestToken(request)
 		const response = await request.post(
@@ -89,7 +89,7 @@ test.describe('a case note reaches the neighbouring register, or says why not', 
 		expect(outcome.caseRecord).toBe('none')
 	})
 
-	// @e2e openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md#a-note-left-on-the-default-never-leaves
+	// @e2e openspec/specs/zgw-api-mapping/spec.md#a-note-left-on-the-default-never-leaves
 	test('the endpoint refuses a request carrying no note', async ({ request }) => {
 		const token = await getRequestToken(request)
 		const response = await request.post(
@@ -104,7 +104,7 @@ test.describe('a case note reaches the neighbouring register, or says why not', 
 		expect(response.status()).toBe(400)
 	})
 
-	// @e2e openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md#a-caller-who-may-not-change-the-case-cannot-send-its-notes
+	// @e2e openspec/specs/zgw-api-mapping/spec.md#a-caller-who-may-not-change-the-case-cannot-send-its-notes
 	test('a caller who may not change the case cannot send its notes', async ({
 		request,
 	}) => {

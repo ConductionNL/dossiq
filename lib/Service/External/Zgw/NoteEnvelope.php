@@ -38,7 +38,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use InvalidArgumentException;
 /**
  * Builds the ZGW document envelope one note travels in.
  *
- * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class NoteEnvelope {
 
@@ -83,7 +83,7 @@ class NoteEnvelope {
 	 *
 	 * @throws InvalidArgumentException When the note has no text, or no type is reserved.
 	 *
-	 * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function build(
 		array $note,

@@ -316,7 +316,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *                                  missing, or the form declaration cannot
      *                                  be rendered by the person it is for.
      *
-     * @spec openspec/changes/the-ask-step-asks-for-fields/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     public function validateConfig(array $config): void {
@@ -359,7 +359,7 @@ class DossiqAskPersonNode implements IFlowNode {
      *
      * @throws UnexpectedValueException When the declaration cannot be rendered.
      *
-     * @spec openspec/changes/the-ask-step-asks-for-fields/specs/case-flow-human-steps/spec.md
+     * @spec openspec/specs/case-flow-human-steps/spec.md
      */
     private function validateForm(array $config): void {
         $declared = false;
