@@ -67,7 +67,7 @@ test.describe('a reader keeps their own arrangement of a dashboard', () => {
 		await dismissSupportDialog(page)
 	})
 
-	// @e2e openspec/changes/a-dashboard-the-reader-arranges/specs/dashboard/spec.md#scenario-one-users-arrangement-is-their-own
+	// @e2e openspec/changes/archive/2026-09-20-a-dashboard-the-reader-arranges/specs/dashboard/spec.md#scenario-one-users-arrangement-is-their-own
 	test('a card moved to the top row is still there after a reload', async ({
 		page,
 	}) => {
@@ -106,7 +106,7 @@ test.describe('a reader keeps their own arrangement of a dashboard', () => {
 		expect(errors, 'the dashboard logged errors while arranging').toEqual([])
 	})
 
-	// @e2e openspec/changes/a-dashboard-the-reader-arranges/specs/dashboard/spec.md#scenario-a-handler-adds-a-list-they-did-not-have-to-configure
+	// @e2e openspec/changes/archive/2026-09-20-a-dashboard-the-reader-arranges/specs/dashboard/spec.md#scenario-a-handler-adds-a-list-they-did-not-have-to-configure
 	test('the add-widget modal offers the two lists by name and adds one', async ({
 		page,
 	}) => {
@@ -117,7 +117,7 @@ test.describe('a reader keeps their own arrangement of a dashboard', () => {
 		await expect(modal.getByText("Your team's queue")).toBeVisible()
 
 		// A preset carries its own register and schema, so adding one must ask
-		// for neither. A modal that asks is the failure REQ-DASH-021 names.
+		// for neither. A modal that asks is the failure REQ-DASH-024 names.
 		await expect(
 			modal.getByLabel(/register/i),
 			'the modal asked the reader for a register, which a preset carries',

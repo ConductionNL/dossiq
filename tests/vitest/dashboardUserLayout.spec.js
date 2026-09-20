@@ -20,7 +20,7 @@
  * reserves, and every sentinel token in a preset filter is one the manifest
  * schema's own pattern admits.
  *
- * @spec openspec/changes/a-dashboard-the-reader-arranges/specs/dashboard/spec.md
+ * @spec openspec/changes/archive/2026-09-20-a-dashboard-the-reader-arranges/specs/dashboard/spec.md
  */
 
 import fs from 'fs'

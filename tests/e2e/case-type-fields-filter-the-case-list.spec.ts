@@ -17,6 +17,14 @@ import type { APIRequestContext } from '@playwright/test'
  * below names a case that must NOT be there, and it is seeded to be there
  * without the filter.
  *
+ * 🔴 THE URL IS NOT THE TRANSPORT, WHICH IS WHY THE DEEP-LINK TESTS BELOW ARE
+ * REAL TESTS. `CnIndexPage` builds its filters with `resolveQueryFilters()`,
+ * which skips the underscore namespace, so a `_related` key in the address
+ * bar is dropped before the fetch. The bar hands each block to the list
+ * through `sidebarState.onFilterChange` as well, and replays the route's
+ * blocks on mount. A run where the address bar carries `_related` and the
+ * list is not narrowed is that hop missing, not openregister refusing.
+ *
  * 🔴 A REFUSAL IS NOT AN EMPTY RESULT. openregister refuses a malformed
  * `_related` block with a sentence rather than running it, but the object
  * store records the refusal and returns `[]`, so `CnIndexPage` draws its empty
@@ -30,7 +38,7 @@ import type { APIRequestContext } from '@playwright/test'
  * SPDX-FileCopyrightText: 2026 Dossiq Contributors
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 import { expect, test } from '@playwright/test'
 import {
@@ -106,7 +114,7 @@ test.afterAll(async () => {
 })
 
 test.describe('a case type says which of its fields are worth filtering on', () => {
-	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-definition-that-declares-nothing-is-not-offered
+	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-definition-that-declares-nothing-is-not-offered
 	test('the schema stores filterable, so the declaration reaches the instance', async () => {
 		const res = await api.get(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/propertyDefinition/${costDefinitionId}`,
@@ -124,7 +132,7 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 		).toBe(true)
 	})
 
-	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-definition-that-declares-nothing-is-not-offered
+	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-definition-that-declares-nothing-is-not-offered
 	test('the bar offers the declared field and not the silent one', async ({
 		page,
 	}) => {
@@ -140,7 +148,7 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 		).not.toContainText(`${RUN_PREFIX}-intern`)
 	})
 
-	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-clearing-the-case-type-clears-its-field-filters
+	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-clearing-the-case-type-clears-its-field-filters
 	test('no case type picked renders no bar at all', async ({ page }) => {
 		await page.goto(APP_URL, PAGE_LOAD)
 		await dismissSupportDialog(page)
@@ -150,7 +158,7 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 })
 
 test.describe('the case list filters on a case type own fields', () => {
-	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-two-fields-narrow-to-the-cases-that-satisfy-both
+	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-two-fields-narrow-to-the-cases-that-satisfy-both
 	test('a cost filter lists the expensive case and NOT the cheap one', async ({
 		page,
 	}) => {
@@ -172,7 +180,7 @@ test.describe('the case list filters on a case type own fields', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-clearing-the-case-type-clears-its-field-filters
+	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-clearing-the-case-type-clears-its-field-filters
 	test('clearing the case type clears the field filters with it', async ({
 		page,
 	}) => {
@@ -199,7 +207,7 @@ test.describe('the case list filters on a case type own fields', () => {
 		await expect(page.getByTestId('case-type-field-filters')).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-refused-filter-is-not-an-empty-result
+	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-refused-filter-is-not-an-empty-result
 	test('a refused block says so instead of showing an empty list', async ({
 		page,
 	}) => {
