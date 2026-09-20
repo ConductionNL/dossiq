@@ -236,6 +236,7 @@ export default {
 			 * Look the instruction up again whenever the case type changes.
 			 *
 			 * @return {void}
+			 * @spec openspec/changes/knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
 			 */
 			handler() {
 				this.load()
