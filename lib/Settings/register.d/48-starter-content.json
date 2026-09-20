@@ -261,6 +261,7 @@
             "title": "Name",
             "description": "What the step is called, for example Ontvankelijkheidstoets.",
             "translatable": true,
+            "sourceLanguage": "nl",
             "facetable": true,
             "maxLength": 255
           },
@@ -268,6 +269,7 @@
             "type": "string",
             "title": "Description",
             "description": "What happens in this step.",
+            "sourceLanguage": "nl",
             "translatable": true
           },
           "leadTimeDays": {
@@ -302,6 +304,7 @@
             "title": "Name",
             "description": "What the template is called where a handler picks one, for example Vraag advies aan juridische zaken.",
             "translatable": true,
+            "sourceLanguage": "nl",
             "facetable": true,
             "maxLength": 255
           },
@@ -323,6 +326,7 @@
             "type": "string",
             "title": "Body",
             "description": "The text the template presets.",
+            "sourceLanguage": "nl",
             "translatable": true
           },
           "caseTypes": {

@@ -4016,12 +4016,14 @@
             "maxLength": 255,
             "description": "Name of this case type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Title"
           },
           "description": {
             "type": "string",
             "description": "Detailed description of this case type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Description"
           },
           "identifier": {
@@ -4033,18 +4035,21 @@
             "type": "string",
             "description": "The purpose or goal of this case type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Purpose"
           },
           "trigger": {
             "type": "string",
             "description": "What triggers the creation of a case of this type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Trigger"
           },
           "subject": {
             "type": "string",
             "description": "The subject matter of this case type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Subject"
           },
           "processingDeadline": {
@@ -4456,6 +4461,7 @@
             "maxLength": 255,
             "description": "Short subject of the complaint",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Subject"
           },
           "description": {
@@ -4667,12 +4673,14 @@
             "maxLength": 255,
             "description": "Category name",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this category",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Description"
           },
           "defaultHandler": {
@@ -5796,12 +5804,14 @@
             "maxLength": 255,
             "description": "Name of this decision type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this decision type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Description"
           },
           "caseType": {
@@ -6143,12 +6153,14 @@
             "maxLength": 255,
             "description": "Name of this document type (e.g. Situatietekening)",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this document type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Description"
           },
           "caseType": {
@@ -11738,12 +11750,14 @@
             "maxLength": 255,
             "description": "Name of this result type (e.g. Vergunning verleend)",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description/toelichting of this result type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Description"
           },
           "genericDescription": {
@@ -11888,12 +11902,14 @@
             "maxLength": 255,
             "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this role type",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Description"
           },
           "caseType": {
@@ -12351,12 +12367,14 @@
             "maxLength": 255,
             "description": "Name of this status (e.g. Ontvangen, In behandeling)",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Name"
           },
           "description": {
             "type": "string",
             "description": "Description of this status phase",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Description"
           },
           "publicLabel": {
@@ -12364,12 +12382,14 @@
             "maxLength": 255,
             "description": "What the applicant reads for this status. Leave it empty and they read the name.",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Public label"
           },
           "publicDescription": {
             "type": "string",
             "description": "What the applicant is told this status means. Empty shows no description.",
             "translatable": true,
+            "sourceLanguage": "nl",
             "title": "Public description"
           },
           "caseType": {
