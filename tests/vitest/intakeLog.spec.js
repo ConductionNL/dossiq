@@ -98,6 +98,10 @@ const MailIntakeLogView = (
 	await import('../../src/views/intake/MailIntakeLogView.vue')
 ).default
 
+const MailIntakeFileOnCaseDialog = (
+	await import('../../src/dialogs/MailIntakeFileOnCaseDialog.vue')
+).default
+
 /**
  * One log entry, as the endpoint answers it.
  *
@@ -274,6 +278,54 @@ describe('the intake log', () => {
 		await flushPromises()
 
 		expect(calls.some((call) => call.url.endsWith('/held/release'))).toBe(true)
+	})
+
+	// 🔴 UNLIKE RELEASE, THIS ONE IS ON EVERY ROW, and that is the point of it.
+	// Release files a message on the case the matcher already chose, so a
+	// handler who knew it belonged on 2026-114 could do nothing with that
+	// knowledge. A wrong match is the common reason somebody reaches for this,
+	// and an entry that became 2026-090 when it belonged on 2026-114 looks
+	// exactly like a successful match until a person reads it.
+	// @spec openspec/specs/case-email-integration/spec.md
+	it('offers File on a case on every entry, matched or not', async () => {
+		serve({
+			results: [
+				entry({
+					'@self': { id: 'wrong' },
+					outcome: 'case',
+					case: '2026-090',
+				}),
+				entry({ '@self': { id: 'nowhere' }, outcome: 'inbox', case: '' }),
+			],
+		})
+
+		const wrapper = await mountLog()
+
+		expect(
+			wrapper.find('[data-testid="intake-log-file-on-case-wrong"]').exists(),
+		).toBe(true)
+		expect(
+			wrapper.find('[data-testid="intake-log-file-on-case-nowhere"]').exists(),
+		).toBe(true)
+		// Found by COMPONENT, not by its `data-testid`: the dialog's own
+		// NcDialog teleports its markup to the body, so a DOM query on this
+		// wrapper answers false whether the dialog opened or not.
+		expect(wrapper.findComponent(MailIntakeFileOnCaseDialog).exists()).toBe(
+			false,
+		)
+
+		await wrapper
+			.find('[data-testid="intake-log-file-on-case-wrong"]')
+			.trigger('click')
+		await flushPromises()
+
+		// The dialog opens on the entry that was clicked, carrying where the
+		// matcher put it. Nothing is posted until the handler confirms.
+		const dialog = wrapper.findComponent(MailIntakeFileOnCaseDialog)
+		expect(dialog.exists()).toBe(true)
+		expect(dialog.props('entryId')).toBe('wrong')
+		expect(dialog.props('entry').case).toBe('2026-090')
+		expect(calls.some((call) => call.url.includes('/file-on-case'))).toBe(false)
 	})
 
 	it('says the order the filters ran in', async () => {
