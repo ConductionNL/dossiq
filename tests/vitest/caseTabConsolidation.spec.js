@@ -344,14 +344,24 @@ describe('the container type this change depends on', () => {
 			'case-custody-panel': 'case-custody-pane',
 		}
 
-		// The tabs the LIBRARY draws from another app's leaf. Files was the
-		// first and Knowledge (#2995, the collectives leaf) the second, so the
-		// exception is a map rather than one id: each has to name the leaf it
-		// draws, because an `integration` widget with no `integrationId`
-		// renders an empty tab and logs nothing.
+		// The tabs the LIBRARY draws from another app's leaf. Files is the
+		// only one left: Knowledge was here too until the case type's work
+		// instruction joined the collectives leaf under it, which made it a
+		// GROUP and so a `case-sections` like every other group. Its leaf did
+		// not go anywhere, it just moved one level down, and the assertion
+		// below follows it there rather than being deleted.
+		//
+		// A map rather than one id, because each entry has to name the leaf it
+		// draws: an `integration` widget with no `integrationId` renders an
+		// empty tab and logs nothing.
 		const LEAVES = {
 			'case-files': 'files',
-			'case-knowledge-panel': 'collectives',
+		}
+
+		// A leaf that lives inside a group, as `{ widgetId: [sectionWidgetId,
+		// integrationId] }`. Same failure it guards against, one level down.
+		const NESTED_LEAVES = {
+			'case-knowledge-panel': ['case-knowledge-pages', 'collectives'],
 		}
 		const registry = read(path.join(ROOT, 'src/registry.js'))
 
@@ -373,6 +383,19 @@ describe('the container type this change depends on', () => {
 				continue
 			}
 			expect(widget(widgetId).type).toBe('case-sections')
+
+			if (NESTED_LEAVES[widgetId]) {
+				const [sectionId, integrationId] = NESTED_LEAVES[widgetId]
+				const section = (widget(widgetId).content.sections || [])
+					.map((entry) => entry.widget)
+					.find((child) => child && child.id === sectionId)
+				expect(
+					section,
+					`${widgetId} no longer holds the ${integrationId} leaf, so the tab draws no pages at all`,
+				).toBeTruthy()
+				expect(section.type).toBe('integration')
+				expect(section.integrationId).toBe(integrationId)
+			}
 		}
 	})
 

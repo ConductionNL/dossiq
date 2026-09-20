@@ -73,6 +73,10 @@ import CaseStatusDeclarationPanel from './components/case/CaseStatusDeclarationP
 // derived status fires, who the case waits on, and how long it has been here.
 // @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
 import CaseUnreadPanel from './components/case/CaseUnreadPanel.vue'
+// The work instruction for this kind of case, from the case type's
+// Collectives page, on the case itself.
+// @spec openspec/specs/case-knowledge-base/spec.md
+import CaseWorkInstructionPanel from './components/case/CaseWorkInstructionPanel.vue'
 // A reviewer's own pending archival decisions, on My Work.
 // @spec openspec/changes/the-case-archives-through-openregister/specs/archief-edepot-handover/spec.md
 import MyArchivalReviews from './components/case/MyArchivalReviews.vue'
@@ -533,6 +537,15 @@ const registry = {
 		kind: 'widget',
 		component: CaseArchivalPanel,
 		_note: "CaseDetail Archiving tab: the appraisal, the disposal date, the retention period, the selectielijst row, the nomination with the rule that produced it, and the outcome once a reviewer has decided one. Fails CLOSED on an unreachable openregister: an error with a retry, never an empty archival block, because an outage and a case with no archival future look identical from the browser. An unnominatable case is drawn apart from a case nobody has closed yet, because only one of the two is somebody's problem today.",
+	},
+
+	// --- The work instruction for this kind of case (knowledge-base-on-the-case). ---
+	// @spec openspec/specs/case-knowledge-base/spec.md
+	'case-work-instruction': {
+		// @custom-widget-ratchet exclude the value lives on the case TYPE and the page is bound to the CASE, and CnDetailPage reads no `extend` (measured: the string does not occur in CnDetailPage.vue of the installed 3.4.0), so a declared widget over a dotted `caseType.knowledgeBasePage` path renders blank while looking configured. Deleted the day a detail page can expand a reference, or the manifest vocabulary has a widget that reads one
+		kind: 'widget',
+		component: CaseWorkInstructionPanel,
+		_note: 'CaseDetail Knowledge tab, first section: the Collectives page that explains how this municipality handles this kind of case, followed one reference from the case to its type. dossiq stores no article text and fetches no article body, so a handler whose role group is not in the collective\'s team meets Collectives\' own refusal on the page rather than a copy dossiq made. Nothing renders when the type names no page, because most types will not for a while and a heading over "no work instruction" is a reproach for something an administrator has not done. A lookup that FAILED says so with a retry: a blank panel would read as a type without an instruction.',
 	},
 
 	// --- A reviewer's own pending archival decisions (My Work). ---

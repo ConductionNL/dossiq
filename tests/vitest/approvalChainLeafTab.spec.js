@@ -16,7 +16,7 @@
  * would find nothing on a page where the leaf is present, and the notice would
  * be permanent.
  *
- * @spec openspec/changes/approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 import { mount } from '@vue/test-utils'

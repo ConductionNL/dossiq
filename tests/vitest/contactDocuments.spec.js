@@ -18,7 +18,7 @@
  * party per role carrying the case, so one equality filter is the whole
  * answer and `relationshipType` is the direction.
  *
- * @spec openspec/changes/the-contact-360-shows-documents/specs/kcc-klantcontact-integratie/spec.md
+ * @spec openspec/specs/kcc-klantcontact-integratie/spec.md
  */
 
 import fs from 'fs'

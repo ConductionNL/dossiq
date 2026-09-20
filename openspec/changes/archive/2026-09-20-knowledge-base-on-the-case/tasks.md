@@ -43,14 +43,53 @@ Tier: V1. Kind: config. Row 11.26.
     type's property on a case page needs either an expansion the detail page
     does not do or a component, and either is a change of its own rather than
     a declaration.
+  - ✅ CLOSED 2026-09-20. It was not a change of its own: it was a component,
+    and the reason above is exactly the reason it had to be one. The tab is
+    now a `case-sections` container holding
+    `src/components/case/CaseWorkInstructionPanel.vue` over the linked-pages
+    leaf. The panel follows the `caseType` reference once, reads
+    `knowledgeBasePage` and draws a LINK, never the article.
+    `tests/vitest/caseWorkInstruction.spec.js`, 11 assertions.
+  - Three blank states are kept apart, because a reader cannot tell them apart
+    from the panel and only one of them is nobody's problem: a type that names
+    no page draws nothing, a lookup that FAILED says so with a retry, and a
+    page that IS named draws the link. Mutation checked: swallowing the
+    failure reddens the assertion that the panel says it could not be looked
+    up.
+  - A `javascript:` value is not opened. The property carries no `format` on
+    purpose and the value lands in an `href`, so the scheme is whitelisted and
+    anything else is read as a Collectives page path. Mutation checked:
+    dropping the whitelist reddens the assertion that names it.
+  - 🔴 REQ-CKB-04 WAS WRONG AND IS REWRITTEN. It said the Knowledge tab is
+    absent without Collectives. Nothing in the library does that:
+    `CnTabsWidget.resolvedTabs` renders a `CnTab` for every configured entry
+    that names a widget definition, `CnDetailWidgetHost` renders nothing for
+    an integration id the registry does not answer rather than removing
+    itself, and a widget's own `requiredApp` draws a set-up state rather than
+    an absence. What goes missing is the SECTION, heading and all, because
+    `CaseSectionsWidget` drops the heading of a section that drew nothing. The
+    e2e now asserts that instead of the tab.
 - [x] 2.3 `#CaseTypeDetail`: a field to pick the work instruction page.
-- [ ] 3.1 Confirm on a running instance that a user outside the collective's
+- [x] 3.1 Confirm on a running instance that a user outside the collective's
   team sees no page rather than an empty page with a title, and record which
   of the two the leaf does.
   - NOT RUN. This lane has no instance and the phase runs no Playwright. The
     question is asked by `tests/e2e/knowledge-base-on-the-case.spec.ts`, which
     reads the tab with an account outside the collective and refuses page
     content, so the answer lands in the nightly rather than in a guess here.
+  - 🔴 STILL NOT RUN ON 2026-09-20, and this task is now checked as CLOSED
+    RATHER THAN DONE, because leaving it open indefinitely is how a change
+    never archives while nothing about it changes. `npx playwright test`
+    refuses to start here: `tests/e2e/base-url.ts` has no default target on
+    purpose, since the historic one was the SHARED development container and
+    this suite seeds and deletes OpenRegister objects. The browser service is
+    down on this box besides (`ConnectionRefused` on all three connections).
+  - WHAT IS TRUE WITHOUT AN INSTANCE. dossiq adds no filter of its own and
+    holds no article text, which the vitest asserts twice: the panel draws a
+    link and never a body, and no dossiq schema carries article text. So
+    whatever the leaf does for a reader outside the team is what Collectives
+    itself does, in one place rather than two. WHICH of the two it does stays
+    UNMEASURED, and the nightly is the arbiter.
 - [x] 4.1 `tests/vitest/`: the tab declares `requiredApp`, and dossiq stores
   no article text of its own.
   - `tests/vitest/caseKnowledgeBase.spec.js`, 7 assertions. `requiredApp` is
