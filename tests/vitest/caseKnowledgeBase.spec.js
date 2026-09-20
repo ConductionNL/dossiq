@@ -81,7 +81,9 @@ describe('a case links the pages that explain it', () => {
 		// The pages the case itself links are STILL the leaf and nothing
 		// dossiq built. The section moved, the ownership did not.
 		const sections = widget.content.sections || []
-		const pages = sections.map((s) => s.widget).find((w) => w?.id === 'case-knowledge-pages')
+		const pages = sections
+			.map((s) => s.widget)
+			.find((w) => w?.id === 'case-knowledge-pages')
 		expect(
 			pages,
 			'the linked pages section is gone, so the case can no longer show the pages somebody linked to it',
