@@ -17,7 +17,7 @@
  * FORMATTER over a value the page fetched, and nothing in the register holds
  * it: the last test asserts no dossiq schema carries one.
  *
- * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 import fs from 'fs'

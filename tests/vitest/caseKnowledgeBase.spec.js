@@ -23,7 +23,7 @@
  * would render on an instance without Collectives and say nothing, and a
  * copy of the string in this file could not see that.
  *
- * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+ * @spec openspec/specs/case-knowledge-base/spec.md
  */
 
 import fs from 'fs'

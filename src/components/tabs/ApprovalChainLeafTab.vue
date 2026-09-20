@@ -113,7 +113,7 @@ export default {
 		 * not loaded on the page.
 		 *
 		 * @return {object|undefined} The registry entry.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		leafEntry() {
 			const reg = window.OCA?.OpenRegister?.integrations
@@ -128,7 +128,7 @@ export default {
 		 * The leaf's tab component, for a provider that ships one.
 		 *
 		 * @return {object|undefined} The leaf tab Vue component.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		leafComponent() {
 			return this.leafEntry ? this.leafEntry.tab || undefined : undefined
@@ -140,7 +140,7 @@ export default {
 		 * normally renders.
 		 *
 		 * @return {boolean} True for a mount-mode leaf.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		isMountLeaf() {
 			const entry = this.leafEntry
@@ -157,7 +157,7 @@ export default {
 		 * The context the leaf is given: the DOCUMENT record, not the case.
 		 *
 		 * @return {{register: string, schema: string, objectId: string}} The context.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		integrationContext() {
 			return {
@@ -178,7 +178,7 @@ export default {
 		 * actor, so the surface is named rather than left to a default.
 		 *
 		 * @return {object} The mount props.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		mountProps() {
 			return {
@@ -194,7 +194,7 @@ export default {
 		 * The heading shown when decidiq's leaf is not loaded.
 		 *
 		 * @return {string} The heading.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		unavailableTitle() {
 			return t('dossiq', 'Approval chain unavailable')
@@ -204,7 +204,7 @@ export default {
 		 * What to do about it.
 		 *
 		 * @return {string} The description.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		unavailableDescription() {
 			return t(

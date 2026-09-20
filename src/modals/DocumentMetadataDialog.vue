@@ -299,7 +299,7 @@ export default {
 		 * the document that nobody made.
 		 *
 		 * @return {string} The record id, or an empty string.
-		 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+		 * @spec openspec/specs/besluitvorming-leaf/spec.md
 		 */
 		recordId() {
 			return String(this.record?.id || this.record?.['@self']?.id || '')

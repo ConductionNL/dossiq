@@ -35,7 +35,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Reads decidiq's clearance answer for one document.
  *
- * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+ * @spec openspec/specs/besluitvorming-leaf/spec.md
  */
 class DocumentApprovalClearance {
 
@@ -92,7 +92,7 @@ class DocumentApprovalClearance {
 	 * @return array{routed: bool, cleared: bool, waitingOn: array<int, array<string, mixed>>}
 	 *         The answer, or NOT_ROUTED when decidiq cannot answer.
 	 *
-	 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	public function forDocument(string $documentId, string $schema = 'informatieobject'): array {
 		$documentId = trim($documentId);
@@ -152,7 +152,7 @@ class DocumentApprovalClearance {
 	 *
 	 * @return string The reason, or the empty string when nothing is waiting.
 	 *
-	 * @spec openspec/changes/archive/2026-09-20-approval-chain-on-the-document/specs/besluitvorming-leaf/spec.md
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
 	 */
 	public function describe(array $clearance): string {
 		$waiting = (array)($clearance['waitingOn'] ?? []);

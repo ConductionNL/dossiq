@@ -24,7 +24,7 @@
  * `href`. The scheme whitelist is asserted here rather than trusted, because
  * a blacklist that missed one would look exactly like this test passing.
  *
- * @spec openspec/changes/archive/2026-09-20-knowledge-base-on-the-case/specs/case-knowledge-base/spec.md
+ * @spec openspec/specs/case-knowledge-base/spec.md
  */
 
 import axios from '@nextcloud/axios'
