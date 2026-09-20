@@ -144,14 +144,19 @@ describe('the bar compiles to one block per field', () => {
 			{ definitionId: 'pd-4', value: { eq: 'Noord' } },
 		])
 
-		expect(query['_related[caseProperty][0][case][propertyDefinition]']).toBe(
+		// The number sits AFTER the foreign key. `RelatedRowFilterParser`
+		// reads the schema, then the foreign key, and only then counts
+		// numbered rows, so `_related[caseProperty][0][case][…]` names a
+		// foreign key called `0` and is refused outright with "uses operator
+		// 'propertyDefinition'".
+		expect(query['_related[caseProperty][case][0][propertyDefinition]']).toBe(
 			'pd-1',
 		)
-		expect(query['_related[caseProperty][0][case][value][gte]']).toBe('100000')
-		expect(query['_related[caseProperty][1][case][propertyDefinition]']).toBe(
+		expect(query['_related[caseProperty][case][0][value][gte]']).toBe('100000')
+		expect(query['_related[caseProperty][case][1][propertyDefinition]']).toBe(
 			'pd-4',
 		)
-		expect(query['_related[caseProperty][1][case][value]']).toBe('Noord')
+		expect(query['_related[caseProperty][case][1][value]']).toBe('Noord')
 
 		// One block asking for two definitions is a row that cannot exist, so
 		// the handler would get an empty list and no reason for it.
