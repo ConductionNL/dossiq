@@ -55,17 +55,39 @@ test.describe('document acts reach a surface', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#versions-opens-on-the-file-the-row-named
+	// 🔴 THE TWO ROW TESTS BELOW HAVE NO FILE TO CLICK ON YET.
+	//
+	// `beforeAll` creates the CASE and nothing puts a document in its
+	// folder, so `cn-files-browser-row` matches nothing and both row tests
+	// fail on their first assertion. `helpers/fixtures.ts` carries no
+	// upload helper to seed one with; adding one means a multipart POST to
+	// /api/cases/{caseId}/dossier, and it is written by whoever first has a
+	// Playwright run to check it against. This is recorded here rather than
+	// left to be discovered, because four tests in a file read as four
+	// covered scenarios to anyone counting.
+	//
+	// The three LOCATORS are fixed and verified against the pinned library
+	// source. The missing seed is the remaining reason this file has never
+	// been green.
+
+	// @e2e openspec/specs/document-zaakdossier/spec.md#versions-opens-on-the-file-the-row-named
 	test('Versions opens on the file the row named', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page.getByRole('tab', { name: /Files/ }).first().click()
 
-		const row = page.locator('[data-testid="cn-files-row"]').first()
+		// `cn-files-browser-row`, and the act is reached through the row's
+		// own actions menu. This used to say `cn-files-row` and to RIGHT
+		// CLICK the row: neither exists. CnFilesBrowser renders no
+		// contextmenu handler at all, so the test could never have passed,
+		// which is the mirror of the defect this file covers.
+		const row = page.locator('[data-testid="cn-files-browser-row"]').first()
 		await expect(row).toBeVisible({ timeout: 30_000 })
 		const fileName = await row.innerText()
 
-		await row.click({ button: 'right' })
-		await page.getByText('Versions', { exact: true }).click()
+		await row.locator('.cn-files-browser__col-actions button').first().click()
+		await page
+			.locator('[data-testid="cn-files-browser-host-action-versions"]')
+			.click()
 
 		// The panel is open AND it is about this file: a panel handed no file
 		// says so instead, and the two states must not be confused.
@@ -75,15 +97,17 @@ test.describe('document acts reach a surface', () => {
 		expect(fileName.length).toBeGreaterThan(0)
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#scenario-a-file-is-marked-final-from-its-row
+	// @e2e openspec/specs/document-zaakdossier/spec.md#scenario-a-file-is-marked-final-from-its-row
 	test('a file is marked final from its row', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 		await page.getByRole('tab', { name: /Files/ }).first().click()
 
-		const row = page.locator('[data-testid="cn-files-row"]').first()
+		const row = page.locator('[data-testid="cn-files-browser-row"]').first()
 		await expect(row).toBeVisible({ timeout: 30_000 })
-		await row.click({ button: 'right' })
-		await page.getByText('Mark as final', { exact: true }).click()
+		await row.locator('.cn-files-browser__col-actions button').first().click()
+		await page
+			.locator('[data-testid="cn-files-browser-host-action-mark-final"]')
+			.click()
 
 		await page.getByRole('button', { name: /Apply/ }).click()
 
@@ -95,18 +119,24 @@ test.describe('document acts reach a surface', () => {
 		).toBeVisible({ timeout: 30_000 })
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
+	// @e2e openspec/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
 	test('a handler downloads the case file', async ({ page }) => {
 		await page.goto(`/apps/dossiq/cases/${caseId}`)
 
+		// CaseDetail sets no `inlineActions`, so CnDetailPage hands every
+		// header action to a `display: "menu"` CnActionButtons and draws
+		// them as items of its Actions menu. There is no Export dossier
+		// button on the bar to click.
+		await page.locator('[data-testid="cn-detail-page-actions"]').click()
+
 		const download = page.waitForEvent('download', { timeout: 60_000 })
-		await page.getByRole('button', { name: 'Export dossier' }).click()
+		await page.locator('[data-testid="cn-action-export-dossier"]').click()
 		const file = await download
 
 		expect(file.suggestedFilename()).toMatch(/\.zip$/)
 	})
 
-	// @e2e openspec/changes/document-acts-reach-a-surface/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
+	// @e2e openspec/specs/document-zaakdossier/spec.md#a-handler-downloads-the-case-file
 	test('a reader with no access to the case gets a status and no bytes', async ({
 		request,
 	}) => {
