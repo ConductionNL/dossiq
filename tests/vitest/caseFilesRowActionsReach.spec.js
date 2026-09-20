@@ -132,7 +132,9 @@ describe('case-files — the three acts are controls a handler can click', () =>
 
 		for (const id of ['versions', 'mark-final', 'change-confidentiality']) {
 			expect(
-				wrapper.find(`[data-testid="cn-files-browser-host-action-${id}"]`).exists(),
+				wrapper
+					.find(`[data-testid="cn-files-browser-host-action-${id}"]`)
+					.exists(),
 				`The \`${id}\` row action is declared in src/manifest.json and the `
 					+ 'files browser renders no control for it. A declared act nobody '
 					+ 'can click is the state row 4.3 was found in.',
@@ -169,7 +171,9 @@ describe('case-files — the three acts are controls a handler can click', () =>
 			.find('[data-testid="cn-files-browser-host-action-mark-final"]')
 			.trigger('click')
 		await wrapper
-			.find('[data-testid="cn-files-browser-host-action-change-confidentiality"]')
+			.find(
+				'[data-testid="cn-files-browser-host-action-change-confidentiality"]',
+			)
 			.trigger('click')
 
 		expect(dispatched.map((action) => action.target)).toEqual([
