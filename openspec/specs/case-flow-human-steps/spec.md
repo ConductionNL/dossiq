@@ -425,7 +425,7 @@ fill in.
 - **AND** completing the task without filling it SHALL be refused naming that field
 
 #### Scenario: A published edit leaves an open task alone
-@e2e tests/e2e/ask-step-form.spec.ts
+@e2e exclude the pin belongs to openregister's TaskFormResolver, which resolves through the run's pinned graph; dossiq writes no form onto the task, so nothing in this repository could be broken to make an assertion here fail. Driving it needs a live run across two published versions, which needs the case flow enabled.
 
 - **GIVEN** an open ask task raised by version 3 of its flow, whose step declared one field
 - **WHEN** an author adds a second field to that step and publishes version 4

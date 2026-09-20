@@ -132,7 +132,7 @@ test.afterAll(async () => {
 })
 
 test.describe('a form the performer could not fill is refused at save', () => {
-	// @e2e openspec/specs/case-flow-human-steps/spec.md#scenario-a-field-the-schema-does-not-have-is-refused-at-save
+	// @e2e openspec/specs/case-flow-human-steps/spec.md#a-field-the-schema-does-not-have-is-refused-at-save
 	test('a field the case schema does not have is refused, naming it', async () => {
 		const { ok, body } = await saveAsk({
 			formKind: 'fields',
@@ -148,7 +148,7 @@ test.describe('a form the performer could not fill is refused at save', () => {
 		expect(body, 'the refusal does not name the schema').toContain('case')
 	})
 
-	// @e2e openspec/specs/case-flow-human-steps/spec.md#scenario-a-read-only-field-is-refused-at-save
+	// @e2e openspec/specs/case-flow-human-steps/spec.md#a-read-only-field-is-refused-at-save
 	test('a generated field nobody can write is refused, and says so', async () => {
 		const { ok, body } = await saveAsk({
 			formKind: 'fields',
@@ -163,7 +163,7 @@ test.describe('a form the performer could not fill is refused at save', () => {
 		)
 	})
 
-	// @e2e openspec/specs/case-flow-human-steps/spec.md#scenario-a-field-the-schema-does-not-have-is-refused-at-save
+	// @e2e openspec/specs/case-flow-human-steps/spec.md#a-field-the-schema-does-not-have-is-refused-at-save
 	test('a nested form block is refused rather than silently ignored', async () => {
 		const { ok } = await saveAsk({
 			form: {
@@ -187,7 +187,7 @@ test.describe('a form the performer could not fill is refused at save', () => {
 })
 
 test.describe('a declared field reaches the person who has to answer it', () => {
-	// @e2e openspec/specs/case-flow-human-steps/spec.md#scenario-a-declared-field-reaches-the-person-who-has-to-answer-it
+	// @e2e openspec/specs/case-flow-human-steps/spec.md#a-declared-field-reaches-the-person-who-has-to-answer-it
 	test('a writable field is accepted, published and resolved on the task', async () => {
 		const name = `${RUN_PREFIX}-ask-form-ok-${Math.floor(Math.random() * 1e4)}`
 		const id = await createFlow(
@@ -220,7 +220,7 @@ test.describe('a declared field reaches the person who has to answer it', () => 
 		expect(ask.config.formFields[0].field).toBe('description')
 	})
 
-	// @e2e openspec/specs/case-flow-human-steps/spec.md#scenario-a-step-with-no-form-is-unchanged
+	// @e2e openspec/specs/case-flow-human-steps/spec.md#a-step-with-no-form-is-unchanged
 	test('a step with no form is accepted exactly as before', async () => {
 		const { ok } = await saveAsk({})
 
