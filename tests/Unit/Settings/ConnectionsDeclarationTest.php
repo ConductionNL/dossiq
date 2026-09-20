@@ -325,31 +325,73 @@ class ConnectionsDeclarationTest extends TestCase {
 	}//end testAdapterBlocksUseOnlyD2Fields()
 
 	/**
-	 * A mock-backed seam reads Simulated when its key is empty or names the mock.
+	 * A seam reads Simulated exactly when a mock is really what answers.
 	 *
-	 * Contract D4 rule 3 matches the key's value against `simulatedValues`. The
-	 * default is only the empty string, so an admin who typed the mock class
-	 * into the key would read Configured under rule 5 while the mock answered.
-	 * Each list therefore names the exact class the registrar falls back to,
-	 * and that class must exist and implement the seam, or the entry matches a
-	 * value nothing can bind.
+	 * Contract D4 rule 3 matches the key's value against `simulatedValues`,
+	 * and an admin who typed the mock class into the key would otherwise read
+	 * Configured under rule 5 while the mock answered. So each list names the
+	 * class, and that class must exist and implement the seam, or the entry
+	 * matches a value nothing can bind.
+	 *
+	 * THE TWO SEAMS NO LONGER AGREE ABOUT THE EMPTY STRING, and that is the
+	 * point of this test. `beschikking_template_adapter` still falls back to
+	 * its mock, so empty is simulated there. `berichtenbox_adapter` falls back
+	 * to {@see \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter}, which
+	 * refuses rather than simulating, so listing empty there told an admin a
+	 * mock was answering when nothing was. `mock` is listed beside the class
+	 * because the registrar accepts it as a shorthand.
 	 *
 	 * @return void
 	 */
 	public function testMockBackedSeamsNameTheirMockAsSimulated(): void {
 		$byKey = $this->connectionsByKey();
 		$seams = [
-			'berichtenbox' => [MockAdapter::class, BerichtenboxAdapterInterface::class],
-			'templates' => [MockTemplateEngineAdapter::class, TemplateEngineAdapterInterface::class],
+			'berichtenbox' => [
+				[MockAdapter::class, 'mock'],
+				MockAdapter::class,
+				BerichtenboxAdapterInterface::class,
+			],
+			'templates' => [
+				['', MockTemplateEngineAdapter::class],
+				MockTemplateEngineAdapter::class,
+				TemplateEngineAdapterInterface::class,
+			],
 		];
 
-		foreach ($seams as $key => [$mockClass, $interface]) {
+		foreach ($seams as $key => [$expected, $mockClass, $interface]) {
 			$values = $byKey[$key]['adapter']['simulatedValues'] ?? null;
 
-			$this->assertSame(expected: ['', $mockClass], actual: $values, message: $key);
+			$this->assertSame(expected: $expected, actual: $values, message: $key);
 			$this->assertTrue(condition: is_a($mockClass, $interface, true), message: $mockClass . ' does not implement ' . $interface);
 		}
+
+		// The default adapter refuses, so an instance that set nothing is not
+		// simulating. A regression that put '' back here would say it was.
+		$this->assertNotContains(
+			needle: '',
+			haystack: $byKey['berichtenbox']['adapter']['simulatedValues'],
+			message: 'an empty berichtenbox_adapter binds the integriq adapter, which never simulates'
+		);
 	}//end testMockBackedSeamsNameTheirMockAsSimulated()
+
+	/**
+	 * The Berichtenbox row names the key an administrator has to set.
+	 *
+	 * The seam is bound and real, and a send still cannot leave until
+	 * `digital_post_source` names an integriq digital post source: integriq's
+	 * `DigitalPostService::sourceConfig()` returns null on the empty string
+	 * before it looks anything up. No admin section writes the key, so the row
+	 * has to name it, the way the BRP row names its own.
+	 *
+	 * @return void
+	 */
+	public function testBerichtenboxNamesTheSourceKeyItNeeds(): void {
+		$row = $this->connectionsByKey()['berichtenbox'];
+
+		$this->assertSame(expected: ['digital_post_source'], actual: $row['requiredConfig']);
+		$this->assertStringContainsString(needle: 'digital_post_source', haystack: $row['unconfiguredMessage']);
+		$this->assertArrayNotHasKey(key: 'settingsUrl', array: $row);
+	}//end testBerichtenboxNamesTheSourceKeyItNeeds()
 
 	/**
 	 * No dossiq row is `reportedOnly`.

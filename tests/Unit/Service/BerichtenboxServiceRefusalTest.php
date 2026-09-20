@@ -25,7 +25,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);

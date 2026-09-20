@@ -100,7 +100,7 @@ import { sendMessage } from '../services/berichtenboxApi.js'
  * credential is missing can ask for it; a handler told "sending failed", or
  * shown a dialog that closed, cannot.
  *
- * @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 export default {
 	name: 'BerichtenboxComposeDialog',
@@ -151,7 +151,7 @@ export default {
 		 * every other open-modal on the case page.
 		 *
 		 * @return {string} The case id, or ''.
-		 * @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
 		 */
 		resolvedCaseId() {
 			const fromProp = this.caseId || ''
@@ -179,7 +179,7 @@ export default {
 			 *
 			 * @param {boolean} opened Whether the dialog is showing.
 			 * @return {void}
-			 * @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+			 * @spec openspec/specs/berichtenbox-integration/spec.md
 			 */
 			handler(opened) {
 				if (opened === true && this.form.bsn === '') {
@@ -207,7 +207,7 @@ export default {
 		 * somebody else.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+		 * @spec openspec/specs/berichtenbox-integration/spec.md
 		 */
 		async loadRecipient() {
 			if (this.resolvedCaseId === '') {

@@ -210,7 +210,7 @@ class BerichtenboxService {
 	 *  about which binding handled the letter, which is exactly what a handler
 	 *  reading the message needs to see.
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	public function recordDeliveryStatus(
 		string $externalMessageId,

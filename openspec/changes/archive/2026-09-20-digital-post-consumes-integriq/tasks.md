@@ -121,6 +121,39 @@ spec that reads as though a directory had gone.
     dialog that closed over a letter nobody received reddens there.
 - [x] 4.3 `openspec validate digital-post-consumes-integriq --strict`.
 
+## 5. What the closing pass found, and fixed
+
+The contract was re-read from integriq `development` on 2026-09-20 rather
+than trusted: `DigitalPostSendRequestedEvent`'s constructor takes the eight
+positional arguments `IntegriqAdapter` passes, in that order, and carries
+`isHandled`, `getRefusal` (keys `code` and `reason`) and `getMessageId`.
+`DigitalPostDeliveredEvent` carries the six getters the listener reads.
+integriq's `<id>` is already `integriq` on `development`, and `FleetAppId`
+answers to both ids either way.
+
+- [x] 5.1 **The integrations page reported a mock that was not answering.**
+  `lib/Settings/connections.json` listed the empty string under the
+  Berichtenbox `simulatedValues`, which was true while the default adapter
+  was the mock and false the moment #2996 moved it. An administrator read
+  "a mock adapter answers here" on an instance where nothing answered. The
+  empty string is gone, the mock class and its `mock` shorthand stay.
+- [x] 5.2 **`digital_post_source` existed in one file and nowhere else.**
+  integriq's `DigitalPostService::sourceConfig()` returns null on the empty
+  string before it looks anything up, so a send over an unset source can
+  only come back refused, with integriq's sentence naming no key. The row
+  now requires the key and names it in an `unconfiguredMessage`, exactly as
+  the BRP row names `integration.brp.mode`, and `IntegriqAdapter` refuses an
+  unset source itself rather than dispatching a letter that cannot go.
+- [x] 5.3 Mutation checks re-run rather than inherited. Forcing the refusal
+  branch of `BerichtenboxJournal::messageRecord` to `false` reddens
+  `assertNull($this->saved['sentAt'])` at BerichtenboxServiceRefusalTest.php:231
+  with `Failed asserting that '2026-09-20T08:23:27+00:00' is null`. Making
+  `IntegriqAdapter::refusal()` answer `status: sent` with an id reddens
+  `assertArrayNotHasKey('messageId', $result)` on all three refusal arms.
+  Replacing the new source guard with `false` reddens
+  `assertSame('digital-post-source-unset', $result['code'])` at
+  IntegriqAdapterTest.php:267.
+
 ## Inherited debt found and not fixed here
 
 `src/services/berichtenboxApi.js` `pollReadStatus()` POSTs to
