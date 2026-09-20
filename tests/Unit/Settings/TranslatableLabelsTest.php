@@ -50,7 +50,7 @@ use PHPUnit\Framework\TestCase;
  * configuration. `translatable` is the exception, and an exception nobody
  * asserts is an exception somebody re-breaks.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 class TranslatableLabelsTest extends TestCase {
 

@@ -37,7 +37,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -67,7 +67,7 @@ export const STATUS_OUTDATED = 'outdated'
  * @return {Promise<string[]>} The declared chain, Dutch first on a default install.
  * @throws {Error} When the register cannot be read.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 export async function registerLanguages() {
 	const { data } = await axios.get(generateUrl(`${API}/registers/${REGISTER}`))
@@ -86,7 +86,7 @@ export async function registerLanguages() {
  * @return {Promise<{object: object, languageMeta: object}>} The values and the envelope.
  * @throws {Error} When the case type cannot be read.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 export async function caseTypeWithTranslations(id) {
 	const { data } = await axios.get(
@@ -113,7 +113,7 @@ export async function caseTypeWithTranslations(id) {
  * @return {Promise<object>} Property name to its definition.
  * @throws {Error} When the register's schemas cannot be read.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 export async function caseTypeProperties() {
 	const { data } = await axios.get(
@@ -134,7 +134,7 @@ export async function caseTypeProperties() {
  * @return {Promise<Array<object>>} The rows, each naming property, language and status.
  * @throws {Error} When the sidecar cannot be read.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 export async function translationRows(uuid) {
 	const { data } = await axios.get(
@@ -156,7 +156,7 @@ export async function translationRows(uuid) {
  * @return {Promise<object>} The saved object as OpenRegister returns it.
  * @throws {Error} When the write is refused.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 export async function saveLabel(id, property, languageMap) {
 	const { data } = await axios.patch(
@@ -189,7 +189,7 @@ export async function saveLabel(id, property, languageMap) {
  * @param {string} args.sourceLanguage The language the labels are written in.
  * @return {{translated: number, total: number}} The counts behind the chip.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 export function completenessOf({
 	properties,

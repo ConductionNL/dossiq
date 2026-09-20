@@ -27,7 +27,7 @@
  * depend on merge behaviour the browser cannot see. The assertion below reads
  * the PATCH body and fails if Dutch is not in it.
  *
- * @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+ * @spec openspec/specs/case-configuration-i18n/spec.md
  */
 import axios from '@nextcloud/axios'
 import { flushPromises, mount } from '@vue/test-utils'

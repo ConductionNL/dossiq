@@ -25,7 +25,7 @@
   `BulkTranslationService` for that and a button here would be a second way
   to start it, in the one app that does not own it.
 
-  @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+  @spec openspec/specs/case-configuration-i18n/spec.md
 -->
 <template>
 	<div class="case-type-translations" data-testid="case-type-translations">

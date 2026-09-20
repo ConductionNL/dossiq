@@ -76,7 +76,7 @@ class WorkflowDeployer {
 	 *
 	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
 	 *
-	 * @spec openspec/changes/case-definition-export-is-real/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	public function deploy(\ZipArchive $zip, string $strategy): array {
 		$objectService = $this->settings->getObjectService();

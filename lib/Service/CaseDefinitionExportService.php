@@ -430,7 +430,7 @@ class CaseDefinitionExportService {
 	 * @return array<string, mixed>|null The component data, or null for a name
 	 *                                   this service does not know.
 	 *
-	 * @spec openspec/changes/case-definition-export-is-real/specs/case-types/spec.md
+	 * @spec openspec/specs/case-types/spec.md
 	 */
 	private function exportComponent(string $caseTypeId, array $caseType, string $component): ?array {
 		return match ($component) {

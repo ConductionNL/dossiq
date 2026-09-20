@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-definition-export-is-real/specs/case-types/spec.md#requirement-an-import-writes-the-objects-or-says-it-did-not-req-ct-42
+ * @spec openspec/specs/case-types/spec.md#requirement-an-import-writes-the-objects-or-says-it-did-not-req-ct-42
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use ZipArchive;
 /**
  * Writes an imported case definition package into OpenRegister.
  *
- * @spec openspec/changes/case-definition-export-is-real/specs/case-types/spec.md#requirement-an-import-writes-the-objects-or-says-it-did-not-req-ct-42
+ * @spec openspec/specs/case-types/spec.md#requirement-an-import-writes-the-objects-or-says-it-did-not-req-ct-42
  */
 class PackageWriter {
 
@@ -94,7 +94,7 @@ class PackageWriter {
 	 *
 	 * @return array{status: string, message: string, created?: array<int, string>, replaced?: array<int, string>}
 	 *
-	 * @spec openspec/changes/case-definition-export-is-real/specs/case-types/spec.md#requirement-an-import-writes-the-objects-or-says-it-did-not-req-ct-42
+	 * @spec openspec/specs/case-types/spec.md#requirement-an-import-writes-the-objects-or-says-it-did-not-req-ct-42
 	 */
 	public function writeCollections(string $component, array $data, array $collections, string $strategy): array {
 		$objectService = $this->settings->getObjectService();

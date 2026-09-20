@@ -82,7 +82,7 @@ import RoleTypePicker from './components/case/RoleTypePicker.vue'
 import CaseTypeBlueprintWidget from './components/caseType/CaseTypeBlueprintWidget.vue'
 // A case type's labels in every language the register serves
 // (case-type-labels-are-translatable, row 11.13).
-// @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+// @spec openspec/specs/case-configuration-i18n/spec.md
 import CaseTypeTranslationsWidget from './components/caseType/CaseTypeTranslationsWidget.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
@@ -379,7 +379,7 @@ const registry = {
 		_note: 'CaseTypeDetail: what the type actually offers, over /api/case-types/{id}/blueprint, with an Inherited badge on every row that came from the parent and a Shared badge on every attribute that belongs to no type. In the LAYOUT rather than inside a tab strip on purpose: a type:"custom" widget named as a tab CHILD resolves by registry type, finds nothing and renders an empty panel without logging anything.',
 	},
 	// --- A case type's labels in every language (case-type-labels-are-translatable). ---
-	// @spec openspec/changes/case-type-labels-are-translatable/specs/case-configuration-i18n/spec.md
+	// @spec openspec/specs/case-configuration-i18n/spec.md
 	CaseTypeTranslationsWidget: {
 		// @custom-widget-ratchet exclude the library has no translatable-property surface at all: @conduction/nextcloud-vue 3.4.0 contains no reference to translatable, languageMeta or sourceLanguage, so no declared widget can render a language tab or a completeness chip
 		kind: 'widget',
