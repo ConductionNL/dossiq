@@ -11,7 +11,15 @@
  * already decides which side of that line a note is on and defaults to
  * internal, so nothing leaves the municipality by accident. The marker read
  * here is that same one; no second flag is added, because two flags disagree
- * the first time somebody edits one.
+ * the first time somebody edits one. The note stays, and the case says so:
+ * somebody asked for it to go out, and the case is where the next handler
+ * looks for what became of it.
+ *
+ * EVERY WRITE ON THE CASE IS CHECKED. `CaseTimeline::record()` catches its own
+ * failures, logs a warning and answers an empty string, so a caller that
+ * ignores the answer reports an outcome it recorded nowhere. `answer()` reads
+ * it, says `caseRecord: lost` and tells the caller in the same sentence the
+ * reason travels in. See the note on `RECORD_LOST`.
  *
  * A DORMANT ADAPTER WRITES NO OUTCOME AT ALL. `LogZgwExternalAdapter` answers
  * `PUSH_DEFERRED` with `dormant: true` and contacts nothing, and it is what an
@@ -45,7 +53,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
@@ -62,7 +70,7 @@ use Throwable;
 /**
  * Pushes one case note to a neighbouring ZGW register, or says why it did not.
  *
- * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class NotePush {
 
@@ -98,6 +106,35 @@ class NotePush {
 	public const OUTCOME_FAILED = 'failed';
 
 	/**
+	 * Nothing was due on the case, and nothing was written.
+	 */
+	public const RECORD_NONE = 'none';
+
+	/**
+	 * The outcome is on the case timeline.
+	 */
+	public const RECORD_WRITTEN = 'written';
+
+	/**
+	 * The outcome was due on the case and did not get there.
+	 *
+	 * 🔴 THIS STATE EXISTS BECAUSE THE WRITE CAN FAIL IN SILENCE.
+	 * `CaseTimeline::record()` answers an empty string and logs a warning
+	 * whenever OpenRegister is absent, the register or the case schema is
+	 * unconfigured, the case cannot be read, or the write throws. A caller
+	 * that ignores that answer reports an outcome it recorded nowhere, and the
+	 * case history is then missing the one line saying a note did not leave.
+	 * That is the digital-post evidence loss again, wearing a note.
+	 */
+	public const RECORD_LOST = 'lost';
+
+	/**
+	 * The sentence a caller gets when the case could not be told.
+	 */
+	private const RECORD_LOST_REASON = 'The case could not record this, so the case history does not show it. '
+		. 'Check the dossiq log before you rely on the history.';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ZgwExternalAdapterInterface $adapter  The outbound ZGW seam.
@@ -121,9 +158,9 @@ class NotePush {
 	 * @param string               $caseId The case the note is on.
 	 * @param array<string, mixed> $note   The note as OpenRegister answers it.
 	 *
-	 * @return array{outcome: string, reason: string, receiverUrl: string} What happened.
+	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} What happened.
 	 *
-	 * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	public function push(string $caseId, array $note): array {
 		if ($this->adapter->isDormant() === true) {
@@ -133,12 +170,19 @@ class NotePush {
 				outcome: self::OUTCOME_NO_REGISTER,
 				reason: 'This case is not bound to an external register, so nothing was sent '
 					. 'and nothing is recorded.',
+				caseRecord: self::RECORD_NONE,
 			);
 		}
 
 		if ($this->isExternal(note: $note) === false) {
 			// The DEFAULT, and deliberately so: nothing leaves by accident.
-			return $this->outcome(
+			// It is still recorded: somebody asked for this note to go out and
+			// it stayed, and an answer only the caller's tab saw is an answer
+			// nobody finds again.
+			return $this->answer(
+				caseId: $caseId,
+				note: $note,
+				message: 'Note kept here rather than sent to the neighbouring register',
 				outcome: self::OUTCOME_NOT_SENT,
 				reason: 'This note is internal, so it stays here. Make it external to send it.',
 			);
@@ -187,15 +231,10 @@ class NotePush {
 			);
 		}
 
-		$this->record(
+		return $this->answer(
 			caseId: $caseId,
 			note: $note,
 			message: 'Note sent to the neighbouring register',
-			outcome: self::OUTCOME_SENT,
-			reason: ''
-		);
-
-		return $this->outcome(
 			outcome: self::OUTCOME_SENT,
 			reason: '',
 			receiverUrl: $result->receiverUrl
@@ -245,19 +284,86 @@ class NotePush {
 	 * @param array<string, mixed> $note   The note.
 	 * @param string               $reason Why it failed.
 	 *
-	 * @return array{outcome: string, reason: string, receiverUrl: string} The outcome.
+	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} The outcome.
 	 */
 	private function recordFailure(string $caseId, array $note, string $reason): array {
-		$this->record(
+		return $this->answer(
 			caseId: $caseId,
 			note: $note,
 			message: 'Note not sent to the neighbouring register',
 			outcome: self::OUTCOME_FAILED,
 			reason: $reason
 		);
-
-		return $this->outcome(outcome: self::OUTCOME_FAILED, reason: $reason);
 	}//end recordFailure()
+
+	/**
+	 * Write the outcome on the case, and answer whether it got there.
+	 *
+	 * 🔴 THE TIMELINE WRITE IS CHECKED, NOT FIRED AND FORGOTTEN.
+	 * `CaseTimeline::record()` catches its own failures, logs a warning and
+	 * answers an empty string: no OpenRegister, no configured register or case
+	 * schema, an unreadable case and a throwing write all look identical to a
+	 * caller that ignores the return. Ignoring it here would answer `failed`
+	 * to the person pushing and write nothing on the case, so tomorrow the
+	 * history reads as though this note was never pushed at all. The one thing
+	 * this change exists to prevent is a note that did not travel looking like
+	 * one that did, and a lost record is that same failure one day later.
+	 *
+	 * @param string               $caseId      The case.
+	 * @param array<string, mixed> $note        The note.
+	 * @param string               $message     The sentence.
+	 * @param string               $outcome     The outcome code.
+	 * @param string               $reason      The reason, when there is one.
+	 * @param string               $receiverUrl The receiver's url, on a send.
+	 *
+	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} The outcome.
+	 */
+	private function answer(
+		string $caseId,
+		array $note,
+		string $message,
+		string $outcome,
+		string $reason,
+		string $receiverUrl = '',
+	): array {
+		$written = $this->record(
+			caseId: $caseId,
+			note: $note,
+			message: $message,
+			outcome: $outcome,
+			reason: $reason
+		);
+
+		if ($written === true) {
+			return $this->outcome(
+				outcome: $outcome,
+				reason: $reason,
+				receiverUrl: $receiverUrl,
+				caseRecord: self::RECORD_WRITTEN
+			);
+		}
+
+		$this->logger->error(
+			'Dossiq: the outcome of a note push could not be recorded on the case',
+			[
+				'caseId' => $caseId,
+				'noteId' => (string)($note['id'] ?? ''),
+				'outcome' => $outcome,
+			]
+		);
+
+		$told = self::RECORD_LOST_REASON;
+		if ($reason !== '') {
+			$told = ($reason . ' ' . self::RECORD_LOST_REASON);
+		}
+
+		return $this->outcome(
+			outcome: $outcome,
+			reason: $told,
+			receiverUrl: $receiverUrl,
+			caseRecord: self::RECORD_LOST
+		);
+	}//end answer()
 
 	/**
 	 * Write the outcome on the case timeline.
@@ -271,15 +377,15 @@ class NotePush {
 	 * @param string               $outcome The outcome code.
 	 * @param string               $reason  The reason, when there is one.
 	 *
-	 * @return void
+	 * @return bool True when an entry reached the case.
 	 */
-	private function record(string $caseId, array $note, string $message, string $outcome, string $reason): void {
+	private function record(string $caseId, array $note, string $message, string $outcome, string $reason): bool {
 		$sentence = $message;
 		if ($reason !== '') {
 			$sentence = ($message . ': ' . $reason);
 		}
 
-		$this->timeline->record(
+		$entryId = $this->timeline->record(
 			caseId: $caseId,
 			kind: TimelineKinds::MAIL_OUT,
 			message: $sentence,
@@ -289,6 +395,8 @@ class NotePush {
 			],
 			visibility: CaseTimeline::INTERNAL,
 		);
+
+		return (trim($entryId) !== '');
 	}//end record()
 
 	/**
@@ -297,10 +405,21 @@ class NotePush {
 	 * @param string $outcome     The outcome code.
 	 * @param string $reason      The reason, when there is one.
 	 * @param string $receiverUrl The receiver's url, on a send.
+	 * @param string $caseRecord  Whether the case was told: written, lost or none.
 	 *
-	 * @return array{outcome: string, reason: string, receiverUrl: string} The outcome.
+	 * @return array{outcome: string, reason: string, receiverUrl: string, caseRecord: string} The outcome.
 	 */
-	private function outcome(string $outcome, string $reason, string $receiverUrl = ''): array {
-		return ['outcome' => $outcome, 'reason' => $reason, 'receiverUrl' => $receiverUrl];
+	private function outcome(
+		string $outcome,
+		string $reason,
+		string $receiverUrl = '',
+		string $caseRecord = self::RECORD_NONE,
+	): array {
+		return [
+			'outcome' => $outcome,
+			'reason' => $reason,
+			'receiverUrl' => $receiverUrl,
+			'caseRecord' => $caseRecord,
+		];
 	}//end outcome()
 }//end class

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -240,6 +240,34 @@ class IntegriqAdapterTest extends TestCase {
 		$this->assertSame('integriq-missing', $result['code']);
 		$this->assertStringContainsString('Integriq', $result['error']);
 	}//end testWithNoIntegriqTheSendIsRefusedAndNothingIsDispatched()
+
+	/**
+	 * An unset digital post source is refused here, and nothing is dispatched.
+	 *
+	 * MEASURED from integriq `development` on 2026-09-20:
+	 * `DigitalPostService::sourceConfig()` returns null on the empty string
+	 * before it looks anything up, so a send over an empty source can only
+	 * come back refused. integriq's own sentence for it reads `No digital post
+	 * source is configured under "". Nothing was sent.`, which names no key a
+	 * handler or an administrator can act on. dossiq names the key instead.
+	 *
+	 * @return void
+	 */
+	public function testAnUnsetDigitalPostSourceIsRefusedBeforeAnythingIsDispatched(): void {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturn('');
+		$this->appConfig = $appConfig;
+
+		$this->dispatcher->expects($this->never())->method('dispatchTyped');
+
+		$result = $this->adapter()->sendMessage('123456782', 'Besluit', 'De tekst', 'BESLUIT');
+
+		$this->assertArrayNotHasKey('messageId', $result);
+		$this->assertTrue($result['refused']);
+		$this->assertSame('digital-post-source-unset', $result['code']);
+		// The sentence has to carry the key, or it is "sending failed" again.
+		$this->assertStringContainsString('digital_post_source', $result['error']);
+	}//end testAnUnsetDigitalPostSourceIsRefusedBeforeAnythingIsDispatched()
 
 	/**
 	 * A renamed integriq still resolves, under either of its two ids.

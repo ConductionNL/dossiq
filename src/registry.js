@@ -102,7 +102,7 @@ import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
 import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
 import CaseTaskPane from './components/tasks/CaseTaskPane.vue'
 // Send digital post — the CaseDetail header action's compose surface.
-// @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+// @spec openspec/specs/berichtenbox-integration/spec.md
 import BerichtenboxComposeDialog from './dialogs/BerichtenboxComposeDialog.vue'
 // Generate document — the CaseDetail header action's template picker.
 // @spec openspec/specs/beschikking-generatie/spec.md
@@ -601,7 +601,7 @@ const registry = {
 	// resolves for nobody and is dead configuration.
 
 	// --- Send digital post, the CaseDetail header action (digital-post-consumes-integriq). ---
-	// @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+	// @spec openspec/specs/berichtenbox-integration/spec.md
 	BerichtenboxComposeDialog: {
 		kind: 'modal',
 		component: BerichtenboxComposeDialog,

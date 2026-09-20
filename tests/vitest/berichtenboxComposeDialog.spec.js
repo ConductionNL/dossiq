@@ -17,7 +17,7 @@
  * closed on it would put the reader back where they started: told that
  * something happened, with no way to learn what.
  *
- * @spec openspec/changes/digital-post-consumes-integriq/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 import { flushPromises, mount } from '@vue/test-utils'

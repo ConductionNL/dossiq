@@ -172,7 +172,7 @@ class SubstitutableAdapterRegistrar {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/digital-post-reaches-integriq/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
 	 */
 	private static function resolveBerichtenboxAlias(ContainerInterface $container): void {
 		$config = $container->get(IAppConfig::class);

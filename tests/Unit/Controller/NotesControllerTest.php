@@ -267,7 +267,12 @@ class NotesControllerTest extends TestCase {
 			['note' => ['id' => 1, 'message' => 'Kort', 'visibility' => 'public']]
 		);
 		$this->notePush->method('push')->willReturn(
-			['outcome' => 'failed', 'reason' => 'the register said no', 'receiverUrl' => '']
+			[
+				'outcome' => 'failed',
+				'reason' => 'the register said no',
+				'receiverUrl' => '',
+				'caseRecord' => 'lost',
+			]
 		);
 
 		$response = $this->controller->push('my-own-case');
@@ -278,5 +283,9 @@ class NotesControllerTest extends TestCase {
 		$this->assertSame(200, $response->getStatus());
 		$this->assertSame('failed', $response->getData()['outcome']);
 		$this->assertSame('the register said no', $response->getData()['reason']);
+		// VERBATIM means the whole answer, including whether the case was told.
+		// A controller that forwarded the outcome and dropped this would hand
+		// the caller a failure that reads as though the case now carries it.
+		$this->assertSame('lost', $response->getData()['caseRecord']);
 	}//end testACallerWithMutationAccessGetsTheOutcome()
 }//end class

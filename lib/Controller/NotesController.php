@@ -90,7 +90,7 @@ class NotesController extends Controller {
 	 *
 	 * @return JSONResponse The outcome, or a refusal.
 	 *
-	 * @spec openspec/changes/a-case-note-reaches-the-neighbouring-register/specs/zgw-api-mapping/spec.md
+	 * @spec openspec/specs/zgw-api-mapping/spec.md
 	 */
 	#[NoAdminRequired]
 	public function push(string $caseId): JSONResponse {
