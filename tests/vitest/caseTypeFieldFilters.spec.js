@@ -13,11 +13,12 @@
  * answer is an empty list and nothing on screen says why.
  *
  * So the assertions are about the exact wire shape, measured against
- * openregister `parity/round2`'s `RelatedRowFilterParser`, and about the two
+ * openregister's own `RelatedRowFilterParser`, now merged to
+ * `development`, and about the two
  * places a filter can be dropped: the bar clearing with its case type, and the
  * whole-result bulk act.
  *
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 
 import fs from 'fs'

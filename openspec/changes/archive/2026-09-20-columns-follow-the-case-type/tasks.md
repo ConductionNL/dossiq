@@ -5,7 +5,7 @@ Tier: V1. Kind: config. Row 11.9.
 - [x] 1.1 Raise `@conduction/nextcloud-vue` in `package.json` to the version
   carrying nextcloud-vue PR 1213, and confirm `CnIndexPage` resolves scope
   columns in the built bundle rather than only in the library source.
-  - `@spec openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md`
+  - `@spec openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md`
   - NOT RAISED, because there is no such version. Measured 2026-09-18: the
     installed 3.2.0 and the newest published 3.3.0 (released that morning)
     carry no `src/utils/scopeListLayout.js` and no scope resolution in

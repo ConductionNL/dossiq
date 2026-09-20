@@ -20,7 +20,7 @@
  * So everything here is checked against the page's own declared set and
  * against the register fragment, never against a list written twice.
  *
- * @spec openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md
+ * @spec openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md
  */
 
 import fs from 'fs'

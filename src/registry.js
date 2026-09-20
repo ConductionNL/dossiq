@@ -279,7 +279,7 @@ const registry = {
 	},
 
 	// --- The filters a case type's own fields offer. ---
-	// @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+	// @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 	CaseTypeFieldFilters: {
 		kind: 'page',
 		component: CaseTypeFieldFilters,

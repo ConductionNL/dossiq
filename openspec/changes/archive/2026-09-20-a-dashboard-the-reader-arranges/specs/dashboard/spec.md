@@ -1,6 +1,6 @@
 ## ADDED Requirements
 
-### Requirement: REQ-DASH-020 A reader keeps their own arrangement of a dashboard
+### Requirement: REQ-DASH-023 A reader keeps their own arrangement of a dashboard
 
 Every dashboard page in this app SHALL declare `config.userLayout: true`, so
 a user keeps their own arrangement of it without changing what anybody else
@@ -49,7 +49,7 @@ puts it back with nothing on screen to say why.
 
 @e2e exclude Failure path in the library; asserted by its own suite.
 
-### Requirement: REQ-DASH-021 The two lists a handler wants are offered by name
+### Requirement: REQ-DASH-024 The two lists a handler wants are offered by name
 
 The Dashboard page SHALL declare `config.userWidgets` carrying the case
 lists a handler would ask for and cannot configure: the cases they follow,

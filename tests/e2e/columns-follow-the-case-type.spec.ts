@@ -70,7 +70,7 @@ async function headerLabels(page: Page): Promise<string[]> {
 }
 
 test.describe('a case type carries its own columns', () => {
-	// @e2e openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-permit-shows-its-expiry-date
+	// @e2e openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-permit-shows-its-expiry-date
 	test('the seeded permit carries a layout on the record, not only in the file', async () => {
 		const res = await api.get(`${CASE_TYPES}?_limit=200`, {
 			headers: { requesttoken: token },
@@ -94,7 +94,7 @@ test.describe('a case type carries its own columns', () => {
 		expect(permit['x-index'].columns).toContain('procedureType')
 	})
 
-	// @e2e openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-permit-shows-its-expiry-date
+	// @e2e openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-permit-shows-its-expiry-date
 	test('picking the permit changes the header, and All types changes it back', async ({
 		page,
 	}) => {
@@ -135,7 +135,7 @@ test.describe('a case type carries its own columns', () => {
 			.not.toContain('Decision date')
 	})
 
-	// @e2e openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-handhavingszaak-orders-by-its-decision-date
+	// @e2e openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-handhavingszaak-orders-by-its-decision-date
 	test('a case type that orders by its own date leads with the latest one', async ({
 		page,
 	}) => {

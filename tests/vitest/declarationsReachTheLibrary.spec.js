@@ -24,9 +24,9 @@
  * `vitest.config.js` matches the bare package name only, so a deep import is
  * the published file itself.
  *
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
- * @spec openspec/changes/columns-follow-the-case-type/specs/case-management/spec.md
- * @spec openspec/changes/a-dashboard-the-reader-arranges/specs/dashboard/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md
+ * @spec openspec/changes/archive/2026-09-20-a-dashboard-the-reader-arranges/specs/dashboard/spec.md
  */
 
 import { userWidgetPresets } from '@conduction/nextcloud-vue/src/components/CnWidgetGrid/dashboardWidgetRegistry.js'

@@ -122,7 +122,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 
 import { useObjectStore } from '@conduction/nextcloud-vue'
@@ -186,7 +186,7 @@ export default {
 		 * The case type the folder sidebar has narrowed to, or an empty string.
 		 *
 		 * @return {string} The case type id.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		caseType() {
 			const picked = this.$route?.query?.caseType
@@ -198,7 +198,7 @@ export default {
 		 * The definitions this case type offers as filters.
 		 *
 		 * @return {Array<object>} The definitions.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		offered() {
 			return filterableDefinitions(this.definitions)
@@ -208,7 +208,7 @@ export default {
 		 * The shared object store, where the list's own failure is recorded.
 		 *
 		 * @return {object} The store.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		objectStore() {
 			return useObjectStore()
@@ -218,7 +218,7 @@ export default {
 		 * The refusal to show, or null when the last fetch was not refused.
 		 *
 		 * @return {object|null} The refusal.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		refusal() {
 			return readRelatedRefusal({
@@ -231,7 +231,7 @@ export default {
 		 * The sentence above the refusal.
 		 *
 		 * @return {string} The headline.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		refusalHeadline() {
 			if (this.refusal?.name) {
@@ -253,7 +253,7 @@ export default {
 		/**
 		 * The option that asks for nothing.
 		 *
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		anyLabel() {
 			return t('dossiq', 'Any')
@@ -270,7 +270,7 @@ export default {
 			 *
 			 * @param {string} picked The case type id.
 			 * @return {Promise<void>}
-			 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+			 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 			 */
 			async handler(picked) {
 				this.values = {}
@@ -307,7 +307,7 @@ export default {
 		 *
 		 * @param {object} definition The definition.
 		 * @return {string} The id.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		idOf(definition) {
 			return definitionId(definition)
@@ -318,7 +318,7 @@ export default {
 		 *
 		 * @param {object} definition The definition.
 		 * @return {string} The control.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		controlOf(definition) {
 			return controlFor(definition)
@@ -332,7 +332,7 @@ export default {
 		 *
 		 * @param {object} definition The definition.
 		 * @return {string} The label.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		fromLabel(definition) {
 			return t('dossiq', '{field}, from', { field: definition?.name || '' })
@@ -343,7 +343,7 @@ export default {
 		 *
 		 * @param {object} definition The definition.
 		 * @return {string} The label.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		toLabel(definition) {
 			return t('dossiq', '{field}, up to', { field: definition?.name || '' })
@@ -354,7 +354,7 @@ export default {
 		 *
 		 * @param {object} definition The definition.
 		 * @return {object} The value.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		valueOf(definition) {
 			return this.values[this.idOf(definition)] || {}
@@ -366,7 +366,7 @@ export default {
 		 * @param {object} definition The definition.
 		 * @param {object} value      The entered value.
 		 * @return {void}
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		setValue(definition, value) {
 			this.values = { ...this.values, [this.idOf(definition)]: value }
@@ -383,7 +383,7 @@ export default {
 		 *
 		 * @param {string} caseType The case type id.
 		 * @return {Promise<Array<object>>} The definitions.
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		async loadDefinitions(caseType) {
 			try {
@@ -410,7 +410,7 @@ export default {
 		 * was there.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		applyFilters() {
 			const entries = this.offered.map((definition) => ({
@@ -434,7 +434,7 @@ export default {
 		 *
 		 * @param {object} related The compiled `_related` keys.
 		 * @return {void}
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		sendToList(related) {
 			const onFilterChange = this.listSidebarState?.onFilterChange
@@ -465,7 +465,7 @@ export default {
 		 * Take every `_related` key off the route.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		clearRelated() {
 			this.pushQuery({})
@@ -477,7 +477,7 @@ export default {
 		 *
 		 * @param {object} related The keys to set.
 		 * @return {void}
-		 * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+		 * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
 		 */
 		pushQuery(related) {
 			const current = { ...(this.$route?.query || {}) }

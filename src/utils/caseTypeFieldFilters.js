@@ -10,7 +10,7 @@
  *
  * 🔴 THE GRAMMAR IS MEASURED, NOT GUESSED, because a filter built against a
  * guessed grammar returns the UNFILTERED SET and reads as a working page.
- * Read against openregister `parity/round2`,
+ * Read against openregister `development`, where the four PRs are merged,
  * `lib/Service/Query/RelatedRowFilterParser.php`:
  *
  *     _related[caseProperty][case][propertyDefinition]=pd-7
@@ -36,7 +36,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 
 /** The related schema a case's declared field values live in. */
@@ -87,7 +87,7 @@ const DATE_TYPES = ['date', 'datetime', 'date-time']
  * @param {Array<object>} [definitions] The case type's property definitions.
  *
  * @return {Array<object>} The filterable ones, in the order they were given.
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function filterableDefinitions(definitions) {
 	return (Array.isArray(definitions) ? definitions : []).filter(
@@ -105,7 +105,7 @@ export function filterableDefinitions(definitions) {
  * @param {object} [definition] The property definition.
  *
  * @return {string} One of the CONTROL_* constants.
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function controlFor(definition) {
 	const type = String(definition?.propertyType || '')
@@ -133,7 +133,7 @@ export function controlFor(definition) {
  * @param {object} [definition] The property definition.
  *
  * @return {string} The id, or an empty string.
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function definitionId(definition) {
 	const self = definition?.['@self']
@@ -150,7 +150,7 @@ export function definitionId(definition) {
  * @param {object} [value] The entered value for one field.
  *
  * @return {boolean} True when the field asks something.
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function isFilled(value) {
 	if (value === undefined || value === null) {
@@ -188,7 +188,7 @@ export function isFilled(value) {
  * @param {Array<object>} [entries] `[{ definitionId, value }]`, in bar order.
  *
  * @return {object} The query keys, ready to merge into the route query.
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function buildRelatedFilters(entries) {
 	const filled = (Array.isArray(entries) ? entries : []).filter(
@@ -236,7 +236,7 @@ export function buildRelatedFilters(entries) {
  * @param {object} [query] A route query.
  *
  * @return {Array<string>} The keys.
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function relatedKeysIn(query) {
 	return Object.keys(query || {}).filter((key) => key.startsWith('_related['))
@@ -255,7 +255,7 @@ export function relatedKeysIn(query) {
  * @param {Array}  [options.definitions] The case type's definitions.
  *
  * @return {object|null} `{ name, message }`, or null when nothing was refused.
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 export function readRelatedRefusal({ error, definitions } = {}) {
 	if (!error) {

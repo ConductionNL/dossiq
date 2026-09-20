@@ -19,7 +19,7 @@
  * sidebar already uses, because `useListView.buildParams()` copies its keys
  * into the request verbatim. These assertions watch that call.
  *
- * @spec openspec/changes/case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
+ * @spec openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md
  */
 
 import { mount } from '@vue/test-utils'
