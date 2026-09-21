@@ -27,6 +27,8 @@ export const INTEGRIQ_CONNECTIONS_PATH =
  * The route is the one hydra connection-registry D9 names.
  *
  * @return {void}
+ *
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
  */
 export function openIntegriqConnections() {
 	window.location.assign(generateUrl(INTEGRIQ_CONNECTIONS_PATH))

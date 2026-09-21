@@ -52,6 +52,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Repair\Vth\VthCaseTypeChildSeeder;
+use OCA\Dossiq\Repair\Vth\VthChecklistSeeder;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\Migration\IOutput;
@@ -81,11 +82,13 @@ class VthSeedDataRepairStep implements IRepairStep {
 	 * @param VthCaseTypeChildSeeder $children Writes each case type's statusTypes,
 	 *                                         roleTypes, documentTypes and
 	 *                                         propertyDefinitions.
+	 * @param VthChecklistSeeder $checklists Writes the inspection-checklist templates.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly VthCaseTypeChildSeeder $children,
+		private readonly VthChecklistSeeder $checklists,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -159,7 +162,7 @@ class VthSeedDataRepairStep implements IRepairStep {
 				// The checklists bind to their case type by uuid, so they reuse
 				// the map the case-type pass just built and refreshed rather
 				// than reading the whole catalogue back a second time.
-				$checklistSummary = $this->seedInspectionChecklists(
+				$checklistSummary = $this->checklists->seed(
 					objectService: $objectService,
 					register: $register,
 					data: $data,
@@ -377,7 +380,7 @@ class VthSeedDataRepairStep implements IRepairStep {
 	/**
 	 * The uuid of a saved row, wherever the store put it.
 	 *
-	 * `@self.id` is where a read carries it — the same place `existingSlugs()`
+	 * `@self.id` is where a read carries it — the same place VthChecklistSeeder
 	 * reads the slug from — and `id` / `uuid` are the shapes a save can answer
 	 * with.
 	 *
@@ -397,82 +400,6 @@ class VthSeedDataRepairStep implements IRepairStep {
 
 		return (string)($self['id'] ?? $row['id'] ?? $row['uuid'] ?? '');
 	}//end idOf()
-
-	/**
-	 * Seed the inspection-checklist templates.
-	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug.
-	 * @param array<string, mixed> $data Decoded seed data.
-	 * @param array<string, string> $caseTypeIds Case-type uuid keyed by slug.
-	 * @param IOutput $output Output.
-	 *
-	 * @return array{seeded: int, skipped: int}
-	 */
-	private function seedInspectionChecklists(
-		object $objectService,
-		string $register,
-		array $data,
-		array $caseTypeIds,
-		IOutput $output,
-	): array {
-		$checklists = $data['inspectionChecklists'] ?? [];
-		if (is_array($checklists) === false || $checklists === []) {
-			return ['seeded' => 0, 'skipped' => 0];
-		}
-
-		// Prefer the configured schema slug; fall back to the canonical name.
-		$schema = (string)$this->settingsService->getConfigValue('inspection_checklist_template_schema');
-		if ($schema === '') {
-			$schema = 'inspectionChecklistTemplate';
-		}
-
-		$existing = $this->existingSlugs(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema
-		);
-		if ($existing === null) {
-			// Same rule as the case types: an unreadable list seeds nothing.
-			$output->warning('VTH seed: the checklist list could not be read; no checklists seeded this run.');
-			return ['seeded' => 0, 'skipped' => 0];
-		}
-
-		$seeded = 0;
-		$skipped = 0;
-		foreach ($checklists as $checklist) {
-			if (is_array($checklist) === false) {
-				continue;
-			}
-
-			$slug = (string)($checklist['slug'] ?? '');
-			if ($slug === '') {
-				continue;
-			}
-
-			if (in_array($slug, $existing, true) === true) {
-				$skipped++;
-				continue;
-			}
-
-			try {
-				$objectService->saveObject(
-					register: $register,
-					schema: $schema,
-					object: $this->bindCaseType(checklist: $checklist, caseTypeIds: $caseTypeIds)
-				);
-				$seeded++;
-			} catch (Throwable $e) {
-				$output->warning('VTH checklist seed failed for ' . $slug . ': ' . $e->getMessage());
-				$this->logger->warning(
-					'Dossiq VTH checklist seed failed',
-					['slug' => $slug, 'exception' => $e->getMessage()]
-				);
-			}
-		}//end foreach
-
-		return ['seeded' => $seeded, 'skipped' => $skipped];
-	}//end seedInspectionChecklists()
 
 	/**
 	 * Strip the four child collections from a case-type payload.
@@ -499,48 +426,9 @@ class VthSeedDataRepairStep implements IRepairStep {
 	}//end stripChildren()
 
 	/**
-	 * Bind a checklist template to its case type, by slug.
-	 *
-	 * The seed names its case type by slug because that is the only stable
-	 * identifier a shipped file can carry: the uuid is minted at install. The
-	 * schema declares `caseType` (a uuid `$ref`) and declares no `caseTypeSlug`,
-	 * so shipping the slug straight through wrote a key OpenRegister answers 200
-	 * to and stores nowhere, and every checklist installed unbound.
-	 *
-	 * An unresolvable slug drops the binding rather than the template: a
-	 * checklist with no case type is still usable, `caseType` is optional
-	 * ("null means any case type"), and a `caseTypeSlug` left in the payload
-	 * would only be discarded again.
-	 *
-	 * @param array<string, mixed> $checklist The shipped checklist payload.
-	 * @param array<string, string> $caseTypeIds Case-type uuid keyed by slug.
-	 *
-	 * @return array<string, mixed> The payload as OpenRegister should receive it.
-	 */
-	private function bindCaseType(array $checklist, array $caseTypeIds): array {
-		$slug = (string)($checklist['caseTypeSlug'] ?? '');
-		unset($checklist['caseTypeSlug']);
-
-		$caseTypeId = (string)($caseTypeIds[$slug] ?? '');
-		if ($slug !== '' && $caseTypeId === '') {
-			$this->logger->warning(
-				'Dossiq VTH checklist seed could not resolve its case type',
-				['checklist' => ($checklist['slug'] ?? ''), 'caseTypeSlug' => $slug]
-			);
-			return $checklist;
-		}
-
-		if ($caseTypeId !== '') {
-			$checklist['caseType'] = $caseTypeId;
-		}
-
-		return $checklist;
-	}//end bindCaseType()
-
-	/**
 	 * Map every seeded case type's slug to its OpenRegister uuid.
 	 *
-	 * The slug lives in `@self`, the same place `existingSlugs()` reads it from.
+	 * The slug lives in `@self`, the same place VthChecklistSeeder reads it from.
 	 *
 	 * @param object $objectService OpenRegister ObjectService.
 	 * @param string $register Register slug.
@@ -554,11 +442,10 @@ class VthSeedDataRepairStep implements IRepairStep {
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(
+			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
-				schema: $schema,
-				unscoped: true
+				schema: $schema
 			);
 		} catch (Throwable) {
 			return null;
@@ -576,55 +463,4 @@ class VthSeedDataRepairStep implements IRepairStep {
 
 		return $ids;
 	}//end caseTypeIdsBySlug()
-
-	/**
-	 * Read existing slugs for idempotency.
-	 *
-	 * @param object $objectService OpenRegister ObjectService.
-	 * @param string $register Register slug.
-	 * @param string $schema Schema slug.
-	 *
-	 * @return array<int, string>|null The slugs, or null when the list could not be read.
-	 */
-	private function existingSlugs(
-		object $objectService,
-		string $register,
-		string $schema,
-	): ?array {
-		try {
-			$rows = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				unscoped: true
-			);
-		} catch (Throwable) {
-			return null;
-		}
-
-		$slugs = [];
-		foreach ($rows as $row) {
-			// THE SLUG LIVES IN `@self`, NOT IN THE OBJECT BODY.
-			//
-			// A seeded `slug:` is an import-time identifier OpenRegister keeps
-			// as metadata; it is NOT a stored property. Reading `$row['slug']`
-			// therefore returned '' for every row, so this list came back empty,
-			// so the idempotency check below matched nothing, so every upgrade
-			// re-seeded the whole set. Measured on a live instance: nine
-			// consecutive upgrades left 9 copies each of Omgevingsvergunning
-			// Bouwactiviteit, Sloopmelding, Toezichtzaak Bouw, Toezichtzaak
-			// Milieu, Handhavingszaak and Invorderingszaak — and every run
-			// reported success.
-			//
-			// The body form is kept as a fallback rather than dropped: an
-			// object created by some other path may legitimately carry it.
-			$self = $row['@self'] ?? [];
-			$slug = (string)($self['slug'] ?? $row['slug'] ?? '');
-			if ($slug !== '') {
-				$slugs[] = $slug;
-			}
-		}
-
-		return $slugs;
-	}//end existingSlugs()
 }//end class

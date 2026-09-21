@@ -271,8 +271,13 @@ describe('the star is declared on the case page', () => {
 			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
 			'utf8',
 		)
-		const order = ['CaseArchivedStrip', 'CaseFavouriteStrip', 'CaseUnreadPanel', 'CaseStatusDeclarationPanel', 'CaseAttentionPanel']
-			.map((c) => stack.indexOf(`<${c}`))
+		const order = [
+			'CaseArchivedStrip',
+			'CaseFavouriteStrip',
+			'CaseUnreadPanel',
+			'CaseStatusDeclarationPanel',
+			'CaseAttentionPanel',
+		].map((c) => stack.indexOf(`<${c}`))
 
 		expect(order.every((i) => i > -1)).toBe(true)
 		expect([...order].sort((a, b) => a - b)).toEqual(order)
@@ -359,7 +364,9 @@ describe('the two lenses', () => {
 			expect(action.handler).toBe('toggleCaseFavourite')
 		}
 
-		expect(registrySource).toMatch(/\n\ttoggleCaseFavourite: \{\n\t\tkind: 'handler',\n\t\thandler: toggleCaseFavourite,\n/)
+		expect(registrySource).toMatch(
+			/\n\ttoggleCaseFavourite: \{\n\t\tkind: 'handler',\n\t\thandler: toggleCaseFavourite,\n/,
+		)
 	})
 
 	it('puts both lenses on the dashboard, each pointing at its own chip', () => {

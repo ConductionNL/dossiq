@@ -186,6 +186,16 @@ function newerSchemaAccepts(instancePath, property) {
 		)
 	) {
 		def = schema.$defs.action
+	} else if (
+		segments.length === 6
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& ['headerActions', 'actions', 'bulkActions', 'newActions'].includes(
+			segments[3],
+		)
+		&& segments[5] === 'visibleWhen'
+	) {
+		def = schema.$defs.visibleWhen
 	}
 
 	if (!def || !def.properties) {

@@ -14,13 +14,6 @@
 				"body": "Dossiq handles cases from intake to archive. First initialise the register and schemas. Then load the demo data to see it work."
 			},
 			{
-				"id": "register-check",
-				"type": "run-action",
-				"title": "Initialise the register and schemas",
-				"action": "init-register",
-				"required": true
-			},
-			{
 				"id": "demo-data",
 				"type": "choice",
 				"display": "cards",
@@ -29,6 +22,13 @@
 				"title": "Load example data?",
 				"required": false,
 				"body": "Example data fills the lists, detail pages and dashboards so you can see the app working straight away. Pick \"None\" on a production install."
+			},
+			{
+				"id": "register-check",
+				"type": "run-action",
+				"title": "Initialise the register and schemas",
+				"action": "init-register",
+				"required": true
 			},
 			{
 				"id": "load-demo-data",

@@ -98,7 +98,9 @@ describe('the strip is declared on the case page', () => {
 		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
 		expect(banners.gridY).toBeLessThan(panels.gridY)
 		expect(banners.gridWidth).toBe(12)
-		expect(stack.indexOf('<CaseUnreadPanel')).toBeLessThan(stack.indexOf('<CaseAttentionPanel'))
+		expect(stack.indexOf('<CaseUnreadPanel')).toBeLessThan(
+			stack.indexOf('<CaseAttentionPanel'),
+		)
 	})
 
 	it('declares a widget whose type the registry answers', () => {

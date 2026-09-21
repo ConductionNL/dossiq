@@ -826,7 +826,10 @@ describe('Archive and Restore on the case page', () => {
 			'utf8',
 		)
 		const archived = stack.indexOf('<CaseArchivedStrip')
-		expect(archived, 'the archived strip is missing from the stack').toBeGreaterThan(-1)
+		expect(
+			archived,
+			'the archived strip is missing from the stack',
+		).toBeGreaterThan(-1)
 		expect(archived).toBeLessThan(stack.indexOf('<CaseFavouriteStrip'))
 		// `objectData` and not `object`, for the reason the strip itself gives.
 		expect(stack).toContain('<CaseArchivedStrip :objectData="objectData" />')

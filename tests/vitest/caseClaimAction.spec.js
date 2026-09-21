@@ -44,10 +44,7 @@ const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const routes = fs.readFileSync(path.join(ROOT, 'appinfo', 'routes.php'), 'utf8')
 
 /**
@@ -157,7 +154,9 @@ describe('the queue and the case list offer Claim on a row', () => {
 		expect(registrySource).toContain(
 			"import { claimCase } from './utils/caseClaim.js'",
 		)
-		expect(registrySource).toMatch(/\n\tclaimCase: \{\n\t\tkind: 'handler',\n\t\thandler: claimCase,\n/)
+		expect(registrySource).toMatch(
+			/\n\tclaimCase: \{\n\t\tkind: 'handler',\n\t\thandler: claimCase,\n/,
+		)
 		expect(typeof claimCase).toBe('function')
 	})
 })

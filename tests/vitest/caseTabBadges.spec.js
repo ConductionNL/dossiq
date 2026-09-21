@@ -100,7 +100,9 @@ describe('the strip is declared on the case page', () => {
 		// resolves a renderer from `cnRegistry[widget.type]` and renders
 		// NOTHING, silently, when no key answers. So the type is the key that
 		// has to be there.
-		const widget = caseDetail.config.widgets.find((w) => w.id === 'case-banner-stack')
+		const widget = caseDetail.config.widgets.find(
+			(w) => w.id === 'case-banner-stack',
+		)
 		expect(widget).toBeTruthy()
 		expect(widget.type).toBe('case-banner-stack')
 		expect(registrySource).toContain("'case-banner-stack': {")

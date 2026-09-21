@@ -270,12 +270,11 @@ class VthCaseTypeChildSeeder {
 		string $caseTypeId,
 	): ?array {
 		try {
-			$rows = $this->searchObjectsAsArrays(
+			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['caseType' => $caseTypeId, '_limit' => 500],
-				unscoped: true
+				filters: ['caseType' => $caseTypeId, '_limit' => 500]
 			);
 		} catch (Throwable $e) {
 			// An unreadable list is NOT an empty one. Seeding on the strength

@@ -242,12 +242,11 @@ class VthSeedLookup {
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(
+			return $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: $filters,
-				unscoped: true,
+				filters: $filters
 			);
 		} catch (\Throwable $e) {
 			$this->logger->log(

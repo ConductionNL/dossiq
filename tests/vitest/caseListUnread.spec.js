@@ -52,10 +52,7 @@ const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'registry.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const cellWidgetsSource = fs.readFileSync(
 	path.join(ROOT, 'src', 'services', 'cellWidgets.js'),
 	'utf8',
@@ -234,8 +231,12 @@ describe('both marks are offered on a row', () => {
 		expect(registrySource).toContain(
 			"import { markCaseRead, markCaseUnread } from './utils/caseUnread.js'",
 		)
-		expect(registrySource).toMatch(/\n\tmarkCaseRead: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseRead,\n/)
-		expect(registrySource).toMatch(/\n\tmarkCaseUnread: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseUnread,\n/)
+		expect(registrySource).toMatch(
+			/\n\tmarkCaseRead: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseRead,\n/,
+		)
+		expect(registrySource).toMatch(
+			/\n\tmarkCaseUnread: \{\n\t\tkind: 'handler',\n\t\thandler: markCaseUnread,\n/,
+		)
 		expect(typeof markCaseRead).toBe('function')
 		expect(typeof markCaseUnread).toBe('function')
 	})

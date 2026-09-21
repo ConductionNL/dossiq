@@ -15,6 +15,8 @@
  * CnIndexPage props for a page whose Add button files a case.
  *
  * @return {object} Props to bind on CnIndexPage.
+ *
+ * @spec openspec/specs/friendly-case-create-form/spec.md
  */
 export function caseCreateFormProps() {
 	return {
@@ -22,11 +24,24 @@ export function caseCreateFormProps() {
 		// OUTPUT of a lifecycle transition and priority is derived from the case
 		// type's matrix, so neither may reach a form even if the whitelist is
 		// later widened.
-		excludeFields: ['status', 'priority', 'priorityOverride', 'priorityOverrideReason'],
+		excludeFields: [
+			'status',
+			'priority',
+			'priorityOverride',
+			'priorityOverrideReason',
+		],
 		includeFields: [
-			'caseType', 'title', 'requester', 'description', 'assignee',
-			'impact', 'urgency', 'confidentiality', 'intakeChannel',
-			'startDate', 'plannedEndDate',
+			'caseType',
+			'title',
+			'requester',
+			'description',
+			'assignee',
+			'impact',
+			'urgency',
+			'confidentiality',
+			'intakeChannel',
+			'startDate',
+			'plannedEndDate',
 		],
 		fieldOverrides: {
 			description: { widget: 'textarea' },

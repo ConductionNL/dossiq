@@ -50,8 +50,6 @@ use OCP\IRequest;
 /**
  * Admin-only declarative Prometheus metrics endpoint backed by the AppHost engine.
  *
- * @psalm-suppress UnusedClass
- *
  * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
  */
 class MetricsController extends GenericMetricsController {

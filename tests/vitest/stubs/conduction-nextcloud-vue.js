@@ -258,7 +258,10 @@ export const CnContextMenu = {
 							if (typeof action.handler === 'function') {
 								action.handler(this.targetItem)
 							}
-							this.$emit('action', { action: action.label, row: this.targetItem })
+							this.$emit('action', {
+								action: action.label,
+								row: this.targetItem,
+							})
 						},
 					},
 					String(action.label ?? ''),

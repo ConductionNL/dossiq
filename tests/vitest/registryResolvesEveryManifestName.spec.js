@@ -44,11 +44,18 @@ const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'u
 function manifests() {
 	const dir = path.join(ROOT, 'src', 'manifest.d')
 	const fragments = fs.existsSync(dir)
-		? fs.readdirSync(dir).filter((f) => f.endsWith('.json') && !f.startsWith('_'))
+		? fs
+				.readdirSync(dir)
+				.filter((f) => f.endsWith('.json') && !f.startsWith('_'))
 		: []
 
 	return [
-		{ name: 'manifest.json', doc: JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8')) },
+		{
+			name: 'manifest.json',
+			doc: JSON.parse(
+				fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+			),
+		},
 		...fragments.map((f) => ({
 			name: `manifest.d/${f}`,
 			doc: JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')),
@@ -85,8 +92,19 @@ const ENTRIES = registryEntries()
 
 /** The `handler` values that are library keywords rather than registry names. */
 const KEYWORDS = new Set([
-	'navigate', 'emit', 'none', 'open-modal', 'open-page', 'refresh',
-	'export', 'api-call', 'handler', 'toggle', 'open-form', 'agent', 'object-op',
+	'navigate',
+	'emit',
+	'none',
+	'open-modal',
+	'open-page',
+	'refresh',
+	'export',
+	'api-call',
+	'handler',
+	'toggle',
+	'open-form',
+	'agent',
+	'object-op',
 ])
 
 /**
@@ -141,15 +159,40 @@ function references() {
 						name: value,
 						needs: needsPageKind(at, key) ? 'page' : 'component',
 					})
-				} else if (key === 'headerComponent' || key === 'actionsComponent' || key === 'cardComponent' || key === 'listComponent') {
-					found.push({ doc, at: [...at, key].join('.'), name: value, needs: 'component' })
+				} else if (
+					key === 'headerComponent'
+					|| key === 'actionsComponent'
+					|| key === 'cardComponent'
+					|| key === 'listComponent'
+				) {
+					found.push({
+						doc,
+						at: [...at, key].join('.'),
+						name: value,
+						needs: 'component',
+					})
 				} else if (key === 'handler' && !KEYWORDS.has(value)) {
-					found.push({ doc, at: [...at, key].join('.'), name: value, needs: 'function' })
+					found.push({
+						doc,
+						at: [...at, key].join('.'),
+						name: value,
+						needs: 'function',
+					})
 				} else if (key === 'createOverride') {
-					found.push({ doc, at: [...at, key].join('.'), name: value, needs: 'function' })
+					found.push({
+						doc,
+						at: [...at, key].join('.'),
+						name: value,
+						needs: 'function',
+					})
 				}
 			}
-			if (key === 'slots' && value && typeof value === 'object' && !Array.isArray(value)) {
+			if (
+				key === 'slots'
+				&& value
+				&& typeof value === 'object'
+				&& !Array.isArray(value)
+			) {
 				for (const [slot, name] of Object.entries(value)) {
 					if (typeof name === 'string') {
 						// `main` on a page that declares no `component` IS the page
@@ -188,40 +231,58 @@ describe('the registry answers every name the manifests use', () => {
 	})
 
 	it('registers every name', () => {
-		const missing = REFERENCES.filter((r) => !ENTRIES[r.name])
-			.map((r) => `${r.doc}: ${r.at} = ${r.name}`)
+		const missing = REFERENCES.filter((r) => !ENTRIES[r.name]).map(
+			(r) => `${r.doc}: ${r.at} = ${r.name}`,
+		)
 		expect(missing).toEqual([])
 	})
 
 	it("gives every page component kind 'page', which is the kind the renderer demands", () => {
-		const wrong = REFERENCES
-			.filter((r) => r.needs === 'page' && ENTRIES[r.name] && !/^\t\tkind: 'page',$/m.test(ENTRIES[r.name]))
-			.map((r) => `${r.doc}: ${r.at} = ${r.name}`)
+		const wrong = REFERENCES.filter(
+			(r) =>
+				r.needs === 'page'
+				&& ENTRIES[r.name]
+				&& !/^\t\tkind: 'page',$/m.test(ENTRIES[r.name]),
+		).map((r) => `${r.doc}: ${r.at} = ${r.name}`)
 		expect(wrong).toEqual([])
 	})
 
 	it('gives every slot and header/actions component something to mount', () => {
-		const wrong = REFERENCES
-			.filter((r) => r.needs === 'component' && ENTRIES[r.name] && !/^\t\tcomponent: /m.test(ENTRIES[r.name]))
-			.map((r) => `${r.doc}: ${r.at} = ${r.name}`)
+		const wrong = REFERENCES.filter(
+			(r) =>
+				r.needs === 'component'
+				&& ENTRIES[r.name]
+				&& !/^\t\tcomponent: /m.test(ENTRIES[r.name]),
+		).map((r) => `${r.doc}: ${r.at} = ${r.name}`)
 		expect(wrong).toEqual([])
 	})
 
 	it('gives every named handler a function', () => {
-		const wrong = REFERENCES
-			.filter((r) => r.needs === 'function' && ENTRIES[r.name]
-				&& !/^\t\t(?:handler|fn): /m.test(ENTRIES[r.name]))
-			.map((r) => `${r.doc}: ${r.at} = ${r.name}`)
+		const wrong = REFERENCES.filter(
+			(r) =>
+				r.needs === 'function'
+				&& ENTRIES[r.name]
+				&& !/^\t\t(?:handler|fn): /m.test(ENTRIES[r.name]),
+		).map((r) => `${r.doc}: ${r.at} = ${r.name}`)
 		expect(wrong).toEqual([])
 	})
 
-	it("declares no kind the library does not know, so nothing throws RegistryKindError", () => {
+	it('declares no kind the library does not know, so nothing throws RegistryKindError', () => {
 		// CnAppRoot throws on an unknown kind at mount, which stops the two
 		// calls after it — the deprecation check and the menu-count hydration,
 		// so the nav badges stay empty.
 		const KNOWN = new Set([
-			'widget', 'modal', 'page', 'form-field', 'cell-renderer',
-			'header', 'actions', 'tab', 'section', 'handler', 'create-override',
+			'widget',
+			'modal',
+			'page',
+			'form-field',
+			'cell-renderer',
+			'header',
+			'actions',
+			'tab',
+			'section',
+			'handler',
+			'create-override',
 		])
 		const unknown = []
 		for (const [key, body] of Object.entries(ENTRIES)) {
@@ -235,14 +296,22 @@ describe('the registry answers every name the manifests use', () => {
 
 	it('gives every widget entry the grid metadata the validator requires', () => {
 		// Missing metadata is five console.warns per entry at every mount.
-		const REQUIRED = ['defaultSize', 'minSize', 'maxSize', 'allowedSlots', 'propsSchema']
+		const REQUIRED = [
+			'defaultSize',
+			'minSize',
+			'maxSize',
+			'allowedSlots',
+			'propsSchema',
+		]
 		const bare = []
 		for (const [key, body] of Object.entries(ENTRIES)) {
 			if (!/^\t\tkind: 'widget',$/m.test(body)) {
 				continue
 			}
 			const spreadsMeta = /\.\.\.[A-Z_]+_META,/.test(body)
-			const inline = REQUIRED.every((f) => new RegExp(`^\\t\\t${f}: `, 'm').test(body))
+			const inline = REQUIRED.every((f) =>
+				new RegExp(`^\\t\\t${f}: `, 'm').test(body),
+			)
 			if (!spreadsMeta && !inline) {
 				bare.push(key)
 			}

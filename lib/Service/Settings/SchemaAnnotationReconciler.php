@@ -253,21 +253,20 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
-		// 🔴 ELEVATE, OR THIS ONLY WORKS FROM THE COMMAND LINE. OpenRegister
-		// trusts a null user under `PHP_SAPI === 'cli'` or inside a
-		// SystemOperationContext; the WEB updater is neither, so the write came
-		// back "Access denied" and this schema was skipped in silence.
+		// OpenRegister trusts a null user under CLI or a SystemOperationContext;
+		// the web updater is neither, so an unelevated write is denied in silence.
 		$write = function () use ($schema, $schemaMapper, $merged): void {
 			$schema->setConfiguration($merged);
 			$schemaMapper->update($schema);
 		};
 
 		try {
-			if (class_exists(\OCA\OpenRegister\Service\SystemOperationContext::class) === true) {
-				\OCA\OpenRegister\Service\SystemOperationContext::run($write);
-			} else {
+			if (class_exists(\OCA\OpenRegister\Service\SystemOperationContext::class) === false) {
 				$write();
+				return 1;
 			}
+
+			\OCA\OpenRegister\Service\SystemOperationContext::run($write);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: Failed to reconcile declarative configuration for schema ' . $slug,

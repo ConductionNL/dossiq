@@ -148,7 +148,9 @@ describe('the links read succeeds', () => {
 	it('shows no refusal note and keeps the rows', async () => {
 		axios.get.mockImplementation((url) =>
 			url.includes('/access-links/case/')
-				? Promise.resolve({ data: { results: [{ id: 1, label: FORBIDDEN }] } })
+				? Promise.resolve({
+						data: { results: [{ id: 1, label: FORBIDDEN }] },
+					})
 				: Promise.resolve({ data: { results: [] } }),
 		)
 

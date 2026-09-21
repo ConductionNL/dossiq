@@ -41,6 +41,7 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\OpenRegister\AppHost\Controller\GenericHealthController;
 use OCA\OpenRegister\AppHost\Observability\HealthCheckExecutor;
 use OCA\OpenRegister\AppHost\Observability\ManifestLoader;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -48,8 +49,6 @@ use OCP\IRequest;
 
 /**
  * Public, declarative health endpoint backed by the AppHost engine.
- *
- * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/adopt-apphost/tasks.md#task-2.3
  */
@@ -87,6 +86,7 @@ class HealthController extends GenericHealthController {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(): JSONResponse {
 		return parent::index();
 	}//end index()

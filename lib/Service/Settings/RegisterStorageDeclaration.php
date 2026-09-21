@@ -77,18 +77,7 @@ class RegisterStorageDeclaration {
 			$declared = [];
 		}
 
-		foreach ($schemas as $slug) {
-			if (is_string($slug) === false || $slug === '' || isset($declared[$slug]) === true) {
-				continue;
-			}
-
-			$declared[$slug] = [
-				'magicMapping'    => true,
-				'autoCreateTable' => true,
-			];
-		}
-
-		$configuration['schemas'] = $declared;
+		$configuration['schemas'] = $this->withEverySchema(schemas: $schemas, declared: $declared);
 
 		// The import REPLACES the stored configuration (Register::hydrate sets
 		// every key it is handed), so the flag MigrateArchivalToOpenRegister
@@ -102,4 +91,31 @@ class RegisterStorageDeclaration {
 
 		return $config;
 	}//end declare()
+
+	/**
+	 * Every schema the register lists, declared into a magic table.
+	 *
+	 * A schema the monolith or a fragment declares explicitly keeps what it says.
+	 *
+	 * @param array<int|string, mixed> $schemas  The slugs the register lists.
+	 * @param array<string, mixed>     $declared What is declared already.
+	 *
+	 * @return array<string, mixed> The declaration for every schema.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function withEverySchema(array $schemas, array $declared): array {
+		foreach ($schemas as $slug) {
+			if (is_string($slug) === false || $slug === '' || isset($declared[$slug]) === true) {
+				continue;
+			}
+
+			$declared[$slug] = [
+				'magicMapping'    => true,
+				'autoCreateTable' => true,
+			];
+		}
+
+		return $declared;
+	}//end withEverySchema()
 }//end class

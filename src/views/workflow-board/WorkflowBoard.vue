@@ -88,7 +88,9 @@
 					</NcPopover>
 				</p>
 			</div>
-			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
+			<NcButton
+				variant="tertiary"
+				@click="$router.push({ name: 'Dashboard' })">
 				{{ t('dossiq', 'Dashboard') }}
 			</NcButton>
 		</div>
@@ -97,7 +99,7 @@
 
 		<div v-else-if="error" class="workflow-board__error">
 			<p>{{ error }}</p>
-			<NcButton type="tertiary" @click="fetchData">
+			<NcButton variant="tertiary" @click="fetchData">
 				{{ t('dossiq', 'Retry') }}
 			</NcButton>
 		</div>
@@ -131,7 +133,7 @@
 					<NcButton @click="openBulkDialog">
 						{{ t('dossiq', 'Change status…') }}
 					</NcButton>
-					<NcButton type="tertiary" @click="clearSelectionHandler">
+					<NcButton variant="tertiary" @click="clearSelectionHandler">
 						{{ t('dossiq', 'Cancel') }}
 					</NcButton>
 				</div>
@@ -199,8 +201,8 @@ import { NcButton, NcLoadingIcon, NcPopover } from '@nextcloud/vue'
 import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
 import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
+import MoveCaseDialog from '../../dialogs/MoveCaseDialog.vue'
 import BoardColumn from './BoardColumn.vue'
-import MoveCaseDialog from './MoveCaseDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import {
@@ -238,6 +240,13 @@ export default {
 		NcPopover,
 	},
 
+	/**
+	 * The context-menu seam the board's card menu is driven from.
+	 *
+	 * @return {object} The menu's reactive state and its open/close handles.
+	 *
+	 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	 */
 	setup() {
 		const ctx = useContextMenu()
 		return {
@@ -307,6 +316,13 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The object store the board reads its cases and status types from.
+		 *
+		 * @return {object} The store instance.
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -316,6 +332,8 @@ export default {
 		 * could not already do by clicking or dragging it.
 		 *
 		 * @return {Array<object>} CnContextMenu action definitions.
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		contextMenuActions() {
 			return [
@@ -331,6 +349,8 @@ export default {
 		 * The title of the case the move dialog is about.
 		 *
 		 * @return {string}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		moveDialogCaseTitle() {
 			const found = this.cardById(this.moveDialogCaseId)
@@ -596,6 +616,8 @@ export default {
 		 *
 		 * @param {string} caseId The dragged case id
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		async onDragStart(caseId) {
 			this.draggedCaseId = caseId
@@ -624,6 +646,8 @@ export default {
 		 * The card was let go, wherever it landed.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		onDragEnd() {
 			this.drag = null
@@ -635,6 +659,8 @@ export default {
 		 *
 		 * @param {string} toColumn The hovered column's name
 		 * @return {boolean} False refuses the hover
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		canDropInto(toColumn) {
 			if (!this.drag) {
@@ -649,6 +675,8 @@ export default {
 		 *
 		 * @param {string} columnId The column's name
 		 * @return {object|null} A `dropVerdict`, or null
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		dropStateFor(columnId) {
 			if (!this.drag || String(columnId) === String(this.drag.fromColumn)) {
@@ -660,6 +688,8 @@ export default {
 		/**
 		 * @param {string} toColumn The column's name
 		 * @return {{allowed: boolean|null, blocked: boolean, reason: string}} The verdict
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		verdictFor(toColumn) {
 			return dropVerdict({
@@ -676,6 +706,8 @@ export default {
 		 *
 		 * @param {string} caseId The case id
 		 * @return {string|null} The column name, or null when the board does not hold it
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		columnOf(caseId) {
 			for (const [colName, list] of Object.entries(this.casesByStatus)) {
@@ -696,6 +728,8 @@ export default {
 		 * @param {string} drop.fromColumn The column it came from
 		 * @param {string} drop.toColumn The column it landed in
 		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		async onCardDropped({ caseId, fromColumn, toColumn }) {
 			// Read the offer before `end` clears the drag; the list updates land
@@ -972,6 +1006,8 @@ export default {
 		 *
 		 * @param {string} caseId The case id
 		 * @return {object|null} The card, or null when the board does not hold it
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		cardById(caseId) {
 			if (caseId === null || caseId === undefined) {
@@ -992,6 +1028,8 @@ export default {
 		 * @param {string} caseId The right-clicked case
 		 * @param {MouseEvent} event The native contextmenu event, for the position
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		onCardContextMenu(caseId, event) {
 			this.openContextMenu({ item: caseId, event })
@@ -1057,6 +1095,8 @@ export default {
 		 *
 		 * @param {string} columnName The chosen status name
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		onMoveConfirmed(columnName) {
 			const caseId = this.moveDialogCaseId

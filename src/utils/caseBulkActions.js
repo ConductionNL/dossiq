@@ -55,6 +55,8 @@ async function listScope(ids) {
  *
  * @param {{actionId: string, selectedIds: Array<string>, count: number}} scope The selection.
  * @return {void}
+ *
+ * @spec openspec/changes/bulk-actions-report-progress/specs/case-management/spec.md
  */
 export async function reassignSelection({ selectedIds }) {
 	const ids = Array.isArray(selectedIds) ? selectedIds : []

@@ -221,12 +221,11 @@ describe('Cases index lenses', () => {
 		// Seventeen pills wrap the actions bar and squeeze the count beside them.
 		// The cap makes the ORDER above load-bearing, so the four are named
 		// here: moving a lens up or down moves it in or out of the strip.
-		expect(cases.quickFilters.slice(0, VISIBLE_LENS_COUNT).map((entry) => entry.label)).toEqual([
-			'All',
-			'Unread',
-			'Waiting on the applicant',
-			'Needs attention',
-		])
+		expect(
+			cases.quickFilters
+				.slice(0, VISIBLE_LENS_COUNT)
+				.map((entry) => entry.label),
+		).toEqual(['All', 'Unread', 'Waiting on the applicant', 'Needs attention'])
 	})
 
 	it('marks All as the default chip and nothing else', () => {
@@ -652,7 +651,9 @@ describe('bulk actions on the Cases index', () => {
 				new RegExp(`export (?:async )?function ${action.handler}\\(`),
 			)
 			expect(registrySource).toMatch(
-				new RegExp(`\\n\\t${action.handler}: \\{\\n\\t\\tkind: 'handler',\\n\\t\\thandler: ${action.handler},\\n`),
+				new RegExp(
+					`\\n\\t${action.handler}: \\{\\n\\t\\tkind: 'handler',\\n\\t\\thandler: ${action.handler},\\n`,
+				),
 			)
 		}
 	})

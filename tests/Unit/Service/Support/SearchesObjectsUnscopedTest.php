@@ -39,19 +39,34 @@ class SearchingHost {
 	 * @param object     $objectService The store.
 	 * @param int|string $register      Register id or slug.
 	 * @param int|string $schema        Schema id or slug.
-	 * @param bool       $unscoped      Whether to read past the caller's scope.
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 */
-	public function search(object $objectService, int|string $register, int|string $schema, bool $unscoped): array {
+	public function search(object $objectService, int|string $register, int|string $schema): array {
 		return $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['title' => 'X'],
-			unscoped: $unscoped
+			filters: ['title' => 'X']
 		);
 	}//end search()
+
+
+	/**
+	 * @param object     $objectService The store.
+	 * @param int|string $register      Register id or slug.
+	 * @param int|string $schema        Schema id or slug.
+	 *
+	 * @return array<int, array<string, mixed>> The rows.
+	 */
+	public function searchUnscoped(object $objectService, int|string $register, int|string $schema): array {
+		return $this->searchObjectsAsArraysUnscoped(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['title' => 'X']
+		);
+	}//end searchUnscoped()
 }//end class
 
 /**
@@ -116,11 +131,11 @@ class SearchesObjectsUnscopedTest extends TestCase {
 	 */
 	public function testAnUnscopedReadDropsRbacAndTenancy(): void {
 		$store = $this->store();
-		(new SearchingHost())->search(objectService: $store, register: 18, schema: 23, unscoped: true);
+		(new SearchingHost())->searchUnscoped(objectService: $store, register: 18, schema: 23);
 		$this->assertSame(expected: ['method' => 'searchObjects', 'rbac' => false, 'multitenancy' => false], actual: $store->call);
 
 		$store = $this->store();
-		(new SearchingHost())->search(objectService: $store, register: 'dossiq', schema: 'caseType', unscoped: true);
+		(new SearchingHost())->searchUnscoped(objectService: $store, register: 'dossiq', schema: 'caseType');
 		$this->assertSame(expected: ['method' => 'searchObjectsBySlug', 'rbac' => false, 'multitenancy' => false], actual: $store->call);
 	}//end testAnUnscopedReadDropsRbacAndTenancy()
 
@@ -150,7 +165,7 @@ class SearchesObjectsUnscopedTest extends TestCase {
 			}//end searchObjects()
 		};
 
-		(new SearchingHost())->search(objectService: $store, register: 18, schema: 23, unscoped: false);
+		(new SearchingHost())->search(objectService: $store, register: 18, schema: 23);
 
 		$this->assertTrue(condition: $store->called);
 	}//end testAScopedReadPassesNoFlags()

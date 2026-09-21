@@ -235,6 +235,8 @@ export default {
 		/**
 		 * The shared case create-form definition, so filing a case here asks
 		 * what the Dashboard's New case button asks.
+		 *
+		 * @spec openspec/specs/friendly-case-create-form/spec.md
 		 */
 		caseForm() {
 			return caseCreateFormProps()

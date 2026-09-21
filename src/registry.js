@@ -1316,7 +1316,7 @@ const registry = {
 	FeaturesRoadmapView: {
 		kind: 'page',
 		component: FeaturesRoadmapView,
-		_note: "Features & roadmap. Wraps the library's CnFeaturesAndRoadmapPage (which has no slots, so `type: \"roadmap\"` could not carry a third surface) and adds the capability comparison.",
+		_note: 'Features & roadmap. Wraps the library\'s CnFeaturesAndRoadmapPage (which has no slots, so `type: "roadmap"` could not carry a third surface) and adds the capability comparison.',
 	},
 	DeletedCasesView: {
 		kind: 'page',
@@ -1381,7 +1381,7 @@ const registry = {
 	reassignSelection: {
 		kind: 'handler',
 		handler: reassignSelection,
-		_note: "The Cases page's reassign bulk action. A function because the manifest's declarative `handler: \"open-modal\"` path emits an `open-modal` event that nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked.",
+		_note: 'The Cases page\'s reassign bulk action. A function because the manifest\'s declarative `handler: "open-modal"` path emits an `open-modal` event that nothing in the library listens for, so declaring it would ship a bulk action that does nothing when clicked.',
 	},
 	// The four lifecycle bulk actions, all four opening the one
 	// BulkTransitionDialog in the matching mode, functions for the reason

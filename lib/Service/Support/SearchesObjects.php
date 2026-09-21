@@ -51,17 +51,14 @@ trait SearchesObjects {
 	/**
 	 * Search OpenRegister objects and return them as plain associative arrays.
 	 *
-	 * Replacement for the non-existent `ObjectService::findObjects()`. Chooses
-	 * the numeric-ID search path when both register and schema are numeric
-	 * identifiers, otherwise delegates to the slug-aware bridge.
+	 * Replacement for the non-existent `ObjectService::findObjects()`. Reads
+	 * as the caller: whatever RBAC and tenancy allow them.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService instance.
 	 * @param int|string $register Register numeric ID or slug.
 	 * @param int|string $schema Schema numeric ID or slug.
 	 * @param array<string, mixed> $filters Object-field filters plus OpenRegister
 	 *                                      pagination keys (`_limit`, `_offset`).
-	 * @param bool $unscoped Read the whole register regardless of the caller's
-	 *                       RBAC and tenancy; for seeding, which runs with no user.
 	 *
 	 * @return array<int, array<string, mixed>> Matching objects as associative arrays.
 	 *
@@ -75,10 +72,76 @@ trait SearchesObjects {
 		int|string $register,
 		int|string $schema,
 		array $filters = [],
-		bool $unscoped = false,
 	): array {
-		// Passed only when asked, so a service without these parameters still accepts the call.
-		$scope = $unscoped === true ? ['_rbac' => false, '_multitenancy' => false] : [];
+		return $this->searchObjectsWithin(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: $filters,
+			scope: []
+		);
+	}//end searchObjectsAsArrays()
+
+	/**
+	 * The same search, reading the whole register regardless of the caller.
+	 *
+	 * For seeding and repair, which run with no user session: OpenRegister
+	 * fail-closes an anonymous caller, so a scoped read there returns nothing
+	 * and the step reports success over an empty result.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService instance.
+	 * @param int|string $register Register numeric ID or slug.
+	 * @param int|string $schema Schema numeric ID or slug.
+	 * @param array<string, mixed> $filters Object-field filters plus OpenRegister
+	 *                                      pagination keys (`_limit`, `_offset`).
+	 *
+	 * @return array<int, array<string, mixed>> Matching objects as associative arrays.
+	 *
+	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	protected function searchObjectsAsArraysUnscoped(
+		object $objectService,
+		int|string $register,
+		int|string $schema,
+		array $filters = [],
+	): array {
+		return $this->searchObjectsWithin(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: $filters,
+			scope: ['_rbac' => false, '_multitenancy' => false]
+		);
+	}//end searchObjectsAsArraysUnscoped()
+
+	/**
+	 * The one bridge both entry points run through.
+	 *
+	 * Chooses the numeric-ID search path when both register and schema are
+	 * numeric identifiers, otherwise delegates to the slug-aware bridge.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService instance.
+	 * @param int|string $register Register numeric ID or slug.
+	 * @param int|string $schema Schema numeric ID or slug.
+	 * @param array<string, mixed> $filters Object-field filters plus OpenRegister
+	 *                                      pagination keys.
+	 * @param array<string, bool> $scope The scope-lifting parameters, or none.
+	 *
+	 * @return array<int, array<string, mixed>> Matching objects as associative arrays.
+	 *
+	 * @throws \OCP\AppFramework\Db\DoesNotExistException When a slug cannot be resolved.
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+	 */
+	private function searchObjectsWithin(
+		object $objectService,
+		int|string $register,
+		int|string $schema,
+		array $filters,
+		array $scope,
+	): array {
 		$registerIsNumeric = (is_int($register) === true || ctype_digit((string)$register) === true);
 		$schemaIsNumeric = (is_int($schema) === true || ctype_digit((string)$schema) === true);
 
@@ -90,6 +153,8 @@ trait SearchesObjects {
 					(string)$register,
 					(string)$schema,
 					$filters,
+					// Passed only when asked, so a service without these
+					// parameters still accepts the call.
 					...$scope
 				)
 			);
@@ -104,7 +169,7 @@ trait SearchesObjects {
 		$query['@self'] = $self;
 
 		return $this->normaliseObjectRows(rows: $objectService->searchObjects($query, ...$scope));
-	}//end searchObjectsAsArrays()
+	}//end searchObjectsWithin()
 
 	/**
 	 * Fetch a single OpenRegister object by id and return it as a plain array.

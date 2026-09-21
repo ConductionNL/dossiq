@@ -26,6 +26,8 @@ const DEFAULT_IGNORE =
  * @param {string} [options.ignore] Selector for targets a pan must not start on.
  * @param {string} [options.panningClass] Class set on `el` while panning.
  * @return {{ destroy: () => void }} Detaches every listener.
+ *
+ * @spec exclude Sideways panning of the board row; a pointer affordance over the existing scroll, with no spec scenario of its own.
  */
 export function attachDragToScroll(el, options = {}) {
 	const ignore = options.ignore ?? DEFAULT_IGNORE
@@ -104,6 +106,14 @@ export function attachDragToScroll(el, options = {}) {
 	window.addEventListener('pointercancel', onPointerUp)
 
 	return {
+		/**
+		 * Detach every listener this attachment added.
+		 *
+		 * @return {void}
+		 *
+		 * @spec exclude Sideways panning of the board row; a pointer affordance
+		 * over the existing scroll, with no spec scenario of its own.
+		 */
 		destroy() {
 			el.removeEventListener('pointerdown', onPointerDown)
 			window.removeEventListener('pointermove', onPointerMove)
@@ -123,9 +133,28 @@ const handles = new WeakMap()
  * @type {import('vue').Directive<HTMLElement>}
  */
 export const dragToScroll = {
+	/**
+	 * Attach on mount.
+	 *
+	 * @param {HTMLElement} el The scroll container.
+	 * @return {void}
+	 *
+	 * @spec exclude Sideways panning of the board row; a pointer affordance
+	 * over the existing scroll, with no spec scenario of its own.
+	 */
 	mounted(el) {
 		handles.set(el, attachDragToScroll(el))
 	},
+
+	/**
+	 * Detach on unmount, so a re-rendered board leaves no window listeners.
+	 *
+	 * @param {HTMLElement} el The scroll container.
+	 * @return {void}
+	 *
+	 * @spec exclude Sideways panning of the board row; a pointer affordance
+	 * over the existing scroll, with no spec scenario of its own.
+	 */
 	unmounted(el) {
 		handles.get(el)?.destroy()
 		handles.delete(el)

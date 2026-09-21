@@ -207,6 +207,8 @@ export default {
 
 		/**
 		 * @return {boolean} The dragged card cannot land here.
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		refused() {
 			return this.dropState?.allowed === false
@@ -214,6 +216,8 @@ export default {
 
 		/**
 		 * @return {boolean} The dragged card can land here.
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		reachable() {
 			return this.dropState?.allowed === true
@@ -223,6 +227,8 @@ export default {
 		 * Why the dragged card cannot land here, when a guard is the reason.
 		 *
 		 * @return {string} The guard's sentence, or the empty string.
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		hint() {
 			if (!this.dropState?.blocked) {
@@ -295,6 +301,8 @@ export default {
 		 *
 		 * @param {object} evt Sortable's start event; `item` is the card
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		onStart(evt) {
 			const caseId = evt?.item?.dataset?.caseId
@@ -309,6 +317,8 @@ export default {
 		 *
 		 * @param {object} evt Sortable's add event; `item` is the card, `from` the source list
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		onAdd(evt) {
 			const caseId = evt?.item?.dataset?.caseId
@@ -330,6 +340,8 @@ export default {
 		 *
 		 * @param {object} evt Sortable's move event; `to` is the hovered list
 		 * @return {boolean} False refuses the hover
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		onMove(evt) {
 			const to = evt?.to?.dataset?.columnId ?? null

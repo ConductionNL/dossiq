@@ -158,6 +158,8 @@ export default {
 		 * `{s}` subdomain form has to stay.
 		 *
 		 * @return {Array<object>} CnMapWidget layer definitions.
+		 *
+		 * @spec openspec/specs/case-map-overview/spec.md
 		 */
 		mapLayers() {
 			return [

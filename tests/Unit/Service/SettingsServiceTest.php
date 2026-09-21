@@ -39,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
  * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
  * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
+ * @uses \OCA\Dossiq\Service\Settings\RegisterStorageDeclaration
  */
 class SettingsServiceTest extends TestCase {
 
