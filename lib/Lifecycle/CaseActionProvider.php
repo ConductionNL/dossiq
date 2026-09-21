@@ -37,7 +37,6 @@ namespace OCA\Dossiq\Lifecycle;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\StatusTransitionService;
-use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
 use OCA\OpenRegister\Exception\LifecycleSubjectNotFoundException;
@@ -69,20 +68,6 @@ use Throwable;
  * @spec openspec/specs/status-transition-engine/spec.md
  */
 class CaseActionProvider implements LifecycleActionProviderInterface {
-
-	/**
-	 * The input a closing move must carry.
-	 *
-	 * `execute()` refuses a transition into a final status without a
-	 * resultType, before it mutates anything. Declaring the input here is what
-	 * lets a client collect the answer first instead of meeting the refusal.
-	 */
-	private const CLOSING_INPUT = 'resultTypeId';
-
-	/**
-	 * The free-form note a move may carry.
-	 */
-	private const COMMENT_INPUT = 'comment';
 
 	/**
 	 * The engine's sentinel for a case it could not load.
@@ -134,9 +119,9 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 * Constructor.
 	 *
 	 * @param StatusTransitionService $transitionEngine The single reader of a case's available moves.
-	 * @param CaseResultWriter $resultWriter Decides whether a target status closes the case.
 	 * @param OpenRegisterGrantsGateway $grants The reader of OpenRegister's effective grants.
 	 * @param ExternalHome $externalHome Whether the work on this case happens in another application.
+	 * @param CaseActionList $actions The acts a case offers, and what blocks them.
 	 * @param LoggerInterface $logger Logger for provider diagnostics.
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
@@ -144,9 +129,9 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 	 */
 	public function __construct(
 		private readonly StatusTransitionService $transitionEngine,
-		private readonly CaseResultWriter $resultWriter,
 		private readonly OpenRegisterGrantsGateway $grants,
 		private readonly ExternalHome $externalHome,
+		private readonly CaseActionList $actions,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -222,7 +207,7 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			);
 		}
 
-		$actions = $this->publishAll(transitions: (array)($available['transitions'] ?? []));
+		$actions = $this->actions->publishAll(transitions: (array)($available['transitions'] ?? []));
 
 		// OpenRegister's grants, beside dossiq's own guards (REQ-CGP-02).
 		//
@@ -247,34 +232,14 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 		// the list and come back BLOCKED, carrying the application that holds
 		// the work: an act that vanished would read as a permission problem
 		// and send somebody to the rights matrix for an afternoon.
-		return $this->honourExternalHome(actions: $actions, object: $object);
+		$actions = $this->actions->honourExternalHome(actions: $actions, object: $object);
+
+		// A case whose type requires the leges first (REQ-FEE-04). Blocked
+		// rather than hidden, for the same reason and with the same shape: the
+		// sentence names the rule, so the handler goes to the payment panel
+		// instead of to the rights matrix.
+		return $this->actions->honourPaymentRule(actions: $actions, object: $object, caseId: $caseId);
 	}//end availableActions()
-
-	/**
-	 * Disable the acts that perform work on a case handled elsewhere.
-	 *
-	 * @param list<array<string, mixed>> $actions The moves as published.
-	 * @param array<string, mixed>       $object  The loaded case payload.
-	 *
-	 * @return list<array<string, mixed>> The moves, blocked when the work is elsewhere.
-	 *
-	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-may-be-homed-in-another-application-req-hand-04
-	 */
-	private function honourExternalHome(array $actions, array $object): array {
-		$sentence = $this->externalHome->whereTheWorkIs(case: $object);
-		if ($sentence === '') {
-			return $actions;
-		}
-
-		$disabled = [];
-		foreach ($actions as $action) {
-			$action['blocked'] = true;
-			$action['description'] = $sentence;
-			$disabled[] = $action;
-		}
-
-		return $disabled;
-	}//end honourExternalHome()
 
 	/**
 	 * The uid to resolve the caller by, or null to let the session decide.
@@ -296,36 +261,6 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 
 		return $userId;
 	}//end callerOf()
-
-	/**
-	 * Map every transition the engine answered onto OpenRegister's shape.
-	 *
-	 * Extracted from `availableActions()` rather than inlined: with the grant
-	 * read beside it the method crossed phpmd's complexity thresholds, and a
-	 * suppression would have been the wrong answer to a method that had simply
-	 * grown two jobs.
-	 *
-	 * @param array<int, mixed> $transitions The engine's `transitions` list.
-	 *
-	 * @return list<array<string, mixed>> The publishable actions, in order.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function publishAll(array $transitions): array {
-		$actions = [];
-		foreach ($transitions as $transition) {
-			if (is_array($transition) === false) {
-				continue;
-			}
-
-			$action = $this->publish(transition: $transition);
-			if ($action !== null) {
-				$actions[] = $action;
-			}
-		}
-
-		return $actions;
-	}//end publishAll()
 
 	/**
 	 * Take one of the moves this provider offered.
@@ -400,13 +335,23 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 			throw new RuntimeException($elsewhere);
 		}
 
+		// The same enforcement for the payment rule, and for the same reason:
+		// a flag the write path does not check is a suggestion, and the first
+		// client that posts the move anyway hands a case to a handler the
+		// gemeente has not been paid for. Refused as a RuntimeException, which
+		// OpenRegister answers 422 with the sentence in `error` (ADR-050).
+		$unpaid = $this->actions->whyPaymentBlocks(object: $object, caseId: $caseId);
+		if ($unpaid !== '') {
+			throw new RuntimeException($unpaid);
+		}
+
 		try {
 			return $this->transitionEngine->execute(
 				caseId: $caseId,
 				transitionId: $action,
-				comment: $this->textOf(data: $data, field: self::COMMENT_INPUT),
+				comment: $this->textOf(data: $data, field: CaseActionList::COMMENT_INPUT),
 				userId: $caller,
-				resultTypeId: $this->textOf(data: $data, field: self::CLOSING_INPUT),
+				resultTypeId: $this->textOf(data: $data, field: CaseActionList::CLOSING_INPUT),
 			);
 		} catch (Throwable $e) {
 			throw $this->classify(failure: $e, object: $object, caseId: $caseId, action: $action);
@@ -544,104 +489,6 @@ class CaseActionProvider implements LifecycleActionProviderInterface {
 
 		return $text;
 	}//end textOf()
-
-	/**
-	 * Map one dossiq transition onto OpenRegister's published action shape.
-	 *
-	 * Role-hidden transitions need no filtering here: `getAvailableTransitions()`
-	 * drops them itself, through `TransitionSpecReader::isRoleHidden()`, before
-	 * the caller ever sees them. Re-filtering would be the second derivation
-	 * this class exists to avoid.
-	 *
-	 * @param array<string, mixed> $transition One entry off the engine's answer.
-	 *
-	 * @return array{action:string,to:string,requires:null,description:string,inputs:list<array{field:string,required:bool}>,label:string,blocked:bool}|null
-	 *         Null when the transition names no action, which is unpublishable.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function publish(array $transition): ?array {
-		$action = (string)($transition['id'] ?? '');
-		if ($action === '') {
-			return null;
-		}
-
-		$toStatus = (string)($transition['toStatus'] ?? '');
-		$passed = (($transition['guardsPassed'] ?? true) !== false);
-
-		return [
-			'action' => $action,
-			'to' => $toStatus,
-			// Dossiq has no schema-declared `requires` on a transition: guards
-			// are named per transition inside the workflowTemplate and are
-			// already evaluated above, so there is no single class name to
-			// publish. The failure reasons travel in `description` instead.
-			'requires' => null,
-			'description' => $this->describe(transition: $transition, passed: $passed),
-			'inputs' => $this->inputsFor(toStatus: $toStatus),
-			'label' => (string)($transition['label'] ?? ''),
-			'blocked' => ($passed === false),
-		];
-	}//end publish()
-
-	/**
-	 * The sentence a client shows under a move.
-	 *
-	 * A blocked move explains itself with the guards that refused it, joined
-	 * in the order they were evaluated — a handler who is told only "blocked"
-	 * has to guess which of four guards to satisfy. A move that passed carries
-	 * the transition's own description when its workflowTemplate wrote one.
-	 *
-	 * @param array<string, mixed> $transition One entry off the engine's answer.
-	 * @param bool $passed Whether every guard passed.
-	 *
-	 * @return string The description, empty when there is nothing to say.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function describe(array $transition, bool $passed): string {
-		if ($passed === false) {
-			$messages = [];
-			foreach ((array)($transition['failedGuards'] ?? []) as $guard) {
-				if (is_array($guard) === false) {
-					continue;
-				}
-
-				$message = trim((string)($guard['failureMessage'] ?? ''));
-				if ($message !== '') {
-					$messages[] = $message;
-				}
-			}
-
-			if ($messages !== []) {
-				return implode(' ', $messages);
-			}
-		}
-
-		return trim((string)($transition['description'] ?? ''));
-	}//end describe()
-
-	/**
-	 * The inputs a move must carry before it can be applied.
-	 *
-	 * Only one exists today: a transition into a final status closes the case,
-	 * and `StatusTransitionService::execute()` refuses it without a resultType.
-	 * Publishing the input is what turns that refusal into a question the
-	 * client asks first.
-	 *
-	 * @param string $toStatus The statusType UUID the move targets.
-	 *
-	 * @return list<array{field:string,required:bool}> The declared inputs, empty for an ordinary move.
-	 *
-	 * @spec openspec/specs/status-transition-engine/spec.md
-	 */
-	private function inputsFor(string $toStatus): array {
-		if ($toStatus === '' || $this->resultWriter->isFinalStatus(statusTypeId: $toStatus) === false) {
-			return [];
-		}
-
-		return [['field' => self::CLOSING_INPUT, 'required' => true]];
-	}//end inputsFor()
 
 	/**
 	 * Read the case's own identifier off the payload OpenRegister handed over.

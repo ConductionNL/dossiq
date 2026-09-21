@@ -160,12 +160,20 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		// assertion therefore allows exactly the rows that carry a widget and
 		// still refuses an empty one, which is what it was guarding.
 		//
-		// FOUR ROWS NOW. `case-attention` (markers-and-assessments-on-the-case)
-		// landed without being named here and left this assertion RED on
-		// `development`; `case-favourite` (case-number-and-favourites) is added
-		// with it. The star reads FIRST because it is part of what identifies
-		// this case to the reader, where the three strips under it are about
-		// the case rather than about you.
+		// TWO ROWS NOW, and the six strips are one of them. Four of the six
+		// are a root v-if, so six rows reserved four empty ones on an ordinary
+		// case; `case-banner-stack` holds Archived, Favourite, Follow, unread,
+		// the status declaration and Attention in ONE row carrying
+		// `sizeToContent`. Presence (#2963) stays a row of its own ABOVE it: it
+		// says who else has this case open, which is read before anything
+		// about the case itself.
+		//
+		// THE UNIT IS THE ROW, NOT THE CELL. `case-followers` gave one of
+		// these rows a second widget once, and the banner stack could hold a
+		// second again; asserting the CELLS in order would read that as an
+		// extra row and the gutter check under it would want a row that is
+		// not there. Grouping by `gridY` keeps both assertions about what the
+		// reader actually sees.
 		const layout = caseDetail().config.layout
 		const tiles = layout.filter((c) => c.gridY === 0)
 		const panels = cells('case-panels')[0]
@@ -176,17 +184,29 @@ describe('CaseDetail: the timeline widget IS the transition surface', () => {
 		const between = layout.filter(
 			(c) => c.gridY >= tileRows && c.gridY < panels.gridY,
 		)
+		const rows = [...new Set(between.map((c) => c.gridY))].sort((a, b) => a - b)
 		expect(
-			between.map((c) => c.widgetId),
+			rows.map((y) =>
+				between
+					.filter((c) => c.gridY === y)
+					.sort((a, b) => a.gridX - b.gridX)
+					.map((c) => c.widgetId),
+			),
 			'every row between the tiles and the panels must carry a widget',
-		).toEqual([
-			// ONE row, not four. Three of the four strips are a root v-if, so four
-			// rows reserved three empty ones on an ordinary case; CaseBannerStack
-			// holds all four and the row carries `sizeToContent`.
-			'case-banner-stack',
-		])
+		).toEqual([['case-presence'], ['case-banner-stack']])
+		// No gutter row: the panels start where the last strip ends.
 		expect(panels.gridY).toBe(
-			tileRows + between.reduce((rows, c) => rows + c.gridHeight, 0),
+			tileRows
+				+ rows.reduce(
+					(total, y) =>
+						total
+						+ Math.max(
+							...between
+								.filter((c) => c.gridY === y)
+								.map((c) => c.gridHeight),
+						),
+					0,
+				),
 		)
 	})
 
@@ -255,18 +275,27 @@ describe('CaseDetail: one menu holds every lifecycle act', () => {
 		expect(action('case-lifecycle-menu').visibleWhen).toBeUndefined()
 	})
 
-	it('registers both dialogs as modals, which open-modal requires', () => {
+	it('registers the menu as a modal, which open-modal requires', () => {
 		// dispatchAction refuses a target whose registry kind is not "modal",
 		// with a console warning and no dialog: a dead menu entry.
 		expect(registrySource).toMatch(
 			/CaseLifecycleMenuDialog: \{\s*\n\s*kind: 'modal',/,
 		)
-		// The per-gesture dialog stays registered: the stages widget opens it
-		// directly for Resume, which is the one gesture a suspended case needs
-		// in front of the handler rather than behind a menu.
-		expect(registrySource).toMatch(
-			/CaseLifecycleActionDialog: \{\s*\n\s*kind: 'modal',/,
-		)
+	})
+
+	it('no longer registers the per-gesture dialog', () => {
+		// This assertion used to require CaseLifecycleActionDialog to be
+		// registered, on the stated ground that the stages widget opened it
+		// for Resume. It did not: `case-stages` is the library `stages`
+		// widget, which cannot resolve a dossiq registry name, and no manifest
+		// action named it either. So the test asserted the presence of a
+		// component no user could open, which is the shape registryOrphans
+		// exists to catch. It is retired; the menu serves all four gestures.
+		// Asserted on the ENTRY, not on the name. The name still appears, in
+		// the menu's own note recording what was retired and why, and a
+		// substring test would have called that a registration.
+		expect(registrySource).not.toMatch(/\n\tCaseLifecycleActionDialog: \{/)
+		expect(registrySource).not.toContain('import CaseLifecycleActionDialog from')
 	})
 })
 

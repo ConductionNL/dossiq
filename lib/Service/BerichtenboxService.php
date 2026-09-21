@@ -29,10 +29,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
-use OCA\Dossiq\Service\Timeline\CaseTimeline;
-use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,7 +51,7 @@ class BerichtenboxService {
 	 * @param LoggerInterface $logger The logger.
 	 * @param OwningCaseResolver $owningCase Resolves a message's owning case.
 	 * @param BerichtenboxAdapterInterface $adapter The transport this instance has.
-	 * @param CaseTimeline $timeline The one seam that writes a timeline entry.
+	 * @param BerichtenboxJournal $journal What a send leaves behind for a reader.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
@@ -61,7 +60,7 @@ class BerichtenboxService {
 		private LoggerInterface $logger,
 		private readonly OwningCaseResolver $owningCase,
 		private readonly BerichtenboxAdapterInterface $adapter,
-		private readonly CaseTimeline $timeline,
+		private readonly BerichtenboxJournal $journal,
 	) {
 	}//end __construct()
 
@@ -106,27 +105,35 @@ class BerichtenboxService {
 			// Placeholder -- actual file reading via IRootFolder.
 		}
 
-		// Send via whichever adapter this instance has. On an instance with no
-		// `berichtenbox_adapter` configured that is the mock, which succeeds and
-		// sends nothing: the Integrations page carries the Simulated row that
-		// says so, and the log carries the warning the registrar wrote at boot.
+		// Send via whichever adapter this instance has. The default is
+		// IntegriqAdapter, which dispatches integriq's typed send command and
+		// refuses rather than simulating; the mock is still selectable by
+		// naming it in `berichtenbox_adapter`, and it is no longer what an
+		// instance that configured nothing silently gets.
 		$result = $this->adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent);
+
+		// 🔴 A REFUSAL IS NOT A DELIVERY, AND THE DIFFERENCE IS THE WHOLE
+		// CHANGE. A refused send gets a message record too, because a handler
+		// who pressed Send must be able to see what happened to the letter
+		// they wrote, but it carries status `refused`, no external message id
+		// and a reason, and its timeline entry is INTERNAL rather than public:
+		// telling a citizen on the portal that we tried to write to them and
+		// failed is not what the portal is for.
+		$refused = (($result['refused'] ?? false) === true);
 
 		// Store message record.
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-		$messageData = [
-			'caseId' => $caseId,
-			'bsn' => $bsn,
-			'subject' => $subject,
-			'body' => $body,
-			'berichtTypeCode' => $typeCode,
-			'attachmentFileId' => $attachmentFileId,
-			'externalMessageId' => $result['messageId'] ?? null,
-			'status' => $result['status'] ?? 'sent',
-			'sentAt' => $result['sentAt'] ?? (new DateTime())->format('c'),
-		];
+		$messageData = $this->journal->messageRecord(
+			caseId: $caseId,
+			bsn: $bsn,
+			subject: $subject,
+			body: $body,
+			typeCode: $typeCode,
+			attachmentFileId: $attachmentFileId,
+			result: $result,
+		);
 
 		$saved = $objectService->saveObject(
 			object: $messageData,
@@ -134,21 +141,41 @@ class BerichtenboxService {
 			schema: (int)$schema,
 		);
 
-		// PUBLIC, and deliberately WITHOUT the BSN. The recipient already has
-		// the message; the identifier they were addressed by is not part of
-		// what happened on the case, and a public entry is the last place to
-		// put one.
-		$this->timeline->record(
-			caseId: $caseId,
-			kind: TimelineKinds::PORTAL_MESSAGE,
-			message: $subject,
-			fields: [
-				'subject' => $subject,
-				'messageId' => (string)($result['messageId'] ?? ''),
-				'status' => (string)($result['status'] ?? 'sent'),
-			],
-			visibility: CaseTimeline::PUBLIC_ENTRY,
-		);
+		$this->journal->recordSend(caseId: $caseId, subject: $subject, result: $result, messageData: $messageData);
+
+		$this->logSendOutcome(caseId: $caseId, result: $result);
+
+		$stored = $saved->jsonSerialize();
+		if ($refused === true) {
+			// The caller is a controller answering a handler who just pressed
+			// Send. It has to be able to tell a refusal from a send WITHOUT
+			// reading a status string it would have to know the vocabulary of.
+			$stored['refused'] = true;
+			$stored['error'] = (string)($result['error'] ?? '');
+		}
+
+		return $stored;
+	}//end sendMessage()
+
+
+
+	/**
+	 * Log what became of the send, at the level the outcome deserves.
+	 *
+	 * @param string               $caseId The case.
+	 * @param array<string, mixed> $result What the adapter answered.
+	 *
+	 * @return void
+	 */
+	private function logSendOutcome(string $caseId, array $result): void {
+		if ((($result['refused'] ?? false) === true)) {
+			$this->logger->warning(
+				'Dossiq: digital post was not sent',
+				['caseId' => $caseId, 'reason' => (string)($result['error'] ?? '')]
+			);
+
+			return;
+		}
 
 		$this->logger->info(
 			'Dossiq: Berichtenbox message sent',
@@ -157,9 +184,128 @@ class BerichtenboxService {
 				'messageId' => $result['messageId'] ?? '',
 			]
 		);
+	}//end logSendOutcome()
 
-		return $saved->jsonSerialize();
-	}//end sendMessage()
+	/**
+	 * Record what became of a letter integriq is tracking.
+	 *
+	 * Called by {@see \OCA\Dossiq\Listener\DigitalPostDeliveredListener} on
+	 * integriq's status event. The event fires on EVERY status change, `failed`
+	 * and `read` included, so this writes whatever it is told rather than only
+	 * the happy path: a letter that failed and a letter nobody has opened are
+	 * two different things a handler needs to see, and neither is `sent`.
+	 *
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 * @param string $status            The status it moved to.
+	 * @param string $lastError         The provider's reason, when it failed.
+	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
+	 *
+	 * @return bool True when a stored message was updated.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$simulated` decides nothing.
+	 *  It is written straight onto the stored message as `simulated` and is never
+	 *  read in a condition anywhere in this method, so there is no second
+	 *  responsibility to split out: a `recordSimulatedDeliveryStatus()` twin
+	 *  would be this method again with one literal changed. The value is data
+	 *  about which binding handled the letter, which is exactly what a handler
+	 *  reading the message needs to see.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 */
+	public function recordDeliveryStatus(
+		string $externalMessageId,
+		string $status,
+		string $lastError = '',
+		bool $simulated = false,
+	): bool {
+		if (trim($externalMessageId) === '' || trim($status) === '') {
+			return false;
+		}
+
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return false;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
+
+		$data = $this->storedMessage(
+			objectService: $objectService,
+			externalMessageId: $externalMessageId,
+			register: (int)$register,
+			schema: (int)$schema,
+		);
+		if ($data === null) {
+			return false;
+		}
+
+		$data['status'] = $status;
+		$data['lastError'] = $lastError;
+		$data['simulated'] = $simulated;
+		if ($status === 'read') {
+			$data['readAt'] = (new DateTime())->format('c');
+		}
+
+		$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+
+		$this->journal->recordStatus(
+			data: $data,
+			externalMessageId: $externalMessageId,
+			status: $status,
+			lastError: $lastError,
+		);
+
+		return true;
+	}//end recordDeliveryStatus()
+
+	/**
+	 * The stored message integriq is tracking under this external id, as an array.
+	 *
+	 * Integriq tracks messages for every app on the instance. One we did not
+	 * send is not ours to record, and it is not an error, so an absent row and
+	 * a row in a shape this cannot read both answer null.
+	 *
+	 * @param object $objectService     The OpenRegister object service.
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 * @param int    $register          The register the messages live in.
+	 * @param int    $schema            The message schema.
+	 *
+	 * @return array<string, mixed>|null The stored message, or null.
+	 */
+	private function storedMessage(
+		object $objectService,
+		string $externalMessageId,
+		int $register,
+		int $schema,
+	): ?array {
+		$matches = $objectService->findAll(
+			[
+				'filters' => [
+					'register' => $register,
+					'schema' => $schema,
+					'externalMessageId' => $externalMessageId,
+				],
+			],
+		);
+
+		if ($matches === []) {
+			return null;
+		}
+
+		$data = $matches[0];
+		if (is_object($data) === true && method_exists($data, 'jsonSerialize') === true) {
+			$data = $data->jsonSerialize();
+		}
+
+		if (is_array($data) === false) {
+			return null;
+		}
+
+		return $data;
+	}//end storedMessage()
+
+
 
 	/**
 	 * Get sent messages for a case.
@@ -263,6 +409,20 @@ class BerichtenboxService {
 		}
 
 		$status = $this->adapter->getReadStatus($data['externalMessageId']);
+
+		// 🔴 AN ADAPTER THAT CANNOT ANSWER MUST NOT MOVE THE RECORD. The
+		// integriq adapter reports status by EVENT, not by poll, so it answers
+		// `unknown` rather than inventing a read flag. Falling through here
+		// would walk every such message into `unread_flagged` after seven days
+		// on the strength of a question nobody asked, and a case would read
+		// "the citizen has not opened this" when the truth is "we did not
+		// check". The poll simply records that it looked.
+		if (($status['unknown'] ?? false) === true) {
+			$data['readPolledAt'] = (new DateTime())->format('c');
+			$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+
+			return $data;
+		}
 
 		$data['readPolledAt'] = (new DateTime())->format('c');
 

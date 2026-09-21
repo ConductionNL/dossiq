@@ -43,6 +43,8 @@ use Psr\Log\NullLogger;
 /**
  * @covers \OCA\Dossiq\Service\Access\CaseFieldRoleProjector
  * @covers \OCA\Dossiq\Service\Access\FieldRoleLedger
+ * @uses \OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  *
  * @spec openspec/changes/field-rules-declared/specs/security-hardening/spec.md
  */

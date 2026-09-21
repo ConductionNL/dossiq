@@ -234,8 +234,6 @@ class NotificationRouting {
 	 *
 	 * @return bool TRUE when the platform stored it, FALSE when nothing routes.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The stored preference is itself an on/off switch.
-	 *
 	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-the-daily-digest-switch-is-a-notification-preference-req-urs-06
 	 */
 	public function setDigestEnabled(string $userId, bool $enabled): bool {

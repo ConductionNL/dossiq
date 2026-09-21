@@ -121,6 +121,29 @@ export default {
 				['mark-final', 'confidentiality', 'zip'].includes(value),
 		},
 
+		/**
+		 * The clicked node's Nextcloud file id, merged onto an `open-modal`
+		 * row action's props by CnFilesBrowser.
+		 *
+		 * The `case-files` leaf is the surface this dialog has now, and it
+		 * names ONE file rather than a selection: CnFilesBrowser carries no
+		 * selection bar, because the Files app's list, its selection bar and
+		 * its inline rename are bound to the Files router and cannot be
+		 * mounted off the Files page. A `bulkActions` prop declared on that
+		 * widget would be read by nothing, which is the same darkness that
+		 * left this dialog with no caller at all from 2026-09-13.
+		 */
+		fileId: {
+			type: [String, Number],
+			default: '',
+		},
+
+		/** The clicked node's name, for the dialog's own sentence. */
+		fileName: {
+			type: String,
+			default: '',
+		},
+
 		// May arrive as the unresolved `@objectId` token; see resolvedCaseId.
 		// Only used by `zip`, which downloads scoped to one case.
 		caseId: {
@@ -247,6 +270,10 @@ export default {
 		 * @spec openspec/specs/document-zaakdossier/spec.md
 		 */
 		async resolveDocumentIds() {
+			if (this.selectedIds.length === 0) {
+				return this.resolveFromFileId()
+			}
+
 			const resolved = []
 
 			for (const joinId of this.selectedIds) {
@@ -274,6 +301,40 @@ export default {
 		},
 
 		/**
+		 * The informatieobject id behind a clicked file node.
+		 *
+		 * The case's dossier listing is the one endpoint that carries every
+		 * record together with its `fileId`, which is how DocumentMetadataDialog
+		 * finds the record for the same node. A file with no record yet (the
+		 * projection listener may not have run) resolves to nothing, and the
+		 * act reports that it changed nothing rather than posting an empty id
+		 * an endpoint would answer as a miss.
+		 *
+		 * @return {Promise<Array<string>>} The one document id, or an empty list.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		async resolveFromFileId() {
+			const fileId = Number(this.fileId)
+			if (
+				!Number.isFinite(fileId)
+				|| fileId <= 0
+				|| this.resolvedCaseId === ''
+			) {
+				return []
+			}
+			const url = generateUrl(
+				`/apps/dossiq/api/cases/${encodeURIComponent(this.resolvedCaseId)}/dossier`,
+			)
+			const { data } = await axios.get(url)
+			const rows = Array.isArray(data?.informatieobjecten)
+				? data.informatieobjecten
+				: []
+			const record = rows.find((row) => Number(row.fileId) === fileId) || null
+			const id = record === null ? '' : String(record.id || '')
+			return id === '' ? [] : [id]
+		},
+
+		/**
 		 * Run one of the two bulk mutation endpoints and report the per-item
 		 * results, mirroring DossierTab's old `runBulk()`.
 		 *
@@ -287,6 +348,29 @@ export default {
 			this.error = ''
 			try {
 				const ids = await this.resolveDocumentIds()
+
+				// 🔴 AN EMPTY ID LIST IS A REFUSAL, NOT A RUN. Both endpoints
+				// answer 200 with an empty per-item list for an empty request,
+				// which rendered as "0 of 0 document(s) updated" -- a success
+				// sentence over an act that never had a document to act on.
+				// It happens for real: a file dropped a moment ago has no
+				// informatieobject record until the projection listener runs.
+				if (ids.length === 0) {
+					this.error =
+						this.fileName === ''
+							? this.t(
+									'dossiq',
+									'No document record was found, so nothing was changed',
+								)
+							: this.t(
+									'dossiq',
+									'No document record was found for {name}, so nothing was changed',
+									{ name: this.fileName },
+								)
+					showError(this.error)
+					return
+				}
+
 				const { data } = await axios.post(generateUrl(path), {
 					ids,
 					...extra,

@@ -140,7 +140,6 @@ class OneDateWritePathTest extends TestCase {
 		'Service/StufMessageBuilder.php',
 		'Service/Stuf/StufMessageHandler.php',
 		'Service/Stuf/StufCaseMappingStore.php',
-		'Service/Stuf/ContactBetrokkeneMapper.php',
 	];
 
 	/**

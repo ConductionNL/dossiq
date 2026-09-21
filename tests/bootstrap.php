@@ -469,10 +469,29 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 // classes by name so dossiq stays installable without integriq. The stubs
 // mirror integriq's real constructor signatures verbatim and no-op when the
 // real classes are present.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent'] as $stubEvent) {
+// IntakeMessageRoutedEvent rides the same loop (an-intake-message-opens-a-case):
+// integriq's channel intake asks whoever owns the target to open one, and
+// IntakeMessageRoutedListener answers it by name for the same reason.
+// The two digital post events ride the same loop (digital-post-reaches-integriq):
+// IntegriqAdapter dispatches DigitalPostSendRequestedEvent and reads its result
+// slot, and DigitalPostDeliveredListener consumes DigitalPostDeliveredEvent,
+// both resolved by name so dossiq stays installable without integriq. Without
+// these stubs the adapter's resolve would only ever answer null, every test
+// would exercise the absent branch alone, and the branch that turns a handled
+// event with no tracked message into a refusal could never be reached.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
+}
+
+// Shillinq's payment-request leaf (fees-and-payments-on-the-case). dossiq reads
+// a case's payment state through it and resolves the class by name, so the app
+// stays installable without the money app. Without this stub the lookup can
+// only ever answer false, every test of the reader would exercise the absent
+// branch alone, and static analysis would report the resolution as dead code.
+if (class_exists('\\OCA\\Shillinq\\Integration\\PaymentRequestLeafProvider') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Integration/PaymentRequestLeafProvider.php';
 }
 
 // Hermiq's oversight contract. procest resolves it by name so it stays
@@ -605,6 +624,14 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkedEvent.php';
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php';
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
+}
+
+// case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
+// `::class`, which does not autoload, so the registration is silent at runtime
+// without openregister and reads to the analysers as a class that does not
+// exist. Declaration-only, shared with psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so

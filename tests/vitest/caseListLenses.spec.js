@@ -162,6 +162,11 @@ const CASE_LENSES = [
 	DRAFTS_LENS,
 	'Overdue',
 	'Due this week',
+	// fees-and-payments-on-the-case (#2930): the cases whose type makes a fee
+	// due and whose payment shillinq has not confirmed. It sits with the two
+	// clock lenses because it is the same question about a different clock:
+	// what this case is waiting on before it can move.
+	'Awaiting payment',
 	'Stuck',
 ]
 
@@ -199,6 +204,9 @@ const CASES_ONLY = [
 	// A case closes with or without a result; a task completes and has none.
 	'Closed with no result',
 	DRAFTS_LENS,
+	// A fee is due on a CASE, under its type's own rule; a task carries no
+	// payment of its own and nothing on the Tasks list could answer this.
+	'Awaiting payment',
 	'Stuck',
 ]
 
@@ -428,6 +436,33 @@ describe('Tasks index lenses', () => {
 		// here would be a divergent one, which is what this change removes.
 		expect(page('Tasks').config.columns).toBeUndefined()
 		expect(page('Tasks').config.entitySource).toBe('tasks')
+	})
+
+	/**
+	 * task-search-fields: a lens answers one of six fixed questions, a field
+	 * lets you ask your own. Both reach the server and they compose.
+	 *
+	 * The sidebar only offers a filter for a property marked `facetable`, so
+	 * a sidebar switched on with no declaration is a search box and nothing
+	 * else. That is what this page shipped before, and it looks identical to
+	 * a sidebar whose filters happen to match everything.
+	 *
+	 * Whether each declared field reaches a real inbox argument is asserted
+	 * in `tests/vitest/taskSearchFields.spec.js`, under "every declared field
+	 * maps to an inbox argument".
+	 */
+	it('declares five search fields beside the six lenses', () => {
+		const config = page('Tasks').config
+		expect(config.sidebar.enabled).toBe(true)
+
+		const filters = Object.entries(config.sidebar.fields)
+			.filter(([, prop]) => prop.facetable === true)
+			.map(([key]) => key)
+		// `kind` joined the four with case-reminder-as-task (#2920): a
+		// reminder is an engine task like any other, so the only thing that
+		// tells it apart from the work a flow scheduled is what sort of task
+		// it is, and the list could not be asked that.
+		expect(filters).toEqual(['objectUuid', 'state', 'priority', 'kind', 'dueAt'])
 	})
 })
 
@@ -693,14 +728,37 @@ describe('what this change does NOT move', () => {
 			'Organisations',
 			'Map layers',
 			'Case types',
+			// The eighth later addition (attribute-catalogue-folders): the
+			// attribute catalogue, beside the case types it files for. It
+			// spends no top-level slot either, because it carries
+			// `section: "settings"` like `Case types` and `Flows` do.
+			'Attributes',
 			'Flows',
 			'Objection advisory committees',
 			'Deadline monitoring',
+			// Eight schemas that shipped with a register entry and no way in
+			// (#2959, #2961, #2958): the offline inspection trio, the three
+			// remaining sociaal domein records, the supplier portal accounts
+			// and the data breach register. Each spends no top-level slot,
+			// because all eight carry `section: "settings"`, and each existed
+			// as stored data only an admin reading the register could see.
+			'Field evidence',
+			'Offline sync queue',
+			'Offline sync conflicts',
+			'Needs assessments',
+			'Multidisciplinary consultations',
+			'Re-integration pathways',
+			'Supplier portal accounts',
+			'Data breach register',
 			'Substitutions & reassignment',
 			'Integrations',
 			'Features & roadmap',
 			'Processing activities (AVG)',
 			'AI oversight',
+			// The register behind every case type, reachable from the app
+			// rather than only from OpenRegister (#2911). It reads last
+			// because it is the only entry that leaves dossiq.
+			'Data model',
 		])
 	})
 })

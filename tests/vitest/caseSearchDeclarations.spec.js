@@ -55,22 +55,32 @@ const INPUT_CONTROLS = [
  * objects, or a JSON document held in a string column. None of them is typed
  * into a search box or offered as a filter, and declaring a match type would
  * put a serialised blob into the free-text scan.
+ *
+ * Kept alphabetical, so a name is looked up rather than scanned for, and so
+ * two branches adding an entry collide in the merge instead of silently
+ * listing it twice.
  */
 const SILENT = [
+	'aanvulling',
 	'acknowledgementDuty',
 	'actionResult',
 	'activity',
-	'aanvulling',
+	'admissibility',
+	'approvalRefs',
 	'attentionFlag',
 	'attentionFlagHistory',
 	'attentionMarkers',
 	'casePlanState',
 	'commissieBesluit',
 	'conversations',
+	'erasureCounts',
+	'erasureOutcome',
+	'erasureProtected',
 	'geometry',
 	'handoverRecord',
 	'intakeRefusal',
 	'majorChannel',
+	'mergeRelinked',
 	'missingFields',
 	'outboundCommunications',
 	'properties',
@@ -78,6 +88,7 @@ const SILENT = [
 	'relatedCases',
 	'riskAssessment',
 	'skippedPhases',
+	'splitMovedItems',
 	'statusDwellTotals',
 	'statusHistory',
 	'taskAttachments',

@@ -22,8 +22,19 @@ carry a `row-field-level-security` field rule readable by group
 - **THEN** OpenRegister's audit SHALL hold a field-access row for it
 
 #### Scenario: The guard no longer decides
-@e2e exclude structural; a unit test asserts CitizenLookupGuard has no field-level branch
+@e2e exclude structural; a unit test asserts CitizenLookupGuard evaluates no declaration
 
 - **GIVEN** `CitizenLookupGuard`
-- **WHEN** its methods are listed
-- **THEN** none SHALL check a field's group
+- **WHEN** its source is read
+- **THEN** it SHALL NOT read a schema, a property or an `authorization` block
+- **AND** it SHALL NOT grant a field the declaration withholds
+
+SHARPENED 2026-09-18 by `citizen-lookup-is-guarded-and-recorded`. The first
+wording was "none of its methods SHALL check a field's group", and that change
+adds `redactForCaller()`, which checks exactly one group against one constant
+list to take four keys OUT of a payload dossiq composed itself. That is not the
+duplication this requirement forbids: the thing to forbid is a SECOND EVALUATOR
+of OpenRegister's declaration, which would eventually disagree with it and be
+"fixed" in whichever direction was easier. A remove-only list that can never
+grant is the opposite failure mode, and the wording above says which one is
+meant.

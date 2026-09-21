@@ -16,6 +16,7 @@
     "check:schema-l10n": "node scripts/check-schema-l10n.js",
     "check:debt-ratchet": "node scripts/debt-ratchet.js",
     "check:manifest": "node tests/validate-manifest.js",
+    "check:types-e2e": "tsc --noEmit -p tests/e2e/tsconfig.json",
     "test:unit:watch": "vitest",
     "test:l10n": "node tests/l10n/check-l10n.js",
     "test:l10n:write": "node tests/l10n/check-l10n.js --write",

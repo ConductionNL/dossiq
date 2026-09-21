@@ -176,13 +176,6 @@ class TaskDeclarationReader {
 	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
 	 */
 	public function stepsOf(array $definition): array {
-		$steps = [];
-		foreach ($this->json->decodeList(raw: ($definition['steps'] ?? '')) as $step) {
-			if (is_array($step) === true) {
-				$steps[] = $step;
-			}
-		}
-
-		return $steps;
+		return $this->json->stepsOf(definition: $definition);
 	}//end stepsOf()
 }//end class

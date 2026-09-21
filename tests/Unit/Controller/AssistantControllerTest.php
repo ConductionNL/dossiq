@@ -26,9 +26,12 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use Exception;
 use OCA\Dossiq\Controller\AssistantController;
+use OCA\Dossiq\Service\Ai\CaseTypeAiFeatures;
 use OCA\Dossiq\Service\Assistant\CaseAssistantService;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantClient;
+use OCA\Dossiq\Service\Assistant\HermiqAiFeatureClient;
 use OCA\Dossiq\Service\Assistant\HermiqAssistantException;
+use OCP\AppFramework\Http;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
@@ -93,7 +96,10 @@ class AssistantControllerTest extends TestCase {
 	 *
 	 * @return AssistantController
 	 */
-	private function controller(): AssistantController {
+	private function controller(
+		?CaseTypeAiFeatures $aiFeatures = null,
+		?HermiqAiFeatureClient $aiFeatureClient = null,
+	): AssistantController {
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
 
@@ -104,7 +110,9 @@ class AssistantControllerTest extends TestCase {
 			$this->hermiqClient,
 			$this->userSession,
 			$l10n,
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			$aiFeatures,
+			$aiFeatureClient
 		);
 	}//end controller()
 
@@ -253,4 +261,80 @@ class AssistantControllerTest extends TestCase {
 
 		$this->assertSame(503, $response->getStatus());
 	}//end testHermiqUnavailableMapsTo503()
+	/**
+	 * An undeclared case type makes no call to hermiq at all.
+	 *
+	 * Contract coverage for `assistant#aiFeatures` (gate-25), and the privacy
+	 * rule underneath it (REQ-AIC-01). "No features declared" must be answered
+	 * LOCALLY. A call that goes out to find that out has already sent the case
+	 * type somewhere, and the empty answer that comes back looks identical.
+	 *
+	 * @return void
+	 */
+	public function testAiFeaturesAsksNobodyWhenTheCaseTypeDeclaresNothing(): void {
+		$this->stubParams(['caseType' => ['id' => 'ct-1'], 'surface' => 'case']);
+
+		$declared = $this->createMock(CaseTypeAiFeatures::class);
+		$declared->method('onSurface')->willReturn([]);
+
+		$client = $this->createMock(HermiqAiFeatureClient::class);
+		$client->expects(self::never())->method('featureResidency');
+
+		$response = $this->controller(aiFeatures: $declared, aiFeatureClient: $client)->aiFeatures();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame([], $response->getData()['features']);
+	}//end testAiFeaturesAsksNobodyWhenTheCaseTypeDeclaresNothing()
+
+	/**
+	 * A feature hermiq does not answer for is unavailable, never local.
+	 *
+	 * An unknown residency rendered as "here" is the one wrong answer this
+	 * endpoint could give, so it is asserted rather than assumed (REQ-AIC-02).
+	 *
+	 * @return void
+	 */
+	public function testAFeatureHermiqDoesNotKnowIsUnavailableAndNotLocal(): void {
+		$this->stubParams(['caseType' => ['id' => 'ct-1'], 'surface' => 'case']);
+
+		$declared = $this->createMock(CaseTypeAiFeatures::class);
+		$declared->method('onSurface')->willReturn(['summarise', 'classify']);
+
+		$client = $this->createMock(HermiqAiFeatureClient::class);
+		$client->method('featureResidency')->willReturn(
+			['summarise' => ['provider' => 'azure-eu', 'residency' => 'eu-west']]
+		);
+
+		$data = $this->controller(aiFeatures: $declared, aiFeatureClient: $client)
+			->aiFeatures()
+			->getData();
+
+		$bySlug = array_column($data['features'], null, 'slug');
+
+		self::assertTrue($bySlug['summarise']['available']);
+		self::assertSame('azure-eu', $bySlug['summarise']['provider']);
+		self::assertSame('eu-west', $bySlug['summarise']['residency']);
+
+		self::assertFalse($bySlug['classify']['available']);
+		self::assertNull($bySlug['classify']['provider']);
+		self::assertNull($bySlug['classify']['residency'], 'an unknown residency must never render as local');
+	}//end testAFeatureHermiqDoesNotKnowIsUnavailableAndNotLocal()
+
+	/**
+	 * With the AI collaborators absent the endpoint answers an empty list.
+	 *
+	 * Both are nullable on the constructor, so an instance without them must
+	 * answer a well-formed empty envelope rather than a 500.
+	 *
+	 * @return void
+	 */
+	public function testAiFeaturesAnswersAnEmptyEnvelopeWhenTheCollaboratorsAreAbsent(): void {
+		$this->stubParams([]);
+
+		$response = $this->controller()->aiFeatures();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame([], $response->getData()['features']);
+	}//end testAiFeaturesAnswersAnEmptyEnvelopeWhenTheCollaboratorsAreAbsent()
+
 }//end class

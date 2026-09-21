@@ -102,6 +102,41 @@ class CaseTypeStore {
 	}//end rowsOfType()
 
 	/**
+	 * The case type's active workflow template.
+	 *
+	 * Here rather than on a caller because two of them ask: publishing writes
+	 * the template out, and the publication checks walk its moves to find what
+	 * nothing can reach. Both asked {@see self::rowsOfType()} and picked the
+	 * same row the same way, and two readings of "which template is active" is
+	 * how a publish and its own validation come to read different workflows.
+	 *
+	 * A type with templates but none marked active answers the first one, which
+	 * is what an unmarked set has always meant here.
+	 *
+	 * @param string $caseTypeId CaseType UUID.
+	 *
+	 * @return array<string, mixed> The template, or an empty array when there is none.
+	 *
+	 * @spec openspec/specs/zaaktype-versioning/spec.md
+	 */
+	public function activeTemplate(string $caseTypeId): array {
+		$rows = $this->rowsOfType(schemaKey: 'workflow_template_schema', caseTypeId: $caseTypeId);
+
+		$fallback = [];
+		foreach ($rows as $row) {
+			if (($row['isActive'] ?? false) === true) {
+				return $row;
+			}
+
+			if ($fallback === []) {
+				$fallback = $row;
+			}
+		}
+
+		return $fallback;
+	}//end activeTemplate()
+
+	/**
 	 * Every case type sharing one identifier: the version chain.
 	 *
 	 * ZGW's `identificatie` is what makes two rows versions of one zaaktype, so
@@ -133,6 +168,47 @@ class CaseTypeStore {
 			filterValue: $identifier
 		);
 	}//end versionsWithIdentifier()
+
+	/**
+	 * Every case type the register holds.
+	 *
+	 * The catalogue rather than one chain, for the one act that crosses case
+	 * types: a rebind picks a target from all of them, and asking per
+	 * identifier would need the list of identifiers first.
+	 *
+	 * The filter is EMPTY on purpose, which is not the same as `IS NULL`: the
+	 * bare-key grammar `search()` speaks narrows on what it is given, so giving
+	 * it nothing is the whole catalogue. Drafts are answered too and are
+	 * dropped by the caller, because "every case type" and "every case type you
+	 * may put a running case on" are different questions and this one is the
+	 * store's.
+	 *
+	 * @return array<int, array<string, mixed>> The case types, unordered.
+	 *
+	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 */
+	public function everyCaseType(): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$schema = $this->settingsService->getConfigValue(key: 'case_type_schema');
+
+		if ($objectService === null || $register === '' || $schema === '') {
+			return [];
+		}
+
+		try {
+			$found = $objectService->searchObjects(
+				[
+					'@self' => ['register' => $register, 'schema' => $schema],
+					'_limit' => 200,
+				]
+			);
+		} catch (Throwable $e) {
+			return [];
+		}
+
+		return $this->asRows(value: $found);
+	}//end everyCaseType()
 
 	/**
 	 * Rows of one schema that belong to no case type at all.

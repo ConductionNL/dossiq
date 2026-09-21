@@ -29,9 +29,13 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTime;
 use OCA\Dossiq\Service\Access\CaseFieldRoleProjector;
 use OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration;
+use OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration;
 use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+use OCA\Dossiq\Service\CaseType\CaseTypeReachability;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow;
+use OCA\Dossiq\Service\Intake\AdmissibilityJudgement;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
+use OCA\Dossiq\Service\CaseType\PublicationChecks;
 use OCA\Dossiq\Service\CaseTypePublishService;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
@@ -50,6 +54,7 @@ use Psr\Log\NullLogger;
  * Unit tests for the handling-switch half of CaseTypePublishService::validate().
  *
  * @covers \OCA\Dossiq\Service\CaseTypePublishService
+ * @covers \OCA\Dossiq\Service\CaseType\PublicationChecks
  *
  * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
  * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
@@ -57,6 +62,11 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\UnreadTriggerService
  * @uses \OCA\Dossiq\Service\Status\CaseStateFieldRuleProjector
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeVersionWindow
+ * @uses   \OCA\Dossiq\Service\Access\FieldRoleRuleDeclaration
+ * @uses   \OCA\Dossiq\Service\Beschikking\RemedyClauseDeclaration
+ * @uses   \OCA\Dossiq\Service\CaseType\CaseTypeReachability
+ * @uses   \OCA\Dossiq\Service\Status\StatusFieldRuleDeclaration
  */
 class CaseTypePublishValidationTest extends TestCase {
 
@@ -146,11 +156,20 @@ class CaseTypePublishValidationTest extends TestCase {
 
 		return new CaseTypePublishService(
 			settingsService: $settings,
-			caseTypeResolver: new CaseTypeResolver(store: $store),
 			store: $store,
-			acknowledgement: new CaseTypeAcknowledgement(),
-			unreadTriggers: new UnreadTriggerService(),
-			handling: new CaseTypeHandling(),
+			// A REAL checks object over the SAME store and resolver the
+			// assertions read through. Only the wiring lines moved when the
+			// findings and warnings were split out.
+			checks: new PublicationChecks(
+				caseTypeResolver: new CaseTypeResolver(store: $store),
+				store: $store,
+				acknowledgement: new CaseTypeAcknowledgement(),
+				unreadTriggers: new UnreadTriggerService(),
+				admissibility: $this->createMock(originalClassName: AdmissibilityJudgement::class),
+				remedy: new RemedyClauseDeclaration(),
+				handling: new CaseTypeHandling(),
+				reachability: new CaseTypeReachability(),
+			),
 			fieldRules: new CaseStateFieldRuleProjector(
 				store: $store,
 				declaration: new StatusFieldRuleDeclaration(),

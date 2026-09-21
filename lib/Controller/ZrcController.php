@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CaseRelationService;
 use OCA\Dossiq\Service\ZgwService;
 use OCA\Dossiq\Service\Zaakdossier\DocumentJoinHoming;
+use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCA\OpenRegister\Exception\HookStoppedException;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -1055,8 +1056,6 @@ class ZrcController extends ZgwController {
 	 *
 	 * @return JSONResponse|null A 400 response if validation fails, null if valid
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $isPatch reserved for partial-update validation
 	 *
 	 * @psalm-suppress UnusedParam — $isPatch reserved for partial-update validation
@@ -1289,14 +1288,42 @@ class ZrcController extends ZgwController {
 		// side-effect cannot be handled by OpenRegister's cascade delete.
 		// L1: Paginate through all ZIOs to avoid orphan OIOs on large zaken.
 		$zioConfig = $this->zgwService->getZgwMappingService()->getMapping('zaakinformatieobject');
-		if ($zioConfig !== null) {
+		$zioScope = ZgwSearchScope::fromMapping(mappingConfig: $zioConfig);
+
+		// 🔴 DO NOT DESTROY THE ZAAK WHEN THE CASCADE CANNOT EVEN LOOK.
+		// A zaakinformatieobject mapping whose register or schema OpenRegister
+		// cannot resolve answers this paged search with an empty first page and
+		// no error ({@see ZgwSearchScope}), so the loop below runs zero times,
+		// the zaak is destroyed and every OIO in DRC that pointed at it
+		// survives as an orphan pointing at nothing. Refusing the delete is
+		// recoverable; the orphans are not.
+		if ($zioConfig !== null && $zioScope === null) {
+			$this->zgwService->getLogger()->error(
+				'zrc-023: refusing to delete zaak ' . $uuid
+				. ': the zaakinformatieobject mapping has no searchable register/schema, '
+				. 'so linked OIOs in DRC cannot be sync-deleted'
+			);
+
+			return new JSONResponse(
+				data: [
+					'detail' => $this->l10n->t(
+						'This case cannot be deleted yet. Its zaakinformatieobject mapping has no '
+						. 'usable register and schema. Without that, the linked documents cannot be unlinked.'
+					),
+					'code' => 'zaakinformatieobject-mapping-unsearchable',
+				],
+				statusCode: Http::STATUS_CONFLICT
+			);
+		}
+
+		if ($zioScope !== null) {
 			try {
 				$page = 1;
 				do {
 					$query = $objectService->buildSearchQuery(
 						requestParams: ['case' => $uuid, '_limit' => 100, '_page' => $page],
-						register: $zioConfig['sourceRegister'],
-						schema: $zioConfig['sourceSchema']
+						register: $zioScope->register,
+						schema: $zioScope->schema
 					);
 					$result = $objectService->searchObjectsPaginated(query: $query);
 					$objects = $result['results'] ?? [];
@@ -1940,6 +1967,9 @@ class ZrcController extends ZgwController {
 	 * @param string $zaakUuid The zaak UUID
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function setIndicationGebruiksrechtOnClose(string $zaakUuid): void {
 		try {
@@ -1980,21 +2010,46 @@ class ZrcController extends ZgwController {
 
 					if ($indGr === null || $indGr === '') {
 						// Check if gebruiksrechten exist for this document.
+						//
+						// 🔴 "NO GEBRUIKSRECHTEN FOUND" AND "COULD NOT LOOK" ARE
+						// NOT THE SAME ANSWER, and the write below states a
+						// usage-rights position on the document either way. A
+						// gebruiksrechten mapping whose scope OpenRegister
+						// cannot resolve answers `total: 0` with no error
+						// ({@see ZgwSearchScope}), so the old `$hasGr = false`
+						// default recorded "this document carries no usage
+						// restrictions" on a document that may carry several —
+						// and zrc-007q then read that `false` as "set" and let
+						// the zaak close. Leave the indication UNSET when the
+						// lookup could not run: an unset indication is what
+						// zrc-007q refuses on, so the case stays closed-blocked
+						// until the mapping is configured.
 						$grConfig = $this->zgwService->getZgwMappingService()->getMapping('gebruiksrechten');
+						$grScope = ZgwSearchScope::fromMapping(mappingConfig: $grConfig);
+						if ($grScope === null) {
+							$this->zgwService->getLogger()->warning(
+								'zrc-007b: gebruiksrechten mapping has no searchable register/schema, '
+								. 'leaving indicatieGebruiksrecht unset for doc ' . $docMatches[1]
+							);
+							continue;
+						}
+
 						$hasGr = false;
-						if ($grConfig !== null) {
-							try {
-								$grQuery = $this->zgwService->getObjectService()->buildSearchQuery(
-									requestParams: ['document' => $docMatches[1], '_limit' => 1],
-									register: $grConfig['sourceRegister'],
-									schema: $grConfig['sourceSchema']
-								);
-								$grResult = $this->zgwService->getObjectService()
-									->searchObjectsPaginated(query: $grQuery);
-								$hasGr = empty($grResult['results'] ?? []) === false;
-							} catch (\Throwable $e) {
-								// No gebruiksrechten schema — default to false.
-							}
+						try {
+							$grQuery = $this->zgwService->getObjectService()->buildSearchQuery(
+								requestParams: ['document' => $docMatches[1], '_limit' => 1],
+								register: $grScope->register,
+								schema: $grScope->schema
+							);
+							$grResult = $this->zgwService->getObjectService()
+								->searchObjectsPaginated(query: $grQuery);
+							$hasGr = empty($grResult['results'] ?? []) === false;
+						} catch (\Throwable $e) {
+							$this->zgwService->getLogger()->warning(
+								'zrc-007b: gebruiksrechten lookup failed, leaving indicatieGebruiksrecht '
+								. 'unset for doc ' . $docMatches[1] . ': ' . $e->getMessage()
+							);
+							continue;
 						}
 
 						// Set indicatieGebruiksrecht based on whether gebruiksrechten exist.
@@ -2451,6 +2506,9 @@ class ZrcController extends ZgwController {
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function syncDeleteObjectInformatieObject(string $caseUrl, string $ioUrl): void {
 		try {
@@ -2465,10 +2523,22 @@ class ZrcController extends ZgwController {
 				return;
 			}
 
+			// An unsearchable scope answers with an empty page and no error
+			// ({@see ZgwSearchScope}), which reads as "there is no OIO to
+			// delete" and leaves the DRC link behind. Name it instead.
+			$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioConfig);
+			if ($oioScope === null) {
+				$this->zgwService->getLogger()->error(
+					'zrc-005b: objectinformatieobject mapping has no searchable register/schema, '
+					. 'so the OIO for ' . $ioUrl . ' is being left behind as an orphan'
+				);
+				return;
+			}
+
 			$query = $this->zgwService->getObjectService()->buildSearchQuery(
 				requestParams: ['object' => $caseUrl, 'document' => $ioUrl],
-				register: $oioConfig['sourceRegister'],
-				schema: $oioConfig['sourceSchema']
+				register: $oioScope->register,
+				schema: $oioScope->schema
 			);
 			$result = $this->zgwService->getObjectService()->searchObjectsPaginated(query: $query);
 

@@ -70,6 +70,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Controller\BeschikkingController
  * @covers \OCA\Dossiq\Middleware\MandateValidationMiddleware
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
+ * @uses   \OCA\Dossiq\Middleware\MandateDeniedException
  */
 class RefusalCarriesAStatusTest extends TestCase {
 	/**

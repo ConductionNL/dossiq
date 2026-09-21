@@ -24,6 +24,7 @@ use OCA\OpenRegister\Service\Flow\FlowRunContext;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
 use OCA\OpenRegister\Service\Flow\FlowSuspension;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCA\OpenRegister\Service\Task\TaskFormReader;
 use OCP\IL10N;
 use OCP\IUserSession;
 use OCP\WorkflowEngine\IManager;
@@ -127,6 +128,26 @@ class DossiqAskPersonNode implements IFlowNode {
 
 
     /**
+     * The flat keys `TaskFormReader::fromConfig()` reads off a step.
+     *
+     * Kept as one list because "does this step declare a form at all" has to
+     * be answered the same way twice: once here, to leave a step with no form
+     * exactly as it was, and once by the reader, which refuses an orphaned
+     * `formFields` that names no `formKind`.
+     *
+     * @var array<int, string>
+     */
+    private const FORM_KEYS = [
+        'formKind',
+        'formSchema',
+        'formAction',
+        'formFields',
+        'formId',
+        'formRequireChecklist',
+    ];
+
+
+    /**
      * The task rows this ask writes and reads back.
      *
      * @var AskPersonTaskStore
@@ -142,11 +163,19 @@ class DossiqAskPersonNode implements IFlowNode {
      * container, and the suites that build it by hand — keeps working. It
      * needs nothing this node was not already given.
      *
-     * @param AssigneeResolver  $assignees       The app's one answer to who work goes to.
-     * @param IL10N             $l10n            The localisation service.
-     * @param LoggerInterface   $logger          The logger.
-     * @param EngineTaskGateway $engineTasks     The seam onto OpenRegister's task engine.
-     * @param IUserSession      $userSession     The acting identity the engine records.
+     * @param AssigneeResolver    $assignees   The app's one answer to who work goes to.
+     * @param IL10N               $l10n        The localisation service.
+     * @param LoggerInterface     $logger      The logger.
+     * @param EngineTaskGateway   $engineTasks The seam onto OpenRegister's task engine.
+     * @param IUserSession        $userSession The acting identity the engine records.
+     * @param TaskFormReader|null $forms       The engine's own form reader, which
+     *                                         is what refuses a declaration nobody
+     *                                         could fill. Nullable and LAST so every
+     *                                         existing construction site keeps working;
+     *                                         a step that declares a form and finds it
+     *                                         missing is REFUSED rather than accepted
+     *                                         unchecked, because an unvalidated form is
+     *                                         the one failure this change exists to end.
      *
      * @return void
      *
@@ -158,6 +187,7 @@ class DossiqAskPersonNode implements IFlowNode {
         private readonly LoggerInterface $logger,
         EngineTaskGateway $engineTasks,
         IUserSession $userSession,
+        private readonly ?TaskFormReader $forms = null,
     ) {
         $this->tasks = new AskPersonTaskStore(
             engineTasks: $engineTasks,
@@ -235,13 +265,56 @@ class DossiqAskPersonNode implements IFlowNode {
 
 
     /**
-     * Refuse a step that asks nothing of nobody.
+     * Refuse a step that asks nothing of nobody, or asks for a field nobody can fill.
+     *
+     * 🔑 THE FORM KEYS ARE FLAT, AND THAT IS NOT A STYLE CHOICE. A task raised
+     * by a STATUS TRANSITION carries a nested `task.form` block, which
+     * {@see \OCA\Dossiq\Service\Task\TaskDeclaration} writes verbatim to the
+     * engine task's `metadata.form`, and the engine reads through
+     * `TaskFormReader::fromRecord()`. A task raised by a FLOW NODE carries no
+     * such block: the engine resolves its form from the flow definition
+     * instead, through `TaskFormResolver::declarationOf()`, which matches the
+     * task's node id in the run's PINNED graph and reads `node['config']`
+     * through `TaskFormReader::fromConfig()` — and that method reads six FLAT
+     * keys:
+     *
+     * ```json
+     * {
+     *   "question": "Hoor de belanghebbende",
+     *   "assignee": "…",
+     *   "formKind": "fields",
+     *   "formSchema": "case",
+     *   "formFields": [{"field": "verslag", "required": true}]
+     * }
+     * ```
+     *
+     * A nested `form` block written here would be read by nothing:
+     * `fromConfig()` would find no `formKind`, return a declaration whose
+     * `hasForm()` is false, and the assignee would open a task with no fields
+     * and no error anywhere. Measured against openregister `parity/round2`
+     * before this was written, because the shape was the one thing that could
+     * not be guessed from the transition path.
+     *
+     * 🔑 NOTHING IS WRITTEN ONTO THE TASK. {@see buildTask} is unchanged. The
+     * task already carries `flowRun` and `flowNode`, which
+     * {@see \OCA\Dossiq\Service\Task\EngineTaskGateway} maps to `runUuid` and
+     * `nodeId`, so the engine resolves the form from the version the run is
+     * pinned to. Editing or publishing the flow afterwards therefore changes
+     * the form of no open task, and a copy on the task would be exactly the
+     * second truth that makes that impossible.
+     *
+     * The field-level refusals are NOT re-implemented here. `TaskFormReader`
+     * owns them and already names the schema, the field and the reason; a
+     * dossiq copy would be a second opinion about the same schema, and the two
+     * would disagree the first time openregister learned a new reason.
      *
      * @param array $config The step configuration.
      *
      * @return void
      *
-     * @throws UnexpectedValueException When the question or the assignee is missing.
+     * @throws UnexpectedValueException When the question or the assignee is
+     *                                  missing, or the form declaration cannot
+     *                                  be rendered by the person it is for.
      *
      * @spec openspec/specs/case-flow-human-steps/spec.md
      */
@@ -262,7 +335,66 @@ class DossiqAskPersonNode implements IFlowNode {
             );
         }
 
+        $this->validateForm(config: $config);
+
     }//end validateConfig()
+
+
+    /**
+     * Refuse a form declaration the performer could not fill.
+     *
+     * A step declaring NO form key is left alone: it behaves exactly as it did
+     * before this change, a task with a question, a description, an assignee
+     * and a due date, and nothing to fill in.
+     *
+     * A step that DOES declare one and finds no reader is REFUSED. The
+     * alternative is to accept it unchecked, which lands the broken
+     * declaration on the performer, who can neither fill the field nor skip
+     * it, and who is not the person who can fix it.
+     *
+     * @param array $config The step configuration.
+     *
+     * @return void
+     *
+     * @throws UnexpectedValueException When the declaration cannot be rendered.
+     *
+     * @spec openspec/specs/case-flow-human-steps/spec.md
+     */
+    private function validateForm(array $config): void {
+        $declared = false;
+        foreach (self::FORM_KEYS as $key) {
+            $value = ($config[$key] ?? null);
+            if ($value !== null && $value !== '' && $value !== []) {
+                $declared = true;
+                break;
+            }
+        }
+
+        if ($declared === false) {
+            return;
+        }
+
+        if ($this->forms === null) {
+            throw new UnexpectedValueException(
+                $this->l10n->t(
+                    'This step declares a form, and the task engine that has to render it is not available here, '
+                    . 'so the declaration cannot be checked. Remove the form keys or install OpenRegister.'
+                )
+            );
+        }
+
+        // Both calls throw naming what is wrong. `fromConfig` refuses the
+        // SHAPE — a kind that is neither fields nor external, an external
+        // naming no form, a field list beside a lifecycle action, a field key
+        // orphaned from any kind — and `validate` refuses the FIELDS, naming
+        // the schema, the field and why nobody can write it. Neither message
+        // is rewritten here: a refusal the author reads in two different
+        // wordings depending on which app refused is a refusal they cannot
+        // search for.
+        $form = $this->forms->fromConfig(config: $config);
+        $this->forms->validate(form: $form);
+
+    }//end validateForm()
 
 
     /**

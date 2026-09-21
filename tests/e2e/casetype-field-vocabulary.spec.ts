@@ -50,7 +50,7 @@ test.describe('case type field vocabulary', () => {
 	})
 
 	test.afterAll(async ({ request }) => {
-		await cleanupRunObjects(request)
+		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
 	/**
@@ -104,9 +104,8 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('#pd-add-items').selectOption('string')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((row: any) => row.name === name)
@@ -122,9 +121,8 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('#pd-add-type').selectOption('file')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((row: any) => row.name === name)
@@ -140,9 +138,8 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('#pd-add-format').selectOption('markdown')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((row: any) => row.name === name)
@@ -163,9 +160,8 @@ test.describe('case type field vocabulary', () => {
 			await tab.locator('.pd-fields__field--small input').nth(1).fill('10')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((row: any) => row.name === name)
@@ -201,9 +197,8 @@ test.describe('case type field vocabulary', () => {
 			timeout: 30_000,
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((row: any) => row.name === name)
@@ -229,9 +224,8 @@ test.describe('case type field vocabulary', () => {
 				.fill('{"op":"multiply","left":"aantal","right":"tarief"}')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((row: any) => row.name === name)
@@ -258,9 +252,8 @@ test.describe('case type field vocabulary', () => {
 				.fill('bag')
 		})
 
-		const token = await getRequestToken(request)
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((row: any) => row.name === name)
@@ -289,7 +282,7 @@ test.describe('case type field vocabulary', () => {
 		await expect(tab.locator('.properties-tab__error')).toContainText('polyline')
 
 		const stored = (
-			await listObjects(request, token, 'propertyDefinition', {
+			await listObjects(request, 'propertyDefinition', {
 				caseType: caseTypeId,
 			})
 		).find((entry: any) => entry.name === name)

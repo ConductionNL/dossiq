@@ -12,7 +12,7 @@
       "aanvullingsverzoek": {
         "slug": "aanvullingsverzoek",
         "icon": "FileQuestionOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Action",
         "title": "Aanvullingsverzoek",
         "description": "A request to an applicant to complete their submission, under Awb 4:5. It names the party asked, what is missing, who asked, when, and the date the hersteltermijn ends. It stays readable after it is answered, and after it expires unanswered.",
@@ -70,13 +70,15 @@
             "type": "string",
             "title": "Summary",
             "description": "One line naming what this request is about, so a list of requests reads without opening each one.",
-            "searchable": true
+            "matchType": "fulltext",
+            "inputControl": "text"
           },
           "party": {
             "type": "string",
             "title": "Party asked",
             "description": "Who was asked. The applicant on most cases, but a gemachtigde where one is on the case.",
-            "searchable": true
+            "matchType": "fuzzy",
+            "inputControl": "text"
           },
           "recipient": {
             "type": "string",
@@ -93,7 +95,8 @@
             "type": "string",
             "title": "Why",
             "description": "Why the case cannot be decided without this, in the handler's own words. A note beside the typed reason, never instead of it.",
-            "searchable": true
+            "matchType": "fulltext",
+            "inputControl": "text"
           },
           "missingItems": {
             "type": "array",
@@ -191,7 +194,8 @@
             "title": "Days given",
             "description": "How many days the applicant was given, which is the same number the term was suspended by."
           }
-        }
+        },
+        "searchable": true
       },
       "case": {
         "properties": {

@@ -49,6 +49,11 @@ class PersonalQueueService {
 	 * @param QueueOrdering        $ordering    The one urgency rule.
 	 * @param QueueViewPreferences $preferences What the reader changed about their own view.
 	 * @param LoggerInterface      $logger      Logger.
+	 * @param QueueItemLifecycle   $lifecycle   Whether an item still stands for this
+	 *                                          person. LAST and defaulted, like
+	 *                                          `QueueItem::$waiting` and for the same
+	 *                                          reason: every existing construction of
+	 *                                          this service keeps working unchanged.
 	 *
 	 * @return void
 	 *
@@ -59,6 +64,7 @@ class PersonalQueueService {
 		private readonly QueueOrdering $ordering,
 		private readonly QueueViewPreferences $preferences,
 		private readonly LoggerInterface $logger,
+		private readonly QueueItemLifecycle $lifecycle = new QueueItemLifecycle(),
 	) {
 	}//end __construct()
 
@@ -89,6 +95,10 @@ class PersonalQueueService {
 
 			try {
 				foreach ($source->itemsFor(userId: $userId) as $item) {
+					if ($this->hasClosed(item: $item, userId: $userId) === true) {
+						continue;
+					}
+
 					$items[] = $item;
 				}
 			} catch (Throwable $e) {
@@ -116,6 +126,42 @@ class PersonalQueueService {
 			'total' => count($ordered),
 		];
 	}//end forPerson()
+
+	/**
+	 * Whether an item has stopped standing for this person.
+	 *
+	 * `QueueItemLifecycle` has answered this since the queue shipped and
+	 * nothing asked it, so a case somebody finished, or handed on, stayed on
+	 * their queue until they pressed something. A work list that shows work
+	 * already done is one people stop trusting, and then stop reading.
+	 *
+	 * 🔴 AN ITEM WITH NO SUBJECT IS LEFT ALONE, AND THE EARLY RETURN SAYS SO IN
+	 * ONE PLACE. A source that passed nothing is saying it did not read one,
+	 * which is a different statement from "the subject is gone". Eight of the
+	 * ten declared sources pass nothing today, so the day anybody reads an
+	 * absent subject as a closed one, every one of their items disappears and
+	 * every source still reports itself available.
+	 *
+	 * Measured rather than assumed: today `stillStands()` happens to answer TRUE
+	 * for an empty array anyway, because it only treats a NULL subject as
+	 * withdrawn, so deleting this branch reddens nothing. It stays because that
+	 * agreement is incidental, and `testASourceThatPassesNoSubjectKeepsItsItems`
+	 * pins the behaviour either way: it reddens when this branch is inverted.
+	 *
+	 * @param QueueItem $item   The item.
+	 * @param string    $userId The person whose queue this is.
+	 *
+	 * @return bool TRUE when the item should not be shown.
+	 *
+	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+	 */
+	private function hasClosed(QueueItem $item, string $userId): bool {
+		if ($item->subject === []) {
+			return false;
+		}
+
+		return ($this->lifecycle->stillStands(item: $item, subject: $item->subject, userId: $userId) === false);
+	}//end hasClosed()
 
 	/**
 	 * Group the ordered items.

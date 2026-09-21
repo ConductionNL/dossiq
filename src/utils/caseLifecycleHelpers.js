@@ -154,77 +154,6 @@ export function buildTransitionPayload({ transitionId, comment, resultTypeId }) 
 }
 
 /**
- * The lifecycle actions the case's state allows, in menu order.
- *
- * The server decides; this only reads its answer. An unreadable state offers
- * nothing, which is the safe reading of "the case did not say".
- *
- * @param {object} state The `/lifecycle` response.
- * @return {Array<string>} The action ids to offer.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function offeredLifecycleActions(state) {
-	if (!state || typeof state !== 'object') {
-		return []
-	}
-	const offered = []
-	if (state.canSuspend === true) {
-		offered.push('suspend')
-	}
-	if (state.canResume === true) {
-		offered.push('resume')
-	}
-	if (state.canExtend === true) {
-		offered.push('extend')
-	}
-	if (state.canReopen === true) {
-		offered.push('reopen')
-	}
-	return offered
-}
-
-/**
- * Whether one lifecycle gesture is honest to offer on this case.
- *
- * The dialog asks before it posts. The reason is not politeness: the four
- * gestures sit in a menu that cannot read the case type — an `open-modal`
- * action's `visibleWhen` sees the case record, and `suspensionAllowed` lives
- * on the case TYPE — so the menu offers what the record alone can justify and
- * this is where the case type gets its say.
- *
- * A state that could not be read refuses nothing. The endpoint is the
- * authority on the gesture either way, and a dialog that blocks on its own
- * failed request would hide a gesture the case does allow.
- *
- * @param {string} action One of suspend, resume, extend, reopen.
- * @param {object|null} state The `/lifecycle` response, or null when unread.
- * @return {string} The refusal code, or the empty string when allowed.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function lifecycleRefusalCode(action, state) {
-	if (!state || typeof state !== 'object') {
-		return ''
-	}
-	if (offeredLifecycleActions(state).includes(String(action))) {
-		return ''
-	}
-	switch (String(action)) {
-		case 'suspend':
-			return state.suspended === true
-				? 'already_suspended'
-				: 'suspension_not_allowed'
-		case 'resume':
-			return 'not_suspended'
-		case 'extend':
-			return 'extension_not_allowed'
-		case 'reopen':
-			return 'case_not_closed'
-		default:
-			return ''
-	}
-}
-
-/**
  * Turn a server refusal into a sentence.
  *
  * @param {object} body The refusal body ({message, error, code, failedGuards, errors}).
@@ -287,6 +216,18 @@ export function refusalMessage(body, translate) {
 			return t('This case could not be found.')
 		case 'reason_required':
 			return t('Give a reason first.')
+		// The three approval refusals (REQ-DEC-01). The sentence naming the
+		// approval and the people it waits on rides on the blocked act itself,
+		// where there is room for it; these are what a handler sees when they
+		// posted the act anyway and the write path refused it.
+		case 'approval_outstanding':
+			return t('This act waits for an approval that is still open.')
+		case 'approval_rejected':
+			return t('The approval for this act was refused.')
+		case 'approval_unreadable':
+			return t(
+				'We could not reach the approval service, so this act stays closed.',
+			)
 		default:
 			// `message` before `error`: since refusals-carry-a-status, `error`
 			// is a kebab-case rule slug meant for code, and `message` is the

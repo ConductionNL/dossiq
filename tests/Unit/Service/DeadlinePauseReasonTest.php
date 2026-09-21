@@ -38,6 +38,8 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class DeadlinePauseReasonTest extends TestCase {
 	use MakesCaseDateNormaliser;

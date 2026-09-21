@@ -67,8 +67,6 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	 *
 	 * @return GuardResult
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {

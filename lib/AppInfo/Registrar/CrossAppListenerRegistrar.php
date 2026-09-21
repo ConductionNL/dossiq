@@ -48,6 +48,19 @@ class CrossAppListenerRegistrar {
 	 * @return void
 	 */
 	public function register(IRegistrationContext $context): void {
+		$this->registerFlowNodes(context: $context);
+		$this->registerDeliveryListeners(context: $context);
+		$this->registerIntakeListeners(context: $context);
+	}//end register()
+
+	/**
+	 * Offer OpenRegister's flow engine the six things a case can do.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 */
+	private function registerFlowNodes(IRegistrationContext $context): void {
 		// ADR-065: OpenRegister owns the flow engine; dossiq contributes the six
 		// things a case can DO, because every one of OpenRegister's own nineteen
 		// nodes is control-flow or data and none of them acts outward.
@@ -62,7 +75,16 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Flow\DossiqFlowNodeListener::class
 			);
 		}
+	}//end registerFlowNodes()
 
+	/**
+	 * Listen for what became of something this app sent out.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 */
+	private function registerDeliveryListeners(IRegistrationContext $context): void {
 		// ADR-041 delivery seam: integriq concludes a besluit-publication
 		// delivery this app requested (PublicationService) with a terminal
 		// DeliveryConcludedEvent; the listener projects the outcome onto the
@@ -76,5 +98,90 @@ class CrossAppListenerRegistrar {
 				\OCA\Dossiq\Listener\DeliveryConcludedListener::class
 			);
 		}
-	}//end register()
+		// REQ: digital-post-reaches-integriq, what became of a letter. Integriq
+		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
+		// tracked message, `failed` and `read` included, so this is how a case
+		// learns that a letter did not arrive rather than going on showing the
+		// last good news anyone heard. FQN string and a `class_exists` guard,
+		// the same as the three above and for the same reason.
+		//
+		// It fails towards doing nothing: a wrong name registers nothing, the
+		// stored message keeps the status the send gave it, and nobody is told
+		// a letter arrived that did not.
+		if (class_exists(\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT,
+				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::class
+			);
+		}
+	}//end registerDeliveryListeners()
+
+	/**
+	 * Listen for work arriving from a form, a channel or a message.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 */
+	private function registerIntakeListeners(IRegistrationContext $context): void {
+		// REQ-LEAF-103 (leaf-integrations): a submission of a form a case type
+		// bound opens a case with the statutory clock already running. `forms`
+		// is optional, and the guard is what keeps an instance without it
+		// booting: the event name is an FQN STRING on the listener, never an
+		// import, because a type hint on a class the instance does not have is
+		// a fatal when the container builds the listener rather than a feature
+		// that is quietly missing.
+		//
+		// It also fails towards doing nothing. A wrong event name makes
+		// `class_exists` answer false, nothing registers, and no submission
+		// opens a case. For a path whose only act is CREATING work, that is
+		// the right direction to fail in.
+		if (class_exists(\OCA\Dossiq\Listener\FormSubmittedListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\FormSubmittedListener::EVENT,
+				\OCA\Dossiq\Listener\FormSubmittedListener::class
+			);
+		}
+
+		// REQ: an-intake-message-opens-a-case. Integriq receives on a channel,
+		// matches a routing rule and asks whoever owns the target to open one.
+		// Nothing answered, so every form submission, messaging message and
+		// public space report it routed was held with "No app opened a case
+		// for this message". An FQN string for the reason the delivery seam
+		// above uses one: integriq is optional, and a cross-app event class
+		// name is a runtime lookup this app can only follow.
+		//
+		// It fails towards doing nothing. A wrong name makes `class_exists`
+		// answer false, nothing registers, and integriq holds its messages
+		// exactly as it does today, which for a path whose only act is
+		// CREATING work is the right direction to fail in.
+		if (class_exists(\OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT,
+				\OCA\Dossiq\Listener\IntakeMessageRoutedListener::class
+			);
+		}
+		// REQ: inbound-messages-consume-integriq. Integriq offers every received
+		// message to whichever app owns cases, with a result slot the listener
+		// answers linked, created or declined. Nothing listened for it, so
+		// every offer went unanswered and landed in integriq's `unassigned`.
+		// That is correct behaviour on integriq's part, and the app that had
+		// gone quiet was this one. FQN string and a `class_exists` guard, the
+		// same as the four above and for the same reason.
+		//
+		// It fails towards doing nothing: a wrong name registers nothing and
+		// integriq holds its messages exactly as it does today, which for a
+		// path whose act is CREATING work is the right direction to fail in.
+		//
+		// It is a DIFFERENT event from IntakeMessageRoutedEvent above, and the
+		// two listeners are not duplicates. That one answers a routing rule
+		// that already decided a message belongs to a case schema; this one is
+		// offered a message and its detected reference and has to decide.
+		if (class_exists(\OCA\Dossiq\Listener\MessageReceivedListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\MessageReceivedListener::EVENT,
+				\OCA\Dossiq\Listener\MessageReceivedListener::class
+			);
+		}
+	}//end registerIntakeListeners()
 }//end class

@@ -120,7 +120,7 @@ class IntegrationStatusService {
 		'kcc' => ['identification_method'],
 		'dmn' => ['decision_table_schema'],
 		'financial' => ['dwangsom_callback_secret'],
-		'berichtenbox' => ['berichtenbox_adapter'],
+		'berichtenbox' => ['digital_post_source', 'berichtenbox_adapter'],
 		'templates' => ['beschikking_template_adapter'],
 	];
 

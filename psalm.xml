@@ -33,6 +33,9 @@
         <file name="tests/Stubs/OpenRegister/Event/PersonLinkedEvent.php" />
         <file name="tests/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php" />
         <file name="tests/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php" />
+        <!-- case-merge: OpenRegister's merge event, which CaseMergeRegistrar
+             registers the follower against by `::class`. -->
+        <file name="tests/Stubs/OpenRegister/Event/ObjectsMergedEvent.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>

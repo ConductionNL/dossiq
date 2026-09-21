@@ -56,7 +56,7 @@
 				data-testid="case-version-move-target"
 				:inputLabel="t('dossiq', 'Version to move to')"
 				:options="targetOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label" />
 
 			<div
@@ -220,7 +220,7 @@ export default {
 		 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
 		 */
 		targetOptions() {
-			return this.targets.map(version => ({
+			return this.targets.map((version) => ({
 				id: version.id,
 				label: t('dossiq', 'Version {version}', {
 					version: version.version,
@@ -375,8 +375,7 @@ export default {
 		 */
 		refusalOf(e) {
 			return (
-				e?.response?.data?.message
-				|| t('dossiq', 'The case was not moved.')
+				e?.response?.data?.message || t('dossiq', 'The case was not moved.')
 			)
 		},
 	},

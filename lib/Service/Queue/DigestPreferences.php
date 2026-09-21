@@ -175,8 +175,6 @@ class DigestPreferences {
 	 *
 	 * @return array{enabled: bool, hour: int, source: string, scope: string} The settings now stored.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The stored preference is itself an on/off switch.
-	 *
 	 * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
 	 */
 	public function save(string $userId, bool $enabled, int $hour): array {

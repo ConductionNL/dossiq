@@ -39,8 +39,16 @@ const LISTING = {
 			email: 'jan@example.org',
 			role: 'afzender',
 		},
-		{ partyUuid: 'party-council', displayName: 'Gemeente Utrecht', role: 'geadresseerde' },
-		{ contactUid: 'uid-ouder', displayName: 'Ouder Link', role: 'belanghebbende' },
+		{
+			partyUuid: 'party-council',
+			displayName: 'Gemeente Utrecht',
+			role: 'geadresseerde',
+		},
+		{
+			contactUid: 'uid-ouder',
+			displayName: 'Ouder Link',
+			role: 'belanghebbende',
+		},
 	],
 }
 
@@ -57,9 +65,9 @@ describe('the picker offers the parties of the case', () => {
 
 	it('offers a link written before the party model under its contact uid', () => {
 		expect(partyIdentifier({ contactUid: 'uid-ouder' })).toBe('uid-ouder')
-		expect(partyIdentifier({ partyUuid: 'party-jan', contactUid: 'uid-x' })).toBe(
-			'party-jan',
-		)
+		expect(
+			partyIdentifier({ partyUuid: 'party-jan', contactUid: 'uid-x' }),
+		).toBe('party-jan')
 		expect(partyIdentifier(null)).toBe('')
 	})
 

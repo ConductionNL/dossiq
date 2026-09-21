@@ -35,12 +35,15 @@ use OCA\Dossiq\Service\Beschikking\FilinqTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Dossiq\Service\Beschikking\TemplateEngineAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
+use OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter;
 use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
 use OCA\Dossiq\Service\IntegrationStatusService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IL10N;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -102,6 +105,7 @@ class NotAnAdapter {
  * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter
  * @uses \OCA\Dossiq\Service\Beschikking\MockTemplateEngineAdapter
  * @uses \OCA\Dossiq\Support\FleetAppId
+ * @uses \OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter
  */
 class AdapterHonestyTest extends TestCase {
 
@@ -146,9 +150,17 @@ class AdapterHonestyTest extends TestCase {
 			}
 		);
 
+		// The Berichtenbox DEFAULT is IntegriqAdapter now, not MockAdapter, so
+		// the container has to be able to build it. Left to `new $id()` it
+		// dies with an ArgumentCountError on five constructor arguments, which
+		// reads as a registrar that binds nothing rather than as a test that
+		// was not told the default moved.
+		$dispatcher = $this->createMock(IEventDispatcher::class);
+		$userSession = $this->createMock(IUserSession::class);
+
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($appConfig, $appManager, $l10n, $logger): object {
+			static function (string $id) use ($appConfig, $appManager, $dispatcher, $l10n, $logger, $userSession): object {
 				return match ($id) {
 					IAppConfig::class => $appConfig,
 					IAppManager::class => $appManager,
@@ -156,6 +168,13 @@ class AdapterHonestyTest extends TestCase {
 					LoggerInterface::class => $logger,
 					MockAdapter::class => new MockAdapter(logger: $logger),
 					MockTemplateEngineAdapter::class => new MockTemplateEngineAdapter(),
+					IntegriqAdapter::class => new IntegriqAdapter(
+						dispatcher: $dispatcher,
+						appManager: $appManager,
+						appConfig: $appConfig,
+						userSession: $userSession,
+						logger: $logger,
+					),
 					default => new $id(),
 				};
 			}
@@ -218,8 +237,13 @@ class AdapterHonestyTest extends TestCase {
 		$this->assertArrayHasKey(BerichtenboxAdapterInterface::class, $factories);
 		$this->assertArrayHasKey(TemplateEngineAdapterInterface::class, $factories);
 
+		// IntegriqAdapter and NOT MockAdapter: the registrar's own comment
+		// says why the default moved. An instance that never set the key used
+		// to report every letter to a citizen as delivered, because the mock
+		// simulates the send. The unconfigured seam refuses now, and this is
+		// where that is asserted rather than described.
 		$berichtenbox = $factories[BerichtenboxAdapterInterface::class]($this->container(named: ''));
-		$this->assertInstanceOf(MockAdapter::class, $berichtenbox);
+		$this->assertInstanceOf(IntegriqAdapter::class, $berichtenbox);
 
 		$template = $factories[TemplateEngineAdapterInterface::class]($this->container(named: ''));
 		$this->assertInstanceOf(MockTemplateEngineAdapter::class, $template);
@@ -319,8 +343,11 @@ class AdapterHonestyTest extends TestCase {
 
 		// And the Integrations page looks the seams up under keys that resolve
 		// to those same settings, so saving one moves the row it belongs to.
+		// Berichtenbox carries a second key: the adapter is bound by default
+		// now, and what an instance still has to set is the integriq source it
+		// sends over.
 		$this->assertSame(
-			[SubstitutableAdapterRegistrar::BERICHTENBOX_CONFIG_KEY],
+			[IntegriqAdapter::SOURCE_CONFIG_KEY, SubstitutableAdapterRegistrar::BERICHTENBOX_CONFIG_KEY],
 			IntegrationStatusService::SAVE_REQUIRED_KEYS['berichtenbox']
 		);
 		$this->assertSame(

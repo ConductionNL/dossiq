@@ -216,6 +216,7 @@ import {
 	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
 import { dragToScroll } from '../../utils/dragToScroll.js'
+import { capacityRefusal } from '../../utils/statusCapacity.js'
 import { mergeColumnColour } from '../../utils/statusColour.js'
 import { failedActionsWarning } from '../../utils/transitionOutcome.js'
 import {
@@ -536,12 +537,25 @@ export default {
 							existing.colour,
 							st.colour,
 						)
+						// 🔴 A MERGED COLUMN SHOWS NO LIMIT. A capacity is
+						// authored on ONE status type, and this column holds
+						// the cases of every type whose status shares this
+						// name. One number over two different limits would be
+						// wrong in both directions, and a number that read
+						// "9 of 12" while the engine refused at 4 is worse
+						// than no number at all. The refusal still bites per
+						// case, on the concrete status the case is moving to.
+						existing.capacity = null
+						existing.merged = true
 					} else {
 						colByName.set(name, {
 							id: name,
 							name,
 							order,
 							colour: mergeColumnColour(null, st.colour),
+							capacity:
+								Number(st.capacity) > 0 ? Number(st.capacity) : null,
+							merged: false,
 						})
 					}
 				}
@@ -759,6 +773,43 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
 		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 		 */
+		/**
+		 * Why a card may not land on this column, when it may not.
+		 *
+		 * The decision lives in `src/utils/statusCapacity.js`: the board reads
+		 * the CONCRETE target status rather than the merged column, because a
+		 * column holds every status type sharing a name and each carries its
+		 * own limit.
+		 *
+		 * @param {string} columnName The merged column's name.
+		 * @param {string} targetStatusId The concrete status the case moves to.
+		 * @return {string} The refusal, or '' when the move may go ahead.
+		 *
+		 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+		 */
+		capacityRefusal(columnName, targetStatusId) {
+			const status = this.statusById[targetStatusId]
+			if (!status) {
+				return ''
+			}
+
+			return capacityRefusal(
+				status,
+				this.casesByStatus[columnName] || [],
+				(text, params) => this.t('dossiq', text, params),
+			)
+		},
+
+		/**
+		 * Move a card to another column, through the engine and nowhere else.
+		 *
+		 * @param {string} caseId The dropped case id.
+		 * @param {string} newColumn The target column's name (merged status name).
+		 * @return {Promise<void>} Nothing.
+		 *
+		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+		 */
 		async onDrop(caseId, newColumn) {
 			this.draggedCaseId = null
 
@@ -790,6 +841,18 @@ export default {
 						"That status is not part of this case's workflow.",
 					),
 				)
+				return
+			}
+
+			// 🔴 REFUSED BEFORE THE CARD LANDS, not after the round trip. The
+			// engine refuses this too and its answer is the authority; this is
+			// the affordance, so a handler does not watch a card slide back.
+			// It counts the cases in the column carrying the CONCRETE target
+			// status, never the column's whole length: a merged column holds
+			// several status types and each has its own limit.
+			const refusal = this.capacityRefusal(newColumn, targetStatusId)
+			if (refusal !== '') {
+				showError(refusal)
 				return
 			}
 

@@ -85,6 +85,10 @@ function control(name) {
 
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: control('NcButton'),
+	// The approval chain draws an empty state when decidiq is absent. A
+	// component the dialog imports and this mock does not declare takes the
+	// whole file down at collection time.
+	NcEmptyContent: control('NcEmptyContent'),
 	NcModal: control('NcModal'),
 	NcProgressBar: control('NcProgressBar'),
 	NcSelect: control('NcSelect'),

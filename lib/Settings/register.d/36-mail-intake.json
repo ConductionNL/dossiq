@@ -9,6 +9,9 @@
         },
         "schemas": {
             "mailIntakeEntry": {
+                "slug": "mailIntakeEntry",
+                "version": "1.0.0",
+                "type": "object",
                 "title": "Mail intake entry",
                 "description": "One message the intake mailbox processed, with its original, its authentication results, the filter that decided and what became of it.",
                 "properties": {

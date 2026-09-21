@@ -64,8 +64,6 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass Injected into DataSubjectRequestCase and the controller.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) Four platform services behind one door is the point.
- *
  * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
  */
 class PlatformDataSubjectRights {
@@ -165,10 +163,6 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform is absent or refuses.
 	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
-	 * @psalm-suppress MixedAssignment OpenRegister is resolved by name.
-	 * @psalm-suppress MixedArgument OpenRegister is resolved by name.
-	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function previewErasure(
@@ -200,8 +194,6 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform is absent or does not know it.
 	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
-	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function preview(string $previewId): array {
@@ -223,8 +215,6 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform refuses the approval.
 	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
-	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function approvePreview(string $previewId): array {
@@ -241,9 +231,6 @@ class PlatformDataSubjectRights {
 	 * @return array<string, mixed> `{destroyed, pseudonymised, withheld, refused, failed, complete}`.
 	 *
 	 * @throws RefusedException When the preview is unapproved, spent or stale.
-	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
-	 * @psalm-suppress MixedArgument OpenRegister is resolved by name.
 	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
@@ -271,8 +258,6 @@ class PlatformDataSubjectRights {
 	 *
 	 * @throws RefusedException When the platform is absent or refuses.
 	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
-	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
 	public function requestExport(string $subject, ?string $type, ?string $requestId): array {
@@ -298,8 +283,6 @@ class PlatformDataSubjectRights {
 	 * @param string $exportId The export uuid.
 	 *
 	 * @return array<string, mixed> The export record, or an empty array when it is gone.
-	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by name.
 	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */
@@ -357,9 +340,6 @@ class PlatformDataSubjectRights {
 	 * @return array<string, mixed> Whatever the platform answered.
 	 *
 	 * @throws RefusedException When the platform refused, with its own rule.
-	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister's exception is resolved by name.
-	 * @psalm-suppress MixedArgument OpenRegister's exception is resolved by name.
 	 *
 	 * @spec openspec/changes/data-subject-requests-drive-the-platform/specs/avg-processing-surface/spec.md
 	 */

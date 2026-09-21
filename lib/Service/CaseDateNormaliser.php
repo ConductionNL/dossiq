@@ -31,6 +31,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use InvalidArgumentException;
+use OCP\AppFramework\Utility\ITimeFactory;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -125,12 +126,14 @@ class CaseDateNormaliser {
 	 * @param TenantConfigurationService $tenantConfiguration Reads `tenantConfiguration.timezone`.
 	 * @param SettingsService $settingsService Resolves engine classes when OpenRegister is installed.
 	 * @param LoggerInterface $logger Logger.
+	 * @param ITimeFactory $time The clock. Injected so a test can state the instant it reasons from.
 	 */
 	public function __construct(
 		private readonly TenantContext $tenantContext,
 		private readonly TenantConfigurationService $tenantConfiguration,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ITimeFactory $time,
 	) {
 	}//end __construct()
 
@@ -283,12 +286,19 @@ class CaseDateNormaliser {
 	/**
 	 * Now, in the administered zone.
 	 *
+	 * The instant comes from the injected clock, not from `new
+	 * DateTimeImmutable('now')`. Reading the clock inline left every test that
+	 * asked what day it is coupled to the day it ran, and three of them turned
+	 * red on 2026-09-19 at 22:00 UTC, which is midnight in Amsterdam: the test
+	 * built its fixture in the process zone while this class answered in the
+	 * administered one, so for two hours a night the two disagreed by a day.
+	 *
 	 * @return DateTimeImmutable The current moment.
 	 *
 	 * @spec openspec/changes/one-date-write-path/specs/case-management/spec.md
 	 */
 	public function now(): DateTimeImmutable {
-		return new DateTimeImmutable('now', $this->timeZone());
+		return $this->time->now()->setTimezone($this->timeZone());
 	}//end now()
 
 	/**

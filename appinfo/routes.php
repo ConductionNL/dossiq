@@ -67,6 +67,10 @@ $extra = [
         // case-assistant-surface; this app only enriches with case context.
     ['name' => 'assistant#availability', 'url' => '/api/assistant/availability', 'verb' => 'GET'],
     ['name' => 'assistant#converse',     'url' => '/api/assistant/converse',     'verb' => 'POST'],
+    // Which AI features a case type offers, and where each one runs. The
+    // declaration is read locally first, so an undeclared case type reaches
+    // no network at all (REQ-AIC-01).
+    ['name' => 'assistant#aiFeatures',   'url' => '/api/assistant/ai-features',  'verb' => 'GET'],
 
         // KCC Klantcontact (kcc-klantcontact-integratie).
         // Static/verb routes precede the {id} wildcard routes.
@@ -148,6 +152,33 @@ $extra = [
     ['name' => 'caseVersion#deprecate',     'url' => '/api/case-types/{id}/deprecate',    'verb' => 'POST'],
     ['name' => 'caseVersion#options',       'url' => '/api/case/{caseId}/version-move',   'verb' => 'GET'],
     ['name' => 'caseVersion#moveToVersion', 'url' => '/api/case/{caseId}/version-move',   'verb' => 'POST'],
+        // Rebinding a running case to a DIFFERENT case type (case-type-rebind).
+        // Deliberately not folded into version-move: that act derives its
+        // landing status by name across two versions of one type, and across
+        // two types a name means nothing, so the mapping is asked for. The
+        // permission route carries no case id on purpose: the manifest's
+        // `visibleWhen` fetches a URL and compares one field, and the question
+        // it asks is about the caller's group rather than about a case.
+    ['name' => 'caseRebind#permission',     'url' => '/api/rebind/permission',            'verb' => 'GET'],
+    ['name' => 'caseRebind#options',        'url' => '/api/case/{caseId}/rebind',         'verb' => 'GET'],
+    ['name' => 'caseRebind#rebind',         'url' => '/api/case/{caseId}/rebind',         'verb' => 'POST'],
+
+        // ── The family plan and its grounds (the-social-domain-plan-and-its-grounds)
+        // Rows 5.18 and 14.1. The plan read answers the plan, its goals, its
+        // interventions and whether it is due for review in ONE call: four
+        // round trips would let the four halves of one screen come from four
+        // moments. The lookup's guard is not a role, it is that a GROUND has
+        // been chosen, and the service refuses without one before it reads
+        // anything; `grounds` exists so the dialog offers the server's own list
+        // rather than a second copy that can drift out of it.
+    ['name' => 'sociaalDomeinPlan#plan',             'url' => '/api/family-plans/{planId}',                    'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#saveGoal',         'url' => '/api/family-plans/{planId}/goals',              'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#saveIntervention', 'url' => '/api/family-plans/{planId}/interventions',      'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#recordReview',     'url' => '/api/family-plans/{planId}/reviews',            'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#closeGoal',        'url' => '/api/family-plan-goals/{goalId}/close',         'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#grounds',          'url' => '/api/cross-domain/grounds',                     'verb' => 'GET'],
+    ['name' => 'sociaalDomeinPlan#lookUp',           'url' => '/api/cross-domain/lookup',                      'verb' => 'POST'],
+    ['name' => 'sociaalDomeinPlan#lookupsAbout',     'url' => '/api/cross-domain/lookups/{bsn}',               'verb' => 'GET'],
     ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
 
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
@@ -337,6 +368,12 @@ $extra = [
 
         // Dashboard KPI aggregation endpoint.
     ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
+        // Which declared widgets this reader is shown (widget-roles-declared).
+        // Read by the `visibleWhen` on each declared widget, which fetches it
+        // and takes `visible.<widgetId>` out of the answer. It is the LAYOUT
+        // half: the data is already withheld by DashboardWidgetScope and by the
+        // endpoints behind the other thirteen widgets.
+    ['name' => 'widgetVisibility#index', 'url' => '/api/dashboard/widget-visibility', 'verb' => 'GET'],
 
         // Intelligent work-queue: urgency-scored personal queue + coordinator workload.
     ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],
@@ -372,6 +409,13 @@ $extra = [
         // dossiq-side side-effect: turning a saved note's @mention
         // tokens into real Nextcloud notifications.
     ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
+        // a-case-note-reaches-the-neighbouring-register: sending ONE note to a
+        // neighbouring ZGW register, as a zaakinformatieobject of a reserved
+        // type. A deliberate act rather than a hook on save, because note
+        // storage is OpenRegister's entirely and it dispatches no note-saved
+        // event dossiq could listen for; `notes#mention` above is called the
+        // same way, after the note is already stored.
+    ['name' => 'notes#push', 'url' => '/api/cases/{caseId}/notes/push', 'verb' => 'POST'],
 
         // ── Workflow Definitions (workflowTemplate) ─────────────────────
         // CRUD on workflowTemplate is served by the manifest renderer +
@@ -415,6 +459,9 @@ $extra = [
         // perform, with the sentence naming the role, because an act that is
         // simply absent teaches nobody why.
     ['name' => 'caseActs#acts',           'url' => '/api/case/{caseId}/acts',           'verb' => 'GET'],
+        // Decision outcomes on the case: start the decidiq walk a gated act
+        // waits for, and link its decision id to the case.
+    ['name' => 'caseApproval#raise',      'url' => '/api/case/{caseId}/approvals/{act}', 'verb' => 'POST'],
     ['name' => 'caseActs#finish',         'url' => '/api/case/{caseId}/finish',         'verb' => 'POST'],
     ['name' => 'caseActs#abort',          'url' => '/api/case/{caseId}/abort',          'verb' => 'POST'],
     ['name' => 'caseActs#archive',        'url' => '/api/case/{caseId}/archive',        'verb' => 'POST'],
@@ -444,6 +491,24 @@ $extra = [
     ['name' => 'caseAssignment#state',   'url' => '/api/case/{caseId}/assignment', 'verb' => 'GET'],
     ['name' => 'caseAssignment#claim',   'url' => '/api/case/{caseId}/claim',      'verb' => 'POST'],
     ['name' => 'caseAssignment#release', 'url' => '/api/case/{caseId}/release',    'verb' => 'POST'],
+
+        // Merging two cases into one (case-merge, row 2.23). The merge itself
+        // is OpenRegister's; what lives here is the refusal, because whether a
+        // case may be merged away is a case management rule and the browser
+        // hiding the action is not a refusal.
+    ['name' => 'caseMerge#merge',        'url' => '/api/case/{caseId}/merge',      'verb' => 'POST'],
+
+        // The public "track your case" link of a case that was merged away.
+        // OpenRegister's own token endpoint answers with the case the token
+        // names; this one follows `mergedInto` and answers with the case the
+        // request became part of, under the same public-group read.
+    ['name' => 'publicCaseSurvivor#survivor', 'url' => '/api/public/case-tokens/{token}/survivor', 'verb' => 'GET', 'requirements' => ['token' => '[^/]+']],
+
+        // The two answers to a followed term move (dependent-term-follows-
+        // predecessor, row Q3.21). The days are on the task, not in the body,
+        // so neither endpoint takes one.
+    ['name' => 'caseTermFollow#accept',  'url' => '/api/case/{caseId}/term-follow/{taskId}/accept',  'verb' => 'POST'],
+    ['name' => 'caseTermFollow#decline', 'url' => '/api/case/{caseId}/term-follow/{taskId}/decline', 'verb' => 'POST'],
 
         // The Awb 4:3a acknowledgement of receipt (ontvangstbevestiging). One
         // read that answers "did we confirm receipt, when, to whom and by
@@ -497,6 +562,10 @@ $extra = [
         // are NOT a route of their own: they ride on `caseActs#acts` above,
         // so "what may I do right now" is one endpoint feeding one menu.
     ['name' => 'caseTask#capabilities', 'url' => '/api/case-tasks/capabilities',         'verb' => 'GET'],
+    // admin-inspect-entry: the Inspect action's visibleWhen predicate. The
+    // manifest action vocabulary has no adminOnly, and only the endpoint mode
+    // of visibleWhen can ask about the READER rather than the record.
+    ['name' => 'inspect#availability', 'url' => '/api/inspect/availability', 'verb' => 'GET'],
     ['name' => 'caseTask#complete',     'url' => '/api/case-tasks/{taskId}/complete',    'verb' => 'POST'],
     ['name' => 'caseTask#claim',        'url' => '/api/case-tasks/{taskId}/claim',       'verb' => 'POST'],
     ['name' => 'caseTask#attach',       'url' => '/api/case/{caseId}/tasks/{taskId}/attachments', 'verb' => 'POST'],
@@ -638,6 +707,11 @@ $extra = [
         // Per-case inspection result submission and retrieval.
     ['name' => 'inspectionChecklist#submitResult', 'url' => '/api/vth/cases/{id}/inspection-result', 'verb' => 'POST'],
     ['name' => 'inspectionChecklist#getResults',   'url' => '/api/vth/cases/{id}/inspection-results', 'verb' => 'GET'],
+        // What an inspector captured at the site. The metadata validator and
+        // the transcription queue both shipped with mobiel-inspectie-offline
+        // and had no door, so a photo or a voice memo reached nobody and the
+        // fieldEvidence page read a schema nothing wrote.
+    ['name' => 'fieldEvidence#capture', 'url' => '/api/inspections/{inspectionRef}/evidence', 'verb' => 'POST'],
         // Per-case advice request creation.
     ['name' => 'advice#createForCase', 'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'POST'],
     ['name' => 'advice#getForCase',    'url' => '/api/vth/cases/{id}/advice-requests', 'verb' => 'GET'],
@@ -704,6 +778,13 @@ $extra = [
     ['name' => 'mailIntake#junk',    'url' => '/api/mail-intake/log/{entryId}/junk',     'verb' => 'POST'],
     ['name' => 'mailIntake#bounce',  'url' => '/api/mail-intake/log/{entryId}/bounce',   'verb' => 'POST'],
     ['name' => 'mailIntake#move',    'url' => '/api/mail-intake/log/{entryId}/move',     'verb' => 'POST'],
+        // inbound-messages-consume-integriq: the fifth act on a log entry.
+        // The other four release, junk, bounce and move a message; none of
+        // them let a handler who KNOWS which case a message belongs on say so,
+        // and `release` files it on the case the matcher already chose. Behind
+        // the same intake role, plus a per-case read guard on the case the
+        // handler picked.
+    ['name' => 'mailIntake#fileOnCase', 'url' => '/api/mail-intake/log/{entryId}/file-on-case', 'verb' => 'POST'],
 
     // Intake-triage-and-refusal: what a case type asks for before a case of it
     // exists, and the three acts an intake worker performs. `requirements` is
@@ -713,6 +794,11 @@ $extra = [
     // controller body, because they read and write the triage queue.
     ['name' => 'intakeTriage#requirements', 'url' => '/api/intake/case-types/{caseTypeId}/requirements', 'verb' => 'GET'],
     ['name' => 'intakeTriage#refuse',       'url' => '/api/cases/{caseId}/refuse',                       'verb' => 'POST'],
+    // Decision outcomes on the case: intake ends with an ontvankelijkheid
+    // verdict on the case types that declare one. It goes through the same
+    // per-case guard `refuse` does, because it mutates a case and, on an
+    // inadmissible verdict, closes it.
+    ['name' => 'intakeTriage#judgeAdmissibility', 'url' => '/api/cases/{caseId}/admissibility',          'verb' => 'POST'],
     ['name' => 'intakeTriage#queue',        'url' => '/api/intake/triage',                               'verb' => 'GET'],
     ['name' => 'intakeTriage#sleepItem',    'url' => '/api/intake/triage/{entryId}/sleep',                'verb' => 'POST'],
     ['name' => 'intakeTriage#fanOut',       'url' => '/api/intake/fan-out',                              'verb' => 'POST'],
@@ -756,6 +842,16 @@ $extra = [
     ['name' => 'milestone#caseProgress', 'url' => '/api/cases/{caseId}/milestones/progress', 'verb' => 'GET'],
     ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
     ['name' => 'milestone#reverse',  'url' => '/api/cases/{caseId}/milestones/{milestoneId}/reverse', 'verb' => 'POST'],
+
+    // What happens next on a case, and the gesture that moves it on
+    // (task-dependencies-and-the-next-planned-action, gap register row 3.28).
+    // READING the list of planned actions is not here: they are ordinary
+    // OpenRegister objects and the case page reads them as it reads every
+    // other collection, so a route for that would be the pass-through ADR-022
+    // refuses. `next` answers the ONE action a handler is asked about, and
+    // `complete` is the two writes that must not be three client calls.
+    ['name' => 'plannedAction#next',     'url' => '/api/cases/{caseId}/planned-actions/next', 'verb' => 'GET'],
+    ['name' => 'plannedAction#complete', 'url' => '/api/cases/{caseId}/planned-actions/{actionId}/complete', 'verb' => 'POST'],
 
         // ── Besluitvorming workflow ──────────────────────────────────────
     ['name' => 'besluitvorming#activateTemplate', 'url' => '/api/besluitvorming/templates/{slug}/activate', 'verb' => 'POST'],
@@ -831,6 +927,20 @@ $extra = [
         // schema has no manifest page, so this is the only way in.
     ['name' => 'bezwaarHearing#recordAttendance', 'url' => '/api/bezwaar/hearings/{sessionId}/attendance', 'verb' => 'POST'],
 
+    // The decision on an objection, Awb 7:11. `DecisionService` has held the
+    // whole disposition matrix since the bezwaar lifecycle shipped and no
+    // route reached any of it, so a jurist could hold the hearing and had
+    // nowhere to write what it decided.
+    ['name' => 'bezwaarDecision#draft',   'url' => '/api/bezwaar/{objectionId}/decision',          'verb' => 'POST'],
+    ['name' => 'bezwaarDecision#publish', 'url' => '/api/bezwaar/decisions/{decisionId}/publish',  'verb' => 'POST'],
+
+    // Which besluit an objection is against. A CONTROLLER and not a listener:
+    // no create event carries a contested decision, because which besluit is
+    // contested is a judgement a jurist makes rather than a fact the case
+    // already holds, and a guessed one files the objection against the wrong
+    // besluit.
+    ['name' => 'bezwaarObjection#open',   'url' => '/api/bezwaar/{caseId}/objection',              'verb' => 'POST'],
+
         // Archief / e-Depot handover is owned by OpenRegister (migrate-archival-to-or,
         // ADR-022): retention, transfer, proof and destruction run through OR's
         // /api/archival, /api/transfers, /api/settings/edepot surfaces. Dossiq
@@ -884,6 +994,30 @@ $extra = [
     ['name' => 'caseHandover#accept',      'url' => '/api/case/{caseId}/handover/{transferId}/accept',    'verb' => 'POST'],
     ['name' => 'caseHandover#refuse',      'url' => '/api/case/{caseId}/handover/{transferId}/refuse',    'verb' => 'POST'],
     ['name' => 'caseHandover#outstanding', 'url' => '/api/teams/{team}/outstanding-handovers',            'verb' => 'GET'],
+
+    // The chain of custody (read-only: the chain is written by the moves) and
+    // the takeover request beside it (custody-and-handover-of-a-case).
+    ['name' => 'caseCustody#chain',        'url' => '/api/case/{caseId}/custody',                         'verb' => 'GET'],
+    ['name' => 'caseCustody#holder',       'url' => '/api/case/{caseId}/custody/holder',                  'verb' => 'GET'],
+    ['name' => 'caseCustody#unit',         'url' => '/api/units/{unit}/custody',                          'verb' => 'GET'],
+    ['name' => 'caseTakeover#ask',         'url' => '/api/case/{caseId}/takeover',                        'verb' => 'POST'],
+    ['name' => 'caseTakeover#onCase',      'url' => '/api/case/{caseId}/takeovers',                       'verb' => 'GET'],
+    ['name' => 'caseTakeover#accept',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/accept',    'verb' => 'POST'],
+    ['name' => 'caseTakeover#refuse',      'url' => '/api/case/{caseId}/takeover/{takeoverId}/refuse',    'verb' => 'POST'],
+
+    // Dividing one case into two, and the dated reports inside one. The
+    // DECIDING half of both shipped in #2945 as three pure classes with no
+    // caller: CaseSplitPolicy, CaseSplitPlan and IncidentRecord answered
+    // questions nobody was asking them. These are the doors that ask.
+        // What the case type allows a split to divide, asked BEFORE the picker
+        // draws so a handler reads the rule instead of discovering it from a
+        // refusal after choosing (split-picker-asks-the-policy).
+    ['name' => 'caseSplit#divisible',      'url' => '/api/case/{caseId}/split',                           'verb' => 'GET'],
+    ['name' => 'caseSplit#split',          'url' => '/api/case/{caseId}/split',                           'verb' => 'POST'],
+    ['name' => 'caseIncident#index',       'url' => '/api/case/{caseId}/incidents',                       'verb' => 'GET'],
+    ['name' => 'caseIncident#record',      'url' => '/api/case/{caseId}/incidents',                       'verb' => 'POST'],
+    ['name' => 'caseIncident#assign',      'url' => '/api/case/{caseId}/incidents/{incidentId}/assign',   'verb' => 'POST'],
+    ['name' => 'caseIncident#settle',      'url' => '/api/case/{caseId}/incidents/{incidentId}/settle',   'verb' => 'POST'],
     ['name' => 'caseSeats#show',           'url' => '/api/case/{caseId}/seats',                           'verb' => 'GET'],
     ['name' => 'caseSeats#nameCoordinator', 'url' => '/api/case/{caseId}/seats/coordinator',              'verb' => 'PUT'],
     ['name' => 'leaverHandover#preview',   'url' => '/api/leaver-handover/preview',                       'verb' => 'POST'],
@@ -935,6 +1069,11 @@ $extra = [
         // TermijnDefinitiesTab.vue has always called this collection; only
         // /api/termijn/instances* was declared, so the tab rendered empty.
     ['name' => 'termijnDefinitie#index',  'url' => '/api/termijn/definities',      'verb' => 'GET'],
+    // What every term on this instance is counted against: the zone, and
+    // whether an organisation calendar answers the Awt roll. The admin page
+    // says which, because a roll that could not be made and a roll that was
+    // not needed produce the same plausible date.
+    ['name' => 'termijnDefinitie#calendar', 'url' => '/api/termijn/calendar',      'verb' => 'GET'],
     ['name' => 'termijnDefinitie#create', 'url' => '/api/termijn/definities',      'verb' => 'POST'],
     ['name' => 'termijnDefinitie#update', 'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
         // Notice-of-default registration.
@@ -959,6 +1098,9 @@ $extra = [
     ['name' => 'deadlineReporting#dashboard',        'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
     ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
     ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+        // The first response, counted and averaged from what was stored on the
+        // cases at the time (term-configuration-beyond-the-case-type, row 8.24).
+    ['name' => 'deadlineReporting#firstResponseReport', 'url' => '/api/termijn/reports/eerste-reactie', 'verb' => 'GET'],
         // IV3/BBV taakveld reference list, for the case-type classification
         // picker. The quarterly IV3 cost report that used to sit alongside it
         // is gone under ADR-081 — Shillinq is the only statutory reporter. The
@@ -972,6 +1114,14 @@ $extra = [
         // documents-live-on-the-case: the documents joined to this case whose file
         // lives in another case's folder, as the Files tab's linked rows.
     ['name' => 'linkedDocuments#index',            'url' => '/api/cases/{caseId}/dossier/linked',              'verb' => 'GET'],
+    // scan-verdict-on-the-row: what files_antivirus recorded for one file, for
+    // the Scan column and the document properties dialog. dossiq scans nothing.
+    ['name' => 'scanVerdict#show',                 'url' => '/api/files/{fileId}/scan',                        'verb' => 'GET'],
+        // inbound-messages-consume-integriq: reading a saved `.eml` or `.msg`
+        // on a case as the message it is. dossiq parses nothing: the bytes go
+        // to integriq's MessageParser and the parsed message is filed on the
+        // case beside the original, which is never moved or deleted.
+    ['name' => 'savedMail#read',                   'url' => '/api/cases/{caseId}/files/{fileId}/read-as-message', 'verb' => 'POST'],
     // people-on-the-case: who can be asked for a file, and the asking.
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
@@ -983,6 +1133,12 @@ $extra = [
     ['name' => 'caseDocumentGeneration#generateDocument', 'url' => '/api/cases/{caseId}/dossier/generate',        'verb' => 'POST'],
     ['name' => 'zaakdossier#linkExisting',         'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'POST'],
     ['name' => 'zaakdossier#unlinkDocument',       'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'DELETE'],
+    // approval-chain-on-the-document REQ-BVL-005. Which documents are in a
+    // route and at which step, asked for the whole Files tab in one call. It
+    // is a READ of decidiq's route state and never a stored copy on the
+    // document: a copy is written once and disagrees with the route the first
+    // time somebody approves from decidiq's own page.
+    ['name' => 'zaakdossier#approvalMarkers',      'url' => '/api/informatieobjecten/approval-markers',       'verb' => 'GET'],
     ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],
     ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',          'verb' => 'POST'],
     ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status',   'verb' => 'PATCH'],

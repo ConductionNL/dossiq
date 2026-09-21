@@ -118,7 +118,16 @@ describe('statusType carries a colour and a list visibility', () => {
 		// 1.5.0 adds `fieldRules`, which an instance that stopped at 1.4.0
 		// would never import: the status form would offer the rules, the rows
 		// would carry them, and the publish would project nothing.
-		expect(schema('statusType').version).toBe('1.5.0')
+		//
+		// THE LITERAL PIN IS GONE, and the clause this test always meant is
+		// what is asserted instead: the version MOVED past the checklist's
+		// 1.1.0 and past the twice-claimed 1.3.0. Pinned to one number, the
+		// test reddened on the next lane to touch statusType for a reason that
+		// had nothing to do with the property it was guarding, which is how it
+		// arrived on this branch red (statusType is at 1.6.0 and nothing in
+		// this change touches it).
+		const [major, minor] = schema('statusType').version.split('.').map(Number)
+		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1005)
 	})
 })
 
@@ -333,9 +342,7 @@ describe('the case type page shows its version chain', () => {
 		expect(deprecate.type).toBe('api-call')
 		expect(deprecate.op).toBeUndefined()
 		expect(deprecate.values).toBeUndefined()
-		expect(deprecate.url).toBe(
-			'/apps/dossiq/api/case-types/@objectId/deprecate',
-		)
+		expect(deprecate.url).toBe('/apps/dossiq/api/case-types/@objectId/deprecate')
 		expect(deprecate.method).toBe('POST')
 		expect(deprecate.confirm).toBe(true)
 	})
@@ -462,6 +469,95 @@ describe('an attribute without a case type is shared', () => {
 			.version.split('.')
 			.map(Number)
 		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1002)
+	})
+})
+
+describe('attributes are in folders', () => {
+	// attribute-catalogue-folders, gap register row 11.23. Case types were in
+	// folders and attributes were a flat list, and every failure below is one
+	// nothing reports at runtime: a folder sidebar over a property that is not
+	// facetable renders whatever happens to be on the loaded page, a category
+	// the schema does not declare is dropped by OpenRegister on save without a
+	// word, and a menu entry pointing at a page id that does not exist warns
+	// only to the console.
+	const attributes = () => page('PropertyDefinitions')
+
+	it('declares category on propertyDefinition, facetable', () => {
+		const category = schema('propertyDefinition').properties.category
+		expect(category).toBeDefined()
+		expect(category.type).toBe('string')
+		expect(category.facetable).toBe(true)
+		expect(category.title).toBe('Category')
+	})
+
+	it('defaults the category rather than leaving it empty', () => {
+		// CnFolderSidebar's `fieldTree()` skips a row whose grouping value is
+		// null, undefined or empty, so there is no empty bucket to label and
+		// an attribute with no category would have no folder at all. The
+		// default is what puts it under Uncategorised.
+		expect(schema('propertyDefinition').properties.category.default).toBe(
+			'Uncategorised',
+		)
+	})
+
+	it('moves the propertyDefinition version so the property is imported', () => {
+		const [major, minor] = schema('propertyDefinition')
+			.version.split('.')
+			.map(Number)
+		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1004)
+	})
+
+	it('gives the attributes their own index page', () => {
+		expect(attributes()).toBeDefined()
+		expect(attributes().type).toBe('index')
+		expect(attributes().config.schema).toBe('propertyDefinition')
+		expect(attributes().config.register).toBe('dossiq')
+	})
+
+	it('folders the index on category, in the shape CaseTypes uses', () => {
+		const folders = attributes().config.folderSidebar
+		expect(folders.source).toBe('field')
+		expect(folders.field).toBe('category')
+		expect(folders.filterField).toBe('category')
+		expect(folders.allLabel).toBe('All attributes')
+	})
+
+	it('shows the category as a column too', () => {
+		expect(attributes().config.columns).toContain('category')
+		expect(attributes().config.columns).toContain('name')
+	})
+
+	it('binds every column to a property the schema declares', () => {
+		const properties = Object.keys(schema('propertyDefinition').properties)
+		for (const column of attributes().config.columns) {
+			expect(
+				properties,
+				`${column} is a propertyDefinition property`,
+			).toContain(column)
+		}
+	})
+
+	it('offers no view action, because there is no detail page for one', () => {
+		expect(attributes().config.showViewAction).toBe(false)
+		expect(
+			manifest.pages.find((p) => p.id === 'PropertyDefinitionDetail'),
+		).toBeUndefined()
+	})
+
+	it('reaches the page from the settings menu, with a registered icon', () => {
+		const entry = manifest.menu.find(
+			(item) => item.id === 'PropertyDefinitionsMenu',
+		)
+		expect(entry).toBeDefined()
+		expect(entry.route).toBe('PropertyDefinitions')
+		expect(entry.section).toBe('settings')
+		expect(
+			manifest.pages.some((p) => p.id === entry.route),
+			'the menu names a page that exists',
+		).toBe(true)
+		expect(iconsSource, `${entry.icon} in src/icons.js`).toContain(
+			`vue-material-design-icons/${entry.icon}.vue`,
+		)
 	})
 })
 

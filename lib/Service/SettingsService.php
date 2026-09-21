@@ -28,12 +28,8 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Settings\ConfigKeys;
-use OCA\Dossiq\Service\Settings\RegisterFragmentMerger;
-use OCA\Dossiq\Service\Settings\RegisterStorageDeclaration;
-use OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler;
-use OCA\Dossiq\Service\Settings\SchemaKeyReconciler;
-use OCA\Dossiq\Service\Settings\SchemaSlugResolver;
-use OCA\Dossiq\Service\Settings\SchemaSlugMap;
+use OCA\Dossiq\Service\Settings\ConfigurationImport;
+use OCA\Dossiq\Service\Settings\OpenRegisterBridge;
 use OCP\App\IAppManager;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
@@ -108,35 +104,19 @@ class SettingsService {
 		'woo_publication_document_schema' => 'document',
 	];
 
-	private const OPENREGISTER_APP_ID = 'openregister';
+	/**
+	 * Reaching OpenRegister's optional services by name.
+	 *
+	 * @var OpenRegisterBridge
+	 */
+	private OpenRegisterBridge $openRegister;
 
 	/**
-	 * The ADR-037 register-fragment merger.
+	 * Importing the shipped register, and reconciling what the import drops.
 	 *
-	 * @var RegisterFragmentMerger
+	 * @var ConfigurationImport
 	 */
-	private RegisterFragmentMerger $fragments;
-
-	/**
-	 * Declares magic-table storage for every schema of the register.
-	 *
-	 * @var RegisterStorageDeclaration
-	 */
-	private RegisterStorageDeclaration $storage;
-
-	/**
-	 * Reconciles `*_schema` appconfig keys against live OpenRegister schema ids.
-	 *
-	 * @var SchemaKeyReconciler
-	 */
-	private SchemaKeyReconciler $schemaKeys;
-
-	/**
-	 * Reconciles declarative `x-openregister-*` blocks onto live schemas.
-	 *
-	 * @var SchemaAnnotationReconciler
-	 */
-	private SchemaAnnotationReconciler $schemaAnnotations;
+	private ConfigurationImport $import;
 
 	/**
 	 * The app-config key holding the Besluit schema id.
@@ -181,29 +161,17 @@ class SettingsService {
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
 	) {
-		$this->fragments = new RegisterFragmentMerger();
-		$this->storage   = new RegisterStorageDeclaration();
-
-		// One resolver, shared by both reconcilers. They must agree on which
-		// schema a slug means: when they disagreed, the config keys pointed at
-		// one `task` schema while the calculations were merged onto another.
-		$slugResolver = new SchemaSlugResolver(
-			appConfig: $appConfig,
+		$this->openRegister = new OpenRegisterBridge(
+			appManager: $appManager,
 			container: $container,
 			logger: $logger
 		);
 
-		$this->schemaKeys = new SchemaKeyReconciler(
+		$this->import = new ConfigurationImport(
+			openRegister: $this->openRegister,
 			appConfig: $appConfig,
 			container: $container,
-			logger: $logger,
-			slugResolver: $slugResolver
-		);
-		$this->schemaAnnotations = new SchemaAnnotationReconciler(
-			container: $container,
-			fragments: $this->fragments,
-			logger: $logger,
-			slugResolver: $slugResolver
+			logger: $logger
 		);
 	}//end __construct()
 
@@ -221,8 +189,7 @@ class SettingsService {
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	public function isOpenRegisterAvailable(): bool {
-		return $this->appManager->isEnabledForUser(self::OPENREGISTER_APP_ID) === true
-			|| $this->appManager->isInstalled(self::OPENREGISTER_APP_ID) === true;
+		return $this->openRegister->isAvailable();
 	}//end isOpenRegisterAvailable()
 
 	/**
@@ -238,26 +205,37 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ObjectService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function getObjectService(): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister ObjectService',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->openRegister->objectService();
 	}//end getObjectService()
+
+	/**
+	 * Lazily resolve OpenRegister's per-object grant resolver.
+	 *
+	 * THE ONE THING DOSSIQ CANNOT ANSWER FOR ITSELF. A grant is a real
+	 * Nextcloud share on the object's folder, resolved per request by
+	 * OpenRegister, and since openregister#3873 that resolution walks the
+	 * declared hierarchy: a grant on a parent case answers for its deelzaken.
+	 * Asking this service is how dossiq consumes that instead of keeping a
+	 * second, parallel answer, which is what ADR-022 is about and what
+	 * `deelzaken-inherit-the-parent-grants` D-2 asks for by name.
+	 *
+	 * Same lazy-resolve contract as {@see self::getObjectService()}: an
+	 * optional runtime dependency, resolved at call time rather than
+	 * type-hinted, and callers MUST handle null. A null answer means dossiq
+	 * cannot ask, which every caller here treats as NOT GRANTED — the
+	 * fail-closed direction, and the behaviour dossiq had before inheritance
+	 * existed at all.
+	 *
+	 * @return object|null OpenRegister's ObjectGrantResolver, or null when unavailable.
+	 *
+	 * @spec openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md
+	 */
+	public function getObjectGrantResolver(): ?object {
+		return $this->openRegister->objectGrantResolver();
+	}//end getObjectGrantResolver()
 
 	/**
 	 * Lazily resolve OpenRegister's FileService for in-process file attachment.
@@ -278,25 +256,10 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister FileService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/woo-publication-in-process-object-writes/specs/woo-publication-via-opencatalogi/spec.md
 	 */
 	public function getFileService(): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\FileService');
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister FileService',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->openRegister->fileService();
 	}//end getFileService()
 
 	/**
@@ -313,25 +276,10 @@ class SettingsService {
 	 *
 	 * @return object|null The OpenRegister ApprovalService or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getApprovalService(): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ApprovalService');
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister ApprovalService',
-				['exception' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->openRegister->approvalService();
 	}//end getApprovalService()
 
 	/**
@@ -345,25 +293,10 @@ class SettingsService {
 	 *
 	 * @return object|null The resolved service, or null when unavailable
 	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
-	 *
 	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P0.1
 	 */
 	public function getOpenRegisterClass(string $class): ?object {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return null;
-		}
-
-		try {
-			return $this->container->get($class);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: Could not access OpenRegister class',
-				['class' => $class, 'exception' => $e->getMessage()]
-			);
-			return null;
-		}
+		return $this->openRegister->classNamed(class: $class);
 	}//end getOpenRegisterClass()
 
 	/**
@@ -378,148 +311,8 @@ class SettingsService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function loadConfiguration(bool $force = false): array {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return [
-				'success' => false,
-				'message' => 'OpenRegister is not installed or enabled',
-			];
-		}
-
-		try {
-			$configurationService = $this->container->get(
-				'OCA\OpenRegister\Service\ConfigurationService'
-			);
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: Could not access ConfigurationService',
-				['exception' => $e->getMessage()]
-			);
-			return [
-				'success' => false,
-				'message' => 'Could not access ConfigurationService: ' . $e->getMessage(),
-			];
-		}
-
-		$effective = $this->readEffectiveConfiguration();
-		if (isset($effective['error']) === true) {
-			return $effective['error'];
-		}
-
-		$configData = $effective['data'];
-		$configVersion = ($configData['info']['version'] ?? '0.0.0');
-
-		try {
-			$importResult = $configurationService->importFromApp(
-				appId: Application::APP_ID,
-				data: $configData,
-				version: $configVersion,
-				force: $force,
-			);
-
-			$configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
-			$this->reconcileSchemaConfig();
-
-			// 🔴 THE IMPORT DOES NOT CARRY THE DECLARATIVE ANNOTATION BLOCKS, SO
-			// MERGE THEM HERE. Importing the register creates the schemas, but the
-			// `x-openregister-*` blocks declared alongside them in
-			// dossiq_register.json do not survive onto the live schema. Without
-			// this call a FRESH instance never gets them: `isTerminalStatus` never
-			// materialises, so every completed task keeps reading false and the
-			// widgets filtering on it keep showing finished work, and
-			// `daysUntilDue` does not exist to extend, so due-date columns render
-			// blank. Both failures are silent. The e2e suite caught it on a clean
-			// CI install after passing on a dev box where the reconcile had been
-			// run by hand. Idempotent, so it is safe on every import.
-			$this->reconcileSchemaDeclarativeConfig();
-
-			$this->logger->info(
-				'Dossiq: Configuration imported and reconciled',
-				['version' => $configVersion, 'configured' => $configuredCount]
-			);
-
-			return [
-				'success' => true,
-				'message' => 'Configuration imported and auto-configured (' . $configuredCount . ' schemas mapped)',
-				'version' => $configVersion,
-				'configured' => $configuredCount,
-				'result' => $importResult,
-			];
-		} catch (\Exception $e) {
-			$this->logger->error(
-				'Dossiq: Configuration import failed',
-				['exception' => $e->getMessage()]
-			);
-			return [
-				'success' => false,
-				'message' => 'Import failed: ' . $e->getMessage(),
-			];
-		}//end try
+		return $this->import->loadConfiguration(force: $force);
 	}//end loadConfiguration()
-
-	/**
-	 * Read dossiq_register.json and deep-merge the ADR-037 register fragments
-	 * on top of it, producing the effective register configuration to import.
-	 *
-	 * Returns either `['data' => array]` on success or `['error' => array]`
-	 * carrying the caller-facing failure shape, so {@see loadConfiguration()}
-	 * stays a single import flow rather than also being a file reader.
-	 *
-	 * @return array{data?: array, error?: array}
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	private function readEffectiveConfiguration(): array {
-		$configPath = __DIR__ . '/../Settings/dossiq_register.json';
-		if (file_exists($configPath) === false) {
-			$this->logger->error(
-				'Dossiq: Configuration file not found at ' . $configPath
-			);
-			return [
-				'error' => [
-					'success' => false,
-					'message' => 'Configuration file not found',
-				],
-			];
-		}
-
-		$configContent = file_get_contents($configPath);
-		$configData = json_decode($configContent, true);
-
-		if (json_last_error() !== JSON_ERROR_NONE) {
-			$this->logger->error('Dossiq: Invalid JSON in configuration file');
-			return [
-				'error' => [
-					'success' => false,
-					'message' => 'Invalid JSON in configuration file',
-				],
-			];
-		}
-
-		// ADR-037: deep-merge any modular register fragments from
-		// lib/Settings/register.d/*.json on top of the monolith. This lets
-		// concurrent same-app builds add registers/schemas via isolated
-		// fragment files instead of all editing dossiq_register.json and
-		// conflicting. Fragments are applied in sorted filename order.
-		// The merge also returns a hash of the fragment set. It is deliberately
-		// not captured: it used to be folded into the version so that adding or
-		// changing a fragment forced a re-import, but OpenRegister gates with
-		// version_compare, which treats `+…` as further version parts and
-		// compares them LEXICALLY rather than as semver build metadata — so
-		// whether the gate fired depended on how two md5 hashes happened to
-		// sort. Unchanged content re-imported about half the time; a real
-		// change was skipped the other half. OpenRegister now hashes the merged
-		// configuration itself and skips on hash equality, which detects a
-		// changed fragment from the data. The version stays a version.
-		[$configData] = $this->fragments->merge(
-			base: $configData,
-			fragmentDir: __DIR__ . '/../Settings/register.d'
-		);
-		// Every schema of the register is stored in a magic table; the
-		// register has to say so, or OpenRegister cannot name its objects.
-		$configData = $this->storage->declare(config: $configData);
-
-		return ['data' => $configData];
-	}//end readEffectiveConfiguration()
 
 	/**
 	 * Get all current settings as an associative array.
@@ -745,11 +538,7 @@ class SettingsService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function reconcileSchemaConfig(): int {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return 0;
-		}
-
-		return $this->schemaKeys->reconcile();
+		return $this->import->reconcileSchemaConfig();
 	}//end reconcileSchemaConfig()
 
 	/**
@@ -765,9 +554,9 @@ class SettingsService {
 	 * those blocks from `Schema::getConfiguration()`, so a dropped block silently
 	 * disables auto-deadline / auto-identifier / initial-status on create.
 	 *
-	 * The reconcile itself lives in {@see SchemaAnnotationReconciler}: for every
+	 * The reconcile itself lives in {@see \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler}: for every
 	 * schema defined in the (fragment-merged) register JSON it reads the
-	 * annotation keys listed in {@see SchemaSlugMap::SCHEMA_ANNOTATION_KEYS} and
+	 * annotation keys listed in {@see \OCA\Dossiq\Service\Settings\SchemaSlugMap::SCHEMA_ANNOTATION_KEYS} and
 	 * writes them onto the live schema's configuration via the SchemaMapper,
 	 * MERGING (never replacing) so existing keys such as `objectNameField` are
 	 * preserved. Fully idempotent: a schema whose live configuration already
@@ -778,10 +567,6 @@ class SettingsService {
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
 	public function reconcileSchemaDeclarativeConfig(): int {
-		if ($this->isOpenRegisterAvailable() === false) {
-			return 0;
-		}
-
-		return $this->schemaAnnotations->reconcile();
+		return $this->import->reconcileSchemaDeclarativeConfig();
 	}//end reconcileSchemaDeclarativeConfig()
 }//end class

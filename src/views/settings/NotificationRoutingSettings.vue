@@ -10,11 +10,28 @@
   says who set it, and a value a team default decided says so in words rather
   than just reading as off.
 
-  A person can still overrule their team. Clearing their own value hands the
-  decision back to the layer below, which is why "use the team's setting" is a
-  button and not just the act of switching it back on.
+  THIS IS NOW THE SHARED SCREEN. dossiq had its own list beside
+  CnNotificationMatrix, which does the same job with one layer more. The
+  hand-rolled list could say app default, team default and your own, and had
+  nowhere to put a channel an administrator has FORCED or one the platform
+  REFUSES for this recipient. A handler could therefore see a switch that was
+  on, believe they had turned it off, and keep receiving the notice with
+  nothing on the page saying an administrator had overridden them. That is the
+  whole reason the shared screen exists, so this consumes it rather than
+  growing a second implementation towards it.
 
-  @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+  What is kept from the old screen: the domain selector, because pinning a
+  preference to one part of your work is dossiq's own idea and the shared
+  screen takes a scope per row; the team default block, because setting one is
+  an act of administration the platform checks and refuses with a 403 that is
+  shown rather than second-guessed; and the labels, because a handler should
+  read "a case is assigned to me", not a schema key.
+
+  What is gone: the per-row "use the setting from my team" button. The shared
+  screen has no such control, so clearing is what a handler does by switching a
+  row back to what the layer below says, and the row then names that layer.
+
+  @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 -->
 <template>
 	<div class="notification-routing">
@@ -37,34 +54,18 @@
 				t('dossiq', 'This instance routes no dossiq notifications yet.')
 			" />
 
-		<ul v-else class="notification-routing__list">
-			<li
-				v-for="entry in entries"
-				:key="entryKey(entry)"
-				class="notification-routing__item">
-				<NcCheckboxRadioSwitch
-					:modelValue="entry.enabled"
-					type="switch"
-					:data-testid="`notification-routing-switch-${entryKey(entry)}`"
-					@update:modelValue="(v) => setOwn(entry, v)">
-					{{ labelFor(entry) }}
-				</NcCheckboxRadioSwitch>
+		<CnNotificationMatrix
+			v-else
+			v-bind="preferenceProps"
+			data-testid="notification-routing-preferences"
+			@change="onChange" />
 
-				<p
-					class="notification-routing__decided"
-					:data-testid="`notification-routing-layer-${entryKey(entry)}`">
-					{{ decidedBy(entry) }}
-				</p>
-
-				<NcButton
-					v-if="entry.source === 'user-override'"
-					variant="tertiary"
-					:data-testid="`notification-routing-clear-${entryKey(entry)}`"
-					@click="useLayerBelow(entry)">
-					{{ t('dossiq', 'Use the setting from my team') }}
-				</NcButton>
-			</li>
-		</ul>
+		<p
+			v-if="message"
+			class="notification-routing__message"
+			data-testid="notification-routing-message">
+			{{ message }}
+		</p>
 
 		<div v-if="isAdmin" class="notification-routing__group">
 			<h3>{{ t('dossiq', 'Set a default for a team') }}</h3>
@@ -85,7 +86,7 @@
 
 			<NcSelect
 				:modelValue="selectedGroupEntry"
-				:options="entries"
+				:options="entryOptions"
 				label="notificationLabel"
 				:aria-label-combobox="t('dossiq', 'Notification')"
 				:inputLabel="t('dossiq', 'Notification')"
@@ -118,17 +119,21 @@
 </template>
 
 <script>
+import { CnNotificationMatrix } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
-	NcCheckboxRadioSwitch,
 	NcEmptyContent,
 	NcLoadingIcon,
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
 import {
-	clearPreference,
+	keyFor,
+	propsFor,
+	writeFor,
+} from '../../services/notificationPreferenceProps.js'
+import {
 	fetchPreferences,
 	saveGroupDefault,
 	savePreference,
@@ -138,8 +143,8 @@ export default {
 	name: 'NotificationRoutingSettings',
 
 	components: {
+		CnNotificationMatrix,
 		NcButton,
-		NcCheckboxRadioSwitch,
 		NcEmptyContent,
 		NcLoadingIcon,
 		NcSelect,
@@ -156,20 +161,50 @@ export default {
 	data() {
 		return {
 			entries: [],
+			channels: [],
 			loading: true,
 			domain: '',
 			group: '',
 			selectedGroupEntry: null,
 			groupMessage: '',
+			message: '',
 		}
 	},
 
 	computed: {
 		/**
+		 * What the shared screen renders.
+		 *
+		 * @return {object} Its props.
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 */
+		preferenceProps() {
+			return propsFor({
+				entries: this.entries,
+				channels: this.channels,
+				label: (entry) => this.labelFor(entry),
+				singleChannelLabel: t('dossiq', 'Notifications'),
+			})
+		},
+
+		/**
+		 * The notifications a team default can be set on.
+		 *
+		 * @return {Array<object>} The entries, each carrying its own label.
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
+		 */
+		entryOptions() {
+			return this.entries.map((entry) => ({
+				...entry,
+				notificationLabel: this.labelFor(entry),
+			}))
+		},
+
+		/**
 		 * The domains a preference may be pinned to, plus the unpinned answer.
 		 *
 		 * @return {Array<{id: string, label: string}>} The options.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
 		domainOptions() {
 			return [
@@ -184,7 +219,7 @@ export default {
 		 * The domain currently being shown.
 		 *
 		 * @return {{id: string, label: string}} The option.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
 		selectedDomain() {
 			return (
@@ -197,7 +232,7 @@ export default {
 		 * Whether a team default can be written from what is filled in.
 		 *
 		 * @return {boolean} TRUE when a group and a notification are chosen.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
 		canWriteGroupDefault() {
 			return this.group.trim() !== '' && this.selectedGroupEntry !== null
@@ -208,7 +243,7 @@ export default {
 	 * Read the reader's own effective preferences.
 	 *
 	 * @return {Promise<void>} When the read has finished.
-	 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+	 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 	 */
 	async mounted() {
 		await this.load()
@@ -216,36 +251,30 @@ export default {
 
 	methods: {
 		t,
+		keyFor,
 
 		/**
 		 * Read the preferences as they apply in the chosen domain.
 		 *
 		 * @return {Promise<void>} When the read has finished.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
 		async load() {
 			this.loading = true
 			try {
 				const scope = this.domain ? `domain:${this.domain}` : null
-				const entries = await fetchPreferences(scope)
-				this.entries = entries.map((entry) => ({
-					...entry,
-					notificationLabel: this.labelFor(entry),
-				}))
+				const answer = await fetchPreferences(scope)
+
+				// The service still answers with a bare array on an instance
+				// whose platform has no channel axis. Both shapes are read
+				// rather than one being assumed, because assuming the newer
+				// one renders an empty screen on every instance that has not
+				// been upgraded yet.
+				this.entries = Array.isArray(answer) ? answer : answer?.entries || []
+				this.channels = Array.isArray(answer) ? [] : answer?.channels || []
 			} finally {
 				this.loading = false
 			}
-		},
-
-		/**
-		 * A stable key for one entry.
-		 *
-		 * @param {object} entry The entry.
-		 * @return {string} The key.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
-		 */
-		entryKey(entry) {
-			return `${entry.schema}-${entry.notification}`
 		},
 
 		/**
@@ -253,7 +282,7 @@ export default {
 		 *
 		 * @param {object} entry The entry.
 		 * @return {string} The label.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
 		labelFor(entry) {
 			const known = {
@@ -278,41 +307,11 @@ export default {
 		},
 
 		/**
-		 * Which layer decided this value, in words.
-		 *
-		 * @param {object} entry The entry.
-		 * @return {string} The sentence.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
-		 */
-		decidedBy(entry) {
-			const scoped = entry.scope && entry.scope !== 'global'
-			if (entry.source === 'user-override') {
-				return scoped
-					? t('dossiq', 'You set this, for this part of your work only.')
-					: t('dossiq', 'You set this.')
-			}
-
-			if (entry.source === 'group-default') {
-				return scoped
-					? t(
-							'dossiq',
-							'Your team set this, for this part of your work only. You can decide for yourself.',
-						)
-					: t('dossiq', 'Your team set this. You can decide for yourself.')
-			}
-
-			return t(
-				'dossiq',
-				'Nobody has changed this, so it is on the setting it ships with.',
-			)
-		},
-
-		/**
 		 * Show the preferences as they apply in one domain.
 		 *
 		 * @param {?{id: string}} option The chosen domain.
 		 * @return {Promise<void>} When the read has finished.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
 		async chooseDomain(option) {
 			this.domain = option ? option.id : ''
@@ -320,36 +319,47 @@ export default {
 		},
 
 		/**
-		 * Record the reader's own value.
+		 * Record the reader's own value for one cell.
 		 *
-		 * @param {object} entry The entry.
-		 * @param {boolean} enabled Whether they want it.
+		 * The shared screen never emits for a locked cell, so a forced row
+		 * cannot be written from here. The guard below is not that check: it
+		 * refuses an id this app did not make, because a write to the wrong
+		 * notification is silent and permanent.
+		 *
+		 * @param {object} change What was set.
+		 * @param {string} change.eventId The row's id.
+		 * @param {string} [change.scope] The scope the row was on.
+		 * @param {boolean} change.value The new value.
 		 * @return {Promise<void>} When the write has finished.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
-		async setOwn(entry, enabled) {
-			await savePreference({
-				schema: entry.schema,
-				notification: entry.notification,
-				enabled,
-				scope: this.domain ? `domain:${this.domain}` : null,
-			})
-			await this.load()
-		},
+		async onChange({ eventId, scope = '', value }) {
+			const write = writeFor({ eventId, scope: scope || this.domain, value })
+			if (write === null) {
+				return
+			}
 
-		/**
-		 * Hand the decision back to the layer below.
-		 *
-		 * @param {object} entry The entry.
-		 * @return {Promise<void>} When the write has finished.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
-		 */
-		async useLayerBelow(entry) {
-			await clearPreference({
-				schema: entry.schema,
-				notification: entry.notification,
-				scope: this.domain ? `domain:${this.domain}` : null,
-			})
+			this.message = ''
+			try {
+				await savePreference({
+					schema: write.schema,
+					notification: write.notification,
+					enabled: write.enabled,
+					scope: write.scope || null,
+				})
+			} catch (error) {
+				// Said out loud, and then re-read. A failed write that left
+				// the switch where the click put it is a setting somebody
+				// believes they made.
+				this.message =
+					error?.response?.status === 403
+						? t(
+								'dossiq',
+								'An administrator decides this one, so it is not yours to change.',
+							)
+						: t('dossiq', 'That setting was not saved.')
+			}
+
 			await this.load()
 		},
 
@@ -361,7 +371,7 @@ export default {
 		 *
 		 * @param {boolean} enabled Whether the team gets it by default.
 		 * @return {Promise<void>} When the write has finished.
-		 * @spec openspec/changes/unread-state-on-the-case/specs/case-management/spec.md#requirement-a-notification-preference-says-which-layer-decided-it-req-urs-05
+		 * @spec openspec/changes/notification-settings-on-the-shared-screen/specs/case-management/spec.md
 		 */
 		async setGroupDefault(enabled) {
 			this.groupMessage = ''
@@ -397,20 +407,6 @@ export default {
 	gap: 16px;
 }
 
-.notification-routing__list {
-	display: flex;
-	flex-direction: column;
-	gap: 12px;
-	list-style: none;
-	padding: 0;
-}
-
-.notification-routing__item {
-	border-bottom: 1px solid var(--color-border);
-	padding-bottom: 12px;
-}
-
-.notification-routing__decided,
 .notification-routing__explainer {
 	color: var(--color-text-maxcontrast);
 	margin: 4px 0 0;

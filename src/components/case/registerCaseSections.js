@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
-import { registerDashboardWidget } from '@conduction/nextcloud-vue'
+import { CnNavCardGrid, registerDashboardWidget } from '@conduction/nextcloud-vue'
 import CaseSectionsWidget from './CaseSectionsWidget.vue'
 
 /**
@@ -36,5 +36,19 @@ export function registerCaseSections() {
 		surfaces: ['detail-page'],
 		displayName: 'Case sections',
 		icon: 'ViewAgendaOutline',
+	})
+
+	// `nav-card-grid` is a BUILT-IN widget for CnWidgetGrid, which resolves it
+	// from its own map. CnDetailWidgetHost does not read that map: it resolves
+	// a `type` from the shared catalog alone, so a case section naming
+	// `nav-card-grid` rendered nothing and logged nothing. The Object types
+	// section (data-model-link) is the first child that needs it. Not a
+	// container: its cards are links and it reads no case context.
+	registerDashboardWidget('nav-card-grid', {
+		renderer: CnNavCardGrid,
+		form: null,
+		surfaces: ['detail-page'],
+		displayName: 'Navigation cards',
+		icon: 'ViewGridOutline',
 	})
 }

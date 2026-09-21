@@ -83,8 +83,6 @@ class BrkController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function parcel(): JSONResponse {
@@ -135,8 +133,6 @@ class BrkController extends Controller {
 	 * @return JSONResponse carrying lookupStatus, parcel, dormant and extras.
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */

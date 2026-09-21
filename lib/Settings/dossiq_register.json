@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.19.2"
+        "version": "0.20.10"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "FolderCogOutline",
-                "version": "1.14.0",
+                "version": "1.15.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -45,13 +45,15 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Title"
                     },
                     "description": {
                         "type": "string",
                         "description": "Detailed description of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "identifier": {
@@ -69,25 +71,28 @@
                     "purpose": {
                         "type": "string",
                         "description": "The purpose or goal of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Purpose"
                     },
                     "trigger": {
                         "type": "string",
                         "description": "What triggers the creation of a case of this type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Trigger"
                     },
                     "subject": {
                         "type": "string",
                         "description": "The subject matter of this case type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Subject"
                     },
                     "processingDeadline": {
                         "type": "string",
                         "description": "ISO 8601 duration for the processing deadline (e.g. P30D)",
-                        "title": "Processing Deadline"
+                        "title": "Processing deadline"
                     },
                     "processingDeadlineDate": {
                         "type": "string",
@@ -233,18 +238,24 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this case type is valid",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     },
                     "validUntil": {
                         "type": "string",
                         "format": "date",
                         "description": "Date until which this case type is valid (null = indefinite)",
-                        "title": "Valid Until"
+                        "title": "Valid until"
                     },
                     "origin": {
                         "type": "string",
                         "description": "Initiator action (e.g. indienen, aanvragen)",
                         "title": "Origin"
+                    },
+                    "contributedBy": {
+                        "type": "string",
+                        "title": "Contributed by",
+                        "description": "The app that declares this case type, when another app does. Empty for a case type this organisation wrote itself. CaseTypeContributionRegistry stamps it from the app id rather than reading it from the provider: a provider naming a different app as the contributor would make an unowned case type look owned. SeedContributedCaseTypes writes a contributed case type ONCE and never again, so an administrator who edits it keeps their edit through every upgrade.",
+                        "facetable": true
                     },
                     "suspensionAllowed": {
                         "type": "boolean",
@@ -256,12 +267,12 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Whether the processing deadline can be extended",
-                        "title": "Extension Allowed"
+                        "title": "Extension allowed"
                     },
                     "extensionPeriod": {
                         "type": "string",
                         "description": "ISO 8601 duration for extension period (e.g. P14D)",
-                        "title": "Extension Period"
+                        "title": "Extension period"
                     },
                     "maxSuspensionDays": {
                         "type": "integer",
@@ -323,7 +334,7 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Whether publication of the decision is required",
-                        "title": "Publication Required"
+                        "title": "Publication required"
                     },
                     "internalOrExternal": {
                         "type": "string",
@@ -337,7 +348,7 @@
                     "handlerAction": {
                         "type": "string",
                         "description": "Action performed by the handler",
-                        "title": "Handler Action"
+                        "title": "Handler action"
                     },
                     "productsOrServices": {
                         "type": "array",
@@ -357,7 +368,7 @@
                     "referenceProcess": {
                         "type": "string",
                         "description": "Reference process definition (JSON-encoded object)",
-                        "title": "Reference Process"
+                        "title": "Reference process"
                     },
                     "responsible": {
                         "type": "string",
@@ -428,7 +439,7 @@
                             "caseType": "@objectId"
                         },
                         "description": "The default route through this case type: the workflow a case follows when it is not given one of its own. A case type may carry several routes, and this names the one new cases take. When unset, a case falls through to the case type's only active workflow. A case keeps the workflow it was bound to, even after a newer version is published (see case.workflowTemplate and case.workflowVersion).",
-                        "title": "Workflow Definition"
+                        "title": "Workflow definition"
                     },
                     "layerIds": {
                         "type": "array",
@@ -514,7 +525,7 @@
                                 "title": {
                                     "type": "string",
                                     "maxLength": 255,
-                                    "x-translatable": true,
+                                    "translatable": true,
                                     "title": "Title",
                                     "description": "What the handler is told is outstanding. Write it as the thing itself, not as the rule: \"the fire safety inspection\" rather than \"inspection obligation open\"."
                                 },
@@ -651,16 +662,53 @@
                         "title": "Case type group",
                         "description": "The group of case types this one belongs to. A samenwerkingsverband grants once on the group and every type in it inherits the grant, so thirty grants that drift become one. The inheritance is OpenRegister's (rbac-inherits-to-children): dossiq declares the membership and never re-applies a group grant to each type.",
                         "facetable": true
+                    },
+                    "splittableParts": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": ["documents", "parties", "tasks"]
+                        },
+                        "description": "What a split of a case of this type may divide. Which documents belong to which half is a judgement about the content and only the handler has it; what may be divided AT ALL is a rule that does not change per case, so it is declared here once and the handler is offered the allowed choices and no others. ABSENT MEANS ALL THREE: every case type predates this key, and reading silence as \"nothing may be divided\" would ship a split action that refuses every split on the day it arrives.",
+                        "title": "Splittable parts"
+                    },
+                    "paymentRequiredBeforeHandling": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether a case of this type waits for its leges before it may be handled. A vergunningaanvraag does; a melding openbare ruimte does not, because a pothole nobody fixed is a worse outcome than a fee nobody collected. Absent means no, so nothing on an existing install starts waiting for money the day this ships. Where it is true and the payment state cannot be read, the act is refused rather than allowed (ADR-102).",
+                        "title": "Payment required before handling"
+                    },
+                    "areaFallbackRoleType": {
+                        "type": "string",
+                        "description": "The roleType a case of this type routes to when its address falls in no administered boundary. Declared per case type because the right fallback differs: a melding goes to the central desk, a vergunning goes to the duty handler. Absent, an unresolvable area routes by the rule's own roleType and the case still says the fallback was used.",
+                        "title": "Area fallback role type"
+                    },
+                    "consentRequiredInsideOrganisation": {
+                        "type": "boolean",
+                        "title": "Consent required inside the organisation",
+                        "description": "Whether a move between two teams of this organisation also needs a recorded consent. Off by default, because a move inside one organisation is not a disclosure. A Jeugdwet file and a parking permit are not the same question, which is why this is declared per case type rather than decided in the service."
+                    },
+                    "takeoverAnswerPeriodDays": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Takeover answer period, in days",
+                        "description": "How long the holder has to accept or refuse a takeover request before it goes to the unit holding the case. Empty means the fleet default of three days."
+                    },
+                    "intakeFormRef": {
+                        "type": "string",
+                        "title": "Intake form",
+                        "description": "The hash of the Nextcloud Forms form that opens a case of this type. Leave it empty and nothing listens. A submission of a bound form starts the case with this type’s first status and the clock running from the day it came in.",
+                        "visible": true
                     }
                 }
             },
             "statusType": {
                 "slug": "statusType",
                 "icon": "ListStatus",
-                "version": "1.6.0",
+                "version": "1.7.0",
                 "x-schema-org": "schema:ActionStatusType",
                 "x-zgw-equivalent": "StatusType",
-                "title": "Status Type",
+                "title": "Status type",
                 "description": "Status lifecycle phase definition for a case type. V1.3 additive: a status declares what makes it true (derivedWhen), who the case is waiting on (waitingOn) and how long it may last (maximumDwell). V1.5 additive: a status declares which case fields it requires, hides and locks (fieldRules), published onto the case schema for OpenRegister to enforce. V1.6 additive: a status may declare the words the applicant reads for it (publicLabel, publicDescription); declare neither and the applicant reads the name, as before. A status that declares none of the five behaves exactly as it did before: it is reached by a transition somebody picks, it is nobody's wait in particular, it has no maximum, it asks nothing of any field, and the applicant reads its name. See openspec/changes/what-a-status-declares and openspec/changes/citizen-status-labels.",
                 "type": "object",
                 "required": [
@@ -673,13 +721,15 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this status (e.g. Ontvangen, In behandeling)",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this status phase",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "publicLabel": {
@@ -687,14 +737,16 @@
                         "maxLength": 255,
                         "description": "What the applicant reads for this status. Leave it empty and they read the name.",
                         "x-notes": "The name is written for the handler, and \"Toets register B\" says nothing to the person waiting. The empty fallback to `name` is the whole migration: a case type nobody has annotated keeps reading exactly as it did. ZGW calls this the statustekst, and the ZTC statustype mapping writes it there.",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Public label"
                     },
                     "publicDescription": {
                         "type": "string",
                         "description": "What the applicant is told this status means. Empty shows no description.",
                         "x-notes": "It never falls back to `description`: that one is written for a colleague and can name an internal check, an internal register or a colleague by role. Showing nothing is the safe default; showing the handler's words to the applicant is a disclosure nobody chose.",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Public description"
                     },
                     "caseType": {
@@ -715,6 +767,13 @@
                         "default": false,
                         "description": "Whether this is a terminal/final status",
                         "title": "Is Final"
+                    },
+                    "capacity": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0,
+                        "title": "Capacity",
+                        "description": "How many cases this status may hold at once. Leave it at zero and the status takes as many as arrive, which is how every status behaves today. Set a number and the case past it is refused, with the status, the limit and the count in the sentence. A final status is never capped: a case type that could not close its thirteenth case would be worse off than one with no limit at all."
                     },
                     "phaseTermDays": {
                         "type": "integer",
@@ -837,7 +896,7 @@
                                     "type": "string",
                                     "maxLength": 255,
                                     "description": "What the handler is told is missing while this condition is unmet. Write it as the thing itself, not as the rule: \"the signed consent form\" rather than \"documentPresent failed\".",
-                                    "x-translatable": true,
+                                    "translatable": true,
                                     "title": "Label"
                                 }
                             }
@@ -935,7 +994,7 @@
                                     "type": "string",
                                     "maxLength": 255,
                                     "description": "What the handler reads when the save is refused. Write the thing itself, not the rule: \"a motivation is needed before this decision can be taken\" rather than \"required field missing\". Left empty, OpenRegister writes a plain sentence naming the field and the status.",
-                                    "x-translatable": true,
+                                    "translatable": true,
                                     "title": "Message"
                                 }
                             }
@@ -946,10 +1005,10 @@
             "resultType": {
                 "slug": "resultType",
                 "icon": "FlagOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "ResultaatType",
-                "title": "Result Type",
+                "title": "Result type",
                 "description": "Case outcome type with archival rules",
                 "type": "object",
                 "required": [
@@ -961,13 +1020,15 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this result type (e.g. Vergunning verleend)",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description/toelichting of this result type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "genericDescription": {
@@ -1013,10 +1074,10 @@
             "roleType": {
                 "slug": "roleType",
                 "icon": "BadgeAccountOutline",
-                "version": "1.1.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "RolType",
-                "title": "Role Type",
+                "title": "Role type",
                 "description": "Participant role type definition; optionally scoped to a case type (generic roles like applicant/handler apply across case types)",
                 "type": "object",
                 "required": [
@@ -1027,13 +1088,15 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this role type (e.g. Behandelaar, Adviseur)",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this role type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "caseType": {
@@ -1053,9 +1116,10 @@
                             "decision_maker",
                             "coordinator",
                             "stakeholder",
-                            "contact"
+                            "contact",
+                            "gemachtigde"
                         ],
-                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data.",
+                        "description": "The generic role this case-type role plays, so routing rules and reports can speak about \"the handler\" without knowing every case type's own naming. Maps to the ZGW RolType field omschrijvingGeneriek. Set from the Roles tab in case-type settings, and shipped by the bezwaar and besluitvorming seed data. `gemachtigde` is the authorised representative of Awb 2:1: the row carrying it has no caseType, so every case type offers it, and SeedGemachtigdeRoleType keeps exactly one of it.",
                         "title": "Generic Role"
                     },
                     "ncGroupId": {
@@ -1069,10 +1133,10 @@
             "propertyDefinition": {
                 "slug": "propertyDefinition",
                 "icon": "FormatListBulletedType",
-                "version": "1.3.0",
+                "version": "1.5.0",
                 "x-schema-org": "schema:PropertyValueSpecification",
                 "x-zgw-equivalent": "Eigenschap",
-                "title": "Property Definition",
+                "title": "Property definition",
                 "description": "Custom field definition for a case type",
                 "type": "object",
                 "required": [
@@ -1094,6 +1158,14 @@
                         "type": "string",
                         "description": "The sentence a handler reads under the field while answering it. One line. This is the field's help: the case form renders it beside the input, not as a heading and not as the field's own documentation. Definition carries the short definition for whoever maintains the case type.",
                         "title": "Help text"
+                    },
+                    "category": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "default": "Uncategorised",
+                        "facetable": true,
+                        "description": "The folder this attribute sits in on the Attributes index, a free word rather than a fixed list: an organisation's own grouping (Adres, Financieel, Persoon) is the one it recognises. Attributes with no category are listed under Uncategorised.",
+                        "title": "Category"
                     },
                     "caseType": {
                         "type": "string",
@@ -1182,6 +1254,11 @@
                         "title": "Calculation",
                         "description": "A JSON expression that derives this answer from other fields, evaluated by OpenRegister. A Twig expression is not accepted: the JSON form is diffable and an auditor can read it a year later, which is the decision this field carries."
                     },
+                    "conceptScheme": {
+                        "type": "string",
+                        "title": "Concept scheme",
+                        "description": "The SKOS concept scheme in OpenRegister whose concepts are this field's options, such as a municipality-wide list of wijken or afhandelkanalen. Set it and the scheme rules: the case form offers the scheme's concepts and stores the chosen concept's URI, and the inline list under Limit answers to a list is ignored. Leave it empty and enumValues rules. OpenRegister owns the scheme and the picker; dossiq stores which scheme a field is bound to. The case form does not read it yet: the key x-openregister-concept-scheme is not in OpenRegister's published vocabulary, and a form may only forward a key the vocabulary holds."
+                    },
                     "propertySource": {
                         "type": "string",
                         "title": "Values from a register",
@@ -1203,17 +1280,17 @@
                     "defaultValue": {
                         "type": "string",
                         "description": "Default value for this property",
-                        "title": "Default Value"
+                        "title": "Default value"
                     }
                 }
             },
             "documentType": {
                 "slug": "documentType",
                 "icon": "FileDocumentMultipleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:DigitalDocument",
                 "x-zgw-equivalent": "InformatieObjectType",
-                "title": "Document Type",
+                "title": "Document type",
                 "description": "Document type requirement for a case type",
                 "type": "object",
                 "required": [
@@ -1229,13 +1306,15 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this document type (e.g. Situatietekening)",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this document type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "caseType": {
@@ -1286,23 +1365,23 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this document type is valid",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     },
                     "validUntil": {
                         "type": "string",
                         "format": "date",
                         "description": "Date until which this document type is valid",
-                        "title": "Valid Until"
+                        "title": "Valid until"
                     }
                 }
             },
             "decisionType": {
                 "slug": "decisionType",
                 "icon": "ScaleBalance",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "BesluitType",
-                "title": "Decision Type",
+                "title": "Decision type",
                 "description": "Decision type definition for a case type",
                 "type": "object",
                 "required": [
@@ -1318,13 +1397,15 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Name of this decision type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this decision type",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "caseType": {
@@ -1344,7 +1425,7 @@
                         "type": "boolean",
                         "default": false,
                         "description": "Whether this decision type requires publication",
-                        "title": "Publication Required"
+                        "title": "Publication required"
                     },
                     "caseTypes": {
                         "type": "array",
@@ -1366,13 +1447,13 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this decision type is valid",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     },
                     "validUntil": {
                         "type": "string",
                         "format": "date",
                         "description": "Date until which this decision type is valid",
-                        "title": "Valid Until"
+                        "title": "Valid until"
                     }
                 }
             },
@@ -1474,7 +1555,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.25.0",
+                "version": "1.31.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1534,6 +1615,48 @@
                 "description": "A case instance in the case management system",
                 "type": "object",
                 "configuration": {
+                    "x-openregister-merge": {
+                        "entityType": "case",
+                        "statusField": "mergeState",
+                        "survivorStatus": "active",
+                        "mergedStatus": "merged",
+                        "reversalWindowDays": 7,
+                        "x-dossiq-relink": [
+                            {
+                                "schema": "role",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseDocument",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseObject",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "caseProperty",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "customerContact",
+                                "field": "case"
+                            },
+                            {
+                                "schema": "decision",
+                                "field": "case"
+                            }
+                        ]
+                    },
+                    "_hierarchyNote": "Row Q13.23. The edge is `parentCase` and NOTHING ELSE. `relatedCases` is a typed PEER relation written symmetrically by CaseRelationService, so declaring it here would make a grant travel sideways along every link a handler ever made, without limit and without anyone having asked for it. `maxDepth` is not a performance dial: a deelzaak chain is a graph nobody validates on write, and a cycle written by an import would otherwise resolve forever. `inheritedVerbs` names READ and no more, which is the measured half of the competitor's behaviour (Vikunja 2.6.0 read on the root reached the grandchild and was refused a write): a right to see the parent is not a right to change the child. THIS BLOCK IS INERT UNTIL OPENREGISTER READS IT (`rbac-inherits-to-children`, row Q13.23), and it is declared now so the edge is one thing rather than two. It is also listed in SchemaSlugMap::SCHEMA_ANNOTATION_KEYS, without which OpenRegister DROPS an unknown configuration key in silence and the declaration would never reach the instance at all.",
+                    "x-openregister-hierarchy": {
+                        "parent": "parentCase",
+                        "parentField": "parentCase",
+                        "maxDepth": 10,
+                        "inheritedVerbs": [
+                            "read"
+                        ]
+                    },
                     "x-openregister-dedup": {
                         "blockingKeys": [
                             "caseType"
@@ -1607,7 +1730,11 @@
                         "photos",
                         "maps",
                         "shares",
-                        "decidesk-decisions"
+                        "decidesk-decisions",
+                        "talk",
+                        "deck",
+                        "collectives",
+                        "xwiki"
                     ],
                     "x-openregister-processing": {
                         "logReads": true,
@@ -2263,8 +2390,26 @@
                                 "en": "related to"
                             },
                             "symmetric": true
+                        },
+                        {
+                            "key": "waitsOn",
+                            "label": {
+                                "nl": "wacht op",
+                                "en": "waits on"
+                            },
+                            "inverseLabel": {
+                                "nl": "blokkeert",
+                                "en": "blocks"
+                            }
                         }
-                    ]
+                    ],
+                    "mailObjectTemplate": {
+                        "title": "{{subject}}",
+                        "description": "{{preview}}",
+                        "intakeChannel": "email",
+                        "startDate": "{{date}}",
+                        "initiatorDisplayName": "{{senderName}}"
+                    }
                 },
                 "required": [
                     "title",
@@ -2343,7 +2488,8 @@
                                 "enum": "enumValues",
                                 "required": "isRequired",
                                 "default": "defaultValue",
-                                "calculation": "calculation"
+                                "calculation": "calculation",
+                                "conceptScheme": "conceptScheme"
                             },
                             "values": {
                                 "mode": "array",
@@ -2424,6 +2570,8 @@
                         "visible": false
                     },
                     "statusPublicLabel": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
                         "type": "string",
                         "readOnly": true,
                         "description": "What the applicant reads for the status this case sits in.",
@@ -2431,6 +2579,8 @@
                         "title": "Status, as the applicant reads it"
                     },
                     "statusPublicDescription": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
                         "type": "string",
                         "readOnly": true,
                         "description": "What the applicant is told the current status means.",
@@ -2500,7 +2650,8 @@
                             "finish",
                             "abort",
                             "archive",
-                            "autoClose"
+                            "autoClose",
+                            "merged"
                         ],
                         "description": "Which act ended this case. Finishing, aborting, archiving and an automatic close are four acts with four archival consequences, and collapsing them is how a withdrawn aanvraag ends up archived as a granted one. Written by the act, kept when the case is reopened so the record still names what happened.",
                         "title": "Ending act",
@@ -2575,7 +2726,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the case was completed",
-                        "title": "End Date",
+                        "title": "End date",
                         "order": 12
                     },
                     "plannedEndDate": {
@@ -2851,7 +3002,91 @@
                         "title": "Override reason",
                         "order": 24
                     },
+                    "firstResponseStatus": {
+                        "matchType": "exact",
+                        "inputControl": "select",
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "met",
+                            "missed"
+                        ],
+                        "readOnly": true,
+                        "facetable": true,
+                        "title": "First response",
+                        "description": "Whether the promise that you hear from us within so many days was kept. Recorded either way: storing only the misses makes the denominator a second query with different filters, and the two then disagree.",
+                        "order": 28
+                    },
+                    "firstResponseOverrunDays": {
+                        "matchType": "range",
+                        "inputControl": "range",
+                        "type": "integer",
+                        "minimum": 0,
+                        "readOnly": true,
+                        "facetable": true,
+                        "title": "First response overrun",
+                        "description": "How far the first response missed its term, in the term's own counting mode. A number rather than a flag: a service manager improving a process needs to know whether we miss by a day or by three weeks, and those are different problems with different fixes.",
+                        "order": 29
+                    },
+                    "firstResponseAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
+                        "type": "string",
+                        "format": "date-time",
+                        "readOnly": true,
+                        "title": "First response sent",
+                        "description": "When the first response actually went out. Written once, by the act that sent it.",
+                        "order": 30
+                    },
+                    "mergedInto": {
+                        "matchType": "exact",
+                        "inputControl": "select",
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "readOnly": true,
+                        "title": "Merged into",
+                        "description": "The case this one was merged into. Written by CaseMergedListener when OpenRegister reports the merge, and cleared when the merge is reversed inside its window. The old case number keeps working: mail matching and the public status page follow this reference until they reach a case that carries none.",
+                        "order": 27
+                    },
+                    "mergeRelinked": {
+                        "type": "array",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Relinked at merge",
+                        "description": "Which rows moved to the survivor when this case was merged away, so a reversal can put exactly those back. Written by CaseMergeService; empty on every case that was never merged.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "schema": {
+                                    "type": "string",
+                                    "title": "Schema",
+                                    "description": "The slug of the schema the moved row belongs to, so a reversal knows what it is putting back."
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Row",
+                                    "description": "The id of the row that moved to the survivor."
+                                }
+                            }
+                        }
+                    },
+                    "mergeState": {
+                        "matchType": "exact",
+                        "inputControl": "select",
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "merged"
+                        ],
+                        "default": "active",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Merge state",
+                        "description": "Whether this case is still its own case. The OpenRegister merge engine writes this field and reads it back, which is why it is a plain value of its own and not the ending act: the engine compares it as a string and refuses a survivor that is not active. An absent value reads as active, so every case written before merging existed stays mergeable."
+                    },
                     "duplicateOverrideOf": {
+                        "inputControl": "multiselect",
                         "type": "array",
                         "readOnly": true,
                         "title": "Filed over",
@@ -2864,6 +3099,8 @@
                         }
                     },
                     "duplicateOverrideReason": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
                         "type": "string",
                         "readOnly": true,
                         "title": "Filed over a duplicate warning",
@@ -2890,7 +3127,7 @@
                         "type": "string",
                         "description": "Typed peer relations to other cases, JSON-encoded array of objects {caseId (uuid, required), aardRelatie (enum: vervolg|onderwerp|bijdrage, required), toelichting (string, optional)} per RGBZ/ZRC relevanteAndereZaken. Written symmetrically by CaseRelationService; do not edit directly.",
                         "visible": false,
-                        "title": "Related Cases"
+                        "title": "Related cases"
                     },
                     "geometry": {
                         "type": "string",
@@ -2902,7 +3139,7 @@
                         "type": "string",
                         "description": "History of status changes (JSON-encoded array)",
                         "visible": false,
-                        "title": "Status History"
+                        "title": "Status history"
                     },
                     "casePlanState": {
                         "type": "string",
@@ -3008,7 +3245,7 @@
                         "format": "uri",
                         "description": "URL reference to the communication channel",
                         "visible": false,
-                        "title": "Communication Channel"
+                        "title": "Communication channel"
                     },
                     "workflowTemplate": {
                         "type": "string",
@@ -3018,7 +3255,7 @@
                             "caseType": "@object.caseType"
                         },
                         "description": "Reference to the bound workflow template",
-                        "title": "Workflow Template"
+                        "title": "Workflow template"
                     },
                     "workflowVersion": {
                         "type": "integer",
@@ -3060,7 +3297,7 @@
                         "type": "string",
                         "description": "JSON-encoded array of samenwerkverzoek UUIDs linked to this zaak",
                         "visible": false,
-                        "title": "Collaboration Requests"
+                        "title": "Collaboration requests"
                     },
                     "qualityScore": {
                         "type": "number",
@@ -3125,6 +3362,65 @@
                         "title": "Portal subject reference",
                         "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner.",
                         "visible": false
+                    },
+                    "splitFrom": {
+                        "matchType": "exact",
+                        "inputControl": "text",
+                        "type": "string",
+                        "title": "Split from",
+                        "description": "The case this one was split off. Written on the new case beside the typed relation, because a relation answers `relatedCases` and a filter over the case list needs a plain field.",
+                        "facetable": true
+                    },
+                    "splitInto": {
+                        "matchType": "exact",
+                        "inputControl": "text",
+                        "type": "string",
+                        "title": "Split into",
+                        "description": "The case this one was split into. A split MOVES material rather than copying it, so without this the original file reads as though the missing documents were never there.",
+                        "facetable": true
+                    },
+                    "splitMovedItems": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "part": {
+                                    "type": "string",
+                                    "title": "Part",
+                                    "description": "What kind of thing moved: a document, a party or a task."
+                                },
+                                "id": {
+                                    "type": "string",
+                                    "title": "Id",
+                                    "description": "The id of the item that moved."
+                                },
+                                "label": {
+                                    "type": "string",
+                                    "title": "Label",
+                                    "description": "What the item was called when it moved, kept here because the item itself may be renamed afterwards."
+                                },
+                                "movedTo": {
+                                    "type": "string",
+                                    "title": "Moved to",
+                                    "description": "The case it moved to."
+                                },
+                                "movedAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "title": "Moved at",
+                                    "description": "The moment it moved."
+                                }
+                            }
+                        },
+                        "title": "Moved out by a split",
+                        "description": "One row per item a split moved off this case: what it was, where it went and when. `CaseSplitPlan::forSelection()` produces these and until now the schema had nowhere to store them. Written rather than derived, because the item itself no longer names this case once it has moved, so nothing could reconstruct what left."
+                    },
+                    "splitNote": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
+                        "type": "string",
+                        "title": "Split note",
+                        "description": "The one line `CaseSplitPlan::noteFor()` writes about a split: what went where, in a sentence. One note and not one per item, because twenty lines would bury the act that produced them."
                     },
                     "decisions": {
                         "type": "array",
@@ -3277,6 +3573,21 @@
                         "description": "The users pulled into the working channel when this case was declared major, resolved from the responders the case type names. Recorded so a gemeente can show afterwards who was in the room.",
                         "visible": false
                     },
+                    "blockingCases": {
+                        "inputControl": "multiselect",
+                        "type": "array",
+                        "title": "Waits on",
+                        "description": "Cases this one waits on. A vergunning that cannot be decided until a bezwaar is, for instance: when the case it waits on has its term extended or paused, the handler of this case is offered the same move. Written by CaseRelationService as the typed half of relevanteAndereZaken; the far side reads it as \"blokkeert\" through OpenRegister's /used.",
+                        "visible": false,
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "case",
+                            "x-openregister-relation": {
+                                "type": "waitsOn"
+                            }
+                        }
+                    },
                     "associatedCases": {
                         "type": "array",
                         "title": "Associated cases",
@@ -3290,6 +3601,113 @@
                                 "type": "samenhang"
                             }
                         }
+                    },
+                    "paymentState": {
+                        "matchType": "exact",
+                        "inputControl": "select",
+                        "type": "string",
+                        "enum": [
+                            "notRequired",
+                            "outstanding",
+                            "paid",
+                            "waived",
+                            "stale"
+                        ],
+                        "description": "What shillinq reports about the money on this case, held as a projection so the list can be filtered on it. dossiq stores the word and nothing else: no amount received, no ledger line and no payment date, because those are shillinq's and a second copy of money is a second set of books. `stale` means shillinq could not be asked, which is not the same fact as unpaid and is never read as paid.",
+                        "title": "Payment state",
+                        "facetable": true,
+                        "readOnly": true
+                    },
+                    "paymentStateCheckedAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the payment state was last read from shillinq. A state with no timestamp cannot be told apart from one that stopped updating in March, and the second one is what people make decisions on.",
+                        "title": "Payment state checked at",
+                        "readOnly": true
+                    },
+                    "contract": {
+                        "matchType": "exact",
+                        "inputControl": "text",
+                        "type": "string",
+                        "description": "The shillinq contract this case is handled under, as a reference. dossiq copies no term, no cost and no renewal date: a copied term goes stale and then alerts on the wrong date. The contract lists its own cases through shillinq's `linkedObjects`, and the alert before it lapses is shillinq's too.",
+                        "title": "Contract",
+                        "facetable": true
+                    },
+                    "receivedAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Received at",
+                        "description": "The moment the submission arrived. Stored beside the moment the term starts rather than only being the record's creation timestamp, because a handler answering a complaint in March has to be able to say what the citizen was told in January, and a recomputed answer is not that.",
+                        "facetable": true
+                    },
+                    "termStartsAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Term starts at",
+                        "description": "The first working moment on or after `receivedAt`, on the same calendar the term counts on. Written once at creation and never recomputed: the calendar can gain a holiday afterwards, and a recomputation would quietly agree with whatever it says today.",
+                        "facetable": true
+                    },
+                    "receivedOutsideWorkingHours": {
+                        "inputControl": "boolean",
+                        "type": "boolean",
+                        "title": "Received outside working hours",
+                        "description": "True when the request arrived when the municipality was closed, so the clock started later than the moment the applicant pressed send. Derivable from the two moments and stored anyway, because it is what a report filters on and what the ontvangstbevestiging branches on. Absent, rather than false, on a case the working calendar could not place: an unanswered calendar does not know whether the week was open.",
+                        "facetable": true
+                    },
+                    "district": {
+                        "matchType": "exact",
+                        "inputControl": "select",
+                        "type": "string",
+                        "description": "The wijk this case's address falls in, resolved once when the address is set rather than on every routing decision: resolving per query makes routing depend on an external service being up, and an unresolvable boundary would then read as a case with no area. Held here so a routing rule and a list filter can read the same value.",
+                        "title": "District",
+                        "facetable": true
+                    },
+                    "neighbourhood": {
+                        "matchType": "exact",
+                        "inputControl": "select",
+                        "type": "string",
+                        "description": "The buurt this case's address falls in, resolved with the district and from the same answer.",
+                        "title": "Neighbourhood",
+                        "facetable": true
+                    },
+                    "areaResolvedAt": {
+                        "matchType": "range",
+                        "inputControl": "date-range",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the area was resolved. Boundaries change, and a municipality may redraw its own division, so a value on a case can only be explained beside the moment it was read.",
+                        "title": "Area resolved at",
+                        "readOnly": true
+                    },
+                    "areaSource": {
+                        "matchType": "exact",
+                        "inputControl": "select",
+                        "type": "string",
+                        "description": "The boundary set the area was read from, so the value can be explained by the boundaries in force at the time. Today that is PDOK's locatieserver through `PdokService`; when integriq publishes the `pdok-geo-boundaries` connection (ADR-019) this names that connection instead.",
+                        "title": "Area source",
+                        "readOnly": true
+                    },
+                    "areaFallbackUsed": {
+                        "inputControl": "boolean",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether this case was routed by the case type's fallback because its address fell in no administered boundary. Addresses do: new developments, water, an address abroad, a case with no address at all. The flag is what keeps that from looking like routing that silently did nothing.",
+                        "title": "Area fallback used",
+                        "readOnly": true
+                    },
+                    "areaAddressId": {
+                        "matchType": "exact",
+                        "inputControl": "text",
+                        "type": "string",
+                        "description": "The address the held area was resolved from. Held so the resolution runs when the ADDRESS changes and not on every write: without it, a case would ask the boundary service once per note added to it.",
+                        "title": "Area address id",
+                        "readOnly": true
                     }
                 },
                 "searchable": true
@@ -3297,7 +3715,7 @@
             "role": {
                 "slug": "role",
                 "icon": "AccountKeyOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Role",
                 "x-zgw-equivalent": "Rol",
                 "title": "Role",
@@ -3332,7 +3750,7 @@
                         "format": "uuid",
                         "$ref": "roleType",
                         "description": "Reference to the role type",
-                        "title": "Role Type"
+                        "title": "Role type"
                     },
                     "case": {
                         "type": "string",
@@ -3367,7 +3785,27 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "End of the delegation window (ISO 8601). MUST be greater than or equal to delegateFrom",
-                        "title": "Delegate Until"
+                        "title": "Delegate until"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 1,
+                        "description": "How large a share of the pool's work this membership takes. The weight is on the MEMBERSHIP and not on the person, because the same handler may carry a full share of intake and a quarter share of objections, and one number on the person would be wrong for one of the two. A pool whose weights are all one is routed exactly as it was before weights existed. Zero means this member takes no new work without leaving the pool.",
+                        "title": "Weight"
+                    },
+                    "team": {
+                        "type": "string",
+                        "description": "The team this membership belongs to, so a routing rule can name a position INSIDE a team (the senior handler of team zuid) without an organisation-wide role for every senior of every team. That is how a role list reaches forty entries that mean six things. The value comes from the organisation; dossiq holds no second org chart.",
+                        "title": "Team",
+                        "facetable": true
+                    },
+                    "representedParty": {
+                        "type": "string",
+                        "format": "uuid",
+                        "facetable": true,
+                        "description": "Whom this participant acts for on this case. Filled on a role of type Gemachtigde (Awb 2:1) and empty on every other role. It is NOT delegateFrom: that is the start of a delegation window and RoleDelegationResolver reads it as a date, so writing a party uuid into it would make the resolver substitute a delegate at an unparseable moment.",
+                        "title": "Represented by"
                     }
                 }
             },
@@ -3404,7 +3842,7 @@
                         "format": "uuid",
                         "$ref": "resultType",
                         "description": "Reference to the result type",
-                        "title": "Result Type"
+                        "title": "Result type"
                     },
                     "description": {
                         "type": "string",
@@ -3416,10 +3854,10 @@
             "statusRecord": {
                 "slug": "statusRecord",
                 "icon": "ProgressClock",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Event",
                 "x-zgw-equivalent": "Status",
-                "title": "Status Record",
+                "title": "Status record",
                 "description": "A status transition record for a case",
                 "type": "object",
                 "required": [
@@ -3440,7 +3878,7 @@
                         "format": "uuid",
                         "$ref": "statusType",
                         "description": "Reference to the target status type (toStatus)",
-                        "title": "Status Type"
+                        "title": "Status type"
                     },
                     "description": {
                         "type": "string",
@@ -3472,7 +3910,7 @@
                                 },
                                 "passed": {
                                     "type": "boolean",
-                                    "title": "Passed",
+                                    "title": "passed",
                                     "description": "Whether the guard evaluation passed"
                                 },
                                 "details": {
@@ -3497,7 +3935,7 @@
                                 },
                                 "ok": {
                                     "type": "boolean",
-                                    "title": "Ok",
+                                    "title": "OK",
                                     "description": "Whether the action dispatch succeeded"
                                 },
                                 "error": {
@@ -3559,7 +3997,7 @@
                         "format": "uuid",
                         "$ref": "decisionType",
                         "description": "Reference to the decision type",
-                        "title": "Decision Type"
+                        "title": "Decision type"
                     },
                     "responsibleOrganisation": {
                         "type": "string",
@@ -3582,7 +4020,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the decision expires",
-                        "title": "Expiry Date"
+                        "title": "Expiry date"
                     },
                     "publicationDate": {
                         "type": "string",
@@ -3635,7 +4073,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the document was created",
-                        "title": "Creation Date"
+                        "title": "Creation date"
                     },
                     "title": {
                         "type": "string",
@@ -3716,7 +4154,7 @@
                         "format": "uuid",
                         "$ref": "documentType",
                         "description": "Reference to the document type",
-                        "title": "Document Type"
+                        "title": "Document type"
                     },
                     "locked": {
                         "type": "boolean",
@@ -3816,7 +4254,7 @@
                             "decision"
                         ],
                         "description": "Type of the related object",
-                        "title": "Object Type"
+                        "title": "Object type"
                     }
                 }
             },
@@ -3906,7 +4344,7 @@
                         "format": "uuid",
                         "$ref": "caseType",
                         "description": "Reference to the case type",
-                        "title": "Case Type Reference"
+                        "title": "Case type reference"
                     },
                     "informatieobjecttype": {
                         "type": "string",
@@ -3969,12 +4407,72 @@
                         "format": "uuid",
                         "$ref": "propertyDefinition",
                         "description": "Reference to the property definition (eigenschap)",
-                        "title": "Property Definition"
+                        "title": "Property definition"
                     },
                     "value": {
                         "type": "string",
                         "description": "The property value",
                         "title": "Value"
+                    }
+                }
+            },
+            "caseIncident": {
+                "slug": "caseIncident",
+                "icon": "AlertOutline",
+                "version": "1.0.0",
+                "title": "Case incident",
+                "description": "One dated event inside a case, with its own reporter, its own owner and its own outcome. NOT a sub-case: a deelzaak has its own number, its own term and its own decision, and giving every repeat report a beslistermijn it does not have is exactly the mistake this avoids (splitting-a-case-and-its-incidents D-4). The slug is qualified because slugs are global on a shared OpenRegister and hermiq owns the bare `incident`, which is an AI-agent lifecycle record and a different thing entirely.",
+                "type": "object",
+                "properties": {
+                    "case": {
+                        "type": "string",
+                        "format": "uuid",
+                        "$ref": "case",
+                        "title": "Case",
+                        "description": "The case this incident belongs to. One case holds several: the pattern of repeat reports on one address is what makes the case worth keeping open.",
+                        "facetable": true
+                    },
+                    "eventDate": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Event date",
+                        "description": "When the incident happened. The list is ordered by THIS and not by the recording moment: a report recorded three weeks late belongs where it happened, and sorting by creation would quietly rewrite the sequence the case is about."
+                    },
+                    "recordedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Recorded at",
+                        "description": "When the incident was written down. Kept beside the event date rather than instead of it, so the delay between the two is visible rather than hidden.",
+                        "readOnly": true
+                    },
+                    "reporter": {
+                        "type": "string",
+                        "title": "Reporter",
+                        "description": "Who reported it. A name or a contact reference; the melder of one report is often not the melder of the next on the same address."
+                    },
+                    "description": {
+                        "type": "string",
+                        "title": "Description",
+                        "description": "What was reported, in the reporter's terms."
+                    },
+                    "assignee": {
+                        "type": "string",
+                        "title": "Assignee",
+                        "description": "Who works THIS incident. Its own owner, not the case's: the case sits with the area handler while one report inside it is worked by an inspector, and handing the incident over must leave the case's assignee exactly as it was.",
+                        "facetable": true
+                    },
+                    "state": {
+                        "type": "string",
+                        "enum": ["open", "in-behandeling", "afgehandeld"],
+                        "default": "open",
+                        "title": "State",
+                        "description": "Where this incident stands. Deliberately three values and no transition machine: an incident is a report inside a case, and a lifecycle of its own would make it the deelzaak it must not become.",
+                        "facetable": true
+                    },
+                    "outcome": {
+                        "type": "string",
+                        "title": "Outcome",
+                        "description": "What was done about it. Written when the incident is finished, and read as the history of the address when the next report arrives."
                     }
                 }
             },
@@ -4019,7 +4517,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Registration date",
-                        "title": "Registration Date"
+                        "title": "Registration date"
                     }
                 }
             },
@@ -4091,7 +4589,7 @@
                     "objectType": {
                         "type": "string",
                         "description": "Type of the external object",
-                        "title": "Object Type",
+                        "title": "Object type",
                         "facetable": true
                     },
                     "objectIdentification": {
@@ -4227,7 +4725,7 @@
                     "receiveDate": {
                         "type": "string",
                         "format": "date",
-                        "description": "Date received",
+                        "description": "Date Received",
                         "title": "Receive Date"
                     },
                     "sendDate": {
@@ -4273,12 +4771,12 @@
                     "startDate": {
                         "type": "string",
                         "description": "Start date of the usage rights",
-                        "title": "Start Date"
+                        "title": "Start date"
                     },
                     "endDate": {
                         "type": "string",
                         "description": "End date of the usage rights",
-                        "title": "End Date"
+                        "title": "End date"
                     },
                     "conditionsDescription": {
                         "type": "string",
@@ -4290,10 +4788,10 @@
             "workflowTemplate": {
                 "slug": "workflowTemplate",
                 "icon": "SitemapOutline",
-                "version": "1.3.0",
+                "version": "1.4.0",
                 "x-schema-org": "schema:HowTo",
                 "x-cmmn-equivalent": "CasePlanModel",
-                "title": "Workflow Template",
+                "title": "Workflow template",
                 "description": "A workflow definition for a case type: defines process steps, status transitions, guards, and automatic actions. V1.1: each step entry MAY carry an additive `config` sub-object ({sla, requiredFields, autoActions, escalationRule}); absent config preserves v1 behaviour (see process-step-configuration spec). V1.2 additive: `variant` names which route through the case type this workflow describes, so one case type can carry several routes with one active workflow each; absent variant is the route `standaard`, which is every workflow that predates the property (see workflow-variants spec).",
                 "type": "object",
                 "required": [
@@ -4347,7 +4845,7 @@
                         ],
                         "default": "draft",
                         "description": "Lifecycle state of this definition. Authoritative going forward; isDraft/isActive remain for backwards compatibility. draft = editable, cannot back new cases. published = immutable, can back new cases (one active per caseType). deprecated = immutable, cannot back new cases, existing cases keep using it.",
-                        "title": "Lifecycle Status"
+                        "title": "Lifecycle status"
                     },
                     "steps": {
                         "type": "string",
@@ -4516,7 +5014,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the bezwaarschrift was received (start of the AWB 7:10 lid 1 termijn)",
-                        "title": "Receipt Date"
+                        "title": "Receipt date"
                     },
                     "adjournedOn": {
                         "type": "string",
@@ -4528,7 +5026,7 @@
                         "type": "integer",
                         "default": 0,
                         "description": "Verdaging in days (0 = no verdaging; 42 = standard 6-week extension)",
-                        "title": "Extension Period"
+                        "title": "Extension period"
                     },
                     "suspensionStart": {
                         "type": "string",
@@ -4575,7 +5073,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Statutory deadline for the beslissing op bezwaar: computed as ontvangstdatum + 6 weeks + verdagingsperiode + opschorting (AWB 7:10)",
-                        "title": "Decision Deadline"
+                        "title": "Decision deadline"
                     }
                 },
                 "searchable": true,
@@ -5192,7 +5690,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the advice was issued",
-                        "title": "Advice Date"
+                        "title": "Advice date"
                     },
                     "adviceType": {
                         "type": "string",
@@ -5295,7 +5793,7 @@
                     "followsAdvice": {
                         "type": "boolean",
                         "description": "Whether the decision follows the committee's advice",
-                        "title": "Follows Advice"
+                        "title": "Follows advice"
                     },
                     "deviationReason": {
                         "type": "string",
@@ -5336,7 +5834,7 @@
                         "format": "uuid",
                         "$ref": "role",
                         "description": "The person/body that made the decision",
-                        "title": "Decision Maker"
+                        "title": "Decision maker"
                     },
                     "decisionDocument": {
                         "type": "string",
@@ -5391,7 +5889,7 @@
                     "legalBasis": {
                         "type": "string",
                         "description": "Awb article(s) and/or sectoral wettelijke grondslag the decision rests on",
-                        "title": "Legal Basis"
+                        "title": "Legal basis"
                     },
                     "advisoryOpinion": {
                         "type": "string",
@@ -5403,7 +5901,7 @@
                     "followsAdvice": {
                         "type": "boolean",
                         "description": "Whether this decision follows the BAC advisory opinion",
-                        "title": "Follows Advice"
+                        "title": "Follows advice"
                     },
                     "deviationRationale": {
                         "type": "string",
@@ -5536,7 +6034,7 @@
                         "format": "uuid",
                         "$ref": "role",
                         "description": "Bestuursorgaan or mandated official; derived from mandate config, never from request body",
-                        "title": "Decision Maker"
+                        "title": "Decision maker"
                     },
                     "decisionDocument": {
                         "type": "string",
@@ -5547,7 +6045,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Set on transition to published; once set the bezwaarDecision is immutable",
-                        "title": "Published At"
+                        "title": "Published at"
                     },
                     "notifiedRecipients": {
                         "type": "array",
@@ -6016,7 +6514,7 @@
                         "type": "string",
                         "maxLength": 64,
                         "description": "BRK kadastrale aanduiding (e.g. AMR00-G-1234)",
-                        "title": "Parcel ID"
+                        "title": "Parcel id"
                     },
                     "accuracyRadius": {
                         "type": "number",
@@ -6107,7 +6605,8 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "What is being asked for, in the words the handler reads where the transition would have been. Write it as the thing itself: \"the fire safety inspection\" rather than \"obligation of kind inspection\".",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Title"
                     },
                     "placedOn": {
@@ -6218,12 +6717,12 @@
                         "format": "uuid",
                         "$ref": "case",
                         "description": "Reference to the parent case UUID",
-                        "title": "Parent Case"
+                        "title": "Parent case"
                     },
                     "adviceAuthority": {
                         "type": "string",
                         "description": "Department or advisory body being consulted",
-                        "title": "Advisory Body"
+                        "title": "Advisory body"
                     },
                     "advisoryBodyId": {
                         "type": "string",
@@ -6246,7 +6745,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Deadline for response",
-                        "title": "Response Deadline"
+                        "title": "Response deadline"
                     },
                     "priority": {
                         "type": "string",
@@ -6499,8 +6998,8 @@
             "advisoryBody": {
                 "slug": "advisoryBody",
                 "icon": "OfficeBuildingOutline",
-                "version": "1.0.0",
-                "title": "Advisory Body",
+                "version": "1.1.0",
+                "title": "Advisory body",
                 "description": "Registry of departments and external advisory bodies that can receive consultations",
                 "type": "object",
                 "required": [
@@ -6526,7 +7025,7 @@
                     "defaultGroup": {
                         "type": "string",
                         "description": "Nextcloud group ID for department-based consultation assignment",
-                        "title": "Default Group"
+                        "title": "Default group"
                     },
                     "email": {
                         "type": "string",
@@ -6553,9 +7052,9 @@
             "adviesAanvraag": {
                 "slug": "adviesAanvraag",
                 "icon": "CommentQuestionOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:AskAction",
-                "title": "Advice Request",
+                "title": "Advice request",
                 "description": "A request for internal or external advice on a case, with deadline tracking",
                 "type": "object",
                 "required": [
@@ -6622,7 +7121,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Timestamp when the advice was received",
-                        "title": "Received At"
+                        "title": "Received at"
                     },
                     "questions": {
                         "type": "string",
@@ -6753,7 +7252,7 @@
                     "overrideReason": {
                         "type": "string",
                         "description": "Documented reasoning if the LHS suggestion was overridden",
-                        "title": "Override Reason"
+                        "title": "Override reason"
                     }
                 },
                 "configuration": {
@@ -6875,7 +7374,7 @@
                                 },
                                 "actorType": {
                                     "type": "string",
-                                    "title": "Actor Type",
+                                    "title": "Actor type",
                                     "description": "Actor type axis value for this matrix cell"
                                 },
                                 "intervention": {
@@ -7001,7 +7500,7 @@
                             "recidivist"
                         ],
                         "description": "Actor type of the violator (LHS actorType axis)",
-                        "title": "Actor Type"
+                        "title": "Actor type"
                     },
                     "matrixVersion": {
                         "type": "integer",
@@ -7149,7 +7648,7 @@
                                     "type": "boolean",
                                     "default": false,
                                     "description": "Whether a photo is required (especially on failure)",
-                                    "title": "Photo Required"
+                                    "title": "Photo required"
                                 },
                                 "options": {
                                     "type": "array",
@@ -7162,11 +7661,11 @@
                                 "helpText": {
                                     "type": "string",
                                     "description": "Guidance text for the inspector",
-                                    "title": "Help Text"
+                                    "title": "Help text"
                                 }
                             }
                         },
-                        "title": "Items"
+                        "title": "items"
                     }
                 },
                 "configuration": {
@@ -7302,7 +7801,7 @@
                                 }
                             }
                         },
-                        "title": "Items"
+                        "title": "items"
                     },
                     "photos": {
                         "type": "array",
@@ -7424,7 +7923,7 @@
                                             "helpText": {
                                                 "type": "string",
                                                 "description": "Optional inspector guidance",
-                                                "title": "Help Text"
+                                                "title": "Help text"
                                             },
                                             "responseType": {
                                                 "type": "string",
@@ -7454,7 +7953,7 @@
                                                 ],
                                                 "default": "nooit",
                                                 "description": "Photo requirement gate",
-                                                "title": "Photo Required"
+                                                "title": "Photo required"
                                             },
                                             "numericRange": {
                                                 "type": "object",
@@ -7467,7 +7966,7 @@
                                                     },
                                                     "max": {
                                                         "type": "number",
-                                                        "title": "Max",
+                                                        "title": "max",
                                                         "description": "Maximum acceptable numeric value for this measurement item"
                                                     },
                                                     "unit": {
@@ -7518,7 +8017,7 @@
                                             }
                                         }
                                     },
-                                    "title": "Items"
+                                    "title": "items"
                                 }
                             }
                         },
@@ -7534,7 +8033,7 @@
             "inspectionChecklistRun": {
                 "slug": "inspectionChecklistRun",
                 "icon": "ClipboardCheckMultipleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Inspection Checklist Run",
                 "description": "Per-inspection runtime instance of an inspectionChecklistTemplate. Once it is submitted (status=ingediend) the run is append-only, and further edits are rejected.",
@@ -7542,7 +8041,8 @@
                 "configuration": {
                     "linkedTypes": [
                         "forms",
-                        "photos"
+                        "photos",
+                        "maps"
                     ]
                 },
                 "required": [
@@ -7575,7 +8075,7 @@
                         "type": "integer",
                         "minimum": 1,
                         "description": "Template version captured at run start",
-                        "title": "Template Version"
+                        "title": "Template version"
                     },
                     "templateSnapshot": {
                         "type": "object",
@@ -7603,7 +8103,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the run was submitted",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "submittedAt": {
                         "type": "string",
@@ -7803,7 +8303,7 @@
                         "type": "string",
                         "maxLength": 20,
                         "description": "Dutch Chamber of Commerce (KvK) number",
-                        "title": "KvK Number"
+                        "title": "KvK number"
                     },
                     "status": {
                         "type": "string",
@@ -7994,7 +8494,7 @@
                             "partner"
                         ],
                         "description": "Type of share",
-                        "title": "Share Type"
+                        "title": "Share type"
                     },
                     "partnerId": {
                         "type": "string",
@@ -8004,13 +8504,13 @@
                     "permissionLevel": {
                         "type": "string",
                         "description": "Permission level slug (e.g. bekijken, bekijken_reageren, bekijken_bijdragen)",
-                        "title": "Permission Level"
+                        "title": "Permission level"
                     },
                     "expiresAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Expiration datetime in ISO 8601",
-                        "title": "Expires At"
+                        "title": "Expires at"
                     },
                     "password": {
                         "type": "string",
@@ -8054,12 +8554,31 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Revocation datetime in ISO 8601",
-                        "title": "Revoked At"
+                        "title": "Revoked at"
                     },
                     "revokedBy": {
                         "type": "string",
                         "description": "User ID of the revoker",
                         "title": "Revoked By"
+                    },
+                    "consentId": {
+                        "type": "string",
+                        "title": "Consent",
+                        "description": "The `toestemming` that allowed this share to exist. A partner share is written only when one covers the case, the receiver and the moment, so this is never empty on a partner share."
+                    },
+                    "consentScope": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Consent scope",
+                        "description": "What the consent names the receiving organisation may read: the data fields it lists, or its free-text reach when it lists none. Recording a scope that nothing enforces is the defect row 13.28 already names, so the scope travels with the share and the enforcement is asked of the platform (D-6)."
+                    },
+                    "consentUntil": {
+                        "type": "string",
+                        "format": "date",
+                        "title": "Consent runs until",
+                        "description": "The day the consent behind this share ends. Empty when the consent names no end."
                     }
                 }
             },
@@ -8086,7 +8605,7 @@
                     "remoteCloudId": {
                         "type": "string",
                         "description": "Federated target address (slug@host / NC cloud id)",
-                        "title": "Remote Cloud ID"
+                        "title": "Remote cloud ID"
                     },
                     "sharedFields": {
                         "type": "array",
@@ -8113,7 +8632,7 @@
                         "type": "string",
                         "default": "bekijken",
                         "description": "Permission level slug for the remote org's read access",
-                        "title": "Permission Level"
+                        "title": "Permission level"
                     },
                     "federationShareId": {
                         "type": "integer",
@@ -8140,7 +8659,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Revocation datetime in ISO 8601",
-                        "title": "Revoked At"
+                        "title": "Revoked at"
                     },
                     "revokedBy": {
                         "type": "string",
@@ -8189,7 +8708,7 @@
                                         "remote"
                                     ],
                                     "description": "Whether the actor is a local user on this Nextcloud instance or a remote user on the federated partner instance",
-                                    "title": "Actor Type"
+                                    "title": "Actor type"
                                 },
                                 "cloudId": {
                                     "type": "string",
@@ -8368,7 +8887,7 @@
                     "targetOrganization": {
                         "type": "string",
                         "description": "Target partner organisation UUID",
-                        "title": "Target Organization"
+                        "title": "Target organization"
                     },
                     "handoverScope": {
                         "type": "string",
@@ -8405,7 +8924,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Requested transfer date (ISO 8601)",
-                        "title": "Requested Date"
+                        "title": "Requested date"
                     },
                     "status": {
                         "type": "string",
@@ -8427,12 +8946,12 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "When the transfer was completed (ISO 8601)",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "remoteCloudId": {
                         "type": "string",
                         "description": "Federated target address (slug@host); set only when this transfer crosses instances",
-                        "title": "Remote Cloud ID"
+                        "title": "Remote cloud ID"
                     },
                     "federationShareId": {
                         "type": "integer",
@@ -8510,7 +9029,7 @@
                                         "remote"
                                     ],
                                     "description": "Whether the actor is a local user on this Nextcloud instance or a remote user on the federated partner instance",
-                                    "title": "Actor Type"
+                                    "title": "Actor type"
                                 },
                                 "cloudId": {
                                     "type": "string",
@@ -8712,7 +9231,7 @@
                         "type": "string",
                         "format": "date-time",
                         "description": "Server timestamp when the council referred the bezwaar to the committee",
-                        "title": "Assigned At"
+                        "title": "Assigned at"
                     },
                     "deadline": {
                         "type": "string",
@@ -8829,7 +9348,7 @@
             "complaint": {
                 "slug": "complaint",
                 "icon": "AlertCircleOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Action",
                 "title": "Complaint",
                 "description": "Klacht (complaint) entity: tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
@@ -8868,7 +9387,7 @@
                             },
                             "phone": {
                                 "type": "string",
-                                "description": "Phone number",
+                                "description": "Phone Number",
                                 "title": "Phone Number"
                             },
                             "bsn": {
@@ -8883,7 +9402,8 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Short subject of the complaint",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Subject"
                     },
                     "description": {
@@ -8895,7 +9415,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date the complaint was received (Awb deadline calculation basis)",
-                        "title": "Receipt Date"
+                        "title": "Receipt date"
                     },
                     "receiptChannel": {
                         "type": "string",
@@ -9076,6 +9596,15 @@
                                 "description": "The complainant withdraws the complaint."
                             }
                         }
+                    },
+                    "linkedTypes": [
+                        "mail"
+                    ],
+                    "mailObjectTemplate": {
+                        "subject": "{{subject}}",
+                        "description": "{{preview}}",
+                        "receiptChannel": "email",
+                        "receiptDate": "{{date}}"
                     }
                 }
             },
@@ -9266,19 +9795,21 @@
                         "type": "string",
                         "maxLength": 255,
                         "description": "Category name",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Name"
                     },
                     "description": {
                         "type": "string",
                         "description": "Description of this category",
-                        "x-translatable": true,
+                        "translatable": true,
+                        "sourceLanguage": "nl",
                         "title": "Description"
                     },
                     "defaultHandler": {
                         "type": "string",
                         "description": "Default handler: NC user ID or group ID prefixed with 'group:'",
-                        "title": "Default Handler"
+                        "title": "Default handler"
                     },
                     "slaOverride": {
                         "type": "integer",
@@ -9689,7 +10220,7 @@
                         "type": "string",
                         "maxLength": 20,
                         "description": "Dutch Chamber of Commerce (KvK) number: natural key",
-                        "title": "KvK Number"
+                        "title": "KvK number"
                     },
                     "legalName": {
                         "type": "string",
@@ -9968,13 +10499,13 @@
                     "startDate": {
                         "type": "string",
                         "format": "date",
-                        "title": "Start Date",
+                        "title": "Start date",
                         "description": "Date the contract becomes effective"
                     },
                     "endDate": {
                         "type": "string",
                         "format": "date",
-                        "title": "End Date",
+                        "title": "End date",
                         "description": "Date the contract expires"
                     },
                     "value": {
@@ -10067,7 +10598,7 @@
                     "dueDate": {
                         "type": "string",
                         "format": "date",
-                        "title": "Due Date",
+                        "title": "Due date",
                         "description": "Date by which the invoice must be paid"
                     },
                     "expectedPaymentDate": {
@@ -10152,7 +10683,7 @@
                     "sentAt": {
                         "type": "string",
                         "format": "date-time",
-                        "title": "Sent At",
+                        "title": "Sent at",
                         "description": "Timestamp when this message was sent"
                     }
                 }
@@ -10198,7 +10729,7 @@
                     },
                     "complianceScore": {
                         "type": "number",
-                        "title": "Compliance Score",
+                        "title": "Compliance score",
                         "description": "Composite compliance score (0–100) based on contract KPIs"
                     },
                     "benchmark": {
@@ -10261,13 +10792,13 @@
                     "completedBy": {
                         "type": "string",
                         "description": "NC user ID who completed the step",
-                        "title": "Completed By"
+                        "title": "Completed by"
                     },
                     "completedAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Completion timestamp",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "blockedReason": {
                         "type": "string",
@@ -10279,9 +10810,9 @@
             "emailTemplate": {
                 "slug": "emailTemplate",
                 "icon": "EmailOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-equivalent": "schema:DigitalDocument",
-                "title": "Email Template",
+                "title": "Email template",
                 "description": "Per-zaaktype email template with placeholder variables; version-bumped on edit (case-email-integration spec).",
                 "type": "object",
                 "required": [
@@ -10331,15 +10862,15 @@
                         "format": "uuid",
                         "$ref": "emailTemplate",
                         "description": "Reference to the prior version object (audit chain)",
-                        "title": "Previous Version"
+                        "title": "Previous version"
                     }
                 }
             },
             "adviceRequest": {
                 "slug": "adviceRequest",
                 "icon": "MessageTextOutline",
-                "version": "1.0.0",
-                "title": "Advice Request",
+                "version": "1.1.0",
+                "title": "Advice request",
                 "description": "A request for advice from an internal or external adviser on a specific case. Tracks the full lifecycle from open to received or cancelled.",
                 "type": "object",
                 "required": [
@@ -10361,7 +10892,7 @@
                     "requestedBy": {
                         "type": "string",
                         "description": "UID of the user who submitted the advice request.",
-                        "title": "Requested By"
+                        "title": "Requested by"
                     },
                     "advisor": {
                         "type": "string",
@@ -10408,8 +10939,8 @@
             "checklistItem": {
                 "slug": "checklistItem",
                 "icon": "CheckboxOutline",
-                "version": "1.0.0",
-                "title": "Checklist Item",
+                "version": "1.1.0",
+                "title": "Checklist item",
                 "description": "A single question or observation point within an inspection checklist. Supports boolean, enum, text, and photo answer types.",
                 "type": "object",
                 "required": [
@@ -10483,7 +11014,7 @@
                         "format": "uuid",
                         "$ref": "caseType",
                         "description": "The case type this checklist applies to.",
-                        "title": "Case Type Reference"
+                        "title": "Case type reference"
                     },
                     "items": {
                         "type": "array",
@@ -10491,7 +11022,7 @@
                             "$ref": "checklistItem"
                         },
                         "description": "Ordered list of checklist items (questions) that make up this template.",
-                        "title": "Items"
+                        "title": "items"
                     },
                     "active": {
                         "type": "boolean",
@@ -10503,7 +11034,7 @@
                         "type": "string",
                         "format": "date",
                         "description": "Date from which this version of the checklist is valid.",
-                        "title": "Valid From"
+                        "title": "Valid from"
                     }
                 }
             },
@@ -10538,13 +11069,13 @@
                     "completedBy": {
                         "type": "string",
                         "description": "UID of the inspector who completed the checklist.",
-                        "title": "Completed By"
+                        "title": "Completed by"
                     },
                     "completedAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Timestamp when the inspection run was finalised.",
-                        "title": "Completed At"
+                        "title": "Completed at"
                     },
                     "answers": {
                         "type": "array",
@@ -10616,9 +11147,10 @@
                 },
                 "slug": "dossiqIntegration",
                 "icon": "PowerPlugOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "title": "Integration",
                 "x-openregister-catalogue": true,
+                "x-openregister-demo-data": "The rows are a catalogue that register.d seeds, and ImportHandler upserts on register, schema and slug, so a generated demo row ships a second BRP and a second ZGW entry beside the real ones. MockRegisterHasNoSeededCatalogueTest refuses them for that reason. The schema is deprecated as well: nothing writes these rows any more, because the Integrations page reads integriq's app_connection.",
                 "description": "One connection between Dossiq and a system outside it: what it is called, whether it works, and where an admin configures it. The rows are seeded by the app; an admin reads them and does not write them by hand. Read is restricted to admins, and the authorization block is load-bearing rather than decorative. OpenRegister treats an ABSENT block as open. Without one, GET /apps/openregister/api/objects/dossiq/dossiqIntegration answered every row to every authenticated account, measured at ten rows to an account in no groups. The Integrations page is admin-only and #2307 added a router guard, but a router guard stops the page and not the data. All four actions are named on purpose. Once the block is non-empty, OpenRegister fails an unlisted action closed, so naming only read would have moved the write posture too. Every writer is already admin-gated behind AuthorizedAdminSetting, so naming admins on create, update and delete matches what the code does today.",
                 "authorization": {
                     "read": [
@@ -10715,14 +11247,166 @@
                         "default": 0
                     }
                 }
+            },
+            "caseCustody": {
+                "slug": "caseCustody",
+                "icon": "AccountSwitchOutline",
+                "version": "1.0.0",
+                "title": "Case custody",
+                "description": "One period a case was held by one organisation unit. The chain of these records answers who held a case on a given day, which the audit trail cannot: the audit says what changed, and reading a sequence of diffs back into a holding is a reconstruction, not a record. Exactly one holding per case is open at a time, and a move closes the open one and opens the next in the same act, so the chain has no gap by construction.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "organisationUnit",
+                    "from"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case this holding belongs to."
+                    },
+                    "organisationUnit": {
+                        "type": "string",
+                        "title": "Organisation unit",
+                        "description": "The unit that held the case for this period. A team inside the organisation or a partner organisation, whichever the move named."
+                    },
+                    "handler": {
+                        "type": "string",
+                        "title": "Handler",
+                        "description": "The person on the seat during this holding, where there was one. A unit can hold a case with nobody named on it."
+                    },
+                    "from": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Held from",
+                        "description": "The moment this holding began, in ISO 8601."
+                    },
+                    "until": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Held until",
+                        "description": "The moment this holding ended, in ISO 8601. Empty on the open holding."
+                    },
+                    "open": {
+                        "type": "boolean",
+                        "title": "Open",
+                        "description": "Whether this is the holding that is running now. Stored rather than derived so a reader can ask the register for the open holding instead of sorting the chain."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "title": "Reason",
+                        "description": "Why the case moved into this holding."
+                    },
+                    "movedBy": {
+                        "type": "string",
+                        "title": "Moved by",
+                        "description": "Who made the move that opened this holding."
+                    },
+                    "sequence": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "title": "Sequence",
+                        "description": "The position of this holding in the chain, counted from one. Two holdings that begin in the same second still read back in order."
+                    }
+                }
+            },
+            "caseTakeover": {
+                "slug": "caseTakeover",
+                "icon": "HandBackRightOutline",
+                "version": "1.0.0",
+                "title": "Case takeover request",
+                "description": "A colleague asking the current holder for a case. A case nobody holds is claimed rather than requested; a case somebody holds needs that person's answer, because the holder knows something the asker does not. The answer is accept or refuse, a refusal carries a reason, and a request nobody answers escalates to the holding unit rather than expiring in silence.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "requestedBy",
+                    "reason",
+                    "status"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case being asked for."
+                    },
+                    "requestedBy": {
+                        "type": "string",
+                        "title": "Asked by",
+                        "description": "Who wants to take the case over."
+                    },
+                    "holder": {
+                        "type": "string",
+                        "title": "Holder",
+                        "description": "The person holding the case when the request was made, where there is one."
+                    },
+                    "holdingUnit": {
+                        "type": "string",
+                        "title": "Holding unit",
+                        "description": "The organisation unit holding the case when the request was made. The escalation goes here."
+                    },
+                    "reason": {
+                        "type": "string",
+                        "title": "Reason",
+                        "description": "Why the asker should have the case."
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "accepted",
+                            "refused",
+                            "escalated"
+                        ],
+                        "title": "Status",
+                        "description": "Where the request stands. `escalated` is still open: the question moved to the unit, it was not answered."
+                    },
+                    "requestedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Asked at",
+                        "description": "When the request was made, in ISO 8601."
+                    },
+                    "answeredBy": {
+                        "type": "string",
+                        "title": "Answered by",
+                        "description": "Who accepted or refused."
+                    },
+                    "answeredAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Answered at",
+                        "description": "When the answer was given, in ISO 8601."
+                    },
+                    "refusalReason": {
+                        "type": "string",
+                        "title": "Refusal reason",
+                        "description": "Why the holder is keeping the case. A refusal without one is not an answer."
+                    },
+                    "escalatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Escalated at",
+                        "description": "When the unanswered request went to the holding unit, in ISO 8601."
+                    },
+                    "taskId": {
+                        "type": "string",
+                        "title": "Task",
+                        "description": "The engine task that carries the request to the holder."
+                    }
+                }
             }
         },
         "registers": {
             "dossiq": {
                 "slug": "dossiq",
                 "title": "Dossiq",
-                "version": "1.2.1",
+                "version": "1.3.0",
                 "description": "Case management (zaakgericht werken) register for Dossiq: manages case types, status types, cases, tasks, roles, results, and decisions.",
+                "languages": [
+                    "nl",
+                    "en"
+                ],
                 "schemas": [
                     "caseType",
                     "statusType",
@@ -10742,6 +11426,7 @@
                     "caseProperty",
                     "caseDocument",
                     "caseObject",
+                    "caseIncident",
                     "customerContact",
                     "decisionDocument",
                     "dispatch",
@@ -10795,6 +11480,8 @@
                     "caseFederatedShare",
                     "caseShare",
                     "casetransfer",
+                    "caseCustody",
+                    "caseTakeover",
                     "checklistItem",
                     "consultation",
                     "obligation",
@@ -11205,6 +11892,7 @@
                     "slug": "rol-gemachtigde"
                 },
                 "name": "Gemachtigde",
+                "genericRole": "gemachtigde",
                 "description": "Persoon of organisatie gemachtigd om namens de aanvrager op te treden"
             },
             {

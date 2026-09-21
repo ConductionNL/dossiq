@@ -11,13 +11,13 @@
  * many jobs. It was.
  *
  * 🔑 THIS IS A SEAM, NOT A LAYER. It decides nothing and validates nothing:
- * every method here is one line onto the class that owns the act. What it
- * adds is {@see self::overview()}, which is the one thing that genuinely
- * needed all six at once, and which was the reason the controller had them.
+ * every method here is one line onto the class that owns the act.
  *
- * So the controller now has one collaborator for the acts, and the question
- * "what may this handler do to this case" has a home that is not a
- * controller method.
+ * The read that goes with the acts is {@see CaseActsOverview}, and it is a
+ * separate class on purpose: it was a method here until 2026-09-20, and it
+ * was the only thing that needed all eleven collaborators at once. Holding
+ * them for it made this seam a class with eleven constructor parameters and
+ * eleven public methods, suppressed twice. The commands need four.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Lifecycle
@@ -38,24 +38,12 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Lifecycle;
 
-use OCA\Dossiq\Exception\RefusedException;
-use OCA\Dossiq\Service\CaseType\AlwaysAvailableActs;
-use OCA\Dossiq\Service\Transitions\CaseStatusStore;
-use OCP\IUserSession;
-
 /**
- * One seam over the six classes that own the acts on a case.
+ * One seam over the classes that own the acts on a case.
  *
  * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
  */
 class CaseActs {
-
-	/**
-	 * The three acts whose permission the case type declares.
-	 *
-	 * @var list<string>
-	 */
-	private const ROLE_GATED = ['finish', 'abort', 'archive'];
 
 	/**
 	 * Constructor.
@@ -64,122 +52,14 @@ class CaseActs {
 	 * @param CaseHoldActs $holds Hold and release.
 	 * @param DraftCaseActs $drafts Begin and promote.
 	 * @param CaseIncompleteness $incompleteness Record what is missing.
-	 * @param LifecycleActorGate $gate Whether an act is permitted, and which role is missing.
-	 * @param ProcessOwnedStatusRule $processStatus Whether a status may be hand-set.
-	 * @param CaseStatusStore $store Reads the case the overview is about.
-	 * @param AlwaysAvailableActs|null $alwaysAvailable The acts the case type allows in every
-	 *                                                  phase. Optional, so a test that predates
-	 *                                                  the half builds the facade as it did.
-	 * @param IUserSession|null $userSession Names the caller the always-available acts are
-	 *                                       decided for.
-	 * @param CaseArchiveState|null $archiveState Reads the platform's archive marker, so the
-	 *                                            menu can offer Restore instead of Archive.
-	 *                                            Optional for the same reason
-	 *                                            `alwaysAvailable` is.
 	 */
 	public function __construct(
 		private readonly CaseEndingActs $endings,
 		private readonly CaseHoldActs $holds,
 		private readonly DraftCaseActs $drafts,
 		private readonly CaseIncompleteness $incompleteness,
-		private readonly LifecycleActorGate $gate,
-		private readonly ProcessOwnedStatusRule $processStatus,
-		private readonly CaseStatusStore $store,
-		private readonly ?AlwaysAvailableActs $alwaysAvailable = null,
-		private readonly ?IUserSession $userSession = null,
-		private readonly ?CaseArchiveState $archiveState = null,
 	) {
 	}//end __construct()
-
-	/**
-	 * The acts this case type allows in every phase, decided for this caller.
-	 *
-	 * Answers the empty list when the half is not wired, which is what every
-	 * test constructing this facade seven-argument gets: the half is
-	 * additive, and a test written before it cannot be failed by it.
-	 *
-	 * @param string $caseId The case.
-	 *
-	 * @return array<int, array<string, mixed>> The acts, each carrying its verdict.
-	 *
-	 * @spec openspec/changes/task-as-a-first-class-record/specs/process-step-configuration/spec.md
-	 */
-	private function alwaysAvailableOn(string $caseId): array {
-		if ($this->alwaysAvailable === null) {
-			return [];
-		}
-
-		return $this->alwaysAvailable->forCase(
-			caseId: $caseId,
-			userId: (string)($this->userSession?->getUser()?->getUID() ?? '')
-		);
-	}//end alwaysAvailableOn()
-
-	/**
-	 * What this handler may do to this case, with a reason on every refusal.
-	 *
-	 * 🔴 A REFUSED ACT IS LISTED, NOT OMITTED. The menu shows it disabled with
-	 * the reason, because an act that is simply absent teaches nobody why. So
-	 * the answer carries every role-gated act, each with `allowed` and, when it
-	 * is not, the sentence naming the role.
-	 *
-	 * @param string $caseId The case UUID.
-	 *
-	 * @return array<string, mixed> The state and the verdicts.
-	 *
-	 * @throws RefusedException When the case cannot be read.
-	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-	 */
-	public function overview(string $caseId): array {
-		$case = $this->store->loadCase(caseId: $caseId);
-		if ($case === null) {
-			throw new RefusedException(
-				rule: 'case-not-found',
-				sentence: 'This case could not be found.',
-				status: RefusedException::STATUS_UNPROCESSABLE,
-			);
-		}
-
-		$missing = $this->incompleteness->missingOn(case: $case);
-
-		// The archive marker, read off the case the overview already loaded.
-		// The menu needs it to offer Restore in the place Archive stood: two
-		// entries both enabled would let a handler archive a case that is
-		// already archived, and the platform answers that with a shrug rather
-		// than a refusal, so nothing on screen would say what happened.
-		$marker = ($this->archiveState?->markerOn(case: $case) ?? []);
-
-		return [
-			'caseId' => $caseId,
-			'archived' => ($marker !== []),
-			'archivedAt' => (string)($marker['at'] ?? ''),
-			'archivedBy' => (string)($marker['by'] ?? ''),
-			'archivedReason' => (string)($marker['reason'] ?? ''),
-			'held' => $this->holds->isHeld(case: $case),
-			'heldUntil' => (string)($case[CaseHoldActs::UNTIL_FIELD] ?? ''),
-			'draft' => $this->drafts->isDraft(case: $case),
-			'incomplete' => ($missing !== []),
-			'missingFields' => $missing,
-			'endingAct' => (string)($case[CaseEndingActs::ENDING_FIELD] ?? ''),
-			'ending' => $this->endings->endingOf(case: $case),
-			'statusIsHandSettable' => $this->processStatus->allowsHandSet(
-				caseTypeId: (string)($case['caseType'] ?? '')
-			),
-			'acts' => $this->verdicts(case: $case),
-			// The second half of "what may I do right now": the acts the case
-			// type allows in EVERY phase, beside the acts of the current one.
-			// One answer and one menu, because two lists are two places to
-			// look and one of them gets forgotten.
-			//
-			// 🔑 NOT A PHASE THAT IS ALWAYS ACTIVE. Modelled as a phase, an
-			// always-available act would appear in the phase strip, count
-			// towards the progress figure and be given a phase term, and all
-			// three would be wrong. It is its own declared list, marked, and
-			// it never reaches the status machinery.
-			'alwaysAvailable' => $this->alwaysAvailableOn(caseId: $caseId),
-		];
-	}//end overview()
 
 	/**
 	 * Finish the case: it reached its result.
@@ -319,36 +199,4 @@ class CaseActs {
 	public function recordIncompleteness(string $caseId, array $fields): array {
 		return $this->incompleteness->record(caseId: $caseId, missing: $fields);
 	}//end recordIncompleteness()
-
-	/**
-	 * The three role-gated acts, each with its verdict and its reason.
-	 *
-	 * @param array<string, mixed> $case The loaded case.
-	 *
-	 * @return array<int, array<string, mixed>> One entry per act.
-	 *
-	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-management/spec.md
-	 */
-	private function verdicts(array $case): array {
-		$acts = [];
-		foreach (self::ROLE_GATED as $act) {
-			$allowed = $this->gate->may(act: $act, case: $case);
-
-			// A permitted act carries no reason, so the menu has nothing to
-			// render beside it. Only a refusal explains itself.
-			$reason = '';
-			if ($allowed === false) {
-				$reason = $this->gate->refusalSentence(act: $act, case: $case);
-			}
-
-			$acts[] = [
-				'act' => $act,
-				'allowed' => $allowed,
-				'role' => $this->gate->roleFor(act: $act, case: $case),
-				'reason' => $reason,
-			];
-		}
-
-		return $acts;
-	}//end verdicts()
 }//end class

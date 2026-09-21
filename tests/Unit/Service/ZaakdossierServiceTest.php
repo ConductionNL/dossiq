@@ -110,6 +110,8 @@ interface DossierObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser
  * @uses \OCA\Dossiq\Service\InformatieobjectAccessGuard
  * @uses \OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle
+ * @uses \OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter
+ * @uses \OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents
  */
 class ZaakdossierServiceTest extends TestCase {
 

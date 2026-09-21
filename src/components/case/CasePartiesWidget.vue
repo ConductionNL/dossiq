@@ -104,9 +104,18 @@
 							{{ party.email }}
 						</span>
 						<span
+							v-if="representedBy(party)"
+							class="case-parties__represented"
+							data-testid="case-parties-represented">
+							{{ t('dossiq', 'Represented by') }}:
+							{{ representedBy(party) }}
+						</span>
+						<span
 							v-if="correspondenceOf(party)"
 							class="case-parties__documents"
-							:data-party-documents="party.partyUuid || party.contactUid"
+							:data-party-documents="
+								party.partyUuid || party.contactUid
+							"
 							data-testid="case-parties-documents">
 							{{ correspondenceOf(party) }}
 						</span>
@@ -136,9 +145,11 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcNoteCard from '@nextcloud/vue/components/NcNoteCard'
 import {
 	fetchCaseParties,
+	fetchCaseRoles,
 	fetchParty,
 	indicatorsOf,
 	indicatorVerdict,
+	representedByMap,
 	rolesInOrder,
 } from '../../services/caseParties.js'
 import { documentsOfParty } from '../../services/documentCorrespondents.js'
@@ -165,6 +176,8 @@ export default {
 			partyRecords: {},
 			/** The documents of the case, for the correspondence line. */
 			documents: [],
+			/** Participant reference to the party they act for. */
+			represented: {},
 		}
 	},
 
@@ -274,6 +287,7 @@ export default {
 			this.failed = false
 			this.partyRecords = {}
 			this.documents = []
+			this.represented = {}
 
 			const listing = await fetchCaseParties(this.caseId)
 			if (listing === null) {
@@ -299,8 +313,38 @@ export default {
 				}
 			})
 			this.partyRecords = byUuid
+			this.represented = representedByMap(await fetchCaseRoles(this.caseId))
 			await this.loadDocuments()
 			this.loading = false
+		},
+
+		/**
+		 * Whom this party acts for on the case, by name.
+		 *
+		 * Empty for every party but a representative, which is what keeps the
+		 * line off the other rows rather than printing it blank.
+		 *
+		 * @param {object} party The link row.
+		 * @return {string} The represented party's name, '' when they act for nobody.
+		 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-the-parties-tab-shows-who-is-represented-req-role-010
+		 */
+		representedBy(party) {
+			const key = party.partyUuid || party.contactUid || ''
+			const uuid = this.represented[key] || ''
+			if (uuid === '') {
+				return ''
+			}
+
+			// The represented party is on this case too, so the listing already
+			// carries their name. Falling back to the uuid says WHO it is even
+			// when the link was written before they were added.
+			const rows = this.listing?.results || []
+			const row = rows.find((candidate) => candidate?.partyUuid === uuid)
+			if (row) {
+				return this.nameOf(row)
+			}
+
+			return this.partyRecords[uuid]?.name || uuid
 		},
 
 		/**
@@ -490,6 +534,7 @@ export default {
 
 	&__party-kind,
 	&__party-email,
+	&__represented,
 	&__documents {
 		color: var(--color-text-maxcontrast);
 	}

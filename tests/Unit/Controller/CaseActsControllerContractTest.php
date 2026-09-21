@@ -32,6 +32,8 @@ use OCA\Dossiq\Controller\CaseActsController;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\Lifecycle\CaseActs;
+use OCA\Dossiq\Service\Lifecycle\CaseActsMenu;
+use OCA\Dossiq\Service\Lifecycle\CaseActsOverview;
 use OCA\Dossiq\Service\Lifecycle\CaseEndingActs;
 use OCA\Dossiq\Service\Lifecycle\CaseHoldActs;
 use OCA\Dossiq\Service\Lifecycle\CaseIncompleteness;
@@ -53,6 +55,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Controller\CaseActsController
  * @uses \OCA\Dossiq\Exception\RefusedException
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseActs
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseActsMenu
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseActsOverview
  */
 class CaseActsControllerContractTest extends TestCase {
 
@@ -154,11 +158,28 @@ class CaseActsControllerContractTest extends TestCase {
 			holds: $this->holds,
 			drafts: $this->drafts,
 			incompleteness: $this->incompleteness,
-			gate: $this->gate,
-			processStatus: $this->processStatus,
-			store: $this->store,
 		);
 	}//end facade()
+
+	/**
+	 * A REAL read model over the same doubled acts.
+	 *
+	 * Real for the same reason the facade is: the menu the controller answers
+	 * with is composed here, so doubling it would let a missing key pass.
+	 *
+	 * @return CaseActsOverview The read model.
+	 */
+	private function overview(): CaseActsOverview {
+		return new CaseActsOverview(
+			store: $this->store,
+			menu: new CaseActsMenu(gate: $this->gate),
+			endings: $this->endings,
+			holds: $this->holds,
+			drafts: $this->drafts,
+			incompleteness: $this->incompleteness,
+			processStatus: $this->processStatus,
+		);
+	}//end overview()
 
 	/**
 	 * A signed-in handler who works on the case.
@@ -215,6 +236,7 @@ class CaseActsControllerContractTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->request,
 			acts: $this->facade(),
+			overview: $this->overview(),
 			caseAccessGuard: $this->caseAccessGuard,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
@@ -367,6 +389,7 @@ class CaseActsControllerContractTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->request,
 			acts: $this->facade(),
+			overview: $this->overview(),
 			caseAccessGuard: $guard,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
@@ -396,6 +419,7 @@ class CaseActsControllerContractTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->request,
 			acts: $this->facade(),
+			overview: $this->overview(),
 			caseAccessGuard: $this->caseAccessGuard,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),

@@ -44,13 +44,20 @@ const vocabularyKeys = VOCABULARY_SNAPSHOT.keys
 
 describe('the vocabulary snapshot is the engine own list', () => {
 	it('publishes the counts PropertyValidatorHandler holds', () => {
+		// The modifier and key counts moved by one on 2026-09-18, when
+		// openregister#3883 published `conceptScheme` and this app began
+		// forwarding it. ONLY by one: the live vocabulary holds 99 keys against
+		// this snapshot's 90, and the rest of that drift is deliberately left
+		// where it is. A snapshot is refreshed by taking it again from the
+		// endpoint, which is its own piece of work; nudging the numbers here to
+		// match a live instance would turn this assertion into a rubber stamp.
 		expect(VOCABULARY_SNAPSHOT.counts).toEqual({
 			types: 19,
 			constraints: 33,
-			modifiers: 36,
+			modifiers: 37,
 			passthrough: 19,
 			formats: 33,
-			keys: 89,
+			keys: 90,
 		})
 	})
 
@@ -216,6 +223,11 @@ describe('a key the platform has not published is not forwarded', () => {
 		})
 	})
 
+	// 30s, not the 5s default: this one READS EVERY FILE under src/ and lib/,
+	// and the two trees grew past the default over one programme. A timeout
+	// here is the tree being large, never the assertion being false, and the
+	// scan is the point: a grep for the three names is what makes "dossiq
+	// declares and integriq resolves" checkable rather than stated.
 	it('ships no resolver for a declared source', () => {
 		expect(definitionKeys).toContain('propertySource')
 		const hits = []
@@ -242,5 +254,5 @@ describe('a key the platform has not published is not forwarded', () => {
 		walk(join(ROOT, 'src'))
 		walk(join(ROOT, 'lib'))
 		expect(hits, 'integriq resolves a source, dossiq declares it').toEqual([])
-	})
+	}, 30000)
 })

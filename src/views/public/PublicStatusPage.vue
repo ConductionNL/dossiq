@@ -20,6 +20,18 @@
 						})
 					}}
 				</p>
+				<p
+					v-if="mergedFrom"
+					class="public-status-page__ref"
+					data-testid="public-status-merged-from">
+					{{
+						t(
+							'dossiq',
+							'Your request {ref} is handled together with this one.',
+							{ ref: mergedFrom },
+						)
+					}}
+				</p>
 			</header>
 
 			<!-- Visual status indicator -->
@@ -67,6 +79,30 @@
 				</div>
 			</section>
 
+			<!-- What has happened on the case, as far as the applicant may see. -->
+			<section
+				v-if="timeline.length"
+				class="public-status-page__timeline"
+				data-testid="public-status-timeline">
+				<h2 class="public-status-page__timeline-title">
+					{{ t('dossiq', 'What has happened') }}
+				</h2>
+				<ol class="public-status-page__timeline-list">
+					<li
+						v-for="entry in timeline"
+						:key="entry.id"
+						class="public-status-page__timeline-entry"
+						data-testid="public-status-timeline-entry">
+						<span class="public-status-page__timeline-moment">{{
+							formatDate(entry.occurredAt)
+						}}</span>
+						<span class="public-status-page__timeline-message">{{
+							entry.message
+						}}</span>
+					</li>
+				</ol>
+			</section>
+
 			<footer class="public-status-page__footer">
 				<p>
 					{{
@@ -82,11 +118,9 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import { NcLoadingIcon } from '@nextcloud/vue'
-import {
-	descriptionOnCase,
-	labelOnCase,
-} from '../../utils/statusPublicLabel.js'
+import { descriptionOnCase, labelOnCase } from '../../utils/statusPublicLabel.js'
 
 export default {
 	name: 'PublicStatusPage',
@@ -106,6 +140,8 @@ export default {
 			loading: true,
 			error: '',
 			statusData: null,
+			timeline: [],
+			mergedFrom: '',
 		}
 	},
 
@@ -114,6 +150,13 @@ export default {
 	},
 
 	methods: {
+		// INHERITED, AND FIXED HERE BECAUSE THIS FILE GAINED ANOTHER CALLER.
+		// Every string on this page goes through `t()`, and the template had
+		// no `t` to go through: the import and the method were both missing,
+		// so the page rendered untranslated at best. Its sibling
+		// PublicAppointmentPage has had both since it was written.
+		t,
+
 		/**
 		 * Resolve the public "track your case" token through OpenRegister's
 		 * shares integration leaf (ADR-022). The OR `#[PublicPage]` endpoint
@@ -137,7 +180,31 @@ export default {
 				}
 
 				const data = await response.json()
-				const obj = data.object || {}
+				let obj = data.object || {}
+
+				// 🔴 A MERGED CASE IS NOT THE CASE THE APPLICANT IS WAITING
+				// ON. The token still resolves, and it resolves to a case
+				// nobody works on any more: its term was completed at the
+				// merge and its status stopped moving there. The survivor is
+				// the one whose status is the answer, and only the server can
+				// read it, because this page has no session.
+				if (obj.mergedInto) {
+					const survivor = await fetch(
+						`/apps/dossiq/api/public/case-tokens/${encodeURIComponent(this.token)}/survivor`,
+					)
+					if (survivor.ok) {
+						const merged = await survivor.json()
+						obj = merged.object || obj
+						this.mergedFrom = String(data.object?.identifier || '')
+					}
+				}
+				// The entries the server already decided are public. There is
+				// no client-side filter here on purpose: the projection has no
+				// visibility field to filter on, because the decision is the
+				// server's and a page with no session cannot be trusted to
+				// make it. An empty or absent list is a case with nothing to
+				// show, not an error.
+				this.timeline = Array.isArray(data.timeline) ? data.timeline : []
 				// Map the public-safe OR object view onto the citizen status fields.
 				//
 				// 🔴 THE STATUS THE APPLICANT READS IS ON THE CASE, NOT BEHIND
@@ -260,6 +327,36 @@ export default {
 
 .public-status-page__date-value {
 	font-weight: bold;
+}
+
+.public-status-page__timeline {
+	margin-bottom: 32px;
+}
+
+.public-status-page__timeline-title {
+	font-size: 16px;
+	margin: 0 0 12px;
+}
+
+.public-status-page__timeline-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border-inline-start: 2px solid var(--color-border);
+}
+
+.public-status-page__timeline-entry {
+	padding: 8px 0 8px 16px;
+}
+
+.public-status-page__timeline-moment {
+	display: block;
+	font-size: 13px;
+	color: var(--color-text-maxcontrast);
+}
+
+.public-status-page__timeline-message {
+	display: block;
 }
 
 .public-status-page__footer {

@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver
+ * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
+ * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
  */
 class SettingsServiceTest extends TestCase {
 
@@ -383,6 +385,58 @@ class SettingsServiceTest extends TestCase {
 		// lexically (see #721).
 		$this->assertStringNotContainsString('+', $captured['version']);
 	}//end testLoadConfigurationImportsMergedConfigUnderItsOwnVersion()
+
+	/**
+	 * An import that raises an `\Error` is REPORTED, not escaped.
+	 *
+	 * 🔴 THE BUG THIS CLOSES. A declaration OpenRegister's entity setters
+	 * refuse arrives as a `TypeError`, which extends `\Error` and not
+	 * `\Exception`. The catch here used to be `catch (\Exception)`, so the
+	 * TypeError left the service, left the controller, and the caller read
+	 * HTTP 500 with a Nextcloud error page. Measured 2026-09-19 on a live
+	 * instance: `Schema::setSearchable(): Argument #1 ($searchable) must be
+	 * of type bool, array given`, and `POST /api/settings/load` answered 500.
+	 *
+	 * The cost of the 500 is not the status code. The e2e seed reads it as
+	 * "this app's own loader is unavailable" and falls back to OpenRegister's
+	 * importer, which cannot merge `register.d`, so every schema declared in
+	 * a fragment is absent and no `*_schema` app-config key is ever written.
+	 *
+	 * The assertion is on what the CALLER receives, because that is the thing
+	 * that was wrong.
+	 *
+	 * @return void
+	 */
+	public function testLoadConfigurationReportsAnErrorRatherThanLettingItEscape(): void {
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->appManager->method('isInstalled')->willReturn(true);
+
+		$configurationService = $this->createMock(DossiqConfigurationServiceStub::class);
+		$configurationService->expects($this->once())
+			->method('importFromApp')
+			->willThrowException(
+				new \TypeError(
+					'OCA\OpenRegister\Db\Schema::setSearchable(): Argument #1 '
+					. '($searchable) must be of type bool, array given'
+				)
+			);
+
+		$this->container->method('get')->willReturnCallback(
+			static function (string $class) use ($configurationService) {
+				if ($class === 'OCA\OpenRegister\Service\ConfigurationService') {
+					return $configurationService;
+				}
+
+				throw new \RuntimeException('not resolvable in this test: ' . $class);
+			}
+		);
+
+		$result = $this->service->loadConfiguration();
+
+		$this->assertFalse($result['success']);
+		$this->assertStringContainsString('Import failed', $result['message']);
+		$this->assertStringContainsString('setSearchable', $result['message']);
+	}//end testLoadConfigurationReportsAnErrorRatherThanLettingItEscape()
 
 }//end class
 

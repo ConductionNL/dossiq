@@ -43,6 +43,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTimeImmutable;
+use OCA\Dossiq\Service\Termijn\TermMoveHistory;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -51,7 +52,6 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-binding/spec.md
  * @spec openspec/changes/phase-terms-and-the-internal-target/specs/termijn-reporting/spec.md
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.StaticAccess) {@see TermKind} is a vocabulary: four
  * constants and four pure predicates over an array, with no state, no I/O and
  * nothing to inject. Making it an instance would add a constructor dependency
@@ -65,12 +65,16 @@ class CaseTermsService {
 	 * @param TermDeclarationReader $declarations What the case type and its phases declare.
 	 * @param TermijnTimerService $timers The engine calendar bridge.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermMoveHistory|null $moves The record of every move a term made, and
+	 *        why. Optional so a container that cannot build it leaves the binding
+	 *        exactly as it was.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly TermDeclarationReader $declarations,
 		private readonly TermijnTimerService $timers,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermMoveHistory $moves = null,
 	) {
 	}//end __construct()
 
@@ -300,6 +304,12 @@ class CaseTermsService {
 				'pauseReason' => (string)($row['pauseReason'] ?? ''),
 				'pauseWaitingOn' => (string)($row['pauseWaitingOn'] ?? ''),
 				'chasesSent' => max(0, (int)($row['chasesSent'] ?? 0)),
+				// WHY THIS DATE IS NOT THE DATE IT WAS. A deadline that
+				// quietly became another deadline is the thing a handler
+				// cannot see and an applicant will argue about, so every move
+				// the engine recorded travels with the term rather than
+				// waiting for somebody to go and look for it.
+				'moves' => ($this->moves?->movesFor(instance: $row) ?? []),
 			];
 		}//end foreach
 

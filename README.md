@@ -156,11 +156,18 @@ silent specialist.
 
 ## Requirements
 
+<!-- prerequisites:start -->
+<!-- Generated from lib/Prerequisites.php. PrerequisitesTest holds this table
+     to that declaration, so edit the declaration and not the table. -->
+
 | Dependency | Version |
 |-----------|---------|
-| Nextcloud | 28 – 34 |
+| Nextcloud | 32 – 34 |
 | PHP | 8.3+ |
+| PHP extensions | json, mbstring, zip |
 | [OpenRegister](https://github.com/ConductionNL/openregister) | latest |
+
+<!-- prerequisites:end -->
 
 ## Installation
 

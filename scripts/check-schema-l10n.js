@@ -114,6 +114,42 @@ function collect(node, where, sink) {
 }
 
 /**
+ * Whether a descriptor's schemas ever reach an instance.
+ *
+ * 🔴 A MOCK DESCRIPTOR'S SCHEMAS ARE NEVER IMPORTED, SO NOBODY EVER READS
+ * THEM. `DemoDataService` imports `type: mock` descriptors OBJECTS ONLY: its
+ * `objectsOnly()` does `unset($data['registers'], $data['schemas'])` and the
+ * same under `components`, deliberately, because handing those to the
+ * importer forked the schema set and overwrote the live register's title.
+ * So the titles, property descriptions and enum labels inside a mock
+ * descriptor's schemas cannot appear in any form on any instance.
+ *
+ * Counting them measured strings in a FILE rather than strings a person
+ * reads, and translating them would have put demo-fixture prose into the
+ * shipped catalogue for forms nobody renders.
+ *
+ * 🔑 IT ALSO SHADOWED THE REAL FIX, WHICH IS HOW IT WAS FOUND. Strings are
+ * deduplicated by value, and this descriptor sorts first, so it was credited
+ * as the source of every string the real register also carries. Sentence
+ * casing the shipped registers to match the catalogue therefore looked
+ * almost worthless: measured on dossiq, 3090 uncovered went to 3085, a gain
+ * of five, because the mock copies kept the old Title Case spellings alive.
+ * With the mock descriptor excluded the same edit gains 121, to 2969.
+ *
+ * The test is the descriptor's own declared type, not a filename, so a
+ * second mock register is covered the day it lands and a real one can never
+ * be excluded by being named like a fixture.
+ *
+ * @param {object} doc - the parsed descriptor
+ * @return {boolean} true when this descriptor's schemas are shipped
+ */
+function shipsItsSchemas(doc) {
+	const declared = doc && doc['x-openregister']
+	if (declared === null || typeof declared !== 'object') return true
+	return declared.type !== 'mock'
+}
+
+/**
  *
  */
 function main() {
@@ -128,6 +164,7 @@ function main() {
 		} catch {
 			continue // not a schema document; the manifest checks own their own files
 		}
+		if (!shipsItsSchemas(doc)) continue
 		collect(doc, path.relative(REPO_ROOT, file), strings)
 	}
 

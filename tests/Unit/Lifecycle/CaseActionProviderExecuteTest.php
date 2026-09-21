@@ -36,10 +36,15 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Lifecycle;
 
+use OCA\Dossiq\Lifecycle\CaseActionList;
 use OCA\Dossiq\Lifecycle\CaseActionProvider;
 use OCA\Dossiq\Service\Access\OpenRegisterGrantsGateway;
 use OCA\Dossiq\Service\Cases\ExternalHome;
 use OCA\Dossiq\Service\StatusTransitionService;
+use OCA\Dossiq\Service\Money\CasePaymentReader;
+use OCA\Dossiq\Service\Money\CasePaymentState;
+use OCA\Dossiq\Service\Money\UnpaidCaseGate;
+use OCA\Dossiq\Service\Transitions\CaseTypeReader;
 use OCA\Dossiq\Service\Transitions\CaseResultWriter;
 use OCA\Dossiq\Service\Transitions\GuardFailedException;
 use OCA\OpenRegister\Exception\LifecycleProviderException;
@@ -55,8 +60,11 @@ use TypeError;
  * Maps the transition engine's write outcome onto OpenRegister's contract.
  *
  * @covers \OCA\Dossiq\Lifecycle\CaseActionProvider
+ * @uses \OCA\Dossiq\Lifecycle\CaseActionList
  * @uses \OCA\Dossiq\Service\Transitions\GuardFailedException
  * @uses \OCA\Dossiq\Service\Cases\ExternalHome
+ * @uses \OCA\Dossiq\Service\Money\UnpaidCaseGate
+ * @uses   \OCA\Dossiq\Service\Money\CasePaymentState
  */
 class CaseActionProviderExecuteTest extends TestCase {
 
@@ -95,9 +103,18 @@ class CaseActionProviderExecuteTest extends TestCase {
 	private function providerOver(StatusTransitionService $engine): CaseActionProvider {
 		return new CaseActionProvider(
 			transitionEngine: $engine,
-			resultWriter: $this->createMock(CaseResultWriter::class),
 			grants: $this->createMock(OpenRegisterGrantsGateway::class),
 			externalHome: new ExternalHome(),
+			// A REAL action list over the SAME doubles the assertions read
+			// through. Only the wiring lines moved when the acts and what
+			// blocks them were split out.
+			actions: new CaseActionList(
+				resultWriter: $this->createMock(CaseResultWriter::class),
+				externalHome: new ExternalHome(),
+				caseTypes: $this->createMock(CaseTypeReader::class),
+				unpaidCases: new UnpaidCaseGate(new CasePaymentState()),
+				payments: $this->createMock(CasePaymentReader::class),
+			),
 			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end providerOver()

@@ -60,6 +60,17 @@ export const LEGACY_TYPE_ALIASES = {
  * the extends-form map cannot forward it: a form may only forward a key the
  * vocabulary holds, and `ExtendingFormDeclaration` refuses the rest by name.
  *
+ * 🔑 THE SAVE PATH IS NOT WHAT HOLDS A KEY BACK, and the entry that left this
+ * map read as if it were. OpenRegister's `assertKeysAreInTheVocabulary()` skips
+ * every `x-` prefixed key, so a property carrying one has always saved. What a
+ * pending key cannot do is be FORWARDED, which is the sentence above and the
+ * only thing that was ever missing. `conceptScheme` left this map on 2026-09-18
+ * when openregister#3883 published it, and it is published BARE: an `x-` key is
+ * skipped rather than checked, so the prefixed spelling this entry named would
+ * have been a key in the vocabulary that the vocabulary's own enforcer refuses
+ * to look at. If `x-openregister-property-source` is ever published, expect the
+ * same correction.
+ *
  * The definition carries the source regardless, so a case type authored today
  * keeps the administrator's answer. `propertyDefinitionSchema.spec.js` fails
  * the moment the vocabulary does hold the key, which is the one reminder to

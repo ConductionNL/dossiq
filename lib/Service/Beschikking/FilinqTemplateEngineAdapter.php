@@ -127,14 +127,6 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * @throws RuntimeException When filinq is absent, no user is acting, or the render fails.
 	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver over the
-	 *      app-id and namespace rename map; injecting it would add a dependency to say
-	 *      the same thing.
-	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function render(string $templateId, array $context): array {
@@ -220,12 +212,6 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @throws RuntimeException When filinq is absent, does not know the template,
 	 *                          or holds no version for it.
 	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
-	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function resolveVersion(string $templateId, string $effectiveDate): array {
@@ -276,12 +262,6 @@ class FilinqTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 *
 	 * @return string|null The version, as `v<n>`, or null when the chain
 	 *                     answers nothing for that date.
-	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
 	 */
 	private function versionInForce(string $templateId, string $effectiveDate): ?string {
 		$versionService = FleetAppId::getService($this->container, 'filinq', self::TEMPLATE_VERSION_SERVICE);

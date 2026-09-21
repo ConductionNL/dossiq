@@ -699,16 +699,18 @@ writes only, as REQ-CDV-17 and REQ-CDV-18 describe.
 - **WHEN** the handler opens the History tab
 - **THEN** the upload SHALL read above the status change, with the handler as actor
 
-### Requirement: Nine tabs hold every panel of the case (REQ-CDV-16)
+### Requirement: Thirteen tabs hold every panel of the case (REQ-CDV-16)
 
-You reach every panel of the case from one row of nine tabs. The `case-panels`
-widget on `CaseDetail` SHALL list exactly nine tabs, in the order Data
-(`case-data-panel`), Files (`case-files`), Notes (`case-notes-panel`), People
+You reach every panel of the case from one row of thirteen tabs. The
+`case-panels` widget on `CaseDetail` SHALL list exactly thirteen tabs, in the
+order Data (`case-data-panel`), Files (`case-files`), Notes
+(`case-notes-panel`), Timeline (`case-timeline-panel`), People
 (`case-people-panel`), Communication (`case-communication-panel`), Email
 (`case-email-panel`), Work (`case-work-panel`), Decisions
-(`case-decisions-panel`) and Related (`case-related-panel`). The strip SHALL
-sit above the fold at 1024 pixels wide, and all nine SHALL be visible there
-without a scroll or a gesture.
+(`case-decisions-panel`), Related (`case-related-panel`), Custody
+(`case-custody-panel`), Archiving (`case-archival-panel`) and Knowledge
+(`case-knowledge-panel`). The strip SHALL sit above the fold at 1024 pixels
+wide, and all thirteen SHALL be visible there without a scroll or a gesture.
 
 Objects and locations is retired. Its objects are the last section of Related,
 an object linked to a case being a relation like any other, and its locations
@@ -743,9 +745,14 @@ places is duplication rather than coverage (REQ-CDV-17). Until 2026-09-13 that
 rule was satisfied by keeping the sidebar copy and barring the strip tab; it is
 satisfied the other way now, because the strip is where a handler works and the
 sidebar is a shelf beside it. Notes, Email and Besluitvorming are strip tabs,
-and the sidebar carries only History, Sharing and Tags, none of which has a
-strip counterpart. The strip SHALL still carry no Timeline tab: the timeline is
-the History sidebar tab, and that one is not moving.
+and the sidebar carries History, Terms, Access, Sharing, AVG and Tags, none of
+which has a strip counterpart.
+
+The strip carries a Timeline tab as of 2026-09-16, and that is not the
+duplication this rule bars. The History sidebar tab is the audit trail, one row
+per write on the object. Timeline is every note, call and message on the case
+in one order, which the audit trail does not hold. Two surfaces over two
+sources is coverage; the rule bars two surfaces over one.
 
 A panel SHALL NOT be removed from the strip unless it is reachable elsewhere on
 the page: folding it into a tab and deleting it look identical in a tab count.
@@ -758,25 +765,27 @@ collection holding nothing could be absent rather than empty; with tabs that
 hold one or two collections each, an empty section is a line of text inside a
 tab the handler opened deliberately.
 
-> The ceiling has moved twice, both times deliberately. Six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files. Seven to nine on 2026-09-13 (Ruben): Communication left the People tab, and Email and Decisions left the SIDEBAR. The second move added nothing to the page. The sidebar lost exactly the three tabs the strip gained, so counted together the page holds what it held; what changed is which chrome each surface reads in. The ceiling guards UNWATCHED growth, the strip going from ten to fourteen with nothing counting it, and an exact count somebody has to edit on purpose is what does that guarding.
+> The ceiling has moved five times, every time deliberately. Six to seven on 2026-09-12 (Ruben): a Notes tab joined the strip beside Files. Seven to nine on 2026-09-13 (Ruben): Communication left the People tab, and Email and Decisions left the SIDEBAR. The second move added nothing to the page. The sidebar lost exactly the three tabs the strip gained, so counted together the page holds what it held; what changed is which chrome each surface reads in. Nine to ten on 2026-09-15: Archiving arrived, a surface the case did not have. Ten to eleven on 2026-09-16: Timeline arrived. Eleven to thirteen on 2026-09-19 (Ruben): Custody and Knowledge both arrived this round, and both stay. Custody answers who has held the case and who is asking for it, which the timeline does not: the timeline says what changed, not who was accountable while it changed. Knowledge is the work instruction for this kind of case, drawn from the collectives leaf, beside the case instead of in a second app the handler has to go and find. Neither folds into an existing tab without burying it.
+>
+> Thirteen is a decision, not a surrender. A fourteenth tab still reddens the count, and whoever wants it says here what it answers that the thirteen do not. The ceiling guards UNWATCHED growth, the strip going from ten to fourteen with nothing counting it, and an exact count somebody has to edit on purpose is what does that guarding.
 
-#### Scenario: The strip holds nine tabs and no more
+#### Scenario: The strip holds thirteen tabs and no more
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a case with three tasks and one document
 - **WHEN** the handler opens the case page
-- **THEN** the tab strip SHALL contain exactly nine tabs
-- **AND** they SHALL read Data, Files, Notes, People, Communication, Email, Work, Decisions, Related, in that order
+- **THEN** the tab strip SHALL contain exactly thirteen tabs
+- **AND** they SHALL read Data, Files, Notes, Timeline, People, Communication, Email, Work, Decisions, Related, Custody, Archiving, Knowledge, in that order
 - **AND** the strip SHALL carry no tab named Documents, Mail, Contacts or Objects and locations
 
-#### Scenario: The nine tabs fit a laptop screen
+#### Scenario: The thirteen tabs fit a laptop screen
 @e2e tests/e2e/case-header.spec.ts
 
 - **GIVEN** a viewport 1024 pixels wide
 - **WHEN** the handler opens the case page
 - **THEN** the tab strip SHALL sit above the fold
-- **AND** every one of the nine tabs SHALL be visible without a scroll or a gesture
+- **AND** every one of the thirteen tabs SHALL be visible without a scroll or a gesture
 
 > Measured 2026-09-09 at 1024 pixels: six tabs need 661 pixels on one line, and the strip's
 > tab row has roughly 280. A full-width strip yields about 570, so one line is not reachable
@@ -795,7 +804,7 @@ tab the handler opened deliberately.
 #### Scenario: Every folded panel still renders, inside the tab it moved to
 @e2e tests/e2e/case-detail-kpis-and-tabs.spec.ts
 
-- **GIVEN** a case page whose strip holds nine tabs
+- **GIVEN** a case page whose strip holds thirteen tabs
 - **WHEN** the handler opens each tab in turn
 - **THEN** each `case-sections` tab SHALL render both of its sections
 - **AND** each section SHALL carry its own heading

@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Sharing;
 
 use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\AccessLinkProjection;
 use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
@@ -287,9 +288,36 @@ class CaseAccessLinkServiceTest extends TestCase {
 				$logger,
 				$this->createMock(TenantAuditTrailService::class)
 			),
+			consent: $this->allowingConsentGate(),
 			logger: $logger,
 		);
 	}//end setUp()
+
+	/**
+	 * A consent gate that lets every partner share through.
+	 *
+	 * Stubbed here because this test's subject is the federated share and the
+	 * access link, not the consent. REQ-CST-01 and REQ-CST-02 are watched
+	 * against a real in-memory register in PartnerShareScopeTest.
+	 *
+	 * @return CaseTransferConsentGate The gate.
+	 */
+	private function allowingConsentGate(): CaseTransferConsentGate {
+		$gate = $this->createStub(CaseTransferConsentGate::class);
+		$gate->method('assess')->willReturn(
+			[
+				'allowed' => true,
+				'rule' => '',
+				'sentence' => '',
+				'consent' => null,
+				'scope' => [],
+				'until' => '',
+				'crossesOrganisation' => true,
+			]
+		);
+
+		return $gate;
+	}//end allowingConsentGate()
 
 	/**
 	 * A share mints a link over the case, declaring what the holder may do,

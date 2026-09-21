@@ -8,14 +8,29 @@
 			</h4>
 
 			<NcEmptyContent
-				v-if="!loading && versions.length === 0"
+				v-if="hasNoFile"
+				class="dossier-version-panel__refusal"
+				:name="t('dossiq', 'No file to read versions of')"
+				:description="refusalDescription">
+				<template #icon>
+					<History :size="20" />
+				</template>
+				<template #action>
+					<NcButton variant="secondary" @click="showInFiles">
+						{{ t('dossiq', 'Show in Files') }}
+					</NcButton>
+				</template>
+			</NcEmptyContent>
+
+			<NcEmptyContent
+				v-if="!hasNoFile && !loading && versions.length === 0"
 				:name="t('dossiq', 'No previous versions')">
 				<template #icon>
 					<History :size="20" />
 				</template>
 			</NcEmptyContent>
 
-			<NcLoadingIcon v-if="loading" :size="24" />
+			<NcLoadingIcon v-if="loading && !hasNoFile" :size="24" />
 
 			<ul v-if="versions.length > 0" class="dossier-version-panel__list">
 				<li
@@ -29,6 +44,9 @@
 						<span class="dossier-version-panel__meta">
 							{{ formatDate(version.timestamp) }} ·
 							{{ version.author || t('dossiq', 'Unknown') }}
+							<template v-if="formatSize(version.size) !== ''">
+								· {{ formatSize(version.size) }}
+							</template>
 						</span>
 					</div>
 					<div class="dossier-version-panel__actions">
@@ -63,7 +81,7 @@ import { getCurrentUser } from '@nextcloud/auth'
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
-import { generateRemoteUrl } from '@nextcloud/router'
+import { generateRemoteUrl, generateUrl } from '@nextcloud/router'
 import { NcButton, NcEmptyContent, NcLoadingIcon, NcModal } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
@@ -80,6 +98,17 @@ import History from 'vue-material-design-icons/History.vue'
  * `document` object a parent DossierTab used to pass down directly, and no
  * `userId` prop either, since there is no parent to read `getCurrentUser()`
  * for it any more.
+ *
+ * TWO CALLERS, ONE FILE (document-acts-reach-a-surface REQ-ZAK-020). This
+ * panel was registered and named by no manifest action at all between
+ * 2026-09-13, when the Documents tab that opened it was retired, and this
+ * change. The `case-files` leaf opens it now, and CnFilesBrowser merges the
+ * clicked node's `fileId`, `fileName` and `path` onto the action's props
+ * rather than a row, so `fileId` is read first and `row.informatieobject`
+ * second. Handed NEITHER, it says which file it could not find and offers
+ * Show in Files; it does NOT render the empty-versions state, because a file
+ * with no history and no file at all are two different sentences and only one
+ * of them is about the document.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
  * @spec openspec/specs/document-zaakdossier/spec.md
@@ -104,6 +133,27 @@ export default {
 		row: {
 			type: Object,
 			default: () => ({}),
+		},
+
+		/**
+		 * The Nextcloud file id of the clicked node, merged onto an
+		 * `open-modal` row action's props by CnFilesBrowser.
+		 *
+		 * This is the path the `case-files` leaf uses and the only one that
+		 * still has a caller: the Documents tab that handed `row` down was
+		 * retired on 2026-09-13. `row` is kept because a widget row action on
+		 * an object-list still passes it, and losing that would swap one dark
+		 * caller for another.
+		 */
+		fileId: {
+			type: [String, Number],
+			default: '',
+		},
+
+		/** The clicked node's name, for the refusal sentence. */
+		fileName: {
+			type: String,
+			default: '',
 		},
 	},
 
@@ -130,6 +180,40 @@ export default {
 		},
 
 		/**
+		 * The Nextcloud file id whose versions this panel reads.
+		 *
+		 * The `fileId` prop wins over the row, because a row action on the
+		 * files browser names the node that was clicked while `row` is empty
+		 * there.
+		 *
+		 * @return {number} The file id, or 0 when neither prop carries one.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		resolvedFileId() {
+			const fromProp = Number(this.fileId)
+			if (Number.isFinite(fromProp) && fromProp > 0) {
+				return fromProp
+			}
+			const fromRow = Number(this.document.fileId)
+			return Number.isFinite(fromRow) && fromRow > 0 ? fromRow : 0
+		},
+
+		/**
+		 * Whether the panel was handed no file at all.
+		 *
+		 * A panel with no file must SAY so. Rendering the empty-versions state
+		 * instead reads as "this file has no previous versions", which is a
+		 * different sentence and the wrong one: no versions and no file look
+		 * identical to a reader.
+		 *
+		 * @return {boolean} True when neither prop named a file.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		hasNoFile() {
+			return this.resolvedFileId === 0
+		},
+
+		/**
 		 * The signed-in user id, for the versions DAV path.
 		 *
 		 * @return {string} The user id, or empty string.
@@ -148,6 +232,26 @@ export default {
 		 */
 		restoreDisabled() {
 			return this.document.status === 'final'
+		},
+
+		/**
+		 * The sentence the refusal shows, naming the file when one was named.
+		 *
+		 * @return {string} The description.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		refusalDescription() {
+			if (this.fileName !== '') {
+				return this.t(
+					'dossiq',
+					'{name} could not be resolved to a file on this server, so its versions cannot be read here.',
+					{ name: this.fileName },
+				)
+			}
+			return this.t(
+				'dossiq',
+				'This panel was opened without a file, so there is nothing to read versions of.',
+			)
 		},
 	},
 
@@ -176,7 +280,7 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		async fetchVersions() {
-			if (!this.document.fileId || !this.userId) {
+			if (this.resolvedFileId === 0 || !this.userId) {
 				this.versions = []
 				return
 			}
@@ -190,12 +294,29 @@ export default {
 				// said "No previous versions" on every such instance — including the
 				// `php -S` instance this app's own E2E job runs on.
 				const url = generateRemoteUrl(
-					`dav/versions/${this.userId}/versions/${this.document.fileId}`,
+					`dav/versions/${this.userId}/versions/${this.resolvedFileId}`,
 				)
+				// 🔴 THE PROPERTIES ARE NAMED, NOT LEFT TO ALLPROP. A PROPFIND
+				// with an empty body returns the DAV: live properties and the
+				// dead ones, and Nextcloud's own `nc:` live properties are in
+				// neither set. So the author has to be ASKED for, or it never
+				// arrives and the panel goes on reading Unknown. A property
+				// the server does not know comes back in a 404 propstat,
+				// which the parser simply does not find, so naming one costs
+				// nothing where it is absent.
 				const { data } = await axios.request({
 					method: 'PROPFIND',
 					url,
-					headers: { Depth: '1' },
+					data:
+						'<?xml version="1.0"?>'
+						+ '<d:propfind xmlns:d="DAV:" xmlns:nc="http://nextcloud.org/ns">'
+						+ '<d:prop>'
+						+ '<d:getlastmodified/>'
+						+ '<d:getcontentlength/>'
+						+ '<nc:version-author/>'
+						+ '</d:prop>'
+						+ '</d:propfind>',
+					headers: { Depth: '1', 'Content-Type': 'application/xml' },
 				})
 				this.versions = this.parseVersions(data)
 			} catch {
@@ -231,16 +352,35 @@ export default {
 				if (
 					!href
 					|| href.textContent.endsWith(
-						'/versions/' + this.document.fileId + '/',
+						'/versions/' + this.resolvedFileId + '/',
 					)
 				) {
 					return
 				}
+				// 🔴 `author` USED TO BE THE LITERAL `''` HERE, and the template
+				// renders `version.author || 'Unknown'`. So every version of
+				// every document read Unknown, which looks exactly like a
+				// server that did not send an author and is really a field
+				// nobody ever parsed. REQ-ZAK-020 asks for the moment, the
+				// author and the size, and two of the three were never read.
+				//
+				// The author lives in Nextcloud's own namespace, not in DAV:.
+				// A server that does not send it still renders Unknown, which
+				// is now a real absence rather than a hardcoded one.
+				const author = node.getElementsByTagNameNS(
+					'http://nextcloud.org/ns',
+					'version-author',
+				)[0]
+				const size = node.getElementsByTagNameNS(
+					'DAV:',
+					'getcontentlength',
+				)[0]
 				versions.push({
 					id: href.textContent,
 					number: responses.length - index,
 					timestamp: lastModified ? lastModified.textContent : '',
-					author: '',
+					author: author ? author.textContent : '',
+					size: size ? Number(size.textContent) : null,
 				})
 			})
 			return versions
@@ -265,6 +405,32 @@ export default {
 		},
 
 		/**
+		 * Format a version's byte count for the meta line.
+		 *
+		 * A version whose size the server did not send renders NOTHING
+		 * rather than `0 B`: an unsent size and an empty file are different
+		 * facts, and only one of them is worth a reader's attention.
+		 *
+		 * @param {number|null} bytes The byte count, or null when unsent.
+		 * @return {string} The formatted size, or an empty string.
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		formatSize(bytes) {
+			if (typeof bytes !== 'number' || !Number.isFinite(bytes) || bytes < 0) {
+				return ''
+			}
+			const units = ['B', 'KB', 'MB', 'GB', 'TB']
+			let value = bytes
+			let unit = 0
+			while (value >= 1024 && unit < units.length - 1) {
+				value /= 1024
+				unit += 1
+			}
+			const rounded = unit === 0 ? value : Math.round(value * 10) / 10
+			return `${rounded} ${units[unit]}`
+		},
+
+		/**
 		 * Download one previous version.
 		 *
 		 * `version.id` is the DAV href PROPFIND returned, which is already the
@@ -279,6 +445,23 @@ export default {
 				return
 			}
 			window.open(version.id, '_blank')
+		},
+
+		/**
+		 * Open the Files app when this panel has no file of its own to read.
+		 *
+		 * The panel refuses rather than showing an empty list, and a refusal
+		 * that offers nothing to do next is a dead end; the Files app is where
+		 * the versions of any node can still be reached.
+		 *
+		 * @return {void}
+		 * @spec openspec/specs/document-zaakdossier/spec.md
+		 */
+		showInFiles() {
+			if (typeof window === 'undefined') {
+				return
+			}
+			window.open(generateUrl('/apps/files'), '_blank', 'noopener')
 		},
 
 		/**

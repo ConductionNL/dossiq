@@ -274,10 +274,10 @@ class PerTaskConfigurationTest extends TestCase {
 	/**
 	 * A reader over a definition service that answers nothing.
 	 *
-	 * The validator only ever asks it to DECODE a definition it was handed,
-	 * never to look one up, so the lookup half is deliberately a double that
-	 * would fail loudly if anything started using it. The reader resolves that
-	 * half through the container, so the double is handed over the same way.
+	 * The lookup half is deliberately a double that would fail loudly if
+	 * anything started using it: only `stepsForCase` resolves a definition,
+	 * and nothing here calls it. The reader resolves that half through the
+	 * container, so the double is handed over the same way.
 	 *
 	 * @return TaskDeclarationReader The reader.
 	 */
@@ -314,7 +314,7 @@ class PerTaskConfigurationTest extends TestCase {
 			handlers: $registry,
 			groups: $groupManager,
 			declaration: new TaskDeclaration(),
-			steps: $this->reader()
+			steps: new WorkflowJsonProperty()
 		);
 	}
 }//end class

@@ -130,12 +130,31 @@
 									@click="markNotJunk(entry)">
 									{{ t('dossiq', 'Not junk') }}
 								</NcButton>
+								<!-- Offered on EVERY entry, not only on one that
+								     became no case: a wrong match is the common
+								     reason somebody reaches for this, and an
+								     entry that became case 2026-090 when it
+								     belonged on 2026-114 looks exactly like a
+								     successful match until a person reads it. -->
+								<NcButton
+									variant="tertiary"
+									:data-testid="`intake-log-file-on-case-${entryId(entry)}`"
+									@click="openFileOnCase(entry)">
+									{{ t('dossiq', 'File on a case') }}
+								</NcButton>
 							</td>
 						</tr>
 					</tbody>
 				</table>
 			</template>
 		</div>
+
+		<MailIntakeFileOnCaseDialog
+			v-if="filing !== null"
+			:entry="filing"
+			:entryId="entryId(filing)"
+			@close="filing = null"
+			@filed="onFiled" />
 	</NcAppContent>
 </template>
 
@@ -150,6 +169,7 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import MailIntakeFileOnCaseDialog from '../../dialogs/MailIntakeFileOnCaseDialog.vue'
 
 /**
  * The intake log as a surface rather than a log file.
@@ -172,6 +192,7 @@ export default {
 	name: 'MailIntakeLogView',
 	components: {
 		NcAppContent,
+		MailIntakeFileOnCaseDialog,
 		NcButton,
 		NcEmptyContent,
 		NcLoadingIcon,
@@ -189,6 +210,9 @@ export default {
 			junkRules: [],
 			sender: '',
 			outcome: '',
+			// The entry a handler is filing by hand, or null. The fields,
+			// the refusal and the write live in the dialog itself.
+			filing: null,
 		}
 	},
 
@@ -302,6 +326,28 @@ export default {
 		 * @return {Promise<void>}
 		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 		 */
+		/**
+		 * Open the picker on one entry.
+		 *
+		 * @param {object} entry The log entry.
+		 * @return {void}
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		openFileOnCase(entry) {
+			this.filing = entry
+		},
+
+		/**
+		 * The dialog filed the message: close it and re-read the log.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
+		async onFiled() {
+			this.filing = null
+			await this.reload()
+		},
+
 		async release(entry) {
 			await this.post(`${this.entryId(entry)}/release`, {})
 			await this.reload()

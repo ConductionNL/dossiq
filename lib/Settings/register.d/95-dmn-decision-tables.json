@@ -26,7 +26,7 @@
                         "description": "Free-form description of what this decision determines"
                     },
                     "hitPolicy": {
-                        "title": "Hit Policy",
+                        "title": "Hit policy",
                         "type": "string",
                         "enum": ["UNIQUE", "FIRST", "PRIORITY", "ANY", "COLLECT"],
                         "default": "UNIQUE",

@@ -142,6 +142,10 @@ describe('the Log contact action', () => {
 			'startTime',
 			'summary',
 			'callerIdentification',
+			// timeline-entries-default-internal (#2907): an entry is internal
+			// unless the handler says otherwise, so the form has to carry the
+			// side of the counter rather than leave it to a default nobody saw.
+			'visibleToApplicant',
 		])
 	})
 

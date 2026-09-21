@@ -26,14 +26,18 @@ import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
 import { registerCaseSections } from './components/case/registerCaseSections.js'
 import appIcons from './icons.js'
+import logger from './logger.js'
 import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
+import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
 import cellWidgets from './services/cellWidgets.js'
 import formatters from './services/formatters.js'
 import mapFormatters from './services/mapFormatters.js'
+import { useObjectStore } from './store/modules/object.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
+import { currentPermissions } from './utils/permissions.js'
 import { routerBase } from './utils/routerBase.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
@@ -75,9 +79,8 @@ registerCaseSections()
 try {
 	registerTranslations()
 } catch (e) {
-	// Non-fatal — lib translations fall back to English source.
-	// eslint-disable-next-line no-console
-	console.warn('[dossiq] registerTranslations failed; falling back to English', e)
+	// Non-fatal, lib translations fall back to English source.
+	logger.warn('registerTranslations failed; falling back to English', { error: e })
 }
 
 // Fire-and-forget translation load. Some Nextcloud installs (including
@@ -163,16 +166,43 @@ const fragments = fragmentCtx
 // needs to be tracked to re-render the nav after the backend delta lands.
 // Without this, Vue 2 walks the entire nested structure with
 // Object.defineProperty getters/setters on every app boot.
-const builtManifest = markRaw(buildManifest(bundledManifest, fragments, menuLayout))
+// `runtime` is the context a `visibleIf` dot-path predicate resolves against
+// (`{ "user.isAdmin": true }` on a nav card, say). The schema describes it as
+// backend-injected, and dossiq fills it here instead, for two reasons. The
+// answer is already on the page: `currentPermissions()` is the one source the
+// nav filter and the router guard both read, so a second read over HTTP could
+// only disagree with them. And `passesContextPredicates` hides an entry
+// whenever runtime is absent, so a value that arrives after the first render
+// makes the card blink in rather than appear.
+//
+// ON THE BUNDLED MANIFEST, deliberately, not on the `/api/manifest` response:
+// a merge that fails validation is discarded whole, and an admin-gated link
+// that disappears when some unrelated part of the delta is malformed is the
+// kind of failure nobody reports because it looks like "not allowed".
+const builtManifest = markRaw({
+	...buildManifest(bundledManifest, fragments, menuLayout),
+	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
+})
 
 // Case-type navigation now lives on the Cases index page itself: a folder
 // sidebar (config.folderSidebar) lists the live `caseType` objects and filters
-// cases by `caseType` on select — replacing the former per-case-type menu
-// children injected by the backend ManifestController (`/api/manifest` delta,
-// now removed). `useAppManifest` still returns a REACTIVE ref (the render
-// function reads `resolvedManifest.value`); with no backend delta it resolves
-// to the built manifest.
-const { manifest: resolvedManifest } = useAppManifest('dossiq', builtManifest)
+// cases by `caseType` on select, rather than the per-case-type menu children
+// the backend ManifestController used to inject. `useAppManifest` still
+// returns a REACTIVE ref (the render function reads `resolvedManifest.value`).
+//
+// `mergeStrategy: 'delta'` IS REQUIRED, and it was missing. Both
+// `appinfo/routes.php` and ManifestController's own docblock name this exact
+// call shape, and without it `useAppManifest` falls back to a plain deep
+// merge, where an array REPLACES rather than merges by id. `/api/manifest`
+// answers `{"menu": []}` on four of its five paths, so the merge substituted
+// an EMPTY menu for all 32 entries, and the fifth path replaced them with one
+// group. Nothing reported it: the response is a 200, the merged manifest
+// still validates (`menu` has no `minItems`), and a navigation that renders
+// nothing looks exactly like one that has not loaded yet. In delta mode the
+// same responses merge BY KEY, so an empty list changes nothing.
+const { manifest: resolvedManifest } = useAppManifest('dossiq', builtManifest, {
+	mergeStrategy: 'delta',
+})
 
 // Shallow-clone CnPageRenderer because the lib's barrel exports are
 // non-extensible (webpack ESM module records). Vue 2's `Vue.extend()`
@@ -205,6 +235,14 @@ const router = createRouter({
 // `utils/manifestRoutes.js#permissionGuard` for what it enforces, why it
 // redirects rather than errors, and what it deliberately does NOT close.
 router.beforeEach(permissionGuard)
+
+// The case page subscribes to the case it is showing (gap register row 2.20).
+// It is wired here rather than in a component because `#CaseDetail` is rendered
+// by the library's CnPageRenderer and has no dossiq component in its tree; the
+// route is also the only thing whose lifetime actually matches "this case is on
+// screen". See src/services/caseLiveUpdates.js for what an event does, and for
+// the one thing it deliberately does not cover.
+installCaseLiveUpdates(router, () => useObjectStore())
 
 tryLoadTranslations()
 

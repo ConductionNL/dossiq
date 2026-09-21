@@ -16,6 +16,7 @@ namespace OCA\Dossiq\Service\People;
 use DateTime;
 use OCA\Dossiq\Service\Zaakdossier\DocumentProjectionService;
 use OCP\Constants;
+use OCA\Dossiq\Service\Pipelinq\PartyRefusalReader;
 use OCP\IUserSession;
 use OCP\Share\IManager as IShareManager;
 use OCP\Share\IShare;
@@ -46,6 +47,7 @@ class FileRequestService {
 	 * @param PartyIndicatorReader $indicators What the party's indicators refuse.
 	 * @param IShareManager $shares Creates the share Nextcloud mails.
 	 * @param IUserSession $userSession The handler making the request.
+	 * @param PartyRefusalReader|null $refusals Joins pipelinq's refusal to this app's own.
 	 */
 	public function __construct(
 		private readonly PersonLinkReader $people,
@@ -53,6 +55,9 @@ class FileRequestService {
 		private readonly PartyIndicatorReader $indicators,
 		private readonly IShareManager $shares,
 		private readonly IUserSession $userSession,
+		// Nullable and last: pipelinq is optional, and every existing
+		// construction of this service keeps working unchanged.
+		private readonly ?PartyRefusalReader $refusals = null,
 	) {
 	}//end __construct()
 
@@ -87,10 +92,11 @@ class FileRequestService {
 		// The refusal is evaluated HERE, where the message goes out, and not
 		// only in the dialog that lists who can be asked. A check that lives
 		// in one caller is a check the next caller does not have.
-		$refusal = $this->indicators->sendRefusalFor(
-			partyUuid: $this->indicators->partyUuidOf(link: $person)
-		);
-		if ($refusal !== null) {
+		$partyUuid = $this->indicators->partyUuidOf(link: $person);
+
+		$refusal = $this->refusalFor(partyUuid: $partyUuid);
+
+		if ($refusal !== null && $refusal !== '') {
 			throw new RuntimeException(
 				'A file request to ' . $this->people->nameOf(link: $person)
 				. ' is refused by the indicator "' . $refusal . '" on this party',
@@ -136,6 +142,35 @@ class FileRequestService {
 			'expiresAt' => $expires->format('Y-m-d'),
 		];
 	}//end request()
+
+	/**
+	 * The indicator refusing a send to this party, or null when nothing refuses.
+	 *
+	 * EITHER REFUSAL STOPS IT. `PartyRefusalReader` joins pipelinq's blocking
+	 * answer to the one this app already read out of OpenRegister, and
+	 * pipelinq's label wins the sentence when both refuse because it carries
+	 * the vocabulary an administrator maintains. With pipelinq absent the
+	 * reader is not there, and the answer comes from OpenRegister alone, which
+	 * is exactly what this call site did before.
+	 *
+	 * @param string $partyUuid The party the request would go to.
+	 *
+	 * @return string|null The refusing indicator, or null.
+	 *
+	 * @spec openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#requirement-an-indicator-on-a-party-is-surfaced-where-the-act-is-offered-req-role-013
+	 */
+	private function refusalFor(string $partyUuid): ?string {
+		if ($this->refusals === null) {
+			return $this->indicators->sendRefusalFor(partyUuid: $partyUuid);
+		}
+
+		$verdict = $this->refusals->maySendTo(partyUuid: $partyUuid);
+		if ($verdict['refused'] === true) {
+			return $verdict['indicator'];
+		}
+
+		return null;
+	}//end refusalFor()
 
 	/**
 	 * How many days a request stands: what the caller asked, within a year.

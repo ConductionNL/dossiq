@@ -177,12 +177,19 @@ describe('the Objects tab on the case page', () => {
 		expect(where.tab).toBe('Related')
 		expect(where.label).toBe('Objects')
 
-		// Last of Related's sections, after the cases. The two case collections
-		// are what a handler opens Related for; the objects are the tail.
+		// After the cases. The two case collections are what a handler opens
+		// Related for; the objects are the tail. The one thing behind them is
+		// the Object types card (#2911), which is a link to the register
+		// rather than a collection on this case, so it reads last.
 		const sections = panels
 			.caseWidget('case-related-panel')
 			.content.sections.map((section) => section.widget.id)
-		expect(sections.at(-1)).toBe('case-objects')
+		expect(sections).toEqual([
+			'case-related',
+			'case-sub-cases',
+			'case-objects',
+			'case-object-types-link',
+		])
 
 		// And the tab it came from is gone rather than left standing empty.
 		expect(panelTabs().map((tab) => tab.label)).not.toContain(

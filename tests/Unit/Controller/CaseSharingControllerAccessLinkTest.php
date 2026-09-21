@@ -171,6 +171,85 @@ class CaseSharingControllerAccessLinkTest extends TestCase {
 	}//end testCreateShareRefusesAnUnrelatedCase()
 
 	/**
+	 * An unconfigured instance answers 503 and names what is missing.
+	 *
+	 * 🔴 502 SENDS THE READER TO THE WRONG APP. The mint used to map every
+	 * error to 502 Bad Gateway with a bare "Service unavailable", so an
+	 * unwritten `case_share_schema` on THIS instance read as OpenRegister
+	 * breaking. An e2e lane filed it as a product defect needing an owner and
+	 * could not get past it, because nothing in the answer named the gap.
+	 *
+	 * @return void
+	 */
+	public function testAnUnconfiguredInstanceAnswers503AndNamesTheGap(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-1']);
+
+		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
+		$this->caseSharingService->method('createTokenShare')->willReturn(
+			[
+				'error' => 'Sharing is not configured on this instance yet. '
+					. 'An administrator reloads the dossiq configuration to map the case share schema.',
+				'reason' => CaseLinkShares::REASON_NOT_CONFIGURED,
+			]
+		);
+
+		$response = $this->shareController->createShare();
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+		$this->assertStringContainsString(
+			'case share schema',
+			$response->getData()['error']
+		);
+	}//end testAnUnconfiguredInstanceAnswers503AndNamesTheGap()
+
+	/**
+	 * An upstream refusal is still 502.
+	 *
+	 * The control for the test above: without it, a change that answered 503
+	 * for every error would pass it while losing the one distinction the
+	 * `reason` exists to make.
+	 *
+	 * @return void
+	 */
+	public function testAnUpstreamRefusalIsStillABadGateway(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-1']);
+
+		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
+		$this->caseSharingService->method('createTokenShare')->willReturn(
+			['error' => 'This instance cannot publish links: OpenRegister does not offer them']
+		);
+
+		$response = $this->shareController->createShare();
+
+		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
+	}//end testAnUpstreamRefusalIsStillABadGateway()
+
+	/**
+	 * A link the rollback could not withdraw reaches the caller.
+	 *
+	 * @return void
+	 */
+	public function testALinkStillOpenAfterAFailedShareIsNamedInTheAnswer(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-1']);
+
+		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
+		$this->caseSharingService->method('createTokenShare')->willReturn(
+			[
+				'error' => 'The link could not be recorded on the case, so it was withdrawn again.',
+				'reason' => CaseLinkShares::REASON_ROLLED_BACK,
+				'linksNotRevoked' => [4711],
+			]
+		);
+
+		$response = $this->shareController->createShare();
+
+		$this->assertSame([4711], $response->getData()['linksNotRevoked']);
+	}//end testALinkStillOpenAfterAFailedShareIsNamedInTheAnswer()
+
+	/**
 	 * Listing the links on a case refuses an anonymous caller, and reads
 	 * nothing.
 	 *

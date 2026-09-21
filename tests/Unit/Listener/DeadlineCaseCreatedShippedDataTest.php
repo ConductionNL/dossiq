@@ -54,6 +54,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Listener\DeadlineCaseCreatedListener
  * @covers \OCA\Dossiq\Service\CaseTypeSlugResolver
  * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class DeadlineCaseCreatedShippedDataTest extends TestCase {
 

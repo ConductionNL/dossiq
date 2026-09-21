@@ -63,8 +63,6 @@ use Throwable;
  * Repair step that seeds VTH case types and inspection-checklist templates
  * into OpenRegister.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister + settings.
- *
  * @spec openspec/changes/vth-workflow-configuration-01-config-foundation/tasks.md
  */
 class VthSeedDataRepairStep implements IRepairStep {

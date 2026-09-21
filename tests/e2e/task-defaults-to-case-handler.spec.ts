@@ -286,7 +286,7 @@ test.describe('A task created on a case goes to the case handler', () => {
 		await api.dispose()
 	})
 
-	// @e2e openspec/specs/task-management/spec.md#the-handler-gets-the-task
+	// @e2e openspec/changes/task-defaults-to-case-handler/specs/task-management/spec.md#scenario-the-handler-gets-the-task
 	test('the handler gets the task, and it shows under Mine', async ({ page }) => {
 		const moved = await executeTransition(api, token, cases.handled, TRANSITION)
 		expect(moved.status, JSON.stringify(moved.body)).toBe(200)

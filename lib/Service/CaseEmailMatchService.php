@@ -104,6 +104,7 @@ class CaseEmailMatchService {
 	 * @param MailMessageSource         $messages        Mail accounts and messages.
 	 * @param ContainerInterface        $container       Resolves OpenRegister's email leaf.
 	 * @param LoggerInterface           $logger          Logger.
+	 * @param CaseMergeService          $mergeService    Follows a merged case to its survivor.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -113,6 +114,7 @@ class CaseEmailMatchService {
 		private readonly MailMessageSource $messages,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly CaseMergeService $mergeService,
 	) {
 	}//end __construct()
 
@@ -193,8 +195,6 @@ class CaseEmailMatchService {
 	 * @param int   $accountId Their configured Mail account.
 	 *
 	 * @return array{objectService: object, linkService: object, pattern: string, register: string, schema: string}|string
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) One flat guard per precondition, each an early refusal.
 	 */
 	private function prepareRun(IUser $owner, int $accountId): array|string {
 		if ($this->messages->ownsAccount(accountId: $accountId, userId: $owner->getUID()) === false) {
@@ -375,14 +375,49 @@ class CaseEmailMatchService {
 	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The cases.
 	 */
 	private function casesIn(string $text, array $context, IUser $owner): array {
-		return $this->recognizer->resolveCases(
+		$cases = $this->recognizer->resolveCases(
 			candidates: $this->recognizer->extractCaseNumberCandidates(text: $text, pattern: $context['pattern']),
 			objectService: $context['objectService'],
 			register: $context['register'],
 			schema: $context['schema'],
 			owner: $owner
 		);
+
+		return $this->onSurvivors(cases: $cases);
 	}//end casesIn()
+
+	/**
+	 * Move every matched case onto the case it was merged into.
+	 *
+	 * A merged case keeps its number, and an applicant writes back with the
+	 * number they were given. Filing that reply on the case that was merged
+	 * away puts it where nobody is working, which is the whole reason
+	 * `mergedInto` exists. The identifier is left as it was matched: it is
+	 * what the mail quoted, and rewriting it would hide which number arrived.
+	 *
+	 * @param array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> $cases The matched cases.
+	 *
+	 * @return array<int, array{uuid: string, identifier: string, registerId: int, schemaId: int}> The same cases, on their survivors.
+	 *
+	 * @spec openspec/changes/case-merge/specs/case-management/spec.md#requirement-the-old-number-still-finds-the-case-req-cm-38
+	 */
+	private function onSurvivors(array $cases): array {
+		$resolved = [];
+		$seen = [];
+
+		foreach ($cases as $case) {
+			$case['uuid'] = $this->mergeService->resolveSurvivor(caseId: (string)($case['uuid'] ?? ''));
+			if (isset($seen[$case['uuid']]) === true) {
+				// Two numbers that now name one case are one link, not two.
+				continue;
+			}
+
+			$seen[$case['uuid']] = true;
+			$resolved[] = $case;
+		}
+
+		return $resolved;
+	}//end onSurvivors()
 
 	/**
 	 * Link a message to a case unless the leaf already holds that link.

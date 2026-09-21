@@ -115,8 +115,6 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The versions, or 404 when the type is unreadable.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-the-case-type-page-shows-its-version-chain-req-zv-04
 	 */
 	#[NoAdminRequired]
@@ -140,8 +138,6 @@ class CaseVersionController extends Controller {
 	 * @param string $id The case type version to close.
 	 *
 	 * @return JSONResponse The outcome, or 422 with what stood in the way.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-new-version-and-deprecate-are-actions-on-the-page-req-zv-05
 	 */
@@ -176,8 +172,6 @@ class CaseVersionController extends Controller {
 	 *
 	 * @return JSONResponse The options, with the preview when a target is named.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */
 	#[NoAdminRequired]
@@ -208,8 +202,6 @@ class CaseVersionController extends Controller {
 	 * @param string $caseId The case uuid.
 	 *
 	 * @return JSONResponse What was applied, or the refusal naming the status.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md#requirement-a-running-case-moves-to-another-version-only-as-a-named-act-req-zv-09
 	 */

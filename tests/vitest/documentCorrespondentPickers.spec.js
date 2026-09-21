@@ -34,7 +34,11 @@ vi.mock('@nextcloud/axios', () => ({
 const PARTIES = {
 	primary: 'party-jan',
 	results: [
-		{ partyUuid: 'party-jan', displayName: 'Jan Jansen', email: 'jan@example.org' },
+		{
+			partyUuid: 'party-jan',
+			displayName: 'Jan Jansen',
+			email: 'jan@example.org',
+		},
 		{ partyUuid: 'party-council', displayName: 'Gemeente Utrecht' },
 	],
 }
@@ -159,7 +163,10 @@ describe('the document properties dialog', () => {
 		const wrapper = mount(DocumentMetadataDialog, {
 			props: { caseId: 'case-1', fileId: 4711, fileName: 'aanvraag.pdf' },
 			global: {
-				mocks: { t: (app, text) => text, $route: { params: { id: 'case-1' } } },
+				mocks: {
+					t: (app, text) => text,
+					$route: { params: { id: 'case-1' } },
+				},
 				stubs: {
 					NcModal: { template: '<div><slot /></div>' },
 					NcButton: { template: '<button><slot /></button>' },
