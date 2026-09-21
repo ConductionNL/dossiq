@@ -86,6 +86,9 @@ export default {
 </script>
 
 <style scoped>
+/* I hate gridstack so much, this piece of crap component is so limiting.
+   It is basically impossible to have a dynamic grid with gridstack, even claude cannot do it. */
+
 /*
  * The gap is BETWEEN strips that rendered, so a panel whose `v-if` is false
  * costs nothing: `gap` only applies between boxes that exist, which `margin`
