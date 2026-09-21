@@ -83,7 +83,7 @@ class SchemaAnnotationReconciler {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: Could not access OpenRegister SchemaMapper for declarative reconcile',
-				['exception' => $e->getMessage()]
+				['exception' => $e]
 			);
 			return 0;
 		}
@@ -253,13 +253,25 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
-		try {
+		// 🔴 ELEVATE, OR THIS ONLY WORKS FROM THE COMMAND LINE. OpenRegister
+		// trusts a null user under `PHP_SAPI === 'cli'` or inside a
+		// SystemOperationContext; the WEB updater is neither, so the write came
+		// back "Access denied" and this schema was skipped in silence.
+		$write = function () use ($schema, $schemaMapper, $merged): void {
 			$schema->setConfiguration($merged);
 			$schemaMapper->update($schema);
+		};
+
+		try {
+			if (class_exists(\OCA\OpenRegister\Service\SystemOperationContext::class) === true) {
+				\OCA\OpenRegister\Service\SystemOperationContext::run($write);
+			} else {
+				$write();
+			}
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: Failed to reconcile declarative configuration for schema ' . $slug,
-				['exception' => $e->getMessage()]
+				['exception' => $e]
 			);
 			return 0;
 		}
