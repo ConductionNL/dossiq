@@ -1440,7 +1440,8 @@
 						"label": "Claim",
 						"icon": "AccountCheckOutline",
 						"handler": "claimCase",
-						"type": "handler"
+						"type": "handler",
+						"visibleWhen": { "field": "assignee", "op": "empty" }
 					},
 					{
 						"id": "mark-unread",
@@ -1625,7 +1626,7 @@
 					]
 				},
 				"showViewAction": false,
-				"_claimNote": "The Claim row action is the same one the Queue carries (case-claim-action, row 2.4), reachable from every lens rather than only from Unclaimed. It is offered on every row, including rows that already have a handler: a row action's `visible` predicate is a FUNCTION and this file is JSON, so per-row visibility cannot be declared here. A claim on a case that is already somebody's is refused by the endpoint with a sentence.",
+				"_claimNote": "The Claim row action is the same one the Queue carries (case-claim-action, row 2.4), reachable from every lens rather than only from Unclaimed. It is no longer offered on a row that already has a handler: CnRowActions reads a declarative `visibleWhen` against the row as of nextcloud-vue 2.39.0, where before this only a `visible` FUNCTION could decide per row and a JSON manifest cannot hold one. `empty` is its own operator because an unclaimed case arrives as null, '' or absent depending on the store. A claim on a case that is already somebody's is still refused by the endpoint with a sentence, which is now the backstop rather than the only guard.",
 				"actions": [
 					{
 						"id": "view",
@@ -1640,7 +1641,8 @@
 						"label": "Claim",
 						"icon": "AccountCheckOutline",
 						"handler": "claimCase",
-						"type": "handler"
+						"type": "handler",
+						"visibleWhen": { "field": "assignee", "op": "empty" }
 					},
 					{
 						"id": "mark-unread",
@@ -3192,7 +3194,7 @@
 				"_inspectNote": "admin-inspect-entry row 2.22. TWO FLAT ACTIONS, NOT ONE WITH CHILDREN, which is what the design asked for. CnDetailPage runs CnActionButtons in `display: \"menu\"`, and that mode renders no buttons of its own: it emits `menuEntries`, which maps the visible actions into menu descriptors and drops `children` on the floor. A parent with two children would therefore have shown ONE menu item and neither entry, with no warning anywhere. The chevron the `children` key documents only ever renders in the inline `barActions` mode, which a detail page never uses. The design also named `adminOnly`; there is no such key. A manifest action is a CLOSED object in the nextcloud-vue schema and its vocabulary has no admin flag, and of visibleWhen's three modes only `endpoint` can ask about the READER: the local mode dot-paths into the case record and the source mode queries OpenRegister objects, and neither knows who is looking. So both actions carry the same gate, GET /api/inspect/availability, and evaluation is fail-safe, which means a broken predicate hides them rather than showing them to everyone. Hiding is an AFFORDANCE and not a control: both surfaces read through OpenRegister, which refuses a non-admin itself. Raw data opens `CaseRawDataDialog` and NOT `CnObjectMetadataModal`, which the design named: that component takes a required `objectData` object an open-modal action cannot hand it, and it renders the `@self` block rather than the record, so it would have opened on a case and shown no stored property at all.",
 				"_editLockNote": "edit-lock-on-the-case-page REQ-CM-39, row 2.27. Two caseworkers silently overwriting each other was, in the gap register's own words, a real failure mode we had no answer to. The answer is the PLATFORM lock, and the take, the release and both displays belong to CnDetailPage rather than to this manifest: opening the edit form acquires, closing it and a successful save release, leaving the page releases through the composable's scope, and Edit is withdrawn while another user holds it rather than offered and then refused by the write. Nothing here declares any of that, and nothing should: a key that turned the lock on per page would be a second answer to a question one detail page answers for every app in the fleet. \ud83d\udd34 WHAT THIS PAGE OWES THE LOCK IS TWO STRINGS. The lock url is built from `config.register` and `config.schema`, and a slug no register answers to comes back 404, at which point the acquire fails for a reason that is not a conflict, the form stays open on purpose and the edit proceeds with NO LOCK AT ALL, silently. That is not hypothetical: nextcloud-vue passed the object-cache key `<register>-<schema>` into that url until #1202, and the release sent a DELETE to a route OpenRegister does not declare and read its own 404 as success, so no lock was ever taken or handed back on any manifest-driven detail page. `tests/vitest/caseEditLock.spec.js` is what keeps the pair honest here. \u26a0\ufe0f A HELD LOCK DOES NOT YET REFUSE A SAVE: openregister `run-scoped-object-locking` is unshipped, so today the lock is what the second handler is SHOWN, and the write guard arrives with that change.",
 				"_archivedNote": "archived-cases-leave-the-lenses REQ-CM-43, D-4. Six header actions that WRITE to the case are gated on `@self.archived`, the platform's own marker, read straight off the case object the page already holds: the LOCAL form of `visibleWhen` dot-paths into that object, so the gate costs no round trip. `eq null` is how absence is spelled, and it is exact rather than loose: an absent marker is null and a present one is an object, and String(object) is never \"null\". THE FOUR THAT ARE NOT GATED ARE DELIBERATE. Claim, Release and Hand to another team already carry `isFinalStatus neq true`, and a case can only be archived once it has ended, so they are already gone on an archived case; `visibleWhen` holds ONE condition and no AND, so adding the archive to them would mean dropping the condition doing the work. Copy case stays, because a copy is a NEW case and writes nothing to this one. The Lifecycle menu stays, because Restore lives inside it and gating it would hide the one act that undoes the archive. Start keeps its own `hasStartableFlows` gate for the same one-condition reason, and a flow that writes to an archived case is refused by OpenRegister with a sentence naming the archive. \ud83d\udd34 THE GENERIC EDIT BUTTON IS STILL OFFERED, AND DOSSIQ CANNOT TAKE IT AWAY PER RECORD. `config.showEditAction` is a page-level boolean in the manifest schema and CnDetailPage has no predicate form of it, so pressing Edit opens the form, saving is refused by the platform, and the refusal names the archive, the archiving user and the date. That is the reason reaching the reader rather than a silent failure, but it arrives after the click where the other six are simply not there. It belongs in nextcloud-vue, where one detail page reading `@self.archived` answers for every app in the fleet.",
-				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. NEITHER IS GATED ON THE ASSIGNEE, though the requirement is worded that way. A local `visibleWhen` compares a dot-path against a LITERAL with eq or neq: it has no empty operator, it does not resolve `@me` in `value`, and neither its endpoint nor its source mode can name this case (the endpoint URL is fetched verbatim, and OpenRegister's object list ignores an `id` filter). So the gate is the one thing the record says for certain, which is that a closed case is not picked up, and the SERVER refuses a claim on a case that already has a handler, or a release by anyone who is not that handler, with a 409 and a sentence. That is this page's own convention, the one `case-resume` follows: a gesture the case does not allow is refused in words rather than silently accepted. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
+				"_claimNote": "Claim and Release (case-claim-action, row 2.4). Both are `api-call` header actions and NOT the `handler` type the change's design named: a handler header action resolves `action.handler` against `effectiveManifest.actions`, a JSON map in this file, so it cannot hold a function and the entry would warn to the console and do nothing when clicked. That is the same finding the copy-case sentence records. BOTH ARE NOW GATED ON THE ASSIGNEE, which needed vocabulary that did not exist: a local `visibleWhen` compared one dot-path against one literal, with no way to ask whether a field is empty, no resolution of `@me` in `value`, and no way to require two facts at once. nextcloud-vue 2.39.0 adds `empty`/`notEmpty`, resolves `value` through the shared @-token grammar, and composes with `all`/`any`. So Claim shows only where CaseAssignmentService::claim() would accept it (nobody holds the case) and Release only where release() would (the reader holds it), and the two can no longer be offered together. The SERVER still refuses either with a 409 and a sentence, which is the backstop rather than the gate. Neither action sets `errorMessage`, on purpose: the library shows its own text when one is set and the server's sentence when it is not, and the server's sentence is the one that says why.",
 				"_crossDomainNote": "the-social-domain-plan-and-its-grounds REQ-XDV-01 and REQ-XDV-02, row 5.18. Whether an open case exists in another social-domain register, which one, and who to call. Three facts, and there is no show-more: purpose limitation between Wmo, Jeugdwet and Participatiewet does not allow the 360 view row 5.4 asks for, and every field beyond those three is one somebody has to justify. A modal rather than an api-call because the GROUND is the act and is chosen BEFORE the answer: a ground filled in afterwards is a formality, and choosing it first is what makes the log mean something when the person asks what was looked up about them. Not gated on a group here, deliberately: the guard is that a ground has been chosen, the service refuses without one before it reads anything, and it writes the ground, the person, the requester, the moment and what came back to `sociaalDomeinAuditLog` in the same act as the answer, which is the field that had been declared and unread since the register was written.",
 				"_rebindNote": "case-rebind (case-type-rebind): move a running case to a DIFFERENT case type, which the version move beside it refuses by design. A case filed under the wrong type used to be closed and refiled, with a new number, a new term and a paper trail that stops; a rebind keeps all three. It is a modal because the MAPPING is the act: across two case types a status name means nothing, so the landing status is asked for and so is every property the target requires in that status. The action is gated on `visibleWhen` rather than on a group key, because an action carries no group vocabulary: the endpoint answers whether the caller is a case coordinator, and the service checks the same group itself, since a hidden button is not an authorization.",
 				"_versionMoveNote": "case-version-move (case-type-version-chain): move this case to another version of its OWN case type, which nothing could do. A case filed the day before a correction was published had to be closed and refiled under a new number. It is a modal and not a confirm-gated api-call because the PREVIEW is the act's substance: the person moving the case is shown the status it lands in, the statuses and fields the other version adds and drops, and which of the dropped fields this case has already answered. Every one of those, and the refusal when the other version has no status by the name this case is sitting in, comes from the server, so the dialog cannot disagree with the write. Moving a case to a DIFFERENT case type is a rebind and is not this act: `case-type-rebind` owns that and declares this change as its dependency. Hidden on a closed case, like the other acts that rewrite what governs it.",
@@ -3392,9 +3394,10 @@
 						"method": "POST",
 						"successMessage": "You are now handling this case.",
 						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
+							"all": [
+								{ "field": "isFinalStatus", "op": "neq", "value": true },
+								{ "field": "assignee", "op": "empty" }
+							]
 						}
 					},
 					{
@@ -3406,9 +3409,10 @@
 						"method": "POST",
 						"successMessage": "The case is back in the queue.",
 						"visibleWhen": {
-							"field": "isFinalStatus",
-							"op": "neq",
-							"value": true
+							"all": [
+								{ "field": "isFinalStatus", "op": "neq", "value": true },
+								{ "field": "assignee", "op": "eq", "value": "@me" }
+							]
 						}
 					},
 					{

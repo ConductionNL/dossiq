@@ -94,14 +94,18 @@ describe('the case page offers Claim and Release', () => {
 		expect(release.label).toBe('Release')
 	})
 
-	it('offers both on an open case only', () => {
-		for (const id of ['case-claim', 'case-release']) {
-			expect(action(headerActions, id).visibleWhen).toEqual({
-				field: 'isFinalStatus',
-				op: 'neq',
-				value: true,
-			})
-		}
+	it('offers both on an open case only, and never the two together', () => {
+		const open = { field: 'isFinalStatus', op: 'neq', value: true }
+
+		// Claim where CaseAssignmentService::claim() would accept it: nobody
+		// holds the case. Release where release() would: the reader holds it.
+		// The two assignee clauses cannot both hold, which is the whole point.
+		expect(action(headerActions, 'case-claim').visibleWhen).toEqual({
+			all: [open, { field: 'assignee', op: 'empty' }],
+		})
+		expect(action(headerActions, 'case-release').visibleWhen).toEqual({
+			all: [open, { field: 'assignee', op: 'eq', value: '@me' }],
+		})
 	})
 
 	it('leaves the refusal sentence to the server', () => {
