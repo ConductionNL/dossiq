@@ -648,8 +648,10 @@ describe('Inspect, for an administrator', () => {
 		expect(headerAction('case-inspect-runs').target).toContain(
 			'/apps/openregister/#/flows/runs',
 		)
+		// `{objectId}`, the spelling the library interpolates. `{id}` resolved to
+		// nothing and reached the address bar as those four characters.
 		expect(headerAction('case-inspect-runs').target).toContain(
-			'subjectUuid={id}',
+			'subjectUuid={objectId}',
 		)
 	})
 

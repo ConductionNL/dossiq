@@ -3538,7 +3538,7 @@
 						"type": "navigate",
 						"label": "Inspect flow runs",
 						"icon": "MagnifyScan",
-						"target": "/index.php/apps/openregister/#/flows/runs?subjectUuid={id}",
+						"target": "/index.php/apps/openregister/#/flows/runs?subjectUuid={objectId}",
 						"visibleWhen": {
 							"endpoint": "/index.php/apps/dossiq/api/inspect/availability",
 							"field": "isAdmin",
