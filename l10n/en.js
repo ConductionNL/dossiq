@@ -1279,6 +1279,7 @@ OC.L10N.register(
         "Colour": "Colour",
         "Columns": "Columns",
         "Columns for this case type": "Columns for this case type",
+        "Columns in the case list": "Columns in the case list",
         "Comma-separated keywords": "Comma-separated keywords",
         "Comma-separated list of what the link grants: read, comment, upload. Reading is always granted. Anything not named here is refused by OpenRegister with a 403.": "Comma-separated list of what the link grants: read, comment, upload. Reading is always granted. Anything not named here is refused by OpenRegister with a 403.",
         "Comment": "Comment",

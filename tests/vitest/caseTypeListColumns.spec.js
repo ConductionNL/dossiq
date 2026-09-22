@@ -175,3 +175,44 @@ describe('the folder sidebar is the scope these layouts hang off', () => {
 		expect(casesPage.config.folderSidebar.folders).toBeUndefined()
 	})
 })
+
+describe('an administrator can give a case type its columns without editing the record', () => {
+	/** The case type detail page, which is where a type is looked at. */
+	const detailPage = (manifest.pages || []).find((p) => p.id === 'CaseTypeDetail')
+
+	/** The widget that asks for the block. */
+	const widget = (detailPage.config.widgets || []).find((w) =>
+		((w.content || {}).include || []).includes('x-index'),
+	)
+
+	it('asks for x-index somewhere on the case type detail page', () => {
+		expect(
+			widget,
+			'no widget on CaseTypeDetail includes x-index, so the block is declared on the schema, read by the library, and reachable only by editing the record',
+		).toBeTruthy()
+	})
+
+	it('asks for it in a data widget, which is the kind that carries an edit dialog', () => {
+		expect(
+			widget.type,
+			'only a data widget offers the scoped edit dialog, so another type would show the block and give no way to change it',
+		).toBe('data')
+	})
+
+	it('keeps the card visible when the case type declares nothing', () => {
+		expect(
+			widget.content.hideEmpty,
+			'hiding the empty card hides the only way to fill it, and declaring no columns is the ordinary case',
+		).toBe(false)
+	})
+
+	it('is placed on the page, because a widget absent from the layout never renders', () => {
+		const placed = (detailPage.config.layout || []).some(
+			(entry) => entry.widgetId === widget.id,
+		)
+		expect(
+			placed,
+			`${widget.id} is declared but has no layout entry, so it is a widget nobody sees`,
+		).toBe(true)
+	})
+})

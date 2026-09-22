@@ -1279,6 +1279,7 @@ OC.L10N.register(
         "Colour": "Kleur",
         "Columns": "Kolommen",
         "Columns for this case type": "Kolommen voor dit zaaktype",
+        "Columns in the case list": "Kolommen in de zakenlijst",
         "Comma-separated keywords": "Komma-gescheiden trefwoorden",
         "Comma-separated list of what the link grants: read, comment, upload. Reading is always granted. Anything not named here is refused by OpenRegister with a 403.": "Door komma's gescheiden lijst van wat de link toestaat: read, comment, upload. Lezen is altijd toegestaan. Wat hier niet genoemd staat, weigert OpenRegister met een 403.",
         "Comment": "Opmerking",
