@@ -119,6 +119,24 @@
     "docsUrl": "openspec/specs/doorlooptijd-dashboard/spec.md"
   },
   {
+    "slug": "case-search-and-lists",
+    "status": "beta",
+    "title": "Search and saved lists",
+    "title_nl": "Zoeken en opgeslagen lijsten",
+    "summary": "You search on the fields a case type declares, and keep the list you built.",
+    "summary_nl": "Je zoekt op de velden die een zaaktype aangeeft, en bewaart de lijst die je maakte.",
+    "docsUrl": "openspec/specs/case-search-and-lists/spec.md"
+  },
+  {
+    "slug": "case-access-control",
+    "status": "beta",
+    "title": "Access control on the case",
+    "title_nl": "Toegangsrechten op de zaak",
+    "summary": "You decide per case who reads it, who changes it, and which fields they see.",
+    "summary_nl": "Je bepaalt per zaak wie leest, wie wijzigt, en welke velden zichtbaar zijn.",
+    "docsUrl": "openspec/specs/case-access-control/spec.md"
+  },
+  {
     "slug": "multi-tenancy",
     "title": "Multi-tenant SaaS",
     "title_nl": "Multi-tenant SaaS",

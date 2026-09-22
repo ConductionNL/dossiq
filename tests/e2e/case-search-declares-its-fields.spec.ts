@@ -124,6 +124,7 @@ test.describe('The case declares how each of its fields is searched', () => {
 		await api.dispose()
 	})
 
+	// @e2e case-search-and-lists::the-identifier-answers-to-the-whole-case-number
 	test('the identifier answers to the whole case number and not to half of it', async ({
 		playwright,
 		baseURL,
@@ -197,6 +198,7 @@ test.describe('The case declares how each of its fields is searched', () => {
 		await api.dispose()
 	})
 
+	// @e2e case-search-and-lists::the-cases-page-says-where-a-refused-term-broke
 	test('the Cases page says where a refused term broke', async ({ page }) => {
 		await page.goto(
 			`/index.php/apps/dossiq/cases?_search=${encodeURIComponent('(dakkapel AND NOT geweigerd')}`,
@@ -210,6 +212,7 @@ test.describe('The case declares how each of its fields is searched', () => {
 		)
 	})
 
+	// @e2e case-search-and-lists::a-term-the-page-could-read-draws-no-hint
 	test('the Cases page shows no hint for a term it could read', async ({
 		page,
 	}) => {

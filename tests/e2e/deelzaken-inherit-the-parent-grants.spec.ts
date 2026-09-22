@@ -169,6 +169,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 
 	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#access-to-a-case-reaches-its-deelzaak
 	// @e2e deelzaak-support::access-to-a-case-reaches-its-deelzaak
+	// @e2e case-access-control::the-chain-a-grant-travels-is-read-back-from-the-instance
 	test('the chain the grant travels down is written and read back', async () => {
 		// The edge itself, end to end. A `parentCase` that did not survive the
 		// write makes every assertion about inheritance vacuous: there would
@@ -183,6 +184,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 
 	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#read-does-not-become-write
 	// @e2e deelzaak-support::read-does-not-become-write
+	// @e2e case-access-control::a-colleague-with-no-grant-is-refused-the-write
 	test('a principal with no grant is refused a write on the deepest deelzaak', async ({
 		playwright,
 		baseURL,

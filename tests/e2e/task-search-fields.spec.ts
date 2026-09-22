@@ -235,6 +235,7 @@ test.describe('the Tasks index offers its search fields', () => {
 })
 
 test.describe('Narrow to one case', () => {
+	// @e2e case-search-and-lists::narrowing-the-tasks-to-one-case
 	test("keeps that case's tasks and drops the other case's", async ({ page }) => {
 		const sidebar = await openTasksWithFilters(page)
 		await page.getByRole('tab', { name: CHIPS.all }).click()
@@ -267,6 +268,7 @@ test.describe('Narrow to one case', () => {
 })
 
 test.describe('Due window inside a lens', () => {
+	// @e2e case-search-and-lists::a-due-window-narrows-inside-a-lens
 	test('narrows within Mine rather than replacing it', async ({ page }) => {
 		const sidebar = await openTasksWithFilters(page)
 		await page.getByRole('tab', { name: CHIPS.mine }).click()

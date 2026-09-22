@@ -246,6 +246,7 @@ test.describe('sensitive fields behind an extra permission', () => {
 	// field-access audit records nothing at all and the reveal is unaccountable.
 	// An OpenRegister that does not answer the route SKIPS rather than fails: a
 	// red there would say this app is broken when it is not.
+	// @e2e case-access-control::a-reveal-leaves-a-field-access-row
 	test('a reveal by a member leaves a field-access audit row', async () => {
 		await readPerson(officerApi as APIRequestContext)
 
