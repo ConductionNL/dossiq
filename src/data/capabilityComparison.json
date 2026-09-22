@@ -465,7 +465,7 @@
 			"from": "no",
 			"to": "partial",
 			"cause": "corrected",
-			"reason": "The Cases list shows the columns, order and search fields a case type declares in its own `x-index` block, declared as a property of `caseType` in `lib/Settings/register.d/39-case-type-list-layout.json` and read back from the pinned library with a mutation. Three seeded case types carry one. dossiq's own case type form does not offer the block, so an administrator edits it on the record rather than in the editor, and `#Tasks` cannot carry it at all. Held at partial for that reason. Closed 2026-09-20 by dossiq#3085 (87ec6952)."
+			"reason": "The Cases list shows the columns, order and search fields a case type declares in its own `x-index` block, declared as a property of `caseType` in `lib/Settings/register.d/39-case-type-list-layout.json` and read back from the pinned library with a mutation. Three seeded case types carry one. CaseTypeDetail carries a `Columns in the case list` data widget whose scoped edit dialog opens a form for `x-index` and nothing else, so an administrator sets a case type's columns inside the app rather than on the record (dossiq#3112, a7118ddf1). Held at partial for what is left: an object property renders as a JSON editor, so the block is typed rather than picked from the columns the Cases page declares, and `#Tasks` cannot carry one at all. Closed 2026-09-20 by dossiq#3085 (87ec6952)."
 		},
 		{
 			"id": "11.13",
