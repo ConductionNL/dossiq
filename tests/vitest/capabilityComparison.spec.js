@@ -58,8 +58,14 @@ import {
 // The 104 rows this file carried between 2026-09-10 and 2026-09-14 are gone
 // from `capabilities` and are not a regression: they were never rows. They are
 // 98 of the 146 proposals in `pending`, under the ids the corpus issued them.
+//
+// Our column moved again on 2026-09-22, and by more than any reading before it.
+// Thirty-five rows: sixteen the build wave closed on 2026-09-20, sixteen the
+// 2026-09-19 gap scan found we already had, and three the corpus had corrected
+// while this file still carried the old value. 89/89/47 became 121/69/35. The
+// other four columns did not move, for the same reason they never do.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 89, partial: 89, no: 47, unknown: 0 },
+	dossiq: { yes: 121, partial: 69, no: 35, unknown: 0 },
 	opencase: { yes: 62, partial: 46, no: 98, unknown: 19 },
 	gzac: { yes: 86, partial: 55, no: 65, unknown: 19 },
 	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 19 },
@@ -99,7 +105,58 @@ const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
 // harsh while one was too kind. `cause: 'corrected'` rather than `'built'`,
 // because nothing was shipped between the two readings. The first reading was
 // wrong, and a page about honesty has to be able to say which of the two it is.
-const CORRECTED_IDS = ['2.3', '2.7', '3.3', '11.2']
+//
+// The 2026-09-22 re-rating adds thirty-five more, and 11.2 appears twice: it
+// went yes to no on 2026-09-14 when the export turned out to be a placeholder,
+// and no to yes on 2026-09-22 when the placeholder was replaced. A row can be
+// corrected more than once, so this list holds entries and not ids, and the
+// guard below reads each id's entries as a chain rather than as one value.
+const CORRECTED_IDS = [
+	'2.3',
+	'2.7',
+	'3.3',
+	'11.2',
+	// 2026-09-22, the closed rows: the build wave shipped them and the ledger
+	// recorded only the prose.
+	'3.4',
+	'3.13',
+	'5.4',
+	'6.5',
+	'6.6',
+	'6.10',
+	'6.14',
+	'9.2',
+	'10.1',
+	'11.2',
+	'11.9',
+	'11.13',
+	'11.26',
+	'12.9',
+	// 2026-09-22, the rows we already had: the note predated the work.
+	'1.1',
+	'1.3',
+	'1.5',
+	'2.1',
+	'2.5',
+	'2.12',
+	'2.15',
+	'2.19',
+	'3.10',
+	'4.2',
+	'4.22',
+	'5.1',
+	'5.2',
+	'6.4',
+	'6.12',
+	'11.21',
+	// 2026-09-22, the rows where the corpus was already right and this file was
+	// behind it, plus one absence feature nobody had re-read.
+	'7.7',
+	'9.10',
+	'11.22',
+	'13.11',
+	'13.17',
+]
 
 // Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad
 // 7.1.3 driven locally. They are logged in `_rerated` with `cause: 'added'`
@@ -154,7 +211,12 @@ const ADDED_ON = {
 // only ever shorten this list, never lengthen it, because every row on it has
 // to be `yes` for every rival. So a fifth column cannot turn a boast into an
 // overclaim here. It can only retire a row we were right to admit.
-const BEHIND_EVERY_RIVAL = ['2.4', '4.16', '4.22', '9.1', '11.10', '12.7']
+//
+// 4.22, upload with drag and drop, left the list on 2026-09-22. It did not
+// shrink because a rival lost something: the case files leaf binds drop on its
+// root and PUTs over DAV, so the row was ours all along and the note describing
+// a retired tab was the only thing saying otherwise.
+const BEHIND_EVERY_RIVAL = ['2.4', '4.16', '9.1', '11.10', '12.7']
 
 // Two labels are identical in English and Dutch because the Dutch IS the
 // English: `StUF (BG, ZKN, DCR)` is a Dutch standard's own name, and `Intake`
@@ -476,11 +538,33 @@ describe('capabilityComparison data', () => {
 		// The failure this catches: a row is edited again later and the note
 		// beside it goes on describing the previous value. A note that
 		// disagrees with its own row is worse than no note.
+		//
+		// Read as a CHAIN, because a row can move twice. 11.2 went yes to no
+		// and then no to yes, and comparing every entry to today's rating
+		// would call the first one drift. So each entry has to hand its `to`
+		// to the next entry's `from`, and the last `to` is the row's rating.
+		// That is stricter than the single comparison it replaces: it also
+		// catches a middle entry nobody would otherwise read again.
 		const byId = new Map(data.capabilities.map((c) => [c.id, c]))
-		const drifted = data._rerated.filter(
-			(entry) => byId.get(entry.id)?.dossiq !== entry.to,
-		)
-		expect(drifted.map((entry) => entry.id)).toEqual([])
+		const chains = new Map()
+		for (const entry of data._rerated) {
+			chains.set(entry.id, [...(chains.get(entry.id) ?? []), entry])
+		}
+		const broken = []
+		for (const [id, entries] of chains) {
+			const ordered = [...entries].sort((a, b) =>
+				a.on < b.on ? -1 : a.on > b.on ? 1 : 0,
+			)
+			for (let i = 1; i < ordered.length; i++) {
+				if (ordered[i].from !== ordered[i - 1].to) {
+					broken.push(`${id} ${ordered[i].on} follows ${ordered[i - 1].to}`)
+				}
+			}
+			if (byId.get(id)?.dossiq !== ordered.at(-1).to) {
+				broken.push(`${id} ends ${ordered.at(-1).to}, row is ${byId.get(id)?.dossiq}`)
+			}
+		}
+		expect(broken).toEqual([])
 	})
 })
 

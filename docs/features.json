@@ -85,7 +85,7 @@
     "title": "Leges en heffingen",
     "summary": "You calculate fees from your verordening and bill them through Shillinq.",
     "status": "stable",
-    "docsUrl": "openspec/specs/leges-heffingen/spec.md",
+    "docsUrl": "openspec/specs/case-management/spec.md",
     "title_nl": "Leges en heffingen",
     "summary_nl": "Je berekent leges uit je verordening en factureert ze via Shillinq."
   },
