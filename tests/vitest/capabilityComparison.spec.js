@@ -638,7 +638,10 @@ describe('the authored fields survive a corpus re-issue', () => {
 			.filter((row) => row.provider && !row.providerHow)
 			.map((row) => row.id)
 
-		expect(without, `rows with a provider and no derivation: ${without.join(', ')}`).toEqual([])
+		expect(
+			without,
+			`rows with a provider and no derivation: ${without.join(', ')}`,
+		).toEqual([])
 	})
 
 	it('keeps the providers dictionary that labels them', () => {
@@ -647,10 +650,17 @@ describe('the authored fields survive a corpus re-issue', () => {
 
 		const declared = new Set(data.providers.map((entry) => entry.key))
 		const undeclared = [
-			...new Set(everyRow.map((row) => row.provider).filter((key) => !declared.has(key))),
+			...new Set(
+				everyRow
+					.map((row) => row.provider)
+					.filter((key) => !declared.has(key)),
+			),
 		]
 
-		expect(undeclared, `providers used but not declared: ${undeclared.join(', ')}`).toEqual([])
+		expect(
+			undeclared,
+			`providers used but not declared: ${undeclared.join(', ')}`,
+		).toEqual([])
 	})
 
 	it('states a confidence wherever it states a feature', () => {
@@ -658,6 +668,9 @@ describe('the authored fields survive a corpus re-issue', () => {
 			.filter((row) => row.feature && !row.featureConfidence)
 			.map((row) => row.id)
 
-		expect(without, `rows with a feature and no confidence: ${without.join(', ')}`).toEqual([])
+		expect(
+			without,
+			`rows with a feature and no confidence: ${without.join(', ')}`,
+		).toEqual([])
 	})
 })
