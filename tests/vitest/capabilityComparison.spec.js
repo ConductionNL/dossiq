@@ -617,3 +617,47 @@ describe('formatComparedOn', () => {
 		expect(formatComparedOn('', 'en')).toBe('')
 	})
 })
+
+describe('the authored fields survive a corpus re-issue', () => {
+	// `provider`, `feature` and their confidence are authored by hand and are
+	// NOT in the parity corpus, so nothing can regenerate them. An earlier
+	// version of scripts/sync-capability-comparison.mjs rebuilt each row from
+	// the corpus alone, which dropped all 371 of them and the providers
+	// dictionary while still printing "re-issued 225 rows and 146 pending" and
+	// leaving a well formed file. These assertions are what notices.
+	const everyRow = [...data.capabilities, ...data.pending]
+
+	it('gives every capability a provider', () => {
+		const without = everyRow.filter((row) => !row.provider).map((row) => row.id)
+
+		expect(without, `rows with no provider: ${without.join(', ')}`).toEqual([])
+	})
+
+	it('records how each provider was derived', () => {
+		const without = everyRow
+			.filter((row) => row.provider && !row.providerHow)
+			.map((row) => row.id)
+
+		expect(without, `rows with a provider and no derivation: ${without.join(', ')}`).toEqual([])
+	})
+
+	it('keeps the providers dictionary that labels them', () => {
+		expect(Array.isArray(data.providers)).toBe(true)
+		expect(data.providers.length).toBeGreaterThan(0)
+
+		const declared = new Set(data.providers.map((entry) => entry.key))
+		const undeclared = [
+			...new Set(everyRow.map((row) => row.provider).filter((key) => !declared.has(key))),
+		]
+
+		expect(undeclared, `providers used but not declared: ${undeclared.join(', ')}`).toEqual([])
+	})
+
+	it('states a confidence wherever it states a feature', () => {
+		const without = everyRow
+			.filter((row) => row.feature && !row.featureConfidence)
+			.map((row) => row.id)
+
+		expect(without, `rows with a feature and no confidence: ${without.join(', ')}`).toEqual([])
+	})
+})
