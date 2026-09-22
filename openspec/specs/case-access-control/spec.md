@@ -67,19 +67,21 @@ Built by `case-grants-name-their-source` and `deelzaken-inherit-the-parent-grant
 
 ### Requirement: A grant on a case reaches the cases hanging under it (REQ-ACC-02)
 
-The `case` schema SHALL declare `parentCase` as its hierarchy edge, so one grant
-answers for a case and its deelzaken. `relatedCases` SHALL NOT be an edge: a case
-somebody linked is not a case somebody owns. The inherited grant SHALL carry the
-parent's verbs and no others.
+The `case` schema SHALL declare `parentCase` as its hierarchy edge, so a grant on a
+case answers for its deelzaken and their deelzaken without a second grant.
+`relatedCases` SHALL NOT be an edge: a case somebody linked is not a case somebody
+owns. The edge SHALL inherit the read and SHALL NOT inherit the write, so a
+colleague let into a parent cannot change what hangs under it.
 
 Built by `deelzaken-inherit-the-parent-grants`, requirement REQ-DZ-20.
 
-#### Scenario: The chain a grant travels is read back from the instance
+#### Scenario: The hierarchy edge reached the instance
 @e2e tests/e2e/deelzaken-inherit-the-parent-grants.spec.ts
 
-- **GIVEN** a case with a deelzaak and a deelzaak of that deelzaak
-- **WHEN** the hierarchy declaration is read from the running schema
-- **THEN** the chain the grant travels down SHALL be the parent chain
+- **GIVEN** the `case` schema on a running instance
+- **WHEN** its configuration is read
+- **THEN** it SHALL name `parentCase` as the parent field
+- **AND** it SHALL inherit the read verb and no other
 
 ### Requirement: A case says who holds which right, and where that right came from (REQ-ACC-03)
 

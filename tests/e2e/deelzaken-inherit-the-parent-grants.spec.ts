@@ -136,6 +136,7 @@ test.describe('A deelzaak inherits its parent grants', () => {
 
 	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#access-to-a-case-reaches-its-deelzaak
 	// @e2e deelzaak-support::access-to-a-case-reaches-its-deelzaak
+	// @e2e case-access-control::the-hierarchy-edge-reached-the-instance
 	test('the hierarchy declaration reached the instance', async () => {
 		// The silent failure this whole change turns on. OpenRegister drops an
 		// unknown configuration key on import without a word, so the block can
@@ -169,7 +170,6 @@ test.describe('A deelzaak inherits its parent grants', () => {
 
 	// @e2e openspec/changes/deelzaken-inherit-the-parent-grants/specs/deelzaak-support/spec.md#access-to-a-case-reaches-its-deelzaak
 	// @e2e deelzaak-support::access-to-a-case-reaches-its-deelzaak
-	// @e2e case-access-control::the-chain-a-grant-travels-is-read-back-from-the-instance
 	test('the chain the grant travels down is written and read back', async () => {
 		// The edge itself, end to end. A `parentCase` that did not survive the
 		// write makes every assertion about inheritance vacuous: there would
