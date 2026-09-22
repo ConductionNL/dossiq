@@ -101,7 +101,8 @@ bar, because a filter over fields no row shares filters nothing.
 The filter SHALL be answered by the platform, not applied over a page already
 fetched, so that the count under the list and the list itself cannot disagree.
 
-Built by `casetype-field-vocabulary`.
+Built by `case-type-fields-filter-the-case-list`, archived 2026-09-20, requirements
+REQ-CTF-01 and REQ-CTF-02.
 
 #### Scenario: The bar offers the declared field and not the silent one
 @e2e tests/e2e/case-type-fields-filter-the-case-list.spec.ts
