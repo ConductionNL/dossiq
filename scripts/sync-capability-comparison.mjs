@@ -99,6 +99,10 @@ const RATINGS = ['yes', 'partial', 'no']
 /** The five columns the page publishes, in the order it renders them. */
 const COLUMNS = ['dossiq', 'opencase', 'gzac', 'zaaksysteem', 'zac']
 
+// Authored per row and absent from the corpus: who provides the capability,
+// how that was derived, which feature bundles it, and how sure that is.
+const AUTHORED_FIELDS = ['provider', 'providerHow', 'feature', 'featureConfidence']
+
 /**
  * Read `--flag value` off the argv, or return the fallback.
  *
@@ -146,6 +150,27 @@ function build(corpus, current, on) {
 		}
 	}
 
+	// The authored fields, carried by id from BOTH lists for the same reason
+	// the Dutch above is: a row that became a proposal keeps them. These are
+	// not in the corpus and cannot be regenerated, so dropping them here would
+	// silently discard 371 provider values and 329 feature mappings on the
+	// next re-issue, with the file still looking well formed.
+	const authored = new Map()
+	for (const row of [
+		...(current.capabilities ?? []),
+		...(current.pending ?? []),
+	]) {
+		const held = {}
+		for (const field of AUTHORED_FIELDS) {
+			if (row[field] !== undefined) {
+				held[field] = row[field]
+			}
+		}
+		if (Object.keys(held).length > 0) {
+			authored.set(row.id, held)
+		}
+	}
+
 	const areaKey = new Map((current.areas ?? []).map((a) => [a.name, a.key]))
 	const areas = corpus.areas.map((a) => {
 		const key = areaKey.get(a.name)
@@ -174,6 +199,7 @@ function build(corpus, current, on) {
 			}
 			out[column] = value
 		}
+		Object.assign(out, authored.get(row.id) ?? {})
 		const held = previous.get(row.id)
 		if (held && held.addedOn) {
 			out.addedOn = held.addedOn
@@ -217,6 +243,7 @@ function build(corpus, current, on) {
 			}
 			out[column] = 'unknown'
 		}
+		Object.assign(out, authored.get(row.id) ?? {})
 		return out
 	})
 
@@ -257,6 +284,9 @@ function build(corpus, current, on) {
 		dossiqRevision: current.dossiqRevision,
 		_rerated: rerated,
 		systems: current.systems,
+		// Authored dictionaries, not derivable from the corpus.
+		...(current.providers ? { providers: current.providers } : {}),
+		...(current.features ? { features: current.features } : {}),
 		areas,
 		capabilities,
 		pending,
