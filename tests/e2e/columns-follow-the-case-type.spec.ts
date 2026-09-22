@@ -95,6 +95,7 @@ test.describe('a case type carries its own columns', () => {
 	})
 
 	// @e2e openspec/changes/archive/2026-09-20-columns-follow-the-case-type/specs/case-management/spec.md#scenario-a-permit-shows-its-expiry-date
+	// @e2e case-search-and-lists::picking-a-case-type-changes-the-header
 	test('picking the permit changes the header, and All types changes it back', async ({
 		page,
 	}) => {

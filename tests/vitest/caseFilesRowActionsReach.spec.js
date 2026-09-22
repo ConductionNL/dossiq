@@ -24,7 +24,7 @@
 import { mount } from '@vue/test-utils'
 import fs from 'fs'
 import path from 'path'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import CnFilesBrowser from '@conduction/nextcloud-vue/src/components/CnFilesBrowser/CnFilesBrowser.vue'
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -68,6 +68,13 @@ const NODE = {
 	mtime: new Date('2026-09-01T10:00:00Z').getTime(),
 }
 
+// Every wrapper this file mounts, so each one is torn down deliberately.
+// Left mounted, a component unmounts only when the environment does, and
+// `useFormatDateTime` reads `window` in its unmounted hook. That threw
+// `ReferenceError: window is not defined` as an unhandled rejection in CI,
+// which fails the run even though all 2724 tests pass.
+const mounted = []
+
 /**
  * Mount the real browser with the manifest's row actions and one file, and
  * capture what a click dispatches.
@@ -107,12 +114,20 @@ function mountBrowser() {
 			},
 		},
 	})
+	mounted.push(wrapper)
+
 	return { wrapper, dispatched }
 }
 
 describe('case-files — the three acts are controls a handler can click', () => {
 	beforeEach(() => {
 		vi.restoreAllMocks()
+	})
+
+	afterEach(() => {
+		while (mounted.length > 0) {
+			mounted.pop().unmount()
+		}
 	})
 
 	it('declares the three acts in the manifest', () => {

@@ -133,6 +133,7 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 	})
 
 	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-a-definition-that-declares-nothing-is-not-offered
+	// @e2e case-search-and-lists::the-bar-offers-the-declared-field-and-not-the-silent-one
 	test('the bar offers the declared field and not the silent one', async ({
 		page,
 	}) => {
@@ -159,6 +160,7 @@ test.describe('a case type says which of its fields are worth filtering on', () 
 
 test.describe('the case list filters on a case type own fields', () => {
 	// @e2e openspec/changes/archive/2026-09-20-case-type-fields-filter-the-case-list/specs/case-search-via-or-unified-search/spec.md#scenario-two-fields-narrow-to-the-cases-that-satisfy-both
+	// @e2e case-search-and-lists::a-field-filter-keeps-the-matching-case-and-drops-the-other
 	test('a cost filter lists the expensive case and NOT the cheap one', async ({
 		page,
 	}) => {

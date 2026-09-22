@@ -121,6 +121,7 @@ test.describe('A case share is an access link', () => {
 	// The load-bearing pair is the mint and the anonymous read. A mint that
 	// returns a URL nobody can open is the failure an authenticated assertion
 	// cannot see, because the handler's own session would open the case anyway.
+	// @e2e case-access-control::an-outsider-opens-the-case-without-an-account
 	test('a handler shares a case with an outsider, and the outsider can open it without an account', async () => {
 		const minted = await api.post(SHARES, {
 			headers: { requesttoken: token },
@@ -192,6 +193,7 @@ test.describe('A case share is an access link', () => {
 	//
 	// A link switched off must read as switched off rather than disappearing:
 	// a handler who cannot see a paused link cannot switch it back on.
+	// @e2e case-access-control::the-handler-sees-the-state-of-every-link-on-the-case
 	test('the handler sees the state of every link on the case', async () => {
 		const minted = await api.post(SHARES, {
 			headers: { requesttoken: token },

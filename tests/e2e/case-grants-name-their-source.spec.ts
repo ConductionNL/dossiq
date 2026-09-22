@@ -85,6 +85,7 @@ test.describe('A case names the source of every grant on it', () => {
 	// the holder and the source. A read that 404s is the failure this catches:
 	// the panel would render, and render an empty table, which an auditor reads
 	// as "nobody holds a right on this dossier".
+	// @e2e case-access-control::an-auditor-reads-who-could-open-this-dossier
 	test('an auditor asks who could open this dossier, and each holder is listed with its source', async () => {
 		const catalogue = await api.get(PERMISSIONS)
 		expect(
@@ -206,6 +207,7 @@ test.describe('A case names the source of every grant on it', () => {
 	// asserts that a case type can carry the three-axis row at all and that the
 	// axis survives a save. A row that the schema silently drops would leave
 	// the editor showing a matrix the store never kept.
+	// @e2e case-access-control::a-case-type-grants-per-department-role-and-confidentiality
 	test('a department may see the ordinary cases and not the confidential ones', async () => {
 		const updated = await api.put(
 			`/index.php/apps/openregister/api/objects/${REGISTER}/caseType/${caseTypeId}`,

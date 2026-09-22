@@ -254,6 +254,7 @@ test.describe('field rules per role', () => {
 		await cleanupRunObjects(request, await getRequestToken(request))
 	})
 
+	// @e2e case-access-control::a-handler-does-not-receive-the-field-the-rule-hides
 	test('the officer keeps the field and the handler does not receive it', async () => {
 		// The control first. Without it an absence proves only that the seed
 		// never wrote a value, which is the same empty answer a working rule
@@ -302,6 +303,7 @@ test.describe('field rules per role', () => {
 		).toBeTruthy()
 	})
 
+	// @e2e case-access-control::the-access-tab-names-the-rule-behind-the-field-that-is-missing
 	test('the access tab names the rule behind the field that is not there', async ({
 		browser,
 		baseURL,

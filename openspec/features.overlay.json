@@ -18,6 +18,24 @@
     "docsUrl": "openspec/specs/case-types/spec.md"
   },
   {
+    "slug": "case-configuration-i18n",
+    "status": "beta",
+    "title": "Multilingual case types",
+    "title_nl": "Meertalige zaaktypen",
+    "summary": "You give every case type label a second language, and see what is missing.",
+    "summary_nl": "Je geeft elk zaaktypelabel een tweede taal, en ziet wat nog ontbreekt.",
+    "docsUrl": "openspec/specs/case-configuration-i18n/spec.md"
+  },
+  {
+    "slug": "document-zaakdossier",
+    "status": "stable",
+    "title": "Documents on the case",
+    "title_nl": "Documenten op de zaak",
+    "summary": "You read every version, mark a document final, and export the whole dossier.",
+    "summary_nl": "Je leest elke versie, markeert een document als definitief, en exporteert het hele dossier.",
+    "docsUrl": "openspec/specs/document-zaakdossier/spec.md"
+  },
+  {
     "slug": "workflow-definition-engine",
     "title": "Workflow engine with guards and actions",
     "title_nl": "Workflow-engine met voorwaarden en acties",
@@ -101,6 +119,24 @@
     "docsUrl": "openspec/specs/doorlooptijd-dashboard/spec.md"
   },
   {
+    "slug": "case-search-and-lists",
+    "status": "beta",
+    "title": "Search and saved lists",
+    "title_nl": "Zoeken en opgeslagen lijsten",
+    "summary": "You search on the fields a case type declares, and keep the list you built.",
+    "summary_nl": "Je zoekt op de velden die een zaaktype aangeeft, en bewaart de lijst die je maakte.",
+    "docsUrl": "openspec/specs/case-search-and-lists/spec.md"
+  },
+  {
+    "slug": "case-access-control",
+    "status": "beta",
+    "title": "Access control on the case",
+    "title_nl": "Toegangsrechten op de zaak",
+    "summary": "You decide per case who reads it, who changes it, and which fields they see.",
+    "summary_nl": "Je bepaalt per zaak wie leest, wie wijzigt, en welke velden zichtbaar zijn.",
+    "docsUrl": "openspec/specs/case-access-control/spec.md"
+  },
+  {
     "slug": "multi-tenancy",
     "title": "Multi-tenant SaaS",
     "title_nl": "Multi-tenant SaaS",
@@ -120,6 +156,15 @@
     "docsUrl": "openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md"
   },
   {
+    "slug": "case-email-integration",
+    "status": "stable",
+    "title": "Zaakgericht mailen",
+    "title_nl": "Zaakgericht mailen",
+    "summary": "You file incoming mail on the right case, and open a case from a message.",
+    "summary_nl": "Je koppelt binnenkomende mail aan de juiste zaak, en opent een zaak vanuit een bericht.",
+    "docsUrl": "openspec/specs/case-email-integration/spec.md"
+  },
+  {
     "slug": "zaakportaal-mijngemeente",
     "title": "Burgerportaal Mijn Zaken",
     "title_nl": "Burgerportaal Mijn Zaken",
@@ -136,6 +181,15 @@
     "summary_nl": "Je wisselt zaakberichten uit met systemen die nog StUF spreken.",
     "status": "beta",
     "docsUrl": "openspec/specs/stuf-zkn-outbound/spec.md"
+  },
+  {
+    "slug": "berichtenbox-integration",
+    "status": "beta",
+    "title": "Digital post to citizens",
+    "title_nl": "Digitale post aan inwoners",
+    "summary": "You send a letter to the Berichtenbox and see whether it arrived.",
+    "summary_nl": "Je stuurt een brief naar de Berichtenbox en ziet of die is aangekomen.",
+    "docsUrl": "openspec/specs/berichtenbox-integration/spec.md"
   },
   {
     "slug": "dso-omgevingsloket",
