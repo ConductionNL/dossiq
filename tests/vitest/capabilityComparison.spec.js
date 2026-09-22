@@ -557,11 +557,15 @@ describe('capabilityComparison data', () => {
 			)
 			for (let i = 1; i < ordered.length; i++) {
 				if (ordered[i].from !== ordered[i - 1].to) {
-					broken.push(`${id} ${ordered[i].on} follows ${ordered[i - 1].to}`)
+					broken.push(
+						`${id} ${ordered[i].on} follows ${ordered[i - 1].to}`,
+					)
 				}
 			}
 			if (byId.get(id)?.dossiq !== ordered.at(-1).to) {
-				broken.push(`${id} ends ${ordered.at(-1).to}, row is ${byId.get(id)?.dossiq}`)
+				broken.push(
+					`${id} ends ${ordered.at(-1).to}, row is ${byId.get(id)?.dossiq}`,
+				)
 			}
 		}
 		expect(broken).toEqual([])
