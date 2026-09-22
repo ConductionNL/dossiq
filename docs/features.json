@@ -18,6 +18,24 @@
     "summary_nl": "Je modelleert elk zaaktype met statussen, termijnen en documenten, zonder code."
   },
   {
+    "slug": "case-configuration-i18n",
+    "title": "Multilingual case types",
+    "summary": "You give every case type label a second language, and see what is missing.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/case-configuration-i18n/spec.md",
+    "title_nl": "Meertalige zaaktypen",
+    "summary_nl": "Je geeft elk zaaktypelabel een tweede taal, en ziet wat nog ontbreekt."
+  },
+  {
+    "slug": "document-zaakdossier",
+    "title": "Documents on the case",
+    "summary": "You read every version, mark a document final, and export the whole dossier.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/document-zaakdossier/spec.md",
+    "title_nl": "Documenten op de zaak",
+    "summary_nl": "Je leest elke versie, markeert een document als definitief, en exporteert het hele dossier."
+  },
+  {
     "slug": "workflow-definition-engine",
     "title": "Workflow engine with guards and actions",
     "summary": "You automate transitions with checks, e-mails, tasks and webhooks.",
@@ -118,6 +136,15 @@
     "summary_nl": "Medewerkers leggen contactmomenten vast, routeren gesprekken en lezen zaken vanuit het klantcontactcentrum."
   },
   {
+    "slug": "case-email-integration",
+    "title": "Zaakgericht mailen",
+    "summary": "You file incoming mail on the right case, and open a case from a message.",
+    "status": "stable",
+    "docsUrl": "openspec/specs/case-email-integration/spec.md",
+    "title_nl": "Zaakgericht mailen",
+    "summary_nl": "Je koppelt binnenkomende mail aan de juiste zaak, en opent een zaak vanuit een bericht."
+  },
+  {
     "slug": "zaakportaal-mijngemeente",
     "title": "Burgerportaal Mijn Zaken",
     "summary": "Citizens follow their case status and get Berichtenbox notifications.",
@@ -134,6 +161,15 @@
     "docsUrl": "openspec/specs/stuf-zkn-outbound/spec.md",
     "title_nl": "StUF-ZKN-koppeling",
     "summary_nl": "Je wisselt zaakberichten uit met systemen die nog StUF spreken."
+  },
+  {
+    "slug": "berichtenbox-integration",
+    "title": "Digital post to citizens",
+    "summary": "You send a letter to the Berichtenbox and see whether it arrived.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/berichtenbox-integration/spec.md",
+    "title_nl": "Digitale post aan inwoners",
+    "summary_nl": "Je stuurt een brief naar de Berichtenbox en ziet of die is aangekomen."
   },
   {
     "slug": "dso-omgevingsloket",
