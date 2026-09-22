@@ -84,6 +84,7 @@ test.afterAll(async () => {
 })
 
 test.describe('a saved view of the cases is a place', () => {
+	// @e2e case-search-and-lists::a-saved-view-opens-from-its-own-address
 	test('opens from its own address, in a tab that never saw the list', async ({
 		page,
 	}) => {
@@ -192,6 +193,7 @@ test.describe('a saved view of the cases is a place', () => {
 		await expect(page.getByText(new RegExp(viewId))).toBeVisible()
 	})
 
+	// @e2e case-search-and-lists::a-saved-view-is-not-handed-to-somebody-who-does-not-own-it
 	test('does not hand another user this view at its address', async ({
 		browser,
 	}) => {

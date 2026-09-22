@@ -140,6 +140,7 @@ test.describe('A case answers who holds which right, and who held it then', () =
 	// and enumerating who else can is a second. What this catches is the
 	// refusal arriving as something OTHER than 403, because the panel keys its
 	// sentence on that status and every other code renders as a failed read.
+	// @e2e case-access-control::a-reader-who-may-not-review-access-is-told-so
 	test('a reader without the right to review access is told so', async () => {
 		const unknown = await api.get(
 			objectPermissions('00000000-0000-0000-0000-000000000000'),
@@ -203,6 +204,7 @@ test.describe('A case answers who holds which right, and who held it then', () =
 	// key the panel reads. An OpenRegister that dropped the key would leave the
 	// panel showing a permanent grant where a temporary one was written, which
 	// is a disclosure nobody would notice.
+	// @e2e case-access-control::a-grant-that-runs-out-names-its-last-day
 	test('a grant that runs out names its last day', async () => {
 		const ends = '2026-12-31T17:00:00+01:00'
 		const written = await api.put(

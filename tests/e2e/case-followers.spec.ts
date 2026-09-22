@@ -183,6 +183,7 @@ test.describe('Following a case', () => {
 	// BREAKS IF: the strip stops reading `@self.watching`, or the PUT stops
 	// landing. The reload is the point: an optimistic flip that never reached
 	// OpenRegister looks identical to one that did until the page is read back.
+	// @e2e case-access-control::follow-survives-a-reload
 	test('the Follow button on the case page takes the subscription, and it survives a reload', async ({
 		page,
 	}) => {
@@ -232,6 +233,7 @@ test.describe('Following a case', () => {
 	// drawing a refusal as an empty list. The admin driving this run may update
 	// the case, so a refusal here is a real failure and not a permission the
 	// fixture forgot.
+	// @e2e case-access-control::the-people-tab-names-who-follows-the-case
 	test('the People tab names who follows the case', async ({ page }) => {
 		await follow(cases.listed)
 

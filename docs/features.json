@@ -118,6 +118,24 @@
     "summary_nl": "Je ziet doorlooptijden en knelpunten, en exporteert KPI-rapporten."
   },
   {
+    "slug": "case-search-and-lists",
+    "title": "Search and saved lists",
+    "summary": "You search on the fields a case type declares, and keep the list you built.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/case-search-and-lists/spec.md",
+    "title_nl": "Zoeken en opgeslagen lijsten",
+    "summary_nl": "Je zoekt op de velden die een zaaktype aangeeft, en bewaart de lijst die je maakte."
+  },
+  {
+    "slug": "case-access-control",
+    "title": "Access control on the case",
+    "summary": "You decide per case who reads it, who changes it, and which fields they see.",
+    "status": "beta",
+    "docsUrl": "openspec/specs/case-access-control/spec.md",
+    "title_nl": "Toegangsrechten op de zaak",
+    "summary_nl": "Je bepaalt per zaak wie leest, wie wijzigt, en welke velden zichtbaar zijn."
+  },
+  {
     "slug": "multi-tenancy",
     "title": "Multi-tenant SaaS",
     "summary": "You host many gemeenten apart, with quota, billing and onboarding per tenant.",
