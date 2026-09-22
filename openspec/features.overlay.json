@@ -87,7 +87,7 @@
     "summary": "You calculate fees from your verordening and bill them through Shillinq.",
     "summary_nl": "Je berekent leges uit je verordening en factureert ze via Shillinq.",
     "status": "stable",
-    "docsUrl": "openspec/specs/leges-heffingen/spec.md"
+    "docsUrl": "openspec/specs/case-management/spec.md"
   },
   {
     "slug": "archief-edepot-handover",
@@ -245,7 +245,8 @@
     "summary": "Citizens and companies sign in with DigiD and eHerkenning.",
     "summary_nl": "Inwoners en bedrijven loggen in met DigiD en eHerkenning.",
     "status": "beta",
-    "reason": "Local login SIMULATOR only (maykinmedia pattern, no real SAML); capped at beta until validated against Logius preproductie with a PKIoverheid certificate. Default tier is log (no external call)."
+    "reason": "Local login SIMULATOR only (maykinmedia pattern, no real SAML); capped at beta until validated against Logius preproductie with a PKIoverheid certificate. Default tier is log (no external call).",
+    "docsUrl": "openspec/specs/zaakportaal-mijngemeente/spec.md"
   },
   {
     "slug": "brp-integration",

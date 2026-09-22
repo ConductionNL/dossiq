@@ -533,9 +533,15 @@ export default {
 				.map((entry) => entry.on)
 				.sort()
 				.at(-1)
+			// Two reasons, not one. Until 2026-09-22 this sentence said every
+			// correction was a capability we had shipped since the reading.
+			// That day's re-rating moved 35 rows and sixteen of them were
+			// rows we already had, where the note was simply too harsh and
+			// nothing was built. Naming one reason for both is the kind of
+			// small overclaim this page exists to avoid.
 			return t(
 				'dossiq',
-				'We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other {others} columns that way. Those ratings are as we read them, on the dates given here.',
+				'We corrected {count} of our own ratings on {date}. Some we had shipped since the reading, and some we had read too harshly. We do not correct the other {others} columns that way. Those ratings are as we read them, on the dates given here.',
 				{
 					count: corrections.length,
 					others: comparison.systems.length - 1,
