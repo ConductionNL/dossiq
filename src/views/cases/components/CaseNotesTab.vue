@@ -64,6 +64,7 @@
 import axios from '@nextcloud/axios'
 import { showError, showSuccess, showWarning } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
+import { markRaw } from 'vue'
 import SendOutline from 'vue-material-design-icons/SendOutline.vue'
 import { leafTab } from '../../../integrations/leafTabs.js'
 import logger from '../../../logger.js'
@@ -126,7 +127,9 @@ export default {
 				{
 					id: PUSH_ACTION,
 					label: t('dossiq', 'Send to the neighbouring register'),
-					icon: SendOutline,
+					// markRaw: a component object in `data` is otherwise made
+					// reactive, which Vue warns about and which buys nothing.
+					icon: markRaw(SendOutline),
 				},
 			],
 		}
