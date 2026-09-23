@@ -29,6 +29,15 @@
  * pending is READ from the installed schema below, never written down, so this
  * retires itself the day the release lands.
  *
+ * 🔴 AND THEN THE KEY WAS REMOVED, which is the case the classifier CANNOT
+ * tell apart on its own. Schema 2.40.0 drops `savedViewPlaces` (a saved view
+ * is a lens, not a place). A removal the vendored copy has not caught up with
+ * looks exactly like a lag — vendored declares it, installed does not — so
+ * `check:manifest` would print PASS over a page still declaring a key the
+ * library refuses. Nothing in the classifier can fix that, because the two
+ * situations are the same shape. The version comparison below is the only
+ * guard: re-vendor, and the removal stops reading as a lag.
+ *
  * 🔴 A STALE VENDORED COPY FORGIVES A REMOVAL. Once the installed schema is
  * the NEWER of the two, a property the library has since DROPPED is still
  * declared in the vendored copy, and the classifier would read a genuine
@@ -119,15 +128,18 @@ describe('the vendored schema never falls behind the installed one', () => {
 		).toBeGreaterThanOrEqual(0)
 	})
 
-	it('has the page key whose release ended the lag', () => {
+	it('has dropped the page key the mechanism was built around, in both copies', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
 
-		// `savedViewPlaces` is the property the whole mechanism was built
-		// around. The installed library now declares it, which is what
-		// retired the lag, and the vendored copy must not have lost it.
-		expect(vendored.$defs.page.properties).toHaveProperty('savedViewPlaces')
-		expect(installed.$defs.page.properties).toHaveProperty('savedViewPlaces')
+		// `savedViewPlaces` was the worked example this whole file was built
+		// around: first as a lag (vendored declared it, no release did), then
+		// as the lag that ended. Schema 2.40.0 REMOVES it, which is the third
+		// state and the dangerous one — a removal the vendored copy has not
+		// caught up with reads as a lag, and the classifier forgives it. Both
+		// copies must have lost it, or a page still declaring it passes.
+		expect(vendored.$defs.page.properties).not.toHaveProperty('savedViewPlaces')
+		expect(installed.$defs.page.properties).not.toHaveProperty('savedViewPlaces')
 	})
 
 	it('refuses `_note` on an action in BOTH, which is why that error is real', () => {

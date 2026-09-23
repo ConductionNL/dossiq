@@ -40,6 +40,16 @@ export const SCOPE_RESULT = 'result'
  * stored query straight into `ObjectService::searchObjects()`, the same call
  * the list itself makes.
  *
+ * 🔴 THIS LIST DENIES BY NAME, NOT BY THE `_` PREFIX, and that is the whole
+ * reason it is a list. It is also how a bug got in: while applying a saved
+ * view wrote its sort as `_sortKey`/`_sortOrder`, neither name was here, so
+ * "Select all 400 cases matching this search" handed `searchObjects()` two
+ * keys matching no column as FILTERS, on the query that decides what four
+ * hundred cases get reassigned. It closed when that spelling was retired in
+ * favour of `_order`, which was already denied — not by an entry added here.
+ * Do not add the retired names back: they would suggest the prefix is handled,
+ * and it is not.
+ *
  * 🔴 NEITHER IS `_related[…]`, FOR THE SAME REASON. A filter on a case type's
  * own field narrows the result set exactly as a search term does: it is
  * openregister's related-row query over the `caseProperty` rows that hang off
