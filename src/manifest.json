@@ -6496,6 +6496,21 @@
 						"title": "Translations",
 						"icon": "Translate",
 						"_note": "The case type's labels in every language the register declares, and a chip per language saying how many are still missing. Custom because the library cannot express it: @conduction/nextcloud-vue 3.4.0 contains no reference to `translatable`, `languageMeta` or `sourceLanguage`, so no `data` widget renders a language tab, and OpenRegister renders nothing into a leaf app's page. The chip counts a stale label as missing, which OpenRegister's own `completeness` does not: `getCompletenessByObject()` counts every non-empty row and never reads its status. Same LAYOUT placement and same reason as case-type-blueprint above."
+					},
+					{
+						"id": "case-type-list-layout",
+						"type": "data",
+						"title": "Columns in the case list",
+						"icon": "ViewColumnOutline",
+						"_note": "Row 11.9. The mechanism shipped in dossiq#3085 and `x-index` is a declared property of caseType in lib/Settings/register.d/39-case-type-list-layout.json, but nothing in this manifest ever asked for it, so the only way to give a case type its own columns was to edit the record itself. A data widget is the affordance rather than a field on the create form: its overflow menu carries an edit dialog scoped to exactly the fields the widget declares, so this one opens a form for the x-index block and nothing else, and a block about how a list looks is not something you answer while first naming a case type. `hideEmpty` stays off, because a case type that declares no columns of its own is the ordinary case and hiding the card would hide the way to give it some.",
+						"content": {
+							"title": "Columns in the case list",
+							"columns": 1,
+							"include": [
+								"x-index"
+							],
+							"hideEmpty": false
+						}
 					}
 				],
 				"layout": [
@@ -6560,6 +6575,15 @@
 						"gridY": 18,
 						"gridWidth": 12,
 						"gridHeight": 5,
+						"showTitle": true
+					},
+					{
+						"id": "8",
+						"widgetId": "case-type-list-layout",
+						"gridX": 0,
+						"gridY": 23,
+						"gridWidth": 12,
+						"gridHeight": 4,
 						"showTitle": true
 					}
 				],

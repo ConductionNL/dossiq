@@ -8,8 +8,8 @@
 	},
 	"comparedOn": "2026-09-07",
 	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-09-14",
-	"dossiqRevision": "d1fcc02fb",
+	"reratedOn": "2026-09-22",
+	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
 			"id": "1.8",
@@ -242,6 +242,286 @@
 			"to": "no",
 			"cause": "corrected",
 			"reason": "`lib/Controller/CaseDefinitionController.php` (export, import, validate, copy), `lib/Service/CaseDefinitionExportService.php`. Corrected 2026-09-14 from the case-type depth study (`procest/_round4/discovery/casetype-configurability.md`): the export service is a placeholder behind live routes."
+		},
+		{
+			"id": "1.1",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`caseType.intakeFormRef` binds a form to a case type, `lib/Service/FormsIntakeService.php` turns a submission into a clocked case over the `forms` channel, and `FormSubmittedListener` is registered in `CrossAppListenerRegistrar` behind a class check. Shipped by dossiq#2927. The citizen-facing portal page is portaliq's per ADR-046 and buildiq authors the form."
+		},
+		{
+			"id": "1.3",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`ContactDetail` and `OrganisationDetail` each carry a `new-case-for-contact` header action, an open-form on `case` with the requester prefilled, beside `log-contact`. So a handler starts a case from the person or the company in front of them."
+		},
+		{
+			"id": "1.5",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`lib/Service/Email/UnmatchedMailIntake.php` opens a case from a mail the shared mailbox cannot place, once an administrator names a fallback case type, and `CaseEmailMatchJob` links new mail per opted-in user. `mailObjectTemplate` on `case` and on `complaint` gives the start-a-case button inside Nextcloud Mail. dossiq holds no IMAP credential of its own."
+		},
+		{
+			"id": "2.1",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`case.identifier` declares `x-openregister-generated` with the sequence `case`, the format `{year}-{seq:4}` and a yearly reset, and `complaint.complaintNumber` carries its own counter. A number supplied by hand pushes the counter past it. `ComplaintService::generateComplaintNumber` is retired."
+		},
+		{
+			"id": "2.5",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`case.assignedGroup` is a Team field on the case, `$ref` to `organisatieRol` and facetable, used seven times in `src/manifest.json`, beside the role types the mandate matrix reads. It is described as assignment and not as permission, which is the distinction the row asks about."
+		},
+		{
+			"id": "2.12",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "POST `/api/case/{caseId}/reopen` (`appinfo/routes.php:443`) runs `CaseLifecycleController::reopen`, guarded by the reopen authority, and the act sits in the Lifecycle acts menu on the case. That menu merges the available transitions, the lifecycle and the acts, and shows a refused act disabled with its reason."
+		},
+		{
+			"id": "2.15",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Case objects have a page at `/case-objects`, a menu entry, a folder sidebar grouped on object type and a `case-objects` tab on the case. The tab's Object and Object status columns are lenses resolved on every read, so it shows what the object says now rather than what somebody typed when they linked it."
+		},
+		{
+			"id": "2.19",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The case page carries a favourite star over openregister's favourite endpoints, rendered from `@self.favourite` so it makes no call until pressed. Favourites and Recently opened are lenses on the Cases list, and both have a tile on the Dashboard. Consumer half of openregister#3766, merged as dossiq#2875."
+		},
+		{
+			"id": "3.4",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "A flow ask step takes a form through the six flat keys `TaskFormReader::fromConfig()` reads (`lib/Flow/DossiqAskPersonNode.php:141,394`), beside the status transition path that already carried one. Both ways of raising a task can now ask for fields, and a required field left blank is refused in OpenRegister's own wording. Closed 2026-09-20 by dossiq#3086 (6a1ab145)."
+		},
+		{
+			"id": "3.10",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "A Start header action on the case, gated on the materialised `hasStartableFlows`, opens `src/dialogs/CaseStartFlowDialog.vue`. That reads GET `/apps/dossiq/api/case/{id}/startable-flows` and runs the chosen flow on this case. Sub-cases come from `lib/Flow/DossiqTxCreateSubCaseNode.php`."
+		},
+		{
+			"id": "3.13",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Document properties on the case Files leaf opens decidiq's approval chain: `src/manifest.json:2317` names the row action, `src/registry.js:651` resolves the dialog, and `src/modals/DocumentMetadataDialog.vue:152` renders `ApprovalChainLeafTab` over the leaf id `decidiq-approval-chain`. So a handler approves or rejects a document from the case, and the list carries an Approval column. The chain itself is decidiq's and needs that app installed. Closed 2026-09-20 by dossiq#3083 (19b334fb)."
+		},
+		{
+			"id": "4.2",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The `case-files` widget on the case renders the library's files browser over the case's own object folder: breadcrumbs from the root down, navigation into subfolders, and New folder from the file menu. The ZGW Documents tab it replaced was retired on 2026-09-13, which is what the old note described."
+		},
+		{
+			"id": "4.22",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The same files browser binds dragover and drop on its root and PUTs the dropped files over DAV, beside the New menu's upload entry. `lib/Service/Zaakdossier/DossierUploadHandler.php` still serves the ZGW upload path."
+		},
+		{
+			"id": "5.1",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The `case-parties` widget in the People tab lists everyone involved in the case, grouped by role type, with avatar, email, validity window and note, and a picker over users and contacts. `SyncCaseRoleVocabulary` writes the instance's role types and `PersonLinkListener` projects each link onto a `role` record, so the resolver and the mandate matrix read what they always read."
+		},
+		{
+			"id": "5.2",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`Contacts` and `Organisations` are index pages and `ContactDetail` and `OrganisationDetail` are detail pages over `brpPerson` and `kvkCompany`. The three open tasks on `contacts-domain` are all moved or blocked in another app, none of them this capability."
+		},
+		{
+			"id": "5.4",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`ContactDetail` and `OrganisationDetail` each carry four panels: the card, the cases, the contact moments and `contact-documents` (`src/manifest.json:7053,7145,7344,7436`). The documents panel reads the `dispatch` join, so direction is a row value rather than a guess. Cases, documents and communication are all on both pages now. Closed 2026-09-20 by dossiq#3083 (19b334fb)."
+		},
+		{
+			"id": "6.4",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The `case-timeline-panel` tab is one chronological read of every note, logged call, inbound and outbound message and acknowledgement of receipt on the case, from openregister's timeline. `lib/Service/Timeline/TimelineKinds.php` enumerates the kinds, portal messages included. The audit sidebar keeps the change history, deliberately apart."
+		},
+		{
+			"id": "6.5",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`MailIntakeLogView` lists every message the shared mailbox processed with the verdict that decided it, and each row offers File on case. That opens `MailIntakeFileOnCaseDialog` onto POST `/api/mail-intake/log/{entryId}/file-on-case` (`appinfo/routes.php:787`), guarded per case, so a handler files a message on a case they pick and the override stays traceable. Closed 2026-09-20 by dossiq#3079 (fbdadc4f)."
+		},
+		{
+			"id": "6.6",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Send digital post is a header action on the case (`src/manifest.json:3347`) and opens `BerichtenboxComposeDialog` over `IntegriqAdapter`, the default binding in `SubstitutableAdapterRegistrar`. integriq binds three providers for real: `lib/Service/DigitalPost/BerichtenboxProvider.php`, `PostexProvider.php` and `LogDigitalPostProvider.php`, each over the shared gateway transport. A send on an unset source is refused with the key named rather than simulated. Closed 2026-09-20 by dossiq#3081 (226b7e0b)."
+		},
+		{
+			"id": "6.10",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Read as a message is a row action on every file in the case Files leaf and posts the file to the saved-mail endpoint, which is guarded, capped at twenty megabytes and covered by its own PHP suite. dossiq also answers integriq's `MessageReceivedEvent` through `MessageReceivedListener`, replying linked, created or declined and never a silent decline. integriq reads the bytes, so a `.msg` renamed `.eml` still parses as what it is. Closed 2026-09-20 by dossiq#3079 (fbdadc4f)."
+		},
+		{
+			"id": "6.12",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "`lib/Service/Conversation/CaseConversationService.php` starts a Talk conversation from any case through `OCP\\Talk\\IBroker` and records the moment, who joined and how long it lasted, and `CaseConversationsPanel.vue` renders it in the Communication tab. The messages said in the room are not pulled in: what a conversation produced is filed by hand as a case document. Raised from no to partial rather than to yes, because capture of the chat itself is the half that is missing."
+		},
+		{
+			"id": "6.14",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "`NotePush` pushes a case note over the ZGW adapter and reports a timeline write it lost instead of letting it read as written, which was the defect the closing PR fixed. Every note in the case notes tab now carries a `Send to the neighbouring register` action, so a handler reaches the push from the page (dossiq#3116, fc7fc1bc8, on the `noteActions` seam nextcloud-vue 2.56.0 grew for it). Held at partial for what is left: this is a deliberate act on one note rather than a sync, because OpenRegister dispatches no note-saved event dossiq could listen for, and the reserved informatieobjecttype is still undecided, so an instance that has not set `note_informatieobjecttype` gets a refusal naming the key. Closed 2026-09-20 by dossiq#3086 (6a1ab145)."
+		},
+		{
+			"id": "7.7",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "CORRECTED 09-19: lib/Service/Archival/ArchivalNominationDeriver.php derives the nomination and the action date from the result type on both write paths (called from ZrcController). NOTE: openregister has a second implementation, ArchiveActionDateCalculator; the dedupe is an open question for Ruben. SCANNED 2026-09-19 (pack c, verdict `have`): dossiq has this itself now and the note above predates the merged work. Evidence: _ledger/gap-scan/c.json"
+		},
+		{
+			"id": "9.2",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`CaseTypeFieldFilters.vue` sits in the Cases actions bar and compiles openregister `_related[caseProperty][case][…]` blocks, handing them to the list through `sidebarState.onFilterChange` rather than leaving them on the route, where `resolveQueryFilters()` dropped every underscore key. The bar renders once the folder sidebar has narrowed to one case type. Proved against the pinned library with a mutation, not by a manifest key. Closed 2026-09-20 by dossiq#3085 (87ec6952)."
+		},
+		{
+			"id": "9.10",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "CORRECTED 09-19: dossiq ships the `CaseObjects` index at /case-objects with saved views and an `objectType` sidebar (src/manifest.json). SCANNED 2026-09-19 (pack c, verdict `sibling-has`): held and shipped by openregister, which dossiq consumes; satisfied, and not dossiq's code. Evidence: _ledger/gap-scan/c.json"
+		},
+		{
+			"id": "10.1",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "All five dashboards declare `userLayout` with `appId` and `pageId`, so each reader keeps their own arrangement; `userLayout` alone stored nothing, because `loadUserLayout()` returns early without an app id. The Dashboard carries five count tiles, two charts and three object tables, reading `/apps/dossiq/api/dashboard/kpis` off `lib/Controller/KpiController.php`, and offers user widgets a reader can add. Closed 2026-09-20 by dossiq#3085 (87ec6952)."
+		},
+		{
+			"id": "11.2",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Export is a header action on the case type that downloads a zip (`src/manifest.json:6588`) and Import is a dialog that takes a file, because an api-call sends JSON and cannot. `CaseDefinitionExportService::exportComponent()` reads the register now instead of returning the fixed empty shape it used to. `CaseDefinitionPortabilityTest` is a round trip that asserts the written objects rather than a success status. Closed 2026-09-20 by dossiq#3084 (1c85c2a5)."
+		},
+		{
+			"id": "11.9",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "The Cases list shows the columns, order and search fields a case type declares in its own `x-index` block, declared as a property of `caseType` in `lib/Settings/register.d/39-case-type-list-layout.json` and read back from the pinned library with a mutation. Three seeded case types carry one. CaseTypeDetail carries a `Columns in the case list` data widget whose scoped edit dialog opens a form for `x-index` and nothing else, so an administrator sets a case type's columns inside the app rather than on the record (dossiq#3112, a7118ddf1). Held at partial for what is left: an object property renders as a JSON editor, so the block is typed rather than picked from the columns the Cases page declares, and `#Tasks` cannot carry one at all. Closed 2026-09-20 by dossiq#3085 (87ec6952)."
+		},
+		{
+			"id": "11.13",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`CaseTypeTranslationsWidget` is a widget on the case type page (`src/manifest.json:6509,6573`): a chip per declared language, a tab per language and one PATCH per edited label. The mark reaches the engine now, since dossiq spelled it `x-translatable` and OpenRegister reads `translatable`. Every marked label declares its source language and the register declares `[\"nl\", \"en\"]`, so a changed Dutch label can stale its translations. Closed 2026-09-20 by dossiq#3084 (1c85c2a5)."
+		},
+		{
+			"id": "11.21",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`caseType.parentCaseType` is declared, and `lib/Service/CaseTypeResolver.php` implements it: `chainFor()`, `effectiveCaseType()`, `statusTypesFor()`, `resultTypesFor()` and `propertyDefinitionsFor()` resolve a child's inheritance at read time. A child declares only what differs, a chain that returns to itself is refused on save and the chain is at most three deep. Covered by `tests/e2e/case-type-parent-chain.spec.ts`."
+		},
+		{
+			"id": "11.22",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "CORRECTED 09-19: caseType has carried legalBasis, personalDataCategories, lawfulPurposeRetention and verwerkingsactiviteit since case-type-authoring-extras. SCANNED 2026-09-19 (pack d, verdict `have`): dossiq has this itself now and the note above predates the merged work. Evidence: _ledger/gap-scan/d.json"
+		},
+		{
+			"id": "11.26",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The Knowledge tab on a case (`src/manifest.json:2933`) holds the work instruction the case type names once, shown on every case of that type, and the Collectives pages linked to this case. dossiq stores no article text: Collectives owns the page and a collective is scoped to a Nextcloud team, which is the group `roleType.ncGroupId` already names. A reader who may not read a page does not read it through the case. xwiki was rejected with evidence: it never resolves on a dossiq page. Closed 2026-09-20 by dossiq#3083 (19b334fb)."
+		},
+		{
+			"id": "12.9",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Send digital post on the case opens `BerichtenboxComposeDialog` over `IntegriqAdapter`, which `SubstitutableAdapterRegistrar` binds by default, and integriq's Berichtenbox provider carries the send. The mock no longer pretends: an unset `digital_post_source` is refused with the key named, and the integrations page stopped reporting a mock that was not answering. Closed 2026-09-20 by dossiq#3081 (226b7e0b)."
+		},
+		{
+			"id": "13.11",
+			"on": "2026-09-22",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "CORRECTED 09-19: caseType has carried legalBasis, personalDataCategories, lawfulPurposeRetention and verwerkingsactiviteit since case-type-authoring-extras. SCANNED 2026-09-19 (pack d, verdict `have`): dossiq has this itself now and the note above predates the merged work. Evidence: _ledger/gap-scan/d.json"
+		},
+		{
+			"id": "13.17",
+			"on": "2026-09-22",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`lib/Settings/register.d/62-handler-vervanging.json` records an absence period with its absentee, its substitute, its dates, its scope and its reason, verlof, ziekte or anders. `src/views/admin/SubstitutionAdmin.vue` is a page with a menu entry, and `src/views/MyWorkCards.vue` shows the work an active substitution routes in, above the reader's own, behind a toggle. Shipped by dossiq#2719."
 		}
 	],
 	"systems": [
@@ -272,6 +552,83 @@
 			"readOn": "2026-09-08",
 			"columnAddedOn": "2026-09-10",
 			"ownsNoData": "Open Zaak"
+		}
+	],
+	"providers": [
+		{
+			"key": "dossiq",
+			"name": "Dossiq",
+			"kind": "self"
+		},
+		{
+			"key": "buildiq",
+			"name": "Buildiq",
+			"kind": "app"
+		},
+		{
+			"key": "decidiq",
+			"name": "Decidiq",
+			"kind": "app"
+		},
+		{
+			"key": "filinq",
+			"name": "Filinq",
+			"kind": "app"
+		},
+		{
+			"key": "hermiq",
+			"name": "Hermiq",
+			"kind": "app"
+		},
+		{
+			"key": "humaniq",
+			"name": "Humaniq",
+			"kind": "app"
+		},
+		{
+			"key": "integriq",
+			"name": "Integriq",
+			"kind": "app"
+		},
+		{
+			"key": "nextcloud",
+			"name": "Nextcloud",
+			"kind": "platform"
+		},
+		{
+			"key": "nextcloud-vue",
+			"name": "Conduction UI library",
+			"kind": "app"
+		},
+		{
+			"key": "opencatalogi",
+			"name": "OpenCatalogi",
+			"kind": "app"
+		},
+		{
+			"key": "openregister",
+			"name": "OpenRegister",
+			"kind": "app"
+		},
+		{
+			"key": "pipelinq",
+			"name": "Pipelinq",
+			"kind": "app"
+		},
+		{
+			"key": "portaliq",
+			"name": "Portaliq",
+			"kind": "app"
+		},
+		{
+			"key": "shillinq",
+			"name": "Shillinq",
+			"kind": "app"
+		},
+		{
+			"key": "thematiq",
+			"name": "Thematiq",
+			"kind": "app"
 		}
 	],
 	"areas": [
@@ -367,7 +724,7 @@
 			"area": "intake",
 			"name": "Citizen web form per case type",
 			"name_nl": "Webformulier voor burgers per zaaktype",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "partial",
@@ -397,7 +754,7 @@
 			"area": "intake",
 			"name": "Create case from a contact or citizen record",
 			"name_nl": "Zaak starten vanuit een contact of persoonsgegeven",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -427,7 +784,7 @@
 			"area": "intake",
 			"name": "E-mail intake from a mailbox",
 			"name_nl": "Intake van e-mail uit een mailbox",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "partial",
@@ -562,7 +919,7 @@
 			"area": "case-core",
 			"name": "Case number from a mask or sequence",
 			"name_nl": "Zaaknummer uit een masker of reeks",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -622,7 +979,7 @@
 			"area": "case-core",
 			"name": "Assign case to a team or department plus role",
 			"name_nl": "Zaak toewijzen aan een team of afdeling plus rol",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -727,7 +1084,7 @@
 			"area": "case-core",
 			"name": "Reopen a closed case",
 			"name_nl": "Afgesloten zaak heropenen",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -772,7 +1129,7 @@
 			"area": "case-core",
 			"name": "Custom objects linked to cases",
 			"name_nl": "Eigen objecten koppelen aan zaken",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -832,7 +1189,7 @@
 			"area": "case-core",
 			"name": "Favourites and recent items",
 			"name_nl": "Favorieten en recent geopend",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "partial",
@@ -897,11 +1254,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "2.24",
@@ -913,11 +1270,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "2.25",
@@ -929,11 +1286,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "2.26",
@@ -945,11 +1302,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "visual-workflow-editor",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "2.27",
@@ -961,11 +1318,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "3.1",
@@ -1017,7 +1374,7 @@
 			"area": "tasks-and-phases",
 			"name": "User tasks with a form",
 			"name_nl": "Gebruikerstaken met een formulier",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -1107,7 +1464,7 @@
 			"area": "tasks-and-phases",
 			"name": "Sub-processes or building blocks startable from the case",
 			"name_nl": "Deelprocessen of bouwstenen die vanaf de zaak te starten zijn",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "partial",
@@ -1152,7 +1509,7 @@
 			"area": "tasks-and-phases",
 			"name": "Document review or approval workflow",
 			"name_nl": "Beoordelings- of akkoordstroom voor documenten",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "partial",
@@ -1262,11 +1619,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "workflow-definition-engine",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "4.1",
@@ -1288,7 +1645,7 @@
 			"area": "documents",
 			"name": "Folder structure inside a case",
 			"name_nl": "Mappenstructuur binnen een zaak",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -1588,7 +1945,7 @@
 			"area": "documents",
 			"name": "Upload with drag and drop",
 			"name_nl": "Uploaden met slepen en neerzetten",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -1618,7 +1975,7 @@
 			"area": "parties-and-contacts",
 			"name": "Parties on a case with roles",
 			"name_nl": "Partijen op een zaak met rollen",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -1633,7 +1990,7 @@
 			"area": "parties-and-contacts",
 			"name": "Person and organisation contact registry",
 			"name_nl": "Contactenregister voor personen en organisaties",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -1663,7 +2020,7 @@
 			"area": "parties-and-contacts",
 			"name": "Contact 360 view (cases, documents, communication)",
 			"name_nl": "Contactoverzicht 360 graden (zaken, documenten, communicatie)",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -1858,7 +2215,7 @@
 			"area": "communication",
 			"name": "Unified communication timeline per case (notes, mail, messages)",
 			"name_nl": "Eén communicatietijdlijn per zaak (notities, mail, berichten)",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -1873,7 +2230,7 @@
 			"area": "communication",
 			"name": "Organisation-wide message inbox with assign to case",
 			"name_nl": "Organisatiebrede berichtenbak met koppelen aan een zaak",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -1888,7 +2245,7 @@
 			"area": "communication",
 			"name": "Digital post to citizens (Digital Post, Berichtenbox, Postex)",
 			"name_nl": "Digitale post aan burgers (Berichtenbox, Postex)",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "no",
 			"zaaksysteem": "partial",
@@ -1948,7 +2305,7 @@
 			"area": "communication",
 			"name": "Import .msg or .eml into a case",
 			"name_nl": ".msg- of .eml-bestanden importeren in een zaak",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -1978,7 +2335,7 @@
 			"area": "communication",
 			"name": "Chat capture into the case",
 			"name_nl": "Chatgesprekken vastleggen in de zaak",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "no",
@@ -2008,7 +2365,7 @@
 			"area": "communication",
 			"name": "Notes synced to an external case register",
 			"name_nl": "Notities synchroniseren met een extern zaakregister",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "no",
@@ -2028,11 +2385,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-email-integration",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "6.16",
@@ -2044,11 +2401,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "pipelinq",
 			"providerHow": "ledger-change",
 			"feature": "case-email-integration",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "7.1",
@@ -2145,7 +2502,7 @@
 			"area": "decisions",
 			"name": "Result drives archival nomination and retention",
 			"name_nl": "Resultaat bepaalt archiefnominatie en bewaartermijn",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -2315,11 +2672,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "termijn-binding",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "8.12",
@@ -2331,11 +2688,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "termijn-binding",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "8.13",
@@ -2347,11 +2704,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "termijn-binding",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "8.14",
@@ -2363,11 +2720,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "termijn-binding",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "8.15",
@@ -2379,11 +2736,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "termijn-binding",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "9.1",
@@ -2405,7 +2762,7 @@
 			"area": "search",
 			"name": "Advanced search with per-case-type fields",
 			"name_nl": "Uitgebreid zoeken op velden per zaaktype",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -2525,7 +2882,7 @@
 			"area": "search",
 			"name": "Search over custom objects",
 			"name_nl": "Zoeken in eigen objecten",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -2575,18 +2932,18 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "10.1",
 			"area": "reporting",
 			"name": "Configurable KPI dashboards (count, gauge, chart)",
 			"name_nl": "Instelbare KPI-dashboards (telling, meter, grafiek)",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "no",
@@ -2741,11 +3098,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "doorlooptijd-dashboard",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "11.1",
@@ -2767,7 +3124,7 @@
 			"area": "configuration",
 			"name": "Config as code, import and export of case types",
 			"name_nl": "Inrichting als code, zaaktypen im- en exporteren",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "partial",
@@ -2872,7 +3229,7 @@
 			"area": "configuration",
 			"name": "Configurable list columns per case type",
 			"name_nl": "Instelbare lijstkolommen per zaaktype",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "partial",
@@ -2932,7 +3289,7 @@
 			"area": "configuration",
 			"name": "Translation management in the UI",
 			"name_nl": "Vertalingen beheren in de gebruikersinterface",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "no",
@@ -3052,7 +3409,7 @@
 			"area": "configuration",
 			"name": "Mother and child case types (inheritance)",
 			"name_nl": "Moeder- en dochterzaaktypen (overerving)",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -3067,7 +3424,7 @@
 			"area": "configuration",
 			"name": "GDPR register fields per case type",
 			"name_nl": "AVG-registervelden per zaaktype",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -3117,27 +3474,27 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "11.26",
 			"area": "configuration",
 			"name": "Knowledge base with per-role visibility",
 			"name_nl": "Kennisbank met zichtbaarheid per rol",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "ai-assistance",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "12.1",
@@ -3264,7 +3621,7 @@
 			"area": "integrations",
 			"name": "Digital post or berichtenbox",
 			"name_nl": "Digitale post of berichtenbox",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "no",
 			"zaaksysteem": "partial",
@@ -3639,7 +3996,7 @@
 			"area": "access-and-privacy",
 			"name": "GDPR register per case type",
 			"name_nl": "AVG-register per zaaktype",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -3729,16 +4086,16 @@
 			"area": "access-and-privacy",
 			"name": "Out of office with a stand-in who sees the work",
 			"name_nl": "Afwezigheid met een vervanger die het werk ziet",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"addedOn": "2026-09-09"
 		},
 		{
 			"id": "13.18",
@@ -3750,11 +4107,11 @@
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
 			"zac": "unknown",
-			"addedOn": "2026-09-09",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"addedOn": "2026-09-09"
 		}
 	],
 	"pending": [
@@ -6337,83 +6694,6 @@
 			"providerHow": "ledger-change",
 			"feature": "multi-tenancy",
 			"featureConfidence": "high"
-		}
-	],
-	"providers": [
-		{
-			"key": "dossiq",
-			"name": "Dossiq",
-			"kind": "self"
-		},
-		{
-			"key": "buildiq",
-			"name": "Buildiq",
-			"kind": "app"
-		},
-		{
-			"key": "decidiq",
-			"name": "Decidiq",
-			"kind": "app"
-		},
-		{
-			"key": "filinq",
-			"name": "Filinq",
-			"kind": "app"
-		},
-		{
-			"key": "hermiq",
-			"name": "Hermiq",
-			"kind": "app"
-		},
-		{
-			"key": "humaniq",
-			"name": "Humaniq",
-			"kind": "app"
-		},
-		{
-			"key": "integriq",
-			"name": "Integriq",
-			"kind": "app"
-		},
-		{
-			"key": "nextcloud",
-			"name": "Nextcloud",
-			"kind": "platform"
-		},
-		{
-			"key": "nextcloud-vue",
-			"name": "Conduction UI library",
-			"kind": "app"
-		},
-		{
-			"key": "opencatalogi",
-			"name": "OpenCatalogi",
-			"kind": "app"
-		},
-		{
-			"key": "openregister",
-			"name": "OpenRegister",
-			"kind": "app"
-		},
-		{
-			"key": "pipelinq",
-			"name": "Pipelinq",
-			"kind": "app"
-		},
-		{
-			"key": "portaliq",
-			"name": "Portaliq",
-			"kind": "app"
-		},
-		{
-			"key": "shillinq",
-			"name": "Shillinq",
-			"kind": "app"
-		},
-		{
-			"key": "thematiq",
-			"name": "Thematiq",
-			"kind": "app"
 		}
 	]
 }

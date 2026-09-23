@@ -743,6 +743,19 @@ works exactly that way, as a call the frontend makes after the note is
 already stored. Pushing on save needs an event that does not exist, which
 is an openregister row and not this one.
 
+The deliberate act has a place: every note in the case's notes tab carries
+a "Send to the neighbouring register" action, and pressing it pushes that
+note and shows the answer, including the answers that are neither a success
+nor a failure. That action is `CaseNotesTab`'s single `noteActions` entry
+(`src/views/cases/components/CaseNotesTab.vue`), passed to the shared
+library's `CnNotesTab`, and its call site is asserted in
+`tests/vitest/caseNotesTab.spec.js` by "offers the send action to the notes
+component" and "posts the note the reader picked to the push endpoint".
+This is prose rather than a Scenario on purpose: no dossiq Playwright
+project mounts the library's notes list, so a scenario here would be one
+gate-19 could never see proven, and the vitest pair is named so anybody can
+check the claim.
+
 #### Scenario: An external note reaches the neighbouring register
 @e2e exclude an outbound push to a register no test instance runs; covered by NoteEnvelopeTest and NotePushTest
 
