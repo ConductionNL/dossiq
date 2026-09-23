@@ -417,7 +417,7 @@
 			"from": "no",
 			"to": "partial",
 			"cause": "corrected",
-			"reason": "`NotePush` pushes a case note over the ZGW adapter and reports a timeline write it lost instead of letting it read as written, which was the defect the closing PR fixed. Nothing in `src/` calls `notes#push` (`appinfo/routes.php:418`): `notes#mention` beside it is called from `CaseNotesTab.vue` and the push is called only from an e2e spec. So the path is built and guarded and a handler cannot reach it from a page. Held at partial for that reason. Closed 2026-09-20 by dossiq#3086 (6a1ab145)."
+			"reason": "`NotePush` pushes a case note over the ZGW adapter and reports a timeline write it lost instead of letting it read as written, which was the defect the closing PR fixed. Every note in the case notes tab now carries a `Send to the neighbouring register` action, so a handler reaches the push from the page (dossiq#3116, fc7fc1bc8, on the `noteActions` seam nextcloud-vue 2.56.0 grew for it). Held at partial for what is left: this is a deliberate act on one note rather than a sync, because OpenRegister dispatches no note-saved event dossiq could listen for, and the reserved informatieobjecttype is still undecided, so an instance that has not set `note_informatieobjecttype` gets a refusal naming the key. Closed 2026-09-20 by dossiq#3086 (6a1ab145)."
 		},
 		{
 			"id": "7.7",
