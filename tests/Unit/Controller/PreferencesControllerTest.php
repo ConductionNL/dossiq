@@ -129,20 +129,70 @@ class PreferencesControllerTest extends TestCase {
 	}//end testAnUnsetPreferenceReadsAsNull()
 
 	/**
-	 * A key with nothing safe left in it is refused, not sent to IConfig.
+	 * A key outside the safe charset is refused, not sent to IConfig.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/admin-settings/spec.md
 	 */
-	public function testAKeyThatSanitisesToNothingIsRefused(): void {
+	public function testAnUnsafeKeyIsRefused(): void {
 		$this->signIn();
 		$this->config->expects($this->never())->method('getUserValue');
 
 		$response = $this->controller->getPreference(key: '../../');
 
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-	}//end testAKeyThatSanitisesToNothingIsRefused()
+	}//end testAnUnsafeKeyIsRefused()
+
+	/**
+	 * A key with one unsafe character is refused rather than stripped, so it
+	 * cannot land on the stored value of a different key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testAKeyIsRefusedRatherThanRewritten(): void {
+		$this->signIn();
+		$this->config->expects($this->never())->method('setUserValue');
+
+		$response = $this->controller->setPreference(key: 'case view', value: 'yes');
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testAKeyIsRefusedRatherThanRewritten()
+
+	/**
+	 * The keys the library sends are stored exactly as spelled.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testALibraryKeyIsStoredAsSpelled(): void {
+		$this->signIn();
+		$this->config->expects($this->once())
+			->method('setUserValue')
+			->with('alice', 'dossiq', 'pref_dashboard-layout.Dashboard_1', 'yes');
+
+		$this->controller->setPreference(key: 'dashboard-layout.Dashboard_1', value: 'yes');
+	}//end testALibraryKeyIsStoredAsSpelled()
+
+	/**
+	 * A key too long to fit IConfig's column after `pref_` is refused, not
+	 * truncated onto another key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
+	 */
+	public function testAnOverlongKeyIsRefused(): void {
+		$this->signIn();
+		$this->config->expects($this->never())->method('getUserValue');
+
+		$response = $this->controller->getPreference(key: str_repeat('a', 60));
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testAnOverlongKeyIsRefused()
 
 	/**
 	 * An anonymous caller is refused before anything is read.

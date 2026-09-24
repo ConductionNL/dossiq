@@ -76,7 +76,7 @@ class PreferencesController extends Controller {
 	/**
 	 * Read a per-user preference value.
 	 *
-	 * @param string $key The preference key (kebab/alphanumeric).
+	 * @param string $key The preference key (letters, digits, `.`, `_`, `-`).
 	 *
 	 * @return JSONResponse `{value: string|null}`.
 	 *
@@ -112,7 +112,7 @@ class PreferencesController extends Controller {
 	/**
 	 * Write a per-user preference value. An empty value clears it.
 	 *
-	 * @param string $key The preference key (kebab/alphanumeric).
+	 * @param string $key The preference key (letters, digits, `.`, `_`, `-`).
 	 * @param string $value The value to store (empty string clears it).
 	 *
 	 * @return JSONResponse `{value: string|null}`.
@@ -161,15 +161,24 @@ class PreferencesController extends Controller {
 	}//end setPreference()
 
 	/**
-	 * Restrict keys to a safe charset so callers cannot reach arbitrary
-	 * IConfig user values outside the `pref_` namespace.
+	 * Accept a key only when it is already in the safe charset, so callers
+	 * cannot reach IConfig user values outside the `pref_` namespace.
+	 *
+	 * A key outside it is refused rather than rewritten: stripping would let
+	 * `case.view` and `caseview` silently share one stored value. The charset
+	 * covers the keys the library sends (`cn_landing_page`,
+	 * `dashboard-layout.{pageId}`), and the length leaves room for `pref_`
+	 * within IConfig's 64-character key column.
 	 *
 	 * @param string $key The raw key.
 	 *
-	 * @return string The sanitised key, or '' when nothing safe remains.
+	 * @return string The key unchanged, or '' when it is refused.
 	 */
 	private function sanitizeKey(string $key): string {
-		$safe = preg_replace(pattern: '/[^a-z0-9-]/', replacement: '', subject: strtolower($key));
-		return substr((string)$safe, offset: 0, length: 64);
+		if (preg_match(pattern: '/^[A-Za-z0-9._-]{1,59}$/', subject: $key) !== 1) {
+			return '';
+		}
+
+		return $key;
 	}//end sanitizeKey()
 }//end class
