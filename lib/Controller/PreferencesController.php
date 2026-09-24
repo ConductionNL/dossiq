@@ -173,6 +173,8 @@ class PreferencesController extends Controller {
 	 * @param string $key The raw key.
 	 *
 	 * @return string The key unchanged, or '' when it is refused.
+	 *
+	 * @spec openspec/specs/admin-settings/spec.md
 	 */
 	private function sanitizeKey(string $key): string {
 		if (preg_match(pattern: '/^[A-Za-z0-9._-]{1,59}$/', subject: $key) !== 1) {
