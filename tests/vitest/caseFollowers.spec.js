@@ -355,33 +355,55 @@ describe('the Followers section on the People tab', () => {
 })
 
 describe('following is declared on the case page', () => {
-	it('is a widget on the layout, beside the star and above the panels', () => {
-		const follow = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-follow',
-		)
-		const star = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-favourite',
+	it('rides the banner row, above the panels', () => {
+		// The strips share ONE grid row (case-banner-stack): three of them are
+		// a root v-if, so a row each reserved three empty ones on an ordinary
+		// case. Their ORDER is the component's, asserted below.
+		const banners = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-banner-stack',
 		)
 		const panels = caseDetail.config.layout.find(
 			(l) => l.widgetId === 'case-panels',
 		)
 
-		expect(follow, 'the follow strip is missing from the layout').toBeTruthy()
-		expect(follow.gridY).toBe(star.gridY)
-		expect(follow.gridY).toBeLessThan(panels.gridY)
+		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
+		expect(banners.gridY).toBeLessThan(panels.gridY)
+		// The row is only as tall as whatever rendered; without this an empty
+		// stack costs its whole authored height back again.
+		expect(banners.sizeToContent).toBe(true)
+	})
+
+	it('follows the star in the banner stack', () => {
+		// Beside the star and directly after it: both are per-reader state,
+		// where every strip under them is about the case rather than about you.
+		const stack = fs.readFileSync(
+			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
+			'utf8',
+		)
+		const star = stack.indexOf('<CaseFavouriteStrip')
+		const follow = stack.indexOf('<CaseFollowStrip')
+		const unread = stack.indexOf('<CaseUnreadPanel')
+
+		expect(follow, 'the follow strip is missing from the stack').toBeGreaterThan(
+			-1,
+		)
+		expect(follow).toBeGreaterThan(star)
+		expect(follow).toBeLessThan(unread)
+		// `objectData` and NOT `object`: the strip reads `@self.watching` off
+		// the case the host already loaded, and an unbound prop would leave
+		// the first paint reading "Follow" on a case this reader follows.
+		expect(stack).toContain(
+			'<CaseFollowStrip :objectId="objectId" :objectData="objectData" />',
+		)
 	})
 
 	it('declares widgets whose types the registry answers', () => {
-		// A grid item falls through to CnDetailWidgetHost and a tab child
-		// through CnTabsWidget; both resolve from `cnRegistry[widget.type]` and
-		// render NOTHING, silently, when no key answers.
-		const strip = caseDetail.config.widgets.find((w) => w.id === 'case-follow')
-
-		expect(strip).toBeTruthy()
-		expect(strip.type).toBe('case-follow')
+		// A tab child renders through CnTabsWidget, which resolves from
+		// `cnRegistry[widget.type]` and renders NOTHING, silently, when no key
+		// answers. The strip's own type stays registered even though this page
+		// mounts it through the banner stack: still a valid placement.
 		expect(registrySource).toContain("'case-follow': {")
 		expect(registrySource).toContain('component: CaseFollowStrip,')
-		expect(iconsSource).toContain(`\n\t${strip.icon},\n`)
 
 		const people = caseDetail.config.widgets.find(
 			(w) => w.id === 'case-people-panel',

@@ -23,6 +23,18 @@
 -->
 <template>
 	<div class="case-sharing-tab">
+		<NcNoteCard
+			v-if="linksForbidden"
+			type="info"
+			data-testid="case-sharing-links-forbidden">
+			{{
+				t(
+					'dossiq',
+					'Only the people this case is assigned to can see and manage its access links.',
+				)
+			}}
+		</NcNoteCard>
+
 		<p
 			v-if="deelzaken.length > 0"
 			class="case-sharing-tab__inheritance"
@@ -111,7 +123,7 @@
 import axios from '@nextcloud/axios'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton } from '@nextcloud/vue'
+import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import CaseTransferDialog from '../../../dialogs/CaseTransferDialog.vue'
 import CreateAccessLinkDialog from '../../../dialogs/CreateAccessLinkDialog.vue'
 import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDialog.vue'
@@ -131,6 +143,7 @@ export default {
 	components: {
 		ShareTab,
 		NcButton,
+		NcNoteCard,
 		CreateAccessLinkDialog,
 		CreateShareDialog,
 		CaseTransferDialog,
@@ -152,6 +165,7 @@ export default {
 			loading: false,
 			links: [],
 			linksLoading: false,
+			linksForbidden: false,
 			createAccessLinkDialogOpen: false,
 			preview: null,
 			previewOf: '',
@@ -246,6 +260,7 @@ export default {
 				return
 			}
 			this.linksLoading = true
+			this.linksForbidden = false
 			try {
 				const response = await axios.get(
 					generateUrl(
@@ -253,9 +268,16 @@ export default {
 					),
 				)
 				this.links = response.data?.results || []
-			} catch {
+			} catch (err) {
 				this.links = []
-				showError(t('dossiq', 'Could not load the links on this case'))
+				// A 403 is an ANSWER, not a failure: links are managed by the
+				// people a case is assigned to. This tab loads on every case
+				// detail, opened or not, so shouting about it put a red toast on
+				// every case a handler looked at. Said in the tab instead.
+				this.linksForbidden = err?.response?.status === 403
+				if (!this.linksForbidden) {
+					showError(t('dossiq', 'Could not load the links on this case'))
+				}
 			} finally {
 				this.linksLoading = false
 			}

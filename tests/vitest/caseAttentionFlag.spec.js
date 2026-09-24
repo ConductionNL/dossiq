@@ -81,23 +81,26 @@ async function mountStrip(flag, objectData = {}) {
 
 describe('the strip is declared on the case page', () => {
 	it('sits under the unread strip, above the panels', () => {
-		const unread = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-unread',
-		)
-		const attention = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-attention',
+		// The strips share ONE grid row now (CaseBannerStack): three of the four
+		// are a root v-if, so four rows reserved three empty ones on an ordinary
+		// case. The ORDER that used to be gridY is the component's child order.
+		const banners = caseDetail.config.layout.find(
+			(l) => l.widgetId === 'case-banner-stack',
 		)
 		const panels = caseDetail.config.layout.find(
 			(l) => l.widgetId === 'case-panels',
 		)
+		const stack = fs.readFileSync(
+			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
+			'utf8',
+		)
 
-		expect(
-			attention,
-			'the attention strip is missing from the layout',
-		).toBeTruthy()
-		expect(unread.gridY).toBeLessThan(attention.gridY)
-		expect(attention.gridY).toBeLessThan(panels.gridY)
-		expect(attention.gridWidth).toBe(12)
+		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
+		expect(banners.gridY).toBeLessThan(panels.gridY)
+		expect(banners.gridWidth).toBe(12)
+		expect(stack.indexOf('<CaseUnreadPanel')).toBeLessThan(
+			stack.indexOf('<CaseAttentionPanel'),
+		)
 	})
 
 	it('declares a widget whose type the registry answers', () => {
@@ -105,10 +108,13 @@ describe('the strip is declared on the case page', () => {
 		// resolves a renderer from `cnRegistry[widget.type]` and renders
 		// NOTHING, silently, when no key answers.
 		const widget = caseDetail.config.widgets.find(
-			(w) => w.id === 'case-attention',
+			(w) => w.id === 'case-banner-stack',
 		)
 		expect(widget).toBeTruthy()
-		expect(widget.type).toBe('case-attention')
+		expect(widget.type).toBe('case-banner-stack')
+		expect(registrySource).toContain("'case-banner-stack': {")
+		// The strip's own type stays registered: still a valid placement, just
+		// not the one this page uses.
 		expect(registrySource).toContain("'case-attention': {")
 		expect(registrySource).toContain('component: CaseAttentionPanel,')
 	})

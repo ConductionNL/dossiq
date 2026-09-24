@@ -37,6 +37,7 @@ namespace OCA\Dossiq\Service\Task;
 
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 use OCA\Dossiq\Service\WorkflowDefinitionService;
+use Psr\Container\ContainerInterface;
 
 /**
  * Resolves the per-task declaration a case's workflow holds for one task.
@@ -48,16 +49,31 @@ class TaskDeclarationReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param WorkflowDefinitionService $definitions Resolves the case's bound workflow.
-	 * @param WorkflowJsonProperty      $json        Decodes the JSON-encoded `steps` property.
-	 * @param TaskDeclaration           $declaration Normalises one step's block.
+	 * `WorkflowDefinitionService` is resolved per call rather than injected:
+	 * it depends on `WorkflowLifecycleGuard`, which reaches this reader through
+	 * `TaskDeclarationValidator`, so taking it here closes a constructor cycle
+	 * the container refuses — and refuses with a plain RuntimeException, which
+	 * is not a ContainerExceptionInterface, so no nullable default saves it.
+	 *
+	 * @param ContainerInterface   $container   Resolves the definition service on use.
+	 * @param WorkflowJsonProperty $json        Decodes the JSON-encoded `steps` property.
+	 * @param TaskDeclaration      $declaration Normalises one step's block.
 	 */
 	public function __construct(
-		private readonly WorkflowDefinitionService $definitions,
+		private readonly ContainerInterface $container,
 		private readonly WorkflowJsonProperty $json,
 		private readonly TaskDeclaration $declaration,
 	) {
 	}//end __construct()
+
+	/**
+	 * The service that resolves a case's bound workflow.
+	 *
+	 * @return WorkflowDefinitionService The service.
+	 */
+	private function definitions(): WorkflowDefinitionService {
+		return $this->container->get(WorkflowDefinitionService::class);
+	}//end definitions()
 
 	/**
 	 * The steps of the workflow this case is bound to.
@@ -84,7 +100,7 @@ class TaskDeclarationReader {
 		// case type that declares no workflow declares no per-task block
 		// either, and every such task keeps the behaviour it had before this
 		// block existed.
-		$definition = $this->definitions->getDefinitionForCase(caseId: trim($caseId));
+		$definition = $this->definitions()->getDefinitionForCase(caseId: trim($caseId));
 		if ($definition === null) {
 			return [];
 		}

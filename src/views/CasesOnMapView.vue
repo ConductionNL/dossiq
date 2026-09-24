@@ -151,7 +151,15 @@ export default {
 		/**
 		 * Default OpenStreetMap basemap for the map widget.
 		 *
+		 * `referrerPolicy` is required, not cosmetic: Nextcloud sends
+		 * `Referrer-Policy: no-referrer`, and OSM answers a refererless tile with a
+		 * "not following the tile usage policy" image. See the Cases page's
+		 * `_basemapNote` in manifest.json for the whole chain, including why the
+		 * `{s}` subdomain form has to stay.
+		 *
 		 * @return {Array<object>} CnMapWidget layer definitions.
+		 *
+		 * @spec openspec/specs/case-map-overview/spec.md
 		 */
 		mapLayers() {
 			return [
@@ -159,6 +167,7 @@ export default {
 					type: 'tile',
 					url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 					attribution: '© OpenStreetMap contributors',
+					options: { referrerPolicy: 'strict-origin-when-cross-origin' },
 				},
 			]
 		},

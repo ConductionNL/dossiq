@@ -7,9 +7,11 @@ ships `PUT|DELETE .../watch`, `GET .../watchers`, the `_watching` lens,
 `@self.watching` and `@self.watcherCount`, and the `{"watchers": true}`
 recipient kind. dossiq declares and renders; no PHP here.
 
-- [x] 1.1 `src/manifest.json` `#CaseDetail`: a Follow strip beside the star
-  (D-1), over `PUT|DELETE /api/objects/{r}/{s}/{id}/watch`.
+- [x] 1.1 `#CaseDetail`: a Follow strip beside the star (D-1), over
+  `PUT|DELETE /api/objects/{r}/{s}/{id}/watch`. It rides `CaseBannerStack`,
+  the one grid row the page's strips share, rather than a row of its own.
   - `src/components/case/CaseFollowStrip.vue`,
+    `src/components/case/CaseBannerStack.vue`,
     `src/services/watcherApi.js`, `src/registry.js`, `src/icons.js`
   - `tests/vitest/caseFollowers.spec.js`
   - `@spec openspec/changes/case-followers/specs/case-management/spec.md`

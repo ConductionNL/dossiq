@@ -76,16 +76,23 @@ async function mountStrip(state) {
 
 describe('the strip is declared on the case page', () => {
 	it('is a widget on the layout, above the tab strip', () => {
+		// The strip rides the shared banner row (CaseBannerStack): it is a root
+		// v-if, so its own row was empty and reserved on a case with nothing new.
 		const strip = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-unread',
+			(l) => l.widgetId === 'case-banner-stack',
 		)
-		expect(strip, 'the unread strip is missing from the layout').toBeTruthy()
+		expect(strip, 'the banner row is missing from the layout').toBeTruthy()
 
 		const panels = caseDetail.config.layout.find(
 			(l) => l.widgetId === 'case-panels',
 		)
 		expect(strip.gridY).toBeLessThan(panels.gridY)
 		expect(strip.gridWidth).toBe(12)
+		const stack = fs.readFileSync(
+			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
+			'utf8',
+		)
+		expect(stack).toContain('<CaseUnreadPanel')
 	})
 
 	it('declares a widget whose type the registry answers', () => {
@@ -93,9 +100,14 @@ describe('the strip is declared on the case page', () => {
 		// resolves a renderer from `cnRegistry[widget.type]` and renders
 		// NOTHING, silently, when no key answers. So the type is the key that
 		// has to be there.
-		const widget = caseDetail.config.widgets.find((w) => w.id === 'case-unread')
+		const widget = caseDetail.config.widgets.find(
+			(w) => w.id === 'case-banner-stack',
+		)
 		expect(widget).toBeTruthy()
-		expect(widget.type).toBe('case-unread')
+		expect(widget.type).toBe('case-banner-stack')
+		expect(registrySource).toContain("'case-banner-stack': {")
+		// The strip's own type stays registered: still a valid placement, just
+		// not the one this page uses.
 		expect(registrySource).toContain("'case-unread': {")
 		expect(registrySource).toContain('component: CaseUnreadPanel,')
 		expect(iconsSource).toContain(`\n\t${widget.icon},\n`)

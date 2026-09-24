@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
+use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -178,6 +179,9 @@ class CaseSharingServiceFederationTest extends TestCase {
 	 * @param ContainerInterface $container DI container (mock).
 	 * @param LoggerInterface $logger Logger (mock).
 	 * @param TenantAuditTrailService $audit Audit trail (mock).
+	 * @param IGroupManager $groupManager Group manager (mock); a bare one answers
+	 *                                    "not an admin", which is what every
+	 *                                    assertion in this class assumes.
 	 *
 	 * @return CaseSharingService
 	 */
@@ -187,6 +191,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 		ContainerInterface $container,
 		LoggerInterface $logger,
 		TenantAuditTrailService $audit,
+		IGroupManager $groupManager,
 	): CaseSharingService {
 		$gateway = new OpenRegisterSharingGateway($appManager, $container, $logger);
 
@@ -195,7 +200,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 		return new CaseSharingService(
 			settingsService: $settings,
 			gateway: $gateway,
-			accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
+			accessPolicy: new CaseAccessPolicy($settings, $gateway, $groupManager, $logger),
 			accessLinks: $accessLinks,
 			linkShares: new CaseLinkShares($settings, $gateway, $accessLinks, $logger),
 			federatedShares: new FederatedCaseShareService($settings, $gateway, $logger, $audit),
@@ -271,6 +276,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$this->container,
 			$this->createMock(LoggerInterface::class),
 			$this->audit,
+			$this->createMock(IGroupManager::class),
 		);
 
 		$this->objects->objects['case-1'] = [
@@ -411,6 +417,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$container,
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(TenantAuditTrailService::class),
+			$this->createMock(IGroupManager::class),
 		);
 
 		$result = $service->createFederatedShare('case-1', 'partner@remote.example', ['title'], [], 'bekijken', 'alice');
@@ -447,6 +454,7 @@ class CaseSharingServiceFederationTest extends TestCase {
 			$this->createMock(ContainerInterface::class),
 			$this->createMock(LoggerInterface::class),
 			$this->createMock(TenantAuditTrailService::class),
+			$this->createMock(IGroupManager::class),
 		);
 
 		$result = $service->revokeFederatedShare('anything', 'bob');

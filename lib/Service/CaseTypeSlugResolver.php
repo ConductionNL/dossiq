@@ -125,7 +125,7 @@ class CaseTypeSlugResolver {
 	 * OpenRegister keeps that as object METADATA rather than a stored
 	 * property — it comes back under `@self.slug`, and reading `$row['slug']`
 	 * answers '' for every one of them (the mistake
-	 * {@see \OCA\Dossiq\Repair\VthSeedDataRepairStep::existingSlugs()}
+	 * {@see \OCA\Dossiq\Repair\Vth\VthChecklistSeeder::existingSlugs()}
 	 * documents, which re-seeded the whole VTH set nine times). The body
 	 * `slug` is kept last as a fallback for objects created by some other
 	 * path.

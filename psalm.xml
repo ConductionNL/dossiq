@@ -36,6 +36,14 @@
         <!-- case-merge: OpenRegister's merge event, which CaseMergeRegistrar
              registers the follower against by `::class`. -->
         <file name="tests/Stubs/OpenRegister/Event/ObjectsMergedEvent.php" />
+        <!-- The AppHost observability plane (ADR-006/ADR-040). Health and
+             Metrics EXTEND these generics, so a suppression would only hide
+             the parent rather than resolve it. -->
+        <file name="tests/Stubs/AppHost/Controller/GenericHealthController.php" />
+        <file name="tests/Stubs/AppHost/Controller/GenericMetricsController.php" />
+        <file name="tests/Stubs/AppHost/Observability/ManifestLoader.php" />
+        <file name="tests/Stubs/AppHost/Observability/HealthCheckExecutor.php" />
+        <file name="tests/Stubs/AppHost/Observability/MetricsEngine.php" />
     </stubs>
     <issueHandlers>
         <UndefinedDocblockClass errorLevel="suppress"/>

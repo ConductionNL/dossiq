@@ -5,6 +5,7 @@
     {
       "slug": "omgevingsvergunning-bouwactiviteit",
       "title": "Omgevingsvergunning Bouwactiviteit",
+      "category": "Vergunningen",
       "x-index": {
         "columns": [
           "identifier",
@@ -67,6 +68,7 @@
     {
       "slug": "sloopmelding",
       "title": "Sloopmelding",
+      "category": "Vergunningen",
       "description": "Melding voor sloopactiviteiten. Beoordelingstermijn 4 weken.",
       "processingDeadline": "P28D",
       "suspensionAllowed": false,
@@ -94,6 +96,7 @@
     {
       "slug": "toezichtzaak-bouw",
       "title": "Toezichtzaak Bouw",
+      "category": "Toezicht en handhaving",
       "x-index": {
         "columns": [
           "identifier",
@@ -140,6 +143,7 @@
     {
       "slug": "toezichtzaak-milieu",
       "title": "Toezichtzaak Milieu",
+      "category": "Toezicht en handhaving",
       "description": "Toezichtzaak voor milieuactiviteiten (periodiek of incidenteel).",
       "confidentiality": "intern",
       "origin": "ambtshalve",
@@ -164,6 +168,7 @@
     {
       "slug": "handhavingszaak",
       "title": "Handhavingszaak",
+      "category": "Toezicht en handhaving",
       "x-index": {
         "columns": [
           "identifier",
@@ -218,6 +223,7 @@
     {
       "slug": "invorderingszaak",
       "title": "Invorderingszaak",
+      "category": "Toezicht en handhaving",
       "description": "Invorderingszaak voor verbeurde dwangsommen.",
       "confidentiality": "zaakvertrouwelijk",
       "origin": "ambtshalve",

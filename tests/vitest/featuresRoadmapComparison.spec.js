@@ -54,6 +54,29 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 			return h('div')
 		},
 	},
+	// The tab strip and its panels: a panel renders its body only while its
+	// tab is the active one, which is what the section switch below relies on.
+	CnTabs: {
+		name: 'CnTabs',
+		render() {
+			return h('div', { role: 'tablist' }, this.$slots.default?.())
+		},
+	},
+	CnTab: {
+		name: 'CnTab',
+		props: {
+			title: { type: String, default: '' },
+			active: { type: Boolean, default: false },
+			lazy: { type: Boolean, default: false },
+		},
+		render() {
+			return h(
+				'div',
+				{ role: 'tabpanel' },
+				this.active ? this.$slots.default?.() : [],
+			)
+		},
+	},
 }))
 
 const { default: data } = await import('../../src/data/capabilityComparison.json')

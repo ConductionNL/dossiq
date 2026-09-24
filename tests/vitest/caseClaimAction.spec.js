@@ -15,7 +15,7 @@
  *  - an `api-call` needs a route to exist behind its url, or the click is a
  *    404 toast;
  *  - an index row action knows only `navigate`, `open-page` and a handler
- *    NAME out of customComponents, so the row action is asserted to resolve
+ *    NAME out of the registry, so the row action is asserted to resolve
  *    to a function that is actually exported;
  *  - an icon that is not registered in `src/icons.js` renders no glyph at
  *    all, so both new icons are asserted to be registered.
@@ -44,10 +44,7 @@ const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const registrySource = fs.readFileSync(
-	path.join(ROOT, 'src', 'customComponents.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const routes = fs.readFileSync(path.join(ROOT, 'appinfo', 'routes.php'), 'utf8')
 
 /**
@@ -94,14 +91,18 @@ describe('the case page offers Claim and Release', () => {
 		expect(release.label).toBe('Release')
 	})
 
-	it('offers both on an open case only', () => {
-		for (const id of ['case-claim', 'case-release']) {
-			expect(action(headerActions, id).visibleWhen).toEqual({
-				field: 'isFinalStatus',
-				op: 'neq',
-				value: true,
-			})
-		}
+	it('offers both on an open case only, and never the two together', () => {
+		const open = { field: 'isFinalStatus', op: 'neq', value: true }
+
+		// Claim where CaseAssignmentService::claim() would accept it: nobody
+		// holds the case. Release where release() would: the reader holds it.
+		// The two assignee clauses cannot both hold, which is the whole point.
+		expect(action(headerActions, 'case-claim').visibleWhen).toEqual({
+			all: [open, { field: 'assignee', op: 'empty' }],
+		})
+		expect(action(headerActions, 'case-release').visibleWhen).toEqual({
+			all: [open, { field: 'assignee', op: 'eq', value: '@me' }],
+		})
 	})
 
 	it('leaves the refusal sentence to the server', () => {
@@ -146,14 +147,16 @@ describe('the queue and the case list offer Claim on a row', () => {
 
 	it('resolves that handler to a function in the custom-component registry', () => {
 		// Asserted against the SOURCE rather than by importing the module:
-		// customComponents.js imports every surviving page and tab, so a unit
-		// test that imported it would mount the component tree to reach one
-		// function. The imported `claimCase` below is the same function this
-		// file registers, and the test above pins the manifest to that name.
+		// registry.js imports every surviving page and tab, so a unit test that
+		// imported it would mount the component tree to reach one function. The
+		// imported `claimCase` below is the same function this file registers,
+		// and the test above pins the manifest to that name.
 		expect(registrySource).toContain(
 			"import { claimCase } from './utils/caseClaim.js'",
 		)
-		expect(registrySource).toMatch(/\n\tclaimCase,\n/)
+		expect(registrySource).toMatch(
+			/\n\tclaimCase: \{\n\t\tkind: 'handler',\n\t\thandler: claimCase,\n/,
+		)
 		expect(typeof claimCase).toBe('function')
 	})
 })

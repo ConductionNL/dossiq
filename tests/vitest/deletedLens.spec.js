@@ -26,10 +26,7 @@ const manifest = JSON.parse(
 	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
 )
 const iconsSource = fs.readFileSync(path.join(ROOT, 'src', 'icons.js'), 'utf8')
-const customComponents = fs.readFileSync(
-	path.join(ROOT, 'src', 'customComponents.js'),
-	'utf8',
-)
+const registrySource = fs.readFileSync(path.join(ROOT, 'src', 'registry.js'), 'utf8')
 const register = JSON.parse(
 	fs.readFileSync(
 		path.join(ROOT, 'lib', 'Settings', 'dossiq_register.json'),
@@ -53,7 +50,7 @@ describe('the deleted lens', () => {
 	})
 
 	it('has its component registered, so the route renders something', () => {
-		expect(customComponents).toContain('DeletedCasesView')
+		expect(registrySource).toContain('DeletedCasesView')
 		expect(
 			fs.existsSync(
 				path.join(ROOT, 'src', 'views', 'cases', 'DeletedCasesView.vue'),

@@ -5,6 +5,7 @@
         {
             "slug": "omgevingsvergunning-kleinbouw",
             "title": "Omgevingsvergunning kleine bouwactiviteit",
+            "category": "Vergunningen",
             "description": "Kleine bouwactiviteit onder de Omgevingswet, afgehandeld met de standaard casebehandeling-flow: volledigheidstoets, twee inhoudelijke besluiten, een voorbereidende taak en een definitief besluit van de planningscommissie.",
             "processingDeadline": "P56D",
             "suspensionAllowed": true,

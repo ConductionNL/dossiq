@@ -39,7 +39,7 @@
 			<NcTextField
 				v-model="query"
 				data-testid="case-merge-search"
-				:label="t('dossiq', 'Find the case to merge into')"
+				:label="t('dossiq', 'Search the case to merge into')"
 				:placeholder="t('dossiq', 'Case number or a word from the title')"
 				@update:modelValue="search" />
 
@@ -51,6 +51,7 @@
 					<NcButton
 						:data-testid="`case-merge-option-${option.id}`"
 						:variant="option.id === survivorId ? 'primary' : 'tertiary'"
+						alignment="start"
 						wide
 						@click="survivorId = option.id">
 						{{ option.label }}

@@ -250,9 +250,6 @@
     }
   },
   "src/views/MyWorkCards.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 2
-    },
     "@typescript-eslint/no-unused-vars": {
       "count": 3
     }
@@ -646,9 +643,6 @@
     }
   },
   "src/views/workflow-board/WorkflowBoard.vue": {
-    "@nextcloud/no-deprecated-library-props": {
-      "count": 3
-    },
     "no-console": {
       "count": 3
     }

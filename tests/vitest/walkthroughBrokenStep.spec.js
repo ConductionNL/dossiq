@@ -57,7 +57,7 @@ function scan(tours, known) {
 	for (const tour of tours) {
 		for (const step of tour.steps ?? []) {
 			const kind = step.target?.kind ?? ''
-			const ref = step.target?.ref ?? ''
+			const ref = step.target?.ref ?? step.target?.selector ?? ''
 			if (kind !== 'page' && kind !== 'nav-item') {
 				out.push({
 					step: step.id,
@@ -121,17 +121,18 @@ describe('the scan can actually see a broken step', () => {
 		expect(missing[0].step).toBe(tours[0].steps[1].id)
 	})
 
-	it('classifies an element target as unverifiable rather than broken', () => {
+	it('classifies a DOM target as unverifiable rather than broken', () => {
 		const unverifiable = scan(tours, surfaces()).filter(
 			(step) => step.state === 'unverifiable',
 		)
 
 		expect(
 			unverifiable.length,
-			'no element target was classified, so the scan did not run',
+			'no DOM target was classified, so the scan did not run',
 		).toBeGreaterThan(0)
 		for (const step of unverifiable) {
-			expect(step.kind).toBe('element')
+			// Anything the manifest cannot resolve: a test id or a raw selector.
+			expect(['page', 'nav-item']).not.toContain(step.kind)
 		}
 	})
 })

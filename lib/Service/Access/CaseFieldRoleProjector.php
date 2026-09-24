@@ -96,6 +96,12 @@ class CaseFieldRoleProjector {
 	public const AUTHORIZATION_KEY = 'authorization';
 
 	/**
+	 * The same block as the register JSON spells it: the import refuses an
+	 * unrecognised key unless it is `x-`-prefixed.
+	 */
+	public const DECLARED_AUTHORIZATION_KEY = 'x-openregister-authorization';
+
+	/**
 	 * OpenRegister's schema mapper, by the name the container knows it under.
 	 */
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
@@ -204,7 +210,7 @@ class CaseFieldRoleProjector {
 
 		$base = [];
 		foreach ($properties as $field => $definition) {
-			$block = ($definition[self::AUTHORIZATION_KEY] ?? null);
+			$block = ($definition[self::DECLARED_AUTHORIZATION_KEY] ?? $definition[self::AUTHORIZATION_KEY] ?? null);
 			if (is_array($block) === true && $block !== []) {
 				$base[(string)$field] = $block;
 			}

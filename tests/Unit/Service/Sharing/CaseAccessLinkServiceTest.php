@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\Sharing\FederatedCaseShareService;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Dossiq\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
+use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -278,7 +279,7 @@ class CaseAccessLinkServiceTest extends TestCase {
 		$this->service = new CaseSharingService(
 			settingsService: $settings,
 			gateway: $gateway,
-			accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
+			accessPolicy: new CaseAccessPolicy($settings, $gateway, $this->createMock(IGroupManager::class), $logger),
 			accessLinks: $this->accessLinks,
 			linkShares: $this->linkShares,
 			federatedShares: new FederatedCaseShareService(

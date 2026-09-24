@@ -11576,9 +11576,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "omgevingsvergunning"
                 },
                 "title": "Omgevingsvergunning",
+                "category": "Vergunningen",
                 "identifier": "omgevingsvergunning",
                 "description": "Aanvraag van een omgevingsvergunning conform de Omgevingswet (bouwen, slopen, kappen, milieubelastende activiteiten of afwijken van het omgevingsplan).",
                 "purpose": "Behandeling van aanvragen voor activiteiten in de fysieke leefomgeving",
@@ -11598,9 +11600,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "subsidieaanvraag"
                 },
                 "title": "Subsidieaanvraag",
+                "category": "Subsidies",
                 "identifier": "subsidieaanvraag",
                 "description": "Aanvraag van een gemeentelijke subsidie conform de Algemene Subsidieverordening (ASV).",
                 "purpose": "Beoordeling en toekenning van subsidieaanvragen",
@@ -11620,9 +11624,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "klacht-behandeling"
                 },
                 "title": "Klacht behandeling",
+                "category": "Klachten en meldingen",
                 "identifier": "klacht-behandeling",
                 "description": "Behandeling van een klacht over een gedraging van de gemeente conform Awb hoofdstuk 9.",
                 "purpose": "Behandeling van klachten van burgers en bedrijven",
@@ -11642,9 +11648,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "melding-openbare-ruimte"
                 },
                 "title": "Melding openbare ruimte",
+                "category": "Klachten en meldingen",
                 "identifier": "melding-openbare-ruimte",
                 "description": "Melding van een probleem in de openbare ruimte (kapotte lantaarn, losse stoeptegel, zwerfafval, e.d.).",
                 "purpose": "Snelle afhandeling van meldingen over de openbare ruimte",
@@ -12358,9 +12366,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "leverancier-contractverlenging-verzoek"
                 },
                 "title": "Leverancier contractverlenging verzoek",
+                "category": "Inkoop en leveranciers",
                 "description": "Verzoek tot verlenging van een lopend contract met een leverancier",
                 "purpose": "Behandelen van een contractverlenging-verzoek van een leverancier"
             },
@@ -12368,9 +12378,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "leverancier-iban-wijziging"
                 },
                 "title": "Leverancier IBAN-wijziging",
+                "category": "Inkoop en leveranciers",
                 "description": "Wijziging van het bankrekeningnummer van een leverancier (4-ogen procedure)",
                 "purpose": "Verwerken van een IBAN-wijziging onder 4-ogen-controle"
             },
@@ -12378,9 +12390,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "leverancier-accreditatie-verificatie"
                 },
                 "title": "Leverancier accreditatie verificatie",
+                "category": "Inkoop en leveranciers",
                 "description": "Verificatie van accreditaties van een leverancier",
                 "purpose": "Controle van geldigheid van leveranciersaccreditaties"
             },
@@ -12388,9 +12402,11 @@
                 "@self": {
                     "register": "dossiq",
                     "schema": "caseType",
+                    "version": "1.1.0",
                     "slug": "leverancier-mutatie"
                 },
                 "title": "Leverancier mutatie",
+                "category": "Inkoop en leveranciers",
                 "description": "Algemene wijziging van leveranciersgegevens",
                 "purpose": "Verwerken van wijzigingen in masterdata van een leverancier"
             },

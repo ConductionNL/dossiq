@@ -107,6 +107,7 @@ class StubbedRoleSearchAuthorizer extends DossiqCaseAuthorizer {
 		int|string $register,
 		int|string $schema,
 		array $filters = [],
+		bool $unscoped = false,
 	): array {
 		$this->capturedFilters = $filters;
 		if ($this->roleRows instanceof \Throwable) {

@@ -186,6 +186,16 @@ function newerSchemaAccepts(instancePath, property) {
 		)
 	) {
 		def = schema.$defs.action
+	} else if (
+		segments.length === 6
+		&& segments[0] === 'pages'
+		&& segments[2] === 'config'
+		&& ['headerActions', 'actions', 'bulkActions', 'newActions'].includes(
+			segments[3],
+		)
+		&& segments[5] === 'visibleWhen'
+	) {
+		def = schema.$defs.visibleWhen
 	}
 
 	if (!def || !def.properties) {
@@ -363,6 +373,15 @@ function main() {
 	// error is a lag only when the newer schema this repo vendors actually
 	// declares that property. So it cannot become a blanket excuse, and it
 	// stops being a lag by itself the day the release lands.
+	//
+	// 🔴 `savedViewPlaces` above is kept because it is the MEASURED example,
+	// but the key itself was later removed from the vocabulary (schema 2.40.0:
+	// a saved view is a lens applied onto the page's own address, not a place).
+	// That is the third case, and this classifier cannot see it: a REMOVAL the
+	// vendored copy has not caught up with is the same shape as a lag, so a
+	// page still declaring a retired key would be forgiven and reported as
+	// PASS. Re-vendoring is the only thing that tells them apart, and
+	// `tests/vitest/validateManifestLag.spec.js` is what insists on it.
 	const lagged = []
 	const real = []
 	for (const err of validate.errors || []) {

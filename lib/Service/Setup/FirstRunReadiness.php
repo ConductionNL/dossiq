@@ -164,7 +164,9 @@ class FirstRunReadiness {
 			foreach (($tour['steps'] ?? []) as $step) {
 				$target = ($step['target'] ?? []);
 				$kind = (string)($target['kind'] ?? '');
-				$ref = (string)($target['ref'] ?? '');
+				// A `selector` target carries no ref, so the report would name
+				// nothing at all for it.
+				$ref = (string)($target['ref'] ?? $target['selector'] ?? '');
 
 				if (in_array($kind, ['page', 'nav-item'], true) === false) {
 					$broken[] = [

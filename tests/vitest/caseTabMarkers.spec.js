@@ -204,15 +204,21 @@ describe('the marker is not the unread badge', () => {
 	})
 
 	it('is drawn in its own strip, below the one the unread counts use', () => {
-		const unread = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-unread',
+		// Both strips share ONE grid row now (CaseBannerStack) because each is a
+		// root v-if and an own row stayed reserved when empty. They are still two
+		// SEPARATE components in a fixed order — that is what this asserts, and it
+		// is the point: a marker survives opening the panel it names, an unread
+		// badge does not, so they must not merge into one strip.
+		const stack = fs.readFileSync(
+			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
+			'utf8',
 		)
-		const attention = caseDetail.config.layout.find(
-			(l) => l.widgetId === 'case-attention',
-		)
+		const unreadAt = stack.indexOf('<CaseUnreadPanel')
+		const attentionAt = stack.indexOf('<CaseAttentionPanel')
 
-		expect(unread.widgetId).not.toBe(attention.widgetId)
-		expect(unread.gridY).toBeLessThan(attention.gridY)
+		expect(unreadAt).toBeGreaterThan(-1)
+		expect(attentionAt).toBeGreaterThan(-1)
+		expect(unreadAt).toBeLessThan(attentionAt)
 	})
 })
 

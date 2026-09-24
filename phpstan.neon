@@ -67,6 +67,11 @@ parameters:
         # includes with their own class_exists guards, and widening the scope
         # is how the HttpClientStubs shadowing incident happened.
         - tests/Stubs/AppHost/Service
+        # The same plane's observability controllers. HealthController and
+        # MetricsController EXTEND these, and phpstan refuses to ignore
+        # "extends unknown class" at all, so a scanned declaration is the only
+        # way to resolve them.
+        - tests/Stubs/AppHost/Controller
 
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse

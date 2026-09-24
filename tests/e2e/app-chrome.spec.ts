@@ -295,7 +295,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// wizard does open. global-setup.ts does not settle either one.
 		await dismissSupportDialog(page)
 
-		await page.getByRole('button', { name: 'How dossiq compares' }).click()
+		await page.getByRole('tab', { name: 'How dossiq compares' }).click()
 
 		const comparison = page.locator('.features-roadmap__comparison')
 		await expect(comparison).toBeVisible({ timeout: 15_000 })

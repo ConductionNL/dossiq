@@ -648,8 +648,10 @@ describe('Inspect, for an administrator', () => {
 		expect(headerAction('case-inspect-runs').target).toContain(
 			'/apps/openregister/#/flows/runs',
 		)
+		// `{objectId}`, the spelling the library interpolates. `{id}` resolved to
+		// nothing and reached the address bar as those four characters.
 		expect(headerAction('case-inspect-runs').target).toContain(
-			'subjectUuid={id}',
+			'subjectUuid={objectId}',
 		)
 	})
 
@@ -814,16 +816,41 @@ describe('Archive and Restore on the case page', () => {
 		expect(strip).toContain('v-if="archived"')
 	})
 
-	it('registers the strip by widget TYPE, which is the key that has to answer', () => {
-		// A grid item resolves its renderer from `cnRegistry[widget.type]`
-		// when the app supplies no `widget-<id>` slot, and dossiq supplies
-		// none: a type nothing answers to draws an empty panel with no warning.
-		expect(registrySource).toContain("'case-archived': {")
-		expect(registrySource).toContain('@custom-widget-ratchet exclude')
-		const widget = caseDetail().config.widgets.find(
-			(entry) => entry.id === 'case-archived',
+	it('leads the banner stack, which is the one row the page mounts the strips in', () => {
+		// The strips share ONE grid row (CaseBannerStack): a root v-if strip in
+		// a row of its own stays reserved when it renders nothing, and this one
+		// is empty on almost every case. It comes FIRST because it changes how
+		// everything under it reads: a record to consult, not work to do.
+		const stack = fs.readFileSync(
+			path.join(ROOT, 'src', 'components', 'case', 'CaseBannerStack.vue'),
+			'utf8',
 		)
-		expect(widget.type).toBe('case-archived')
+		const archived = stack.indexOf('<CaseArchivedStrip')
+		expect(
+			archived,
+			'the archived strip is missing from the stack',
+		).toBeGreaterThan(-1)
+		expect(archived).toBeLessThan(stack.indexOf('<CaseFavouriteStrip'))
+		// `objectData` and not `object`, for the reason the strip itself gives.
+		expect(stack).toContain('<CaseArchivedStrip :objectData="objectData" />')
+
+		const banners = caseDetail().config.layout.find(
+			(entry) => entry.widgetId === 'case-banner-stack',
+		)
+		const panels = caseDetail().config.layout.find(
+			(entry) => entry.widgetId === 'case-panels',
+		)
+		expect(banners, 'the banner row is missing from the layout').toBeTruthy()
+		expect(banners.gridY).toBeLessThan(panels.gridY)
+	})
+
+	it('registers the strip by widget TYPE, which is the key that has to answer', () => {
+		// The type stays registered although CaseDetail mounts it through the
+		// stack: it is still a valid placement, and `cnRegistry[widget.type]`
+		// is what any grid item naming it would resolve.
+		expect(registrySource).toContain("'case-archived': {")
+		expect(registrySource).toContain('component: CaseArchivedStrip,')
+		expect(registrySource).toContain('@custom-widget-ratchet exclude')
 		expect(iconsSource).toContain('\n\tArchiveOutline,\n')
 	})
 

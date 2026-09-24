@@ -665,6 +665,16 @@ if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardCont
 	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericDashboardController.php';
 }
 
+// Observability plane (ADR-006): HealthController and MetricsController extend
+// these, so a reflection over either controller loads the parent or dies.
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericHealthController') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericHealthController.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericMetricsController') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericMetricsController.php';
+}
+
 // Store plane (ADR-080): OpenRegister owns discovery, dossiq owns install.
 // StoreController injects both types, so both have to resolve when the
 // openregister runtime is absent. The stubs answer "not_configured" and

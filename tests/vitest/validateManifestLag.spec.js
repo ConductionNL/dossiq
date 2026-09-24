@@ -20,12 +20,23 @@
  * So the classifier resolves the INSTANCE PATH to a definition and asks whether
  * that shape declares the property. These tests are what keep it that way.
  *
- * 🔑 THE LAG IS OVER, AND THAT IS WHY THIS FILE CHANGED. `@conduction/
- * nextcloud-vue` 3.4.0 ships schema 2.37.0, which declares `savedViewPlaces`,
- * so the installed schema has caught up and then overtaken the copy this repo
- * vendored at 2.34.0. The classifier retires itself by design, exactly as its
- * own note said it would: an error is forgiven only while the vendored schema
- * declares a property the installed one does not, and now none does.
+ * ONE LAG ENDED AND ANOTHER BEGAN, WHICH IS THE POINT. `@conduction/
+ * nextcloud-vue` 3.4.0 ships schema 2.37.0, which declares `savedViewPlaces`
+ * and retired the lag this file was built around. Schema 2.39.0 then added
+ * `all`/`any` to `visibleWhen`, which the claim and release gates on the case
+ * detail page use and no release carries yet, so the vendored copy moved to
+ * 2.39.0 and those two errors are forgiven until it does. Whether anything is
+ * pending is READ from the installed schema below, never written down, so this
+ * retires itself the day the release lands.
+ *
+ * 🔴 AND THEN THE KEY WAS REMOVED, which is the case the classifier CANNOT
+ * tell apart on its own. Schema 2.40.0 drops `savedViewPlaces` (a saved view
+ * is a lens, not a place). A removal the vendored copy has not caught up with
+ * looks exactly like a lag — vendored declares it, installed does not — so
+ * `check:manifest` would print PASS over a page still declaring a key the
+ * library refuses. Nothing in the classifier can fix that, because the two
+ * situations are the same shape. The version comparison below is the only
+ * guard: re-vendor, and the removal stops reading as a lag.
  *
  * 🔴 A STALE VENDORED COPY FORGIVES A REMOVAL. Once the installed schema is
  * the NEWER of the two, a property the library has since DROPPED is still
@@ -117,15 +128,18 @@ describe('the vendored schema never falls behind the installed one', () => {
 		).toBeGreaterThanOrEqual(0)
 	})
 
-	it('has the page key whose release ended the lag', () => {
+	it('has dropped the page key the mechanism was built around, in both copies', () => {
 		const vendored = JSON.parse(fs.readFileSync(VENDORED, 'utf8'))
 		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
 
-		// `savedViewPlaces` is the property the whole mechanism was built
-		// around. The installed library now declares it, which is what
-		// retired the lag, and the vendored copy must not have lost it.
-		expect(vendored.$defs.page.properties).toHaveProperty('savedViewPlaces')
-		expect(installed.$defs.page.properties).toHaveProperty('savedViewPlaces')
+		// `savedViewPlaces` was the worked example this whole file was built
+		// around: first as a lag (vendored declared it, no release did), then
+		// as the lag that ended. Schema 2.40.0 REMOVES it, which is the third
+		// state and the dangerous one — a removal the vendored copy has not
+		// caught up with reads as a lag, and the classifier forgives it. Both
+		// copies must have lost it, or a page still declaring it passes.
+		expect(vendored.$defs.page.properties).not.toHaveProperty('savedViewPlaces')
+		expect(installed.$defs.page.properties).not.toHaveProperty('savedViewPlaces')
 	})
 
 	it('refuses `_note` on an action in BOTH, which is why that error is real', () => {
@@ -145,17 +159,29 @@ describe('check:manifest tells a lag from a defect', () => {
 	// SPAWNS the validator, and Ajv compiling the manifest schema over a
 	// 62-page manifest is several seconds of real work per run. The default
 	// was already being cleared by a margin that shrank with the manifest.
-	it('the shipped manifest passes with nothing forgiven', () => {
+	it('the shipped manifest passes, forgiving only what the library lags', () => {
 		const out = execFileSync('node', [VALIDATOR], { encoding: 'utf8' })
 
 		expect(out).toContain('PASS')
 
-		// It used to assert the opposite: that the output NAMED a forgiven
-		// error. Now that the release has landed there is nothing to forgive,
-		// and a manifest that passes on its own merits is the stronger
-		// result. Asserting the absence keeps it that way: a new lag has to
-		// be looked at rather than inherited.
-		expect(out).not.toContain('pending a library release')
+		// Derived, not pinned: the manifest's claim and release gates use
+		// `visibleWhen.all`, so a release that does not declare it yet is a
+		// lag and one that does leaves nothing to forgive. Asserting the
+		// absence in that second case is what keeps a NEW lag from being
+		// inherited without anybody looking at it.
+		const installed = JSON.parse(fs.readFileSync(INSTALLED, 'utf8'))
+		const declaresAll = Object.hasOwn(
+			installed.$defs.visibleWhen.properties || {},
+			'all',
+		)
+
+		if (declaresAll) {
+			expect(out).not.toContain('pending a library release')
+			return
+		}
+
+		expect(out).toContain('pending a library release')
+		expect(out).toContain('visibleWhen uses "all"')
 	}, 30000)
 
 	it('a defect on a shape the newer schema also refuses still fails', () => {

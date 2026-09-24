@@ -83,7 +83,7 @@ class SchemaAnnotationReconciler {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: Could not access OpenRegister SchemaMapper for declarative reconcile',
-				['exception' => $e->getMessage()]
+				['exception' => $e]
 			);
 			return 0;
 		}
@@ -253,13 +253,24 @@ class SchemaAnnotationReconciler {
 			return 0;
 		}
 
-		try {
+		// OpenRegister trusts a null user under CLI or a SystemOperationContext;
+		// the web updater is neither, so an unelevated write is denied in silence.
+		$write = function () use ($schema, $schemaMapper, $merged): void {
 			$schema->setConfiguration($merged);
 			$schemaMapper->update($schema);
+		};
+
+		try {
+			if (class_exists(\OCA\OpenRegister\Service\SystemOperationContext::class) === false) {
+				$write();
+				return 1;
+			}
+
+			\OCA\OpenRegister\Service\SystemOperationContext::run($write);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq: Failed to reconcile declarative configuration for schema ' . $slug,
-				['exception' => $e->getMessage()]
+				['exception' => $e]
 			);
 			return 0;
 		}

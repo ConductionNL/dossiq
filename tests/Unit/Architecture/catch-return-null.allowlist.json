@@ -1,5 +1,5 @@
 {
-  "ceiling": 270,
+  "ceiling": 269,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -21,7 +21,8 @@
     "2026-09-18, openspec/changes/decision-outcomes-on-the-case: two sites arrived with the approval gate and the admissibility verdict. Both turn an unreadable case type into a REFUSAL rather than a write, and each logs at warning naming the case type. Neither is a fail-open: the gate answers 503 and the verdict is refused as undeclared. A third candidate was converted rather than listed, CaseRemedy::caseTypeOf, which throws, because a besluit printed with no bezwaarclausule on the strength of a failed read is a decision somebody cannot object to in time.",
     "2026-09-18, the parity/round2 quality sweep: eighteen sites arrived with the case merge, the split and its incidents, the custody chain and its takeover, the consent gate, pipelinq's party-kind acceptance and the working-day roll. Eleven are degradations of OpenRegister, pipelinq or the organisation calendar being absent or answering badly, and each logs at warning naming what it could not read; seven are read misses on a stored value, five of them a date the reader reports as undated rather than inventing a moment. None is a refusal: every rule these changes enforce throws RefusedException and is translated by its controller, which is why the merge's, the split's and the hand-off's own refusals are nowhere on this list. The ceiling went 238 to 269, and only eighteen of those thirty-one are this entry's: the file already held 251 entries against a ceiling of 238, because thirteen earlier changes on this branch added their sites and left the number alone. That is why the ceiling assertion was red before any of the eighteen were written, and it is the reason the number is restated here rather than incremented.",
     "2026-09-19: the ceiling moved UP, 269 -> 271, for the first time, and that is a deliberate exception to \"only goes down\" rather than an oversight. lib/Service/Termijn/WorkingDayRoll.php arrived with terms-on-the-engine-calendar (#3009) carrying two catches whose null IS the method's declared return contract, not a swallowed failure. The alternative was to make a calendar outage fatal to every deadline in the app. Both are classed degradation and both log at warning. Nothing else was added, and the rule stands for everything that is not a documented nullable contract.",
-    "2026-09-19: the ceiling went 271 -> 270. `Email/NextcloudMailGateway::unpackSynchronisation` no longer has a catch of its own: its three reads of the Mail event go through the class's existing `call()` helper, which already carries the `method_exists` guard and the throw handling, and the method now logs at warning when the event cannot be read at all rather than only when a getter threw."
+    "2026-09-19: the ceiling went 271 -> 270. `Email/NextcloudMailGateway::unpackSynchronisation` no longer has a catch of its own: its three reads of the Mail event go through the class's existing `call()` helper, which already carries the `method_exists` guard and the throw handling, and the method now logs at warning when the event cannot be read at all rather than only when a getter threw.",
+    "2026-09-21, merging feature/bug-fixes: the ceiling went 270 -> 269. `Besluitvorming/TemplateBundleSeeder::findByIdentifier` throws instead of answering null, so a failed lookup is no longer read as an absent case type (fix(seed): a seed step sees the case types it created)."
   ],
   "classes": {
     "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -189,13 +190,6 @@
       "occurrence": 1,
       "class": "read-miss",
       "reason": "`createObject()` answers `return null` when the read fails; the catch logs at error (\"Dossiq: besluitvorming seed object create failed\"), so a failed read and an absent record are the same answer."
-    },
-    {
-      "file": "lib/Service/Besluitvorming/TemplateBundleSeeder.php",
-      "method": "findByIdentifier",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`findByIdentifier()` answers `return null` when the read fails; the catch logs at debug (\"Dossiq: besluitvorming idempotency lookup failed\"), so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Bezwaar/AdvisoryCommitteeService.php",

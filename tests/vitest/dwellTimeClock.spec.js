@@ -161,13 +161,18 @@ describe('the page declares the by-handler widget', () => {
 	})
 
 	it('registers the component, so the slot resolves', () => {
-		const custom = fs.readFileSync(
-			path.join(ROOT, 'src', 'customComponents.js'),
+		// src/registry.js, not the customComponents map this used to read:
+		// that map is retired, and a `kind: 'widget'` entry is what the
+		// renderer resolves a slot name against now.
+		const registry = fs.readFileSync(
+			path.join(ROOT, 'src', 'registry.js'),
 			'utf8',
 		)
-		expect(custom).toContain(
+		expect(registry).toContain(
 			"import PmDwellByAssigneeWidget from './views/processMining/PmDwellByAssigneeWidget.vue'",
 		)
-		expect(/^\tPmDwellByAssigneeWidget,/m.test(custom)).toBe(true)
+		expect(registry).toMatch(
+			/PmDwellByAssigneeWidget: \{\s*\n\s*kind: 'widget',/,
+		)
 	})
 })
