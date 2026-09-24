@@ -124,6 +124,8 @@ export default {
 		 * Hand the picked column name to the board.
 		 *
 		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
 		confirm() {
 			if (this.picked === null) {
