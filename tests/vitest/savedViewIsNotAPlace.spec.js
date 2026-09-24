@@ -42,16 +42,21 @@ const schema = JSON.parse(
 const pageById = (id) => manifest.pages.find((page) => page.id === id)
 
 describe('no page declares that its saved views are places', () => {
-	it.each(['Cases', 'Queue'])('%s keeps its saved views and drops the route', (id) => {
-		const page = pageById(id)
-		expect(page.type).toBe('index')
-		expect(page.savedViewPlaces).toBeUndefined()
-		// The dropdown stays. Only the address layer went.
-		expect(page.config.allowSavedViews).toBe(true)
-	})
+	it.each(['Cases', 'Queue'])(
+		'%s keeps its saved views and drops the route',
+		(id) => {
+			const page = pageById(id)
+			expect(page.type).toBe('index')
+			expect(page.savedViewPlaces).toBeUndefined()
+			// The dropdown stays. Only the address layer went.
+			expect(page.config.allowSavedViews).toBe(true)
+		},
+	)
 
 	it('declares the key on no page at all', () => {
-		expect(manifest.pages.filter((page) => page.savedViewPlaces !== undefined)).toEqual([])
+		expect(
+			manifest.pages.filter((page) => page.savedViewPlaces !== undefined),
+		).toEqual([])
 	})
 
 	it('leaves Tasks out of saved views entirely, because its list is the engine inbox', () => {
@@ -72,7 +77,12 @@ describe('a fresh install has the navigation it had before views were places', (
 		// `__view` was the suffix buildManifestRoutes gave a view route. No
 		// such route is registered any more, so an entry naming one would
 		// render and go nowhere.
-		expect(entries.filter((item) => typeof item.route === 'string' && item.route.endsWith('__view'))).toEqual([])
+		expect(
+			entries.filter(
+				(item) =>
+					typeof item.route === 'string' && item.route.endsWith('__view'),
+			),
+		).toEqual([])
 	})
 
 	it('keeps both page entries top level, with no children added', () => {

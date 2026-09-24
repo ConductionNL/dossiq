@@ -207,7 +207,12 @@ describe('grab-to-pan', () => {
 })
 
 /** A leftward flick: the pointer travels 100px in 32ms, so the row runs right. */
-const FAST = [[0, 300], [16, 250], [32, 200], [48, 150]]
+const FAST = [
+	[0, 300],
+	[16, 250],
+	[32, 200],
+	[48, 150],
+]
 
 /**
  * Flick a row of its own and let it run out, on a row long enough not to clamp.
@@ -257,8 +262,18 @@ describe('the glide after the release', () => {
 	it('throws a hard flick further than a brisk one', () => {
 		// Both of these are ordinary mouse speeds, and both used to land on the
 		// same ceiling, which made every flick above walking pace feel identical.
-		const brisk = glideDistance([[0, 700], [16, 604], [32, 508], [48, 412]])
-		const hard = glideDistance([[0, 700], [16, 508], [32, 316], [48, 124]])
+		const brisk = glideDistance([
+			[0, 700],
+			[16, 604],
+			[32, 508],
+			[48, 412],
+		])
+		const hard = glideDistance([
+			[0, 700],
+			[16, 508],
+			[32, 316],
+			[48, 124],
+		])
 
 		expect(hard).toBeGreaterThan(brisk * 1.8)
 	})
@@ -268,7 +283,12 @@ describe('the glide after the release', () => {
 		handle = attachDragToScroll(el)
 
 		// Rightward, so the row runs back towards its own left edge.
-		flick(el, [[0, 100], [16, 150], [32, 200], [48, 250]])
+		flick(el, [
+			[0, 100],
+			[16, 150],
+			[32, 200],
+			[48, 250],
+		])
 		expect(el.scrollLeft).toBe(0)
 
 		clock.tick(16)
@@ -281,7 +301,12 @@ describe('the glide after the release', () => {
 		const { el } = container()
 		handle = attachDragToScroll(el)
 
-		flick(el, [[0, 300], [100, 280], [300, 278], [400, 277]])
+		flick(el, [
+			[0, 300],
+			[100, 280],
+			[300, 278],
+			[400, 277],
+		])
 
 		expect(el.scrollLeft).toBe(122)
 		expect(clock.pending()).toBe(0)
@@ -292,7 +317,11 @@ describe('the glide after the release', () => {
 		handle = attachDragToScroll(el)
 
 		// One fast move, then a pause longer than the window the speed is read over.
-		flick(el, [[0, 300], [16, 200], [316, 200]])
+		flick(el, [
+			[0, 300],
+			[16, 200],
+			[316, 200],
+		])
 
 		expect(el.scrollLeft).toBe(200)
 		expect(clock.pending()).toBe(0)

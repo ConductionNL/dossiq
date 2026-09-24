@@ -116,7 +116,10 @@ export function attachDragToScroll(el, options = {}) {
 		glide.position = Math.min(Math.max(wanted, 0), limit)
 		el.scrollLeft = glide.position
 
-		if (glide.position !== wanted || Math.abs(glide.velocity) < GLIDE_STOP_SPEED) {
+		if (
+			glide.position !== wanted
+			|| Math.abs(glide.velocity) < GLIDE_STOP_SPEED
+		) {
 			glide = null
 			return
 		}
@@ -216,7 +219,10 @@ export function attachDragToScroll(el, options = {}) {
 		}
 		el.scrollLeft = press.startLeft - dx
 		samples.push({ x: event.clientX, at: performance.now() })
-		while (samples.length > 1 && samples[0].at < samples[samples.length - 1].at - VELOCITY_WINDOW) {
+		while (
+			samples.length > 1
+			&& samples[0].at < samples[samples.length - 1].at - VELOCITY_WINDOW
+		) {
 			samples.shift()
 		}
 		event.preventDefault()
