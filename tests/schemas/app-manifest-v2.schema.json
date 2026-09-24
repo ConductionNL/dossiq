@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.40.0",
+	"version": "2.41.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -1380,7 +1380,7 @@
 				"ncDashboard": {
 					"type": "object",
 					"additionalProperties": false,
-					"description": "Opt-in: also publish this placement as a widget on the native Nextcloud dashboard, alongside the app's own pages. An object rather than a boolean because a Nextcloud panel is a single narrow column with its own title, icon and link, none of which the grid placement carries. Presence of this key REQUIRES a non-empty `id` on the same entry (enforced in allOf below): the host derives a permanent widget id from it, and array position is not stable across edits. Omitting the key leaves the widget visible only inside the app.",
+					"description": "Opt-in: also publish this placement as a widget on the native Nextcloud dashboard, alongside the app's own pages. An object rather than a boolean because a Nextcloud panel is a single narrow column with its own title, icon and link, none of which the grid placement carries. Presence of this key REQUIRES an `id` on the same entry (enforced in allOf below), and that id MUST be unique across the WHOLE manifest, not merely within its own page's widgets[] — Nextcloud's widget namespace is per app, so two pages both declaring id 'recent' derive one shared panel. Manifest-wide uniqueness is beyond JSON Schema; validateManifestV2 enforces it post-schema. Omitting the key leaves the widget visible only inside the app.",
 					"properties": {
 						"title": {
 							"type": "string",
@@ -1396,7 +1396,8 @@
 						},
 						"link": {
 							"type": "string",
-							"description": "In-app route the panel header links to, so a reader can open the page where the widget's full context lives."
+							"pattern": "^(?![a-zA-Z][a-zA-Z0-9+.-]*:)(?!//)\\S+$",
+							"description": "In-app route the panel header links to, so a reader can open the page where the widget's full context lives. Written the way `pages[].route` is, e.g. '/reporting' — the host resolves it against its own app root with generateUrl() and never renders it bare. A scheme ('https:', and 'javascript:' above all) and a protocol-relative '//host' are both refused: the panel is rendered by Nextcloud's dashboard, outside this app's own pages, so a manifest is not a place to hand it an offsite destination."
 						}
 					}
 				}
@@ -1404,13 +1405,12 @@
 			"allOf": [
 				{ "$ref": "#/$defs/sentinelGuardedValue" },
 				{
-					"description": "ncDashboard requires a stable id. The host derives a permanent Nextcloud widget id from `id`, and Nextcloud stores each user's chosen widgets by that id in its own namespace, which no migration of this app can reach. A widget identified by array position would move onto a different widget whenever the array is reordered, silently changing what a user sees.",
+					"description": "ncDashboard requires a stable id. The host derives a permanent Nextcloud widget id from `id`, and Nextcloud stores each user's chosen widgets by that id in its own namespace, which no migration of this app can reach. A widget identified by array position would move onto a different widget whenever the array is reordered, silently changing what a user sees. `id`'s own pattern already refuses an empty string, so requiring the key is the whole of the rule expressible here; the manifest-wide uniqueness half lives in validateManifestV2.",
 					"if": {
 						"required": ["ncDashboard"]
 					},
 					"then": {
-						"required": ["id"],
-						"properties": { "id": { "minLength": 1 } }
+						"required": ["id"]
 					}
 				},
 				{
