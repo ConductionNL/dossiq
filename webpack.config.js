@@ -68,6 +68,16 @@ webpackConfig.entry = {
 // @conduction/nextcloud-vue resolves normally from node_modules. To build
 // against a local checkout instead, `npm i ../nextcloud-vue/` (npm symlinks
 // it in) and run its own build there.
+//
+// This deliberately departs from company ADR-090 decisions 3–4 (an opt-in
+// `USE_LOCAL_LIB` with a version guard here). Which library you build against
+// is decided by the dependency itself, the pinned version or the local install,
+// which is visible in package.json and the lockfile. A shell variable is not,
+// does not work the same in every shell, and needed a version check only
+// because webpack was picking the source instead of npm. That check was itself
+// the bigger problem: a local checkout ahead of the release often still carries
+// the released version number, so the check refused it and had to be patched
+// out for every session of local library work.
 webpackConfig.resolve = {
 	extensions: ['.vue', '.js'],
 	// Resolve the symlinked local checkout from its place INSIDE this app's
