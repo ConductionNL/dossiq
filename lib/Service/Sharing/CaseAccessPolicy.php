@@ -78,9 +78,17 @@ class CaseAccessPolicy {
 	 *  - the user ID appears in `assignees` (array)
 	 *  - the user ID appears as a `createdBy` on any caseShare linked to the case
 	 *
-	 * Returns true when the case cannot be loaded (fail-safe for missing OR
-	 * config) to avoid breaking installations that have not configured the
-	 * case schema. The caller must still authenticate via IUserSession.
+	 * This gate is not read-only: it also guards `createShare`, `revokeShare`,
+	 * `initiateTransfer` and `handleTransfer`. So an admin may also mint and
+	 * revoke share links and initiate or accept a federated transfer on any
+	 * case, as an NC admin may do anything else on the instance. The admin
+	 * answer comes before the case is loaded, so for an admin a true does not
+	 * mean the case exists.
+	 *
+	 * For a non-admin, returns true when the case cannot be loaded (fail-safe
+	 * for missing OR config) to avoid breaking installations that have not
+	 * configured the case schema. The caller must still authenticate via
+	 * IUserSession.
 	 *
 	 * @param string $caseId The case UUID
 	 * @param string $userId The caller's user ID

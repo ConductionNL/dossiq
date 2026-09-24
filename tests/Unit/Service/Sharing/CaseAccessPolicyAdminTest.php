@@ -32,11 +32,18 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Sharing;
 
+use OCA\Dossiq\Controller\CaseSharingController;
+use OCA\Dossiq\Service\CaseSharingService;
+use OCA\Dossiq\Service\CaseTransferService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Sharing\CaseAccessPolicy;
 use OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway;
 use OCP\App\IAppManager;
+use OCP\AppFramework\Http;
 use OCP\IGroupManager;
+use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -92,6 +99,7 @@ final class CapFakeObjectService {
  * @covers \OCA\Dossiq\Service\Sharing\CaseAccessPolicy
  *
  * @uses \OCA\Dossiq\Service\Sharing\OpenRegisterSharingGateway
+ * @uses \OCA\Dossiq\Controller\CaseSharingController
  */
 class CaseAccessPolicyAdminTest extends TestCase {
 
@@ -214,8 +222,48 @@ class CaseAccessPolicyAdminTest extends TestCase {
 	}//end testTheAssigneeStillPasses()
 
 	/**
-	 * A case that does not exist is refused, admin or not — there is nothing to
-	 * be assigned to and nothing to load links for.
+	 * The admin answer reaches the write paths too, not only reading the links:
+	 * an admin who was never assigned mints a share link through the real
+	 * policy.
+	 *
+	 * @return void
+	 */
+	public function testAnAdminMayMintAShareOnACaseTheyWereNeverAssigned(): void {
+		$sharing = $this->createMock(CaseSharingService::class);
+		$sharing->method('canUserAccessCase')->willReturnCallback(
+			fn (string $caseId, string $userId): bool => $this->policy->canUserAccessCase($caseId, $userId)
+		);
+		$sharing->expects($this->once())
+			->method('createTokenShare')
+			->willReturn(['share' => ['id' => 'share-1'], 'url' => 'https://example.test/s/abc']);
+
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static function (string $key, mixed $default = null): mixed {
+				return ($key === 'caseId') ? 'case-1' : $default;
+			}
+		);
+
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('admin');
+		$session = $this->createMock(IUserSession::class);
+		$session->method('getUser')->willReturn($user);
+
+		$controller = new CaseSharingController(
+			request: $request,
+			caseSharingService: $sharing,
+			caseTransferService: $this->createMock(CaseTransferService::class),
+			userSession: $session,
+		);
+
+		$response = $controller->createShare();
+
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testAnAdminMayMintAShareOnACaseTheyWereNeverAssigned()
+
+	/**
+	 * A case that does not exist is refused for a non-admin — there is nothing
+	 * to be assigned to and nothing to load links for.
 	 *
 	 * @return void
 	 */
