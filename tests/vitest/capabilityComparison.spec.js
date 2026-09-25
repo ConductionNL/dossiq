@@ -65,8 +65,14 @@ import {
 // 2026-09-19 gap scan found we already had, and three the corpus had corrected
 // while this file still carried the old value. 89/89/47 became 121/69/35. The
 // other four columns did not move, for the same reason they never do.
+//
+// And on 2026-09-25 by thirteen: rows rated no while the ledger recorded merged
+// build work, each re-read against its whole capability sentence and its
+// caller. Ten became yes and three partial, so 121/69/35 became 131/72/22.
+// Fourteen more such rows stayed no, because the code is there and nothing
+// reaches it.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 121, partial: 69, no: 35, unknown: 0 },
+	dossiq: { yes: 131, partial: 72, no: 22, unknown: 0 },
 	opencase: { yes: 62, partial: 46, no: 98, unknown: 19 },
 	gzac: { yes: 86, partial: 55, no: 65, unknown: 19 },
 	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 19 },
@@ -157,6 +163,21 @@ const CORRECTED_IDS = [
 	'11.22',
 	'13.11',
 	'13.17',
+	// 2026-09-25, rows the ledger recorded merged build work against while
+	// this file still read no. Each was checked for a caller, not for a PR.
+	'1.4',
+	'2.13',
+	'2.20',
+	'2.23',
+	'2.24',
+	'2.25',
+	'2.27',
+	'4.17',
+	'6.15',
+	'8.11',
+	'9.6',
+	'10.7',
+	'13.18',
 ]
 
 // Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad

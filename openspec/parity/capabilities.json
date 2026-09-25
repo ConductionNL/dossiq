@@ -8,7 +8,7 @@
 	},
 	"comparedOn": "2026-09-07",
 	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-09-22",
+	"reratedOn": "2026-09-25",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -522,6 +522,110 @@
 			"to": "yes",
 			"cause": "corrected",
 			"reason": "`lib/Settings/register.d/62-handler-vervanging.json` records an absence period with its absentee, its substitute, its dates, its scope and its reason, verlof, ziekte or anders. `src/views/admin/SubstitutionAdmin.vue` is a page with a menu entry, and `src/views/MyWorkCards.vue` shows the work an active substitution routes in, above the reader's own, behind a toggle. Shipped by dossiq#2719."
+		},
+		{
+			"id": "1.4",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "filinq's Intake page (`src/views/intake/IntakeIndex.vue`, menu entry `Intake`) lists every waiting document and assigns it to a record, a dossiq case included, moving the file into that record's folder (`IntakeService::assign`, POST `/api/intake/documents/{uuid}/assign`), or rejects it with a reason (`/reject`). Held at partial: the queue lives in filinq and the case is picked by register and schema, because the leaf that would put it on dossiq's pages is blocked (filinq `document-intake-inbox` task 3.2)."
+		},
+		{
+			"id": "2.13",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Change case type is a header action on the case (`src/manifest.json:3465`) opening `CaseRebindDialog`, which asks for the target type, the status mapping and a reason. `CaseRebindService` asks the engine before it writes, keeps the number, folder, documents and roles, and re-arms each running term on the target's duration from its original start. Coordinators only, checked in the service. Shipped by dossiq#2914."
+		},
+		{
+			"id": "2.20",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`src/main.js` installs `installCaseLiveUpdates` on the router, so the case page subscribes to the case it shows and refetches it through the object store on every push event; the header, the panels and the terms follow. The flow runs list stopped its 15 second poll (`pollSeconds: 0`, `src/manifest.json:2058`) and refreshes when it mounts. Shipped by dossiq#2925."
+		},
+		{
+			"id": "2.23",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Merge into is a header action on the case (`src/manifest.json:3367`) opening `CaseMergeDialog`, where the surviving case is searched for and a reason is required. `CaseMergeService` asks OpenRegister to merge (`ObjectsMergedEvent`), `CaseMergedListener` moves the declared rows and completes the merged case's term, a reply quoting the old number reaches the survivor, and the merge can be reversed for seven days. Shipped by dossiq#2916."
+		},
+		{
+			"id": "2.24",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Every `new-case` open-form carries `createOverride: caseCreateWithDuplicateCheck` (`src/manifest.json:641,1141,6921,7213`), which asks OpenRegister's `dedup-check` before the case is written and names the matches. The case type's `duplicatePolicy` decides `warn` or `block`, and `DuplicatePolicy` enforces it on the pre-persist event in `IntakeRequirementsListener`, so mail intake and imports are held to it too. Shipped by dossiq#2900."
+		},
+		{
+			"id": "2.25",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "A case type declares `pauseReasons`, each with a reminder interval, a count and an escalation target. A pause arms one reminder per rung on the term's timer and `PauseChaseJob` (registered in `appinfo/info.xml:175`) sweeps as well, both through `PauseChaseService::chaseIfDue()`, which sends by the route the request left by, records it on the term and the timeline, and escalates after the last one. Shipped by dossiq#2876."
+		},
+		{
+			"id": "2.27",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The case page is a manifest detail page, and `CnDetailPage` in nextcloud-vue 2.57.0 (dossiq requires ^2.57.0) takes OpenRegister's lock when the edit form opens, releases it on save or close, names the holder in `CnLockedBanner` and withdraws Edit while someone else holds it. dossiq pins the register and schema the lock url is built from (`src/manifest.json:3187`). A held lock does not yet refuse an API write. Shipped by dossiq#2924 over nextcloud-vue#1202."
+		},
+		{
+			"id": "4.17",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "OpenRegister queues text extraction for every file written into an object folder, a case folder included (`FileChangeListener`, registered at `lib/AppInfo/Application.php:2928`, scope `objects` and mode `background` by default), and chunks the text. Nextcloud's search bar reads those chunks and answers with the owning case (`lib/Search/ObjectsProvider.php:519`, `_content_search`), and the case schema is searchable. The index is keyword over chunks in the database, with no external engine. openregister's own matrix (openregister#4040, row `srch-file-content`) reads this as API only with no screen; that misses `ObjectsProvider.php:519`, because Nextcloud's search bar is a screen and it searches file text."
+		},
+		{
+			"id": "6.15",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Every case timeline entry has a side: the note composer and the Log contact action ask Visible to the applicant (`contactmoment.visibleToApplicant`, `src/manifest.json:3276`), outgoing messages and a sent beschikking are public by construction, and a status move is public when its status carries a `publicLabel`. `ContactMomentTimelineListener` writes every logged contact, and the public status page shows the applicant only the public entries. Shipped by dossiq#2907."
+		},
+		{
+			"id": "8.11",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "A term's end date is counted and rolled in one call: `TermEndRoll` moves an end that falls on a weekend or public holiday to the next ordinary day on the organisation calendar, falling back to a local working day calendar when the engine has none. `deadlineDefinition.rollToWorkingDay` defaults to on (`lib/Settings/register.d/60-termijnbewaking.json:66`) and switches it off for a term the Awt does not govern, and the admin terms tab shows the roll. Shipped by dossiq#2941."
+		},
+		{
+			"id": "9.6",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "Nextcloud's search bar finds a case by a word inside one of its documents, through OpenRegister's extracted file text (`lib/Search/ObjectsProvider.php:519`, `_content_search`). Held at partial: the hit is the case and not the document (openregister `content-search-index` task 1.1 is open), and dossiq's own Cases search does not search document content."
+		},
+		{
+			"id": "10.7",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "OpenRegister keeps an exports area where each prepared export carries an expiry, a download count and a status, swept when it expires (`lib/Db/ExportRun.php`, `GET /api/exports` at `appinfo/routes.php:1937`, `SweepExpiredExportRunsJob`). Held at partial: neither OpenRegister nor dossiq gives that area a screen, so a handler reaches it only through the API."
+		},
+		{
+			"id": "13.18",
+			"on": "2026-09-25",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Follow is a strip on the case page (`CaseFollowStrip` in `CaseBannerStack`, placed as `case-banner-stack` at `src/manifest.json:2922`) over OpenRegister's `PUT|DELETE .../watch`. Followed cases are a lens on the Cases list, the People tab lists the followers (`case-followers`, `src/manifest.json:2534`), and the case schema notifies its watchers when the case moves. Shipped by dossiq#2895."
 		}
 	],
 	"systems": [
@@ -798,7 +902,7 @@
 			"area": "intake",
 			"name": "Document intake queue (assign to case, reject)",
 			"name_nl": "Postbak voor binnenkomende documenten (koppelen of afwijzen)",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -806,7 +910,26 @@
 			"provider": "filinq",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"built": {
+				"state": "built",
+				"change": "filinq/document-intake-inbox",
+				"prs": [
+					{
+						"repo": "filinq",
+						"number": 1119,
+						"sha": "",
+						"mergedAt": "2026-09-18T23:20:00Z"
+					},
+					{
+						"repo": "filinq",
+						"number": 1132,
+						"sha": "e5580bbb4",
+						"mergedAt": "2026-09-19T03:15:00Z"
+					}
+				],
+				"evidence": "filinq src/views/intake/IntakeIndex.vue; filinq lib/Service/IntakeService.php; filinq appinfo/routes.php:77-79; filinq#1119; filinq#1132 e5580bbb4"
+			}
 		},
 		{
 			"id": "1.5",
@@ -1248,7 +1371,7 @@
 			"area": "case-core",
 			"name": "Change case type or version of a running case",
 			"name_nl": "Zaaktype of versie van een lopende zaak wijzigen",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -1256,7 +1379,20 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"built": {
+				"state": "built",
+				"change": "dossiq/case-type-rebind",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2914,
+						"sha": "8f2cd30b",
+						"mergedAt": "2026-09-18T11:10:00Z"
+					}
+				],
+				"evidence": "src/manifest.json:3465; src/dialogs/CaseRebindDialog.vue; lib/Service/CaseRebindService.php; appinfo/routes.php:162-164; dossiq#2914 8f2cd30b"
+			}
 		},
 		{
 			"id": "2.14",
@@ -1397,7 +1533,7 @@
 			"area": "case-core",
 			"name": "Live updates on the case page",
 			"name_nl": "Live bijwerken van de zaakpagina",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "no",
@@ -1405,7 +1541,20 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"built": {
+				"state": "built",
+				"change": "dossiq/live-updates-on-the-case-page",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2925,
+						"sha": "29488fa7",
+						"mergedAt": "2026-09-18T11:20:00Z"
+					}
+				],
+				"evidence": "src/main.js:243; src/services/caseLiveUpdates.js; src/manifest.json:2058; dossiq#2925 29488fa7"
+			}
 		},
 		{
 			"id": "2.21",
@@ -1466,7 +1615,7 @@
 			"area": "case-core",
 			"name": "Merge two cases into one",
 			"name_nl": "Twee zaken samenvoegen tot één",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -1475,6 +1624,19 @@
 			"providerHow": "ledger-change",
 			"feature": "case-types",
 			"featureConfidence": "low",
+			"built": {
+				"state": "built",
+				"change": "dossiq/case-merge",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2916,
+						"sha": "51a29efde",
+						"mergedAt": "2026-09-18T13:05:00Z"
+					}
+				],
+				"evidence": "src/manifest.json:3367; lib/Service/CaseMergeService.php; lib/Listener/CaseMergedListener.php; appinfo/routes.php:499; dossiq#2916 51a29efde"
+			},
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1482,7 +1644,7 @@
 			"area": "case-core",
 			"name": "Duplicate detection at intake",
 			"name_nl": "Duplicaatherkenning bij intake",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -1491,6 +1653,19 @@
 			"providerHow": "ledger-change",
 			"feature": "case-types",
 			"featureConfidence": "low",
+			"built": {
+				"state": "built",
+				"change": "dossiq/duplicate-warning-at-intake",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2900,
+						"sha": "",
+						"mergedAt": ""
+					}
+				],
+				"evidence": "src/manifest.json:641; src/services/createCaseWithDuplicateCheck.js; lib/Service/Intake/DuplicatePolicy.php; lib/Listener/IntakeRequirementsListener.php; dossiq#2900"
+			},
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1498,7 +1673,7 @@
 			"area": "case-core",
 			"name": "Automatic chasing while a case waits on someone else",
 			"name_nl": "Automatisch rappelleren zolang een zaak op iemand wacht",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -1507,6 +1682,19 @@
 			"providerHow": "ledger-change",
 			"feature": "case-types",
 			"featureConfidence": "low",
+			"built": {
+				"state": "built",
+				"change": "dossiq/pause-reason-with-chasing",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2876,
+						"sha": "327b1c01a",
+						"mergedAt": "2026-09-16T09:59:00Z"
+					}
+				],
+				"evidence": "lib/Service/Pause/PauseChaseService.php; lib/BackgroundJob/PauseChaseJob.php; appinfo/info.xml:175; lib/Settings/register.d/66-pause-reason.json; dossiq#2876 327b1c01a"
+			},
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1543,7 +1731,7 @@
 			"area": "case-core",
 			"name": "Edit lock on a case, with the holder named",
 			"name_nl": "Bewerkslot op een zaak, met de houder erbij",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -1552,6 +1740,19 @@
 			"providerHow": "ledger-change",
 			"feature": "case-types",
 			"featureConfidence": "low",
+			"built": {
+				"state": "built",
+				"change": "dossiq/edit-lock-on-the-case-page",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2924,
+						"sha": "b87d6d3c",
+						"mergedAt": "2026-09-18T11:10:00Z"
+					}
+				],
+				"evidence": "src/manifest.json:3187; tests/vitest/caseEditLock.spec.js; nextcloud-vue src/components/CnDetailPage/CnDetailPage.vue; openregister appinfo/routes.php:1243-1244; dossiq#2924 b87d6d3c"
+			},
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -1590,7 +1791,7 @@
 						"mergedAt": "2026-09-18T23:10:00Z"
 					}
 				],
-				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be"
+				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)"
 			}
 		},
 		{
@@ -2369,7 +2570,7 @@
 			"area": "documents",
 			"name": "Full-text indexing of file content",
 			"name_nl": "Volledige tekstindexering van bestandsinhoud",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -2377,7 +2578,20 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"built": {
+				"state": "built",
+				"change": "openregister/unified-search-file-content",
+				"prs": [
+					{
+						"repo": "openregister",
+						"number": 3903,
+						"sha": "",
+						"mergedAt": "2026-09-18T15:10:00Z"
+					}
+				],
+				"evidence": "openregister lib/Listener/FileChangeListener.php; openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3903; openregister's own matrix (openregister#4040) reads this as API only with no screen, which misses ObjectsProvider.php:519: Nextcloud's search bar is a screen and it searches file text"
+			}
 		},
 		{
 			"id": "4.18",
@@ -3186,7 +3400,7 @@
 			"area": "communication",
 			"name": "Internal or public visibility per timeline entry",
 			"name_nl": "Interne of openbare zichtbaarheid per tijdlijnregel",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -3195,6 +3409,19 @@
 			"providerHow": "ledger-change",
 			"feature": "case-email-integration",
 			"featureConfidence": "low",
+			"built": {
+				"state": "built",
+				"change": "dossiq/timeline-entries-default-internal",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2907,
+						"sha": "afcc1626",
+						"mergedAt": "2026-09-18T12:15:00Z"
+					}
+				],
+				"evidence": "src/manifest.json:3276; lib/Listener/ContactMomentTimelineListener.php; lib/Portal/PortalContributionProvider.php; src/views/public/PublicStatusPage.vue; dossiq#2907 afcc1626"
+			},
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -3542,7 +3769,7 @@
 			"area": "deadlines",
 			"name": "Term end date moved off a weekend or public holiday",
 			"name_nl": "Einddatum van een termijn die van een weekend of feestdag afschuift",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -3551,6 +3778,19 @@
 			"providerHow": "ledger-change",
 			"feature": "termijn-binding",
 			"featureConfidence": "high",
+			"built": {
+				"state": "built",
+				"change": "dossiq/terms-on-the-engine-calendar",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2941,
+						"sha": "b72f2f3f",
+						"mergedAt": "2026-09-18T12:15:00Z"
+					}
+				],
+				"evidence": "lib/Service/Termijn/TermEndRoll.php; lib/Settings/register.d/60-termijnbewaking.json:66; src/views/settings/tabs/TermijnDefinitiesTab.vue; dossiq#2941 b72f2f3f"
+			},
 			"addedOn": "2026-09-09"
 		},
 		{
@@ -3749,7 +3989,7 @@
 			"area": "search",
 			"name": "Full-text search over document content",
 			"name_nl": "Zoeken in de inhoud van documenten",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "yes",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -3757,7 +3997,20 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"built": {
+				"state": "built",
+				"change": "openregister/content-search-index",
+				"prs": [
+					{
+						"repo": "openregister",
+						"number": 3892,
+						"sha": "",
+						"mergedAt": "2026-09-18T15:10:00Z"
+					}
+				],
+				"evidence": "openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3892"
+			}
 		},
 		{
 			"id": "9.7",
@@ -4011,7 +4264,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
-				"evidence": "src/views/settings/StufAuditLog.vue; lib/Controller/AiAuditExportController.php"
+				"evidence": "src/views/settings/StufAuditLog.vue; lib/Controller/AiAuditExportController.php; openregister src/views/logs/AuditTrailIndex.vue and export at appinfo/routes.php:1350 are admin-only; openregister#4018 adds GET /api/audit-trails/readable with no screen"
 			}
 		},
 		{
@@ -4038,7 +4291,7 @@
 			"area": "reporting",
 			"name": "Export files area with expiry and download counts",
 			"name_nl": "Exportmap met vervaldatum en downloadtellingen",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -4046,7 +4299,11 @@
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-types",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"built": {
+				"state": "none",
+				"evidence": "openregister lib/Db/ExportRun.php; openregister appinfo/routes.php:1937"
+			}
 		},
 		{
 			"id": "10.8",
@@ -4269,7 +4526,7 @@
 						"mergedAt": "2026-09-18T23:10:00Z"
 					}
 				],
-				"evidence": "src/views/settings/WorkflowEditor.vue; WorkflowTab.vue; openregister#3944 878de2cd; openregister#3948 de4079be"
+				"evidence": "src/views/settings/WorkflowEditor.vue; WorkflowTab.vue; openregister#3944 878de2cd; openregister#3948 de4079be; openregister has no BPMN modeller page; BPMN only through appinfo/routes.php:825-826 (openregister#4040)"
 			}
 		},
 		{
@@ -5336,7 +5593,7 @@
 						"mergedAt": "2026-09-18T13:35:00Z"
 					}
 				],
-				"evidence": "organisatieRol.department/team; openregister#3874 18628dff"
+				"evidence": "organisatieRol.department/team; openregister#3874 18628dff; openregister lib/Service/Object/PermissionHandler.php:2699 compileDepartmentMatrix enforces the matrix; no screen sets it (openregister#4040)"
 			}
 		},
 		{
@@ -5565,7 +5822,7 @@
 			"area": "access-and-privacy",
 			"name": "Watchers on a case, separate from the assignee",
 			"name_nl": "Volgers op een zaak, los van de behandelaar",
-			"dossiq": "no",
+			"dossiq": "yes",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -5574,6 +5831,19 @@
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
 			"featureConfidence": "high",
+			"built": {
+				"state": "built",
+				"change": "dossiq/case-followers",
+				"prs": [
+					{
+						"repo": "dossiq",
+						"number": 2895,
+						"sha": "790c1bcf3",
+						"mergedAt": "2026-09-17T01:20:55Z"
+					}
+				],
+				"evidence": "src/components/case/CaseFollowStrip.vue; src/components/case/CaseBannerStack.vue; src/manifest.json:2534,2922; openregister appinfo/routes.php:127-140; dossiq#2895 790c1bcf3"
+			},
 			"addedOn": "2026-09-09"
 		}
 	],
