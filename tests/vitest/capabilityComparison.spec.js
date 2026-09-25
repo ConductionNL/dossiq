@@ -22,8 +22,9 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import corpusIds from '../../src/data/capabilityComparison.corpus-ids.json'
 import data from '../../openspec/parity/capabilities.json'
+import { build } from '../../scripts/sync-capability-comparison.mjs'
+import corpusIds from '../../src/data/capabilityComparison.corpus-ids.json'
 import {
 	behindEveryRival,
 	formatComparedOn,
@@ -759,6 +760,101 @@ describe('the authored fields survive a corpus re-issue', () => {
 		expect(
 			without,
 			`rows with a feature and no confidence: ${without.join(', ')}`,
+		).toEqual([])
+	})
+})
+
+describe('a re-issue keeps what the corpus does not hold', () => {
+	// The corpus carries ids, texts and ratings. Everything else on a row and
+	// on a system is authored here, and the sync script has already dropped
+	// authored fields once while printing success. This rebuilds a corpus from
+	// the file itself, re-issues it, and demands the file back unchanged, so a
+	// field the script forgets to carry fails here by name.
+	const areaName = new Map(data.areas.map((area) => [area.key, area.name]))
+	const columns = data.systems.map((system) => system.key)
+	const competitors = data.systems
+		.filter((system) => !system.isSelf)
+		.map((system) => system.key)
+	const corpus = {
+		areas: data.areas.map((area, index) => ({ n: index + 1, name: area.name })),
+		rows: data.capabilities.map((row) => ({
+			id: row.id,
+			area: areaName.get(row.area),
+			cap: row.name,
+			...Object.fromEntries(columns.map((column) => [column, row[column]])),
+		})),
+		pending: data.pending.map((row) => ({
+			id: row.id,
+			area: areaName.get(row.area),
+			cap: row.name,
+			source: row.source,
+			dossiq: row.dossiq,
+			dossiqNote: row.dossiqNote,
+			...Object.fromEntries(competitors.map((column) => [column, 'unread'])),
+		})),
+	}
+	const reissued = build(corpus, data, data.comparedOn).data
+
+	it('returns every rated row exactly as it went in', () => {
+		expect(reissued.capabilities).toEqual(data.capabilities)
+	})
+
+	it('returns every pending row exactly as it went in', () => {
+		expect(reissued.pending).toEqual(data.pending)
+	})
+
+	it('keeps each system its grade and its reason for an unknown', () => {
+		expect(reissued.systems).toEqual(data.systems)
+	})
+
+	it('still carries built and evidence on the rows that have them', () => {
+		const carried = (list) =>
+			list.filter((row) => row.built || row.evidence).length
+
+		expect(carried(data.capabilities)).toBeGreaterThan(0)
+		expect(carried(reissued.capabilities)).toBe(carried(data.capabilities))
+	})
+})
+
+describe('a closure is recorded in a field, not only in prose', () => {
+	// On 2026-09-20 sixteen rows were closed by merged PRs and every closing
+	// commit wrote only prose, so shipped capabilities read as gaps on a public
+	// page. The hydra parity-verify skill reports this as closed-in-prose-only;
+	// this is the same rule, held in this repo's own suite.
+	const CLOSURE = /\bclosed\b[^.]{0,60}?\bby\s+[a-z][a-z0-9-]*#\d+/i
+	const GRADES = ['driven', 'demo', 'trial', 'docs-only', 'not-read']
+
+	it('gives every row whose log says it was closed a built state', () => {
+		const byId = new Map(data.capabilities.map((row) => [row.id, row]))
+		const open = [
+			...new Set(
+				(data._rerated ?? [])
+					.filter((entry) => CLOSURE.test(entry.reason ?? ''))
+					.map((entry) => entry.id)
+					.filter(
+						(id) =>
+							!['built', 'decided-no'].includes(
+								byId.get(id)?.built?.state,
+							),
+					),
+			),
+		]
+
+		expect(open, `closed in prose only: ${open.join(', ')}`).toEqual([])
+	})
+
+	it('grades every competitor and says why its unknowns are unknown', () => {
+		const ungraded = data.systems
+			.filter((system) => !system.isSelf)
+			.filter(
+				(system) =>
+					!GRADES.includes(system.evidenceGrade) || !system.unknownReason,
+			)
+			.map((system) => system.key)
+
+		expect(
+			ungraded,
+			`systems without a grade or a reason: ${ungraded.join(', ')}`,
 		).toEqual([])
 	})
 })
