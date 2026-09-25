@@ -39,7 +39,7 @@ const APP_BASE = '/index.php/apps/dossiq'
  */
 const COMPARISON = JSON.parse(
 	fs.readFileSync(
-		path.join(__dirname, '..', '..', 'src', 'data', 'capabilityComparison.json'),
+		path.join(__dirname, '..', '..', 'openspec', 'parity', 'capabilities.json'),
 		'utf8',
 	),
 )
@@ -268,7 +268,7 @@ test.describe('app chrome (ADR-114)', () => {
 	//       -> "the panel must say when the most recent rows were added"
 	//     addedRowsText(): `others: comparison.systems.length - 2`
 	//       -> "the panel must say every competitor column is unrated on the added rows"
-	//     capabilityComparison.json row 2.23: `"opencase": "yes"`
+	//     openspec/parity/capabilities.json row 2.23: `"opencase": "yes"`
 	//       -> "an added row must read Unknown for every competitor, never a guess"
 	//   the-panel-names-the-proposals
 	//     pendingText(): `count: pending.length + 1`

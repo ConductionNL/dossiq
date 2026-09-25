@@ -6,7 +6,7 @@ status: done
 
 **Scope:** dossiq. The permission engine is OpenRegister's.
 **Depends on:** OpenRegister grant provenance (`PermissionHandler::provenanceFor()`, openregister#3726), grants that reach a declared hierarchy edge (openregister#3873), access links (openregister#3817), object watchers, and field level property authorization (`PropertyRbacHandler`).
-**Capability area:** `access-and-privacy` in `src/data/capabilityComparison.json`.
+**Capability area:** `access-and-privacy` in `openspec/parity/capabilities.json`.
 
 ## Purpose
 

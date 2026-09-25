@@ -23,7 +23,7 @@
 
 import { describe, expect, it } from 'vitest'
 import corpusIds from '../../src/data/capabilityComparison.corpus-ids.json'
-import data from '../../src/data/capabilityComparison.json'
+import data from '../../openspec/parity/capabilities.json'
 import {
 	behindEveryRival,
 	formatComparedOn,

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Presentation logic for the capability comparison on the Features & roadmap
- * page. Pure functions over `src/data/capabilityComparison.json`, kept out of
+ * page. Pure functions over `openspec/parity/capabilities.json`, kept out of
  * the .vue file so the grouping and the tallies are unit-testable in the node
  * environment (vitest.config.js: component specs need jsdom, these do not).
  *
@@ -101,7 +101,7 @@ export function tally(capabilities, systemKey) {
  * that forgot would publish a score over cells nobody had filled. A reader of
  * `data.capabilities` gets the scored list and cannot get this by accident.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @return {Array<object>} The pending proposals, or an empty list.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
@@ -124,7 +124,7 @@ export function pendingRows(data) {
  * questions round 4 raised that had nowhere to go, each still waiting on
  * every column but ours.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @param {string} [locale] BCP 47 locale used to pick labels.
  * @return {Array<object>} One entry per area, each with its rows, proposals and tallies.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
@@ -157,7 +157,7 @@ export function groupByArea(data, locale = 'en') {
 /**
  * Tally every system over the whole comparison.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @return {Record<string, {yes: number, partial: number, no: number, unknown: number, total: number}>} Tally per system key.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
@@ -217,7 +217,7 @@ export function formatComparedOn(iso, locale = 'en') {
  * three independent teams shipped something we did not, and a half-built
  * version of it does not refute that.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @return {Array<object>} Rows where every non-self system is `yes` and we are not.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
  */

@@ -79,7 +79,7 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 	},
 }))
 
-const { default: data } = await import('../../src/data/capabilityComparison.json')
+const { default: data } = await import('../../openspec/parity/capabilities.json')
 const { default: FeaturesRoadmapView } =
 	await import('../../src/views/FeaturesRoadmapView.vue')
 
