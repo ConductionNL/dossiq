@@ -86,7 +86,7 @@ Tier: V1. Kind: config. Row 5.6.
 
   **MEASURED 2026-09-18: NOTHING WRITES A ROW.** `git grep sociaalDomeinAuditLog`
   finds the schema in the two register files, the fragment unit test, and two
-  notes in `src/data/capabilityComparison.json` that already say the schema has
+  notes in `openspec/parity/capabilities.json` that already say the schema has
   zero readers. There is no PHP, JS or Vue writer anywhere in the app, so there
   are no reveal rows to retire. The schema is left exactly as it is: it is a
   declared shape another change may fill, and deleting it would be a scope this

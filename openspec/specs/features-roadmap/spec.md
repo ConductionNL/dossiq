@@ -41,7 +41,7 @@ replace the features tab or the roadmap tab.
 ### Requirement: The page MUST present the capability comparison by area
 
 The page SHALL offer a second section that compares dossiq against the systems
-in `src/data/capabilityComparison.json` across every capability in that file.
+in `openspec/parity/capabilities.json` across every capability in that file.
 Capabilities SHALL be grouped by their area, and an area SHALL open to reveal
 its rows. Each row SHALL show its number, the capability, and a rating for
 every system.
@@ -184,7 +184,7 @@ The comparison section SHALL state, before any score:
 
 ### Requirement: The comparison data MUST match the audit it came from
 
-`src/data/capabilityComparison.json` is generated once, offline, from a private
+`openspec/parity/capabilities.json` is re-issued offline from a private
 audit repository, so no CI job can regenerate it and diff the result. The data
 SHALL therefore be guarded by assertions: the row count, unique ids, every row
 filed under a declared area, every rating drawn from the known set, and the

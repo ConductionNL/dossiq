@@ -33,7 +33,7 @@ is the fix for PROC-IDOR-01 and it holds. Three things it does not do:
 - **Nothing records the lookup.** `sociaalDomeinAuditLog`
   (`register.d/50-sociaal-domein.json`) declares `employeeId`, `moment`,
   `ipAddress`, `geraadpleegdeVelden`, `authorisationGround` and `result`, and
-  has no writer anywhere in the app. `src/data/capabilityComparison.json`
+  has no writer anywhere in the app. `openspec/parity/capabilities.json`
   already says so twice. A reveal and a refusal look the same afterwards:
   like nothing.
 

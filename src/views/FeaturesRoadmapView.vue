@@ -334,7 +334,7 @@
 import { CnFeaturesAndRoadmapPage, CnTab, CnTabs } from '@conduction/nextcloud-vue'
 import { getLanguage, translate as t } from '@nextcloud/l10n'
 import { NcNoteCard } from '@nextcloud/vue'
-import comparison from '../data/capabilityComparison.json'
+import comparison from '../../openspec/parity/capabilities.json'
 import {
 	formatComparedOn,
 	groupByArea,

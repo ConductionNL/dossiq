@@ -6,7 +6,7 @@ status: done
 
 **Scope:** dossiq. The query layer is OpenRegister's.
 **Depends on:** OpenRegister search quality, operators and facets (openregister#3768, openregister#3806), the objects provider behind Nextcloud unified search, saved views, and the task inbox (openregister#3581).
-**Capability area:** `search` in `src/data/capabilityComparison.json`.
+**Capability area:** `search` in `openspec/parity/capabilities.json`.
 
 ## Purpose
 
