@@ -58,7 +58,7 @@
  */
 
 import { readFileSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
@@ -110,8 +110,18 @@ const RATINGS = ['yes', 'partial', 'no']
 const COLUMNS = ['dossiq', 'opencase', 'gzac', 'zaaksysteem', 'zac']
 
 // Authored per row and absent from the corpus: who provides the capability,
-// how that was derived, which feature bundles it, and how sure that is.
-const AUTHORED_FIELDS = ['provider', 'providerHow', 'feature', 'featureConfidence']
+// how that was derived, which feature bundles it, and how sure that is; then
+// `built`, the machine-readable half of a closure (prose saying a row was
+// closed is not counted by anything, only this field is), and `evidence`, what
+// was seen per system. The hydra parity-verify skill reads the last two.
+const AUTHORED_FIELDS = [
+	'provider',
+	'providerHow',
+	'feature',
+	'featureConfidence',
+	'built',
+	'evidence',
+]
 
 /**
  * Read `--flag value` off the argv, or return the fallback.
@@ -144,7 +154,7 @@ function die(message) {
  * @param {string} on The date to log a moved rating under, ISO 8601.
  * @return {{data: object, ids: object, report: object}} What to write, and what moved.
  */
-function build(corpus, current, on) {
+export function build(corpus, current, on) {
 	// BOTH lists, not just the rows. A row that became a proposal keeps its
 	// Dutch, and reading only `capabilities` here dropped the Dutch of all 104
 	// on the second run: the first run had already moved them into `pending`.
@@ -319,58 +329,71 @@ function build(corpus, current, on) {
 	}
 }
 
-const corpusPath = arg('--corpus')
-if (!corpusPath) {
-	die(
-		'pass --corpus <path to market-intelligence/procest/_round4/tools/corpus-rows.json>',
-	)
-}
-
-let corpus
-try {
-	corpus = JSON.parse(readFileSync(corpusPath, 'utf8'))
-} catch (error) {
-	die(`cannot read the corpus at ${corpusPath}: ${error.message}`)
-}
-const on = arg('--on', new Date().toISOString().slice(0, 10))
-if (!/^\d{4}-\d{2}-\d{2}$/.test(on)) {
-	die(`--on must be an ISO date, got "${on}"`)
-}
-const current = JSON.parse(readFileSync(DATA, 'utf8'))
-const { data, ids, report } = build(corpus, current, on)
-
-const dataText = JSON.stringify(data, null, '\t') + '\n'
-const idsText = JSON.stringify(ids, null, '\t') + '\n'
-
-if (process.argv.includes('--check')) {
-	const drift = []
-	if (readFileSync(DATA, 'utf8') !== dataText) {
-		drift.push('openspec/parity/capabilities.json')
+/**
+ * Read the corpus, re-issue both files, or with `--check` compare them.
+ *
+ * @return {void}
+ */
+function main() {
+	const corpusPath = arg('--corpus')
+	if (!corpusPath) {
+		die(
+			'pass --corpus <path to market-intelligence/procest/_round4/tools/corpus-rows.json>',
+		)
 	}
-	if (readFileSync(IDS, 'utf8') !== idsText) {
-		drift.push('src/data/capabilityComparison.corpus-ids.json')
+
+	let corpus
+	try {
+		corpus = JSON.parse(readFileSync(corpusPath, 'utf8'))
+	} catch (error) {
+		die(`cannot read the corpus at ${corpusPath}: ${error.message}`)
 	}
-	if (drift.length) {
-		console.error(`drifted from the corpus: ${drift.join(', ')}`)
-		console.error('run this script without --check to re-issue them')
-		process.exit(1)
+	const on = arg('--on', new Date().toISOString().slice(0, 10))
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(on)) {
+		die(`--on must be an ISO date, got "${on}"`)
 	}
+	const current = JSON.parse(readFileSync(DATA, 'utf8'))
+	const { data, ids, report } = build(corpus, current, on)
+
+	const dataText = JSON.stringify(data, null, '\t') + '\n'
+	const idsText = JSON.stringify(ids, null, '\t') + '\n'
+
+	if (process.argv.includes('--check')) {
+		const drift = []
+		if (readFileSync(DATA, 'utf8') !== dataText) {
+			drift.push('openspec/parity/capabilities.json')
+		}
+		if (readFileSync(IDS, 'utf8') !== idsText) {
+			drift.push('src/data/capabilityComparison.corpus-ids.json')
+		}
+		if (drift.length) {
+			console.error(`drifted from the corpus: ${drift.join(', ')}`)
+			console.error('run this script without --check to re-issue them')
+			process.exit(1)
+		}
+		console.log(
+			`in step with the corpus: ${data.capabilities.length} rows, ${data.pending.length} pending`,
+		)
+		process.exit(0)
+	}
+
+	writeFileSync(DATA, dataText)
+	writeFileSync(IDS, idsText)
 	console.log(
-		`in step with the corpus: ${data.capabilities.length} rows, ${data.pending.length} pending`,
+		`re-issued ${data.capabilities.length} rows and ${data.pending.length} pending`,
 	)
-	process.exit(0)
+	for (const move of report.moved) {
+		console.log(`  our column moved: ${move.id} ${move.from} -> ${move.to}`)
+	}
+	if (report.dutchless) {
+		console.log(
+			`  ${report.dutchless} pending rows have no Dutch text and fall back to English`,
+		)
+	}
 }
 
-writeFileSync(DATA, dataText)
-writeFileSync(IDS, idsText)
-console.log(
-	`re-issued ${data.capabilities.length} rows and ${data.pending.length} pending`,
-)
-for (const move of report.moved) {
-	console.log(`  our column moved: ${move.id} ${move.from} -> ${move.to}`)
-}
-if (report.dutchless) {
-	console.log(
-		`  ${report.dutchless} pending rows have no Dutch text and fall back to English`,
-	)
+// Run only as a script. The guard test imports `build` to prove the authored
+// fields survive a re-issue, and importing must not read argv or write files.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+	main()
 }
