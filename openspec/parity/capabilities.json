@@ -1853,7 +1853,7 @@
 				"evidence": "openregister#3766 77bdb1901; dossiq#2875 a4919e93a"
 			},
 			"evidence": {
-				"opencase": "opencase@1.1.0 src/router/index.js:115-122 recent and recent/cases routes plus favorites routes; lib/Db/Favorite.php and History.php; src/components/FavoriteButton.vue on the case header; lib/Dashboard FavoritesWidget and RecentWidget | round 2 drive: procest/opencase/round2/code-census.md:201 \"Favourites and recent items (cases and documents) :: yes\"",
+				"opencase": "opencase@1.1.0 src/router/index.js:115-122 recent and recent/cases routes plus favorites routes; lib/Db/FavoriteEntity.php and HistoryEntity.php; src/components/FavoriteButton.vue on the case header; lib/Dashboard FavoritesWidget and RecentWidget | round 2 drive: procest/opencase/round2/code-census.md:201 \"Favourites and recent items (cases and documents) :: yes\"",
 				"gzac": "gzac@13.4.1 grep -il favorite, favourite, recent over backend/case main and the case frontend returns nothing | round 2 drive: procest/valtimo/round2/dashboard-anatomy.md:17 \"There is no task widget, no overdue widget, no recent-items widget, no per-user layout\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/dashboard/components/widgets/FavoriteCasetype/FavoriteCasetype.tsx favourite case types only; grep -i recent over the topbar search and modules finds no recent-items list and no favourite cases | round 2 drive: procest/xxllnc-zaken/round2/menu-tree.md:57 \"1. **Favoriete zaaktypen** (favourite case types): a search box\"",
 				"zac": "zac@1.0.316 no favoriet in src/main/kotlin or src/main/java; gebruikersvoorkeuren holds saved searches, table settings and dashboard cards only | round 3 drive: procest/zac/round3/rows/rows-1-3.md:40 \"no | Zero hits for `favoriet` or `Favoriet` in `src/main/kotlin` and `src/main/java`, and no recents store.\"",
@@ -3905,11 +3905,11 @@
 				"evidence": "#CaseDetail/case-notes"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:234 \"Journal notes (rich text, lockable) :: yes\"",
-				"gzac": "procest/valtimo/round2/pages/CaseDetail-Notities.md:5 \"Free-text notes on the case, per author, editable and deletable by the author\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Case-Communicatie.md:9 \"actions: new Notitie, Contactmoment, E-mail\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:52 \"yes | `src/main/kotlin/nl/info/zac/note/model/Note.kt` (table `notitie`, zaak_uuid, tekst, tijdstip_laatste_wijziging, gebruikersnaam_medewerker), CRUD at\"",
-				"openzaak": "zaakafhandelapp#723 row 6.1: procest/openzaak/docs/03-api-specifications.md:59: zaaknotities (CRUD operations for case notes) is listed under experimental Zaken API features"
+				"opencase": "opencase@1.1.0 lib/Controller/JournalNoteController.php:59,75,110,143,163 list, create, edit, delete and lock journal notes; src/views/CaseDetailView.vue:186 JournalNoteList on the Journalnotater tab | round 2 drive: procest/opencase/round2/code-census.md:234 \"Journal notes (rich text, lockable) :: yes\"",
+				"gzac": "gzac@13.4.1 backend/notes/src/main/kotlin/com/ritense/note/web/rest/NoteResource.kt:50,65 list and create notes per case; frontend/projects/valtimo/case/src/lib/constants/tab.ts:39 notes tab (CaseDetailTabNotesComponent) | round 2 drive: procest/valtimo/round2/pages/CaseDetail-Notities.md:5 \"Free-text notes on the case, per author, editable and deletable by the author\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/communication-module/src/Communication.constants.ts:26 note thread type; components/MessageForm/Note form in the case Communicatie view | round 2 drive: procest/xxllnc-zaken/round2/pages/Case-Communicatie.md:9 \"actions: new Notitie, Contactmoment, E-mail\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/note/NoteRestService.kt:31,43,51,59,67 notes per zaak; src/main/app/src/app/zaken/zaak-view/zaak-view.component.html:186 zac-notities | round 3 drive: procest/zac/round3/rows/rows-4-6.md:52 \"yes | `src/main/kotlin/nl/info/zac/note/model/Note.kt` (table `notitie`, zaak_uuid, tekst, tijdstip_laatste_wijziging, gebruikersnaam_medewerker), CRUD at\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:2019 ZaakNotitie; openapi.yaml:5852-5855 /zaaknotities marked EXPERIMENTEEL; API only, no screen"
 			}
 		},
 		{
@@ -3941,11 +3941,11 @@
 				"evidence": "register.d/30-kcc.json#customerContact; 40-kcc-werkplek.json#contactmoment; lib/Controller/ContactMomentController.php; pipelinq#1970 428bd3a6b"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:80 \"Communication: `JournalNote` (title, text, isLocked), `DpShipment`\"",
-				"gzac": "procest/valtimo/round2/code-census.md:419 \"in-app messaging / contact moments UI :: no (label only)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Contactmoment-dialog.md:10 \"Contactkanaal (Behandelaar, Balie, Telefoon, Post, E-mail, Webformulier, Sociale media, Externe applicatie), Richting (Inkomend/Uitgaand)\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:53 \"partial, read-only, channel yes, direction no | `KlantRestService.kt:275` `listContactmomenten` reads Open Klant klantcontacten and maps them via\"",
-				"openzaak": "zaakafhandelapp#723 row 6.2: procest/openzaak/docs/04-zgw-standards-zaken.md:21: KlantContact is customer contact moments related to the case; specs/zaak-relaties/spec.md:62: ZaakContactMoment is an external reference to the Contactmomenten API"
+				"opencase": "opencase@1.1.0 no contact moment entity in lib/Db and no channel or direction on journal notes (lib/Db/JournalNote.php:30-36) | round 2 drive: procest/opencase/round2/code-census.md:80 \"Communication: `JournalNote` (title, text, isLocked), `DpShipment`\"",
+				"gzac": "gzac@13.4.1 grep -i 'contactmoment|klantcontact' over frontend/projects/valtimo finds nothing; backend/zgw/klantinteracties-api/.../KlantinteractiesApiPlugin.kt:62 offers only create-persoon | round 2 drive: procest/valtimo/round2/code-census.md:419 \"in-app messaging / contact moments UI :: no (label only)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/communication-module/src/components/MessageForm/ContactMoment/ContactMoment.formDefinition.tsx:15,151-156 channel and direction; Communication.constants.ts:9-17 channels balie, telefoon, post, e-mail, webformulier, social media | round 2 drive: procest/xxllnc-zaken/round2/pages/Contactmoment-dialog.md:10 \"Contactkanaal (Behandelaar, Balie, Telefoon, Post, E-mail, Webformulier, Sociale media, Externe applicatie), Richting (Inkomend/Uitgaand)\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/klant/KlantRestService.kt:276 listContactmomenten reads Open Klant contact moments with kanaal (read only, per party); no create and no direction | round 3 drive: procest/zac/round3/rows/rows-4-6.md:53 \"partial, read-only, channel yes, direction no | `KlantRestService.kt:275` `listContactmomenten` reads Open Klant klantcontacten and maps them via\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:1807-1840 KlantContact with kanaal, onderwerp, toelichting (no direction) and :1943 ZaakContactMoment linking to a contact moment elsewhere; API only"
 			}
 		},
 		{
@@ -3968,11 +3968,11 @@
 				"evidence": "src/views/cases/components/CaseEmailTab.vue; /api/email/{caseId}/send-template; dossiq_register.json#emailTemplate"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:112 \"E-mail: sending a document from the user's own Mail-app account\"",
-				"gzac": "procest/valtimo/round2/code-census.md:413 \"outbound mail with blacklist/whitelist/redirect filters and providers (Flowmailer, Mandrill, local, WordPress, SMTP plugin) :: yes\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Case-Communicatie.md:9 \"E-mail (template, recipients, attachments from the case)\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:54 \"yes | `src/main/app/src/app/mail/mail-create/mail-create.component.ts:109` loads the `ZAAK_ALGEMEEN` template through\"",
-				"openzaak": "zaakafhandelapp#723 row 6.3: procest/openzaak/specs/00-overview.md:23: no UI or e-mail sending feature is documented"
+				"opencase": "opencase@1.1.0 src/components/SendEmailDialog.vue:11-129 Fra, Til, Cc, Bcc, Emne, rich text Besked, Gem som dokument på sagen and the document's files as attachments; lib/Controller/EmailController.php:215-251 sends through the user's Mail app account; no mail templates | round 2 drive: procest/opencase/round2/code-census.md:112 \"E-mail: sending a document from the user's own Mail-app account\"",
+				"gzac": "gzac@13.4.1 backend/mail/src/main/kotlin/com/ritense/mail/service/MailService.kt:41 sendElementTemplateTaskMail sends a provider template from a BPMN step (Flowmailer, Mandrill, local, WordPress mail); no compose screen and no case document picker | round 2 drive: procest/valtimo/round2/code-census.md:413 \"outbound mail with blacklist/whitelist/redirect filters and providers (Flowmailer, Mandrill, local, WordPress, SMTP plugin) :: yes\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/communication-module/src/components/MessageForm/Email/Email.formDefinition.ts:49,90,143-226 e-mail template, attachments, recipient types aanvrager, coordinator, collega, betrokkene, gemachtigde, overig | round 2 drive: procest/xxllnc-zaken/round2/pages/Case-Communicatie.md:9 \"E-mail (template, recipients, attachments from the case)\"",
+				"zac": "zac@1.0.316 src/main/app/src/app/mail/mail-create/mail-create.component.ts:110 ZAAK_ALGEMEEN template, mail-create.component.html:61 case document attachments; src/main/kotlin/nl/info/zac/mail/MailService.kt:101 sendMail; zaak-view-menu.builder.ts:142 actie.mail.versturen | round 3 drive: procest/zac/round3/rows/rows-4-6.md:54 \"yes | `src/main/app/src/app/mail/mail-create/mail-create.component.ts:109` loads the `ZAAK_ALGEMEEN` template through\"",
+				"openzaak": "openzaak@1.30.0 no mail sending under src/openzaak; API backend"
 			}
 		},
 		{
@@ -4010,11 +4010,11 @@
 				"evidence": "lib/Service/Timeline/TimelineKinds.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:154 \"| 6.4 | Unified communication timeline per case (notes, mail, messages) | no |\"",
-				"gzac": "procest/valtimo/round2/pages/CaseDetail-Notities.md:15 \"Adding a note writes nothing to the Log tab.\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Case-Communicatie.md:5 \"purpose: All conversations on the case: notes, contact moments, e-mail, PIP messages, letters\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:55 \"no | the surfaces are separate and never merged: notes (`zac-notities`), documents including archived mail (`zac-zaak-documenten`), and the change history\"",
-				"openzaak": "zaakafhandelapp#723 row 6.4: procest/openzaak/specs/00-overview.md:23: no case page or timeline UI exists"
+				"opencase": "opencase@1.1.0 notes (Journalnotater tab), sent mail and digital post (as documents) and the audit Log tab (CaseAuditLog.vue) are separate; no merged communication view in src/views/CaseDetailView.vue tabs | round 2 drive: procest/_round2/compare/M1-functionality.md:154 \"| 6.4 | Unified communication timeline per case (notes, mail, messages) | no |\"",
+				"gzac": "gzac@13.4.1 case tabs notes, documents and audit are separate (frontend/projects/valtimo/case/src/lib/constants/tab.ts); no thread or conversation entity | round 2 drive: procest/valtimo/round2/pages/CaseDetail-Notities.md:15 \"Adding a note writes nothing to the Log tab.\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/communication-module/src/Communication.constants.ts:25-29 contact moments, notes, e-mail, PIP messages and Postex as threads in one Communicatie view per case; case timeline in modules/case/views/timeline adds document and mail events | round 2 drive: procest/xxllnc-zaken/round2/pages/Case-Communicatie.md:5 \"purpose: All conversations on the case: notes, contact moments, e-mail, PIP messages, letters\"",
+				"zac": "zac@1.0.316 notes (zac-notities), documents and history (zaken-historie) are separate; contact moments hang off the party; no thread entity | round 3 drive: procest/zac/round3/rows/rows-4-6.md:55 \"no | the surfaces are separate and never merged: notes (`zac-notities`), documents including archived mail (`zac-zaak-documenten`), and the change history\"",
+				"openzaak": "openzaak@1.30.0 no timeline; audit trail per resource only"
 			}
 		},
 		{
@@ -4046,11 +4046,11 @@
 				"evidence": "/api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/IncomingDocuments.md:5 \"Inbox of documents that arrived from Digital Post, watched folders or IMAP mailboxes, to be journalised on an existing or new case.\"",
-				"gzac": "procest/_round2/compare/M1-functionality.md:155 \"| 6.5 | Organisation-wide message inbox with assign to case | partial `src/views/InboundDocumentsView.vue` | no |\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Communicatie.md:9 \"on a thread: beantwoorden, Toevoegen aan zaak (link to a case), mark read\"",
-				"zac": "procest/zac/round3/menu-tree.md:40 \"Three separate registers, and this is the part of the navigation with no counterpart in dossiq:\"",
-				"openzaak": "zaakafhandelapp#723 row 6.5: procest/openzaak/no message inbox feature is documented anywhere in the research"
+				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:55,253-266 imports attachments of unseen mails from IMAP import locations as documents on an inbox case; src/views/InboundDocumentsView.vue:26-29 organisation-wide list opens the document, whose Journaliser på eksisterende sag moves it to a case; the mails themselves are not kept as messages | round 2 drive: procest/opencase/round2/pages/IncomingDocuments.md:5 \"Inbox of documents that arrived from Digital Post, watched folders or IMAP mailboxes, to be journalised on an existing or new case.\"",
+				"gzac": "gzac@13.4.1 backend/inbox is a CloudEvents consumer (no user screen); no message inbox route in frontend/projects/valtimo | round 2 drive: procest/_round2/compare/M1-functionality.md:155 \"| 6.5 | Organisation-wide message inbox with assign to case | partial `src/views/InboundDocumentsView.vue` | no |\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/customerContact/CustomerContact.tsx:5-8 Communicatie inbox (nav, capability message_intake); packages/communication-module/src/Communication.requests.ts:28-29 link_thread_to_case, locale :173 Toevoegen aan zaak | round 2 drive: procest/xxllnc-zaken/round2/pages/Communicatie.md:9 \"on a thread: beantwoorden, Toevoegen aan zaak (link to a case), mark read\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/inboxdocument/InboxDocumentRestService.kt and inbox-productaanvragen-list link inbound documents and form submissions to a case; no e-mail or message inbox | round 3 drive: procest/zac/round3/menu-tree.md:40 \"Three separate registers, and this is the part of the navigation with no counterpart in dossiq:\"",
+				"openzaak": "openzaak@1.30.0 no inbox; API backend"
 			}
 		},
 		{
@@ -4059,9 +4059,9 @@
 			"name": "Digital post to citizens (Digital Post, Berichtenbox, Postex)",
 			"name_nl": "Digitale post aan burgers (Berichtenbox, Postex)",
 			"dossiq": "yes",
-			"opencase": "partial",
+			"opencase": "unknown",
 			"gzac": "no",
-			"zaaksysteem": "partial",
+			"zaaksysteem": "yes",
 			"zac": "no",
 			"openzaak": "no",
 			"provider": "integriq",
@@ -4082,11 +4082,11 @@
 				"evidence": "src/manifest.json:3347; lib/Service/DigitalPost/BerichtenboxProvider.php; PostexProvider.php; LogDigitalPostProvider.php; dossiq#3081 226b7e0b; integriq#2062 626d8dabc"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:236 \"Digital post shipment with reply flag and status :: partial (enterprise)\"",
-				"gzac": "procest/valtimo/round2/code-census.md:474 \"StUF, DSO, MijnOverheid/Berichtenbox, e-signing :: no :: (no source)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:342 \"digital post: Postex, MijnOverheid Berichtenbox :: partial\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:57 \"no | the only trace is a dead translation key `\"verzendMethode.berichtenbox\": \"Berichtenbox\"` at `src/main/app/src/assets/i18n/nl.json:573` with zero\"",
-				"openzaak": "zaakafhandelapp#723 row 6.6: procest/openzaak/docs/13-ecosystem-community.md:57: the ecosystem integration list has no digital-post or berichtenbox component"
+				"opencase": "not checked: opencase@1.1.0 lib/Controller/DigitalPostController.php:64-73 returns 501 unless enterprise_version is on and Serviceplatformen PostForespoergClient exists; lib/Command/KombiPostAfsendCommand.php:32 needs DigitalPostSendClient; neither client is in the public tree (lib/Service/Serviceplatformen); not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:236 \"Digital post shipment with reply flag and status :: partial (enterprise)\" | open for the lab: With the enterprise package, does Forsendelse, Digital post on a document send it and show a shipment status?",
+				"gzac": "gzac@13.4.1 grep -i 'berichtenbox|postex|mijnoverheid' over backend and frontend/projects returns nothing | round 2 drive: procest/valtimo/round2/code-census.md:474 \"StUF, DSO, MijnOverheid/Berichtenbox, e-signing :: no :: (no source)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/case/views/documents/actions/SendMessagePostex.tsx:35 and SendMessageMijnoverheid.tsx:27 when the postex or mijnoverheid interface is active; backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/Postex.pm and XML/MijnOverheid/HTTPClient.pm; Postex delivery events in DB/Component/Logging/Case/Postex/ | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:342 \"digital post: Postex, MijnOverheid Berichtenbox :: partial\"",
+				"zac": "zac@1.0.316 only a dead key verzendMethode.berichtenbox in src/main/app/src/assets/i18n/nl.json; no postex or MijnOverheid code in src/main | round 3 drive: procest/zac/round3/rows/rows-4-6.md:57 \"no | the only trace is a dead translation key `\"verzendMethode.berichtenbox\": \"Berichtenbox\"` at `src/main/app/src/assets/i18n/nl.json:573` with zero\"",
+				"openzaak": "openzaak@1.30.0 no sending channel; verzendingen record dispatch data only"
 			}
 		},
 		{
@@ -9017,15 +9017,22 @@
 			"dossiq": "no",
 			"dossiqNote": "lhsRecommendation carries a severity read by LhsLookupService, but it is scoped to VTH. It is not on the case schema, it is not separately permissioned, and it drives neither priority nor filtering, so all three qualifiers of the row fail.",
 			"name_nl": "Ingeschat risiconiveau op de zaak, met een eigen rechtencontrole",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "vth-module",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "opencase@1.1.0 CaseEntity carries sensitivity and insight level (confidentiality), no risk level; grep -i risk over lib/Db returns nothing",
+				"gzac": "gzac@13.4.1 no risk field; a JSON schema property could hold one, but PBAC conditions filter whole cases, not single fields (backend/authorization permission conditions)",
+				"zaaksysteem": "zaaksysteem@b7354824 nothing ships as risk level, but a case type attribute can carry it and attributes have their own read rights (backend/zaken/src/zsnl_domains/shared/repositories/attribute_acl.py:10 user_allowed_read_attributes_subquery); configuration, not a product field",
+				"zac": "zac@1.0.316 no risk field on the case or in zaakdata handling; rights in policies/zaak-rechten.rego are per case, not per field",
+				"openzaak": "openzaak@1.30.0 no risk attribute on Zaak; an eigenschap could hold one but autorisaties do not reach single eigenschappen"
+			}
 		},
 		{
 			"id": "2.41",
@@ -9036,15 +9043,22 @@
 			"dossiq": "no",
 			"dossiqNote": "BulkStatusTransitionService pairs a preview with an execute and has no inverse and no stored batch record. A mistake on a hundred cases is a hundred manual corrections.",
 			"name_nl": "Een bulkactie terugdraaien",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "opencase@1.1.0 no bulk actions exist (see 2.6)",
+				"gzac": "gzac@13.4.1 bulk assign (case-bulk-assign-modal) has no undo or stored batch",
+				"zaaksysteem": "zaaksysteem@b7354824 bulk runs as jobs with a simulate flag and a report (backend/zaken/src/zsnl_domains/jobs/entities/job.py:138-163), a preview rather than an undo; no inverse job type",
+				"zac": "zac@1.0.316 verdelen and vrijgeven in the werkvoorraad have no undo",
+				"openzaak": "openzaak@1.30.0 Django delete selected has no undo"
+			}
 		},
 		{
 			"id": "2.42",
@@ -9055,15 +9069,22 @@
 			"dossiq": "no",
 			"dossiqNote": "The workflow editor and the board are keyboard operable and spec'd as such, which is accessibility rather than this capability. There is no command palette and no global shortcut layer anywhere in src/.",
 			"name_nl": "Bediening vanaf het toetsenbord met een opdrachtenbalk",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "nextcloud-vue",
 			"providerHow": "ledger-change",
 			"feature": "visual-workflow-editor",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "opencase@1.1.0 the only shortcut is Alt+M for voice input in the enterprise AI panel (src/components/AiSidePanel.vue:87,186); no command palette",
+				"gzac": "gzac@13.4.1 grep -il hotkey, shortcut, command palette over frontend/projects/valtimo returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/ui/App/Zaaksysteem/Layout/Topbar/Search/SearchPlaceholder.tsx:34-44 Ctrl or Cmd plus / opens the global quick search over cases, contacts, documents, objects and case types; one shortcut, not a command layer",
+				"zac": "zac@1.0.316 shortcut hits are the html editor and a formio translation; no global shortcuts or palette",
+				"openzaak": "openzaak@1.30.0 API and Django admin only"
+			}
 		},
 		{
 			"id": "2.43",
@@ -9074,15 +9095,22 @@
 			"dossiq": "no",
 			"dossiqNote": "StateMachineService moves a case when somebody chooses a transition. Nothing computes the status from which forms and documents are present.",
 			"name_nl": "Zaakstatus afgeleid uit wat is vastgelegd, niet handmatig gezet",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "partial",
+			"zac": "partial",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "workflow-definition-engine",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "opencase@1.1.0 status changes only through the header actions (lib/Service/CaseService.php:291-316); nothing computes it",
+				"gzac": "gzac@13.4.1 backend/process-document/src/main/kotlin/com/ritense/processdocument/service/DocumentDelegateService.kt:105 setInternalStatus is called from BPMN steps, so status follows the process rather than a handler; it is not computed from which data or documents are present",
+				"zaaksysteem": "zaaksysteem@b7354824 the status enum follows actions (backend/perl-api/lib/Zaaksysteem/Zaken/Roles/Acties.pm:284-291 new when unassigned, reopen from resolved); phases are advanced by hand once their checks pass",
+				"zac": "zac@1.0.316 src/main/kotlin/net/atos/zac/flowable/cmmn/UpdateZaakLifecycleListener.kt:39-49 writes the ZGW status when a plan item changes state, and AanvullendeInformatieTaskListener.kt switches it while that task runs; process-driven, not derived from recorded data",
+				"openzaak": "openzaak@1.30.0 status is whatever a client posts to /statussen"
+			}
 		},
 		{
 			"id": "2.44",
@@ -9093,15 +9121,22 @@
 			"dossiq": "no",
 			"dossiqNote": "Row 2.30 is a marker a person raises on the whole case. This is one the system raises against a specific tab and drops when the work behind that tab is done.",
 			"name_nl": "Attendering die naar één tabblad van de zaak wijst, weg na afhandeling",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue caseTabs counts are totals (documents, files, parties), not things awaiting handling",
+				"gzac": "gzac@13.4.1 case-detail.component.html shows no per-tab badge or count",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/case/sideMenu/navigation/Navigation.tsx:40-48 the Documenten item carries numUnacceptedFiles and Communicatie numUnreadCommunication; accepting documents or reading messages clears them",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/search/model/ZaakIndicatie.kt indicators such as ONTVANGSTBEVESTIGING_NIET_VERSTUURD are case-level, not tied to a tab",
+				"openzaak": "openzaak@1.30.0 no UI"
+			}
 		},
 		{
 			"id": "2.45",
@@ -9112,15 +9147,22 @@
 			"dossiq": "no",
 			"dossiqNote": "A case holds one situation. Nothing models several dated incidents inside it, each with its own owner and its own transfer, which is how repeat reports on one address are handled elsewhere.",
 			"name_nl": "Incident op een zaak als gedateerd record met een eigen eigenaar",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "opencase@1.1.0 no incident entity; journal notes (lib/Db/JournalNote.php) are dated text without an owner or transfer",
+				"gzac": "gzac@13.4.1 no incident entity in backend/case; notes (backend/notes Note.kt) have an author but no owner or transfer",
+				"zaaksysteem": "zaaksysteem@b7354824 nearest are tasks with an assignee and deadline (backend/zaken/src/zsnl_domains/case_management/entities/task.py) and contact moments in threads; no incident record",
+				"zac": "zac@1.0.316 nearest are tasks with a group, handler and fatal date; no incident record",
+				"openzaak": "openzaak@1.30.0 KlantContact on a zaak (admin/zaken.py:178-182) is dated but has no owner"
+			}
 		},
 		{
 			"id": "2.46",
@@ -9131,15 +9173,22 @@
 			"dossiq": "partial",
 			"dossiqNote": "statusType.role is an administered enum including pending-info and stranded, rendered as Waiting for information and read by StatusTypeLookup and the shipped flow. It conflates waiting on the applicant with waiting on a third party, and no team count is built on it.",
 			"name_nl": "Elke status geeft aan of de zaak op ons wacht of op een ander",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial",
+			"zac": "partial",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "workflow-definition-engine",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "opencase@1.1.0 lib/Db/CaseStatus.php:23-26 status rows have only isClosed; nothing marks waiting",
+				"gzac": "gzac@13.4.1 backend/case/src/main/kotlin/com/ritense/document/domain/InternalCaseStatus.kt:31-39 title, visibility, order, colour; no waiting-on attribute",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/_shared.py:267-271 the fixed status stalled marks a case as waiting, with a suspension reason and term; one status, not a declaration per status, and it does not say on whom",
+				"zac": "zac@1.0.316 src/main/app/src/app/admin/inrichtingscheck/inrichtingscheck.component.html:176,256 flags a case type lacking the status Aanvullende informatie vereist, which AanvullendeInformatieTaskListener sets while waiting on the applicant; a naming convention, no flag on statustypen",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/catalogi/models/statustype.py has no waiting attribute; opschorting is a separate flag on the zaak"
+			}
 		},
 		{
 			"id": "2.47",
@@ -9150,16 +9199,23 @@
 			"dossiq": "no",
 			"dossiqNote": "ComplaintService has a withdrawn status, set internally by a handler. No case type lets the applicant close their own case from the portal. Re-rated partial to no on 2026-09-26: portaliq lib/Controller/CitizenCaseController.php:304-331 withdraw() is implemented (appinfo/routes.php:287), but src/portal/lib/portalApi.js has no withdraw method and src/portal/components/CitizenCase.jsx has no withdraw button, so no applicant reaches it (portaliq matrix rows act-withdraw-case and sib-dossiq-2-47).",
 			"name_nl": "Aanvrager trekt de eigen zaak in vanuit het portaal",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
 			"feature": "zaakportaal-mijngemeente",
 			"featureConfidence": "high",
-			"readOn": "2026-09-26"
+			"readOn": "2026-09-26",
+			"evidence": {
+				"opencase": "opencase@1.1.0 no citizen portal",
+				"gzac": "gzac@13.4.1 grep -il withdraw, intrek over backend/case and the portaaltaak plugin returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -il intrekken over backend/perl-api root/tpl and lib, and withdraw over frontend-mono/apps/my-pip, returns nothing; the PIP (Controller/Plugins/PIP.pm) views and messages only",
+				"zac": "zac@1.0.316 the only intrekken is withdrawing a besluit (app/zaak/ZaakBesluitRestService.kt, model/besluit/RestBesluitWithdrawalData.kt), by staff",
+				"openzaak": "openzaak@1.30.0 no citizen surface"
+			}
 		},
 		{
 			"id": "2.48",
@@ -9170,15 +9226,22 @@
 			"dossiq": "no",
 			"dossiqNote": "Row 2.26 declares typed links. Nothing walks them to answer who else is affected, and nothing lets you prune a branch of that walk.",
 			"name_nl": "Betrokken partijen en objecten afgeleid via vastgelegde relaties",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "opencase@1.1.0 relations are parent case, participants and estates read one hop at a time (CaseHierarchyTab.vue, CaseEstateList.vue); nothing walks them to list affected parties",
+				"gzac": "gzac@13.4.1 no relation walk in backend/case or backend/zgw; zaakobjecten are listed per case only (ZaakObjectResource.kt:56)",
+				"zaaksysteem": "zaaksysteem@b7354824 relations tables list direct relations per case (modules/case/views/relations/Relations.tsx) and contact relations per contact; no transitive walk",
+				"zac": "zac@1.0.316 gerelateerde zaken and BAG objects are listed one hop per case (zaak-details-gerelateerde-zaken-tab, zaak-details-bag-objecten-tab); no walk",
+				"openzaak": "openzaak@1.30.0 the API returns direct relations only (hoofdzaak, relevanteAndereZaken, rollen, zaakobjecten)"
+			}
 		},
 		{
 			"id": "2.50",
@@ -9189,15 +9252,22 @@
 			"dossiq": "no",
 			"dossiqNote": "No If-Match, ETag or expected version exists on any write, so the last save wins silently. conflictRecord is declared in the offline sync fragment and has no reader. Row 2.27 answers the same problem with a lock, which is the heavier of the two designs.",
 			"name_nl": "Botsende opslag geweigerd met de waarde van de ander erbij",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep -il If-Match, etag, optimistic over lib hits only file storage etags (lib/Service/FileService.php:941); case updates (CaseController.php:298) carry no expected version",
+				"gzac": "gzac@13.4.1 backend/case/src/main/java/com/ritense/document/domain/impl/JsonSchemaDocument.java:102-103 JPA @Version stops two overlapping transactions, but ModifyDocumentRequest carries no version from the client, so a stale edit overwrites silently",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -il If-Match, optimistic, version_conflict over case_management returns nothing",
+				"zac": "zac@1.0.316 grep -il If-Match, OptimisticLock, @Version over src/main/kotlin returns nothing; ZAC patches Open Zaak without a precondition",
+				"openzaak": "openzaak@1.30.0 the 412 responses (utils/schema.py:49) are for CRS headers; writes take no If-Match"
+			}
 		},
 		{
 			"id": "2.51",
@@ -9208,15 +9278,22 @@
 			"dossiq": "yes",
 			"dossiqNote": "CaseTransferService carries the whole hand-off: offer, acceptance, rejection and the audit entry for each. Added so the instrument can record a strength, not only a gap.",
 			"name_nl": "Een zaak overdragen aan een andere organisatie, die aanneemt of weigert",
-			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "unknown",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "opencase@1.1.0 the organisation is changed in the Edit dialog (CaseController.php:298-325) with no offer, acceptance or refusal",
+				"gzac": "gzac@13.4.1 no organisation on the case and no transfer flow",
+				"zaaksysteem": "zaaksysteem@b7354824 reallocation to a department is direct (actions.requests.ts:170-174); the transfer status is archival transfer (contactView cases Cases.locale.ts:22), not a hand-off to another organisation",
+				"zac": "zac@1.0.316 no inter-organisation transfer; assignment moves between groups only",
+				"openzaak": "openzaak@1.30.0 verantwoordelijke organisatie is an RSIN a client can patch; no acceptance step"
+			}
 		},
 		{
 			"id": "3.24",
@@ -11052,11 +11129,121 @@
 			"pack": "r1"
 		},
 		{
+			"id": "2.40",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.41",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.42",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.43",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.44",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.45",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.46",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.47",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.48",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
 			"id": "2.5",
 			"kind": "row",
 			"system": "gzac",
 			"on": "2026-09-26",
 			"from": "yes",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.50",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.51",
+			"kind": "pending",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
 			"to": "no",
 			"cause": "source-read",
 			"pack": "r1"
@@ -11852,6 +12039,116 @@
 			"pack": "r1"
 		},
 		{
+			"id": "2.40",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.41",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.42",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.43",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.44",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.45",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.46",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.47",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.48",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.50",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.51",
+			"kind": "pending",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
 			"id": "3.24",
 			"kind": "pending",
 			"system": "opencase",
@@ -12003,6 +12300,16 @@
 		},
 		{
 			"id": "5.3",
+			"kind": "row",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "unknown",
+			"cause": "source-read",
+			"pack": "r3"
+		},
+		{
+			"id": "6.6",
 			"kind": "row",
 			"system": "opencase",
 			"on": "2026-09-26",
@@ -12502,12 +12809,122 @@
 			"pack": "r1"
 		},
 		{
+			"id": "2.40",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.41",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.42",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.43",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.44",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.45",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.46",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.47",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.48",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
 			"id": "2.5",
 			"kind": "row",
 			"system": "openzaak",
 			"on": "2026-09-26",
 			"from": "yes",
 			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.50",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.51",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
 			"cause": "source-read",
 			"pack": "r1"
 		},
@@ -13112,6 +13529,116 @@
 			"pack": "r1"
 		},
 		{
+			"id": "2.40",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.41",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.42",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.43",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.44",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.45",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.46",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.47",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.48",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.50",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.51",
+			"kind": "pending",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
 			"id": "2.8",
 			"kind": "row",
 			"system": "zaaksysteem",
@@ -13333,6 +13860,16 @@
 		},
 		{
 			"id": "5.3",
+			"kind": "row",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r3"
+		},
+		{
+			"id": "6.6",
 			"kind": "row",
 			"system": "zaaksysteem",
 			"on": "2026-09-26",
@@ -13848,6 +14385,116 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.40",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.41",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.42",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.43",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.44",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.45",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.46",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.47",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.48",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.50",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.51",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
 			"cause": "source-read",
 			"pack": "r1"
 		},
