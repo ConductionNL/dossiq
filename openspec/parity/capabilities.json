@@ -6,7 +6,7 @@
 		"rows": 225,
 		"pending": 146
 	},
-	"comparedOn": "2026-09-07",
+	"comparedOn": "2026-09-26",
 	"rowsAddedOn": "2026-09-09",
 	"reratedOn": "2026-09-26",
 	"dossiqRevision": "024e93d0a",
@@ -686,41 +686,53 @@
 			"key": "opencase",
 			"name": "OpenCase",
 			"vendor": "Lamotech",
+			"readOn": "2026-09-26",
+			"drivenOn": "2026-09-07",
+			"readVersion": "OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea)",
 			"evidenceGrade": "driven",
-			"unknownReason": "Round 2 drove OpenCase 1.1.0 (commit 1143dbea) against the 206 rows it produced; it was never read against the 19 rows round 3 added on 2026-09-09 from GLPI and Zammad, nor against any pending proposal."
+			"unknownReason": "Source read on 2026-09-26 at OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea), the version the 2026-09-07 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
 		},
 		{
 			"key": "gzac",
 			"name": "Valtimo/GZAC",
 			"vendor": "Ritense",
+			"readOn": "2026-09-26",
+			"drivenOn": "2026-09-07",
+			"readVersion": "Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs",
 			"evidenceGrade": "driven",
-			"unknownReason": "Round 2 drove Valtimo/GZAC 13.4.1 (the Evenementenvergunning demo) against the 206 rows it produced; it was never read against the 19 rows round 3 added on 2026-09-09 from GLPI and Zammad, nor against any pending proposal."
+			"unknownReason": "Source read on 2026-09-26 at Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs, the version the 2026-09-07 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
 		},
 		{
 			"key": "zaaksysteem",
 			"name": "xxllnc Zaken",
 			"vendor": "xxllnc",
+			"readOn": "2026-09-26",
+			"drivenOn": "2026-09-07",
+			"readVersion": "xxllnc Zaken master at commit b7354824 (no release tag; the drive read this commit)",
 			"evidenceGrade": "driven",
-			"unknownReason": "Round 2 drove xxllnc Zaken at master b7354824 against the 206 rows it produced; it was never read against the 19 rows round 3 added on 2026-09-09 from GLPI and Zammad, nor against any pending proposal."
+			"unknownReason": "Source read on 2026-09-26 at xxllnc Zaken master at commit b7354824 (no release tag; the drive read this commit), the version the 2026-09-07 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
 		},
 		{
 			"key": "zac",
 			"name": "Dimpact ZAC",
 			"vendor": "Dimpact",
-			"readOn": "2026-09-08",
+			"readOn": "2026-09-26",
+			"drivenOn": "2026-09-08",
+			"readVersion": "Dimpact ZAC 1.0.316 (tag zaakafhandelcomponent-1.0.316, commit e2c8399e)",
 			"columnAddedOn": "2026-09-10",
 			"ownsNoData": "Open Zaak",
 			"evidenceGrade": "driven",
-			"unknownReason": "Round 3 drove Dimpact ZAC 1.0.316 on 2026-09-08 against the 206 rows round 2 produced; it was never read against the 19 rows round 3 added on 2026-09-09 from GLPI and Zammad, nor against any pending proposal."
+			"unknownReason": "Source read on 2026-09-26 at Dimpact ZAC 1.0.316 (tag zaakafhandelcomponent-1.0.316, commit e2c8399e), the version the 2026-09-08 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
 		},
 		{
 			"key": "openzaak",
 			"name": "Open Zaak",
 			"vendor": "Maykin Media",
-			"readOn": "2026-03-13",
+			"readOn": "2026-09-26",
+			"readVersion": "Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version)",
 			"columnAddedOn": "2026-09-26",
 			"evidenceGrade": "docs-only",
-			"unknownReason": "Seeded from zaakafhandelapp's Open Zaak column (zaakafhandelapp#723), itself rated from the 2026-03-13 procest/openzaak research; a row that research did not settle stays unknown until the source read at 1.30.0 reaches it. Every pending proposal is unread for this column."
+			"unknownReason": "Source read on 2026-09-26 at Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version), not driven; the drive notes are in the lab README. A cell the source did not settle says why on the cell."
 		}
 	],
 	"providers": [
@@ -1430,7 +1442,7 @@
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseEntity.php:55-56 orgUuid and accessProfileId: the case belongs to one organisation unit, required in NewCaseDialog; there is no role on that unit and no work queue per unit | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:18 \"The SF1500 unit that owns the case.\"",
-				"gzac": "gzac@13.4.1 backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentResource.java:128-170 case assignment takes a user only; grep -il team over backend main code and frontend/projects/valtimo .ts files finds no team model. Roles apply to BPMN task candidate groups, not the case | round 2 drive: procest/valtimo/round2/code-census.md:361 \"assign case to user or team, claim, unassign, candidate users/teams :: yes\"",
+				"gzac": "gzac@13.4.1 backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentResource.java:128-170 case assignment takes a user only; grep -il team over backend main and frontend .ts finds no team model. Nearest is a BPMN plugin action writing an organisatorische eenheid zaakrol to Open Zaak (backend/zgw/zaken-api/.../ZakenApiPlugin.kt:565), which Valtimo's own lists do not use | round 2 drive: procest/valtimo/round2/code-census.md:361 \"assign case to user or team, claim, unassign, candidate users/teams :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionDialog/CaseActionDialog.locale.ts:68,72-73 Afdeling en rol assignment; backend/zaken/src/zsnl_domains/case_management/entities/case.py:25-26 department and role on the case | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:234 \"Toewijzing wijzigen (assign: afdeling+rol / specifieke behandelaar / zelf in behandeling nemen, add as betrokkene\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/zaak/ZaakService.kt:199,258,273 assignZaak(group, user) as separate organisatorische eenheid and medewerker roles; app/zaak/ZaakRestService.kt:583-585 handler must belong to the group | round 3 drive: procest/zac/round3/rows/rows-1-3.md:26 \"yes | Group and handler are separate ZGW roles, not one field: `ZaakService.bepaalRolGroep` builds a `RolOrganisatorischeEenheid` and\"",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/admin/betrokkenen.py:74-75 OrganisatorischeEenheid rol with a roltype, edited on the zaak in the Django admin or posted by a client through the Rol API. Django admin only for a person"
@@ -1483,11 +1495,11 @@
 				"evidence": "dossiq_register.json#statusType; src/views/settings/tabs/StatusesTab.vue; procest/_round4/discovery/casetype-configurability.md; StatusesTab.vue:47"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/Configuration-CodeLists.md:10 \"Case status columns: Danish, English, Expired.\"",
-				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:22 \"internal statuses: name, key (auto), colour, \"Standaardzichtbaarheid in dossierlijst\", order\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:213 \"Status is the small enum new -> open -> (stalled) -> resolved (deleted)\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:28 \"partial | Statuses are ZTC `statustypen`, read-only in ZAC: `src/main/kotlin/nl/info/zac/app/zaak/model/RestStatustype.kt` exposes `volgnummer` and\"",
-				"openzaak": "zaakafhandelapp#723 row 2.7: procest/openzaak/specs/catalogi-zaaktypen/spec.md:96: StatusType has statustypevolgnummer for ordering, no colour attribute is defined on StatusType"
+				"opencase": "opencase@1.1.0 lib/Db/CaseStatus.php:23-26 status rows hold name, language, isClosed, expired only, edited as a code list (src/views/ConfigurationView.vue:229); src/views/CaseDetailView.vue:76-84 the header actions hard-code status ids 1 and 2. No colour, no order | round 2 drive: procest/opencase/round2/pages/Configuration-CodeLists.md:10 \"Case status columns: Danish, English, Expired.\"",
+				"gzac": "gzac@13.4.1 backend/case/src/main/kotlin/com/ritense/document/domain/InternalCaseStatus.kt:31-39 title, visible by default, order, colour per case type; frontend case-management-case-detail.component.html:39 mounts the statuses editor (case-management-statuses with a modal) | round 2 drive: procest/valtimo/round2/case-definition-editor-anatomy.md:22 \"internal statuses: name, key (auto), colour, \"Standaardzichtbaarheid in dossierlijst\", order\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/_shared.py:267-271 case status is a fixed enum new, open, stalled, resolved; phase names per case type are configurable but are a separate concept | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:213 \"Status is the small enum new -> open -> (stalled) -> resolved (deleted)\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/model/RestStatustype.kt:20-21 volgnummer and isEindstatus read from Open Zaak statustypen; no colour and no editor in ZAC | round 3 drive: procest/zac/round3/rows/rows-1-3.md:28 \"partial | Statuses are ZTC `statustypen`, read-only in ZAC: `src/main/kotlin/nl/info/zac/app/zaak/model/RestStatustype.kt` exposes `volgnummer` and\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/catalogi/models/statustype.py:61,112,115 statustypen per zaaktype with a unique volgnummer that orders them, editable in the catalogi Django admin; no colour attribute"
 			}
 		},
 		{
@@ -1498,7 +1510,7 @@
 			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
-			"zaaksysteem": "partial",
+			"zaaksysteem": "no",
 			"zac": "no",
 			"openzaak": "no",
 			"provider": "dossiq",
@@ -1510,11 +1522,11 @@
 				"evidence": "dossiq_register.json#case.tags"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:77 \"Case core: `CaseEntity` (caseNumber, title, accessProfileId, orgUuid, year, statusId, casetypeId\"",
-				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:23 \"per-type tags: Naam, Key, Kleur\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/search-anatomy.md:33 \"Free-text labels on a saved search (Meer opties > Labels)\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:29 \"no | No tag or label field on the case. Zero hits for a case tag concept; the only `tag` hits in `src/main/kotlin` are `SearchService.kt` (Solr) and\"",
-				"openzaak": "zaakafhandelapp#723 row 2.8: procest/openzaak/specs/zaak-lifecycle/spec.md:29: Zaak field table has no trefwoorden or tags field, only ZaakType has trefwoorden (catalogi-zaaktypen/spec.md:74)"
+				"opencase": "opencase@1.1.0 lib/Db/CaseEntity.php fixed columns with no tag or label field; grep -i tag over src/components finds no case tagging | round 2 drive: procest/opencase/round2/code-census.md:77 \"Case core: `CaseEntity` (caseNumber, title, accessProfileId, orgUuid, year, statusId, casetypeId\"",
+				"gzac": "gzac@13.4.1 backend/case/src/main/kotlin/com/ritense/document/domain/CaseTag.kt with colour, managed per case type (web/rest/CaseTagResource.kt:49-77, case-management-tags tab); set on a case by the process (process-document/.../DocumentDelegateService.kt:112,119 addCaseTag, removeCaseTag); shown at case-detail.component.html:28-32 and in the case list | round 2 drive: procest/valtimo/round2/case-definition-editor-anatomy.md:23 \"per-type tags: Naam, Key, Kleur\" | open for the lab: Can a case handler add or remove a tag by hand on the case page, or only a BPMN step?",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/saved_search.py:911 labels belong to saved searches; case.py has no tag or label field on the case | round 2 drive: procest/xxllnc-zaken/round2/search-anatomy.md:33 \"Free-text labels on a saved search (Meer opties > Labels)\"",
+				"zac": "zac@1.0.316 no tag field on the case; src/main/kotlin/nl/info/zac/search/model/ZaakIndicatie.kt is a fixed derived set, not user labels | round 3 drive: procest/zac/round3/rows/rows-1-3.md:29 \"no | No tag or label field on the case. Zero hits for a case tag concept; the only `tag` hits in `src/main/kotlin` are `SearchService.kt` (Solr) and\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/admin/zaken.py:651 ZaakKenmerk holds external identifiers (kenmerk plus bron), not labels; no tag field on Zaak"
 			}
 		},
 		{
@@ -1537,11 +1549,11 @@
 				"evidence": "lib/Service/CaseCopyService.php; lib/Controller/CaseActionsController.php; #CaseDetail/headerActions.copy-case"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:22 \"Edit, Copy case, Create subcase, New reminder\"",
-				"gzac": "procest/_round2/compare/M1-functionality.md:62 \"| 2.9 | Copy case | yes `src/components/CopyCaseDialog.vue` | no |\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/case-detail-anatomy.md:40 \"Termijn wijzigen, Zaak relateren, Zaak kopiëren, Rechten wijzigen\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:30 \"no | No copy action anywhere: the case action menu in `src/main/app/src/app/zaken/zaak-view/utils/zaak-view-menu.builder.ts` has no such entry and zero\"",
-				"openzaak": "zaakafhandelapp#723 row 2.9: procest/openzaak/specs/catalogi-zaaktypen/spec.md: no copy-zaak endpoint or admin action is documented anywhere in the research"
+				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:58-62,251 Kopier sag opens CopyCaseDialog; src/components/CopyCaseDialog.vue:552-591 creates a new case and copies chosen documents with files, participants and journal notes | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:22 \"Edit, Copy case, Create subcase, New reminder\"",
+				"gzac": "gzac@13.4.1 grep -il copyCase, copy-case, duplicateCase over backend/case and the case frontend returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:62 \"| 2.9 | Copy case | yes `src/components/CopyCaseDialog.vue` | no |\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionsDialog/CaseActionsDialogContent.tsx:58 copy among the case actions; packages/common/src/domains/case/actions.requests.ts:121-122 POST /api/v2/cm/case/copy_case | round 2 drive: procest/xxllnc-zaken/round2/case-detail-anatomy.md:40 \"Termijn wijzigen, Zaak relateren, Zaak kopiëren, Rechten wijzigen\"",
+				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaak-view/utils/zaak-view-menu.builder.ts has no copy entry; grep -i kopieer over it returns nothing | round 3 drive: procest/zac/round3/rows/rows-1-3.md:30 \"no | No copy action anywhere: the case action menu in `src/main/app/src/app/zaken/zaak-view/utils/zaak-view-menu.builder.ts` has no such entry and zero\"",
+				"openzaak": "openzaak@1.30.0 ZaakViewSet and ZaakAdmin define no copy action; only Django's add and change views"
 			}
 		},
 		{
@@ -1564,11 +1576,11 @@
 				"evidence": "#CaseDetail/case-sub-cases; lib/Controller/CaseRelationController.php; case.parentCase/relatedCases"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-CaseHierarchy.md:5 \"Tree of parent and sub-cases.\"",
-				"gzac": "procest/valtimo/round2/code-census.md:355 \"duplicate/related case linking (relevanteAndereZaken) :: partial (ZGW plugin action)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/case-detail-anatomy.md:48 \"sections Hoofd- en deelzaken (Niveau, #, Voortgang, Zaaktype, Extra informatie, Resultaat), Gerelateerde zaken\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:31 \"yes | `src/main/kotlin/nl/info/zac/app/zaak/ZaakKoppelenRestService.kt` with `linkZaak` and `unlinkZaak`, over\"",
-				"openzaak": "zaakafhandelapp#723 row 2.10: procest/openzaak/specs/zaak-relaties/spec.md:19: hoofdzaak/deelzaken self-referencing FK plus RelevanteZaakRelatie and ZaakRelatie"
+				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:225,257 Opret undersag opens CreateSubCaseDialog and the Sagshierarki tab renders CaseHierarchyTab; CaseEntity parentCaseId. Hierarchy only, no sideways related-case link | round 2 drive: procest/opencase/round2/pages/CaseDetail-CaseHierarchy.md:5 \"Tree of parent and sub-cases.\"",
+				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:269,373-374 create zaak with hoofdzaak, :934-953 add to relevanteAndereZaken, all as BPMN plugin actions; grep for hoofdzaak or related-case over the case frontend finds no screen that shows or links related cases | round 2 drive: procest/valtimo/round2/code-census.md:355 \"duplicate/related case linking (relevanteAndereZaken) :: partial (ZGW plugin action)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case_relation.py and related_case.py; frontend-mono/apps/main/src/modules/case/views/relations/Relations.tsx:17 CaseTables for main, sub and related cases; actions.requests.ts:323-324 create_case_relation | round 2 drive: procest/xxllnc-zaken/round2/case-detail-anatomy.md:48 \"sections Hoofd- en deelzaken (Niveau, #, Voortgang, Zaaktype, Extra informatie, Resultaat), Gerelateerde zaken\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakKoppelenRestService.kt:108,151 linkZaak and unlinkZaak; app/zaak/model/RelatieType.kt:8-15 HOOFDZAAK, DEELZAAK, GERELATEERD linkable, VERVOLG and others shown | round 3 drive: procest/zac/round3/rows/rows-1-3.md:31 \"yes | `src/main/kotlin/nl/info/zac/app/zaak/ZaakKoppelenRestService.kt` with `linkZaak` and `unlinkZaak`, over\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:138 hoofdzaak FK for deelzaken, :661 ZaakRelatie and :715-760 RelevanteZaakRelatie with aard_relatie, exposed on the Zaken API and as admin inlines"
 			}
 		},
 		{
@@ -1591,11 +1603,11 @@
 				"evidence": "lib/Service/DeadlinePauseService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
-				"gzac": "procest/valtimo/round2/code-census.md:429 \"ZGW hersteltermijn start/end and case suspension :: partial (plugin)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:295 \"suspend (indefinite or term) and resume with reasons :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:32 \"yes | `src/main/kotlin/nl/info/zac/app/zaak/ZaakSuspendRestService.kt` (`suspend`, `resume`, `opschorting`) over\"",
-				"openzaak": "zaakafhandelapp#723 row 2.11: procest/openzaak/specs/zaak-lifecycle/spec.md:55: opschorting GegevensGroep (indicatie, reden, eerdere_opschorting)"
+				"opencase": "opencase@1.1.0 lib/Db/CaseStatus.php and src/views/CaseDetailView.vue:76-87 only open, closed and archived; grep -i suspend or pause over src and lib finds no suspension | round 2 drive: procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
+				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:738 Set case suspension, :771 Start hersteltermijn, :816 End hersteltermijn are BPMN plugin actions; no suspend or resume button on the case page | round 2 drive: procest/valtimo/round2/code-census.md:429 \"ZGW hersteltermijn start/end and case suspension :: partial (plugin)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionsDialog/CaseActionsDialogContent.tsx:54-55 suspend and resume; packages/common/src/domains/case/actions.requests.ts:57-58,81-82 /api/v2/cm/case/pause and resume with reason and term | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:295 \"suspend (indefinite or term) and resume with reasons :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakSuspendRestService.kt:48,61,74 opschorting, resume, suspend; UI zaak-opschorten-dialog with days and reason | round 3 drive: procest/zac/round3/rows/rows-1-3.md:32 \"yes | `src/main/kotlin/nl/info/zac/app/zaak/ZaakSuspendRestService.kt` (`suspend`, `resume`, `opschorting`) over\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:309-325 opschorting indicatie, reden and eerdere opschorting on the Zaak resource, set through the API"
 			}
 		},
 		{
@@ -1618,11 +1630,11 @@
 				"evidence": "/api/case/{caseId}/reopen; appinfo/routes.php:443"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:202 \"Case status open/closed/archived with reopen :: yes\"",
-				"gzac": "procest/valtimo/round2/pages/CaseDefinition-Statussen.md:15 \"never by hand from the case page; there is no status dropdown for a handler\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:297 \"early close with result, reopen (previous status) :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:33 \"yes | `ZaakRestService.kt:472 /zaak/{uuid}/heropenen` taking `RestZaakHeropenenGegevens`, exposed as `actie.zaak.heropenen` in\"",
-				"openzaak": "zaakafhandelapp#723 row 2.12: procest/openzaak/specs/zaak-lifecycle/spec.md:111: reopening requires scope zaken.heropenen to create new statuses after the final one"
+				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:80-82 Genåbn sag when status_id is 2 calls changeStatus(1) via PUT /api/v1/cases/{id}/status (lib/Controller/CaseController.php:356) | round 2 drive: procest/opencase/round2/code-census.md:202 \"Case status open/closed/archived with reopen :: yes\"",
+				"gzac": "gzac@13.4.1 grep -il reopen or heropen over backend/case main and the case frontend returns nothing; case status moves only through the process | round 2 drive: procest/valtimo/round2/pages/CaseDefinition-Statussen.md:15 \"never by hand from the case page; there is no status dropdown for a handler\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Zaken/Roles/Acties.pm:290-291,509-510 changing status or phase of a resolved case calls set_heropen; reached from the admin actions setStatus and setPhase (CaseActionsDialogContent.tsx:73-74, actions.requests.ts:245-256) | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:297 \"early close with result, reopen (previous status) :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:472-475 /zaak/{uuid}/heropenen; zaak-view-menu.builder.ts:188-191 menu entry when closed and the heropenen right is granted | round 3 drive: procest/zac/round3/rows/rows-1-3.md:33 \"yes | `ZaakRestService.kt:472 /zaak/{uuid}/heropenen` taking `RestZaakHeropenenGegevens`, exposed as `actie.zaak.heropenen` in\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/scopes.py:78 zaken.heropenen scope allows a client to set a new status after the eindstatus"
 			}
 		},
 		{
@@ -1635,7 +1647,7 @@
 			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "no",
-			"openzaak": "no",
+			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
@@ -1654,11 +1666,11 @@
 				"evidence": "src/manifest.json:3465; src/dialogs/CaseRebindDialog.vue; lib/Service/CaseRebindService.php; appinfo/routes.php:162-164; dossiq#2914 8f2cd30b"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:16 \"A code-list value; changes only via Edit.\"",
-				"gzac": "procest/valtimo/round2/code-census.md:370 \"case migration between case type versions with patches :: partial (beta)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:299 \"change case type/version of a running case :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:34 \"no | `ZaakRestService.updateZaak` (line 569) patches ZGW fields through `toPatchZaak` and the case type is not among them; there is no route that rebinds\"",
-				"openzaak": "zaakafhandelapp#723 row 2.13: procest/openzaak/specs/catalogi-zaaktypen/spec.md:218: new zaaktype versions apply to new cases, no migration of a running zaak to a new type or version is documented"
+				"opencase": "opencase@1.1.0 lib/Controller/CaseController.php:298-325 case update accepts title, organisation, KLE, sensitivity, responsible user, insight level, facet and summary, never casetype_id | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:16 \"A code-list value; changes only via Edit.\"",
+				"gzac": "gzac@13.4.1 frontend/src/environments/environment.ts:142 admin menu Case migration (beta); frontend/projects/valtimo/case-migration/src/lib/case-migration-routing.module.ts:26-29 ROLE_ADMIN; services/case-migration.service.ts:40,47 migrate all documents of one definition to another. Batch admin migration, not a per-case change | round 2 drive: procest/valtimo/round2/code-census.md:370 \"case migration between case type versions with patches :: partial (beta)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionsDialog/CaseActionsDialogContent.tsx:77 changeCaseType admin action; packages/common/src/domains/case/actions.requests.ts:341-343 /api/v2/cm/case/casetype/update | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:299 \"change case type/version of a running case :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt updateZaak patches ZGW fields without the case type; no rebind route | round 3 drive: procest/zac/round3/rows/rows-1-3.md:34 \"no | `ZaakRestService.updateZaak` (line 569) patches ZGW fields through `toPatchZaak` and the case type is not among them; there is no route that rebinds\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:523-530 zaaktype is immutable on the API (LooseFkIsImmutableValidator); admin/zaken.py:773-777,842 the Django admin form keeps _zaaktype as an editable raw id field. Django admin only, a raw data edit | open for the lab: In the Open Zaak admin, can the zaaktype of an existing zaak be changed and saved, and what happens to its statuses?"
 			}
 		},
 		{
@@ -1668,7 +1680,7 @@
 			"name_nl": "Zaaklocatie (adres, geo) met kaart",
 			"dossiq": "yes",
 			"opencase": "partial",
-			"gzac": "yes",
+			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "partial",
@@ -1681,11 +1693,11 @@
 				"evidence": "dossiq_register.json#case-location; #CaseDetail/case-locaties; src/components/map/LocationPicker.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/EstateDetail.md:5 \"An estate (property) as a first-class object with its cadastral sub-objects and the cases on it.\"",
-				"gzac": "procest/valtimo/round2/code-census.md:290 \"| `map` | Leaflet-style map of GeoJSON | `geoJsonSources[{key}]` (Dutch address geocoding via PDOK\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Case-Kaart.md:5 \"purpose: Map of the case address and GeoJSON attributes\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:35 \"yes | Real map, OpenLayers 10.10.0 (`src/main/app/package.json:48`), in `src/main/app/src/app/shared/location/open-layers-location-map.ts`, used by\"",
-				"openzaak": "zaakafhandelapp#723 row 2.14: procest/openzaak/specs/zaak-lifecycle/spec.md:50: zaakgeometrie GeometryField (point/line/polygon), no map UI exists since there is no end-user frontend"
+				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue Ejendomme tab (CaseEstateList.vue) links BBR and cadastral estates with addresses to a case; grep -il leaflet, openlayers, maplibre over src and package.json returns nothing, so no map | round 2 drive: procest/opencase/round2/pages/EstateDetail.md:5 \"An estate (property) as a first-class object with its cadastral sub-objects and the cases on it.\"",
+				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:197-217 the create zaak plugin action can set a zaakgeometrie; frontend/projects/valtimo/layout/src/lib/models/widget.model.ts:27-34 widget types are fields, interactive-table, table, custom, collection, formio, no map; grep -il pdok, geojson, leaflet over backend and frontend finds none | round 2 drive: procest/valtimo/round2/code-census.md:290 \"| `map` | Leaflet-style map of GeoJSON | `geoJsonSources[{key}]` (Dutch address geocoding via PDOK\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case_location.py; frontend-mono/apps/main/src/modules/case/sideMenu/info/Info.tsx:165 location shown on the case; sideMenu/navigation/Navigation.tsx:50 Kaart item when the case has a location; advancedSearch/components/Main/Results/ResultsMap.tsx:5 GeoMap of results | round 2 drive: procest/xxllnc-zaken/round2/pages/Case-Kaart.md:5 \"purpose: Map of the case address and GeoJSON attributes\" | open for the lab: Case.tsx:94-102 declares no location route; does the Kaart item on a case with an address open a map?",
+				"zac": "zac@1.0.316 src/main/app/src/app/shared/location/open-layers-location-map.ts used by zaken/zaak-locatie-wijzigen and zaak-locatie-tonen; backend ZaakRestService zaaklocatie endpoint | round 3 drive: procest/zac/round3/rows/rows-1-3.md:35 \"yes | Real map, OpenLayers 10.10.0 (`src/main/app/package.json:48`), in `src/main/app/src/app/shared/location/open-layers-location-map.ts`, used by\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:283 zaakgeometrie GeometryField on the API; admin/zaken.py:5,795 ZaakAdmin extends GISModelAdmin, so the admin edits it on a map widget. Django admin only"
 			}
 		},
 		{
@@ -1708,11 +1720,11 @@
 				"evidence": "/case-objects"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:204 \"Estates (property) as a first-class linked object :: yes :: src/components/CaseEstateList.vue\"",
-				"gzac": "procest/valtimo/round2/code-census.md:460 \"object management (typed Objecten API objects with view/edit forms) :: yes\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/case-detail-anatomy.md:48 \"Gerelateerde objecten v1, Gerelateerde objecten v2 (Voeg toe)\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:36 \"partial | The ZGW zaakobject mechanism is wired but only for a closed set of BAG types: `src/main/kotlin/nl/info/client/zgw/zrc/model/zaakobjecten/` holds\"",
-				"openzaak": "zaakafhandelapp#723 row 2.15: procest/openzaak/specs/zaakobjecten/spec.md:24: 20+ RGBZ object type models plus a generic overige type with JSON overige_data"
+				"opencase": "opencase@1.1.0 src/components/CaseEstateList.vue and CreateEstateDialog.vue: one fixed object type, the estate, linked to cases; no configurable object types | round 2 drive: procest/opencase/round2/code-census.md:204 \"Estates (property) as a first-class linked object :: yes :: src/components/CaseEstateList.vue\"",
+				"gzac": "gzac@13.4.1 frontend/src/app/app.module.ts:266 registers a zaakobjecten case tab; frontend/projects/valtimo/zgw/src/lib/modules/objecten-api/components/object-type/object-type.component.ts:47-88 lists Objecten API objects per object type on the case; backend/zgw/objecten-api/.../web/rest/ZaakObjectResource.kt:46-109 list, form, create, update, delete | round 2 drive: procest/valtimo/round2/code-census.md:460 \"object management (typed Objecten API objects with view/edit forms) :: yes\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/case/views/relations/Tables/CustomObjects/CustomObjectsTable.tsx and Dialog.tsx relate custom objects of admin-defined object types to a case; backend entities object_relation.py and related_object.py | round 2 drive: procest/xxllnc-zaken/round2/case-detail-anatomy.md:48 \"Gerelateerde objecten v1, Gerelateerde objecten v2 (Voeg toe)\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/client/zgw/zrc/model/zaakobjecten/ holds a fixed set of BAG object types plus productaanvraag and a generic ObjectOverige model; no UI to attach an arbitrary object to a case | round 3 drive: procest/zac/round3/rows/rows-1-3.md:36 \"partial | The ZGW zaakobject mechanism is wired but only for a closed set of BAG types: `src/main/kotlin/nl/info/client/zgw/zrc/model/zaakobjecten/` holds\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:1388-1428 ZaakObject with object_type, object_type_overige and a definition; models/objecten.py:305-307 Overige with JSON overige_data; exposed on the zaakobjecten API"
 			}
 		},
 		{
@@ -1721,21 +1733,21 @@
 			"name": "Case data version history or snapshots",
 			"name_nl": "Versiehistorie of momentopnamen van zaakgegevens",
 			"dossiq": "yes",
-			"opencase": "partial",
-			"gzac": "yes",
+			"opencase": "yes",
+			"gzac": "partial",
 			"zaaksysteem": "partial",
 			"zac": "yes",
-			"openzaak": "partial",
+			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-Log.md:15 \"Access granted (with expiry), Case handler added, Case summary changed\"",
-				"gzac": "procest/valtimo/round2/code-census.md:368 \"case snapshots / document version history :: yes\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:237 \"attribute create/update/remove, checklist item create/update/remove\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:37 \"yes | `ZaakRestService.kt:372 /zaak/{uuid}/historie` over `src/main/kotlin/nl/info/zac/history/converter/ZaakHistoryLineConverter.kt`, which turns the ZGW\"",
-				"openzaak": "zaakafhandelapp#723 row 2.16: procest/openzaak/specs/11-audit-trail.md:20: change description records what was changed (before/after values) via the audit trail rather than a dedicated snapshot/restore feature"
+				"opencase": "opencase@1.1.0 lib/Service/AuditService.php:42-48 case_metadata_changed stores from and to per field; src/components/CaseAuditLog.vue:206-222 the Log tab renders them (title, organisation, KLE, sensitivity changed from to); a change log, not a restorable snapshot | round 2 drive: procest/opencase/round2/pages/CaseDetail-Log.md:15 \"Access granted (with expiry), Case handler added, Case summary changed\"",
+				"gzac": "gzac@13.4.1 backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentSnapshotResource.java:58,67 snapshot API with no frontend caller (grep document-snapshot over frontend finds none); case-detail/tab/audit/audit.component.html renders a timeline of events; JsonSchemaDocumentModifiedEvent.java:38 carries field changes | round 2 drive: procest/valtimo/round2/code-census.md:368 \"case snapshots / document version history :: yes\" | open for the lab: On the case audit tab, does a data change show the old and new values of the field?",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/DB/Component/Logging/Case/Attribute/Update.pm:27-51 logs Kenmerk gewijzigd with the new value only; the timeline shows it, no previous value and no snapshot | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:237 \"attribute create/update/remove, checklist item create/update/remove\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:372 /zaak/{uuid}/historie over history/converter ZaakHistoryLineConverter with per-attribute old and new; UI zaken/zaken-historie/zaak-historie.component.ts | round 3 drive: procest/zac/round3/rows/rows-1-3.md:37 \"yes | `ZaakRestService.kt:372 /zaak/{uuid}/historie` over `src/main/kotlin/nl/info/zac/history/converter/ZaakHistoryLineConverter.kt`, which turns the ZGW\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/urls.py:46 nested audittrail on each zaak (viewsets.py:1481 ZaakAuditTrailViewSet) with oud and nieuw resource versions; utils/admin.py:191-192 admin edits are written to it too"
 			},
 			"built": {
 				"state": "built",
@@ -2699,11 +2711,11 @@
 			},
 			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/PartnerTaskController.php:83-129 ask() is built and RBAC-guarded (appinfo/routes.php:269) but has no caller in portaliq's src/ or in dossiq (portaliq matrix rows tsk-ask-partner and sib-dossiq-3-19). dossiq's own src/manifest.d/consultation-public.json ExternalConsultationResponse page is the older flow, not the portaliq partner task.",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\"",
-				"gzac": "procest/valtimo/round2/code-census.md:343 \"the Portaaltaak plugin is the only external-task mechanism.\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:216 \"assignee (employee, or external supply-chain partner when `allow_external_task_assignment`)\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:62 \"partial | The external party is mailed, never given a task. The CMMN model ships an `ADVIES_EXTERN` human task\"",
-				"openzaak": "zaakafhandelapp#723 row 3.19: procest/openzaak/no external or supply-chain-partner task assignment concept is documented anywhere in the research"
+				"opencase": "opencase@1.1.0 workflow steps and reminders go to Nextcloud users only (lib/Service/WorkflowService.php:54-57 rejects unknown users); no external party task and no portal | round 2 drive: procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\"",
+				"gzac": "gzac@13.4.1 backend/zgw/portaaltaak/src/main/kotlin/com/ritense/portaaltaak/PortaaltaakPlugin.kt:87-88,164-165 create and complete a portal task object in the Objecten API for the zaak initiator or another receiver; an external portal must pick it up | round 2 drive: procest/valtimo/round2/code-census.md:343 \"the Portaaltaak plugin is the only external-task mechanism.\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/task.py:59,65 assignee may be a person or organisation, can_assign_externally; frontend-mono/apps/main/src/modules/case-components/Routes.tsx:29-31 externalTaskAssignment from the case type setting allow_external_task_assignment; Details.FormDefinition.ts:73 supply chain partner | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:216 \"assignee (employee, or external supply-chain partner when `allow_external_task_assignment`)\"",
+				"zac": "zac@1.0.316 src/main/resources/cmmn/Generiek_zaakafhandelmodel.cmmn.xml:201 Advies extern human task; the request is mailed out and the answer recorded internally, the partner gets no task of their own | round 3 drive: procest/zac/round3/rows/rows-1-3.md:62 \"partial | The external party is mailed, never given a task. The CMMN model ships an `ADVIES_EXTERN` human task\"",
+				"openzaak": "openzaak@1.30.0 no task resource in any component openapi.yaml"
 			}
 		},
 		{
@@ -2713,10 +2725,10 @@
 			"name_nl": "Macro die meerdere wijzigingen doet en bepaalt wat de behandelaar daarna ziet",
 			"dossiq": "partial",
 			"opencase": "unknown",
-			"gzac": "unknown",
-			"zaaksysteem": "unknown",
-			"zac": "unknown",
-			"openzaak": "partial",
+			"gzac": "partial",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "workflow-definition-engine",
@@ -2741,7 +2753,11 @@
 			},
 			"addedOn": "2026-09-09",
 			"evidence": {
-				"openzaak": "zaakafhandelapp#723 row 3.20: procest/openzaak/specs/15-convenience-endpoints.md:14: zaak_registreren and zaak_afsluiten combine several writes in one API call, but there is no UI to show the handler what happens next"
+				"openzaak": "openzaak@1.30.0 grep -ri macro over src returns nothing; an API has no one-click action for a handler",
+				"opencase": "not checked: opencase@1.1.0 lib/Db/AiPrompt.php and lib/Db/AiAction.php:13-18 a prompt with an ordered list of typed actions, offered as Favorit-prompts in the case header menu (src/components/AiActionsMenu.vue:6-14); no /ai route in appinfo/routes.php, so execution lives in the closed enterprise package; not checked: enterprise package is closed source | open for the lab: With the enterprise package, does a favourite prompt run its ordered actions on the case in one click, and what does the handler see afterwards?",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-detail/case-detail.component.html:144,221 Start runs an admin-modelled supporting process whose service tasks can change several things (plugin actions via backend/plugin-valtimo/.../ProcessLinkServiceTaskStartListener.kt); what shows next is whatever user task the process opens in the task panel; grep -ri macro returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -ri macro over backend/zaken/src and frontend-mono/apps finds only Office mime types; CaseActionsDialogContent.tsx runs one case action at a time",
+				"zac": "zac@1.0.316 grep -ri macro over src/main/kotlin and src/main/app/src hits only polyfills.ts; case menu actions are single plan items"
 			}
 		},
 		{
@@ -2751,7 +2767,7 @@
 			"name_nl": "Document als metadatarecord met bestanden",
 			"dossiq": "yes",
 			"opencase": "yes",
-			"gzac": "partial",
+			"gzac": "yes",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "yes",
@@ -2764,11 +2780,11 @@
 				"evidence": "register.d/70-document-zaakdossier.json#informatieobject; dossiq_register.json#document; lib/Service/ZaakdossierService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:214 \"Document as a container of files with metadata and numbering :: yes\"",
-				"gzac": "procest/valtimo/round2/code-census.md:149 \"There is no first-party \"document\" entity: case files live in the Documenten API (ZGW) or S3\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:146 \"documents: Document, DocumentPublishSettings, File (D/document/entities/document.py)\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:10 \"yes, the record is a DRC `EnkelvoudigInformatieObject`, not a ZAC row |\"",
-				"openzaak": "zaakafhandelapp#723 row 4.1: procest/openzaak/specs/documenten-api/spec.md:9: EnkelvoudigInformatieObjecten (documents) is the official term for any information object in a case dossier"
+				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 document record with case, number, type, status, dates, category; lib/Db/FileEntity.php:43 file rows point to a documentId; src/views/DocumentDetailView.vue:404 Filer tab lists the files of one document | round 2 drive: procest/opencase/round2/code-census.md:214 \"Document as a container of files with metadata and numbering :: yes\"",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/zgw/src/lib/modules/documenten-api/components/documenten-api-documents/documenten-api-documents.component.ts:273 case tab lists ZGW informatieobjecten with metadata; backend/zgw/documenten-api/src/main/kotlin/com/ritense/documentenapi/web/rest/dto/ModifyDocumentRequest.kt:25-36 editable metadata | round 2 drive: procest/valtimo/round2/code-census.md:149 \"There is no first-party \"document\" entity: case files live in the Documenten API (ZGW) or S3\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/document/entities/document.py:164,376-386 Document entity with category, origin, confidentiality, status, language; :685 File entity | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:146 \"documents: Document, DocumentPublishSettings, File (D/document/entities/document.py)\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/informatieobjecten/EnkelvoudigInformatieObjectRestService.kt:104,216 read and create an informatieobject with upload; the record is a DRC EnkelvoudigInformatieObject stored in Open Zaak | round 3 drive: procest/zac/round3/rows/rows-4-6.md:10 \"yes, the record is a DRC `EnkelvoudigInformatieObject`, not a ZAC row |\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/models.py:62,296 InformatieObject and EnkelvoudigInformatieObject with metadata; :480 BestandsDeel holds file parts; openapi.yaml:599 /enkelvoudiginformatieobjecten"
 			}
 		},
 		{
@@ -2800,11 +2816,11 @@
 				"evidence": "dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-Files.md:5 \"Flat list of every file across the case's documents.\"",
-				"gzac": "procest/_round2/compare/M1-functionality.md:106 \"| 4.2 | Folder structure inside a case | no | no |\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:236 \"folder tree with \"Nieuwe map\", rename, move (drag)\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:11 \"no | `src/main/app/src/app/zaken/zaak-documenten/zaak-documenten.component.html` renders one flat `mat-table`; the only grouping control is a\"",
-				"openzaak": "zaakafhandelapp#723 row 4.2: procest/openzaak/specs/documenten-api/spec.md has no folder field, documents link flatly to a case via ZaakInformatieObject"
+				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 has no folder or parent field; grep -i 'folder|mappe' over src/components/DocumentList.vue and FileList.vue returns nothing; documents sit flat on the case | round 2 drive: procest/opencase/round2/pages/CaseDetail-Files.md:5 \"Flat list of every file across the case's documents.\"",
+				"gzac": "gzac@13.4.1 documenten-api-documents.component.html:34-50 renders one flat carbon list; grep -i 'folder|directory' over frontend/projects/valtimo/zgw and the case-detail tabs returns no folder feature | round 2 drive: procest/_round2/compare/M1-functionality.md:106 \"| 4.2 | Folder structure inside a case | no | no |\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/case/views/documents/Documents.tsx:225 CreateNewFolderButton; Documents.requests.ts:572 create_directory, :722 move_to_directory; backend/zaken/src/zsnl_domains/document/entities/directory.py | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:236 \"folder tree with \"Nieuwe map\", rename, move (drag)\"",
+				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaak-documenten/zaak-documenten.component.html renders one flat mat-table; no folder entity in src/main/kotlin (the folder hits are icon names and WebdavHelper paths) | round 3 drive: procest/zac/round3/rows/rows-4-6.md:11 \"no | `src/main/app/src/app/zaken/zaak-documenten/zaak-documenten.component.html` renders one flat `mat-table`; the only grouping control is a\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/models.py has no folder or directory model; openapi.yaml paths (/enkelvoudiginformatieobjecten, /gebruiksrechten, /objectinformatieobjecten, /verzendingen) carry no folder resource"
 			}
 		},
 		{
@@ -2814,7 +2830,7 @@
 			"name_nl": "Bestandsversies bekijken, downloaden en terugzetten",
 			"dossiq": "partial",
 			"opencase": "yes",
-			"gzac": "partial",
+			"gzac": "no",
 			"zaaksysteem": "yes",
 			"zac": "partial",
 			"openzaak": "partial",
@@ -2836,11 +2852,11 @@
 				"evidence": "src/manifest.json:2321; dossiq#3078 8babeadf; dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/usability.md:15 \"file versions can be viewed and restored\"",
-				"gzac": "procest/valtimo/round2/code-census.md:392 \"ZGW Documenten API document list with configurable columns, filters, tags (trefwoorden), metadata edit, versions, preview, download :: yes (needs plugin config)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:317 \"versions with restore and download :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:12 \"partial, view and download and add-a-version, no restore | `EnkelvoudigInformatieObjectRestService.kt` `readEnkelvoudigInformatieobjectVersion`\"",
-				"openzaak": "zaakafhandelapp#723 row 4.3: procest/openzaak/business-logic/document-lifecycle.md:9: canonical plus version pattern gives version history, but no UI exists to view/download/restore since there is no frontend"
+				"opencase": "opencase@1.1.0 src/components/FileVersionsDialog.vue:48,54,60 Vis version, Download version, Gendan version; lib/Controller/FileController.php:503,540,602 versions, downloadVersion, restoreVersion; opened from FileList.vue:73 | round 2 drive: procest/opencase/round2/usability.md:15 \"file versions can be viewed and restored\"",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/zgw/src/lib/modules/documenten-api/models/documenten-api.model.ts:54 versie is only a list column; DocumentenApiResource.kt:50,74 download current file and modify metadata only; no version list, older-version download or restore in the zgw module | round 2 drive: procest/valtimo/round2/code-census.md:392 \"ZGW Documenten API document list with configurable columns, filters, tags (trefwoorden), metadata edit, versions, preview, download :: yes (needs plugin config)\" | open for the lab: On a case documents tab, can a user open or download an earlier version of a document?",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/case/views/documents/subcomponents/DocumentVersionsDialog.tsx:102,117 download a specific version and restoreVersion; mounted at Documents.tsx:662 | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:317 \"versions with restore and download :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/informatieobjecten/EnkelvoudigInformatieObjectRestService.kt:119,346,402 read and download a given version and the current one; no restore or revert endpoint in the service | round 3 drive: procest/zac/round3/rows/rows-4-6.md:12 \"partial, view and download and add-a-version, no restore | `EnkelvoudigInformatieObjectRestService.kt` `readEnkelvoudigInformatieobjectVersion`\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/openapi.yaml:1407,2121 versie query on retrieve and download; models.py:388 versie per record; no restore operation, API only (no case-worker UI)"
 			}
 		},
 		{
@@ -2863,11 +2879,11 @@
 				"evidence": "lib/Flow/DossiqMergeTemplateNode.php; lib/Service/BeschikkingGenerationService.php; lib/Controller/TemplateController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:216 \"New file from template with merge fields :: yes\"",
-				"gzac": "procest/valtimo/round2/code-census.md:396 \"document generation via SmartDocuments :: partial (plugin)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:320 \"generate document from template (odt/docx/pdf) with magic strings :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:13 \"yes | `src/main/kotlin/nl/info/zac/app/documentcreation/DocumentCreationRestService.kt` `createDocumentAttended` plus the two SmartDocuments callbacks\"",
-				"openzaak": "zaakafhandelapp#723 row 4.4: procest/openzaak/no template or merge-field document generation feature is described anywhere in the research"
+				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php:68,146 buildValues from case and document then mergeToTempFile; lib/Controller/FileController.php:225 files/from-template; src/services/api.js:190 called by NewFileFromTemplateDialog.vue; merge fields listed in src/views/TemplateFieldsView.vue | round 2 drive: procest/opencase/round2/code-census.md:216 \"New file from template with merge fields :: yes\"",
+				"gzac": "gzac@13.4.1 backend/document-generation/smartdocuments/src/main/kotlin/com/ritense/smartdocuments/plugin/SmartDocumentsPlugin.kt:67-79 generate action with templateGroup, templateName, templateData; runs as a BPMN plugin action against the external SmartDocuments service, not a template picker in the case screen | round 2 drive: procest/valtimo/round2/code-census.md:396 \"document generation via SmartDocuments :: partial (plugin)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/components/PhaseActions/PhaseActions.locale.ts:45,56-65 documentTemplate phase action with storage format odt, pdf (PDF/A-1), docx; backend/perl-api/lib/Zaaksysteem/Controller/File.pm:147 file_create_sjabloon creates a case file from a template | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:320 \"generate document from template (odt/docx/pdf) with magic strings :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/documentcreation/DocumentCreationRestService.kt:70 create-document-attended, :116 SmartDocuments callback; src/main/app/src/app/zaken/zaak-view/utils/zaak-view-menu.builder.ts:149 actie.document.maken on the case | round 3 drive: procest/zac/round3/rows/rows-4-6.md:13 \"yes | `src/main/kotlin/nl/info/zac/app/documentcreation/DocumentCreationRestService.kt` `createDocumentAttended` plus the two SmartDocuments callbacks\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/openapi.yaml exposes no generation or template resource; Open Zaak stores documents, it does not generate them"
 			}
 		},
 		{
@@ -2899,11 +2915,11 @@
 				"evidence": "dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\"",
-				"gzac": "procest/_round2/compare/M1-functionality.md:109 \"| 4.5 | In-browser office editing (Collabora, WOPI) | yes `lib/Service/FileService.php` | no |\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:175 \"WOPI (D/document/infrastructures/wopi_editor.py, routes document_lock_for_wopi/{acquire,release,extend}\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:14 \"partial, desktop Office over WebDAV, nothing in the browser | `src/main/kotlin/nl/info/zac/webdav/WebdavHelper.kt` `createRedirectURL` builds a `ms-word:`\"",
-				"openzaak": "zaakafhandelapp#723 row 4.5: procest/openzaak/specs/00-overview.md:23: no browser UI exists for office editing"
+				"opencase": "opencase@1.1.0 src/components/FileList.vue:171-172 handleEdit opens the file by Nextcloud file id at /f/<id>, which Nextcloud Office (Collabora) opens in the browser; lib/Controller/FileController.php:421-444 logs the edit and returns the id | round 2 drive: procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\" | open for the lab: With Nextcloud Office installed, does Rediger on a .docx open the Collabora editor in the browser?",
+				"gzac": "gzac@13.4.1 grep -i 'wopi|collabora|onlyoffice|ms-word' over backend and frontend/projects returns nothing; documenten-api-documents.component.ts:154-169 actions are download, edit metadata, delete | round 2 drive: procest/_round2/compare/M1-functionality.md:109 \"| 4.5 | In-browser office editing (Collabora, WOPI) | yes `lib/Service/FileService.php` | no |\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/case/views/documents/actions/EditDocument.tsx:75-100 Zoho online edit and Word, Excel, PowerPoint online via WOPI; backend/zaken/src/zsnl_domains/document/infrastructures/wopi_editor.py:15 edit_document | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:175 \"WOPI (D/document/infrastructures/wopi_editor.py, routes document_lock_for_wopi/{acquire,release,extend}\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/webdav/WebdavHelper.kt:47,71-72 builds ms-word and ms-excel protocol links over WebDAV, so editing is in desktop Office; no wopi, collabora or onlyoffice in src/main | round 3 drive: procest/zac/round3/rows/rows-4-6.md:14 \"partial, desktop Office over WebDAV, nothing in the browser | `src/main/kotlin/nl/info/zac/webdav/WebdavHelper.kt` `createRedirectURL` builds a `ms-word:`\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/api/viewsets.py:354,396,423 download, lock, unlock only; no editor integration (API only)"
 			}
 		},
 		{
@@ -2912,9 +2928,9 @@
 			"name": "MS Office add-ins or Teams integration",
 			"name_nl": "MS Office-invoegtoepassingen of Teams-koppeling",
 			"dossiq": "no",
-			"opencase": "yes",
+			"opencase": "partial",
 			"gzac": "no",
-			"zaaksysteem": "yes",
+			"zaaksysteem": "partial",
 			"zac": "no",
 			"openzaak": "no",
 			"provider": "nextcloud",
@@ -2922,11 +2938,11 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:217 \"Edit in Nextcloud Office and via MS Office add-ins :: yes\"",
-				"gzac": "procest/valtimo/round2/code-census.md:401 \"office add-ins :: no :: (no source)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:390 \"WOPI Office online, Zoho, MS Teams/SharePoint/Outlook :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-4-6.md:15 \"no | zero hits for teams, add-in, addin, outlook add-in. The nearest thing is the WebDAV protocol handoff in\"",
-				"openzaak": "zaakafhandelapp#723 row 4.6: procest/openzaak/specs/00-overview.md:23: no Office add-in or Teams integration documented"
+				"opencase": "opencase@1.1.0 lib/Controller/SettingsController.php:80,126-138 serves Outlook, Word, Excel, PowerPoint manifests from msoffice/<app>/manifest.xml; appinfo/routes.php CORS preflight routes for the add-in; but msoffice/ is absent from the 1143dbea tree (README.md:25,84 points to it), so the add-in source is not public | round 2 drive: procest/opencase/round2/code-census.md:217 \"Edit in Nextcloud Office and via MS Office add-ins :: yes\" | open for the lab: Does Nextcloud admin, OpenCase, MS Office offer a manifest that downloads and loads in Outlook?",
+				"gzac": "gzac@13.4.1 grep -i 'teams|add-in|addin|office365' over backend and frontend/projects finds no Office add-in or Teams integration | round 2 drive: procest/valtimo/round2/code-census.md:401 \"office add-ins :: no :: (no source)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/createCase/library.ts:7-22 create-case screen for party teams, sharepoint, outlook that calls back to teams.zaken.xxllnc.nl; Configuration.fixtures.ts:260 iframeable_in_teams; the Teams or Office app itself is not in this repo | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:390 \"WOPI Office online, Zoho, MS Teams/SharePoint/Outlook :: yes\"",
+				"zac": "zac@1.0.316 grep -i 'teams|addin|add-in' over src/main/kotlin and src/main/app/src/app returns only unrelated identifiers (addInformatieObjectToZip); nearest is the WebDAV hand-off in WebdavHelper.kt:47 | round 3 drive: procest/zac/round3/rows/rows-4-6.md:15 \"no | zero hits for teams, add-in, addin, outlook add-in. The nearest thing is the WebDAV protocol handoff in\"",
+				"openzaak": "openzaak@1.30.0 no Office add-in or Teams code under src/openzaak; API backend only"
 			}
 		},
 		{
@@ -4410,11 +4426,11 @@
 				"evidence": "dossiq_register.json#resultType; src/views/settings/tabs/ResultsTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:242 \"Formal case decision or result type :: no\"",
-				"gzac": "procest/valtimo/round2/code-census.md:209 \"Catalogi API 8 (statustypen, resultaattypen, besluittype, eigenschap, informatieobjecttype(n))\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:347 \"result per case from case-type result list (72 standard outcomes) :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:9 \"yes | `src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:350` `@Path(\"resultaattypes/{zaaktypeUUID}\")` serves the resultaattypen of the zaaktype\"",
-				"openzaak": "zaakafhandelapp#723 row 7.1: procest/openzaak/specs/catalogi-zaaktypen/spec.md:114: ResultaatType defines possible outcomes for completed cases such as Verleend or Geweigerd"
+				"opencase": "opencase@1.1.0 case close only sets status 2 (src/views/CaseDetailView.vue:76-79); lib/Db/CaseEntity.php has no result field; case types carry no result list | round 2 drive: procest/opencase/round2/code-census.md:242 \"Formal case decision or result type :: no\"",
+				"gzac": "gzac@13.4.1 backend/zgw/catalogi-api/src/main/kotlin/com/ritense/catalogiapi/CatalogiApiPlugin.kt:134-135 get-resultaattypen and backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:705 create-zaakresultaat as BPMN plugin actions; no built-in result picker, a form must be modelled to offer the list | round 2 drive: procest/valtimo/round2/code-census.md:209 \"Catalogi API 8 (statustypen, resultaattypen, besluittype, eigenschap, informatieobjecttype(n))\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case_type_result.py:40-72 results per case type with archival settings; backend/perl-api/client/src/intern/views/case/zsCaseView/zsCasePhaseView/zsCaseResult/template.html radio list of result options in the closing phase | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:347 \"result per case from case-type result list (72 standard outcomes) :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:350 resultaattypes per zaaktype from the catalogue; :181-194 afsluiten posts the chosen resultaattype | round 3 drive: procest/zac/round3/rows/rows-7-10.md:9 \"yes | `src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:350` `@Path(\"resultaattypes/{zaaktypeUUID}\")` serves the resultaattypen of the zaaktype\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/catalogi/models/resultaattype.py:28,59 resultaattypen per zaaktype; src/openzaak/components/zaken/models/zaken.py:947 Resultaat links a zaak to one of them"
 			}
 		},
 		{
@@ -4437,11 +4453,11 @@
 				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Controller/DecisionTableController.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:171 \"| 7.2 | Decision tables (DMN) | no |\"",
-				"gzac": "procest/valtimo/round2/code-census.md:422 \"DMN decision tables with modeller :: yes\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:217 \"Rules engine (regels): per phase, `Rule(name, active, condition_type and|or, conditions, match_actions, nomatch_actions)`\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:10 \"no | zero hits for `dmn` (case-insensitive) across `src/main/kotlin`, `src/main/java`, `src/main/resources`, `build.gradle.kts` and `pom.xml`. Only the\"",
-				"openzaak": "zaakafhandelapp#723 row 7.2: procest/openzaak/openzaak.md:108: no rules or decision-table engine documented"
+				"opencase": "opencase@1.1.0 grep -ri 'dmn|decision table' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:171 \"| 7.2 | Decision tables (DMN) | no |\"",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/decision/src/lib/decision-routing.module.ts decision-tables list, view and dmn-js editor, menu Decision tables (frontend/src/environments/environment.ts:138); experimentalDmnEditing toggle at :231 | round 2 drive: procest/valtimo/round2/code-census.md:422 \"DMN decision tables with modeller :: yes\"",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -ri dmn over backend and frontend-mono/apps returns nothing; its rules are per-phase condition and action lists (backend/perl-api/lib/Zaaksysteem/Backend/Rules), not decision tables | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:217 \"Rules engine (regels): per phase, `Rule(name, active, condition_type and|or, conditions, match_actions, nomatch_actions)`\"",
+				"zac": "zac@1.0.316 build.gradle.kts:134-138 wires the Flowable BPMN and CMMN engines only, no flowable-dmn; grep -ri dmn over src/main returns nothing | round 3 drive: procest/zac/round3/rows/rows-7-10.md:10 \"no | zero hits for `dmn` (case-insensitive) across `src/main/kotlin`, `src/main/java`, `src/main/resources`, `build.gradle.kts` and `pom.xml`. Only the\"",
+				"openzaak": "openzaak@1.30.0 grep -ri dmn over src returns nothing"
 			}
 		},
 		{
@@ -4450,7 +4466,7 @@
 			"name": "Formal decision record (besluit)",
 			"name_nl": "Formeel besluit vastleggen",
 			"dossiq": "yes",
-			"opencase": "no",
+			"opencase": "partial",
 			"gzac": "partial",
 			"zaaksysteem": "no",
 			"zac": "yes",
@@ -4464,11 +4480,11 @@
 				"evidence": "dossiq_register.json#decision; register.d/30-beschikking.json#beschikking; #CaseDetail/case-decidesk-decisions"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:82 \"Decisions: FOI only: `AccessRequest`\"",
-				"gzac": "procest/valtimo/round2/code-census.md:423 \"ZGW besluit create/patch/get/link document :: partial (plugin)\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:150 \"No separate \"decision\"/\"besluit\" entity exists: a decision is a case result plus optionally a generated document.\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:11 \"yes | `src/main/kotlin/nl/info/zac/besluit/BesluitService.kt` (`createBesluit`, `updateBesluit`, `withdrawBesluit`) writes to the ZGW BRC through\"",
-				"openzaak": "zaakafhandelapp#723 row 7.3: procest/openzaak/specs/besluiten-api/spec.md:17: Besluit is the core resource, linked to BesluitType and optionally to a Zaak"
+				"opencase": "opencase@1.1.0 lib/Service/AccessDecisionService.php:15,36-44,81 a decision record (decision text, complaint guidance, approved by, sent by) exists for FOI requests only; ordinary cases have no decision record | round 2 drive: procest/opencase/round2/code-census.md:82 \"Decisions: FOI only: `AccessRequest`\"",
+				"gzac": "gzac@13.4.1 backend/zgw/besluiten-api/src/main/kotlin/com/ritense/besluitenapi/BesluitenApiPlugin.kt:62,88 link-document-to-besluit and create-besluit plugin actions against the Besluiten API; no besluit screen of its own | round 2 drive: procest/valtimo/round2/code-census.md:423 \"ZGW besluit create/patch/get/link document :: partial (plugin)\"",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -rli besluit over backend/zaken/src/zsnl_domains hits only a document type label (document/entities/document.py:69) and the schema; a decision is a case result plus a generated document | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:150 \"No separate \"decision\"/\"besluit\" entity exists: a decision is a case result plus optionally a generated document.\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/besluit/BesluitService.kt create, update, withdraw besluit in the BRC; src/main/kotlin/nl/info/zac/app/zaak/ZaakBesluitRestService.kt; UI src/main/app/src/app/zaken/besluit-create, besluit-edit, besluit-view | round 3 drive: procest/zac/round3/rows/rows-7-10.md:11 \"yes | `src/main/kotlin/nl/info/zac/besluit/BesluitService.kt` (`createBesluit`, `updateBesluit`, `withdrawBesluit`) writes to the ZGW BRC through\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/besluiten/models.py:28,139-173 Besluit with ingangsdatum, vervaldatum, vervalreden, publicatiedatum, verzenddatum, uiterlijke_reactiedatum; besluiten/openapi.yaml"
 			}
 		},
 		{
@@ -4491,11 +4507,11 @@
 				"evidence": "src/dialogs/BeschikkingComposerDialog.vue; lib/Service/BeschikkingGenerationService.php; lib/Flow/DossiqRequestDecisionNode.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:82 \"`AccessDecision` (decisionText, complaintGuidance, approvedBy, sentBy, deliveryMethod)\"",
-				"gzac": "procest/valtimo/round2/code-census.md:218 \"(`LocalPdfDocumentGenerator`, `LocalOperatonProcessDocumentGenerator`), SmartDocuments plugin, freemarker plugin (release build only).\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:349 \"decision document generation and sending as phase action :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:12 \"partial | document generation exists and can be bound to a task, but it is an attended wizard, not an automatic workflow step.\"",
-				"openzaak": "zaakafhandelapp#723 row 7.4: procest/openzaak/no decision-letter generation feature is described anywhere in the research"
+				"opencase": "opencase@1.1.0 lib/Service/AccessExportService.php:19-20,73-74 the FOI export builds a cover letter from the decision text inside the ZIP; FOI only, a text file, no template step for other decisions | round 2 drive: procest/opencase/round2/code-census.md:82 \"`AccessDecision` (decisionText, complaintGuidance, approvedBy, sentBy, deliveryMethod)\"",
+				"gzac": "gzac@13.4.1 backend/document-generation/smartdocuments/src/main/kotlin/com/ritense/smartdocuments/plugin/SmartDocumentsPlugin.kt:68-69 generate-document plugin action a BPMN step can call, needs an external SmartDocuments; the local generator LocalOperatonProcessDocumentGenerator.kt only logs | round 2 drive: procest/valtimo/round2/code-census.md:218 \"(`LocalPdfDocumentGenerator`, `LocalOperatonProcessDocumentGenerator`), SmartDocuments plugin, freemarker plugin (release build only).\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case.py:1734-1740 automatic document template actions enqueued on phase transition; frontend-mono/apps/main/src/components/PhaseActions/PhaseActions.locale.ts documentTemplate with target format odt, pdf or docx | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:349 \"decision document generation and sending as phase action :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/documentcreation/DocumentCreationRestService.kt:70,148 attended SmartDocuments wizard whose result can land on a task; no unattended generation delegate among src/main/kotlin/net/atos/zac/flowable/delegate | round 3 drive: procest/zac/round3/rows/rows-7-10.md:12 \"partial | document generation exists and can be bound to a task, but it is an attended wizard, not an automatic workflow step.\"",
+				"openzaak": "openzaak@1.30.0 grep -ri 'template|sjabloon' over components finds no document generation; it stores documents, it does not produce them"
 			}
 		},
 		{
@@ -4518,11 +4534,11 @@
 				"evidence": "lib/Controller/WOOAssessmentController.php; lib/Service/WOODocumentAssessmentService.php; src/views/doorlooptijd/widgets/DtWooWidget.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:241 \"FOI (aktindsigt) request with per-document decision, redaction upload, decision letter, export ZIP :: yes\"",
-				"gzac": "procest/_round2/compare/M1-functionality.md:174 \"| 7.5 | FOI or Woo request with per-document assessment and redaction | yes `src/views/AccessRequestDetailView.vue` | no |\"",
-				"zaaksysteem": "procest/_round2/compare/M1-functionality.md:174 \"| 7.5 | FOI or Woo request with per-document assessment and redaction | yes `src/views/AccessRequestDetailView.vue` | no | no |\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:13 \"no | zero hits for `woo`, `wob`, `openbaarmaking`, `lakken`, `redact` across `src/main/kotlin`, `src/main/java` and `src/main/app/src` apart from an\"",
-				"openzaak": "zaakafhandelapp#723 row 7.5: procest/openzaak/no Woo or FOI redaction-assessment workflow is described anywhere in the research"
+				"opencase": "opencase@1.1.0 src/views/AccessRequestDetailView.vue:124-125,145,286 per-document decision with exclusion reason and a Maskering tab; lib/Service/AccessRequestService.php:15-19 nine-state request flow; appinfo/routes.php:338-345; lib/Service/AccessExportService.php:56-91 export of the released set | round 2 drive: procest/opencase/round2/code-census.md:241 \"FOI (aktindsigt) request with per-document decision, redaction upload, decision letter, export ZIP :: yes\"",
+				"gzac": "gzac@13.4.1 grep -rli 'woo|redact|openbaarmaking' over frontend/projects and backend returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:174 \"| 7.5 | FOI or Woo request with per-document assessment and redaction | yes `src/views/AccessRequestDetailView.vue` | no |\"",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -rli 'woo|wob|openbaarmaking' over backend/zaken/src and frontend-mono/apps/main/src returns nothing; frontend-mono/apps/main/src/modules/case/views/documents/actions/RedactAction.tsx:24 only hands a document to an external koppelapp_redact integration, with no per-document assessment | round 2 drive: procest/_round2/compare/M1-functionality.md:174 \"| 7.5 | FOI or Woo request with per-document assessment and redaction | yes `src/views/AccessRequestDetailView.vue` | no | no |\"",
+				"zac": "zac@1.0.316 grep -ri 'woo|wob|openbaarmaking|redact' over src/main/kotlin, src/main/java and src/main/app/src finds no request flow | round 3 drive: procest/zac/round3/rows/rows-7-10.md:13 \"no | zero hits for `woo`, `wob`, `openbaarmaking`, `lakken`, `redact` across `src/main/kotlin`, `src/main/java` and `src/main/app/src` apart from an\"",
+				"openzaak": "openzaak@1.30.0 grep -rli 'woo|redact' over src returns nothing"
 			}
 		},
 		{
@@ -4545,11 +4561,11 @@
 				"evidence": "src/manifest.json#BezwaarDetail; lib/Service/Bezwaar/*"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:175 \"| 7.6 | Objection handling surface | no |\"",
+				"opencase": "opencase@1.1.0 the only objection element is the complaint guidance text in the FOI decision (lib/Service/AccessDecisionService.php:15); grep -ri 'klage' over src/views finds no objection surface | round 2 drive: procest/_round2/compare/M1-functionality.md:175 \"| 7.6 | Objection handling surface | no |\"",
 				"gzac": "valtimo@13.4.1 backend/app/gzac/src/main/resources/config/case/bezwaar/1-0-1/bpmn/bezwaar.bpmn is a demo case type whose only user tasks are 'Valideer gegevens aanvrager' and 'In behandeling' plus tag tasks; nothing links it to the contested decision, a hearing or an advisory committee. A configurable case type is not an objection surface | round 2 drive: procest/valtimo/round2/code-census.md:258 \"Example `case-definition.json`: `{\"key\":\"bezwaar\",\"name\":\"Bezwaar\",\"versionTag\":\"1.0.0\",\"final\":true\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:275 \"Objection app (frontend-mono/apps/objection-app): standalone \"Bezwaarformulier\" for WOZ assessments built on Form.io\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:14 \"no | zero hits for `bezwaar` in `src/main/kotlin` and `src/main/java`; the single frontend hit is a fixture string in\"",
-				"openzaak": "zaakafhandelapp#723 row 7.6: procest/openzaak/specs/besluiten-api/spec.md:34: uiterlijke_reactiedatum (deadline for response/objection) is a data field only, no objection-handling workflow or surface"
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/objection-app/index.js:160,271 standalone WOZ Bezwaarformulier on Form.io posting a case through backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/KoppelAppObjections.pm:24; objections are otherwise an ordinary case type | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:275 \"Objection app (frontend-mono/apps/objection-app): standalone \"Bezwaarformulier\" for WOZ assessments built on Form.io\"",
+				"zac": "zac@1.0.316 grep -ri bezwaar over src/main/kotlin and src/main/java returns nothing; nearest is the besluit reactietermijn in src/main/kotlin/nl/info/zac/besluit/BesluitService.kt | round 3 drive: procest/zac/round3/rows/rows-7-10.md:14 \"no | zero hits for `bezwaar` in `src/main/kotlin` and `src/main/java`; the single frontend hit is a fixture string in\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/catalogi/models/besluittype.py:62 reactietermijn per besluittype; besluiten/api/serializers.py:64 uiterlijke_reactiedatum on a besluit; catalogi/models/roltype.py:32 bezwaarindiener as a role; data only, no objection object"
 			}
 		},
 		{
@@ -4568,11 +4584,11 @@
 			"feature": "archief-edepot-handover",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:176 \"| 7.7 | Result drives archival nomination and retention | no |\"",
-				"gzac": "procest/valtimo/round2/code-census.md:253 \"`InternalCaseStatus(id{caseDefinitionId,key}, title, visibleInCaseListByDefault, order, retentionPeriodInDays, color, label)`\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:348 \"result drives archival nomination, selection list, retention period :: yes\"",
-				"zac": "procest/zac/round3/archival.md:43 \"*why you closed a case determines how long you keep it*. And ZAC surfaces that link in its admin UI:\"",
-				"openzaak": "zaakafhandelapp#723 row 7.7: procest/openzaak/business-logic/archiving-rules.md:41: archiefnominatie is set from resultaattype.archiefnominatie, driving archival nomination and retention"
+				"opencase": "opencase@1.1.0 there is no result; archiving is a status value 3 (src/views/CaseDetailView.vue:84-87) and a closed-case XML export (lib/Service/CaseExportService.php), with no retention rule | round 2 drive: procest/_round2/compare/M1-functionality.md:176 \"| 7.7 | Result drives archival nomination and retention | no |\"",
+				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:288,308,375-376 patch-zaak can write archiefnominatie, archiefactiedatum and startdatum bewaartermijn explicitly; the derivation from the result is left to the ZGW backend | round 2 drive: procest/valtimo/round2/code-census.md:253 \"`InternalCaseStatus(id{caseDefinitionId,key}, title, visibleInCaseListByDefault, order, retentionPeriodInDays, color, label)`\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case.py:1929-1972 setting the result computes the destruction date and archival state (overdragen or vernietigen); entities/case_type_result.py:47,63-69,97-116 per-result archive trigger, retention period and source date | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:348 \"result drives archival nomination, selection list, retention period :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/client/zgw/shared/ZgwApiService.kt:190-210 writes the brondatum only for afleidingswijze EIGENSCHAP, else Unit; archiefnominatie and archiefactiedatum are read back from Open Zaak | round 3 drive: procest/zac/round3/archival.md:43 \"*why you closed a case determines how long you keep it*. And ZAC surfaces that link in its admin UI:\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/catalogi/models/resultaattype.py:107,121,139 archiefnominatie, archiefactietermijn and brondatum afleidingswijze per resultaattype; src/openzaak/components/zaken/api/serializers/zaken.py:960-972 applied to the zaak when the eindstatus is set"
 			},
 			"built": {
 				"state": "built",
@@ -4586,8 +4602,8 @@
 			"name": "Legal and service lead time per case type with target date",
 			"name_nl": "Wettelijke en servicetermijn per zaaktype met streefdatum",
 			"dossiq": "yes",
-			"opencase": "no",
-			"gzac": "no",
+			"opencase": "partial",
+			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "yes",
@@ -4600,11 +4616,11 @@
 				"evidence": "register.d/60-termijnbewaking.json#deadlineDefinition; src/views/settings/tabs/TermijnDefinitiesTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:247 \"Case lead time or due date :: no\"",
-				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:65 \"No per-case-type deadline or term, no SLA, no priority\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:352 \"legal and service lead time per case type, target date, urgency (late/high/medium/normal) :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:16 \"yes | `src/main/kotlin/nl/info/client/zgw/shared/ZgwApiService.kt:389` `calculateDoorlooptijden` sets `einddatumGepland = startdatum +\"",
-				"openzaak": "zaakafhandelapp#723 row 8.1: procest/openzaak/specs/catalogi-zaaktypen/spec.md:69: doorlooptijd_behandeling is the legal processing duration and servicenorm_behandeling is the service norm duration, both with a target date"
+				"opencase": "opencase@1.1.0 lib/Service/AccessDeadlineService.php:11-28 a statutory term per FOI request type (7 working days, 30 days for GDPR) with deadlineAt; ordinary case types carry no lead time (src/views/ConfigurationView.vue:229) | round 2 drive: procest/opencase/round2/code-census.md:247 \"Case lead time or due date :: no\"",
+				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:251-252,1204-1209 create-zaak sets uiterlijkeEinddatumAfdoening from the zaaktype doorlooptijd; no service norm target date, and the case definition itself has no term | round 2 drive: procest/valtimo/round2/case-definition-editor-anatomy.md:65 \"No per-case-type deadline or term, no SLA, no priority\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case.py:891-940 _calculate_target_completion_date from the case type interval in kalenderdagen, werkdagen, weken or einddatum; CaseTypeTerms lead_time_legal and lead_time_service in entities/case_type_version.py | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:352 \"legal and service lead time per case type, target date, urgency (late/high/medium/normal) :: yes\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/client/zgw/shared/ZgwApiService.kt:389-394 einddatumGepland from zaaktype servicenorm, uiterlijkeEinddatumAfdoening from doorlooptijd | round 3 drive: procest/zac/round3/rows/rows-7-10.md:16 \"yes | `src/main/kotlin/nl/info/client/zgw/shared/ZgwApiService.kt:389` `calculateDoorlooptijden` sets `einddatumGepland = startdatum +\"",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:676-690 einddatum_gepland from zaaktype.servicenorm_behandeling and uiterlijke_einddatum_afdoening from doorlooptijd_behandeling when not supplied"
 			}
 		},
 		{
@@ -4614,7 +4630,7 @@
 			"name_nl": "Indicator voor te laat of urgent op zaak en lijst",
 			"dossiq": "yes",
 			"opencase": "partial",
-			"gzac": "partial",
+			"gzac": "no",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "no",
@@ -4627,11 +4643,11 @@
 				"evidence": "#CaseDetail/case-kpi-time-left; #Dashboard/overdue-cases; #Doorlooptijd/dt-atrisk"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:19 \"Red when overdue (1 sep on a 7 sep instance).\"",
-				"gzac": "procest/valtimo/round2/journeys.md:30 \"No overdue concept exists on a case; J7 is not achievable without configuring a due date in the process and a dashboard condition on it\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/case-detail-anatomy.md:18 \"Streefafhandeldatum 05-10-2026 (turns red with a warning when overdue)\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:17 \"yes | list warning icons at `src/main/app/src/app/zaken/zaken-werkvoorraad/zaken-werkvoorraad.component.html:319` and `:392` (title\"",
-				"openzaak": "zaakafhandelapp#723 row 8.2: procest/openzaak/openzaak.md:109: no deadline alerting, stores dates but provides no active monitoring"
+				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:24-32,706-707 overdue styling on the next reminder in the case header; src/views/AccessRequestListView.vue:36 traffic-light AccessDeadlineBadge on FOI requests; the case lists (CaseListView.vue, MyCasesView.vue) show no deadline | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:19 \"Red when overdue (1 sep on a 7 sep instance).\"",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/task/src/lib/services/task-list-column.service.ts:45-49 task due date is a plain text column; grep -i 'overdue|verlopen' over shared/assets/core/nl.json finds no indicator and the case list has no term column | round 2 drive: procest/valtimo/round2/journeys.md:30 \"No overdue concept exists on a case; J7 is not achievable without configuring a due date in the process and a dashboard condition on it\"",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/advancedSearch/components/Main/Results/Results.library.tsx:539-552 days column coloured urgent, today or not urgent; backend/zaken/src/zsnl_domains/case_management/entities/case.py:559,672 urgency and days_left; legacy dashboard task widget days-left-template.html:3 | round 2 drive: procest/xxllnc-zaken/round2/case-detail-anatomy.md:18 \"Streefafhandeldatum 05-10-2026 (turns red with a warning when overdue)\"",
+				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaken-werkvoorraad/zaken-werkvoorraad.component.html:319,392 msg.datum.overschreden icons in the list; zaak-details-algemeen-tab.component.ts:135-139 exceeded markers on the case | round 3 drive: procest/zac/round3/rows/rows-7-10.md:17 \"yes | list warning icons at `src/main/app/src/app/zaken/zaken-werkvoorraad/zaken-werkvoorraad.component.html:319` and `:392` (title\"",
+				"openzaak": "openzaak@1.30.0 no case-worker list or case page; the API returns the dates without a derived overdue flag (components/zaken/api/serializers/zaken.py:479-481)"
 			}
 		},
 		{
@@ -4654,11 +4670,11 @@
 				"evidence": "dossiq_register.json#caseTask.dueDate"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/DocumentDetail-Workflow.md:6 \"ordered step list (n. user, step deadline\"",
-				"gzac": "procest/valtimo/round2/code-census.md:427 \"task due dates :: yes\"",
-				"zaaksysteem": "procest/xxllnc-zaken/round2/dashboard-anatomy.md:25 \"task list Zaaknummer, Taak, Behandelaar, Deadline, Dagen\"",
-				"zac": "procest/zac/round3/rows/rows-7-10.md:18 \"yes | `src/main/kotlin/nl/info/zac/app/planitems/PlanItemsRestService.kt:296` `calculateFatalDateFromLeadTime` derives a human task's fatale datum from\"",
-				"openzaak": "zaakafhandelapp#723 row 8.3: procest/openzaak/openzaak.md:73: no task concept exists"
+				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:81,89,336-351 per-step deadlines on review and approval steps, shown on the home page (src/views/HomeView.vue:86-120); reminders carry a deadline (src/components/ReminderDialog.vue:14-16) | round 2 drive: procest/opencase/round2/pages/DocumentDetail-Workflow.md:6 \"ordered step list (n. user, step deadline\"",
+				"gzac": "gzac@13.4.1 backend/core/src/main/java/com/ritense/valtimo/web/rest/TaskResource.java:155 set-due-date; frontend/projects/valtimo/task/src/lib/services/task-list-column.service.ts:45 due column, sortable | round 2 drive: procest/valtimo/round2/code-census.md:427 \"task due dates :: yes\"",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/task.py:56,133 due_date; Details.FormDefinition.ts:97 Deadline field; dashboard task widget columns Deadline and Dagen | round 2 drive: procest/xxllnc-zaken/round2/dashboard-anatomy.md:25 \"task list Zaaknummer, Taak, Behandelaar, Deadline, Dagen\"",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/admin/model/ZaaktypeCmmnHumantaskParameters.kt:64-65 doorlooptijd per human task turned into the task fatal date; src/main/kotlin/nl/info/zac/app/task/TaskRestService.kt:166-171 editable due date | round 3 drive: procest/zac/round3/rows/rows-7-10.md:18 \"yes | `src/main/kotlin/nl/info/zac/app/planitems/PlanItemsRestService.kt:296` `calculateFatalDateFromLeadTime` derives a human task's fatale datum from\"",
+				"openzaak": "openzaak@1.30.0 no task resource in any component openapi.yaml"
 			}
 		},
 		{
@@ -10514,6 +10530,26 @@
 			"pack": "contested"
 		},
 		{
+			"id": "2.14",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.16",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
 			"id": "2.5",
 			"kind": "row",
 			"system": "gzac",
@@ -10529,6 +10565,16 @@
 			"system": "gzac",
 			"on": "2026-09-26",
 			"from": "no",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r2"
+		},
+		{
+			"id": "3.20",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "unknown",
 			"to": "partial",
 			"cause": "source-read",
 			"pack": "r2"
@@ -10554,6 +10600,26 @@
 			"pack": "r2"
 		},
 		{
+			"id": "4.1",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r3"
+		},
+		{
+			"id": "4.3",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r3"
+		},
+		{
 			"id": "5.3",
 			"kind": "row",
 			"system": "gzac",
@@ -10572,6 +10638,26 @@
 			"to": "no",
 			"cause": "source-read",
 			"pack": "contested"
+		},
+		{
+			"id": "8.1",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "no",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r2"
+		},
+		{
+			"id": "8.2",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r2"
 		},
 		{
 			"id": "9.1",
@@ -10604,6 +10690,16 @@
 			"pack": "r1"
 		},
 		{
+			"id": "2.16",
+			"kind": "row",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
 			"id": "2.4",
 			"kind": "row",
 			"system": "opencase",
@@ -10624,12 +10720,62 @@
 			"pack": "contested"
 		},
 		{
+			"id": "4.6",
+			"kind": "row",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r3"
+		},
+		{
+			"id": "7.3",
+			"kind": "row",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "no",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r2"
+		},
+		{
+			"id": "8.1",
+			"kind": "row",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "no",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r2"
+		},
+		{
 			"id": "1.11",
 			"kind": "row",
 			"system": "openzaak",
 			"on": "2026-09-26",
 			"from": "partial",
 			"to": "no",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.13",
+			"kind": "row",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "no",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.16",
+			"kind": "row",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "yes",
 			"cause": "source-read",
 			"pack": "r1"
 		},
@@ -10652,6 +10798,16 @@
 			"to": "partial",
 			"cause": "source-read",
 			"pack": "r1"
+		},
+		{
+			"id": "3.20",
+			"kind": "row",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r2"
 		},
 		{
 			"id": "3.3",
@@ -10680,6 +10836,16 @@
 			"on": "2026-09-26",
 			"from": "partial",
 			"to": "yes",
+			"cause": "source-read",
+			"pack": "r1"
+		},
+		{
+			"id": "2.8",
+			"kind": "row",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
 			"cause": "source-read",
 			"pack": "r1"
 		},
@@ -10714,6 +10880,16 @@
 			"pack": "r2"
 		},
 		{
+			"id": "3.20",
+			"kind": "row",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r2"
+		},
+		{
 			"id": "3.3",
 			"kind": "row",
 			"system": "zaaksysteem",
@@ -10744,6 +10920,16 @@
 			"pack": "r2"
 		},
 		{
+			"id": "4.6",
+			"kind": "row",
+			"system": "zaaksysteem",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r3"
+		},
+		{
 			"id": "1.11",
 			"kind": "row",
 			"system": "zac",
@@ -10762,6 +10948,16 @@
 			"to": "partial",
 			"cause": "source-read",
 			"pack": "r1"
+		},
+		{
+			"id": "3.20",
+			"kind": "row",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r2"
 		},
 		{
 			"id": "3.5",
