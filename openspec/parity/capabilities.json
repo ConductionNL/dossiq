@@ -7703,9 +7703,9 @@
 			},
 			"evidence": {
 				"opencase": "driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): twofactor_totp and twofactor_backupcodes are enabled (a user may opt in, nothing enforces it) and admin_audit is not enabled, so no admin-visible login history out of the box; both are the platform's, not OpenCase's | source: opencase@1.1.0 grep -ri 'twofactor|login_history' over lib and src returns nothing; login is SAML (lib/Controller/SamlController.php) or the Nextcloud session, so 2FA and login history are the platform's | round 2 drive: procest/_round2/compare/M1-functionality.md:300 \"| 13.15 | Two-factor authentication and login history | partial `appinfo/info.xml` (Nextcloud) |\"",
-				"gzac": "gzac@13.4.1 authentication is Keycloak (backend/keycloak-iam); grep -riE 'totp|twofactor|mfa' over backend returns nothing, so 2FA and login history are the Keycloak realm's | round 2 drive: procest/valtimo/round2/pages/Login.md:15 \"MFA variants exist in the realm (admin-mfa) but were not used.\" | open for the lab: In the shipped Keycloak realm, is an OTP required action or login event history enabled?",
+				"gzac": "settled by the lane on 2026-09-26 from the realm the GZAC 13.4.1 compose imports (market-intelligence dossiq/gzac/upstream/imports/keycloak/realm.json, from gzac-docker-compose v/13): OTP is CONDITIONAL on the user having configured it (forms flow, Browser - Conditional OTP), CONFIGURE_TOTP is not a default action, and eventsEnabled is false at :1791, so no login history out of the box; Keycloak can do both once configured | source: gzac@13.4.1 authentication is Keycloak (backend/keycloak-iam); grep -riE 'totp|twofactor|mfa' over backend returns nothing, so 2FA and login history are the Keycloak realm's | round 2 drive: procest/valtimo/round2/pages/Login.md:15 \"MFA variants exist in the realm (admin-mfa) but were not used.\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:683,714 login history per employee with export; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:46 two-factor serves the alternative (citizen) accounts | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:180 \"two-factor (`auth_twofactor`, Plugins/Twofactor.pm, 18 endpoints)\"",
-				"zac": "zac@1.0.316 grep -riE 'mfa|totp|twofactor' over src/main returns nothing; authentication is Keycloak OIDC consumed by src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt, which logs a session start but stores no history | round 3 drive: procest/zac/round3/rows/rows-11-13.md:76 \"partial, delegated to Keycloak | zero hits for mfa, totp or 2fa under `src/main`. Authentication is entirely Keycloak's (`UserPrincipalFilter` only\" | open for the lab: Does the shipped Keycloak realm require OTP, and are login events kept?",
+				"zac": "settled by the lane on 2026-09-26 from the realm ZAC's own compose imports (zac@1.0.316 scripts/docker-compose/imports/keycloak/realms/zaakafhandelcomponent-realm.json): OTP is CONDITIONAL on the user having configured it, CONFIGURE_TOTP is not a default action, and eventsEnabled is false at :1951, so no login history out of the box; Keycloak can do both once configured | source: zac@1.0.316 grep -riE 'mfa|totp|twofactor' over src/main returns nothing; authentication is Keycloak OIDC consumed by src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt, which logs a session start but stores no history | round 3 drive: procest/zac/round3/rows/rows-11-13.md:76 \"partial, delegated to Keycloak | zero hits for mfa, totp or 2fa under `src/main`. Authentication is entirely Keycloak's (`UserPrincipalFilter` only\"",
 				"openzaak": "openzaak@1.30.0 src/openzaak/conf/includes/base.py:144,328 maykin_2fa OTP and WebAuthn on the admin; base.py:152 axes middleware logs access attempts"
 			}
 		},
@@ -8367,9 +8367,9 @@
 			"featureConfidence": "low",
 			"evidence": {
 				"opencase": "driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): occ user:add with password1 was refused with \"Password is among the 1,000,000 most common ones\", \"at least 10 characters long\" and \"present in compromised password list\"; this is the Nextcloud password_policy app, enabled in the nextcloud:34 image, not OpenCase code | source: opencase@1.1.0 the app sets no user password of its own: SAML provisioning creates users (lib/Controller/SamlController.php:1054); password policy is whatever the Nextcloud platform enforces",
-				"gzac": "gzac@13.4.1 passwords are held by Keycloak (backend/keycloak-iam); the product sets none, so refusal of a weak password is the realm's password policy | open for the lab: Does the shipped Keycloak realm have a password policy, and does it name the rule that failed?",
+				"gzac": "settled by the lane on 2026-09-26 from the realm the GZAC 13.4.1 compose imports (market-intelligence dossiq/gzac/upstream/imports/keycloak/realm.json, from gzac-docker-compose v/13): the realm sets no passwordPolicy, so the shipped setup accepts any password; Keycloak names the failed rule once a policy is configured | source: gzac@13.4.1 passwords are held by Keycloak (backend/keycloak-iam); the product sets none, so refusal of a weak password is the realm's password policy",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:15,45 a password shorter than MINIMUM_PASSWORD_LENGTH (Constants.pm:335, 20) or without upper and lower case is refused with a message naming the rule; Twofactor.pm error map names a password containing the username",
-				"zac": "zac@1.0.316 ZAC holds no passwords; login is Keycloak (src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt), so any refusal is the realm's password policy | open for the lab: Does the shipped Keycloak realm have a password policy and does it name the failed rule?",
+				"zac": "settled by the lane on 2026-09-26 from the realm ZAC's own compose imports (zac@1.0.316 scripts/docker-compose/imports/keycloak/realms/zaakafhandelcomponent-realm.json): the realm sets no passwordPolicy, so the shipped setup accepts any password; Keycloak names the failed rule once a policy is configured | source: zac@1.0.316 ZAC holds no passwords; login is Keycloak (src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt), so any refusal is the realm's password policy",
 				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: the admin password change form (/admin/accounts/user/1/password/) refused password1 with \"Dit wachtwoord is te algemeen.\"; AUTH_PASSWORD_VALIDATORS are Django's four (similarity, minimum length, common, numeric) from open_api_framework conf/base.py:1060 | source: openzaak@1.30.0 src/openzaak/conf/includes/base.py:12 imports settings from open_api_framework, which is not in this tree, so AUTH_PASSWORD_VALIDATORS cannot be read here"
 			}
 		},
@@ -13413,8 +13413,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r6"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q13.23",
@@ -20673,8 +20673,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r6"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q13.24",
