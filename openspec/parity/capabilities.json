@@ -8,7 +8,7 @@
 	},
 	"comparedOn": "2026-09-07",
 	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-09-25",
+	"reratedOn": "2026-09-26",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -626,6 +626,46 @@
 			"to": "yes",
 			"cause": "corrected",
 			"reason": "Follow is a strip on the case page (`CaseFollowStrip` in `CaseBannerStack`, placed as `case-banner-stack` at `src/manifest.json:2922`) over OpenRegister's `PUT|DELETE .../watch`. Followed cases are a lens on the Cases list, the People tab lists the followers (`case-followers`, `src/manifest.json:2534`), and the case schema notifies its watchers when the case moves. Shipped by dossiq#2895."
+		},
+		{
+			"id": "13.38",
+			"on": "2026-09-26",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Portal visibility follows the party tree in portaliq: portaliq lib/Service/Identity/PortalPartyTreeResolver.php:90-175 entitiesFor() walks the party tree; lib/Service/Identity/PortalMandateService.php:204-222 reachOf() returns REACH_TREE for a mandate that reaches down; lib/Controller/CitizenCaseController.php:693-696 applies it on the reached citizen-case path (portaliq matrix row sib-dossiq-13-38)."
+		},
+		{
+			"id": "2.21",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "corrected",
+			"reason": "portaliq lib/Controller/ProposalController.php and appinfo/routes.php:242-251 implement the change-proposal queue, but nothing calls it: no portal-SPA propose button, no admin page, no accept or reject UI, and no sibling app calls /api/proposals (portaliq matrix row sib-dossiq-2-21). register.d/50-zaakportaal.json#portaalVerzoek is dossiq's register entry, not a caller of the queue."
+		},
+		{
+			"id": "3.19",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "corrected",
+			"reason": "portaliq lib/Controller/PartnerTaskController.php:83-129 ask() is built and RBAC-guarded (appinfo/routes.php:269) but has no caller in portaliq's src/ or in dossiq (portaliq matrix rows tsk-ask-partner and sib-dossiq-3-19). dossiq's own src/manifest.d/consultation-public.json ExternalConsultationResponse page is the older flow, not the portaliq partner task."
+		},
+		{
+			"id": "2.47",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "corrected",
+			"reason": "portaliq lib/Controller/CitizenCaseController.php:304-331 withdraw() is implemented (appinfo/routes.php:287), but src/portal/lib/portalApi.js has no withdraw method and src/portal/components/CitizenCase.jsx has no withdraw button, so no applicant reaches it (portaliq matrix rows act-withdraw-case and sib-dossiq-2-47)."
+		},
+		{
+			"id": "Q1.16",
+			"on": "2026-09-26",
+			"from": "no",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "the embedded intake chain is wired end to end in portaliq: src/portal/components/EmbeddedForm.jsx (mounted from src/portal/main.jsx:89-95) posts to POST /portal/api/embed/submit (appinfo/routes.php:178-179); lib/Controller/PortalEmbedController.php:163 submit() calls PortalIntakeQueue::accept() (lib/Service/Intake/PortalIntakeQueue.php:98); lib/BackgroundJob/PortalIntakeDeliveryJob.php:102-138 deliver() creates the case in the form binding's caseRegister and caseSchema (portaliq matrix rows int-embedded-form and sib-dossiq-q1-16)."
 		}
 	],
 	"systems": [
@@ -1561,7 +1601,7 @@
 			"area": "case-core",
 			"name": "Change proposals from colleagues or citizens queued for acceptance",
 			"name_nl": "Wijzigingsvoorstellen van collega’s of burgers ter acceptatie",
-			"dossiq": "partial",
+			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -1579,8 +1619,10 @@
 						"number": 604
 					}
 				],
-				"evidence": "register.d/50-zaakportaal.json#portaalVerzoek"
-			}
+				"evidence": "register.d/50-zaakportaal.json#portaalVerzoek",
+				"readOn": "2026-09-26"
+			},
+			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/ProposalController.php and appinfo/routes.php:242-251 implement the change-proposal queue, but nothing calls it: no portal-SPA propose button, no admin page, no accept or reject UI, and no sibling app calls /api/proposals (portaliq matrix row sib-dossiq-2-21). register.d/50-zaakportaal.json#portaalVerzoek is dossiq's register entry, not a caller of the queue."
 		},
 		{
 			"id": "2.22",
@@ -2157,7 +2199,7 @@
 			"area": "tasks-and-phases",
 			"name": "External (supply chain partner) task assignment",
 			"name_nl": "Taken toewijzen aan ketenpartners",
-			"dossiq": "partial",
+			"dossiq": "no",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -2176,8 +2218,10 @@
 						"mergedAt": "2026-09-18T22:45:00Z"
 					}
 				],
-				"evidence": "src/manifest.d/consultation-public.json#ExternalConsultationResponse"
-			}
+				"evidence": "src/manifest.d/consultation-public.json#ExternalConsultationResponse",
+				"readOn": "2026-09-26"
+			},
+			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/PartnerTaskController.php:83-129 ask() is built and RBAC-guarded (appinfo/routes.php:269) but has no caller in portaliq's src/ or in dossiq (portaliq matrix rows tsk-ask-partner and sib-dossiq-3-19). dossiq's own src/manifest.d/consultation-public.json ExternalConsultationResponse page is the older flow, not the portaliq partner task."
 		},
 		{
 			"id": "3.20",
@@ -3208,8 +3252,10 @@
 						"mergedAt": "2026-09-18T11:46:00Z"
 					}
 				],
-				"evidence": "register.d/50-zaakportaal.json#portaalBericht; portaliq#607 809fde293; dossiq#2928 1184f78f2"
-			}
+				"evidence": "register.d/50-zaakportaal.json#portaalBericht; portaliq#607 809fde293; dossiq#2928 1184f78f2",
+				"readOn": "2026-09-26"
+			},
+			"note": "Noted 2026-09-26, rating unchanged: dossiq portaalBericht rows reach portaliq's merged inbox, but portaliq src/portal/components/InboxPage.jsx:86-148 never renders a dossiq portaalBericht's attachments, and the field contract differs: dossiq writes content, sentAt and readByRecipientAt where portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702). This is part of why the row stays partial."
 		},
 		{
 			"id": "6.8",
@@ -6551,8 +6597,8 @@
 			"name": "Can the intake form be embedded on the municipality's own website, and does a submission arrive as a case.",
 			"status": "pending",
 			"source": "round 4 batch 10",
-			"dossiq": "no",
-			"dossiqNote": "From a grep: `iframe|embed|widget.js|postMessage` over `lib/ src/` returns UUID and EXIF matches only, and the one public intake endpoint is `lib/Controller/DSOIntakeController.php` (`#[PublicPage]`), which receives DSO submissions from the Omgevingsloket and not a form on the municipality's site. The portal move to portaliq is where this would land. Jira DC documents the issue collector, \"a Jira feedback form into your own website\" with no account for the visitor and hidden fields preset; Zammad drove one in batch 3, one generic form for the whole install, which is why its 1.1 is `partial` and this row would be its `yes`. Easy Redmine is `no`: its only embed is a dashboard iFrame widget, the wrong direction. Row 1.1 asks whether a citizen can file on the product's own portal, which is a different question.",
+			"dossiq": "yes",
+			"dossiqNote": "From a grep: `iframe|embed|widget.js|postMessage` over `lib/ src/` returns UUID and EXIF matches only, and the one public intake endpoint is `lib/Controller/DSOIntakeController.php` (`#[PublicPage]`), which receives DSO submissions from the Omgevingsloket and not a form on the municipality's site. The portal move to portaliq is where this would land. Jira DC documents the issue collector, \"a Jira feedback form into your own website\" with no account for the visitor and hidden fields preset; Zammad drove one in batch 3, one generic form for the whole install, which is why its 1.1 is `partial` and this row would be its `yes`. Easy Redmine is `no`: its only embed is a dashboard iFrame widget, the wrong direction. Row 1.1 asks whether a citizen can file on the product's own portal, which is a different question. Re-rated no to yes on 2026-09-26: the embedded intake chain is wired end to end in portaliq: src/portal/components/EmbeddedForm.jsx (mounted from src/portal/main.jsx:89-95) posts to POST /portal/api/embed/submit (appinfo/routes.php:178-179); lib/Controller/PortalEmbedController.php:163 submit() calls PortalIntakeQueue::accept() (lib/Service/Intake/PortalIntakeQueue.php:98); lib/BackgroundJob/PortalIntakeDeliveryJob.php:102-138 deliver() creates the case in the form binding's caseRegister and caseSchema (portaliq matrix rows int-embedded-form and sib-dossiq-q1-16). It delivers a case for any form whose binding names a case register and schema.",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
@@ -6560,7 +6606,8 @@
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
 			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"readOn": "2026-09-26"
 		},
 		{
 			"id": "Q2.33",
@@ -6940,8 +6987,8 @@
 			"name": "Applicant withdraws their own case from the portal",
 			"status": "pending",
 			"source": "dossiq#2314, published as 2.41",
-			"dossiq": "partial",
-			"dossiqNote": "ComplaintService has a withdrawn status, set internally by a handler. No case type lets the applicant close their own case from the portal.",
+			"dossiq": "no",
+			"dossiqNote": "ComplaintService has a withdrawn status, set internally by a handler. No case type lets the applicant close their own case from the portal. Re-rated partial to no on 2026-09-26: portaliq lib/Controller/CitizenCaseController.php:304-331 withdraw() is implemented (appinfo/routes.php:287), but src/portal/lib/portalApi.js has no withdraw method and src/portal/components/CitizenCase.jsx has no withdraw button, so no applicant reaches it (portaliq matrix rows act-withdraw-case and sib-dossiq-2-47).",
 			"name_nl": "Aanvrager trekt de eigen zaak in vanuit het portaal",
 			"opencase": "unknown",
 			"gzac": "unknown",
@@ -6950,7 +6997,8 @@
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
 			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"readOn": "2026-09-26"
 		},
 		{
 			"id": "2.48",
@@ -8236,8 +8284,8 @@
 			"name": "Portal visibility derived from the party tree, so a parent sees its subsidiaries",
 			"status": "pending",
 			"source": "dossiq#2314, published as 13.31",
-			"dossiq": "no",
-			"dossiqNote": "Row 13.13 grants portal rights per case. A holding company with eleven subsidiaries is then eleven separate grants, maintained by hand as the group changes.",
+			"dossiq": "yes",
+			"dossiqNote": "Row 13.13 grants portal rights per case. A holding company with eleven subsidiaries is then eleven separate grants, maintained by hand as the group changes. Re-rated no to yes on 2026-09-26 from portaliq's code: portaliq lib/Service/Identity/PortalPartyTreeResolver.php:90-175 entitiesFor() walks the party tree; lib/Service/Identity/PortalMandateService.php:204-222 reachOf() returns REACH_TREE for a mandate that reaches down; lib/Controller/CitizenCaseController.php:693-696 applies it on the reached citizen-case path (portaliq matrix row sib-dossiq-13-38). Caveat from that portaliq row: the SPA never sends a mandate parameter, so the service's default mandate decides whether tree reach applies.",
 			"name_nl": "Portaalzicht afgeleid uit de partijboom, zodat een moeder de dochters ziet",
 			"opencase": "unknown",
 			"gzac": "unknown",
@@ -8246,7 +8294,8 @@
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
 			"feature": "leges-heffingen",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"readOn": "2026-09-26"
 		},
 		{
 			"id": "13.39",
