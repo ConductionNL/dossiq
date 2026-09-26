@@ -125,6 +125,9 @@ const AUTHORED_FIELDS = [
 	'featureConfidence',
 	'built',
 	'evidence',
+	// A row-level sentence a reader needs to read the ratings right, such as
+	// a question answered literally, where a yes is the bad answer.
+	'note',
 ]
 
 /**
