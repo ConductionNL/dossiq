@@ -1,0 +1,129 @@
+{
+  "_note": "One shipped case type with two versions, so the Case types index has something for its version chips to tell apart: Current versions hides version 1, All versions lists both. Version 1 carries `supersededBy` naming version 2 and version 2 carries `previousVersion` naming version 1, exactly what publishing a new version writes (zaaktype-versioning). Both are published and both are the same case type later on, so they share a title and a category. The ids are fixed so the two can name each other in this file.",
+  "components": {
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseType",
+          "version": "1.1.0",
+          "slug": "evenementenvergunning-v1"
+        },
+        "id": "c4e7e000-0000-4000-a000-000000000101",
+        "uuid": "c4e7e000-0000-4000-a000-000000000101",
+        "title": "Evenementenvergunning",
+        "category": "Vergunningen",
+        "identifier": "evenementenvergunning-2024",
+        "description": "Vergunning voor het organiseren van een evenement in de openbare ruimte (APV). Versie 1, vervangen door versie 2 per 1 januari 2026.",
+        "purpose": "Beoordeling van evenementen op openbare orde, veiligheid en overlast",
+        "trigger": "Aanvraag door een organisator",
+        "processingDeadline": "P8W",
+        "confidentiality": "openbaar",
+        "isDraft": false,
+        "version": 1,
+        "validFrom": "2024-01-01",
+        "validUntil": "2025-12-31",
+        "supersededBy": "c4e7e000-0000-4000-a000-000000000102"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseType",
+          "version": "1.1.0",
+          "slug": "evenementenvergunning-v2"
+        },
+        "id": "c4e7e000-0000-4000-a000-000000000102",
+        "uuid": "c4e7e000-0000-4000-a000-000000000102",
+        "title": "Evenementenvergunning",
+        "category": "Vergunningen",
+        "identifier": "evenementenvergunning",
+        "description": "Vergunning voor het organiseren van een evenement in de openbare ruimte (APV). Versie 2: de veiligheidstoets is een eigen status geworden.",
+        "purpose": "Beoordeling van evenementen op openbare orde, veiligheid en overlast",
+        "trigger": "Aanvraag door een organisator",
+        "processingDeadline": "P8W",
+        "confidentiality": "openbaar",
+        "isDraft": false,
+        "version": 2,
+        "validFrom": "2026-01-01",
+        "previousVersion": "c4e7e000-0000-4000-a000-000000000101"
+      },
+      {
+        "@self": { "register": "dossiq", "schema": "statusType", "slug": "evenementenvergunning-v1-ontvangen" },
+        "id": "c4e7e000-0000-4000-a000-000000000111",
+        "uuid": "c4e7e000-0000-4000-a000-000000000111",
+        "caseType": "c4e7e000-0000-4000-a000-000000000101",
+        "name": "Ontvangen",
+        "description": "De aanvraag is ontvangen",
+        "order": 1,
+        "isFinal": false,
+        "role": "intake"
+      },
+      {
+        "@self": { "register": "dossiq", "schema": "statusType", "slug": "evenementenvergunning-v1-in-behandeling" },
+        "id": "c4e7e000-0000-4000-a000-000000000112",
+        "uuid": "c4e7e000-0000-4000-a000-000000000112",
+        "caseType": "c4e7e000-0000-4000-a000-000000000101",
+        "name": "In behandeling",
+        "description": "De aanvraag wordt beoordeeld",
+        "order": 2,
+        "isFinal": false,
+        "role": "in-progress"
+      },
+      {
+        "@self": { "register": "dossiq", "schema": "statusType", "slug": "evenementenvergunning-v1-afgehandeld" },
+        "id": "c4e7e000-0000-4000-a000-000000000113",
+        "uuid": "c4e7e000-0000-4000-a000-000000000113",
+        "caseType": "c4e7e000-0000-4000-a000-000000000101",
+        "name": "Afgehandeld",
+        "description": "Er is een besluit genomen",
+        "order": 3,
+        "isFinal": true,
+        "role": "closed"
+      },
+      {
+        "@self": { "register": "dossiq", "schema": "statusType", "slug": "evenementenvergunning-v2-ontvangen" },
+        "id": "c4e7e000-0000-4000-a000-000000000121",
+        "uuid": "c4e7e000-0000-4000-a000-000000000121",
+        "caseType": "c4e7e000-0000-4000-a000-000000000102",
+        "name": "Ontvangen",
+        "description": "De aanvraag is ontvangen",
+        "order": 1,
+        "isFinal": false,
+        "role": "intake"
+      },
+      {
+        "@self": { "register": "dossiq", "schema": "statusType", "slug": "evenementenvergunning-v2-veiligheidstoets" },
+        "id": "c4e7e000-0000-4000-a000-000000000122",
+        "uuid": "c4e7e000-0000-4000-a000-000000000122",
+        "caseType": "c4e7e000-0000-4000-a000-000000000102",
+        "name": "Veiligheidstoets",
+        "description": "Politie en brandweer adviseren over het veiligheidsplan",
+        "order": 2,
+        "isFinal": false,
+        "role": "review"
+      },
+      {
+        "@self": { "register": "dossiq", "schema": "statusType", "slug": "evenementenvergunning-v2-in-behandeling" },
+        "id": "c4e7e000-0000-4000-a000-000000000123",
+        "uuid": "c4e7e000-0000-4000-a000-000000000123",
+        "caseType": "c4e7e000-0000-4000-a000-000000000102",
+        "name": "In behandeling",
+        "description": "De aanvraag wordt beoordeeld",
+        "order": 3,
+        "isFinal": false,
+        "role": "in-progress"
+      },
+      {
+        "@self": { "register": "dossiq", "schema": "statusType", "slug": "evenementenvergunning-v2-afgehandeld" },
+        "id": "c4e7e000-0000-4000-a000-000000000124",
+        "uuid": "c4e7e000-0000-4000-a000-000000000124",
+        "caseType": "c4e7e000-0000-4000-a000-000000000102",
+        "name": "Afgehandeld",
+        "description": "Er is een besluit genomen",
+        "order": 4,
+        "isFinal": true,
+        "role": "closed"
+      }
+    ]
+  }
+}

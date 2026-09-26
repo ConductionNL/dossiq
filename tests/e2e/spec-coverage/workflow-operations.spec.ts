@@ -209,9 +209,16 @@ test.describe('Case Map page', () => {
 	 *    the Polygon fixture above is here so the count proves a polygon does
 	 *    at least reach the map.
 	 *  - clustering and auto-fit are `CnMapWidget` props (`:clustering="true"`,
-	 *    `:autoFit="features.length > 0"`), owned by the library and asserted
-	 *    in its own suite. What this file can prove is that dossiq passes
-	 *    features to it, which is what the tally reads.
+	 *    `:autoFit="features.length > 0"`), owned by the library. THIS BULLET
+	 *    USED TO SAY THEY WERE "asserted in its own suite", AND THAT SENTENCE
+	 *    IS WHY THE GAP SURVIVED. The library's suite does assert clustering,
+	 *    and its assertion could not fail: the Leaflet mock it runs against
+	 *    puts `markerClusterGroup` on the namespace itself, so the test passes
+	 *    whether or not the plugin ever loads. Measured 2026-09-12, in the
+	 *    library and against the published package, and written up in
+	 *    ConductionNL/nextcloud-vue#1121: clustering has never run in any app.
+	 *    What this file can prove is that dossiq passes features to the widget,
+	 *    which is what the tally reads.
 	 *
 	 * AND THE CONSOLE-ERROR ASSERTION IS GONE, with a finding behind it.
 	 *
@@ -221,8 +228,29 @@ test.describe('Case Map page', () => {
 	 * `webpackIgnore: true`, and in an app bundle that resolves to
 	 * `/custom_apps/node_modules/leaflet.markercluster/dist/leaflet.markercluster-src.js`
 	 * and answers 404. Clustering, one of the clauses the scenario names, is
-	 * therefore never active on this page. Worth fixing in the library or by
-	 * bundling the plugin; not something to hold this citation hostage.
+	 * therefore never active on this page.
+	 *
+	 * WHY THERE IS STILL NO CLUSTERING ASSERTION HERE, AND WHAT WOULD CHANGE
+	 * THAT. Two separate defects had to be fixed before a cluster can appear on
+	 * this page, and nextcloud-vue#1121 fixes both: the `webpackIgnore` marker
+	 * above, and the fact that `leaflet.markercluster` is a classic Leaflet
+	 * plugin that writes onto the GLOBAL `L` while `CnMapWidget` keeps its
+	 * Leaflet on `this.L`, so even a resolving import left
+	 * `L.markerClusterGroup` undefined. Neither reaches this instance until a
+	 * `@conduction/nextcloud-vue` release carrying #1121 ships and dossiq's
+	 * `^2.48.2` is bumped onto it; the published 2.48.2 in `node_modules`
+	 * today still carries the marker.
+	 *
+	 * So an assertion written here now could not go green on any build this
+	 * repo can produce, and one written to go green anyway, by finding
+	 * `.marker-cluster` in the DOM, is the same unfailable locator this
+	 * citation just removed. When the bump lands, the assertion to write is the behaviour the
+	 * scenario names rather than a class: at a low zoom the map shows FEWER
+	 * marker elements than there are located cases, and the cluster icons carry
+	 * counts that sum to the tally. The gap is NOT declared with an
+	 * `@e2e exclude`: that marker is scenario-scoped, and this scenario is
+	 * genuinely cited for its marker and geometry half, so an exclude here
+	 * would trade a real partial citation for a blanket one.
 	 *
 	 * The assertion was also fragile on its own terms: `mapLayers` points at
 	 * `tile.openstreetmap.org`, so it made every run depend on the runner

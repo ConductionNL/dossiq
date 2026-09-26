@@ -27,6 +27,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Custody\CaseCustodyChain;
+use OCA\Dossiq\Service\Custody\CaseTransferConsentGate;
+use OCA\Dossiq\Service\Transfer\FederatedIdempotency;
+use OCA\Dossiq\Service\Transfer\InternalHandover;
 use OCA\Dossiq\Service\Transfer\TransferRegisterGateway;
 use OCA\Dossiq\Service\Transfer\TransferShareBroker;
 use Psr\Log\LoggerInterface;
@@ -43,20 +48,26 @@ class CaseTransferService {
 	/**
 	 * Constructor for the CaseTransferService.
 	 *
-	 * @param SettingsService $settingsService The settings service
 	 * @param TransferRegisterGateway $gateway OpenRegister resolution for the transfer surface
 	 * @param TransferShareBroker $shareBroker Transfer-scoped OCM token minting and resolution
 	 * @param LoggerInterface $logger The logger
 	 * @param TenantAuditTrailService $auditTrail Audit-trail emitter for custody-change actions
+	 * @param InternalHandover $internal The same act with a team in place of the target organisation
+	 * @param CaseCustodyChain $custody The dated chain of holdings every move writes into
+	 * @param CaseTransferConsentGate $consent Whether this case may leave the organisation at all
+	 * @param FederatedIdempotency $idempotency The key a repeated federated ask is recognised by
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private SettingsService $settingsService,
 		private TransferRegisterGateway $gateway,
 		private TransferShareBroker $shareBroker,
 		private LoggerInterface $logger,
 		private TenantAuditTrailService $auditTrail,
+		private InternalHandover $internal,
+		private CaseCustodyChain $custody,
+		private CaseTransferConsentGate $consent,
+		private FederatedIdempotency $idempotency,
 	) {
 	}//end __construct()
 
@@ -99,28 +110,35 @@ class CaseTransferService {
 			return ['error' => 'OpenRegister is not available'];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
-
-		$idempotencyKey = null;
-		if ($remoteCloudId !== null && $remoteCloudId !== '') {
-			$shareService = $this->gateway->federationShareService();
-			if ($shareService === null) {
-				return ['error' => 'Federated case transfer requires the OpenRegister federation leaf'];
-			}
-
-			$idempotencyKey = hash('sha256', $caseId . '|' . $targetOrganization . '|' . $remoteCloudId);
-
-			$existing = $this->findTransferByIdempotencyKey(
-				idempotencyKey: $idempotencyKey,
-				register: (int)$register,
-				schema: (int)$schema,
-				objectService: $objectService,
-			);
-			if ($existing !== null) {
-				return $existing;
-			}
+		// 🔴 THE CONSENT IS A PRECONDITION, NOT A WARNING (D-5). It runs before
+		// the idempotency lookup on purpose: a refused hand-off must not leave
+		// a pending transfer behind that a later call would happily return as
+		// "already initiated".
+		$verdict = $this->consent->assess(
+			caseId: $caseId,
+			sourceOrganisation: $sourceOrganization,
+			receivingOrg: $targetOrganization,
+			atDate: $requestedDate,
+		);
+		if ($verdict['allowed'] === false) {
+			return ['error' => $verdict['sentence'], 'rule' => $verdict['rule']];
 		}
+
+		[$register, $schema] = $this->gateway->transferScope();
+
+		$precheck = $this->idempotency->precheck(
+			remoteCloudId: $remoteCloudId,
+			caseId: $caseId,
+			targetOrganization: $targetOrganization,
+			register: (int)$register,
+			schema: (int)$schema,
+			objectService: $objectService,
+		);
+		if ($precheck['answer'] !== null) {
+			return $precheck['answer'];
+		}
+
+		$idempotencyKey = $precheck['key'];
 
 		$now = (new DateTime())->format('c');
 
@@ -170,6 +188,7 @@ class CaseTransferService {
 
 		return $resultData;
 	}//end initiateTransfer()
+
 
 	/**
 	 * Build the initial (pending) transfer object payload with its first
@@ -324,28 +343,19 @@ class CaseTransferService {
 			return ['error' => 'OpenRegister is not available'];
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
+		[$register, $schema] = $this->gateway->transferScope();
 
-		$transfer = $objectService->find($transferId, register: (int)$register, schema: (int)$schema);
-		if ($transfer === null) {
-			return ['error' => 'Transfer not found'];
-		}
-
-		$transferData = (array)$transfer;
-		if (is_object($transfer) === true) {
-			$transferData = $transfer->jsonSerialize();
-		}
-
-		$currentStatus = (string)($transferData['status'] ?? '');
-		if ($currentStatus === $targetStatus) {
-			// Idempotent replay: same call already applied, return as-is.
+		$transferData = $this->pendingTransfer(
+			objectService: $objectService,
+			transferId: $transferId,
+			targetStatus: $targetStatus,
+			register: (int)$register,
+			schema: (int)$schema,
+		);
+		if (($transferData['status'] ?? '') !== 'pending') {
+			// Not found, an idempotent replay, or a conflicting state: whichever
+			// it is, `pendingTransfer()` has already shaped the answer.
 			return $transferData;
-		}
-
-		if ($currentStatus !== 'pending') {
-			// Ambiguous/conflicting state (e.g. accept after reject) — refuse loudly.
-			return ['error' => 'Transfer is not in a state that can be ' . $targetStatus . ' (current status: ' . $currentStatus . ')'];
 		}
 
 		$caseId = (string)($transferData['caseId'] ?? '');
@@ -365,6 +375,21 @@ class CaseTransferService {
 			remoteCloudId: $remoteCloudId,
 			now: $now,
 		);
+
+		// RECORDED FIRST, THEN APPLIED, the same order InternalHandover uses.
+		// A chain written after the status would leave a hole whenever the
+		// chain write failed, and a chain with a hole reads as an answer. This
+		// way the failure is that the transfer stays pending, which is visible.
+		if ($targetStatus === 'accepted') {
+			$refusal = $this->moveCustody(
+				caseId: $caseId,
+				transferData: $transferData,
+				remoteCloudId: $remoteCloudId,
+			);
+			if ($refusal !== null) {
+				return $refusal;
+			}
+		}
 
 		$result = $objectService->saveObject(
 			object: $transferData,
@@ -397,6 +422,79 @@ class CaseTransferService {
 
 		return $result->jsonSerialize();
 	}//end completeTransfer()
+
+	/**
+	 * The transfer as it stands, or the answer to give when it cannot be completed.
+	 *
+	 * A transfer already at the target status is an idempotent replay and is
+	 * answered as it stands. Any other status is a conflicting state, such as an
+	 * accept after a reject, and is refused loudly. The caller tells the three
+	 * apart by whether what comes back is still `pending`.
+	 *
+	 * @param object $objectService The OpenRegister object service.
+	 * @param string $transferId    The transfer.
+	 * @param string $targetStatus  The status being moved to.
+	 * @param int    $register      The register transfers live in.
+	 * @param int    $schema        The transfer schema.
+	 *
+	 * @return array<string, mixed> The pending transfer, or the answer to return.
+	 */
+	private function pendingTransfer(
+		object $objectService,
+		string $transferId,
+		string $targetStatus,
+		int $register,
+		int $schema,
+	): array {
+		$transfer = $objectService->find($transferId, register: $register, schema: $schema);
+		if ($transfer === null) {
+			return ['error' => 'Transfer not found'];
+		}
+
+		$transferData = (array)$transfer;
+		if (is_object($transfer) === true) {
+			$transferData = $transfer->jsonSerialize();
+		}
+
+		$currentStatus = (string)($transferData['status'] ?? '');
+		if ($currentStatus === $targetStatus) {
+			return $transferData;
+		}
+
+		if ($currentStatus !== 'pending') {
+			return [
+				'error' => 'Transfer is not in a state that can be ' . $targetStatus
+					. ' (current status: ' . $currentStatus . ')',
+			];
+		}
+
+		return $transferData;
+	}//end pendingTransfer()
+
+	/**
+	 * Hand the case over on the custody chain, or say why it did not move.
+	 *
+	 * @param string               $caseId        The case.
+	 * @param array<string, mixed> $transferData  The transfer as it stands.
+	 * @param string|null          $remoteCloudId The remote, when the call came from one.
+	 *
+	 * @return array<string, mixed>|null The refusal, or null when the case moved.
+	 */
+	private function moveCustody(string $caseId, array $transferData, ?string $remoteCloudId): ?array {
+		try {
+			$this->custody->move(
+				caseId: $caseId,
+				organisationUnit: (string)($transferData['targetOrganization'] ?? ''),
+				handler: '',
+				reason: (string)($transferData['reason'] ?? ''),
+				movedBy: ($remoteCloudId ?? (string)($transferData['initiatedBy'] ?? '')),
+			);
+		} catch (RefusedException $e) {
+			return ['error' => $e->getSentence(), 'rule' => $e->getRule()];
+		}
+
+		return null;
+	}//end moveCustody()
 
 	/**
 	 * Resolve the custody-audit actor type for a completion event.
@@ -470,8 +568,7 @@ class CaseTransferService {
 			return null;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('case_transfer_schema');
+		[$register, $schema] = $this->gateway->transferScope();
 		if (empty($register) === true || empty($schema) === true) {
 			return null;
 		}
@@ -520,38 +617,98 @@ class CaseTransferService {
 		return $this->shareBroker->resolveTransferShare(shareToken: $shareToken, transferId: $transferId);
 	}//end resolveFederatedTransferShare()
 
+
 	/**
-	 * Find an existing transfer by idempotency key (pending or accepted
-	 * only — a rejected transfer does not block re-initiating).
+	 * Hand a case to another team inside this organisation.
 	 *
-	 * @param string $idempotencyKey The sha256 idempotency key
-	 * @param int $register The register id
-	 * @param int $schema The schema id
-	 * @param object $objectService The resolved OR ObjectService
+	 * 🔑 ONE DOOR, TWO BOUNDARIES. The internal handover enters through this
+	 * class rather than beside it, so anyone looking for "how does a case
+	 * move" finds every answer in one place and neither path can grow a
+	 * custody trail the other does not know about. The work itself lives in
+	 * {@see InternalHandover} because this class was already at its
+	 * complexity ceiling, which is decomposition and not a second mechanism.
 	 *
-	 * @return array|null The existing transfer data, or null when none found
+	 * @param string $caseId The case uuid.
+	 * @param string $targetTeam The receiving team's Nextcloud group id.
+	 * @param string $reason Why the case is moving.
+	 * @param string $initiatedBy Who handed it on.
+	 * @param bool $doorzending Whether this is a doorzending under Awb 2:3.
+	 *
+	 * @return array The transfer record.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-a-case-is-handed-to-another-team-as-a-recorded-act-req-hand-01
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The declaration Awb 2:3
+	 * hangs on, stored on the record. See InternalHandover::initiate().
 	 */
-	private function findTransferByIdempotencyKey(string $idempotencyKey, int $register, int $schema, object $objectService): ?array {
-		try {
-			$matches = $objectService->findAll(
-				['filters' => ['register' => $register, 'schema' => $schema, 'idempotencyKey' => $idempotencyKey]],
-			);
-		} catch (\Throwable $e) {
-			return null;
-		}
+	public function handToTeam(
+		string $caseId,
+		string $targetTeam,
+		string $reason,
+		string $initiatedBy,
+		bool $doorzending = false,
+	): array {
+		$record = $this->internal->initiate(
+			caseId: $caseId,
+			targetTeam: $targetTeam,
+			reason: $reason,
+			initiatedBy: $initiatedBy,
+			doorzending: $doorzending,
+		);
 
-		foreach ((array)$matches as $match) {
-			$matchData = $match;
-			if (is_array($match) === false) {
-				$matchData = $match->jsonSerialize();
-			}
+		// One door, one chain. The internal handover moves the case on
+		// initiate — the receiving team owns it before anybody accepts — so
+		// the holding opens here rather than on the answer.
+		$this->custody->move(
+			caseId: $caseId,
+			organisationUnit: $targetTeam,
+			handler: '',
+			reason: $reason,
+			movedBy: $initiatedBy,
+		);
 
-			$status = (string)($matchData['status'] ?? '');
-			if ($status === 'pending' || $status === 'accepted') {
-				return $matchData;
-			}
-		}
+		return $record;
+	}//end handToTeam()
 
-		return null;
-	}//end findTransferByIdempotencyKey()
+	/**
+	 * Accept a handover on the receiving team's behalf.
+	 *
+	 * @param string $transferId The handover's uuid.
+	 * @param string $acceptedBy Who accepted it.
+	 *
+	 * @return array The settled record.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	public function acceptHandover(string $transferId, string $acceptedBy): array {
+		return $this->internal->accept(transferId: $transferId, acceptedBy: $acceptedBy);
+	}//end acceptHandover()
+
+	/**
+	 * Refuse a handover back, with a reason.
+	 *
+	 * @param string $transferId The handover's uuid.
+	 * @param string $reason Why the receiving team will not take it.
+	 * @param string $refusedBy Who refused it.
+	 *
+	 * @return array The settled record.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	public function refuseHandover(string $transferId, string $reason, string $refusedBy): array {
+		return $this->internal->refuse(transferId: $transferId, reason: $reason, refusedBy: $refusedBy);
+	}//end refuseHandover()
+
+	/**
+	 * The handovers a team sent that nobody has picked up.
+	 *
+	 * @param string $team The sending team's Nextcloud group id.
+	 *
+	 * @return array The outstanding handovers.
+	 *
+	 * @spec openspec/changes/handing-a-case-over/specs/case-management/spec.md#requirement-the-receiving-team-can-refuse-a-handover-back-req-hand-02
+	 */
+	public function outstandingHandovers(string $team): array {
+		return $this->internal->outstandingFor(team: $team);
+	}//end outstandingHandovers()
 }//end class

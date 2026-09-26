@@ -104,6 +104,16 @@ final class StubApiDriftTest extends TestCase {
 		// tree half-migrated. Tracked as dossiq#1763.
 		'Db\\Verwerkingsactiviteit' => 'dossiq#1763: the catalogue writes Dutch legal bases OR rejects; '
 			. 'stub, catalogue and assertions move together',
+		// The three person-link event stubs declare `getLink(): object` where the
+		// real events declare `ContactLink`. That is a WIDENING rather than a
+		// contradiction — anything written against `object` holds against a
+		// ContactLink — and narrowing it would mean carrying a ContactLink double
+		// this suite has no other use for. Waived deliberately rather than fixed
+		// by inventing a second double, and it stops being a waiver the day a
+		// ContactLink stub earns its place for some other reason.
+		'Event\\PersonLinkedEvent' => 'getLink() is widened to object: the suite carries no ContactLink double',
+		'Event\\PersonUnlinkedEvent' => 'getLink() is widened to object: the suite carries no ContactLink double',
+		'Event\\PersonLinkUpdatedEvent' => 'getLink() is widened to object: the suite carries no ContactLink double',
 	];
 
 	/**
@@ -231,9 +241,46 @@ final class StubApiDriftTest extends TestCase {
 			. " no longer matches the class it doubles.\n"
 			. "A stub that says something the real class does not is the one witness this suite has, so\n"
 			. "anything written against it is green here and fatal against a real OpenRegister.\n\n  - "
-			. implode("\n  - ", $drift) . "\n"
+			. implode("\n  - ", $drift) . "\n\n"
+			. $this->comparedAgainst(realLib: $realLib)
 		);
 	}//end testTheStubAgreesWithTheRealClass()
+
+	/**
+	 * Which openregister this verdict was measured against.
+	 *
+	 * 🔑 THE SAME RED HAS TWO CAUSES AND THEY NEED DIFFERENT PEOPLE. The
+	 * comparison is against whichever checkout happens to sit beside this
+	 * app, so "the stub is stale" and "the sibling checkout is stale" produce
+	 * a byte-identical message, and the second one sends somebody to edit a
+	 * stub that is already correct. Measured 2026-09-19: a sibling three days
+	 * behind `development` reported TaskInboxCriteria as 15 arguments against
+	 * 14, while CI, which clones fresh, reported 14 against 15 — the same
+	 * drift, read from both ends, with nothing in either message to tell them
+	 * apart. So the verdict names its own source.
+	 *
+	 * @param string $realLib Absolute path to the sibling's lib/.
+	 *
+	 * @return string One line naming the checkout and its revision.
+	 */
+	private function comparedAgainst(string $realLib): string {
+		$root = dirname($realLib);
+		$head = '(revision unknown)';
+		$file = $root . '/.git/HEAD';
+		if (is_file($file) === true) {
+			$ref = trim((string)file_get_contents($file));
+			$head = $ref;
+			if (str_starts_with($ref, 'ref: ') === true) {
+				$name = substr($ref, 5);
+				$sha = $root . '/.git/' . $name;
+				$head = $name . (is_file($sha) === true ? ' @ ' . substr(trim((string)file_get_contents($sha)), 0, 12) : '');
+			}
+		}
+
+		return 'Compared against ' . $root . ' at ' . $head . ".\n"
+			. "If that checkout is older than openregister's development, the stub may already be right\n"
+			. "and this checkout is what is behind. CI clones development fresh and is the authority.\n";
+	}//end comparedAgainst()
 
 	/**
 	 * Every way the stub disagrees with the real class.
@@ -299,6 +346,25 @@ final class StubApiDriftTest extends TestCase {
 					$name,
 					implode(', ', $signature['params']),
 					implode(', ', $realSignature['params'])
+				);
+				continue;
+			}
+
+			// What a method hands back, when both sides say. A stub returning
+			// `object` where the real class returns an entity is a stub every
+			// assertion about the return value agrees with and production does
+			// not, which is the same defect as a wrong argument in the other
+			// direction. Only compared when BOTH declare a type: a stub that
+			// declares none promises nothing, and reporting that would be a wall
+			// of noise about doubles that are merely less specific.
+			$stubReturns = ($signature['returns'] ?? '');
+			$realReturns = ($realSignature['returns'] ?? '');
+			if ($stubReturns !== '' && $realReturns !== '' && $stubReturns !== $realReturns) {
+				$drift[] = sprintf(
+					'%s() returns %s where the real class returns %s',
+					$name,
+					$stubReturns,
+					$realReturns
 				);
 			}
 		}//end foreach

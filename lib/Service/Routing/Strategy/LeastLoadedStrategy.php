@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Routing\Strategy;
 
+use OCA\Dossiq\Service\Routing\PoolMembership;
 use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
 
 /**
@@ -35,6 +36,16 @@ use OCA\Dossiq\Service\Routing\RoutingStrategyInterface;
  * @spec openspec/changes/role-based-step-routing/tasks.md#T03
  */
 class LeastLoadedStrategy implements RoutingStrategyInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param PoolMembership $pool Reads the pool, its weights and its teams
+	 */
+	public function __construct(
+		private readonly PoolMembership $pool,
+	) {
+	}//end __construct()
+
 	/**
 	 * {@inheritDoc}
 	 *
@@ -71,22 +82,32 @@ class LeastLoadedStrategy implements RoutingStrategyInterface {
 			raw: ($case['openTaskCountsByParticipant'] ?? [])
 		);
 
+		$team = trim((string)($rule['team'] ?? ''));
+		$members = $this->pool->membersOf(roles: $roles, roleType: $target, team: $team);
+
 		$bestParticipant = null;
-		$bestCount = null;
-		foreach ($roles as $role) {
-			if ((string)($role['roleType'] ?? '') !== $target) {
+		$bestLoad = null;
+		foreach ($members as $member) {
+			$participant = $member['participant'];
+			// LOAD PER UNIT OF WEIGHT, not the raw count. A member at weight 2
+			// holding six is less loaded than one at weight 1 holding four,
+			// and comparing counts gets exactly that case backwards. An
+			// unweighted pool divides every count by one, which is the same
+			// comparison this strategy has always made (REQ-RTP-01).
+			$load = $this->pool->relativeLoad(
+				count: (float)($counts[$participant] ?? 0),
+				weight: $member['weight'],
+			);
+
+			if ($load === INF) {
+				// Weight zero: in the pool, holding their cases, not offered
+				// the next one.
 				continue;
 			}
 
-			$participant = (string)($role['participant'] ?? '');
-			if ($participant === '') {
-				continue;
-			}
-
-			$count = $counts[$participant] ?? 0;
-			if ($bestCount === null || $count < $bestCount) {
+			if ($bestLoad === null || $load < $bestLoad) {
 				$bestParticipant = $participant;
-				$bestCount = $count;
+				$bestLoad = $load;
 			}
 		}
 

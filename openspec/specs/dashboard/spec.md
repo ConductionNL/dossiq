@@ -13,9 +13,19 @@ retrofit_extensions:
 
 ## Purpose
 
-The dashboard is the landing page of the Dossiq app. It provides an at-a-glance overview of case management activity: KPI cards with headline metrics, status and type distribution charts, an overdue cases panel, a personal workload preview, a recent activity feed, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).
+**Superseded 2026-09-13 (dashboard-my-work-split):** the app's landing page is
+now My Work (`openspec/specs/my-work/spec.md`, route `/`), not the Dashboard.
+The Dashboard moved to `/dashboard` and answers "how is the team doing":
+KPI cards, status and type distribution charts, and the stalled-cases panel.
+The personal-workload surface (open tasks, deadlines, open cases) moved onto
+My Work, because a handler opening the app wants "what do I do first today",
+not the team-wide aggregate. REQ-DASH-005 below is kept for its scenario
+detail but its panel now lives on My Work, not the Dashboard — see that
+spec's Requirements for the current widget set.
 
-**Feature tiers**: MVP (KPI cards, status chart, overdue panel, my work preview, activity feed, quick actions, empty state, refresh); V1 (average processing time KPI, case type breakdown chart, SLA compliance widget, workload distribution)
+The dashboard provides an at-a-glance overview of case management activity across the team: KPI cards with headline metrics, status and type distribution charts, and quick actions. The dashboard aggregates data across all cases visible to the current user (respecting RBAC via OpenRegister).
+
+**Feature tiers**: MVP (KPI cards, status chart, quick actions, empty state, refresh); V1 (average processing time KPI, case type breakdown chart, SLA compliance widget)
 
 ## Data Sources
 
@@ -189,6 +199,13 @@ The dashboard MUST display a panel listing cases that have exceeded their proces
 - THEN the system MUST navigate to the case detail view for "2024-042"
 
 ### REQ-DASH-005: My Work Preview [MVP]
+
+**Superseded 2026-09-13 (dashboard-my-work-split):** this panel is no longer
+on the Dashboard. It now lives on My Work (route `/`) as three widgets — My
+work (open tasks), Deadlines, Open Cases — kept as separate object-tables
+rather than one merged cases+tasks panel. The scenarios below describe the
+pre-split panel shape and are retained for history, not as the current
+contract; see `openspec/specs/my-work/spec.md` for what ships today.
 
 The dashboard MUST display a preview of the current user's personal workload, showing the top 5 most urgent items.
 
@@ -685,6 +702,10 @@ advance a case's status.
 - WHEN the user drags the card to the "In behandeling" column and drops it
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID
 - AND the card MUST move to the "In behandeling" column
+- AND while the card is in the air the board MUST show it moving: a ghost under the pointer and a
+  placeholder in the column it is held over
+- AND a column the case cannot reach MUST refuse the card while it is in the air, faded, and when a
+  guard is what holds the case the column MUST show the guard's reason under its header
 - AND if the update fails (e.g., permission denied), the card MUST return to its original column
 
 #### Scenario DASH-V1-006d: Click on case card navigates to detail
@@ -702,21 +723,45 @@ advance a case's status.
 
 - GIVEN case "2026-0042" is in the "Ontvangen" column and the user is navigating with only a
   keyboard (no mouse/touch)
-- WHEN the user tabs to the case card's "Move to…" control and selects "In behandeling" via
-  Enter/Space
+- WHEN the user focuses the case card and presses `M`, then picks "In behandeling" from the move
+  dialog
 - THEN the system MUST update the case's `status` to the "In behandeling" statusType ID via the
-  same persistence path as the drag-and-drop scenario (optimistic move, `saveObject('case', …)`,
-  revert-and-toast on failure)
+  same persistence path as the drag-and-drop scenario (optimistic move, the offered transition
+  posted to the status-transition engine, revert-and-toast on failure)
 - AND the card MUST move to the "In behandeling" column
 - AND the card's existing "open case detail" keyboard activation (Enter/Space on the card body)
-  MUST remain unaffected by the new control
+  MUST remain unaffected by the move gesture
+- AND the card MUST announce the `M` gesture in its accessible name, because the gesture has no
+  visible control to discover
 
-#### Scenario DASH-V1-006g: Drag path unchanged (NEW)
+> Superseded the tabbable "Move to…" menu this scenario originally specified. That menu listed
+> every board column, and columns are merged by status NAME across every case type on the
+> instance — two hundred entries on a real register, nearly all of them statuses the case cannot
+> reach. The keyboard path is preserved as the `M` key; the list is now the engine's offer for
+> that one case.
+
+#### Scenario DASH-V1-006h: The move dialog offers only what the case can reach (NEW)
+
+- GIVEN a case whose workflow offers two transitions, one of them held by a failing guard
+- WHEN the user opens the move dialog, by right-clicking the card or pressing `M` on it
+- THEN the dialog MUST list exactly the statuses `/api/case/{id}/available-transitions` offers,
+  never the board's columns
+- AND a transition whose guards failed MUST be listed, unselectable, showing the guard's reason
+- AND a failure to read the offer MUST be reported as a failure, never as an empty list
+
+#### Scenario DASH-V1-006g: Drag path shares the move (NEW)
 
 - GIVEN a mouse/touch user
 - WHEN they drag a card between columns as in Scenario DASH-V1-006c
-- THEN the behaviour MUST be identical to before this change — no regression to the existing drag
-  gesture
+- THEN the drop MUST go through the same transition path as the keyboard move of Scenario
+  DASH-V1-006f: the engine's offer for that case, the same POST, revert-and-toast on refusal
+- AND the card's click (Scenario DASH-V1-006d) and its selection checkbox MUST keep working: a
+  press without movement is a click, and the checkbox is never a drag handle
+
+> Reworded when the drag moved from the browser's HTML5 drag events to Sortable (vue-draggable-plus).
+> The native drag showed a grab cursor and nothing else until the drop; this scenario used to ask
+> for that behaviour to stay identical, which is not what anybody wanted kept. What is kept is the
+> write path.
 
 ### Requirement: REQ-DASH-FIX-001 Application.php Widget Registration [FIX]
 
@@ -761,11 +806,15 @@ Every table on the Dashboard SHALL carry a View all link whose route query equal
 ### Requirement: KPI tiles render on a fresh load (REQ-DASH-021)
 The five stat tiles SHALL render their values on the first load of the Dashboard in a new browser session. You never see "Widget not available" for a tile whose endpoint answers.
 
-#### Scenario: Fresh session lands on the Dashboard
+#### Scenario: A fresh load of the Dashboard shows every KPI tile
 - **GIVEN** a new browser context with no page visited before
-- **WHEN** you open `/apps/dossiq/`
+- **WHEN** you open `/apps/dossiq/dashboard`
 - **THEN** the tiles Open cases, Overdue, Completed this month, My tasks and SLA compliance each show a number
 - @e2e covered by `tests/e2e/dashboard-tiles.spec.ts` (tasks.md 3.1)
+- Superseded 2026-09-13 (dashboard-my-work-split): opening `/apps/dossiq/`
+  now lands on My Work, not the Dashboard — see
+  `openspec/specs/my-work-landing/spec.md`'s "My Work is the default landing
+  page" requirement for that scenario.
 
 ### Requirement: The case type list on New case is sorted and filtered (REQ-DASH-022)
 The New case form SHALL list case types ordered by title, without drafts and without types whose validity has ended. You pick from a list you can scan.

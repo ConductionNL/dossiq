@@ -77,11 +77,16 @@ class WOODeadlineService {
 	 * @param SettingsService $settingsService Settings service
 	 * @param INotificationManager $notificationManager Nextcloud notification manager
 	 * @param LoggerInterface $logger Logger
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly INotificationManager $notificationManager,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -97,11 +102,16 @@ class WOODeadlineService {
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
 	 */
 	public function calculate(string $receiptDate): array {
-		$receipt = $this->requireIsoDate(value: $receiptDate, label: 'receiptDate');
-		$deadline = $receipt->modify('+' . self::INITIAL_PERIOD_DAYS . ' days');
+		$receipt = $this->dates->parse($receiptDate, 'receiptDate');
+
+		// Woo art. 4.4 names the term; Algemene termijnenwet art. 1 decides the
+		// day it lands on, and the organisation's calendar says which days
+		// those are.
+		$raw = $receipt->modify('+' . self::INITIAL_PERIOD_DAYS . ' days');
+		$deadline = ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw);
 
 		return [
-			'expectedResolution' => $deadline->format('Y-m-d'),
+			'expectedResolution' => $this->dates->formatCalendarDate($deadline),
 			'processingPeriod' => 'P' . self::INITIAL_PERIOD_DAYS . 'D',
 		];
 	}//end calculate()
@@ -168,13 +178,14 @@ class WOODeadlineService {
 			$currentDeadline = $calculated['expectedResolution'];
 		}
 
-		$deadline = $this->requireIsoDate(value: (string)$currentDeadline, label: 'expectedResolution');
-		$newDeadline = $deadline->modify('+' . self::EXTENSION_PERIOD_DAYS . ' days');
+		$deadline = $this->dates->parse((string)$currentDeadline, 'expectedResolution');
+		$extended = $deadline->modify('+' . self::EXTENSION_PERIOD_DAYS . ' days');
+		$newDeadline = ($this->timerService?->rollTermEndFor(date: $extended) ?? $extended);
 
 		$updateData = array_merge(
 			$caseData,
 			[
-				'expectedResolution' => $newDeadline->format('Y-m-d'),
+				'expectedResolution' => $this->dates->formatCalendarDate($newDeadline),
 				self::EXTENSION_COUNT_KEY => 1,
 				self::EXTENSION_REASON_KEY => $reason,
 			]
@@ -183,14 +194,14 @@ class WOODeadlineService {
 		$objectService->saveObject(object: $updateData, register: $register, schema: $caseSchema, uuid: (string)$caseId);
 
 		$this->logger->info(
-			'WOO deadline extended for case ' . $caseId . ' to ' . $newDeadline->format('Y-m-d'),
+			'WOO deadline extended for case ' . $caseId . ' to ' . $this->dates->formatCalendarDate($newDeadline),
 			['app' => Application::APP_ID],
 		);
 
 		return [
 			'caseId' => $caseId,
 			'previousDeadline' => $currentDeadline,
-			'expectedResolution' => $newDeadline->format('Y-m-d'),
+			'expectedResolution' => $this->dates->formatCalendarDate($newDeadline),
 			'extensionReason' => $reason,
 			'extensionCount' => 1,
 		];
@@ -275,7 +286,7 @@ class WOODeadlineService {
 			return ['deadline' => null, 'reason' => 'No deadline set'];
 		}
 
-		$deadline = $this->parseIsoDate(value: (string)$deadlineStr);
+		$deadline = $this->dates->tryParse($deadlineStr);
 		if ($deadline === null) {
 			return ['deadline' => null, 'reason' => 'Invalid deadline format'];
 		}
@@ -291,7 +302,7 @@ class WOODeadlineService {
 	 * @return int Days remaining, negative when overdue
 	 */
 	private function signedDaysUntil(DateTimeImmutable $deadline): int {
-		$today = new DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$daysRemaining = (int)$today->diff($deadline)->days;
 		if ($today > $deadline) {
 			return -$daysRemaining;
@@ -343,51 +354,5 @@ class WOODeadlineService {
 		}//end try
 	}//end sendDeadlineNotification()
 
-	/**
-	 * Parse an ISO 8601 calendar date (Y-m-d) into an immutable date at midnight.
-	 *
-	 * Constructing the value directly (rather than through a static factory)
-	 * keeps the parse honest: an unparseable value yields null instead of a
-	 * boolean sentinel, and the resulting instant is midnight rather than the
-	 * current wall-clock time, so day arithmetic is whole-day exact. A trailing
-	 * time component is accepted and discarded — deadlines are calendar dates.
-	 *
-	 * @param string $value The date string to parse (e.g. '2026-05-01')
-	 *
-	 * @return \DateTimeImmutable|null The parsed date, or null when unparseable
-	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
-	 */
-	private function parseIsoDate(string $value): ?DateTimeImmutable {
-		if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', $value, $parts) !== 1) {
-			return null;
-		}
 
-		try {
-			return new DateTimeImmutable($parts[1] . '-' . $parts[2] . '-' . $parts[3] . ' 00:00:00');
-		} catch (\Exception $e) {
-			return null;
-		}
-	}//end parseIsoDate()
-
-	/**
-	 * Parse an ISO 8601 calendar date, rejecting an unparseable value.
-	 *
-	 * @param string $value The date string to parse (e.g. '2026-05-01')
-	 * @param string $label The field name to name in the rejection message
-	 *
-	 * @return \DateTimeImmutable The parsed date at midnight
-	 *
-	 * @throws \InvalidArgumentException If the value is not a Y-m-d date
-	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
-	 */
-	private function requireIsoDate(string $value, string $label): DateTimeImmutable {
-		$parsed = $this->parseIsoDate(value: $value);
-		if ($parsed === null) {
-			throw new InvalidArgumentException('Invalid ' . $label . ': ' . $value);
-		}
-
-		return $parsed;
-	}//end requireIsoDate()
 }//end class

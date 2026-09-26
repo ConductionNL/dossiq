@@ -27,6 +27,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\InspectionChecklistController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\InspectionChecklistService;
+use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
+use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -359,4 +361,199 @@ class InspectionChecklistControllerTest extends TestCase {
 			message: 'Authorization must be decided before the body is inspected.'
 		);
 	}//end testSubmitResultRefusesBeforeValidatingThePayload()
+
+	/**
+	 * A payload OpenRegister refuses is the CALLER'S fault, so it must come
+	 * back in the 4xx range naming the property that failed.
+	 *
+	 * Before this arm existed OpenRegister's ValidationException fell through
+	 * to `catch (Throwable)` and the caller was told the server had broken.
+	 * The message below is verbatim what a real submission produced, and every
+	 * submission the e2e citation for this endpoint ever made produced it:
+	 * that test asserted `not.toBe(403)`, which a 500 satisfies, so nothing was
+	 * ever stored and nothing ever went red.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	public function testSubmitResultAnswersFourHundredWhenOpenRegisterRefusesThePayload(): void {
+		$mockUser = $this->createMock(IUser::class);
+		$mockUser->method('getUID')->willReturn('inspecteur-a');
+		$this->userSession->method('getUser')->willReturn($mockUser);
+
+		$this->request->method('getParams')->willReturn([
+			'checklistId' => 'e2e-checklist',
+			'answers' => [],
+		]);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->inspectionChecklistService
+			->method('submitResult')
+			->willThrowException(
+				new OpenRegisterValidationException(
+					message: "Property 'checklist' should match format 'uuid' but 'e2e-checklist' does not"
+				)
+			);
+
+		$response = $this->controller->submitResult(id: 'case-uuid');
+
+		$this->assertSame(
+			expected: Http::STATUS_BAD_REQUEST,
+			actual: $response->getStatus(),
+			message: 'A payload the schema refuses is the caller\'s fault, not a server fault.'
+		);
+		$this->assertStringContainsString(
+			needle: "Property 'checklist'",
+			haystack: (string)($response->getData()['message'] ?? ''),
+			message: 'The response must name the property that failed, the way OpenRegister words it.'
+		);
+	}//end testSubmitResultAnswersFourHundredWhenOpenRegisterRefusesThePayload()
+
+	/**
+	 * The sibling exception OpenRegister throws for its own rule checks lands
+	 * in the same 4xx arm. Catching only one of the two would leave half the
+	 * rejections still reading as a server fault.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	public function testSubmitResultAnswersFourHundredForACustomValidationRefusal(): void {
+		$mockUser = $this->createMock(IUser::class);
+		$mockUser->method('getUID')->willReturn('inspecteur-a');
+		$this->userSession->method('getUser')->willReturn($mockUser);
+
+		$this->request->method('getParams')->willReturn(['checklistId' => 'checklist-uuid']);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->inspectionChecklistService
+			->method('submitResult')
+			->willThrowException(
+				new OpenRegisterCustomValidationException(
+					message: 'Referenced object for property case does not exist',
+					errors: ['case' => 'not found']
+				)
+			);
+
+		$response = $this->controller->submitResult(id: 'case-uuid');
+
+		$this->assertSame(
+			expected: Http::STATUS_BAD_REQUEST,
+			actual: $response->getStatus(),
+			message: 'A custom validation refusal is the caller\'s fault too.'
+		);
+	}//end testSubmitResultAnswersFourHundredForACustomValidationRefusal()
+
+	/**
+	 * WHICH WAY THIS FAILS IS THE POINT. The fix for the 500-on-bad-payload
+	 * defect is a NARROW catch, and the tempting wrong fix -- widening the
+	 * `Throwable` arm into a 4xx -- would report a genuine server fault as the
+	 * caller's fault, which is worse than the defect it removes.
+	 *
+	 * This test fails if anyone ever does that. It is the mutation check for
+	 * the two above: break the arm the other way and this reddens.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	public function testSubmitResultStillAnswersFiveHundredForAGenuineServerFault(): void {
+		$mockUser = $this->createMock(IUser::class);
+		$mockUser->method('getUID')->willReturn('inspecteur-a');
+		$this->userSession->method('getUser')->willReturn($mockUser);
+
+		$this->request->method('getParams')->willReturn(['checklistId' => 'checklist-uuid']);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->inspectionChecklistService
+			->method('submitResult')
+			->willThrowException(new \TypeError('Argument #1 must be of type string, null given'));
+
+		$response = $this->controller->submitResult(id: 'case-uuid');
+
+		$this->assertSame(
+			expected: Http::STATUS_INTERNAL_SERVER_ERROR,
+			actual: $response->getStatus(),
+			message: 'A code fault is the server\'s fault and must stay a 500.'
+		);
+	}//end testSubmitResultStillAnswersFiveHundredForAGenuineServerFault()
+
+	/**
+	 * The admin CRUD half of this controller carried the identical arm: a
+	 * checklist whose payload the schema refuses came back as a 500, so an
+	 * author who mistyped a field was told the server had broken.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	public function testCreateAnswersFourHundredWhenOpenRegisterRefusesThePayload(): void {
+		$this->request->method('getParams')->willReturn(['name' => '']);
+		$this->inspectionChecklistService
+			->method('createChecklist')
+			->willThrowException(
+				new OpenRegisterValidationException(
+					message: "Property 'caseTypeRef' should match format 'uuid' but 'vth' does not"
+				)
+			);
+
+		$response = $this->controller->create();
+
+		$this->assertSame(
+			expected: Http::STATUS_BAD_REQUEST,
+			actual: $response->getStatus(),
+			message: 'A refused checklist payload is the author\'s fault, not a server fault.'
+		);
+		$this->assertStringContainsString(
+			needle: "Property 'caseTypeRef'",
+			haystack: (string)($response->getData()['message'] ?? ''),
+			message: 'The response must name the property that failed.'
+		);
+	}//end testCreateAnswersFourHundredWhenOpenRegisterRefusesThePayload()
+
+	/**
+	 * The same on update.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	public function testUpdateAnswersFourHundredWhenOpenRegisterRefusesThePayload(): void {
+		$this->request->method('getParams')->willReturn(['name' => '']);
+		$this->inspectionChecklistService
+			->method('updateChecklist')
+			->willThrowException(
+				new OpenRegisterValidationException(
+					message: "Property 'items' should be of type array but string given"
+				)
+			);
+
+		$response = $this->controller->update(id: 'checklist-uuid');
+
+		$this->assertSame(
+			expected: Http::STATUS_BAD_REQUEST,
+			actual: $response->getStatus(),
+			message: 'A refused checklist update is the author\'s fault, not a server fault.'
+		);
+	}//end testUpdateAnswersFourHundredWhenOpenRegisterRefusesThePayload()
+
+	/**
+	 * And the other way on create: a genuine fault stays a 500.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/inspection-checklists/spec.md
+	 */
+	public function testCreateStillAnswersFiveHundredForAGenuineServerFault(): void {
+		$this->request->method('getParams')->willReturn(['name' => 'VTH']);
+		$this->inspectionChecklistService
+			->method('createChecklist')
+			->willThrowException(new \TypeError('Argument #2 must be of type array, null given'));
+
+		$response = $this->controller->create();
+
+		$this->assertSame(
+			expected: Http::STATUS_INTERNAL_SERVER_ERROR,
+			actual: $response->getStatus(),
+			message: 'A code fault is the server\'s fault and must stay a 500.'
+		);
+	}//end testCreateStillAnswersFiveHundredForAGenuineServerFault()
 }//end class

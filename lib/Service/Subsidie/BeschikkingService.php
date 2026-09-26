@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Service\Subsidie;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\TermijnTimerService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\IUserSession;
@@ -60,12 +61,19 @@ class BeschikkingService {
 	 * @param SubsidieService $subsidyService Core service (voorschot validation, nummers).
 	 * @param IUserSession $userSession Acting identity source.
 	 * @param LoggerInterface $logger Logger.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
+	 * @param StaatssteunClassifier $stateAid Which state-aid ground a grant sits
+	 *        on (REQ-SUB-008). Defaulted for the same reason the validator beside
+	 *        it is: this service is constructed directly in several suites.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly SubsidieService $subsidyService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?TermijnTimerService $timerService = null,
+		private readonly StaatssteunClassifier $stateAid = new StaatssteunClassifier(),
 	) {
 	}//end __construct()
 
@@ -74,12 +82,14 @@ class BeschikkingService {
 	 *
 	 * @param DateTimeImmutable $publication The publication date.
 	 *
-	 * @return DateTimeImmutable The bezwaartermijn end.
+	 * @return DateTimeImmutable The bezwaartermijn end, on a working day.
 	 *
-	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 * @spec openspec/changes/every-term-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
 	 */
 	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
-		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+		$end = $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+
+		return ($this->timerService?->rollTermEndFor(date: $end) ?? $end);
 	}//end computeBezwaartermijn()
 
 	/**
@@ -137,6 +147,7 @@ class BeschikkingService {
 				'beschikkingnummer' => $this->subsidyService->generateBeschikkingnummer(sequence: $sequence),
 				'beschikkingtype' => (string)($payload['beschikkingtype'] ?? 'verleningsbeschikking'),
 				'status' => 'draft',
+				'stateAidCategory' => $this->stateAidCategoryFor(payload: $payload),
 			]
 		);
 		unset($record['signedBy'], $record['signedOn'], $record['publicationDate']);
@@ -148,6 +159,45 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Kon beschikking niet aanmaken');
 		}
 	}//end createDraft()
+
+	/**
+	 * Which state-aid ground this grant sits on.
+	 *
+	 * `StaatssteunClassifier` has answered this since the subsidy chain shipped
+	 * and nothing asked it, so `subsidieBeschikking.stateAidCategory` was a
+	 * declared field that no code ever wrote: a grant above the de-minimis
+	 * ceiling looked exactly like one below it.
+	 *
+	 * 🔴 A CATEGORY THE HANDLER TYPED WINS. The classifier answers from the
+	 * amounts, and a handler who has asserted an AGVV article or a DAEB has
+	 * looked at something the amounts do not contain. Overwriting their answer
+	 * would make the field unusable the moment anybody used it.
+	 *
+	 * @param array<string, mixed> $payload The beschikking as drafted.
+	 *
+	 * @return string The category.
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	private function stateAidCategoryFor(array $payload): string {
+		$declared = trim((string)($payload['stateAidCategory'] ?? ''));
+		if ($declared !== '') {
+			return $declared;
+		}
+
+		$article = trim((string)($payload['agvvArtikel'] ?? ''));
+		$agvvArtikel = null;
+		if ($article !== '') {
+			$agvvArtikel = $article;
+		}
+
+		return $this->stateAid->classify(
+			amount: (float)($payload['grantedAmount'] ?? 0),
+			eerdereDeMinimis: (float)($payload['eerdereDeMinimis'] ?? 0),
+			agvvArtikel: $agvvArtikel,
+			isDaeb: (($payload['isDaeb'] ?? false) === true),
+		);
+	}//end stateAidCategoryFor()
 
 	/**
 	 * Record a digital signature on a beschikking (REQ — security policy).

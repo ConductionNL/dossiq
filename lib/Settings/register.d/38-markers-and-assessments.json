@@ -1,0 +1,295 @@
+{
+  "_note": "markers-and-assessments-on-the-case (rows 2.36, 2.40, 2.44). Three things sit on a case and say 'look here', and they are three different facts. ONE, an attention flag a PERSON raises: every raising and every clearing is a row in `attentionFlagHistory` with its reason, its name and its moment, because a field that toggles loses the fourth time somebody flagged the same case (design D-2). `needsAttention` is the boolean the work list facets on, derived from the history and never typed. TWO, a `riskAssessment` the ORGANISATION makes: a level, the ground it rests on, who assessed it and when it is due to be looked at again. It carries a property-level `authorization` block in OpenRegister's row-field-level-security vocabulary, the same vocabulary `sensitive-fields-declared` uses for the BSN, so reading a case is not reading its risk level (design D-4). `riskLevel` mirrors the level at the top level behind the SAME rule, because a facet cannot be taken over a nested object property and the work list has to filter on it for the people allowed to see it. THREE, markers the SYSTEM raises against a named tab: `caseType.attentionMarkers` declares the pair that governs each one, the condition that raises it and the condition that clears it, and a declaration carrying only the first is refused (design D-6). `case.attentionMarkers` is the raised set, derived on every save and never typed. A marker is NOT the per-user unread badge of `unread-state-on-the-case`: opening the tab clears that one and does not touch this one (design D-8). A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "needsAttention": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true,
+            "title": "Needs attention",
+            "description": "Whether this case currently carries a raised attention flag. Derived from the flag history and never typed, so the facet and the history cannot disagree. The work list filters on it, which is what makes 'the flagged ones' a view rather than a search through tags.",
+            "facetable": true
+          },
+          "attentionFlag": {
+            "type": "object",
+            "title": "Attention flag",
+            "description": "The raising that is standing right now: why the case needs attention, who said so and when. Empty on a case whose flag has been cleared. The reasons that came before are in the history beside it, not here.",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "title": "Reason",
+                "description": "Why this case needs attention, in the words of the person who raised it."
+              },
+              "raisedBy": {
+                "type": "string",
+                "title": "Raised by",
+                "description": "Who raised it. Written from the session rather than offered as a field, so nobody signs somebody else's name to it."
+              },
+              "raisedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Raised at",
+                "description": "When it was raised."
+              }
+            }
+          },
+          "attentionFlagHistory": {
+            "type": "array",
+            "title": "Attention flag history",
+            "description": "Every raising and every clearing this case has had, oldest first. A case flagged once is a case with a problem; a case flagged four times by four people is a different case, and the difference is only readable because no earlier reason was overwritten.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "act": {
+                  "type": "string",
+                  "enum": [
+                    "raised",
+                    "cleared"
+                  ],
+                  "title": "Act",
+                  "description": "Whether this row raised the flag or cleared it.",
+                  "x-enum-labels": {
+                    "raised": "Raised",
+                    "cleared": "Cleared"
+                  }
+                },
+                "reason": {
+                  "type": "string",
+                  "title": "Reason",
+                  "description": "What the person wrote. Neither act is possible without one."
+                },
+                "actor": {
+                  "type": "string",
+                  "title": "By",
+                  "description": "Who performed the act."
+                },
+                "moment": {
+                  "type": "string",
+                  "format": "date-time",
+                  "title": "When",
+                  "description": "When they performed it."
+                }
+              }
+            }
+          },
+          "riskAssessment": {
+            "type": "object",
+            "title": "Risk assessment",
+            "description": "What this organisation assessed the risk on this case to be, on what ground, by whom and when it is due to be looked at again. Available to every domain rather than to VTH alone. A level with no ground is a number nobody can defend or revise, so the ground is part of the assessment rather than an optional note beside it.",
+            "x-openregister-authorization": {
+              "read": [
+                {
+                  "group": "dossiq-risk-assessment"
+                }
+              ],
+              "update": [
+                {
+                  "group": "dossiq-risk-assessment"
+                }
+              ]
+            },
+            "properties": {
+              "level": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high",
+                  "critical"
+                ],
+                "title": "Level",
+                "description": "The assessed level. Its own vocabulary, deliberately not the priority vocabulary: it feeds the impact axis the case type's matrix already reads and does not become a fifth priority word.",
+                "x-enum-labels": {
+                  "low": "Low",
+                  "medium": "Medium",
+                  "high": "High",
+                  "critical": "Critical"
+                },
+                "x-enum-order": {
+                  "low": 1,
+                  "medium": 2,
+                  "high": 3,
+                  "critical": 4
+                },
+                "x-enum-colours": {
+                  "low": "grey",
+                  "medium": "blue",
+                  "high": "orange",
+                  "critical": "red"
+                }
+              },
+              "ground": {
+                "type": "string",
+                "title": "Ground",
+                "description": "What the assessment rests on, in the assessor's own words."
+              },
+              "assessor": {
+                "type": "string",
+                "title": "Assessed by",
+                "description": "Who made the assessment."
+              },
+              "assessedAt": {
+                "type": "string",
+                "format": "date",
+                "title": "Assessed on",
+                "description": "The day the assessment was made."
+              },
+              "reviewDate": {
+                "type": "string",
+                "format": "date",
+                "title": "Review by",
+                "description": "The day this assessment should be looked at again. Once it has passed the assessment reads as due for review rather than as current."
+              }
+            }
+          },
+          "riskLevel": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ],
+            "readOnly": true,
+            "title": "Risk level",
+            "description": "The assessed level, mirrored at the top level so the work list can facet on it. Behind the same rule as the assessment itself, so it is absent from the row entirely for a reader without the permission rather than being blanked in a column they can see. Derived from the assessment on every save and never typed.",
+            "facetable": true,
+            "x-openregister-authorization": {
+              "read": [
+                {
+                  "group": "dossiq-risk-assessment"
+                }
+              ]
+            },
+            "x-enum-labels": {
+              "low": "Low",
+              "medium": "Medium",
+              "high": "High",
+              "critical": "Critical"
+            }
+          },
+          "attentionMarkers": {
+            "type": "array",
+            "readOnly": true,
+            "title": "Attention markers",
+            "description": "The markers standing on this case right now, one per declared condition that is true. Derived on every save from the declarations on the case type, so a marker clears when the condition behind it stops being true and nobody has to dismiss it. Not per user: the per-user badge of unread-state-on-the-case is a different fact and lives beside this one.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "marker": {
+                  "type": "string",
+                  "title": "Marker",
+                  "description": "The id of the declaration this marker was raised from."
+                },
+                "tab": {
+                  "type": "string",
+                  "title": "Panel",
+                  "description": "The panel of the case page this marker points at, named as the case page names it."
+                },
+                "reason": {
+                  "type": "string",
+                  "title": "Reason",
+                  "description": "What is true about this case that raised the marker, in one sentence."
+                },
+                "raisedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "title": "Raised at",
+                  "description": "When the condition first became true."
+                }
+              }
+            }
+          },
+          "hasAttentionMarkers": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true,
+            "title": "Carries a marker",
+            "description": "Whether any marker is standing on this case. Derived beside the markers themselves so the work list can facet without reading every marker of every case.",
+            "facetable": true
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "attentionMarkers": {
+            "type": "array",
+            "title": "Attention markers",
+            "description": "The markers the system may raise on a case of this type. Each one is a PAIR: the condition that raises it and the condition that clears it. Written as code the pair ends up in two files and drifts, so it is declared here where an administrator can read it and a test can check it. A declaration carrying a raise condition and no clear condition is refused on publication, naming the marker.",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "tab",
+                "raiseWhen",
+                "clearWhen"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id",
+                  "description": "What this marker is called, in one word a refusal can name."
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label",
+                  "description": "What the marker says on the panel it points at."
+                },
+                "tab": {
+                  "type": "string",
+                  "enum": [
+                    "case-data-panel",
+                    "case-files",
+                    "case-notes-panel",
+                    "case-people-panel",
+                    "case-communication-panel",
+                    "case-email-panel",
+                    "case-work-panel",
+                    "case-decisions-panel",
+                    "case-related-panel"
+                  ],
+                  "title": "Panel",
+                  "description": "Which panel of the case page the marker points at. The list is the one the case page already names, so nothing invents a second vocabulary of panels."
+                },
+                "raiseWhen": {
+                  "type": "string",
+                  "enum": [
+                    "advice-request-overdue",
+                    "aanvullingsverzoek-open",
+                    "term-exceeded"
+                  ],
+                  "title": "Raised when",
+                  "description": "The condition that raises the marker. A closed list, and a short one on purpose: a condition nothing can evaluate is a marker that never appears and never says why. A marker for a document that failed its virus scan is absent because `scanVerdict` is the open scan-verdict-on-the-row change and no document carries one yet, and a marker for a party whose post came back is absent because a role carries no such field. Both land when the fields do. `aanvullingsverzoek-open` reads the derived flag `aanvullingsverzoek-as-a-record` writes and raises nothing until that change lands, which is declared rather than silent."
+                },
+                "clearWhen": {
+                  "type": "string",
+                  "enum": [
+                    "condition-no-longer-true"
+                  ],
+                  "default": "condition-no-longer-true",
+                  "title": "Cleared when",
+                  "description": "The condition that clears the marker. Clearing is doing the work, never opening the panel, so the only clearing a marker may declare is that the thing that raised it stopped being true."
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "title": "Enabled",
+                  "description": "Off stops the marker being raised, without removing what it was for."
+                }
+              }
+            }
+          },
+          "impactFromRisk": {
+            "type": "boolean",
+            "default": false,
+            "title": "Read impact from the risk assessment",
+            "description": "On, the impact half of this case type's priority matrix is read from the case's assessed risk level instead of from the impact field. The priority itself is still derived by the matrix and still lands in the four words everything reads, so this adds an input and not a vocabulary.",
+            "visible": true
+          }
+        }
+      }
+    }
+  }
+}

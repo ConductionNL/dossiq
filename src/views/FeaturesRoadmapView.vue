@@ -28,258 +28,318 @@
 
 <template>
 	<div class="features-roadmap">
-		<!-- A toggle group, and deliberately NOT an ARIA tab widget. A real tab
-		     widget owes the keyboard the arrow-key roving focus the ARIA
-		     practices describe, and the tab role without it promises a
-		     screen-reader user a keyboard behaviour that is not there. Two plain
-		     buttons carrying aria-pressed keep native button semantics, which
-		     already work for everyone. -->
-		<div
-			class="features-roadmap__sections"
-			role="group"
-			:aria-label="t('dossiq', 'Page sections')">
-			<NcButton
-				id="features-roadmap-tab-product"
-				:aria-pressed="String(section === 'product')"
-				:variant="section === 'product' ? 'primary' : 'tertiary'"
-				@click="section = 'product'">
-				{{ t('dossiq', 'What dossiq does') }}
-			</NcButton>
-			<NcButton
-				id="features-roadmap-tab-comparison"
-				:aria-pressed="String(section === 'comparison')"
-				:variant="section === 'comparison' ? 'primary' : 'tertiary'"
-				@click="section = 'comparison'">
-				{{ t('dossiq', 'How dossiq compares') }}
-			</NcButton>
-		</div>
-
-		<!-- The library page. `v-show`, not `v-if`: CnFeaturesAndRoadmapView
+		<!-- Two sections, so a real tab strip: CnTabs carries the tablist
+		     roles and the arrow-key roving focus a tab widget owes the keyboard.
+		     The library page's panel is never lazy: CnFeaturesAndRoadmapView
 		     publishes its sidebar into CnAppRoot's holder on mounted() and
-		     clears it on beforeUnmount(), so toggling with v-if would tear the
-		     Suggest/Support sidebar down and rebuild it on every switch. -->
-		<div
-			v-show="section === 'product'"
-			id="features-roadmap-panel-product"
-			role="region"
-			aria-labelledby="features-roadmap-tab-product">
-			<CnFeaturesAndRoadmapPage
-				:repo="repo"
-				:documentationUrl="documentationUrl"
-				:openbuiltUrl="openbuiltUrl"
-				:llmSkillsUrl="llmSkillsUrl"
-				:suggestUrl="suggestUrl" />
-		</div>
+		     clears it on beforeUnmount(), and CnTab keeps an inactive panel
+		     mounted, so switching never tears the Suggest/Support sidebar down. -->
+		<CnTabs
+			class="features-roadmap__sections"
+			:ariaLabel="t('dossiq', 'Page sections')">
+			<CnTab
+				:title="t('dossiq', 'What dossiq does')"
+				:active="section === 'product'"
+				@click="section = 'product'">
+				<CnFeaturesAndRoadmapPage
+					:repo="repo"
+					:documentationUrl="documentationUrl"
+					:openbuiltUrl="openbuiltUrl"
+					:llmSkillsUrl="llmSkillsUrl"
+					:suggestUrl="suggestUrl" />
+			</CnTab>
 
-		<section
-			v-if="section === 'comparison'"
-			id="features-roadmap-panel-comparison"
-			role="region"
-			aria-labelledby="features-roadmap-tab-comparison"
-			class="features-roadmap__comparison">
-			<h2>{{ t('dossiq', 'How dossiq compares') }}</h2>
+			<CnTab
+				:title="t('dossiq', 'How dossiq compares')"
+				:active="section === 'comparison'"
+				lazy
+				@click="section = 'comparison'">
+				<section class="features-roadmap__comparison">
+					<h2>{{ t('dossiq', 'How dossiq compares') }}</h2>
 
-			<p class="features-roadmap__lead">
-				{{ leadText }}
-			</p>
+					<p class="features-roadmap__lead">
+						{{ leadText }}
+					</p>
 
-			<NcNoteCard
-				type="info"
-				:heading="t('dossiq', 'Before you use this table')">
-				<p>
-					{{
-						t(
-							'dossiq',
-							'We only compared open source software we could install and run ourselves. Closed and hosted products are not in this table. Their absence is not a verdict on them.',
-						)
-					}}
-				</p>
-				<p>{{ readingDateText }}</p>
-				<p>
-					{{
-						t(
-							'dossiq',
-							'A rating is our reading of software we did not write. It is not proof that a product does or does not have a capability.',
-						)
-					}}
-				</p>
-				<p>
-					{{
-						t(
-							'dossiq',
-							'We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.',
-						)
-					}}
-				</p>
-				<p>{{ shortlistText }}</p>
-				<p>{{ reratedText }}</p>
-				<p>{{ addedRowsText }}</p>
-				<p>
-					{{
-						t(
-							'dossiq',
-							'Every system here is a municipal case system or a workflow engine, and the list is drawn from what they do, in the shape we do it. A capability none of them has is missing from the list, not from the market. A product that splits the work differently scores low without being worse, and that bias runs in our favour. We add rows as we read more systems, so a lower score in a later release can mean the list grew rather than the product shrank.',
-						)
-					}}
-				</p>
-			</NcNoteCard>
+					<NcNoteCard
+						type="info"
+						:heading="t('dossiq', 'Before you use this table')">
+						<p>
+							{{
+								t(
+									'dossiq',
+									'We only compared open source software we could install and run ourselves. Closed and hosted products are not in this table. Their absence is not a verdict on them.',
+								)
+							}}
+						</p>
+						<p>{{ readingDateText }}</p>
+						<p>
+							{{
+								t(
+									'dossiq',
+									'A rating is our reading of software we did not write. It is not proof that a product does or does not have a capability.',
+								)
+							}}
+						</p>
+						<p>
+							{{
+								t(
+									'dossiq',
+									'We strongly advise you to run your own evaluation. This table does not replace testing against your own requirements.',
+								)
+							}}
+						</p>
+						<p>{{ shortlistText }}</p>
+						<p>{{ reratedText }}</p>
+						<p>{{ addedRowsText }}</p>
+						<p v-if="pendingText">{{ pendingText }}</p>
+						<p>
+							{{
+								t(
+									'dossiq',
+									'Every system here is a municipal case system or a workflow engine, and the list is drawn from what they do, in the shape we do it. A capability none of them has is missing from the list, not from the market. A product that splits the work differently scores low without being worse, and that bias runs in our favour. We add rows as we read more systems, so a lower score in a later release can mean the list grew rather than the product shrank.',
+								)
+							}}
+						</p>
+					</NcNoteCard>
 
-			<!-- One card per column that needs reading differently: a column
+					<!-- One card per column that needs reading differently: a column
 			     read on its own date, or a product whose architecture costs it
 			     rows on a list written in our shape. It sits here, between the
 			     general caveats and the first score, because a caveat a reader
 			     meets after the totals is a caveat they meet too late. -->
-			<NcNoteCard
-				v-for="note in systemNotes"
-				:key="note.key"
-				type="info"
-				:heading="note.heading">
-				<p v-for="(paragraph, index) in note.paragraphs" :key="index">
-					{{ paragraph }}
-				</p>
-			</NcNoteCard>
+					<NcNoteCard
+						v-for="note in systemNotes"
+						:key="note.key"
+						type="info"
+						:heading="note.heading">
+						<p
+							v-for="(paragraph, index) in note.paragraphs"
+							:key="index">
+							{{ paragraph }}
+						</p>
+					</NcNoteCard>
 
-			<h3>
-				{{
-					t('dossiq', 'Totals over all {count} capabilities', {
-						count: total,
-					})
-				}}
-			</h3>
-			<div class="features-roadmap__scroller">
-				<table class="features-roadmap__table">
-					<caption class="features-roadmap__caption">
+					<h3>
 						{{
-							t(
-								'dossiq',
-								'How many of the {count} capabilities each system has.',
-								{ count: total },
-							)
+							t('dossiq', 'Totals over all {count} capabilities', {
+								count: total,
+							})
 						}}
-					</caption>
-					<thead>
-						<tr>
-							<th scope="col">
-								{{ t('dossiq', 'System') }}
-							</th>
-							<th
-								v-for="rating in ratingColumns"
-								:key="rating"
-								scope="col">
+					</h3>
+					<div class="features-roadmap__scroller">
+						<table class="features-roadmap__table">
+							<caption class="features-roadmap__caption">
+								{{
+									t(
+										'dossiq',
+										'How many of the {count} capabilities each system has.',
+										{ count: total },
+									)
+								}}
+							</caption>
+							<thead>
+								<tr>
+									<th scope="col">
+										{{ t('dossiq', 'System') }}
+									</th>
+									<th
+										v-for="rating in ratingColumns"
+										:key="rating"
+										scope="col">
+										{{ ratingLabel(rating) }}
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr
+									v-for="system in systems"
+									:key="system.key"
+									:class="{
+										'features-roadmap__row--self': system.isSelf,
+									}">
+									<th scope="row">
+										{{ system.name }}
+									</th>
+									<td
+										v-for="rating in ratingColumns"
+										:key="rating">
+										{{ totals[system.key][rating] }}
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+
+					<h3>{{ t('dossiq', 'Per area') }}</h3>
+					<p class="features-roadmap__legend">
+						<span
+							v-for="rating in ratingColumns"
+							:key="rating"
+							class="features-roadmap__legend-item">
+							<span
+								class="features-roadmap__chip"
+								:class="'features-roadmap__chip--' + rating">
 								{{ ratingLabel(rating) }}
-							</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr
-							v-for="system in systems"
-							:key="system.key"
-							:class="{
-								'features-roadmap__row--self': system.isSelf,
-							}">
-							<th scope="row">
-								{{ system.name }}
-							</th>
-							<td v-for="rating in ratingColumns" :key="rating">
-								{{ totals[system.key][rating] }}
-							</td>
-						</tr>
-					</tbody>
-				</table>
-			</div>
+							</span>
+							{{ ratingMeaning(rating) }}
+						</span>
+					</p>
 
-			<h3>{{ t('dossiq', 'Per area') }}</h3>
-			<p class="features-roadmap__legend">
-				<span
-					v-for="rating in ratingColumns"
-					:key="rating"
-					class="features-roadmap__legend-item">
-					<span
-						class="features-roadmap__chip"
-						:class="'features-roadmap__chip--' + rating">
-						{{ ratingLabel(rating) }}
-					</span>
-					{{ ratingMeaning(rating) }}
-				</span>
-			</p>
+					<details
+						v-for="area in areas"
+						:key="area.key"
+						class="features-roadmap__area">
+						<summary class="features-roadmap__area-summary">
+							<span class="features-roadmap__area-name">{{
+								area.label
+							}}</span>
+							<span class="features-roadmap__area-count">
+								{{ areaSummary(area) }}
+							</span>
+						</summary>
+						<div class="features-roadmap__scroller">
+							<table class="features-roadmap__table">
+								<caption class="features-roadmap__caption">
+									{{
+										areaCaption(area)
+									}}
+								</caption>
+								<thead>
+									<tr>
+										<th
+											scope="col"
+											class="features-roadmap__num">
+											{{ t('dossiq', 'No.') }}
+										</th>
+										<th scope="col">
+											{{ t('dossiq', 'Capability') }}
+										</th>
+										<th
+											v-for="system in systems"
+											:key="system.key"
+											scope="col"
+											:class="{
+												'features-roadmap__col--self':
+													system.isSelf,
+											}">
+											{{ system.name }}
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr
+										v-for="row in area.capabilities"
+										:key="row.id">
+										<td class="features-roadmap__num">
+											{{ row.id }}
+										</td>
+										<th
+											scope="row"
+											class="features-roadmap__cap">
+											{{ row.label }}
+										</th>
+										<td
+											v-for="system in systems"
+											:key="system.key"
+											:class="{
+												'features-roadmap__col--self':
+													system.isSelf,
+											}">
+											<span
+												class="features-roadmap__chip"
+												:class="
+													'features-roadmap__chip--'
+													+ row[system.key]
+												">
+												{{ ratingLabel(row[system.key]) }}
+											</span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
 
-			<details
-				v-for="area in areas"
-				:key="area.key"
-				class="features-roadmap__area">
-				<summary class="features-roadmap__area-summary">
-					<span class="features-roadmap__area-name">{{ area.label }}</span>
-					<span class="features-roadmap__area-count">
-						{{ areaSummary(area) }}
-					</span>
-				</summary>
-				<div class="features-roadmap__scroller">
-					<table class="features-roadmap__table">
-						<caption class="features-roadmap__caption">
-							{{
-								areaCaption(area)
-							}}
-						</caption>
-						<thead>
-							<tr>
-								<th scope="col" class="features-roadmap__num">
-									{{ t('dossiq', 'No.') }}
-								</th>
-								<th scope="col">
-									{{ t('dossiq', 'Capability') }}
-								</th>
-								<th
-									v-for="system in systems"
-									:key="system.key"
-									scope="col"
-									:class="{
-										'features-roadmap__col--self': system.isSelf,
-									}">
-									{{ system.name }}
-								</th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr v-for="row in area.capabilities" :key="row.id">
-								<td class="features-roadmap__num">
-									{{ row.id }}
-								</td>
-								<th scope="row" class="features-roadmap__cap">
-									{{ row.label }}
-								</th>
-								<td
-									v-for="system in systems"
-									:key="system.key"
-									:class="{
-										'features-roadmap__col--self': system.isSelf,
-									}">
-									<span
-										class="features-roadmap__chip"
-										:class="
-											'features-roadmap__chip--'
-											+ row[system.key]
-										">
-										{{ ratingLabel(row[system.key]) }}
-									</span>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
-			</details>
-		</section>
+						<!-- The proposals for this area. A separate table, under its
+				     own heading, because the one thing a reader must not do
+				     with these is read them as ratings: four of the five
+				     columns are empty and the fifth is ours. Putting them in
+				     the table above with an Unknown chip would invite exactly
+				     that, and would also put our own score in a row nobody
+				     has been measured on. -->
+						<template v-if="area.pending.length">
+							<h4 class="features-roadmap__pending-heading">
+								{{ t('dossiq', 'Proposed, not yet rated') }}
+							</h4>
+							<div class="features-roadmap__scroller">
+								<table class="features-roadmap__table">
+									<caption class="features-roadmap__caption">
+										{{
+											pendingCaption(area)
+										}}
+									</caption>
+									<thead>
+										<tr>
+											<th
+												scope="col"
+												class="features-roadmap__num">
+												{{ t('dossiq', 'No.') }}
+											</th>
+											<th scope="col">
+												{{ t('dossiq', 'Capability') }}
+											</th>
+											<th
+												scope="col"
+												class="features-roadmap__col--self">
+												{{ selfSystem.name }}
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr
+											v-for="row in area.pending"
+											:key="row.id"
+											class="features-roadmap__row--pending">
+											<td class="features-roadmap__num">
+												{{ row.id }}
+											</td>
+											<th
+												scope="row"
+												class="features-roadmap__cap">
+												{{ row.label }}
+											</th>
+											<td class="features-roadmap__col--self">
+												<span
+													class="features-roadmap__chip"
+													:class="
+														'features-roadmap__chip--'
+														+ row.dossiq
+													">
+													{{ ratingLabel(row.dossiq) }}
+												</span>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</template>
+					</details>
+				</section>
+			</CnTab>
+		</CnTabs>
 	</div>
 </template>
 
 <script>
-import { CnFeaturesAndRoadmapPage } from '@conduction/nextcloud-vue'
+import { CnFeaturesAndRoadmapPage, CnTab, CnTabs } from '@conduction/nextcloud-vue'
 import { getLanguage, translate as t } from '@nextcloud/l10n'
-import { NcButton, NcNoteCard } from '@nextcloud/vue'
-import comparison from '../data/capabilityComparison.json'
+import { NcNoteCard } from '@nextcloud/vue'
+import comparison from '../../openspec/parity/capabilities.json'
 import {
 	formatComparedOn,
 	groupByArea,
 	overallTallies,
+	pendingRows,
 	RATING_COLUMNS,
 } from '../utils/capabilityComparison.js'
 
@@ -288,7 +348,8 @@ export default {
 
 	components: {
 		CnFeaturesAndRoadmapPage,
-		NcButton,
+		CnTab,
+		CnTabs,
 		NcNoteCard,
 	},
 
@@ -357,6 +418,42 @@ export default {
 		 */
 		total() {
 			return comparison.capabilities.length
+		},
+
+		/**
+		 * @return {object} Our own column, for the proposals table header.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+		 */
+		selfSystem() {
+			return comparison.systems.find((system) => system.isSelf)
+		},
+
+		/**
+		 * The sentence covering the proposals: questions on the list that
+		 * nobody has been measured on yet.
+		 *
+		 * They are not in `total`, not in `totals` and not in any area tally,
+		 * and this paragraph is where a reader is told that. Without it the
+		 * proposals table further down reads as a second scoreboard with four
+		 * empty columns, which is the misreading the whole split exists to
+		 * prevent.
+		 *
+		 * @return {string} The sentence, empty when nothing is pending.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+		 */
+		pendingText() {
+			const pending = pendingRows(comparison)
+			if (pending.length === 0) {
+				return ''
+			}
+			return t(
+				'dossiq',
+				'Another {count} capabilities are proposed and not yet rated. We read our own code for each of them. We have not read the other {others} systems against them, so they are in no total on this page. A proposal becomes a row when every system has been read against it.',
+				{
+					count: pending.length,
+					others: comparison.systems.length - 1,
+				},
+			)
 		},
 
 		/**
@@ -435,9 +532,15 @@ export default {
 				.map((entry) => entry.on)
 				.sort()
 				.at(-1)
+			// Two reasons, not one. Until 2026-09-22 this sentence said every
+			// correction was a capability we had shipped since the reading.
+			// That day's re-rating moved 35 rows and sixteen of them were
+			// rows we already had, where the note was simply too harsh and
+			// nothing was built. Naming one reason for both is the kind of
+			// small overclaim this page exists to avoid.
 			return t(
 				'dossiq',
-				'We corrected {count} of our own ratings on {date}, because we had shipped the capability since the reading. We do not correct the other {others} columns that way. Those ratings are as we read them, on the dates given here.',
+				'We corrected {count} of our own ratings on {date}. Some we had shipped since the reading, and some we had read too harshly. We do not correct the other {others} columns that way. Those ratings are as we read them, on the dates given here.',
 				{
 					count: corrections.length,
 					others: comparison.systems.length - 1,
@@ -634,6 +737,28 @@ export default {
 		 */
 		areaSummary(area) {
 			const self = area.tallies.dossiq
+			if (area.capabilities.length === 0) {
+				// Areas 14 to 17 are proposals and nothing else: four questions
+				// round 4 raised that had nowhere to go. A summary reading
+				// "0 capabilities" over a table with rows in it is the kind of
+				// number that makes a reader distrust the rest of the page.
+				return t('dossiq', '{count} proposed, none rated yet.', {
+					count: area.pending.length,
+				})
+			}
+			if (area.pending.length > 0) {
+				return t(
+					'dossiq',
+					'{total} capabilities. Dossiq has {yes}, partly has {partial}, is missing {no}. {pending} more proposed.',
+					{
+						total: area.capabilities.length,
+						yes: self.yes,
+						partial: self.partial,
+						no: self.no,
+						pending: area.pending.length,
+					},
+				)
+			}
 			return t(
 				'dossiq',
 				'{total} capabilities. Dossiq has {yes}, partly has {partial}, is missing {no}.',
@@ -663,16 +788,37 @@ export default {
 				},
 			)
 		},
+
+		/**
+		 * Table caption for one area's proposals.
+		 *
+		 * It names the one column that is filled and says the others are not.
+		 * The table shows our rating and no rival column at all, so without
+		 * this sentence a reader has no way to tell a proposal apart from a
+		 * row we scored alone.
+		 *
+		 * @param {object} area Grouped area from `groupByArea`.
+		 * @return {string} Translated caption.
+		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+		 */
+		pendingCaption(area) {
+			return t(
+				'dossiq',
+				'{count} capabilities proposed for {area}. We rated ourselves. The other {others} systems have not been read against these, so they are in no total here.',
+				{
+					count: area.pending.length,
+					area: area.label,
+					others: this.systems.length - 1,
+				},
+			)
+		},
 	},
 }
 </script>
 
 <style scoped>
 .features-roadmap__sections {
-	display: flex;
-	gap: 8px;
 	padding: 12px 12px 0;
-	flex-wrap: wrap;
 }
 
 .features-roadmap__comparison {
@@ -788,6 +934,16 @@ export default {
 
 .features-roadmap__chip--no {
 	background-color: var(--color-background-dark);
+	color: var(--color-text-maxcontrast);
+}
+
+.features-roadmap__pending-heading {
+	margin: 16px 0 0;
+}
+
+/* Proposals, set back from the rated table above them. The left rule is the
+   visual half of the caption's claim: these rows are not part of that table. */
+.features-roadmap__row--pending .features-roadmap__cap {
 	color: var(--color-text-maxcontrast);
 }
 

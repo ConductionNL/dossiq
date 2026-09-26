@@ -79,11 +79,9 @@ class BrkController extends Controller {
 	 *   - perceelnummer (string, required)
 	 *   - appartementsrechtVolgnummer (string, optional)
 	 *
-	 * @return JSONResponse {lookupStatus, parcel, dormant, extras}
+	 * @return JSONResponse carrying lookupStatus, parcel, dormant and extras.
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
@@ -132,11 +130,9 @@ class BrkController extends Controller {
 	 *
 	 * @param string $id BRK kadastraalOnroerendeZaak identificatie.
 	 *
-	 * @return JSONResponse {lookupStatus, parcel, dormant, extras}
+	 * @return JSONResponse carrying lookupStatus, parcel, dormant and extras.
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */

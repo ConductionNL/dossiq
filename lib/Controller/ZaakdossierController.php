@@ -35,6 +35,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
+use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 use OCA\Dossiq\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Dossiq\Service\ZaakdossierService;
@@ -42,7 +44,6 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
-use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -60,6 +61,10 @@ class ZaakdossierController extends Controller {
 	 * @param InformatieobjectReader $reader The clearance-gated document reader.
 	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
+	 * @param DocumentApprovalClearance $approvals Reads decidiq's approval chain for a document,
+	 *        so a document in an unfinished route cannot be made final.
+	 * @param BulkDocumentActions $bulk One act over many documents: the clearance gate that runs
+	 *        before a bulk transition writes anything, and the metadata run that reports per id.
 	 */
 	public function __construct(
 		string $appName,
@@ -68,6 +73,8 @@ class ZaakdossierController extends Controller {
 		private readonly InformatieobjectReader $reader,
 		private readonly DossierUploadHandler $uploadHandler,
 		private readonly IUserSession $userSession,
+		private readonly DocumentApprovalClearance $approvals,
+		private readonly BulkDocumentActions $bulk,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -90,7 +97,13 @@ class ZaakdossierController extends Controller {
 		}
 
 		try {
-			$file = $this->fileService->getDossierForCase(caseId: $caseId);
+			$file = $this->fileService->getDossierForCase(
+				caseId: $caseId,
+				// "Show me everything that went to this person." The value is
+				// a party of the case, never a name: two people called Jansen
+				// are two filters.
+				correspondent: (string)$this->request->getParam('correspondent', ''),
+			);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -264,6 +277,14 @@ class ZaakdossierController extends Controller {
 			'description' => $this->request->getParam('description') ?? $this->request->getParam('beschrijving'),
 			'informatieobjecttype' => $this->request->getParam('informatieobjecttype'),
 			'vertrouwelijkheidaanduiding' => $this->request->getParam('vertrouwelijkheidaanduiding'),
+			// The Files tab's Document properties dialog edits these two as well.
+			'direction' => $this->request->getParam('direction'),
+			'keywords' => $this->request->getParam('keywords'),
+			// Who the document came from and who it went to. Both name a
+			// party OF THIS CASE; a value naming anything else is dropped by
+			// DocumentCorrespondents rather than stored as a typed name.
+			'sender' => $this->request->getParam('sender'),
+			'recipients' => $this->request->getParam('recipients'),
 		];
 		$metadata = array_filter($metadata, static fn ($value) => $value !== null);
 
@@ -277,6 +298,63 @@ class ZaakdossierController extends Controller {
 
 		return new JSONResponse($result);
 	}//end updateMetadata()
+
+	/**
+	 * Which of these documents are in an approval route, and at which step.
+	 *
+	 * 🔑 IT IS A READ AND NEVER A COPY. The marker is decidiq's route state,
+	 * asked for at load time. A stored copy on the document would be written
+	 * once and would then disagree with the route the first time somebody
+	 * approved from decidiq's own page, and the row would go on saying "step
+	 * two of three" after the route had finished.
+	 *
+	 * 🔑 ONE CALL FOR THE WHOLE TAB. The Files tab has one row per document, so
+	 * a per-row question is one round trip per row on a case with forty of
+	 * them. The ids come in together and the answers go back together.
+	 *
+	 * 🔴 EVERY ID IS GUARDED. A route's step names a person, and being signed
+	 * in is not permission to read who is holding up somebody else's file, so
+	 * each id goes through the same readability check a single read does and an
+	 * id the caller may not read is DROPPED from the answer rather than
+	 * refused: refusing would turn one unreadable document into a Files tab
+	 * with no markers at all.
+	 *
+	 * @return JSONResponse The markers, keyed by document id.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/besluitvorming-leaf/spec.md
+	 */
+	public function approvalMarkers(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$raw = (string)$this->request->getParam('ids', '');
+		$ids = array_values(array_filter(array_map('trim', explode(',', $raw))));
+
+		$markers = [];
+		foreach ($ids as $id) {
+			if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
+				continue;
+			}
+
+			$clearance = $this->approvals->forDocument(documentId: $id);
+			if (($clearance['routed'] ?? false) !== true) {
+				continue;
+			}
+
+			$markers[$id] = [
+				'routed' => true,
+				'cleared' => ($clearance['cleared'] ?? false),
+				'waitingOn' => ($clearance['waitingOn'] ?? []),
+				'reason' => $this->approvals->describe(clearance: $clearance),
+			];
+		}
+
+		return new JSONResponse(['markers' => $markers]);
+	}//end approvalMarkers()
 
 	/**
 	 * Transition a single informatieobject's status.
@@ -332,7 +410,7 @@ class ZaakdossierController extends Controller {
 		$newStatus = (string)$this->request->getParam('status', '');
 
 		// Per-object clearance gate before any mutation.
-		if ($this->allReadable(user: $user, ids: $ids) === false) {
+		if ($this->bulk->allReadable(user: $user, ids: $ids) === false) {
 			return new JSONResponse(
 				['error' => 'Insufficient clearance for one or more selected documents'],
 				Http::STATUS_FORBIDDEN,
@@ -362,55 +440,9 @@ class ZaakdossierController extends Controller {
 		$ids = (array)$this->request->getParam('ids', []);
 		$metadata = (array)$this->request->getParam('metadata', []);
 
-		$results = [];
-		foreach ($ids as $id) {
-			$results[] = $this->updateOneMetadata(user: $user, id: (string)$id, metadata: $metadata);
-		}
-
-		return new JSONResponse(['results' => $results]);
+		return new JSONResponse(
+			['results' => $this->bulk->updateAll(user: $user, ids: $ids, metadata: $metadata)]
+		);
 	}//end bulkUpdateMetadata()
 
-	/**
-	 * Update one informatieobject's metadata inside a bulk run.
-	 *
-	 * @param IUser $user The requesting user.
-	 * @param string $id The informatieobject UUID.
-	 * @param array<string, mixed> $metadata The metadata to apply.
-	 *
-	 * @return array<string, mixed> The per-id result entry.
-	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-	 */
-	private function updateOneMetadata(IUser $user, string $id, array $metadata): array {
-		if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
-			return ['id' => $id, 'success' => false, 'error' => 'Insufficient clearance'];
-		}
-
-		try {
-			$this->fileService->updateMetadata(infoObjectId: $id, metadata: $metadata);
-			return ['id' => $id, 'success' => true];
-		} catch (\Throwable $e) {
-			return ['id' => $id, 'success' => false, 'error' => $e->getMessage()];
-		}
-	}//end updateOneMetadata()
-
-	/**
-	 * Whether every listed informatieobject is readable by the user.
-	 *
-	 * @param IUser $user The requesting user.
-	 * @param array<int,mixed> $ids The informatieobject UUIDs.
-	 *
-	 * @return bool True when all ids pass the clearance gate.
-	 *
-	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-	 */
-	private function allReadable(IUser $user, array $ids): bool {
-		foreach ($ids as $id) {
-			if ($this->reader->guardReadable(user: $user, infoObjectId: (string)$id) !== null) {
-				return false;
-			}
-		}
-
-		return true;
-	}//end allReadable()
 }//end class

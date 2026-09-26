@@ -6,6 +6,7 @@
         "identifier": "bvw-mandaatbesluit",
         "initialStatusName": "Voorstel opstellen",
         "title": "Mandaatbesluit",
+        "category": "Besluitvorming",
         "description": "Besluit genomen op basis van ambtelijk of politiek mandaat",
         "purpose": "Vastleggen van besluiten binnen gedelegeerde bevoegdheden",
         "trigger": "Aanvraag of beleidswijziging binnen mandaatgrens",

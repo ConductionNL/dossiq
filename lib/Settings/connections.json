@@ -1,0 +1,106 @@
+{
+    "app": "dossiq",
+    "connections": [
+        {
+            "key": "zgw",
+            "title": "ZGW APIs",
+            "description": "Zaken, Documenten, Catalogi, Besluiten, Notificaties and Objecten. Dossiq maps its register onto them as a provider.",
+            "order": 10,
+            "settingsUrl": "/settings/admin/dossiq#section-zgw",
+            "requiredConfig": ["register", "case_schema"]
+        },
+        {
+            "key": "stuf",
+            "title": "StUF-ZKN",
+            "description": "Outbound StUF-ZKN messages to a municipal broker, per endpoint.",
+            "order": 20,
+            "settingsUrl": "/settings/admin/dossiq#section-stuf"
+        },
+        {
+            "key": "kcc",
+            "title": "KCC desk",
+            "description": "The customer-contact workplace: identification, sentiment and the case context a caller needs.",
+            "order": 30,
+            "settingsUrl": "/settings/admin/dossiq#section-kcc",
+            "requiredConfig": ["identification_method"]
+        },
+        {
+            "key": "dmn",
+            "title": "Decision tables",
+            "description": "DMN decision tables a workflow transition can evaluate.",
+            "order": 40,
+            "settingsUrl": "/settings/admin/dossiq#section-dmn",
+            "requiredConfig": ["decision_table_schema"]
+        },
+        {
+            "key": "mailbox",
+            "title": "Shared mailbox",
+            "description": "The IMAP mailbox case email is read from and linked to a case.",
+            "order": 50,
+            "settingsUrl": "/settings/admin/dossiq#section-mailbox"
+        },
+        {
+            "key": "store",
+            "title": "Store",
+            "description": "The registry Dossiq installs case types and templates from.",
+            "order": 60,
+            "settingsUrl": "/settings/admin/dossiq#section-store"
+        },
+        {
+            "key": "financial",
+            "title": "Financial system",
+            "description": "The payout signal for a dwangsom, and the callback that confirms it.",
+            "order": 70,
+            "settingsUrl": "/settings/admin/dossiq#section-financial",
+            "requiredConfig": ["dwangsom_callback_secret"]
+        },
+        {
+            "key": "brp",
+            "title": "BRP",
+            "description": "Looking a person up in the municipal population register.",
+            "order": 80,
+            "unconfiguredMessage": "Built and dormant. The conflict-of-interest check calls it, and it reaches nothing until an integrator sets integration.brp.mode (mock or test) with occ config:app:set.",
+            "sourceTemplate": "brp-haalcentraal"
+        },
+        {
+            "key": "kvk",
+            "title": "KvK",
+            "description": "Looking a company up in the chamber-of-commerce register.",
+            "order": 90,
+            "available": false,
+            "unavailableMessage": "The adapter is built and bound, and no screen or service calls it yet. Configuring it changes nothing until one does.",
+            "sourceTemplate": "kvk"
+        },
+        {
+            "key": "pdok",
+            "title": "PDOK",
+            "description": "Address, parcel and geo lookup for a case location.",
+            "order": 100
+        },
+        {
+            "key": "berichtenbox",
+            "title": "Berichtenbox",
+            "description": "Messages to a citizen's Mijn Overheid Berichtenbox.",
+            "order": 110,
+            "requiredConfig": ["digital_post_source"],
+            "unconfiguredMessage": "Integriq sends these letters, and it needs a source to send them over. Set the source with occ config:app:set dossiq digital_post_source --value <slug>, naming an integriq digital post source. Until then a send is refused, and the case records why.",
+            "adapter": {
+                "configKey": "berichtenbox_adapter",
+                "simulatedValues": ["OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter", "mock"],
+                "simulatedMessage": "A mock adapter answers here, because berichtenbox_adapter names it. No message reaches Mijn Overheid. Clear the key to get the integriq adapter back, which refuses a send it cannot make."
+            }
+        },
+        {
+            "key": "templates",
+            "title": "Document templates",
+            "description": "Rendering a besluit or a letter from a template, which Filinq does.",
+            "order": 120,
+            "requiredConfig": ["beschikking_template_adapter"],
+            "adapter": {
+                "configKey": "beschikking_template_adapter",
+                "simulatedValues": ["", "OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter"],
+                "simulatedMessage": "A mock adapter answers here. No template reaches Filinq. Set beschikking_template_adapter to OCA\\Dossiq\\Service\\Beschikking\\FilinqTemplateEngineAdapter to render through Filinq."
+            }
+        }
+    ]
+}

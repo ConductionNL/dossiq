@@ -1034,7 +1034,7 @@ class CaseFlowDeclarationTest extends TestCase {
 	 * Every status step says what the status MEANS, not only what it is called.
 	 *
 	 * A literal name is not an identifier: `statusType.name` is declared
-	 * `x-translatable`, and every case type spells its working phase
+	 * `translatable`, and every case type spells its working phase
 	 * differently and all of them are right.
 	 */
 	public function testEveryStatusStepNamesARole(): void {

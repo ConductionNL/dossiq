@@ -35,7 +35,26 @@ test.describe('Retired: automatic-actions settings page (C2)', () => {
 	// inline type. They migrate to OpenRegister flows via
 	// `occ dossiq:actions:migrate-to-flows`.
 	//
-	// @e2e openspec/changes/page-topology-cleanup/proposal.md
+	// @e2e openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md#the-pages-are-gone
+	//
+	// 🔴 IT CITED A PROPOSAL AND NO REQUIREMENT, AND IT NAMES THE SCENARIO
+	// NOW. `proposal.md` states why a change is being made; it declares no
+	// scenario, so there was nothing for a reader to check the claim against
+	// and nothing for gate-19 to resolve.
+	//
+	// ⚠️ THIS STILL CREDITS NOTHING, AND THAT IS NOT THE CITATION'S FAULT.
+	// Gate-19 parses `openspec/specs/**` only, so an anchor into an
+	// unarchived change resolves for a human and not for the gate. There is
+	// no published `automatic-actions-surface` capability to point at, and
+	// the published `automatic-actions` capability is about executing
+	// actions, not about retiring their administration pages: it declares no
+	// scenario this test proves. Re-anchoring there to satisfy the gate would
+	// claim coverage of a requirement this test never exercises, which is
+	// harder to catch later than a citation that credits nothing.
+	//
+	// This becomes live the moment `page-topology-cleanup` is archived and
+	// the delta lands under `openspec/specs/`. Until then the honest reading
+	// is: the test proves the retirement, and the gate cannot see it.
 	test('the retired route no longer renders an automatic-actions view', async ({
 		page,
 	}) => {
@@ -81,7 +100,31 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 	// decidiq owns agenda-building and meetings, and surfaces them on a case
 	// through the `decidesk-decisions` integration leaf.
 	//
-	// @e2e openspec/changes/page-topology-cleanup/proposal.md
+	// @e2e openspec/changes/page-topology-cleanup/specs/decision-making-surface/spec.md#procest-hosts-no-decision-making-pages
+	//
+	// 🔴 IT CITED A PROPOSAL AND NO REQUIREMENT. Same repair as the C2 test
+	// above, and the same limit: gate-19 parses `openspec/specs/**` only, so
+	// this resolves for a reader and not for the gate until
+	// `page-topology-cleanup` is archived.
+	//
+	// 🔴 AND THE NEAREST PUBLISHED REQUIREMENT SAYS THE OPPOSITE, SO DO NOT
+	// RE-ANCHOR ONTO IT. `besluitvorming-leaf` REQ-BVL-002 is titled "The
+	// standalone Besluitvorming nav MUST be retired while its pages stay
+	// routable", and its scenario `#former-pages-stay-reachable-by-deep-link`
+	// requires that `/besluitvorming/agenda` "still renders (the route is
+	// registered)". This test asserts it does NOT render and falls through to
+	// the app root. Citing it there would attach the test to a requirement it
+	// disproves, and it would read as coverage.
+	//
+	// The two are not both true, and the conflict is in the published set
+	// rather than in this file: REQ-BVL-002 was superseded by D1 of
+	// `page-topology-cleanup`, which has not been archived, so the retired
+	// requirement is still the published one. Reported with this change;
+	// resolving it belongs to that change's archive step, not to a test file.
+	//
+	// This scenario has three clauses and this test proves the first. The
+	// sibling below proves the second, and carries the same citation for that
+	// reason: one test citing the whole scenario would over-claim it.
 	test('the agenda compiler route no longer renders its view', async ({
 		page,
 	}) => {
@@ -100,6 +143,12 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
+	// @e2e openspec/changes/page-topology-cleanup/specs/decision-making-surface/spec.md#procest-hosts-no-decision-making-pages
+	//
+	// The scenario's SECOND clause, "no `/besluitvorming/vergaderingen/:id`
+	// page exists". Cited here as well as above because the scenario names
+	// both routes and no single test drives both: a citation on one test
+	// alone would claim the pair.
 	test('the vergadering detail route no longer renders its view', async ({
 		page,
 	}) => {

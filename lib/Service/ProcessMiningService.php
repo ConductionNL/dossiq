@@ -67,6 +67,7 @@ class ProcessMiningService {
 	 * @param DwellTimeAnalyzer $dwellTimeAnalyzer Dwell-interval reconstruction + bottleneck ranking.
 	 * @param TransitionMatrixBuilder $transitionBuilder Transition matrix + rework detection.
 	 * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 *
 	 * @return void
 	 */
@@ -75,6 +76,7 @@ class ProcessMiningService {
 		private readonly DwellTimeAnalyzer $dwellTimeAnalyzer,
 		private readonly TransitionMatrixBuilder $transitionBuilder,
 		private readonly ThroughputTrendCalculator $throughputCalculator,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -87,13 +89,14 @@ class ProcessMiningService {
 	 * @return array<string, mixed> The structured response body.
 	 *
 	 * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
+	 * @spec openspec/changes/what-a-status-declares/specs/doorlooptijd-dashboard/spec.md
 	 */
 	public function getReport(array $params): array {
-		$to = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+		$to = ($this->dates->tryParse($params['to'] ?? null) ?? $this->dates->today());
 		$from = $to->sub(new DateInterval('P12M'));
 		$fromParam = $this->nonEmptyStringParam(params: $params, key: 'from');
 		if ($fromParam !== null) {
-			$from = $this->parseDate(value: $fromParam, fallback: $to->sub(new DateInterval('P12M')));
+			$from = ($this->dates->tryParse($fromParam) ?? $to->sub(new DateInterval('P12M')));
 		}
 
 		$caseTypeFilter = $this->nonEmptyStringParam(params: $params, key: 'caseType');
@@ -145,6 +148,18 @@ class ProcessMiningService {
 				'title' => $group['title'],
 				'caseVolume' => count($group['cases']),
 				'dwellTime' => $dwellStats,
+				// The working days the CASES hold, beside the aggregates
+				// reconstructed from the record chain. Published rather than
+				// recomputed, so the page and a handler's work list answer the
+				// same question with the same number.
+				'dwellDaysHeld' => $this->dwellTimeAnalyzer->heldTotalsByStatus(
+					casesById: $group['cases'],
+					now: $now,
+				),
+				// The same intervals keyed by who held them. No second walk
+				// of the records: a by-assignee table computed on its own
+				// would drift from the by-phase one beside it.
+				'dwellByAssignee' => $this->dwellTimeAnalyzer->aggregateDwellStatsByActor(intervals: $intervals),
 				'bottlenecks' => $bottlenecks,
 				'transitionMatrix' => $transitions['matrix'],
 				'reworkPercent' => $transitions['reworkPercent'],
@@ -159,6 +174,13 @@ class ProcessMiningService {
 
 		return [
 			'period' => ['from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')],
+			// WHICH CLOCK THE NUMBERS ARE ON, published with them. The page
+			// puts it in the column header. A report that serves working
+			// hours counted on working days times eight, and looks exactly
+			// like one counted on the calendar, is the failure this whole
+			// change is about, so the answer travels with the payload rather
+			// than being assumed by the reader.
+			'clock' => $this->dwellTimeAnalyzer->clock(),
 			'caseTypeFilter' => $caseTypeFilter,
 			'caseTypes' => $caseTypeReports,
 			'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
@@ -383,26 +405,7 @@ class ProcessMiningService {
 			return null;
 		}
 
-		return $this->parseDate(value: $raw, fallback: null);
+		return $this->dates->tryParse($raw);
 	}//end extractTimestamp()
 
-	/**
-	 * Parse a date/datetime string; return `$fallback` on empty/invalid input.
-	 *
-	 * @param mixed $value Raw date value.
-	 * @param DateTimeImmutable|null $fallback Value to return when parsing fails.
-	 *
-	 * @return DateTimeImmutable|null
-	 */
-	private function parseDate(mixed $value, ?DateTimeImmutable $fallback): ?DateTimeImmutable {
-		if (is_string($value) === false || $value === '') {
-			return $fallback;
-		}
-
-		try {
-			return new DateTimeImmutable($value);
-		} catch (\Throwable $e) {
-			return $fallback;
-		}
-	}//end parseDate()
 }//end class

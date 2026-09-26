@@ -28,12 +28,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\AppInfo\Registrar;
 
+use OCA\Dossiq\Listener\AcknowledgementOnCreateListener;
 use OCA\Dossiq\Listener\CaseNumberListener;
+use OCA\Dossiq\Listener\CasePhaseTermListener;
+use OCA\Dossiq\Listener\CasePlanProjectionListener;
+use OCA\Dossiq\Listener\CustodyCaseCreatedListener;
 use OCA\Dossiq\Listener\DeadlineCaseCreatedListener;
+use OCA\Dossiq\Listener\IntakeTermStartListener;
 use OCA\Dossiq\Listener\DecisionConcludedListener;
-use OCA\Dossiq\Listener\TaskCompletionResumeListener;
-use OCA\OpenRegister\Event\TaskTerminalEvent;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -72,8 +76,37 @@ class WorkflowListenerRegistrar {
 	public function register(IRegistrationContext $context): void {
 		$this->registerTermListeners(context: $context);
 		$this->registerDecisionListeners(context: $context);
-		$this->registerHumanStepListeners(context: $context);
+		$this->registerCasePlanListeners(context: $context);
+
+		// The task-completion listeners are their own registrar: they answer
+		// to the flow engine rather than to termijnbewaking or to a decision,
+		// and they fail in their own way. Called from here rather than from
+		// ListenerRegistrar because a human step IS part of the workflow, so
+		// this is where a reader looks for it.
+		(new TaskListenerRegistrar())->register(context: $context);
 	}//end register()
+
+	/**
+	 * Register the CMMN case-plan projection listener.
+	 *
+	 * A caseType with `handlingModel: cmmn` gets its published `caseModel`
+	 * projected onto OpenRegister's case layer the moment a case of that type
+	 * is created. The listener observes; every decision, including whether the
+	 * caseType is CMMN-managed at all, lives in
+	 * {@see \OCA\Dossiq\Service\CasePlanProjectionService}.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	private function registerCasePlanListeners(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CasePlanProjectionListener::class
+		);
+	}//end registerCasePlanListeners()
 
 	/**
 	 * Register termijnbewaking (AWB deadline engine) listeners.
@@ -95,6 +128,31 @@ class WorkflowListenerRegistrar {
 			listener: DeadlineCaseCreatedListener::class
 		);
 
+		// The chain of custody starts where the case was registered. Without
+		// this the chain would begin at the first MOVE, which reads as though
+		// nobody held the case until it changed hands. The backfill repairs the
+		// cases that already existed; this stops the hole reopening.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: CustodyCaseCreatedListener::class
+		);
+
+		// When the request arrived, and when its clock starts. Written once at
+		// creation and never recomputed: the stamp is a record of what the
+		// citizen was told, not a derivation of what today's calendar says.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: IntakeTermStartListener::class
+		);
+
+		// A phase carries its own clock, and the clock moves when the case
+		// does. The listener reconciles rather than compares, so it needs no
+		// before-image and is correct on a replay.
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: CasePhaseTermListener::class
+		);
+
 		// The case number is DECLARED on the schema, as an OpenRegister
 		// calculation using the `sequence` operator. On an install whose
 		// OpenRegister ships that operator this listener writes nothing: it
@@ -105,6 +163,17 @@ class WorkflowListenerRegistrar {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: CaseNumberListener::class
+		);
+
+		// Awb 4:3a: a case created from an electronic submission owes its
+		// sender a confirmation of receipt. The text, the renderer and the
+		// requirement all shipped and nothing ever triggered them, so a
+		// statutory duty sat unperformed behind a spec that described it. This
+		// is that trigger. It queues rather than sends, so a mail server that
+		// is down cannot stop a case being created.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: AcknowledgementOnCreateListener::class
 		);
 	}//end registerTermijnListeners()
 
@@ -148,36 +217,4 @@ class WorkflowListenerRegistrar {
 			$context->registerEventListener(event: $event, listener: DecisionConcludedListener::class);
 		}
 	}//end registerDecisionListeners()
-
-	/**
-	 * Register the listener that resumes a run when its task is completed.
-	 *
-	 * A task is an OpenRegister `Task` row owned by the flow engine, and the
-	 * engine announces its own terminality: `TaskService` dispatches
-	 * `TaskTerminalEvent` once the terminal write has committed.
-	 *
-	 * Registered unconditionally: unlike the decision events, `TaskTerminalEvent`
-	 * is OpenRegister's own and OpenRegister is a hard dependency of this app.
-	 * The class ships from openregister v2.0.13 onward (openregister#3269), and
-	 * `FlowRunSignalService::signalAs()`, which the listener signals through,
-	 * from openregister#3332.
-	 *
-	 * @param IRegistrationContext $context The registration context.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/task-management/spec.md
-	 */
-	private function registerHumanStepListeners(IRegistrationContext $context): void {
-		// The ENGINE's terminal event, not an object update. Tasks are
-		// OpenRegister `Task` rows now, so nothing writes a `caseTask` object
-		// and an ObjectUpdatedEvent listener would never fire again: the run
-		// would only resume on DossiqAskPersonNode's 30-minute heartbeat, and
-		// a wedge that recovers half an hour late still reads as a wedge.
-		$context->registerEventListener(
-			event: TaskTerminalEvent::class,
-			listener: TaskCompletionResumeListener::class
-		);
-
-	}//end registerHumanStepListeners()
 }//end class

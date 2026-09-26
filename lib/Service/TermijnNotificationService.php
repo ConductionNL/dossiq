@@ -30,8 +30,11 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
+
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
+use OCA\Dossiq\Service\Termijn\TermLetters;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
@@ -46,6 +49,15 @@ class TermijnNotificationService {
 		'extension',
 		'ingebrekestelling-receipt',
 		'dwangsom-payment',
+		'hersteltermijn-request',
+		'hersteltermijn-reminder',
+		'doorzending',
+		// The aanvraag was judged niet-ontvankelijk at intake and the case
+		// closed on that result. The
+		// applicant is told through the case type's declared moment, so this
+		// is a template beside the others rather than a message a service
+		// writes for itself.
+		'niet-ontvankelijk',
 	];
 
 	/**
@@ -55,12 +67,16 @@ class TermijnNotificationService {
 	 * @param BerichtenboxRoutingService $router Router (dossiq notification-router).
 	 * @param LoggerInterface $logger Logger.
 	 * @param IJobList|null $jobList Optional job list for async dispatch.
+	 * @param TermLetters $letters The wording of every term notification. Defaulted rather than
+	 *        required, because it has no collaborators of its own and every caller that wired
+	 *        this service before the letters were split out passes four arguments.
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
 		private readonly BerichtenboxRoutingService $router,
 		private readonly LoggerInterface $logger,
 		private readonly ?IJobList $jobList = null,
+		private readonly TermLetters $letters = new TermLetters(),
 	) {
 	}//end __construct()
 
@@ -74,9 +90,12 @@ class TermijnNotificationService {
 	 * @param string $termInstanceId Instance id.
 	 * @param string $recipientUserId Recipient user id.
 	 * @param array<string, mixed> $context Extra context.
+	 * @param array<string, mixed> $caseType The case type of the term's case, or
+	 *                                       [] when the caller has not resolved one.
 	 *
 	 * @return bool TRUE when the job was queued; FALSE when no job list is
-	 *              wired (callers MAY fall back to synchronous send).
+	 *              wired (callers MAY fall back to synchronous send), or when
+	 *              the case type does not send this message.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
@@ -85,6 +104,7 @@ class TermijnNotificationService {
 		string $termInstanceId,
 		string $recipientUserId,
 		array $context = [],
+		array $caseType = [],
 	): bool {
 		if ($this->jobList === null) {
 			return false;
@@ -92,6 +112,19 @@ class TermijnNotificationService {
 
 		if (in_array($type, self::TEMPLATES, true) === false) {
 			throw new InvalidArgumentException('Unknown template: ' . $type);
+		}
+
+		// The case type decides which of these go out, and CaseTypeHandling is
+		// the one reader of that decision. An empty $caseType is a caller that
+		// has not resolved one, and it queues as it always did: silently
+		// dropping a statutory message because a parameter was not threaded
+		// through would be the worst possible reading of "not configured".
+		if ($caseType !== [] && (new CaseTypeHandling())->sends(caseType: $caseType, message: $type) === false) {
+			$this->logger->info(
+				'TermijnNotification not sent: the case type does not send it',
+				['type' => $type, 'instance' => $termInstanceId]
+			);
+			return false;
 		}
 
 		$this->jobList->add(
@@ -176,47 +209,7 @@ class TermijnNotificationService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
 	 */
 	public function renderTemplate(string $type, array $instance, array $context): array {
-		$locale = (string)($context['locale'] ?? 'nl');
-		$case = (string)($instance['case'] ?? ($context['case'] ?? '–'));
-		$end = (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–'));
-
-		$subject = '';
-		$body = '';
-
-		switch ($type) {
-			case 'ontvangstbevestiging':
-				$subject = 'Ontvangstbevestiging zaak ' . $case;
-				$body = "Beste aanvrager,\n\n"
-					. 'Wij hebben uw aanvraag ontvangen onder zaaknummer ' . $case . ".\n"
-					. 'De wettelijke termijn loopt af op ' . $end . ".\n"
-					. 'Volg uw zaak via het burgerportaal of neem contact op met de gemeente.';
-				break;
-			case 'extension':
-				$newEnd = (string)($context['newEinddatum'] ?? $end);
-				$subject = 'Verlenging termijn zaak ' . $case;
-				$body = "Beste aanvrager,\n\n"
-					. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n"
-					. 'U vindt de officiele verlengingsbrief in uw burgerportaal.';
-				break;
-			case 'ingebrekestelling-receipt':
-				$graceEnd = (string)($context['graceEnd'] ?? '–');
-				$subject = 'Bevestiging ingebrekestelling zaak ' . $case;
-				$body = "Beste aanvrager,\n\n"
-					. 'Wij hebben uw ingebrekestelling voor zaak ' . $case . " ontvangen.\n"
-					. 'De wettelijke begunstigingstermijn (AWB 4:17) eindigt op ' . $graceEnd . ".\n"
-					. 'Indien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.';
-				break;
-			case 'dwangsom-payment':
-				$amountCents = (int)($context['bedragCents'] ?? 0);
-				$amountEur = number_format($amountCents / 100, 2, ',', '.');
-				$ref = (string)($context['betalingsreferentie'] ?? '–');
-				$subject = 'Uitbetaling dwangsom zaak ' . $case;
-				$body = "Beste aanvrager,\n\n"
-					. 'De dwangsom van EUR ' . $amountEur . ' voor zaak ' . $case . " is overgemaakt.\n"
-					. 'Onder betalingsreferentie ' . $ref . '.';
-				break;
-		}//end switch
-
-		return ['subject' => $subject, 'body' => $body, 'locale' => $locale];
+		return $this->letters->render(type: $type, instance: $instance, context: $context);
 	}//end renderTemplate()
+
 }//end class

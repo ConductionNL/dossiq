@@ -39,6 +39,7 @@ use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
 use OCP\Notification\IManager as INotificationManager;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -91,8 +92,11 @@ interface AdviceObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Advice\AdviceNotifier
  * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class AdviceServiceAuthorizationTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
@@ -178,6 +182,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 				notificationManager: $this->createMock(INotificationManager::class),
 				logger: $logger,
 			),
+			dates: $this->caseDates(),
 		);
 	}//end setUp()
 

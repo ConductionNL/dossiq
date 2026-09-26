@@ -3,22 +3,36 @@
 <!--
 	Workflow Board — a Kanban board with one column per non-final status type,
 	open cases grouped into their current status, and status transitions
-	operable by both drag-and-drop AND keyboard alone (each CaseCard's "Move
-	to…" menu). Both paths call the same onDrop(), which posts the case's
-	offered transition to the status-transition engine — the single write-path
-	for case.status, and the one the case page uses — so a board move is role
-	checked, guard evaluated and side-effecting exactly as the same move made
-	from the case page. On a refusal the card goes back and the engine's own
-	reason is toasted. Also holds the column-scoped bulk-selection state: a
-	case card's checkbox toggles selection via toggleSelection() (cross-column
-	selection resets), and a bulk-actions bar opens BulkTransitionDialog to
-	preview/execute one status transition across every selected case.
+	operable by drag-and-drop AND by keyboard alone. Both paths call the same
+	onDrop(), which posts the case's offered transition to the
+	status-transition engine — the single write-path for case.status, and the
+	one the case page uses — so a board move is role checked, guard evaluated
+	and side-effecting exactly as the same move made from the case page. On a
+	refusal the card goes back and the engine's own reason is toasted.
+
+	ASKING TO MOVE A CARD IS A SEPARATE QUESTION FROM MAKING THE MOVE, and this
+	page owns both halves. Each CaseCard used to carry an NcActions listing
+	every board column, and a column exists per status NAME across every case
+	type on the instance: two hundred entries on a real register, nearly all of
+	them statuses the case cannot reach, because merged columns say nothing
+	about one case's workflow. A right-click (CnContextMenu) or M on the
+	focused card now opens MoveCaseDialog, which the board fills from
+	/available-transitions for THAT case — the same answer onDrop validates a
+	drop against, so the two gestures cannot drift apart. Picking one hands
+	onDrop the column name a drop would have passed.
+
+	Also holds the column-scoped bulk-selection state: a case card's checkbox
+	toggles selection via toggleSelection() (cross-column selection resets),
+	and a bulk-actions bar opens BulkTransitionDialog to preview/execute one
+	status transition across every selected case.
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
 -->
 <template>
-	<div class="workflow-board">
+	<div
+		class="workflow-board"
+		:class="{ 'workflow-board--dragging': drag !== null }">
 		<div class="workflow-board__header">
 			<div>
 				<h2>{{ t('dossiq', 'Workflow Board') }}</h2>
@@ -26,12 +40,57 @@
 					{{
 						t(
 							'dossiq',
-							'Drag cases between statuses, or use a case card\'s "Move to…" menu, to advance their workflow',
+							'Drag a case between statuses to advance its workflow.',
 						)
 					}}
+					<!-- The two gestures without a visible control, behind one
+						short affordance rather than a second sentence. -->
+					<NcPopover popupRole="dialog">
+						<template #trigger>
+							<NcButton
+								variant="tertiary"
+								class="workflow-board__help-trigger"
+								data-testid="workflow-board-help">
+								<template #icon>
+									<HelpCircleOutline :size="16" />
+								</template>
+								{{ t('dossiq', 'Other ways to move a case') }}
+							</NcButton>
+						</template>
+						<ul
+							class="workflow-board__help"
+							data-testid="workflow-board-help-list">
+							<li>
+								{{
+									t('dossiq', 'Right-click a card and pick Move….')
+								}}
+							</li>
+							<li>
+								{{ t('dossiq', 'Or focus a card and press M.') }}
+							</li>
+							<li>
+								{{
+									t(
+										'dossiq',
+										'Both open a dialog offering only the statuses that case can reach.',
+									)
+								}}
+							</li>
+							<li>
+								{{
+									t(
+										'dossiq',
+										'While you drag, the statuses this case cannot reach fade out.',
+									)
+								}}
+							</li>
+						</ul>
+					</NcPopover>
 				</p>
 			</div>
-			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
+			<NcButton
+				variant="tertiary"
+				@click="$router.push({ name: 'Dashboard' })">
 				{{ t('dossiq', 'Dashboard') }}
 			</NcButton>
 		</div>
@@ -40,7 +99,7 @@
 
 		<div v-else-if="error" class="workflow-board__error">
 			<p>{{ error }}</p>
-			<NcButton type="tertiary" @click="fetchData">
+			<NcButton variant="tertiary" @click="fetchData">
 				{{ t('dossiq', 'Retry') }}
 			</NcButton>
 		</div>
@@ -74,13 +133,14 @@
 					<NcButton @click="openBulkDialog">
 						{{ t('dossiq', 'Change status…') }}
 					</NcButton>
-					<NcButton type="tertiary" @click="clearSelectionHandler">
+					<NcButton variant="tertiary" @click="clearSelectionHandler">
 						{{ t('dossiq', 'Cancel') }}
 					</NcButton>
 				</div>
 			</div>
 
 			<div
+				v-drag-to-scroll
 				class="workflow-board__columns"
 				tabindex="0"
 				role="region"
@@ -91,17 +151,38 @@
 					:statusType="col"
 					:cases="casesByStatus[col.id] || []"
 					:caseTypeMap="caseTypeMap"
-					:allColumns="columns"
 					:loading="false"
 					:selectedCaseIds="selection.caseIds.map((id) => String(id))"
 					:selectionColumnId="selection.columnId"
-					@drop="onDrop"
-					@move="onDrop"
+					:dropState="dropStateFor(col.id)"
+					:canDrop="canDropInto"
+					@update:cases="(list) => (casesByStatus[col.id] = list)"
+					@cardDropped="onCardDropped"
 					@clickCase="goToCase"
+					@contextMenu="onCardContextMenu"
+					@requestMove="openMoveDialog"
 					@dragstart="onDragStart"
+					@dragend="onDragEnd"
 					@toggleSelect="onToggleSelect" />
 			</div>
 		</template>
+
+		<!-- One menu for the board, not one per card: it is positioned at the
+			cursor and only ever describes the card that was right-clicked. -->
+		<CnContextMenu
+			v-model:open="contextMenuOpen"
+			:targetItem="contextMenuCaseId"
+			:actions="contextMenuActions"
+			@close="closeContextMenu" />
+
+		<MoveCaseDialog
+			v-if="moveDialogOpen"
+			:caseTitle="moveDialogCaseTitle"
+			:targets="moveTargets"
+			:loading="moveTargetsLoading"
+			:error="moveTargetsError"
+			@update:open="moveDialogOpen = $event"
+			@confirm="onMoveConfirmed" />
 
 		<BulkTransitionDialog
 			v-if="showBulkDialog"
@@ -112,11 +193,15 @@
 </template>
 
 <script>
+import { CnContextMenu, useContextMenu } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
-import { showError } from '@nextcloud/dialogs'
+import { showError, showWarning } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcPopover } from '@nextcloud/vue'
+import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
+import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
+import MoveCaseDialog from '../../dialogs/MoveCaseDialog.vue'
 import BoardColumn from './BoardColumn.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
@@ -132,15 +217,44 @@ import {
 	transitionBlockReason,
 	transitionIsBlocked,
 } from '../../utils/caseLifecycleHelpers.js'
+import { dragToScroll } from '../../utils/dragToScroll.js'
+import { capacityRefusal } from '../../utils/statusCapacity.js'
 import { mergeColumnColour } from '../../utils/statusColour.js'
+import { failedActionsWarning } from '../../utils/transitionOutcome.js'
+import {
+	dropVerdict,
+	moveTargetsFromTransitions,
+} from '../../utils/workflowBoardHelpers.js'
 
 export default {
 	name: 'WorkflowBoard',
+	directives: { dragToScroll },
 	components: {
-		NcButton,
-		NcLoadingIcon,
 		BoardColumn,
 		BulkTransitionDialog,
+		CnContextMenu,
+		HelpCircleOutline,
+		MoveCaseDialog,
+		NcButton,
+		NcLoadingIcon,
+		NcPopover,
+	},
+
+	/**
+	 * The context-menu seam the board's card menu is driven from.
+	 *
+	 * @return {object} The menu's reactive state and its open/close handles.
+	 *
+	 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	 */
+	setup() {
+		const ctx = useContextMenu()
+		return {
+			contextMenuOpen: ctx.isOpen,
+			contextMenuCaseId: ctx.targetItem,
+			openContextMenu: ctx.open,
+			closeContextMenu: ctx.close,
+		}
 	},
 
 	data() {
@@ -164,6 +278,11 @@ export default {
 			/** Id of the case currently being dragged. */
 			draggedCaseId: null,
 			/**
+			 * The card in the air: `{ caseId, caseType, fromColumn, offered }`.
+			 * `offered` is the engine's answer once it lands, null until then.
+			 */
+			drag: null,
+			/**
 			 * Column-scoped bulk-selection state: `{ columnId, caseIds }`.
 			 * Selecting a case in a different column resets the selection
 			 * (case-bulk-status-transition).
@@ -171,6 +290,12 @@ export default {
 			selection: emptySelection(),
 			/** Whether the bulk-transition dialog is open. */
 			showBulkDialog: false,
+			/** The single-case move dialog: which case, and what it may reach. */
+			moveDialogOpen: false,
+			moveDialogCaseId: null,
+			moveTargets: [],
+			moveTargetsLoading: false,
+			moveTargetsError: '',
 			/**
 			 * Live-updates handle for the or-collection-{register}-{schema}
 			 * subscription on the `case` type (nc-vue liveUpdatesPlugin,
@@ -191,8 +316,45 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The object store the board reads its cases and status types from.
+		 *
+		 * @return {object} The store instance.
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
 		objectStore() {
 			return useObjectStore()
+		},
+
+		/**
+		 * The right-click menu. One entry: moving is the only thing the card
+		 * could not already do by clicking or dragging it.
+		 *
+		 * @return {Array<object>} CnContextMenu action definitions.
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		contextMenuActions() {
+			return [
+				{
+					label: this.t('dossiq', 'Move…'),
+					icon: ArrowRightBoldCircleOutline,
+					handler: (caseId) => this.openMoveDialog(caseId),
+				},
+			]
+		},
+
+		/**
+		 * The title of the case the move dialog is about.
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		moveDialogCaseTitle() {
+			const found = this.cardById(this.moveDialogCaseId)
+			return found?.title || found?.identifier || ''
 		},
 	},
 
@@ -395,12 +557,25 @@ export default {
 							existing.colour,
 							st.colour,
 						)
+						// 🔴 A MERGED COLUMN SHOWS NO LIMIT. A capacity is
+						// authored on ONE status type, and this column holds
+						// the cases of every type whose status shares this
+						// name. One number over two different limits would be
+						// wrong in both directions, and a number that read
+						// "9 of 12" while the engine refused at 4 is worse
+						// than no number at all. The refusal still bites per
+						// case, on the concrete status the case is moving to.
+						existing.capacity = null
+						existing.merged = true
 					} else {
 						colByName.set(name, {
 							id: name,
 							name,
 							order,
 							colour: mergeColumnColour(null, st.colour),
+							capacity:
+								Number(st.capacity) > 0 ? Number(st.capacity) : null,
+							merged: false,
 						})
 					}
 				}
@@ -434,13 +609,169 @@ export default {
 		},
 
 		/**
-		 * Track the in-flight card id.
+		 * A card left its column: remember which, and ask the engine what it
+		 * may reach, so a column it cannot reach can refuse it while it is in
+		 * the air. Until the answer lands every column accepts and the drop
+		 * path decides after the fact, as it did before the drag could ask.
 		 *
 		 * @param {string} caseId The dragged case id
-		 * @return {void}
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 		 */
-		onDragStart(caseId) {
+		async onDragStart(caseId) {
 			this.draggedCaseId = caseId
+			const caseObj = this.cardById(caseId)
+			this.drag = {
+				caseId: String(caseId),
+				caseType: caseObj?.caseType ?? '',
+				fromColumn: this.columnOf(caseId),
+				offered: null,
+			}
+			try {
+				const offered = await this.offeredTransitions(caseId)
+				// A later drag may have started while this answer travelled.
+				if (
+					this.drag?.caseId === String(caseId)
+					&& this.drag.offered === null
+				) {
+					this.drag.offered = offered
+				}
+			} catch {
+				// Unknown stays unknown: the drop path reports a failed read.
+			}
+		},
+
+		/**
+		 * The card was let go, wherever it landed.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		onDragEnd() {
+			this.drag = null
+			this.draggedCaseId = null
+		},
+
+		/**
+		 * Sortable asks, on every hover, whether the card may enter a column.
+		 *
+		 * @param {string} toColumn The hovered column's name
+		 * @return {boolean} False refuses the hover
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		canDropInto(toColumn) {
+			if (!this.drag) {
+				return true
+			}
+			return this.verdictFor(toColumn).allowed !== false
+		},
+
+		/**
+		 * What a column shows about the card in the air. Null for the column
+		 * it came from, and when nothing is being dragged.
+		 *
+		 * @param {string} columnId The column's name
+		 * @return {object|null} A `dropVerdict`, or null
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		dropStateFor(columnId) {
+			if (!this.drag || String(columnId) === String(this.drag.fromColumn)) {
+				return null
+			}
+			return this.verdictFor(columnId)
+		},
+
+		/**
+		 * @param {string} toColumn The column's name
+		 * @return {{allowed: boolean|null, blocked: boolean, reason: string}} The verdict
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		verdictFor(toColumn) {
+			return dropVerdict({
+				fromColumn: this.drag.fromColumn,
+				toColumn,
+				caseType: this.drag.caseType,
+				offered: this.drag.offered,
+				statusIdByTypeAndName: this.statusIdByTypeAndName,
+			})
+		},
+
+		/**
+		 * The column a card currently sits in.
+		 *
+		 * @param {string} caseId The case id
+		 * @return {string|null} The column name, or null when the board does not hold it
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		columnOf(caseId) {
+			for (const [colName, list] of Object.entries(this.casesByStatus)) {
+				if (list.some((c) => String(c.id) === String(caseId))) {
+					return colName
+				}
+			}
+			return null
+		},
+
+		/**
+		 * A card was dropped in another column. Sortable's wrapper has already
+		 * moved it between the two lists, so this is the optimistic half of
+		 * `onDrop` done for us; what is left is making the move real.
+		 *
+		 * @param {object} drop The drop
+		 * @param {string} drop.caseId The dropped case id
+		 * @param {string} drop.fromColumn The column it came from
+		 * @param {string} drop.toColumn The column it landed in
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		async onCardDropped({ caseId, fromColumn, toColumn }) {
+			// Read the offer before `end` clears the drag; the list updates land
+			// target first, source second, so wait for both before reading them.
+			const offered = this.drag?.offered ?? null
+			await this.$nextTick()
+
+			const caseObj = this.cardById(caseId)
+			if (!caseObj || !fromColumn || String(fromColumn) === String(toColumn)) {
+				return
+			}
+
+			const targetStatusId =
+				this.statusIdByTypeAndName[`${caseObj.caseType}::${toColumn}`]
+			if (!targetStatusId) {
+				this.refuseMove(caseId, caseObj, fromColumn, toColumn)
+				showError(
+					this.t(
+						'dossiq',
+						"That status is not part of this case's workflow.",
+					),
+				)
+				return
+			}
+
+			// The card sits in its new column with its old status; give it the
+			// one a successful move writes, as `onDrop`'s optimistic card has.
+			this.casesByStatus[toColumn] = (this.casesByStatus[toColumn] || []).map(
+				(c) =>
+					String(c.id) === String(caseId)
+						? { ...c, status: targetStatusId }
+						: c,
+			)
+
+			await this.moveCase(
+				caseId,
+				caseObj,
+				fromColumn,
+				toColumn,
+				targetStatusId,
+				offered,
+			)
 		},
 
 		/**
@@ -474,6 +805,44 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+		 */
+		/**
+		 * Why a card may not land on this column, when it may not.
+		 *
+		 * The decision lives in `src/utils/statusCapacity.js`: the board reads
+		 * the CONCRETE target status rather than the merged column, because a
+		 * column holds every status type sharing a name and each carries its
+		 * own limit.
+		 *
+		 * @param {string} columnName The merged column's name.
+		 * @param {string} targetStatusId The concrete status the case moves to.
+		 * @return {string} The refusal, or '' when the move may go ahead.
+		 *
+		 * @spec openspec/changes/status-capacity-limit/specs/status-transition-engine/spec.md
+		 */
+		capacityRefusal(columnName, targetStatusId) {
+			const status = this.statusById[targetStatusId]
+			if (!status) {
+				return ''
+			}
+
+			return capacityRefusal(
+				status,
+				this.casesByStatus[columnName] || [],
+				(text, params) => this.t('dossiq', text, params),
+			)
+		},
+
+		/**
+		 * Move a card to another column, through the engine and nowhere else.
+		 *
+		 * @param {string} caseId The dropped case id.
+		 * @param {string} newColumn The target column's name (merged status name).
+		 * @return {Promise<void>} Nothing.
+		 *
+		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 * @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
 		 */
 		async onDrop(caseId, newColumn) {
 			this.draggedCaseId = null
@@ -509,6 +878,18 @@ export default {
 				return
 			}
 
+			// 🔴 REFUSED BEFORE THE CARD LANDS, not after the round trip. The
+			// engine refuses this too and its answer is the authority; this is
+			// the affordance, so a handler does not watch a card slide back.
+			// It counts the cases in the column carrying the CONCRETE target
+			// status, never the column's whole length: a merged column holds
+			// several status types and each has its own limit.
+			const refusal = this.capacityRefusal(newColumn, targetStatusId)
+			if (refusal !== '') {
+				showError(refusal)
+				return
+			}
+
 			// Optimistic move.
 			const fromList = this.casesByStatus[fromColumn].filter(
 				(c) => String(c.id) !== String(caseId),
@@ -520,8 +901,39 @@ export default {
 				movedCase,
 			]
 
+			await this.moveCase(
+				caseId,
+				caseObj,
+				fromColumn,
+				newColumn,
+				targetStatusId,
+			)
+		},
+
+		/**
+		 * Make a move the board has already drawn real: ask the engine for the
+		 * transition ending on the dropped column and post it, or put the card
+		 * back and say why. One write path for the drag and the dialog.
+		 *
+		 * @param {string} caseId The case id
+		 * @param {object} caseObj The card as it stood before the move
+		 * @param {string} fromColumn The column it came from
+		 * @param {string} newColumn The column it was drawn in
+		 * @param {string} targetStatusId The status id that column means in the case's own workflow
+		 * @param {Array<object>|null} offeredAlready The offer read at drag start, or null to read it now
+		 * @return {Promise<void>}
+		 */
+		async moveCase(
+			caseId,
+			caseObj,
+			fromColumn,
+			newColumn,
+			targetStatusId,
+			offeredAlready = null,
+		) {
 			try {
-				const offered = await this.offeredTransitions(caseId)
+				const offered =
+					offeredAlready ?? (await this.offeredTransitions(caseId))
 				const transition = findTransitionToStatus(offered, targetStatusId)
 
 				// Nothing on offer ends here. Either the workflow has no such
@@ -555,12 +967,21 @@ export default {
 					return
 				}
 
-				await axios.post(
+				const { data } = await axios.post(
 					generateUrl(
 						`/apps/dossiq/api/case/${encodeURIComponent(caseId)}/transition`,
 					),
 					buildTransitionPayload({ transitionId: transition.id }),
 				)
+
+				// The move happened, so the card stays where it was dropped. An
+				// action that failed after it is said out loud: a card in its new
+				// column with no checklist behind it looks the same as a phase
+				// that asks for no work.
+				const warning = failedActionsWarning(data)
+				if (warning !== '') {
+					showWarning(warning)
+				}
 
 				// The engine writes more than the status: a statusRecord, and
 				// whatever actions the transition dispatches. Re-read the board
@@ -578,6 +999,112 @@ export default {
 					),
 				)
 			}
+		},
+
+		/**
+		 * One card by id, wherever it currently sits.
+		 *
+		 * @param {string} caseId The case id
+		 * @return {object|null} The card, or null when the board does not hold it
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		cardById(caseId) {
+			if (caseId === null || caseId === undefined) {
+				return null
+			}
+			for (const list of Object.values(this.casesByStatus)) {
+				const found = list.find((c) => String(c.id) === String(caseId))
+				if (found) {
+					return found
+				}
+			}
+			return null
+		},
+
+		/**
+		 * Open the right-click menu over a card.
+		 *
+		 * @param {string} caseId The right-clicked case
+		 * @param {MouseEvent} event The native contextmenu event, for the position
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		onCardContextMenu(caseId, event) {
+			this.openContextMenu({ item: caseId, event })
+		},
+
+		/**
+		 * Open the move dialog and fill it with what the engine offers.
+		 *
+		 * The offer is read HERE rather than in the dialog because it is the
+		 * same question the drop path asks, of the same endpoint: the board
+		 * owns the move, and a dialog that fetched its own answer would be a
+		 * second place for the two to drift apart.
+		 *
+		 * A failure is shown in the dialog, not as an empty list. "Nowhere to
+		 * go" and "we could not find out" are different answers, and the
+		 * second one is the handler's cue to try again.
+		 *
+		 * @param {string} caseId The case to move
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
+		 */
+		async openMoveDialog(caseId) {
+			this.closeContextMenu()
+			this.moveDialogCaseId = caseId
+			this.moveTargets = []
+			this.moveTargetsError = ''
+			this.moveTargetsLoading = true
+			this.moveDialogOpen = true
+
+			try {
+				const offered = await this.offeredTransitions(caseId)
+				// Guard against a second open racing the first: only the case
+				// the dialog is still about may fill it.
+				if (String(this.moveDialogCaseId) !== String(caseId)) {
+					return
+				}
+				this.moveTargets = moveTargetsFromTransitions(
+					offered,
+					this.statusById,
+				)
+			} catch (err) {
+				// Reported in the dialog rather than the console: the handler
+				// is standing in front of it waiting for a list, and an empty
+				// one would read as "this case cannot move".
+				this.moveTargetsError = this.t(
+					'dossiq',
+					'Could not read which statuses this case can move to: {reason}',
+					{ reason: err?.message || this.t('dossiq', 'unknown error') },
+				)
+			} finally {
+				this.moveTargetsLoading = false
+			}
+		},
+
+		/**
+		 * Move the case the dialog was about, through the drop path.
+		 *
+		 * `onDrop` takes a column name and resolves the status id inside the
+		 * case's own workflow, so the dialog hands over the same argument a
+		 * drop does and both gestures are one write path — role check, guard
+		 * evaluation, optimistic move and revert included.
+		 *
+		 * @param {string} columnName The chosen status name
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		onMoveConfirmed(columnName) {
+			const caseId = this.moveDialogCaseId
+			this.moveDialogCaseId = null
+			if (caseId === null || columnName === '') {
+				return
+			}
+			this.onDrop(caseId, columnName)
 		},
 
 		/**
@@ -692,11 +1219,23 @@ export default {
 
 <style scoped>
 .workflow-board {
+	/* The page is the board: fill NcAppContent (height 100% of the body) and
+	   hand every row under the header to the columns. */
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	box-sizing: border-box;
 	padding: 16px;
+}
+
+/* The pointer crosses headers and counts on its way; none of it is a selection. */
+.workflow-board--dragging {
+	user-select: none;
 }
 
 .workflow-board__header {
 	display: flex;
+	flex: 0 0 auto;
 	justify-content: space-between;
 	align-items: flex-start;
 	margin-bottom: 16px;
@@ -708,21 +1247,48 @@ export default {
 }
 
 .workflow-board__subtitle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0 8px;
 	margin: 4px 0 0;
 	color: var(--color-text-maxcontrast);
 	font-size: 13px;
 }
 
+.workflow-board__help {
+	margin: 0;
+	padding: 8px 12px 8px 28px;
+	max-width: 320px;
+	list-style: disc;
+}
+
+.workflow-board__help li + li {
+	margin-top: 4px;
+}
+
 .workflow-board__columns {
 	display: flex;
+	flex: 1;
+	/* Without this a flex item refuses to shrink below its content, and the
+	   columns would grow the page instead of scrolling inside it. */
+	min-height: 0;
 	gap: 12px;
 	overflow-x: auto;
-	align-items: flex-start;
+	align-items: stretch;
 	padding-bottom: 8px;
+	/* Empty space can be grabbed to pan the row (v-drag-to-scroll). */
+	cursor: grab;
+}
+
+.workflow-board__columns.is-panning {
+	cursor: grabbing;
+	user-select: none;
 }
 
 .workflow-board__bulk-bar {
 	display: flex;
+	flex: 0 0 auto;
 	flex-wrap: wrap;
 	align-items: center;
 	justify-content: space-between;

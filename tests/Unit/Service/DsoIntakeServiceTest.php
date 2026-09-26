@@ -274,7 +274,6 @@ class DsoIntakeServiceTest extends TestCase {
 					'title' => 'Omgevingsvergunning: Bouwactiviteit, Kapactiviteit',
 					'description' => 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket (DSO: DSO-2026-0042)',
 					'startDate' => date('Y-m-d'),
-					'priority' => 'normal',
 				],
 				'extend' => [],
 				'register' => 'dossiq',
@@ -363,7 +362,6 @@ class DsoIntakeServiceTest extends TestCase {
 				'title' => 'Omgevingsvergunning',
 				'description' => 'Vergunningaanvraag ontvangen via DSO/Omgevingsloket',
 				'startDate' => date('Y-m-d'),
-				'priority' => 'normal',
 			],
 			$recorder->calls[0]['object']
 		);

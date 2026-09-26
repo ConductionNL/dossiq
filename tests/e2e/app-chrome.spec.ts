@@ -39,7 +39,7 @@ const APP_BASE = '/index.php/apps/dossiq'
  */
 const COMPARISON = JSON.parse(
 	fs.readFileSync(
-		path.join(__dirname, '..', '..', 'src', 'data', 'capabilityComparison.json'),
+		path.join(__dirname, '..', '..', 'openspec', 'parity', 'capabilities.json'),
 		'utf8',
 	),
 )
@@ -51,6 +51,14 @@ const RIVALS: string[] = COMPARISON.systems
 
 /** The rows a later reading round added, which no competitor was read against. */
 const ADDED_ROWS: any[] = COMPARISON.capabilities.filter((row: any) => row.addedOn)
+
+/**
+ * The proposals: questions raised against one product, not yet read against the
+ * rest. A second list in the data file, rendered in a second table under its own
+ * heading, and counted in no tally on the page. Read from the file for the same
+ * reason the rows are: the numbers below must be the file's, not a copy of them.
+ */
+const PENDING: any[] = COMPARISON.pending ?? []
 
 /**
  * Format an ISO date the way the page formats it.
@@ -260,8 +268,11 @@ test.describe('app chrome (ADR-114)', () => {
 	//       -> "the panel must say when the most recent rows were added"
 	//     addedRowsText(): `others: comparison.systems.length - 2`
 	//       -> "the panel must say every competitor column is unrated on the added rows"
-	//     capabilityComparison.json row 1.14: `"opencase": "yes"`
+	//     openspec/parity/capabilities.json row 2.23: `"opencase": "yes"`
 	//       -> "an added row must read Unknown for every competitor, never a guess"
+	//   the-panel-names-the-proposals
+	//     pendingText(): `count: pending.length + 1`
+	//       -> "the panel must say how many capabilities are proposed and not yet rated"
 	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
@@ -284,7 +295,7 @@ test.describe('app chrome (ADR-114)', () => {
 		// wizard does open. global-setup.ts does not settle either one.
 		await dismissSupportDialog(page)
 
-		await page.getByRole('button', { name: 'How dossiq compares' }).click()
+		await page.getByRole('tab', { name: 'How dossiq compares' }).click()
 
 		const comparison = page.locator('.features-roadmap__comparison')
 		await expect(comparison).toBeVisible({ timeout: 15_000 })
@@ -431,12 +442,35 @@ test.describe('app chrome (ADR-114)', () => {
 			'an added row must read Unknown for every competitor, never a guess',
 		).toEqual([])
 
+		// AND the proposals are named as proposals, and kept out of every
+		// total. This is the half a reader can misread most expensively: four
+		// of a proposal's five columns are empty and the fifth is ours, so a
+		// proposal rendered like a row would publish our own rating as though
+		// three other teams had been measured beside it.
+		await expect(
+			comparison,
+			'the panel must say how many capabilities are proposed and not yet rated',
+		).toContainText(
+			`Another ${PENDING.length} capabilities are proposed and not yet rated`,
+		)
+		await expect(
+			comparison,
+			'the panel must say the proposals are in no total',
+		).toContainText('they are in no total on this page')
+		await expect(
+			comparison,
+			'the totals must count the rows, not the rows plus the proposals',
+		).toContainText(
+			`Totals over all ${COMPARISON.capabilities.length} capabilities`,
+		)
+
 		// Seventeen areas, collapsed. Thirteen came from the audit and round 4
 		// added four more, for capabilities that had nowhere to go: a case
 		// plan of services, money on the case, offline field work, and one
-		// instance serving several organisations. The rows live behind the
-		// disclosure so the landing view stays readable; if a change flattens
-		// 329 rows onto the page, this count is what notices.
+		// instance serving several organisations. Those four hold proposals
+		// and no rows. The rows live behind the disclosure so the landing view
+		// stays readable; if a change flattens every row onto the page, this
+		// count is what notices.
 		const areas = comparison.locator('.features-roadmap__area')
 		await expect(areas).toHaveCount(17)
 
@@ -453,12 +487,23 @@ test.describe('app chrome (ADR-114)', () => {
 			const rows = COMPARISON.capabilities.filter(
 				(row: any) => row.area === area.key,
 			)
+			const pending = PENDING.filter((row: any) => row.area === area.key)
 			const count = (rating: string) =>
 				rows.filter((row: any) => row.dossiq === rating).length
+			// `areaSummary` states three shapes, and the numbers differ in
+			// each: an area with rows and no proposals, an area with both, and
+			// an area that is proposals only, which is what 14 to 17 are.
+			let numbers = [rows.length, count('yes'), count('partial'), count('no')]
+			if (rows.length === 0) {
+				numbers = [pending.length]
+			} else if (pending.length > 0) {
+				numbers = [...numbers, pending.length]
+			}
 			return {
 				key: area.key,
 				total: rows.length,
-				numbers: [rows.length, count('yes'), count('partial'), count('no')],
+				pending: pending.length,
+				numbers,
 			}
 		})
 		await expect(areas).toHaveCount(expected.length)
@@ -481,12 +526,24 @@ test.describe('app chrome (ADR-114)', () => {
 			).toEqual(area.numbers)
 		}
 
-		// Opening an area is what shows its rows, and all of them.
+		// Opening an area is what shows its rows, and all of them. An area with
+		// proposals renders two tables, so the count is both lists: an
+		// assertion on the rows alone would pass while the proposals table
+		// silently disappeared.
 		const first = areas.first()
 		await first.locator('summary').click()
 		await expect(first).toHaveAttribute('open', '')
-		await expect(first.locator('tbody tr')).toHaveCount(expected[0].total)
+		await expect(first.locator('tbody tr')).toHaveCount(
+			expected[0].total + expected[0].pending,
+		)
 		await expect(first.locator('tbody tr').first()).toBeVisible()
+		if (expected[0].pending > 0) {
+			await expect(
+				first.locator('.features-roadmap__row--pending'),
+				'the proposals of the first area must render, marked as proposals',
+			).toHaveCount(expected[0].pending)
+			await expect(first).toContainText('Proposed, not yet rated')
+		}
 	})
 
 	test('the settings foldout carries Personal settings, Admin settings and Flows', async ({

@@ -125,11 +125,16 @@ class LogBagAdapter implements BagAdapterInterface {
 			dormant: true,
 			extras: [
 				'reason' => 'no-outbound-connector-bound',
-				'note' => 'Set `integration.bag.mode` to `test` or `live` (plus `integration.bag.baseUrl` / '
+				// TWO WAYS OUT, AND THE FREE ONE IS NAMED FIRST. This note was
+				// the only advice a dormant instance got, and it named only the
+				// Kadaster key, so the answer to "why is no address checked"
+				// was "buy a key" on every instance that had not.
+				'note' => 'Set `integration.bag.source` to `pdok` for free lookups against the open PDOK BAG '
+					. 'mirror, which needs no key. For the authoritative Kadaster register instead, set '
+					. '`integration.bag.mode` to `test` or `live` plus `integration.bag.baseUrl` / '
 					. '`integration.bag.apiKey` — request a free acceptatie key via '
-					. 'formulieren.kadaster.nl/aanvraag_bag_api_individuele_bevragingen_test_api_key) to enable '
-					. 'real lookups. Application::register() binds BagApiAdapter automatically once the mode '
-					. 'resolves to a non-log tier.',
+					. 'formulieren.kadaster.nl/aanvraag_bag_api_individuele_bevragingen_test_api_key. '
+					. 'Application::register() binds the right adapter for either; no code change needed.',
 			],
 		);
 	}//end deferred()

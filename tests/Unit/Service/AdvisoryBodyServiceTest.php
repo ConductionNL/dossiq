@@ -168,9 +168,12 @@ class AdvisoryBodyServiceTest extends TestCase {
 
 	// testIssueSecureTokenReturns64CharHexString was removed with
 	// AdvisoryBodyService::issueSecureToken(). Nothing minted a consultation
-	// access token, so the public consultation surface it feeds
-	// (/api/public/consultations/{token}) could never be entered; adding a
-	// minter with no route and no guard in front of it was not the remedy.
+	// access token, so the surface it fed could never be entered, and adding
+	// a minter with no route and no guard in front of it was not the remedy.
+	// case-sharing-mints-access-links deleted that surface and replaced it:
+	// an advisory body now receives an OpenRegister access link declaring
+	// `comment`, minted by a route and guarded. See
+	// ExternalConsultationLinkServiceTest.
 
 	/**
 	 * findAll returns empty array when ObjectService is unavailable.

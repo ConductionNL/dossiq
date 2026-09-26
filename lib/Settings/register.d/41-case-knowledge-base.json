@@ -1,0 +1,17 @@
+{
+  "_note": "knowledge-base-on-the-case, row 11.26. A handler who meets an unusual bezwaar has nowhere to read how this municipality handles it: the work instruction is a Word file on a share, or in the head of the colleague who is on holiday. dossiq builds no wiki. Nextcloud Collectives is one, its pages are scoped to a team, which is per-role visibility, and OpenRegister already ships `collectives` and `xwiki` as integration leaves. So `case.linkedTypes` gains both, in dossiq_register.json where that block lives, and the case type points at the page that explains its own kind of case. The reference is a page, NOT the text: dossiq stores no article body anywhere, so a person who may not read a page in Collectives cannot read it through a case either, and there is no second copy to go stale. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "knowledgeBasePage": {
+            "type": "string",
+            "title": "Work instruction",
+            "description": "The Collectives page that explains how this municipality handles this kind of case. Give the page's URL as it appears in Collectives. Leave it empty and a case of this type shows only the pages somebody linked to that case. Who may read it is the collective's own business: a page lives in a team, and a handler whose role group is not in that team does not see it here either. NO `format` ON PURPOSE: adding a format to a property OpenRegister already stores is a breaking change for every row that does not match it, and a work instruction pasted as a page path rather than a full URL is a value a municipality will type.",
+            "maxLength": 2048
+          }
+        }
+      }
+    }
+  }
+}

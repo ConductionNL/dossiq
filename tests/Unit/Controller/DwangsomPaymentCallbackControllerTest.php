@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\DwangsomUitbetalingService;
 use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -41,8 +42,11 @@ use Psr\Log\LoggerInterface;
  * Signature-enforcement tests for DwangsomPaymentCallbackController.
  *
  * @covers \OCA\Dossiq\Controller\DwangsomPaymentCallbackController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class DwangsomPaymentCallbackControllerTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The mocked request.
@@ -96,6 +100,7 @@ class DwangsomPaymentCallbackControllerTest extends TestCase {
 			appName: 'dossiq',
 			request: $this->request,
 			service: $this->service,
+			dates: $this->caseDates(),
 			appConfig: $this->appConfig,
 			logger: $this->logger,
 		);

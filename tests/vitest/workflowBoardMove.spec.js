@@ -31,13 +31,14 @@ import { flushPromises, shallowMount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { h } from 'vue'
 
-const { showError, saveObject, fetchCollection } = vi.hoisted(() => ({
+const { showError, showWarning, saveObject, fetchCollection } = vi.hoisted(() => ({
 	showError: vi.fn(),
+	showWarning: vi.fn(),
 	saveObject: vi.fn(),
 	fetchCollection: vi.fn(),
 }))
 
-vi.mock('@nextcloud/dialogs', () => ({ showError }))
+vi.mock('@nextcloud/dialogs', () => ({ showError, showWarning }))
 
 // The board's own children (BoardColumn -> CaseCard) are stubbed at mount,
 // but their MODULES are still evaluated, so every root `@nextcloud/vue`
@@ -47,12 +48,27 @@ vi.mock('@nextcloud/dialogs', () => ({ showError }))
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: { name: 'NcButton', render: () => h('button') },
 	NcLoadingIcon: { name: 'NcLoadingIcon', render: () => h('span') },
-	NcActions: { name: 'NcActions', render: () => h('div') },
-	NcActionButton: { name: 'NcActionButton', render: () => h('button') },
+	// The help affordance beside the subtitle. Renders its trigger and its
+	// body inline, so the gestures it names are in the page text.
+	NcPopover: {
+		name: 'NcPopover',
+		render() {
+			return h('div', [
+				this.$slots.trigger ? this.$slots.trigger() : null,
+				this.$slots.default ? this.$slots.default() : null,
+			])
+		},
+	},
 	NcCheckboxRadioSwitch: {
 		name: 'NcCheckboxRadioSwitch',
 		render: () => h('input'),
 	},
+	// MoveCaseDialog's, reached because the board imports it. NcActions and
+	// NcActionButton used to be here for the card's own 200-item move menu,
+	// which the context menu replaced.
+	NcDialog: { name: 'NcDialog', render: () => h('div') },
+	NcNoteCard: { name: 'NcNoteCard', render: () => h('div') },
+	NcSelect: { name: 'NcSelect', render: () => h('div') },
 }))
 
 // One store object for every call: the board reads `objectStore` from a
@@ -182,6 +198,40 @@ describe('moving a case on the workflow board', () => {
 		expect(fromBoard[0]).toBe(fromCasePage[0])
 		expect(fromBoard[1]).toEqual({ transitionId: 't1' })
 		expect(fromBoard[1]).toEqual(fromCasePage[1])
+	})
+
+	// @spec openspec/changes/transition-reports-failed-actions/specs/status-transition-engine/spec.md
+	it('keeps the card moved and warns when an action did not run after the move', async () => {
+		const wrapper = await boardWithOffer([OFFERED])
+		axios.post.mockResolvedValue({
+			data: {
+				status: 'partial',
+				failedActions: [{ type: 'createTask', error: 'no_actor' }],
+			},
+		})
+		// The re-read after the move must not overwrite the optimistic card
+		// before the assertion reads it.
+		wrapper.vm.fetchData = vi.fn(async () => {})
+
+		await wrapper.vm.onDrop('case-1', 'In behandeling')
+
+		expect(saveObject).not.toHaveBeenCalled()
+		expect(showError).not.toHaveBeenCalled()
+		expect(showWarning).toHaveBeenCalledWith(
+			'You moved the case, but 1 automatic action did not run. Its status record shows which.',
+		)
+		expect(idsIn(wrapper, 'In behandeling')).toEqual(['case-1'])
+	})
+
+	it('does not warn when every action ran', async () => {
+		const wrapper = await boardWithOffer([OFFERED])
+		axios.post.mockResolvedValue({ data: { status: 'ok', failedActions: [] } })
+		wrapper.vm.fetchData = vi.fn(async () => {})
+
+		await wrapper.vm.onDrop('case-1', 'In behandeling')
+
+		expect(showWarning).not.toHaveBeenCalled()
+		expect(idsIn(wrapper, 'In behandeling')).toEqual(['case-1'])
 	})
 
 	it('puts the card back and names the reason when the engine refuses the move', async () => {

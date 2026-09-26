@@ -64,54 +64,150 @@ function action(id) {
 	return caseDetail().config.headerActions.find((entry) => entry.id === id)
 }
 
-describe('CaseDetail: the transition strip and the stepper', () => {
-	for (const [id, slot, component] of [
-		['case-transitions', 'widget-case-transitions', 'CaseTransitionsWidget'],
-		['case-steps', 'widget-case-steps', 'CaseStepsWidget'],
-	]) {
-		it(`declares ${id} as a custom widget`, () => {
-			expect(widget(id)).toBeTruthy()
-			expect(widget(id).type).toBe('custom')
-		})
-
-		it(`places ${id} in exactly one layout cell`, () => {
-			expect(cells(id)).toHaveLength(1)
-		})
-
-		it(`binds ${id} to ${component} through the page slot`, () => {
-			expect(caseDetail().slots[slot]).toBe(component)
-		})
-
-		it(`registers ${component} as a widget`, () => {
-			expect(registrySource).toContain(`${component}: {`)
-			expect(registrySource).toContain(`component: ${component},`)
-		})
-	}
-
-	it('puts the transition strip straight under the identity row', () => {
-		// The identity row leads the page full width, as KPI cards, and the
-		// strip sits directly under it.
-		//
-		// It has been both ways. The row was once a full-width band, moved into
-		// the right rail as a card because a line of three to five short facts
-		// left more than half of twelve columns empty, and moved back out once
-		// each fact became a card that divides the row evenly. What survived
-		// both moves is the reading order: a handler sees WHICH case they are
-		// on before WHAT they may do to it.
-		const header = cells('case-header')[0]
-		const strip = cells('case-transitions')[0]
-		expect(header.gridY).toBe(0)
-		expect(header.gridX).toBe(0)
-		expect(header.gridWidth).toBe(12)
-		// Directly under, with no gutter row between them.
-		expect(strip.gridY).toBe(header.gridY + header.gridHeight)
-		expect(strip.gridX).toBe(0)
+describe('CaseDetail: the timeline widget IS the transition surface', () => {
+	it('declares case-stages as the library stages widget, configured', () => {
+		// `stages` is a LIBRARY key, so it resolves through the dashboard widget
+		// catalog and needs no registry entry and no page slot. A typo here does
+		// not error: an unknown type falls back to the `widget-<id>` slot, the
+		// page declares none, and the cell renders empty in silence.
+		const entry = widget('case-stages')
+		expect(entry).toBeTruthy()
+		expect(entry.type).toBe('stages')
+		expect(caseDetail().slots['widget-case-stages']).toBeUndefined()
 	})
 
-	it('gives the stepper the cell the milestone tile had', () => {
-		const steps = cells('case-steps')[0]
-		expect(steps.gridX).toBe(8)
-		expect(steps.gridWidth).toBe(4)
+	it('reads the case type blueprint, not the type own status rows', () => {
+		// A case type that derives its lifecycle from a parent carries no
+		// statusType rows of its own, so `statusType where caseType = X` said
+		// "no statuses yet" about a type that plainly has four. /blueprint
+		// merges the chain server-side.
+		const source = widget('case-stages').content.stagesEndpoint
+		expect(source.url).toBe(
+			'/apps/dossiq/api/case-types/@object.caseType/blueprint',
+		)
+		expect(source.path).toBe('statusTypes')
+		expect(source.orderField).toBe('order')
+		expect(source.finalField).toBe('isFinal')
+		expect(source.labelField).toBe('name')
+	})
+
+	it('moves the case through the lifecycle, never by writing the field', () => {
+		// `{ kind: 'field' }` writes `currentField` straight onto the record
+		// with nothing validating the move: whatever the timeline offers is
+		// what happens. `lifecycle` asks OpenRegister what is reachable and
+		// lets it re-validate the write, which is dossiq's own guarded engine
+		// answering through CaseActionProvider.
+		const content = widget('case-stages').content
+		expect(content.transition).toEqual({ kind: 'lifecycle' })
+		expect(content.currentField).toBe('status')
+		expect(content.unreachableReason).toBeTruthy()
+	})
+
+	it('places the timeline in one cell, where the stepper stood', () => {
+		const placed = cells('case-stages')
+		expect(placed).toHaveLength(1)
+		// The right rail is three columns wide in Ruben's layout (2026-09-12).
+		expect(placed[0].gridX).toBe(9)
+		expect(placed[0].gridWidth).toBe(3)
+		// WITH its title. A bare column of labelled dots in the right rail says
+		// nothing about what the column is, so a reader has to infer that it is
+		// the case progressing rather than, say, a checklist.
+		expect(placed[0].showTitle).toBe(true)
+	})
+
+	it('has retired the transition strip and its component', () => {
+		// Ruben, 2026-09-12, on the transition buttons: "let drop it, and make
+		// clicking a status in the timeline widget set that status." So the
+		// page names no actions component, no widget, no cell and no slot, and
+		// the registry holds no entry. Any one of those left behind renders a
+		// second way to move the case beside the timeline.
+		// The actions slot may hold the headless requester projection, never
+		// the transition strip.
+		expect(caseDetail().actionsComponent ?? '').not.toBe('CaseTransitionsWidget')
+		expect(widget('case-transitions')).toBeUndefined()
+		expect(cells('case-transitions')).toHaveLength(0)
+		expect(caseDetail().slots['widget-case-transitions']).toBeUndefined()
+		expect(registrySource).not.toContain('CaseTransitionsWidget.vue')
+		expect(registrySource).not.toContain('CaseTransitionsWidget: {')
+	})
+
+	it('has retired the custom stepper and its component', () => {
+		expect(widget('case-steps')).toBeUndefined()
+		expect(cells('case-steps')).toHaveLength(0)
+		expect(caseDetail().slots['widget-case-steps']).toBeUndefined()
+		expect(registrySource).not.toContain('CaseStepsWidget.vue')
+		expect(registrySource).not.toContain('CaseStepsWidget: {')
+	})
+
+	it('leads with the identity tiles, and the panels sit straight under them', () => {
+		// What survived every move of this row is the reading order: a handler
+		// sees WHICH case they are on before WHAT they may do to it. The tiles
+		// are the top row and the panels take the rows under it, with no gutter
+		// row between.
+		//
+		// THREE ROWS NOW SIT BETWEEN THEM, and none is a gutter. The unread
+		// strip says what changed on this case since the handler last looked
+		// and which panel holds it. The declaration strip says what the status
+		// the case is in is still waiting for, which is the only place that
+		// can be said at all: a derived status is not a move a handler picks,
+		// so an unmet derivation leaves nothing in the panels to read. Both
+		// are read BEFORE the panels for the same reason the tiles are. The
+		// attention strip joined them on 2026-09-15
+		// (markers-and-assessments-on-the-case, #2837): the flag a person
+		// raised with a written reason, the risk this organisation assessed,
+		// and the markers pointing at a named panel of this page. It is read
+		// before the panels because it says WHICH panel to open. The
+		// assertion therefore allows exactly the rows that carry a widget and
+		// still refuses an empty one, which is what it was guarding.
+		//
+		// TWO ROWS NOW, and the six strips are one of them. Four of the six
+		// are a root v-if, so six rows reserved four empty ones on an ordinary
+		// case; `case-banner-stack` holds Archived, Favourite, Follow, unread,
+		// the status declaration and Attention in ONE row carrying
+		// `sizeToContent`. Presence (#2963) stays a row of its own ABOVE it: it
+		// says who else has this case open, which is read before anything
+		// about the case itself.
+		//
+		// THE UNIT IS THE ROW, NOT THE CELL. `case-followers` gave one of
+		// these rows a second widget once, and the banner stack could hold a
+		// second again; asserting the CELLS in order would read that as an
+		// extra row and the gutter check under it would want a row that is
+		// not there. Grouping by `gridY` keeps both assertions about what the
+		// reader actually sees.
+		const layout = caseDetail().config.layout
+		const tiles = layout.filter((c) => c.gridY === 0)
+		const panels = cells('case-panels')[0]
+		expect(tiles.length).toBeGreaterThan(1)
+		expect(panels.gridX).toBe(0)
+
+		const tileRows = Math.max(...tiles.map((c) => c.gridHeight))
+		const between = layout.filter(
+			(c) => c.gridY >= tileRows && c.gridY < panels.gridY,
+		)
+		const rows = [...new Set(between.map((c) => c.gridY))].sort((a, b) => a - b)
+		expect(
+			rows.map((y) =>
+				between
+					.filter((c) => c.gridY === y)
+					.sort((a, b) => a.gridX - b.gridX)
+					.map((c) => c.widgetId),
+			),
+			'every row between the tiles and the panels must carry a widget',
+		).toEqual([['case-presence'], ['case-banner-stack']])
+		// No gutter row: the panels start where the last strip ends.
+		expect(panels.gridY).toBe(
+			tileRows
+				+ rows.reduce(
+					(total, y) =>
+						total
+						+ Math.max(
+							...between
+								.filter((c) => c.gridY === y)
+								.map((c) => c.gridHeight),
+						),
+					0,
+				),
+		)
 	})
 
 	it('has retired the milestone progress tile from this page', () => {
@@ -144,55 +240,70 @@ describe('CaseDetail: the transition strip and the stepper', () => {
 	})
 })
 
-describe('CaseDetail: suspend, resume, extend and reopen', () => {
-	const gestures = [
-		['case-suspend', 'suspend', 'neq'],
-		['case-resume', 'resume', 'neq'],
-		['case-extend', 'extend', 'neq'],
-		['case-reopen', 'reopen', 'eq'],
-	]
+describe('CaseDetail: one menu holds every lifecycle act', () => {
+	// lifecycle-acts-on-the-case REQ-LIFE-10. This block used to assert four
+	// separate header actions, one per gesture, each with its own visibleWhen
+	// on `isFinalStatus`. They were not wrong. They were SCATTERED, beside the
+	// transitions in the stages widget and a delete behind a third control,
+	// each gated differently, so a handler found out what they could do by
+	// trying. One entry replaces them.
 
-	for (const [id, gesture, op] of gestures) {
-		it(`opens the reason dialog for ${gesture}`, () => {
-			expect(action(id)).toBeTruthy()
-			expect(action(id).type).toBe('open-modal')
-			expect(action(id).target).toBe('CaseLifecycleActionDialog')
-			expect(action(id).props.action).toBe(gesture)
-		})
+	it('carries one lifecycle entry and none of the four it replaced', () => {
+		expect(action('case-lifecycle-menu')).toBeTruthy()
+		expect(action('case-lifecycle-menu').type).toBe('open-modal')
+		expect(action('case-lifecycle-menu').target).toBe('CaseLifecycleMenuDialog')
 
-		it(`gates ${gesture} on the case record's own isFinalStatus`, () => {
-			// LOCAL mode only. An `endpoint` predicate is fetched verbatim (no
-			// @objectId interpolation) and an OpenRegister `source` predicate
-			// filtered by id reads the WHOLE table, so either would answer about
-			// a case that is not this one.
-			expect(action(id).visibleWhen).toEqual({
-				field: 'isFinalStatus',
-				op,
-				value: true,
-			})
-			expect(action(id).visibleWhen.endpoint).toBeUndefined()
-			expect(action(id).visibleWhen.source).toBeUndefined()
-		})
-	}
+		for (const gone of [
+			'case-suspend',
+			'case-resume',
+			'case-extend',
+			'case-reopen',
+		]) {
+			expect(
+				action(gone),
+				`${gone} is folded into the one menu`,
+			).toBeUndefined()
+		}
+	})
 
-	it('registers the dialog as a modal, which open-modal requires', () => {
+	it('carries no visibleWhen, because a refused act is shown and disabled', () => {
+		// The absence IS the requirement, so it is asserted rather than left
+		// unmentioned. A visibleWhen here could only read the case RECORD
+		// anyway, which is why Suspend used to be offered on cases whose TYPE
+		// forbids it: `suspensionAllowed` lives on the case type, and an
+		// OpenRegister `source` predicate filtered by id reads the whole table.
+		expect(action('case-lifecycle-menu').visibleWhen).toBeUndefined()
+	})
+
+	it('registers the menu as a modal, which open-modal requires', () => {
 		// dispatchAction refuses a target whose registry kind is not "modal",
-		// with a console warning and no dialog. Four dead menu entries.
+		// with a console warning and no dialog: a dead menu entry.
 		expect(registrySource).toMatch(
-			/CaseLifecycleActionDialog: \{\s*\n\s*kind: 'modal',/,
+			/CaseLifecycleMenuDialog: \{\s*\n\s*kind: 'modal',/,
 		)
+	})
+
+	it('no longer registers the per-gesture dialog', () => {
+		// This assertion used to require CaseLifecycleActionDialog to be
+		// registered, on the stated ground that the stages widget opened it
+		// for Resume. It did not: `case-stages` is the library `stages`
+		// widget, which cannot resolve a dossiq registry name, and no manifest
+		// action named it either. So the test asserted the presence of a
+		// component no user could open, which is the shape registryOrphans
+		// exists to catch. It is retired; the menu serves all four gestures.
+		// Asserted on the ENTRY, not on the name. The name still appears, in
+		// the menu's own note recording what was retired and why, and a
+		// substring test would have called that a registration.
+		expect(registrySource).not.toMatch(/\n\tCaseLifecycleActionDialog: \{/)
+		expect(registrySource).not.toContain('import CaseLifecycleActionDialog from')
 	})
 })
 
 describe('CaseDetail: every icon it names is registered', () => {
 	it('registers each icon the new widgets and actions use', () => {
 		const named = [
-			widget('case-transitions').icon,
-			widget('case-steps').icon,
-			action('case-suspend').icon,
-			action('case-resume').icon,
-			action('case-extend').icon,
-			action('case-reopen').icon,
+			widget('case-stages').icon,
+			action('case-lifecycle-menu').icon,
 		]
 		for (const name of named) {
 			expect(name, 'every new widget and action names an icon').toBeTruthy()

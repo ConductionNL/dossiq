@@ -204,7 +204,7 @@ test.describe('Contacts', () => {
 		// `initiatorDisplayName` AND `initiatorSourceId`. All three, or none of
 		// them, and two CI runs paid for learning why.
 		//
-		// They are not derived by OpenRegister. `InitiatorSection` BACK-FILLS
+		// They are not derived by OpenRegister. `RequesterProjection` BACK-FILLS
 		// them in the browser: opening a case whose `requester` is set but whose
 		// projection is missing fetches the row, shapes it through
 		// `personResult` / `companyResult` and saves it back to the case. So an
@@ -259,6 +259,23 @@ test.describe('Contacts', () => {
 			nature: 'informatieverzoek',
 			startTime: new Date().toISOString(),
 			summary: `${RUN_PREFIX} asked about the dormer window`,
+		})
+
+		// the-contact-360-shows-documents: one letter SENT TO this person, as
+		// the `dispatch` join document-correspondents writes it. A dispatch is
+		// one document, one party and one role, and the contact panel reads
+		// exactly that join, so a document with no dispatch is invisible to it
+		// by design and one with a dispatch is visible without a second write.
+		const letter = await createObject(api, token, 'informatieobject', {
+			title: `${RUN_PREFIX} Besluit dakkapel`,
+			recipients: [personId],
+		})
+		await createObject(api, token, 'dispatch', {
+			document: objectId(letter),
+			involvedParty: personId,
+			relationshipType: 'geadresseerde',
+			case: seededCaseId,
+			sendDate: new Date().toISOString().slice(0, 10),
 		})
 	})
 
@@ -526,6 +543,34 @@ test.describe('Contacts', () => {
 	test('the seeded case carries its requester', async () => {
 		const cases = await listObjects(api, 'case', { requester: personId })
 		expect(cases.map((c) => objectId(c))).toContain(seededCaseId)
+	})
+
+	// @e2e openspec/specs/kcc-klantcontact-integratie/spec.md#a-citizen-who-received-a-decision-sees-it-on-their-contact-page
+	test('a contact who received a letter sees it, with its direction', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/dossiq/contacts/${personId}`)
+
+		// The row this spec seeded, not any row: a panel whose filter names a
+		// property the schema does not carry renders empty, and "no documents
+		// for this contact" and "the filter is wrong" look identical.
+		const row = page.getByText(`${RUN_PREFIX} Besluit dakkapel`)
+		await expect(row).toBeVisible({ timeout: 30_000 })
+
+		// The direction is what tells a letter sent out from one received, and
+		// it is rendered as a sentence rather than as the stored code.
+		await expect(page.getByText('Sent to this contact')).toBeVisible()
+	})
+
+	// @e2e openspec/specs/kcc-klantcontact-integratie/spec.md#a-document-on-nobodys-behalf-does-not-appear
+	test('a contact with no documents is told so in a sentence', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/dossiq/contacts/${emptyPersonId}`)
+
+		await expect(
+			page.getByText('No letters or documents on file for this contact yet'),
+		).toBeVisible({ timeout: 30_000 })
 	})
 
 	test('a search hit on a contact opens the contact page', async () => {

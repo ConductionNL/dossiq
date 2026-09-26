@@ -53,6 +53,9 @@ parameters:
         # DeliveryConcludedEvent), same declaration-only-stub discipline as
         # the decision-app namespaces above.
         - tests/Stubs/Integriq
+        # OpenRegister's people-on-objects event contract, same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/OpenRegister/Event
         # OpenRegister's AppHost store plane (ADR-080). StoreController takes
         # GenericStoreService as an INJECTED type-hint rather than extending a
         # cross-app base, precisely so one scanned stub resolves it; an
@@ -64,6 +67,11 @@ parameters:
         # includes with their own class_exists guards, and widening the scope
         # is how the HttpClientStubs shadowing incident happened.
         - tests/Stubs/AppHost/Service
+        # The same plane's observability controllers. HealthController and
+        # MetricsController EXTEND these, and phpstan refuses to ignore
+        # "extends unknown class" at all, so a scanned declaration is the only
+        # way to resolve them.
+        - tests/Stubs/AppHost/Controller
 
     typeAliases:
         # OCP declares `@psalm-type DataResponseType = ...` in the DataResponse

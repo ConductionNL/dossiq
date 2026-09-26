@@ -9,16 +9,13 @@
 
 import { describe, expect, it } from 'vitest'
 import {
-	buildExecutePayload,
-	buildLifecycleExecutePayload,
-	buildLifecyclePreviewPayload,
-	buildPreviewPayload,
 	clearSelection,
 	emptySelection,
 	isLifecycleGesture,
 	isSelected,
-	summarizeResults,
+	lifecycleParameters,
 	toggleSelection,
+	transitionParameters,
 } from '../../src/utils/bulkTransitionHelpers.js'
 
 describe('emptySelection', () => {
@@ -102,101 +99,6 @@ describe('clearSelection', () => {
 	})
 })
 
-describe('buildPreviewPayload', () => {
-	it('builds a payload from the selection and transitionId', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
-		expect(buildPreviewPayload(selection, 'submit')).toEqual({
-			caseIds: ['case-1', 'case-2'],
-			transitionId: 'submit',
-		})
-	})
-
-	it('defaults to an empty caseIds array and empty transitionId for a malformed selection', () => {
-		expect(buildPreviewPayload(null, undefined)).toEqual({
-			caseIds: [],
-			transitionId: '',
-		})
-	})
-})
-
-describe('buildExecutePayload', () => {
-	it('builds a payload including the comment', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		expect(buildExecutePayload(selection, 'submit', 'go ahead')).toEqual({
-			caseIds: ['case-1'],
-			transitionId: 'submit',
-			comment: 'go ahead',
-		})
-	})
-
-	it('nulls out an empty/undefined comment', () => {
-		const selection = { columnId: 'Received', caseIds: ['case-1'] }
-		expect(buildExecutePayload(selection, 'submit', '')).toEqual({
-			caseIds: ['case-1'],
-			transitionId: 'submit',
-			comment: null,
-		})
-		expect(buildExecutePayload(selection, 'submit')).toEqual({
-			caseIds: ['case-1'],
-			transitionId: 'submit',
-			comment: null,
-		})
-	})
-})
-
-describe('summarizeResults', () => {
-	it('counts statuses and collects non-ready/non-succeeded entries as failed', () => {
-		const results = {
-			'case-1': { status: 'ready', reasons: [] },
-			'case-2': {
-				status: 'blocked',
-				reasons: [{ message: 'missing document' }],
-			},
-			'case-3': { status: 'succeeded' },
-			'case-4': { status: 'failed', reasons: [{ message: 'guard failed' }] },
-			'case-5': { status: 'error', reasons: [{ message: 'preview_failed' }] },
-		}
-
-		const summary = summarizeResults(results)
-
-		expect(summary.total).toBe(5)
-		expect(summary.counts).toEqual({
-			ready: 1,
-			blocked: 1,
-			succeeded: 1,
-			failed: 1,
-			error: 1,
-		})
-		expect(summary.failed).toEqual([
-			{
-				caseId: 'case-2',
-				status: 'blocked',
-				reasons: [{ message: 'missing document' }],
-			},
-			{
-				caseId: 'case-4',
-				status: 'failed',
-				reasons: [{ message: 'guard failed' }],
-			},
-			{
-				caseId: 'case-5',
-				status: 'error',
-				reasons: [{ message: 'preview_failed' }],
-			},
-		])
-	})
-
-	it('returns an empty summary for an empty or malformed results map', () => {
-		expect(summarizeResults({})).toEqual({ total: 0, counts: {}, failed: [] })
-		expect(summarizeResults(null)).toEqual({ total: 0, counts: {}, failed: [] })
-		expect(summarizeResults(undefined)).toEqual({
-			total: 0,
-			counts: {},
-			failed: [],
-		})
-	})
-})
-
 describe('isLifecycleGesture', () => {
 	it('names the three gestures that move the clock, not the status', () => {
 		expect(isLifecycleGesture('suspend')).toBe(true)
@@ -214,90 +116,59 @@ describe('isLifecycleGesture', () => {
 	})
 })
 
-describe('buildLifecyclePreviewPayload', () => {
-	it('carries the ids and the gesture, and no transition id', () => {
-		expect(
-			buildLifecyclePreviewPayload({ caseIds: ['a', 'b'] }, 'suspend'),
-		).toEqual({ caseIds: ['a', 'b'], gesture: 'suspend' })
-	})
-
-	it('copies the ids rather than aliasing the selection', () => {
-		const selection = { columnId: 'col-1', caseIds: ['a'] }
-		const payload = buildLifecyclePreviewPayload(selection, 'resume')
-
-		payload.caseIds.push('b')
-
-		expect(selection.caseIds).toEqual(['a'])
-	})
-
-	it('survives a malformed selection', () => {
-		expect(buildLifecyclePreviewPayload(null, 'resume')).toEqual({
-			caseIds: [],
-			gesture: 'resume',
+describe('transitionParameters', () => {
+	it('carries the transition and the comment the case timeline gets', () => {
+		expect(transitionParameters('to-decided', 'Handled in bulk')).toEqual({
+			transitionId: 'to-decided',
+			comment: 'Handled in bulk',
 		})
+	})
+
+	it('answers empty strings rather than undefined keys', () => {
+		// A key whose value is `undefined` disappears in JSON, so the server
+		// would read a missing parameter rather than an empty one, and the
+		// refusal would name the wrong thing.
+		expect(transitionParameters()).toEqual({ transitionId: '', comment: '' })
 	})
 })
 
-describe('buildLifecycleExecutePayload', () => {
-	it('sends the trimmed reason for every gesture', () => {
+describe('lifecycleParameters', () => {
+	it('sends days with a suspend and nothing else', () => {
 		expect(
-			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'resume', {
-				reason: '  Documents received  ',
+			lifecycleParameters('suspend', {
+				reason: 'Awaiting documents',
+				days: '14',
 			}),
 		).toEqual({
-			caseIds: ['a'],
-			gesture: 'resume',
-			reason: 'Documents received',
-		})
-	})
-
-	it('sends days only for suspend', () => {
-		const suspend = buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {
-			reason: 'Awaiting documents',
-			days: '21',
-			newEndDate: '2026-12-01',
-		})
-
-		expect(suspend).toEqual({
-			caseIds: ['a'],
 			gesture: 'suspend',
 			reason: 'Awaiting documents',
-			days: 21,
+			days: 14,
 		})
-		expect(suspend.newEndDate).toBeUndefined()
 	})
 
-	it('sends the new end date only for extend', () => {
-		const extend = buildLifecycleExecutePayload({ caseIds: ['a'] }, 'extend', {
-			reason: 'Complex case',
-			days: '21',
-			newEndDate: '2026-12-01',
-		})
-
-		expect(extend).toEqual({
-			caseIds: ['a'],
+	it('sends the new deadline with an extend and no days', () => {
+		expect(
+			lifecycleParameters('extend', {
+				reason: 'Complex case',
+				newEndDate: '2026-12-01',
+			}),
+		).toEqual({
 			gesture: 'extend',
 			reason: 'Complex case',
 			newEndDate: '2026-12-01',
 		})
-		expect(extend.days).toBeUndefined()
 	})
 
-	it('reads an unreadable day count as zero, which the server defaults', () => {
+	it('sends neither with a resume', () => {
 		expect(
-			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {
-				reason: 'Awaiting documents',
-				days: 'soon',
-			}).days,
-		).toBe(0)
+			lifecycleParameters('resume', { reason: 'Documents arrived' }),
+		).toEqual({
+			gesture: 'resume',
+			reason: 'Documents arrived',
+		})
 	})
 
-	it('sends an empty reason rather than dropping the key', () => {
-		// The server has to be the one that refuses: dropping the key would
-		// make an empty reason indistinguishable from an older client that
-		// never sent one, and the refusal is what the requirement rests on.
-		expect(
-			buildLifecycleExecutePayload({ caseIds: ['a'] }, 'suspend', {}).reason,
-		).toBe('')
+	it('trims the reason, so whitespace cannot pass for a justification', () => {
+		expect(lifecycleParameters('resume', { reason: '   ' }).reason).toBe('')
 	})
 })

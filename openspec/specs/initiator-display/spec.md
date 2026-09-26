@@ -18,7 +18,7 @@ without leaving the page.
 ### Requirement: Case detail shows the initiator
 
 You see who asked for the case at the top of the case page. The `initiator`
-widget on `CaseDetail` SHALL render a person card in the first row of the
+widget on `CaseDetail` used to render a person card in the first row of the
 layout, beside `case-core`, when the projection fields are set. The card
 SHALL show `initiatorDisplayName`, the type (Person, Company or Contact), the
 identifying `initiatorSourceId` as a link to the source record (the
@@ -34,6 +34,8 @@ without a requester SHALL show no empty card.
 - **WHEN** a handler opens the case page
 - **THEN** the first row SHALL hold a card with the persona's name, the type Person, the BSN and the address
 - **AND** the BSN SHALL link to the seeded `brpPerson` record
+@e2e exclude The initiator card was removed from the case page on 2026-09-12 (Ruben, Buildiq edit mode): the requester reads in the Data tab's Requester field, and the card that carried this scenario no longer renders. The scenario stays as the record of what the card did; nothing on the case page answers to it now.
+
 
 #### Scenario: A company card links to the KvK record
 @e2e tests/e2e/case-requester.spec.ts
@@ -42,6 +44,8 @@ without a requester SHALL show no empty card.
 - **WHEN** a handler opens the case page
 - **THEN** the card SHALL show the company's display name, the type Company and the KvK number
 - **AND** the KvK number SHALL link to the seeded `kvkCompany` record
+@e2e exclude The initiator card was removed from the case page on 2026-09-12 (Ruben, Buildiq edit mode): the requester reads in the Data tab's Requester field, and the card that carried this scenario no longer renders. The scenario stays as the record of what the card did; nothing on the case page answers to it now.
+
 
 #### Scenario: No initiator, no clutter
 @e2e tests/e2e/case-requester.spec.ts
@@ -49,6 +53,8 @@ without a requester SHALL show no empty card.
 - **GIVEN** a case without a requester
 - **WHEN** a handler opens the case page
 - **THEN** no initiator card SHALL render
+@e2e exclude The initiator card was removed from the case page on 2026-09-12 (Ruben, Buildiq edit mode): the requester reads in the Data tab's Requester field, and the card that carried this scenario no longer renders. The scenario stays as the record of what the card did; nothing on the case page answers to it now.
+
 
 ### Requirement: The case list names the requester (REQ-ID-2)
 
@@ -90,6 +96,8 @@ SHALL render the BSN in full.
 - **WHEN** a handler opens the case page
 - **THEN** the card SHALL show the Protected marker
 - **AND** the BSN SHALL read as five dots followed by its last four digits
+@e2e exclude The initiator card was removed from the case page on 2026-09-12 (Ruben, Buildiq edit mode): the requester reads in the Data tab's Requester field, and the card that carried this scenario no longer renders. The scenario stays as the record of what the card did; nothing on the case page answers to it now.
+
 
 #### Scenario: A reveal shows the number and is a logged read
 @e2e tests/e2e/case-requester.spec.ts
@@ -98,6 +106,8 @@ SHALL render the BSN in full.
 - **WHEN** the handler presses Reveal
 - **THEN** the card SHALL show the full BSN
 - **AND** the page SHALL make one read of the `brpPerson` row carrying `_reason=bsn-reveal`
+@e2e exclude The initiator card was removed from the case page on 2026-09-12 (Ruben, Buildiq edit mode): the requester reads in the Data tab's Requester field, and the card that carried this scenario no longer renders. The scenario stays as the record of what the card did; nothing on the case page answers to it now.
+
 
 #### Scenario: An unprotected person is not masked
 @e2e tests/e2e/case-requester.spec.ts
@@ -105,6 +115,8 @@ SHALL render the BSN in full.
 - **GIVEN** a case whose requester is a seeded persona without `indicatieGeheim`
 - **WHEN** a handler opens the case page
 - **THEN** the card SHALL show the full BSN and no Protected marker
+@e2e exclude The initiator card was removed from the case page on 2026-09-12 (Ruben, Buildiq edit mode): the requester reads in the Data tab's Requester field, and the card that carried this scenario no longer renders. The scenario stays as the record of what the card did; nothing on the case page answers to it now.
+
 
 ### Requirement: The Contacts index lists the people dossiq knows (REQ-ID-4)
 

@@ -62,9 +62,12 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * The role check and the side effects, asked of one execute() call.
@@ -77,10 +80,15 @@ use RuntimeException;
  * RISKY without this line. `@uses`, not `@covers`: it is not the subject.
  *
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  *
  * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
  */
 class StatusTransitionServiceEnforcementTest extends TestCase {
+	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
+
 
 	/**
 	 * The NC group the seeded transition is gated on.
@@ -197,6 +205,14 @@ class StatusTransitionServiceEnforcementTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 			resultWriter: $resultWriter,
 			statusChecklist: $checklist,
+			declarations: $this->undeclaredStatuses(),
+			declaredMoves: $this->undeclaredTransitions(),
+			offered: $this->offeredTransitions(
+				guards: $guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 

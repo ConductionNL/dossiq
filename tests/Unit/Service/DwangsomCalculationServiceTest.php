@@ -33,13 +33,17 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\DwangsomCalculationService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class DwangsomCalculationServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private DwangsomCalculationService $service;
 
@@ -59,7 +63,11 @@ class DwangsomCalculationServiceTest extends TestCase {
 			},
 		);
 
-		$this->service = new DwangsomCalculationService($settings, $this->createMock(LoggerInterface::class));
+		$this->service = new DwangsomCalculationService(
+			settingsService: $settings,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 	}
 
 	/**

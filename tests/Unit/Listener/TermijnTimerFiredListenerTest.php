@@ -32,6 +32,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\SettingsService;
@@ -39,6 +41,7 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -49,13 +52,26 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\DwangsomCalculationService
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class TermijnTimerFiredListenerTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private TermijnService $termService;
 	private TermijnTimerFiredListener $listener;
 
+	/**
+	 * The one clock the accrual and the fixtures below both read.
+	 *
+	 * @var CaseDateNormaliser
+	 */
+	private CaseDateNormaliser $dates;
+
 	protected function setUp(): void {
+		$this->dates = $this->caseDatesFrozenAt();
 		$this->objects = new FakeTermijnStore();
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
@@ -76,8 +92,18 @@ class TermijnTimerFiredListenerTest extends TestCase {
 		$this->termService = new TermijnService($settings, $logger);
 		$this->listener = new TermijnTimerFiredListener(
 			$this->termService,
-			new DeadlineEscalationService($this->termService, $logger),
-			new DwangsomCalculationService($settings, $logger),
+			new DeadlineEscalationService(
+				termService: $this->termService,
+				priorityRaiseService: $this->createMock(
+					originalClassName: CasePriorityRaiseService::class
+				),
+				logger: $logger
+			),
+			new DwangsomCalculationService(
+				settingsService: $settings,
+				logger: $logger,
+				dates: $this->dates,
+			),
 			$settings,
 			$logger
 		);
@@ -222,7 +248,11 @@ class TermijnTimerFiredListenerTest extends TestCase {
 	 */
 	public function testFireSyncsRunningPenaltyCalculations(): void {
 		$id = $this->seedInstance(['status' => 'exceeded']);
-		$start = (new \DateTimeImmutable('today'))->modify('-5 days');
+		// The accrual counts from the administered zone's today, so the start
+		// date has to be built from the same clock. Built from PHP's `today`
+		// it was one day further back for the two hours a night between 22:00
+		// UTC and midnight in Amsterdam, and currentDag read 6 instead of 5.
+		$start = $this->dates->today()->modify('-5 days');
 		$this->objects->seed('penaltyPaymentCalculation', [
 			'id' => 'b-l1',
 			'deadlineInstance' => $id,

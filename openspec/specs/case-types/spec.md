@@ -781,10 +781,29 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 #### Scenario CT-15b: General tab content
 
+@e2e exclude Three of the fields this scenario enumerates cannot be honestly
+asserted today, and one of them is a defect rather than a gap. `serviceTarget`
+IS rendered by `GeneralTab.vue` and DOES take input, but it is declared in no
+schema, so OpenRegister discards it on save while the page reports success:
+measured 2026-09-12, a write of `serviceTarget: "P14D"` came back absent from a
+fresh read while `suspensionAllowed` on the same write survived. See #2592. A
+test asserting the field renders would pass and would certify data loss, which
+is worse than no test. `suspensionAllowed` is in the schema but `GeneralTab`
+renders no control for it, and `isDraft` (the published/draft status this
+scenario names) has no control on this tab either. The exclusion is protective,
+not stale: the rendered control a later reader will see is exactly the problem.
+
 - GIVEN the admin on the "General" tab
 - THEN the tab MUST display editable fields for: title, description, purpose, trigger, subject, processing deadline (with ISO 8601 helper), service target, extension allowed (with conditional period), suspension allowed, origin, confidentiality, publication required (with conditional text), valid from, valid until, status (published/draft)
 
 #### Scenario CT-15c: Statuses tab content
+
+@e2e exclude The ordered list, the drag handles, the order number, the name,
+the isFinal checkbox and the Add control all ship. `notifyInitiator`, with its
+conditional text field, does not exist: it is absent from the `statusType`
+schema and from `StatusesTab.vue`. Asserting only the clauses that happen to
+pass would be the shape this programme exists to remove, so the scenario is
+excluded whole until the field is built or the clause is dropped.
 
 - GIVEN the admin on the "Statuses" tab
 - THEN the tab MUST display an ordered list of status types with drag handles
@@ -807,12 +826,24 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 #### Scenario CT-15f: Properties tab content (V1)
 
+@e2e exclude Wording drift only, and recorded rather than repaired so nobody
+re-opens it: every clause ships. The scenario says "format" and
+`PropertiesTab.vue` labels the control Type while binding the `format` field,
+so the requirement holds and the label does not match it. Worth one rename in
+whichever direction the product prefers; not worth a test asserting a label.
+
 - GIVEN the admin on the "Properties" tab
 - THEN the tab MUST display a list of property definitions
 - AND each property MUST show: name, format, max length (if set), required at status (if set)
 - AND an "Add" button MUST be available
 
 #### Scenario CT-15g: Docs tab content (V1)
+
+@e2e exclude The Docs tab ships and lists document types with a name and an
+Add control, but `direction` (incoming/internal/outgoing) exists in neither the
+`documentType` schema nor `DocumentTypesTab.vue`. The tab instead shows
+Category and Confidentiality, which this scenario does not mention, so the
+requirement and the surface have drifted apart in both directions.
 
 - GIVEN the admin on the "Docs" tab
 - THEN the tab MUST display a list of document types
@@ -932,6 +963,19 @@ leave cases in a hidden status out unless you ask for closed cases.
 - **GIVEN** the status In behandeling of a type has the colour orange
 - **WHEN** you open the Workflow board for that type
 - **THEN** the In behandeling column header SHALL render in the orange token
+
+#### Scenario: A coloured status shows on the case
+@e2e tests/e2e/case-type-authoring-extras.spec.ts
+
+- **GIVEN** the status In behandeling of a type has the colour orange
+- **WHEN** you open a case currently in that status
+- **THEN** the case's status badge SHALL render in the orange token
+
+> **Added 2026-09-12.** REQ-CT-19 has always said "the status badge on the case
+> AND the Workflow board column", and only the board half had a scenario. The
+> case half had a test and nothing for it to cite, so it was anchorless and
+> credited nothing. The badge is where a handler actually reads the status, so
+> the half without a scenario was the half that matters most.
 
 #### Scenario: A hidden status keeps its cases out of the list
 @e2e tests/e2e/case-type-authoring-extras.spec.ts
@@ -1171,6 +1215,108 @@ statuses. A type's statuses are authored on its detail page, once it exists.
 
 - **WHEN** an author opens the create form
 - **THEN** it SHALL NOT offer a starting status field
+
+### Requirement: An exported case type carries its own configuration (REQ-CT-40)
+
+You move a case type between instances and it arrives whole.
+`CaseDefinitionExportService::exportComponent()` SHALL read each requested
+component from OpenRegister and SHALL NOT return a fixed empty shape. The
+`schema` component carries the case type object and its property definitions,
+`statuses` its status types and the transitions its workflow templates
+declare, `permissions` its role types and their group bindings, `documents`
+its document types, `metadata` its result types and the decision types the
+case type references, and `workflows` the workflow templates bound to it.
+
+The transitions SHALL come from the workflow templates and not from the
+status types, because `statusType` declares none: a `transitions` list read
+off the status types would be empty beside a populated `statusTypes`, which
+reads as a case type whose statuses connect to nothing. The decision types
+SHALL come from the case type's own reference list for the same reason: they
+carry no `caseType` back-reference, so read as rows they answer the empty set
+on every instance.
+
+#### Scenario: A seeded case type exports its statuses
+@e2e exclude Backend export service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testASeededCaseTypeExportsItsStatuses.
+
+- **GIVEN** a case type with two status types and one transition between them
+- **WHEN** the export runs with the `statuses` component
+- **THEN** `statuses.json` SHALL list both status types by id and title
+- **AND** it SHALL list the transition with its source and target status
+
+#### Scenario: An unknown case type is refused
+@e2e exclude Backend export service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testAnUnknownCaseTypeIsRefusedBeforeAnythingIsWritten.
+
+- **GIVEN** a case type id that no object answers to
+- **WHEN** the export runs
+- **THEN** the service SHALL throw
+- **AND** no ZIP SHALL be written
+
+### Requirement: The manifest names what the package contains (REQ-CT-41)
+
+`buildManifest()` SHALL take `caseType.slug` and `caseType.title` from the
+case type object rather than echoing the requested id, and SHALL fill
+`dependencies` with every object ref the exported components point at, so an
+importer can refuse a package whose references it cannot resolve.
+
+#### Scenario: The manifest lists the workflow templates
+@e2e exclude Backend export service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testTheManifestNamesWhatThePackageCarries.
+
+- **GIVEN** a case type bound to one workflow template
+- **WHEN** the export runs with every component
+- **THEN** `manifest.json` `dependencies` SHALL contain that template's ref
+- **AND** `manifest.json` `caseType.slug` SHALL be the object's slug
+
+### Requirement: An import writes the objects or says it did not (REQ-CT-42)
+
+`CaseDefinitionImportService::importComponent()` SHALL create or update the
+OpenRegister objects of its component under the caller's `conflictResolution`
+mode, and SHALL return the ids it created and the ids it replaced. A
+component that writes nothing SHALL NOT report `status: 'success'`.
+
+The import SHALL keep the ids the package carries. Every child row carries a
+`caseType` back-reference by id, so minting a new id for the case type would
+leave every status type, role type and document type pointing at nothing. A
+CONFLICT SHALL be this instance already holding that id, which is a different
+question from the package carrying one. A component whose rows were all
+skipped under `skip` SHALL report `skipped` rather than `success`: leaving
+what is already here alone is not a write.
+`importWorkflows()` SHALL deploy each workflow entry through the existing
+workflow path, or SHALL return `status: 'error'` naming the entry it could
+not deploy. Counting files SHALL NOT be reported as an import.
+
+#### Scenario: An imported case type exists afterwards
+@e2e exclude Backend import service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, tests testEveryComponentCarriesRealRows and testAComponentThatWritesNothingIsNotASuccess.
+
+- **GIVEN** an empty register and a package holding one case type with two
+  statuses
+- **WHEN** the import runs
+- **THEN** the case type and both status types SHALL exist in the register
+- **AND** the response SHALL name the three created ids
+
+#### Scenario: A failed write is reported as an error
+@e2e exclude Backend import service, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testAHalfWrittenComponentIsRolledBack.
+
+- **GIVEN** a package whose `statuses.json` references a case type that is not
+  in the package
+- **WHEN** the import runs
+- **THEN** the `statuses` component SHALL report `status: 'error'`
+- **AND** no status type SHALL have been created
+
+### Requirement: A case type survives a round trip (REQ-CT-43)
+
+Export then import SHALL reproduce the case type. A case type exported from
+one register and imported into an empty register SHALL match the original on
+every exported property, status type, transition, role binding, document type
+and result type.
+
+#### Scenario: Export and import reproduce the case type
+@e2e exclude Backend round trip, covered by tests/Unit/Service/CaseDefinitionPortabilityTest.php, test testACaseTypeSurvivesARoundTrip.
+
+- **GIVEN** a case type with two statuses, one role, one document type and one
+  workflow template
+- **WHEN** it is exported and imported into an empty register
+- **THEN** the imported case type SHALL match the original field by field
+- **AND** its statuses, role, document type and workflow template SHALL match
 
 ## UI References
 

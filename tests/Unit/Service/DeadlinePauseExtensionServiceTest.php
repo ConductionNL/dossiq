@@ -31,6 +31,8 @@ use OCA\Dossiq\Service\DeadlinePauseService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\TermijnTimerService;
+use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -43,22 +45,52 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\TermijnTimerService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Term\ThresholdShares
+ * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermEndRoll
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private FlowTimerEngineFake $engine;
 	private TermijnService $termService;
 	private DeadlinePauseService $pauseService;
 	private DeadlineExtensionService $extService;
+	/**
+	 * The engine's calendar resolver, seeded from `$closedDates`.
+	 *
+	 * @var WorkingCalendarServiceFake
+	 */
+	private WorkingCalendarServiceFake $calendars;
+
+	/**
+	 * Days the administered calendar closes, beyond its weekend.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $closedDates = [];
 
 	protected function setUp(): void {
 		$this->objects = new FakeTermijnStore();
 		$this->engine = new FlowTimerEngineFake();
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getObjectService')->willReturn($this->objects);
-		$settings->method('getOpenRegisterClass')
-			->with(TermijnTimerService::ENGINE_CLASS)
-			->willReturn($this->engine);
+		$this->calendars = new WorkingCalendarServiceFake(new WorkingCalendarFake('nl-national', $this->closedDates));
+		$slaCalculator = new SlaCalculatorFake();
+		$settings->method('getOpenRegisterClass')->willReturnCallback(
+			function (string $class) use ($slaCalculator): ?object {
+				return match ($class) {
+					TermijnTimerService::ENGINE_CLASS => $this->engine,
+					TermijnTimerService::CALENDAR_SERVICE_CLASS => $this->calendars,
+					TermijnTimerService::SLA_CALCULATOR_CLASS => $slaCalculator,
+					default => null,
+				};
+			}
+		);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
 				return match ($key) {
@@ -72,10 +104,15 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$timerService = new TermijnTimerService($settings, $logger);
+		$timerService = new TermijnTimerService(
+			settingsService: $settings,
+			logger: $logger,
+			dates: $this->caseDates(),
+			fallbackCalendar: new WorkingDayCalculator(),
+		);
 		$this->termService = new TermijnService($settings, $logger, $timerService);
 		$this->pauseService = new DeadlinePauseService($this->termService, $timerService);
-		$this->extService = new DeadlineExtensionService($this->termService, $timerService);
+		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates(), timerService: $timerService);
 
 		// Seed an Omgevingsvergunning definition (max 1 extension).
 		$this->objects->seed('deadlineDefinition', [
@@ -239,8 +276,25 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$resumed = $this->pauseService->resumeAfterPauze($id, $resumeAt);
 
 		// Dossiq case-data side: base end +14 at pause, -10 unused at
-		// resume, net +4 = start + 60.
-		$expected = $start->modify('+60 days')->format('Y-m-d');
+		// resume, net +4.
+		//
+		// 🔑 THE BASE END IS THE ROLLED ONE, AND THE NET IS ADDED TO THAT.
+		// `createTermijnInstance` already put start + 56 on the next
+		// working day (Awt art. 1) and stored it, and both the pause
+		// arithmetic and the armed timer's budget read that stored date.
+		//
+		// The expectation used to be re-derived from `start` as
+		// `roll(start + 60)`, which skips that first roll. Swept over 400
+		// consecutive start dates, `roll(start + 60)` disagrees with what
+		// the service computes on 114 of them, and every one of the 114 is
+		// a Saturday or a Sunday start. Anchored on `today`, that is a
+		// test whose result is the day of the week it ran on. The two
+		// models this fixture actually compares, the case-data chain and
+		// the engine's consumed-budget projection, agree on all 400.
+		//
+		// So the expectation is taken from the term the service created.
+		$base = new DateTimeImmutable((string)$instance['endDateCalculated']);
+		$expected = $this->firstWorkingDayFrom($base->modify('+4 days'))->format('Y-m-d');
 		self::assertSame($expected, $resumed['endDateCurrent']);
 
 		// Engine side: suspend was evidenced with the Awb basis, and the
@@ -251,8 +305,25 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$armed = $this->engine->calls['arm'][0]['config'];
 		$consumed = (int)$start->diff($pauseStart)->days;
 		$remaining = ((int)$armed['sla']['value'] - $consumed);
-		$engineFireAt = $resumeAt->modify('+' . $remaining . ' days');
+		$engineFireAt = $this->firstWorkingDayFrom($resumeAt->modify('+' . $remaining . ' days'));
 		self::assertSame($expected, $engineFireAt->format('Y-m-d'));
+	}
+
+	/**
+	 * The day the fixture's administered calendar first works on or after
+	 * the given date, so an expectation anchored on today survives a
+	 * weekend without a time machine.
+	 *
+	 * @param DateTimeImmutable $date The raw calendar date.
+	 *
+	 * @return DateTimeImmutable
+	 */
+	private function firstWorkingDayFrom(DateTimeImmutable $date): DateTimeImmutable {
+		$calendar = $this->calendars->resolve('nl-national', null);
+		while ($calendar->isWorkingDay($date) === false) {
+			$date = $date->modify('+1 day');
+		}
+		return $date;
 	}
 
 	/**
@@ -298,5 +369,91 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$this->extService->requestSupervisorExtension($id, 'supervisor akkoord', '2026-09-30');
 		self::assertSame(30, $this->engine->calls['extendWithOverride'][0]['amount']);
 		self::assertSame('supervisor', $this->engine->calls['extendWithOverride'][0]['actor']);
+	}
+
+	/**
+	 * Awb 4:5: the credited suspension moves `endDateCurrent`, which is the
+	 * date a handler is judged on. Fourteen days from 12 December 2026 is
+	 * Tweede Kerstdag, and the term runs to the Monday.
+	 *
+	 * @return void
+	 */
+	public function testAPauseCreditLandingOnTweedeKerstdagRollsToTheNextOrdinaryDay(): void {
+		$this->closedDates = ['2026-12-25', '2026-12-26'];
+		$this->setUp();
+
+		$id = (string)$this->newInstance()['id'];
+		$this->termService->updateTermijnInstance($id, ['endDateCurrent' => '2026-12-12']);
+
+		$updated = $this->pauseService->registerPauze($id, 14, 'aanvulling gevraagd');
+
+		self::assertSame('2026-12-28', $updated['endDateCurrent']);
+		self::assertSame('paused', $updated['status']);
+	}
+
+	/**
+	 * The fixture pair: the same pause against a calendar the organisation
+	 * works through keeps the raw date, so the assertion above is about the
+	 * calendar and not about the fourteen days.
+	 *
+	 * @return void
+	 */
+	public function testTheSamePauseOnACalendarThatWorksThatDayKeepsTheRawDate(): void {
+		$this->closedDates = [];
+		$this->setUp();
+
+		$id = (string)$this->newInstance()['id'];
+		$this->termService->updateTermijnInstance($id, ['endDateCurrent' => '2026-12-14']);
+
+		$updated = $this->pauseService->registerPauze($id, 14, 'aanvulling gevraagd');
+
+		// 2026-12-28 is a Monday this calendar works, so nothing moves.
+		self::assertSame('2026-12-28', $updated['endDateCurrent']);
+	}
+
+	/**
+	 * Awb 4:15: the unused remainder is taken off and the result lands on a
+	 * working day too. Ten unused days off 8 April 2027 is Tweede Paasdag.
+	 *
+	 * @return void
+	 */
+	public function testAnUnusedRemainderAlsoLandsOnAWorkingDay(): void {
+		$this->closedDates = ['2027-03-29'];
+		$this->setUp();
+
+		$id = (string)$this->newInstance()['id'];
+		$this->termService->updateTermijnInstance(
+			$id,
+			[
+				'endDateCurrent' => '2027-04-08',
+				'status' => 'paused',
+				'pauzeStartDatum' => '2027-03-01',
+				'pauzeDuurDagen' => 14,
+			]
+		);
+
+		$updated = $this->pauseService->resumeAfterPauze($id, new DateTimeImmutable('2027-03-05'));
+
+		self::assertSame('2027-03-30', $updated['endDateCurrent']);
+		self::assertSame('lopend', $updated['status']);
+	}
+
+	/**
+	 * The arithmetic stays case data (REQ-TOT-002): the pause still credits
+	 * exactly the paused working time, and only the day it lands on moves.
+	 *
+	 * @return void
+	 */
+	public function testThePauseStillCreditsExactlyTheRequestedDays(): void {
+		$this->closedDates = [];
+		$this->setUp();
+
+		$id = (string)$this->newInstance()['id'];
+		$this->termService->updateTermijnInstance($id, ['endDateCurrent' => '2027-03-15']);
+
+		$updated = $this->pauseService->registerPauze($id, 14, 'aanvulling gevraagd');
+
+		// 2027-03-15 plus fourteen calendar days, landing on an ordinary Monday.
+		self::assertSame('2027-03-29', $updated['endDateCurrent']);
 	}
 }

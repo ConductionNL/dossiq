@@ -149,4 +149,78 @@ class CiSeedScriptTest extends TestCase {
 		self::assertStringContainsString('::error', $tail, 'A failed projection must be reported as an error.');
 		self::assertStringContainsString('exit 1', $tail, 'A failed projection must stop the seed.');
 	}//end testTheFlowProjectionFailsTheSeedRatherThanWarning()
+
+	/**
+	 * The schema gate can tell a full import from the degraded fallback.
+	 *
+	 * 🔴 THE GATE USED TO NAME ONLY MONOLITH SCHEMAS. The seed's first choice
+	 * is dossiq's own `settings#load`, which merges `lib/Settings/register.d/`
+	 * before importing. Its fallback posts `dossiq_register.json` alone and
+	 * merges nothing. Both satisfy a gate that asks only for schemas the
+	 * monolith declares, so a degraded seed reported success and the suite
+	 * then died one spec at a time on `Schema not found: 'brpPerson'`.
+	 *
+	 * Two claims, and both are needed. Every required slug is really declared,
+	 * so the gate cannot name one that can never resolve. And at least one is
+	 * declared ONLY in a fragment, so the gate has something the fallback
+	 * cannot produce.
+	 *
+	 * @return void
+	 */
+	public function testTheSchemaGateNamesASlugOnlyAFullImportProduces(): void {
+		$matched = preg_match(
+			"/'schemas': \\[(.*?)\\]/s",
+			$this->script(),
+			$found
+		);
+		self::assertSame(
+			expected: 1,
+			actual: $matched,
+			message: 'The required-schema list was not found in ci-seed.sh.'
+		);
+
+		preg_match_all("/'([A-Za-z]+)'/", $found[1], $names);
+		$required = $names[1];
+		self::assertNotSame(
+			expected: [],
+			actual: $required,
+			message: 'The required-schema list is empty, so it gates nothing.'
+		);
+
+		$settings = __DIR__ . '/../../../lib/Settings';
+		$monolith = json_decode((string)file_get_contents($settings . '/dossiq_register.json'), true);
+		$inMonolith = array_keys($monolith['components']['schemas']);
+
+		$fragments = glob($settings . '/register.d/*.json');
+		if ($fragments === false) {
+			$fragments = [];
+		}
+
+		$inFragments = [];
+		foreach ($fragments as $fragment) {
+			$decoded = json_decode((string)file_get_contents($fragment), true);
+			foreach (array_keys(($decoded['components']['schemas'] ?? [])) as $name) {
+				$inFragments[] = (string)$name;
+			}
+		}
+
+		$undeclared = array_values(
+			array_diff($required, $inMonolith, $inFragments)
+		);
+		self::assertSame(
+			expected: [],
+			actual: $undeclared,
+			message: 'ci-seed.sh requires schemas this app declares nowhere, so the seed can only '
+				. 'ever fail: ' . implode(', ', $undeclared)
+		);
+
+		$fragmentOnly = array_values(array_intersect(array_diff($required, $inMonolith), $inFragments));
+		self::assertNotSame(
+			expected: [],
+			actual: $fragmentOnly,
+			message: 'Every required schema lives in the monolith, so the gate passes on the '
+				. 'fallback import that merges no fragments, and the 88 fragment schemas go '
+				. 'missing in silence.'
+		);
+	}//end testTheSchemaGateNamesASlugOnlyAFullImportProduces()
 }//end class

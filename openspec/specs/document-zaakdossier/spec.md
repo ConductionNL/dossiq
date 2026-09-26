@@ -6,56 +6,40 @@ status: done
 
 ## Purpose
 Manages the document dossier of a zaak using ZGW-compliant informatieobject and zaakinformatieobject records, so a document can be linked to multiple cases without duplication and follows a forward-only concept → definitief → gearchiveerd lifecycle. Access to every document is gated by its vertrouwelijkheidaanduiding at the service layer, and the dossier view groups documents by type with upload (metadata dialog), version history, full-text search, bulk ZIP export with manifest, and a range-capable ZGW DRC download endpoint. A repair step back-fills ZGW metadata for pre-existing linked files.
+
 ## Requirements
+
 ### Requirement: REQ-ZAK-001 Zaak objects MUST support linked documents via ZGW informatieobject and zaakinformatieobject
 
-Every uploaded document MUST be represented as both a Nextcloud file stored at
-`Open Registers/{Register Title} Register/{objectUuid}/` AND an `informatieobject` register
-object carrying the following ZGW DRC-compliant fields:
+Every document MUST be represented as both a Nextcloud file stored in the case's own folder at
+`Open Registers/{Register Title} Register/{caseUuid}/` AND an `informatieobject` register object
+that references it through `fileId` and carries the following ZGW DRC-compliant fields:
 `titel`, `bestandsnaam`, `bestandsomvang`, `formaat`, `vertrouwelijkheidaanduiding`,
 `auteur`, `status`, `informatieobjecttype`, `creatiedatum`, `bronorganisatie`, `taal`,
 `beschrijving`, `link`, `integriteit.algoritme`, `integriteit.waarde`, `vergrendeldOp`, `fileId`.
-
-The link between the zaak and the informatieobject MUST be a separate `zaakinformatieobject`
-join object with fields: `zaak`, `informatieobject`, `aardRelatieWeergave`, `registratiedatum`.
-This join pattern allows a single document to be linked to multiple cases without duplication.
+The file is on the case; the record is its projection (see `document-projection`). The link
+between the zaak and the informatieobject MUST be a separate `zaakinformatieobject` join object
+with fields: `zaak`, `informatieobject`, `aardRelatieWeergave`, `registratiedatum`, so a single
+document can be linked to multiple cases while its file lives in one case's folder.
 
 #### Scenario: REQ-ZAK-001a Upload creates informatieobject and zaakinformatieobject
-
 - **GIVEN** zaak `vergunning-2026-0042` exists in register `Vergunningen`
-- **WHEN** a user uploads `aanvraagformulier.pdf` via `ZaakdossierService.uploadDocument()`
-- **THEN** the file MUST be stored via `CreateFileHandler.addFile()` at
-  `Open Registers/Vergunningen Register/{uuid}/aanvraagformulier.pdf`
-- **AND** an `informatieobject` register object MUST be created with `titel`, `bestandsnaam`,
-  `formaat`, `auteur`, `creatiedatum`, `bronorganisatie`, `taal` (`nld`) populated
-- **AND** a `zaakinformatieobject` join object MUST be created with `zaak` →
-  `vergunning-2026-0042`, `informatieobject` → new informatieobject UUID,
-  `registratiedatum` → current timestamp
-- **AND** the file MUST receive system tags `object:{uuid}` and `doctype:{type}` via `TaggingHandler`
-
-@e2e exclude Service-layer contract (`ZaakdossierService::uploadDocument` + `CreateFileHandler`/`TaggingHandler` wiring) asserted in tests/Unit/Service/ZaakdossierServiceTest and at the API layer in tests/newman/document-zaakdossier.postman_collection.json; there is no UI assertion that can observe the join-object and system-tag side effects.
+- **WHEN** a user uploads `aanvraagformulier.pdf` into the case through the Files tab or through `ZaakdossierService.uploadDocument()`
+- **THEN** the file MUST be stored at `Open Registers/Vergunningen Register/{caseUuid}/aanvraagformulier.pdf`, attached to the case object
+- **AND** an `informatieobject` register object MUST exist with `titel`, `bestandsnaam`,
+  `formaat`, `auteur`, `creatiedatum`, `bronorganisatie`, `taal` (`nld`) and `fileId` populated
+- **AND** a `zaakinformatieobject` join object MUST exist with `zaak` → the case and `informatieobject` → the record
 
 #### Scenario: REQ-ZAK-001b Same informatieobject linked to two cases without duplication
-
-- **GIVEN** informatieobject `advies-brandweer.pdf` is already linked to `vergunning-1`
-- **WHEN** `ZaakdossierService.linkExistingInformatieobject('vergunning-2', infoObjectId)` is called
-- **THEN** a second `zaakinformatieobject` join object MUST be created for `vergunning-2`
-- **AND** the informatieobject record itself MUST NOT be duplicated
-- **AND** both zaak dossier views MUST show the document
-
-@e2e exclude Non-duplication of the informatieobject across two zaakinformatieobject joins is a persistence invariant asserted in tests/Unit/Service/ZaakdossierServiceTest; the UI cannot distinguish "one record, two joins" from "two records".
+- **GIVEN** an `informatieobject` whose file lives in case A's folder
+- **WHEN** a `zaakinformatieobject` joins it to case B
+- **THEN** there MUST be exactly one file and one `informatieobject`, and two join objects
+- **AND** case B's Files tab MUST show the document as a linked row naming case A
 
 #### Scenario: REQ-ZAK-001c Unlink preserves informatieobject
-
-- **GIVEN** `bijlage.pdf` is linked to `vergunning-1` via `zaakinformatieobject` `zio-0001`
-- **WHEN** `ZaakdossierService.unlinkInformatieobject('vergunning-1', infoObjectId)` is called
-- **THEN** only the `zaakinformatieobject` join record MUST be deleted
-- **AND** the informatieobject itself MUST remain in the register
-- **AND** the Nextcloud file MUST remain in Nextcloud Files
-
-@e2e exclude "Only the join record is deleted, the informatieobject and the Nextcloud file survive" is a storage-layer assertion (tests/Unit/Service/ZaakdossierServiceTest) — the dossier UI shows the same absence for a true delete and a mere unlink.
-
----
+- **GIVEN** an `informatieobject` joined to cases A and B, its file in A's folder
+- **WHEN** the join to B is deleted
+- **THEN** the `informatieobject`, its file and the join to A MUST be unchanged
 
 ### Requirement: REQ-ZAK-002 Informatieobjecten MUST follow the ZGW status lifecycle concept → definitief → gearchiveerd
 
@@ -158,6 +142,8 @@ and download operation. Guards MUST be checked at the service layer, not only in
 
 ### Requirement: REQ-ZAK-004 The zaakdossier view MUST render documents grouped by informatieobjecttype
 
+> Retired from the case page on 2026-09-13 (Ruben): the Files tab holds the case folder as a files browser on the Files app's primitives, and the dossier list, its upload dialog and their e2e suite left the page with it. The informatieobject API, the register and `ZaakdossierController` stay. Since `documents-live-on-the-case` the documents ARE the files in that browser: each row is a document, its Document properties action edits the record, and a document joined from another case renders as a linked row. The grouped dossier view described below is no longer rendered anywhere; the scenarios are kept as the record of it and the Files tab answers to `case-dashboard-view` and `document-projection` instead.
+
 `DossierTab.vue` MUST render the complete dossier for a zaak, grouping documents in collapsible
 sections per `informatieobjecttype` via `DossierGroup.vue`. `DocumentRow.vue` MUST display
 for each document: thumbnail (Nextcloud preview API at `/index.php/core/preview?fileId={id}&x=64&y=64`),
@@ -167,64 +153,54 @@ menu (open, share, publish, version history, delete-if-concept). The tab header 
 count badge (e.g., "Dossier (8)").
 
 #### Scenario: REQ-ZAK-004a Dossier groups documents by type with count badge
+@e2e exclude The grouped dossier view left the page on 2026-09-13; the Files tab is the document surface and is asserted under `case-dashboard-view` and `document-projection`.
 
-- **GIVEN** zaak `vergunning-2026-0042` has 8 informatieobjecten: Aanvraag (2), Advies (3),
-  Beschikking (1), Correspondentie (2)
-- **WHEN** the user opens the DossierTab
-- **THEN** documents MUST be grouped into 4 collapsible sections by informatieobjecttype
-- **AND** the tab header MUST show "Dossier (8)"
-- **AND** each row MUST show titel, status badge, creatiedatum, auteur,
-  bestandsomvang, vertrouwelijkheidaanduiding badge
+- **GIVEN** a zaak with 8 documents of 3 types
+- **WHEN** the dossier tab renders
+- **THEN** documents are grouped in 3 collapsible sections and the header reads "Dossier (8)"
 
 #### Scenario: REQ-ZAK-004b Empty dossier shows upload CTA with drag-and-drop zone
+@e2e exclude Retired with the grouped dossier view on 2026-09-13; the empty case folder's own empty state in the Files tab is asserted under `case-dashboard-view`.
 
-- **GIVEN** a new zaak with no linked informatieobjecten
-- **WHEN** the user opens the DossierTab
-- **THEN** an empty state MUST be shown with an upload button and drag-and-drop zone indicator
-- **AND** no error or broken state MUST appear
+- **GIVEN** a zaak with no documents
+- **WHEN** the dossier tab renders
+- **THEN** an upload call to action with a drop zone renders
 
 #### Scenario: REQ-ZAK-004c Sort and filter controls work per column
+@e2e exclude Retired with the grouped dossier view on 2026-09-13; the files browser sorts by name, size and modified.
 
-- **GIVEN** a dossier with 25 informatieobjecten of mixed status and type
-- **WHEN** the user filters by `status = definitief` and sorts by `creatiedatum` ascending
-- **THEN** only definitief documents MUST be shown, sorted oldest-first
-- **AND** the filter+sort state MUST be reflected in the URL
-
----
+- **GIVEN** a dossier with documents
+- **WHEN** the handler sorts or filters a column
+- **THEN** the list follows
 
 ### Requirement: REQ-ZAK-005 Upload MUST present a metadata dialog and require informatieobjecttype and vertrouwelijkheidaanduiding
 
-`DocumentMetadataDialog.vue` MUST be shown on drag-drop or upload click, requiring the user to
-select an `informatieobjecttype` (dropdown from catalog filtered by current register schema)
-and a `vertrouwelijkheidaanduiding` (default from selected type, overridable to more restrictive).
-`titel` MUST be pre-filled from the filename and be editable. `beschrijving` is optional.
-Multi-file upload MUST share the same metadata with per-file upload progress indicators.
+Since `documents-live-on-the-case` a drop in the Files tab stores the file at once with the
+derived defaults of `document-projection` REQ-DPR-001; the metadata dialog is the Document
+properties action on the row, where `informatieobjecttype` and `vertrouwelijkheidaanduiding` MUST
+be present before the record can leave `concept`. The dialog MUST still be the surface that sets
+both, and `ZaakdossierService.uploadDocument()` MUST still require both when called with a
+metadata payload.
 
 #### Scenario: REQ-ZAK-005a Drag-drop triggers metadata dialog before upload
+@e2e tests/e2e/case-documents-on-the-case.spec.ts
 
-- **GIVEN** the user drags two PDF files onto the DossierTab drop zone
-- **WHEN** the files are dropped
-- **THEN** `DocumentMetadataDialog` MUST open showing both filenames
-- **AND** a single `informatieobjecttype` selection MUST apply to both files
-- **AND** the dialog MUST NOT close or upload until all required fields are filled
+- **GIVEN** a case's Files tab
+- **WHEN** the handler drops a file
+- **THEN** the file MUST be stored and listed before any dialog opens
+- **AND** the row's Document properties action MUST open the metadata dialog on the file's record with the derived defaults filled in
 
 #### Scenario: REQ-ZAK-005b Per-file upload progress with shared metadata
+@e2e exclude The upload runs through the files browser, which shows a progress row per file; shared metadata is the case type's document defaults, asserted under `document-projection`.
 
-- **GIVEN** the user has filled in metadata and clicks "Uploaden" for 3 files
-- **WHEN** upload starts
-- **THEN** each file MUST show an individual progress indicator (0–100%)
-- **AND** on completion, each informatieobject MUST be created in the register
-- **AND** a failure on one file MUST NOT block successful upload of the other two
+- **GIVEN** three files dropped together
+- **WHEN** they upload
+- **THEN** each shows its own progress and each record carries the same defaults
 
 #### Scenario: REQ-ZAK-005c File validation blocks executable uploads
-
-- **GIVEN** a user drops `malware.exe` onto the dossier
-- **WHEN** `FileValidationHandler.blockExecutableFile()` runs before storage
-- **THEN** the upload MUST be rejected before the file is written to disk
-- **AND** both extension check AND magic-byte detection MUST run
-- **AND** the error MUST state the filename and reason (executable type)
-
----
+- **GIVEN** a handler drops `setup.exe` into the case folder
+- **WHEN** the projection runs
+- **THEN** no `informatieobject` MUST be created for it and the file MUST be removed with a notice naming the reason
 
 ### Requirement: REQ-ZAK-006 Version history MUST be surfaced via Nextcloud Files versions API
 
@@ -240,6 +216,8 @@ Restore action MUST be disabled when informatieobject status = `definitief`.
 - **THEN** all 3 versions MUST be listed with version number, timestamp, and uploader
 - **AND** each version MUST have a "Downloaden" link
 - **AND** versions 1 and 2 MUST have an active "Herstellen" button
+
+@e2e exclude The blocker has MOVED and shrunk, which is why this is not simply "#764". A document with more than one Nextcloud file version was the missing piece, and it is missing no longer: `case-documents.spec.ts#seedVersionedDocument` writes the file twice and its docblock carries the storage path. What is left is one leg on the DRAFT side. `case-documents.spec.ts` opens the version panel for a `final` document and proves REQ-ZAK-006b's refusal; the same panel on a `draft` document, asserting the Herstellen button is ACTIVE and that pressing it issues the MOVE, is the honest home for this scenario. Restore the citation there once that leg exists and its enabled-restore assertion has been mutation checked, rather than on a body that never runs.
 
 #### Scenario: REQ-ZAK-006b Restore is disabled for definitief documents
 
@@ -317,35 +295,19 @@ informatieobjecttype sub-folders plus a `manifest.csv` with columns:
 
 ### Requirement: REQ-ZAK-009 ZGW DRC-compatible download MUST support HTTP Range requests for resumable streaming
 
-`ZaakdossierController.downloadZgwDocumenten()` MUST expose a ZGW DRC-compatible endpoint at
-`GET /api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download` that uses
-`StreamResponse` with `Content-Range` support for resumable transfers of large files.
-
-All download endpoints MUST pass through `InformatieobjectAccessGuard.canRead()` before
-streaming begins.
+The DRC download endpoint MUST stream the file the record's `fileId` names, wherever that file
+lives: the case's folder for a document on the case, the record's own folder for an API-created
+document not yet joined to a case. Range handling and clearance gating are unchanged.
 
 #### Scenario: REQ-ZAK-009a ZGW DRC endpoint streams large file with Range support
-
-- **GIVEN** informatieobject with UUID `inf-bbbb-0002` has `bestandsomvang` = 52 MB
-- **WHEN** the client sends `GET /api/zgw/documenten/v1/enkelvoudiginformatieobjecten/inf-bbbb-0002/download`
-  with header `Range: bytes=0-1048575`
-- **THEN** the server MUST respond HTTP 206 Partial Content
-- **AND** the response MUST include `Content-Range: bytes 0-1048575/54525952`
-- **AND** the first 1 MB of file content MUST be returned
-
-@e2e exclude HTTP 206 + `Content-Range` on a Range request is a transport contract asserted in tests/Unit/Http/RangeStreamResponseTest and in the Newman collection; a browser page navigation cannot set a Range header or assert partial-content framing.
+- **GIVEN** a document whose file is in its case's folder
+- **WHEN** a client requests `/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download` with a Range header
+- **THEN** the response MUST be 206 with the requested bytes of that file
 
 #### Scenario: REQ-ZAK-009b Download blocked when user lacks clearance
-
-- **GIVEN** informatieobject has `vertrouwelijkheidaanduiding` = `geheim`
-- **AND** the requesting user's clearance is `intern`
-- **WHEN** a download request arrives at the ZGW DRC endpoint
-- **THEN** `InformatieobjectAccessGuard.canRead()` MUST deny access
-- **AND** the server MUST return HTTP 403 Forbidden before streaming any content
-
-@e2e exclude "403 before any bytes stream" is a guard-ordering assertion on the ZGW DRC endpoint, covered in tests/Unit/Service/InformatieobjectAccessGuardTest + Newman; the UI never links a document the caller may not read.
-
----
+- **GIVEN** a document with `vertrouwelijkheidaanduiding` geheim
+- **WHEN** a user below that clearance requests the download
+- **THEN** the response MUST be 403, whichever folder the file is in
 
 ### Requirement: REQ-ZAK-010 Existing linked files MUST be back-filled with ZGW informatieobject metadata
 
@@ -378,3 +340,111 @@ informatieobject MUST be skipped.
 
 @e2e exclude Repair-step idempotence is proven by running the step twice and comparing record counts — a PHPUnit-level assertion (repair-step unit tests); there is no UI that re-runs a repair step.
 
+### Requirement: REQ-ZAK-020 The version history of a case file opens from the file
+
+The Files tab of a case SHALL offer Versions on every file row, and that
+action SHALL open the version history of the file that was clicked. The
+history SHALL list each version with its moment, its author and its size,
+and SHALL offer download and restore on each. A property the server did
+not send SHALL be shown as absent rather than as a value: an author
+nobody recorded reads Unknown, and a size nobody sent is left off the
+line rather than written as nought bytes.
+
+Opening a version in a viewer is deliberately not required. Download is
+how a reader opens an old version, because the Nextcloud viewer resolves
+a file by its node and a version is not one. A separate View that only
+downloaded would be a second name for one act.
+
+dossiq SHALL store no version chain of its own: the versions are the
+platform's, read and restored through the Nextcloud Files versions API.
+
+#### Scenario: Versions opens on the file the row named
+
+- **GIVEN** a case whose folder holds `besluit.pdf` with three versions
+- **WHEN** a handler opens the row menu on `besluit.pdf` and picks Versions
+- **THEN** the panel SHALL list three versions of `besluit.pdf`
+- **AND** restoring the oldest SHALL make it the current file in the folder
+
+#### Scenario: The panel reads the file the browser clicked, not a row it was never given
+@e2e exclude a prop-precedence branch with one gesture behind it; covered by the VersionHistoryPanel unit test
+
+- **GIVEN** the panel is opened with a file id and with a row naming another file
+- **WHEN** it reads the version history
+- **THEN** it SHALL read the versions of the file id
+- **AND** the row SHALL be used only when no file id arrived
+
+#### Scenario: A panel handed no file refuses instead of showing an empty list
+@e2e exclude a defensive branch with no reachable gesture; covered by the VersionHistoryPanel unit test, which mounts it with neither prop
+
+- **GIVEN** the panel is opened with neither a file id nor a document row
+- **WHEN** it renders
+- **THEN** it SHALL say which file it could not find
+- **AND** it SHALL NOT render an empty version list, because no versions and
+  no file look identical to a reader
+
+### Requirement: REQ-ZAK-021 A case file can be marked final or reclassified from its row
+
+The Files tab SHALL offer mark final and change confidentiality on a file
+row, and each act SHALL report what it changed. A file the act could not be
+applied to SHALL be named rather than silently skipped, and an act that
+found no document to work on SHALL refuse rather than report that it
+changed nothing.
+
+Acting on SEVERAL files at once is deliberately not required here. The
+files browser carries no selection bar: the Files app's own list, its
+selection bar and its inline rename are bound to the Files app's router and
+cannot be mounted on a case page, which the component says of itself. A
+bulk-actions declaration on that widget would therefore be read by nothing,
+and a declared capability nobody can reach is the exact failure this change
+exists to end. The whole case file as one download is REQ-ZAK-022.
+
+#### Scenario: A file is marked final from its row
+
+- **GIVEN** a case whose folder holds a file with a document record
+- **WHEN** the handler picks Mark as final on that row and applies it
+- **THEN** that document SHALL read final
+- **AND** the other files in the folder SHALL be unchanged
+
+#### Scenario: A file with no document record refuses rather than reporting nothing
+@e2e exclude a timing branch that needs the projection listener held back; covered by the BulkDocumentActionDialog unit test
+
+- **GIVEN** a file whose informatieobject record has not been written yet
+- **WHEN** the handler marks it final
+- **THEN** the act SHALL say no document record was found
+- **AND** it SHALL NOT report a count of zero as a success
+
+### Requirement: REQ-ZAK-022 The case file can be exported as one download
+
+A case detail page SHALL offer Export dossier, and that action SHALL return
+the case file as a zip carrying its manifest. A reader who may not read the
+case SHALL be refused with a status and no bytes.
+
+#### Scenario: A handler downloads the case file
+
+- **GIVEN** a case with two documents and a reader who may read it
+- **WHEN** that reader presses Export dossier
+- **THEN** a zip SHALL download
+- **AND** it SHALL contain both documents and a manifest naming them
+
+#### Scenario: A reader who may not read the case gets nothing
+@e2e exclude an authorization branch driven from the API; covered by the DossierExportController guard test
+
+- **GIVEN** a reader with no access to the case
+- **WHEN** that reader calls the export endpoint for it
+- **THEN** the response SHALL be 403
+- **AND** no part of the zip SHALL be written to the response
+
+### Requirement: REQ-ZAK-023 A registered dialog that no page opens fails the suite
+
+Every modal registered in the app registry SHALL be named by at least one
+manifest action, or SHALL carry a written reason for being registered
+without one. The check SHALL assert how many entries it examined, so a run
+that matched nothing cannot report success.
+
+#### Scenario: Retiring a tab that owned a dialog turns the suite red
+@e2e exclude a build-time check over two source files; covered by the registry orphan unit test
+
+- **GIVEN** a registered modal opened only by one tab's row actions
+- **WHEN** that tab is removed from the manifest and the entry is left behind
+- **THEN** the registry orphan test SHALL fail
+- **AND** it SHALL name the modal that no page opens

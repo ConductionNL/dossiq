@@ -119,7 +119,7 @@ export default {
 	computed: {
 		/** @spec openspec/specs/mandaat-matrix/spec.md */
 		adminDocsUrl() {
-			return 'https://procest.conduction.nl/docs/user/mandate-matrix-admin'
+			return 'https://dossiq.conduction.nl/docs/user/mandate-matrix-admin'
 		},
 	},
 

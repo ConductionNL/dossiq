@@ -3,10 +3,11 @@
 /**
  * Dossiq case-access policy for the sharing surface.
  *
- * Answers "may this user act on this case?" for every share operation. Three
- * things grant access: the case names the user as assignee (single-valued or
- * in the `assignees` array), or the user once minted a share for the case —
- * which is standing evidence they had access at that time.
+ * Answers "may this user act on this case?" for every share operation. Four
+ * things grant access: the caller is an instance admin, the case names the
+ * user as assignee (single-valued or in the `assignees` array), or the user
+ * once minted a share for the case — which is standing evidence they had
+ * access at that time.
  *
  * Split out of CaseSharingService so the fail-OPEN decisions this policy makes
  * are stated in one auditable place. Note the asymmetry, and that it is
@@ -41,6 +42,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Sharing;
 
 use OCA\Dossiq\Service\SettingsService;
+use OCP\IGroupManager;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -56,11 +58,13 @@ class CaseAccessPolicy {
 	 *
 	 * @param SettingsService $settingsService The settings service
 	 * @param OpenRegisterSharingGateway $gateway OpenRegister resolution for the sharing surface
+	 * @param IGroupManager $groupManager Answers whether the caller is an instance admin
 	 * @param LoggerInterface $logger The logger
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly OpenRegisterSharingGateway $gateway,
+		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -69,14 +73,22 @@ class CaseAccessPolicy {
 	 * Check whether a given user may access a case for sharing purposes.
 	 *
 	 * A user is permitted when any of the following holds:
+	 *  - the caller is an NC admin (checked via group membership `admin`)
 	 *  - the case's `assignee` field equals the user ID
 	 *  - the user ID appears in `assignees` (array)
 	 *  - the user ID appears as a `createdBy` on any caseShare linked to the case
-	 *  - the caller is an NC admin (checked via group membership `admin`)
 	 *
-	 * Returns true when the case cannot be loaded (fail-safe for missing OR
-	 * config) to avoid breaking installations that have not configured the
-	 * case schema. The caller must still authenticate via IUserSession.
+	 * This gate is not read-only: it also guards `createShare`, `revokeShare`,
+	 * `initiateTransfer` and `handleTransfer`. So an admin may also mint and
+	 * revoke share links and initiate or accept a federated transfer on any
+	 * case, as an NC admin may do anything else on the instance. The admin
+	 * answer comes before the case is loaded, so for an admin a true does not
+	 * mean the case exists.
+	 *
+	 * For a non-admin, returns true when the case cannot be loaded (fail-safe
+	 * for missing OR config) to avoid breaking installations that have not
+	 * configured the case schema. The caller must still authenticate via
+	 * IUserSession.
 	 *
 	 * @param string $caseId The case UUID
 	 * @param string $userId The caller's user ID
@@ -86,6 +98,18 @@ class CaseAccessPolicy {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function canUserAccessCase(string $caseId, string $userId): bool {
+		// First, and before the case is loaded: an admin needs no assignment,
+		// and this is the bullet the docblock has always claimed while nothing
+		// checked it. Every case detail page eagerly loads its access links, so
+		// an admin opening any case they were not assigned got a 403 and a red
+		// "Could not load the links on this case" toast.
+		//
+		// `=== true` and not a cast: IGroupManager::isAdmin() carries no return
+		// type, matching the other admin gates in this app.
+		if ($this->groupManager->isAdmin($userId) === true) {
+			return true;
+		}
+
 		$objectService = $this->gateway->objectService();
 		if ($objectService === null) {
 			// OR not available — fail-open so the feature still works on basic setups.

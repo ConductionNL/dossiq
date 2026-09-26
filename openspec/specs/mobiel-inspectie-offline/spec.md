@@ -55,7 +55,7 @@ orphaned mobile-inspection backend, so nothing in this app tests it.
 
 #### Scenario: Sync size warning for slow connections
 
-@e2e exclude Connection-speed estimation depends on the Network Information API + a live throttled link; not headless-drivable. Size-manifest math is server-side (MapTileService) + unit-tested.
+@e2e exclude Connection-speed estimation depends on the Network Information API + a live throttled link; not headless-drivable. The size-manifest math was `MapTileService`, retired on 2026-09-18 as dark; see the note under "Pre-download map tiles for case addresses".
 
 - **GIVEN** the inspector is on a 3G connection with bandwidth ~1 Mbps
 - **WHEN** they initiate sync for a schedule that totals 48 MB
@@ -308,7 +308,11 @@ The system SHALL pre-download relevant map tiles (PDOK BRT background, cadaster 
 
 #### Scenario: Pre-download map tiles for case addresses
 
-@e2e exclude PDOK tile pre-download + IndexedDB tile cache is a Service Worker concern; not headless-deterministic. Tile enumeration / size estimate math is server-side + unit-tested (MapTileServiceTest).
+@e2e exclude PDOK tile pre-download + IndexedDB tile cache is a Service Worker concern; not headless-deterministic.
+
+> **Not implemented, and the server half has been removed.** `MapTileService` enumerated the tiles in a bounding box and estimated the download, was unit-tested, and had no caller of any kind: no route answered a manifest, `public/service-worker.js` pre-caches nothing (its `install` handler is `skipWaiting()` alone), and no view offers a download-this-area gesture. It was retired on 2026-09-18 rather than left dark. What DOES happen today is that the worker caches tiles cache-first at request time, so an inspector who looked at the map before leaving keeps those tiles.
+>
+> The plumbing for a real pre-download is already in place: the CSP on the worker's own response (`DashboardController::serviceWorker()`) allows `connect-src 'self'` and `https://service.pdok.nl`, so a worker CAN fetch a manifest from this Nextcloud and CAN fetch tiles. What is missing is the manifest endpoint, a `precache-tiles` message handler in the worker, and the gesture, which the spec hangs off the "Dag synchroniseren" surface that does not exist either. Rebuild the enumeration beside its consumer; the arithmetic is in git history at the commit that removed this file.
 
 - **GIVEN** the daily sync downloads cases in a radius around the city center (52.0692°N, 5.3039°E)
 - **WHEN** the system calculates map tile coverage for zoom levels 10-18

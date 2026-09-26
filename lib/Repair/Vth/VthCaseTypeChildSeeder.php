@@ -270,7 +270,7 @@ class VthCaseTypeChildSeeder {
 		string $caseTypeId,
 	): ?array {
 		try {
-			$rows = $this->searchObjectsAsArrays(
+			$rows = $this->searchObjectsAsArraysUnscoped(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,

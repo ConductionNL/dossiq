@@ -76,7 +76,18 @@ class DossierZipExporter {
 	 */
 	public function collectDocuments(string $caseId, array $selectedIds): array {
 		$file = $this->fileService->getDossierForCase(caseId: $caseId);
-		$documents = ($file['informatieobjecten'] ?? []);
+
+		// The dossier reader is declared array<string, mixed>, so this key is
+		// mixed and psalm collapsed it to array<never, never>. On that type the
+		// array_values() below looks redundant, and removing it would have been
+		// a real bug: array_filter() preserves keys, so the JSON response would
+		// turn from a list into an object with gaps. Narrowing here keeps the
+		// call honest instead.
+		$raw = ($file['informatieobjecten'] ?? []);
+		$documents = [];
+		if (is_array($raw) === true) {
+			$documents = $raw;
+		}
 
 		if (empty($selectedIds) === true) {
 			return $documents;

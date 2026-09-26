@@ -2,18 +2,22 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The Integrations page, its seed, and the promise the seed makes.
+ * The Integrations page, its declaration, and the promise the declaration makes.
  *
- * Everything asserted here fails SILENTLY in the browser. An icon that is not
- * in `src/icons.js` renders nothing rather than a fallback glyph; a menu id
- * missing from `settingsSection` in menu-layout.json lands in the MAIN nav
- * instead of the gear, where every user sees it; a seed row that claims
- * `configured` makes the page lie on a fresh instance and nothing complains;
- * and a `settingsUrl` pointing at an anchor no section carries scrolls
- * nowhere and logs nothing. The page exists to stop exactly this class of
- * quiet untruth, so the guard has to be here rather than in a reviewer's eye.
+ * Since adopt-connection-registry the rows are integriq's. Dossiq ships two
+ * things: the page in its manifest and `lib/Settings/connections.json`, which
+ * integriq syncs into its `app_connection` schema.
  *
- * @spec openspec/specs/admin-settings/spec.md
+ * Everything asserted here fails SILENTLY in the browser. A menu entry without
+ * its `query` lists every app's rows as though they were dossiq's; an icon that
+ * is not in `src/icons.js` renders nothing; a menu id missing from
+ * `settingsSection` lands in the MAIN nav; a header action naming a handler
+ * nobody exports does nothing when clicked; and a `settingsUrl` pointing at an
+ * anchor no section carries scrolls nowhere and logs nothing. The page exists
+ * to stop exactly this class of quiet untruth, so the guard has to be here
+ * rather than in a reviewer's eye.
+ *
+ * @spec openspec/changes/adopt-connection-registry/specs/admin-settings/spec.md
  */
 
 import fs from 'fs'
@@ -28,25 +32,36 @@ const readJson = (...parts) => JSON.parse(read(...parts))
 const manifest = readJson('src', 'manifest.json')
 const menuLayout = readJson('src', 'menu-layout.json')
 const register = readJson('lib', 'Settings', 'dossiq_register.json')
-const seed = readJson('lib', 'Settings', 'register.d', '96-integrations.json')
+const declaration = readJson('lib', 'Settings', 'connections.json')
 const iconsSource = read('src', 'icons.js')
 const adminRoot = read('src', 'views', 'settings', 'AdminRoot.vue')
+const registrySource = read('src', 'registry.js')
+const integriqSource = read('src', 'utils', 'integriqConnections.js')
+const en = readJson('l10n', 'en.json').translations
+const nl = readJson('l10n', 'nl.json').translations
 
 const page = manifest.pages.find((p) => p.id === 'Integrations')
 const menuEntry = manifest.menu.find((m) => m.id === 'IntegrationsMenu')
-const schema = register.components.schemas.dossiqIntegration
-const rows = seed.components.objects
+const oldSchema = register.components.schemas.dossiqIntegration
+const connections = declaration.connections
+const byKey = Object.fromEntries(connections.map((c) => [c.key, c]))
 
 describe('the Integrations page', () => {
-	it('is declared, admin only, and reads the integration schema', () => {
+	it("is declared, admin only, and reads integriq's app_connection schema", () => {
 		expect(page).toBeDefined()
 		expect(page.permission).toBe('admin')
 		expect(page.route).toBe('/settings/integrations')
-		expect(page.config.register).toBe('dossiq')
-		expect(page.config.schema).toBe('dossiqIntegration')
+		expect(page.config.register).toBe('integriq')
+		expect(page.config.schema).toBe('app_connection')
 	})
 
-	it('is not a custom page — the ADR-100 ratchet is the point of task 2.2', () => {
+	// Without it, a deep link on an instance without integriq renders an empty
+	// table, and "not installed" looks exactly like "no connections".
+	it('names Integriq as the app it needs', () => {
+		expect(page.requiresApp).toEqual({ id: 'integriq', name: 'Integriq' })
+	})
+
+	it('is not a custom page, the ADR-100 ratchet is the point of task 2.2', () => {
 		expect(page.type).toBe('index')
 		expect(page.component).toBeUndefined()
 	})
@@ -56,7 +71,7 @@ describe('the Integrations page', () => {
 		expect(page.config.sections).toBeUndefined()
 	})
 
-	it('shows the four things a card has to show', () => {
+	it('shows the four things a row has to show', () => {
 		const keys = page.config.columns.map((c) => c.key)
 		expect(keys).toContain('title')
 		expect(keys).toContain('status')
@@ -64,34 +79,58 @@ describe('the Integrations page', () => {
 		expect(keys).toContain('checkedAt')
 	})
 
-	it('renders the status through the formatter, never the raw enum', () => {
+	it('renders the status through the contract formatter, never the raw enum', () => {
 		const status = page.config.columns.find((c) => c.key === 'status')
-		expect(status.formatter).toBe('integrationStatus')
+		expect(status.formatter).toBe('connectionStatus')
 	})
 
 	it('offers Open settings as a per-row link, which is the only shape that can hide itself', () => {
 		const settings = page.config.columns.find((c) => c.key === 'settingsUrl')
 		expect(settings.widget).toBe('link')
 		expect(settings.widgetProps.href).toBe('{settingsUrl}')
-		expect(settings.formatter).toBe('integrationSettingsLabel')
-		// A row action could not do this: CnRowActions' `visible` predicate is
-		// a function, and JSON cannot carry one.
+		expect(settings.formatter).toBe('connectionSettingsLabel')
 		expect(page.config.actions ?? []).toEqual([])
 	})
 
-	it('sorts on the seeded order so ZGW is first and PDOK is last', () => {
+	it('sorts on the declared order so ZGW is first', () => {
 		expect(page.config.defaultSort).toEqual({
 			field: 'order',
 			direction: 'asc',
 		})
 	})
 
-	it('groups the sidebar on a facetable field with a source CnFolderSidebar accepts', () => {
-		expect(['custom', 'field', 'files']).toContain(
-			page.config.folderSidebar.source,
-		)
+	it('groups the sidebar on status', () => {
+		expect(page.config.folderSidebar.source).toBe('field')
 		expect(page.config.folderSidebar.field).toBe('status')
-		expect(schema.properties.status.facetable).toBe(true)
+	})
+
+	// A row nothing declared has nothing to check (connection-registry D9).
+	it('offers no generic Add button', () => {
+		expect(page.config.showAdd).toBe(false)
+	})
+
+	it('sends Add integration to integriq through a handler that exists', () => {
+		const add = (page.config.headerActions ?? []).find(
+			(a) => a.id === 'add-integration',
+		)
+		expect(add).toBeDefined()
+		expect(add.label).toBe('Add integration')
+		expect(add.handler).toBe('openIntegriqConnections')
+		// Defined AND registered as a handler, or the renderer cannot resolve it.
+		expect(integriqSource).toContain('export function openIntegriqConnections(')
+		expect(integriqSource).toContain(
+			"'/apps/integriq/connections?app=dossiq&link=1'",
+		)
+		expect(registrySource).toMatch(
+			/\n\topenIntegriqConnections: \{\n\t\tkind: 'handler',\n\t\thandler: openIntegriqConnections,\n/,
+		)
+		expect(iconsSource).toContain(`\n\t${add.icon},`)
+	})
+
+	it('translates the new action label', () => {
+		expect(en['Add integration']).toBe('Add integration')
+		expect(nl['Add integration']).toBeTruthy()
+		expect(nl['Add integration']).not.toBe('Add integration')
 	})
 })
 
@@ -105,6 +144,17 @@ describe('the Integrations menu entry', () => {
 		expect(menuLayout.removals).not.toContain('IntegrationsMenu')
 	})
 
+	// THE PRESET. integriq's schema holds every app's rows. The query is what
+	// makes this dossiq's page, and a bare key is the spelling the objects
+	// endpoint reads as a filter.
+	it("presets the list to dossiq's own rows", () => {
+		expect(menuEntry.query).toEqual({ app: 'dossiq' })
+	})
+
+	it('only renders when integriq is installed', () => {
+		expect(menuEntry.visibleIf).toEqual({ appInstalled: 'integriq' })
+	})
+
 	it('names an icon src/icons.js registers (gate-60)', () => {
 		expect(menuEntry.icon).toBe('PowerPlugOutline')
 		expect(iconsSource).toContain(`\n\t${menuEntry.icon},`)
@@ -115,69 +165,13 @@ describe('the Integrations menu entry', () => {
 	})
 })
 
-describe('the dossiqIntegration schema', () => {
-	it('declares the five states and nothing else', () => {
-		expect(schema.properties.status.enum).toEqual([
-			'configured',
-			'unconfigured',
-			'unavailable',
-			'simulated',
-			'error',
-		])
+describe('the connection declaration', () => {
+	it('names this app', () => {
+		expect(declaration.app).toBe('dossiq')
 	})
 
-	// Simulated is the state that lets an adapter seam tell the truth. Without
-	// it the two mock-backed seams have to be filed under `unconfigured`, which
-	// understates a channel that succeeds and delivers nothing, or under
-	// `configured`, which is the lie this page was built to remove.
-	it('gives Simulated a label, because an unlabelled enum renders raw', () => {
-		expect(schema.properties.status['x-enum-labels'].simulated).toBe('Simulated')
-	})
-
-	it('is listed on the register, so the import creates it', () => {
-		expect(register.components.registers.dossiq.schemas).toContain(
-			'dossiqIntegration',
-		)
-	})
-
-	// THE DECLARATION THAT KEEPS THE ROWS OFF AN ORDINARY ACCOUNT.
-	//
-	// OpenRegister treats an ABSENT `authorization` block as open, and this
-	// schema had none: `GET /apps/openregister/api/objects/dossiq/
-	// dossiqIntegration` answered ten rows to an account in no groups. The
-	// e2e suite measures the live endpoint; this asserts the declaration the
-	// import carries, because the e2e run needs an instance and a deleted
-	// block would otherwise reach `development` with nothing red.
-	//
-	// ALL FOUR ACTIONS, not just `read`. Once the block is non-empty
-	// OpenRegister fails an UNLISTED action closed, so trimming this to
-	// `read` alone would silently move create/update/delete to owner-only —
-	// a different change wearing this one's clothes.
-	it('restricts every action to admins, because an absent block is open', () => {
-		expect(schema.authorization).toEqual({
-			read: ['admin'],
-			create: ['admin'],
-			update: ['admin'],
-			delete: ['admin'],
-		})
-	})
-
-	it('leaves settingsUrl free of format: uri, which rejects a relative path', () => {
-		expect(schema.properties.settingsUrl.format).toBeUndefined()
-	})
-
-	it('hides nothing and marks nothing read-only — both drop a property silently', () => {
-		for (const property of Object.values(schema.properties)) {
-			expect(property.visible).not.toBe(false)
-			expect(property.readOnly).not.toBe(true)
-		}
-	})
-})
-
-describe('the seeded connections', () => {
-	it('are the ten of row A34 plus the two adapter seams, in placement order', () => {
-		expect(rows).toHaveLength(12)
-		expect(rows.map((r) => r.key)).toEqual([
+	it('keeps the twelve keys the page used, in placement order', () => {
+		expect(connections.map((c) => c.key)).toEqual([
 			'zgw',
 			'stuf',
 			'kcc',
@@ -191,94 +185,137 @@ describe('the seeded connections', () => {
 			'berichtenbox',
 			'templates',
 		])
-		const orders = rows.map((r) => r.order)
+		const orders = connections.map((c) => c.order)
 		expect([...orders].sort((a, b) => a - b)).toEqual(orders)
 	})
 
-	it('claim nothing: no seeded row reads Configured', () => {
-		expect(rows.some((r) => r.status === 'configured')).toBe(false)
-	})
-
-	// BRP and KvK were both seeded Not available with "Specified, not built
-	// yet", and that sentence was false for both of them. Each ships a Log
-	// adapter, a real HTTP adapter, a DI registrar bound from
-	// ExternalRegisterRegistrar, and unit tests. What separates them is who
-	// calls them: ConflictOfInterestService injects the BRP adapter for the
-	// belangenconflict check, and nothing anywhere injects the KvK one.
-	it('say Not available only where nothing calls the adapter', () => {
-		const unavailable = rows.filter((r) => r.status === 'unavailable')
-		expect(unavailable.map((r) => r.key)).toEqual(['kvk'])
-		for (const row of unavailable) {
-			expect(row.statusMessage).not.toMatch(/not built/i)
-			expect(row.statusMessage).toMatch(/built and bound/i)
-			expect(row.settingsUrl).toBe('')
+	it('gives every connection a title', () => {
+		for (const connection of connections) {
+			expect(String(connection.title ?? '').trim()).not.toBe('')
 		}
 	})
 
-	// The row that was wrong. BRP is built, bound and called, and it reaches
-	// nothing because its tier defaults to `log`. That is Not configured, and
-	// the message has to name the key an integrator sets, because no admin
-	// section writes it.
-	it('say Not configured for BRP, and name the key that wakes it', () => {
-		const brp = rows.find((r) => r.key === 'brp')
-		expect(brp.status).toBe('unconfigured')
-		expect(brp.statusMessage).not.toMatch(/not built/i)
-		expect(brp.statusMessage).toMatch(/integration\.brp\.mode/)
-		expect(brp.settingsUrl).toBe('')
+	// BRP and KvK were both once marked "Specified, not built yet", which was
+	// false for both. What separates them is who calls them: nothing injects
+	// the KvK adapter.
+	it('declares only KvK unavailable, and says why', () => {
+		const unavailable = connections.filter((c) => c.available === false)
+		expect(unavailable.map((c) => c.key)).toEqual(['kvk'])
+		expect(byKey.kvk.unavailableMessage).toMatch(/built and bound/i)
+		expect(byKey.kvk.unavailableMessage).not.toMatch(/not built/i)
+		expect(byKey.kvk.settingsUrl).toBeUndefined()
 	})
 
-	// The row this change exists for. Berichtenbox and the template engine both
-	// resolve to a mock adapter until an integrator names a real one, and the
-	// mock WORKS: it returns a message id, it returns a rendered document, and
-	// nothing leaves the instance. `unconfigured` would understate that and
-	// `configured` would be the page's own lie, so both read Simulated and both
-	// say the word mock in a sentence a reader sees on the row itself.
-	it('say Simulated where a mock adapter is what answers', () => {
-		const simulated = rows.filter((r) => r.status === 'simulated')
-		expect(simulated.map((r) => r.key)).toEqual(['berichtenbox', 'templates'])
-		for (const row of simulated) {
-			expect(row.statusMessage).toMatch(/mock/i)
-			expect(row.settingsUrl).toBe('')
-		}
+	// The rows this page exists for. A mock adapter WORKS and delivers
+	// nothing, so integriq shows Simulated while the adapter key is empty, and
+	// the message has to say the word.
+	// BRP is built and called, and reaches nothing until its tier key moves.
+	// No admin section writes that key, so the row's message has to name it.
+	it('names the key that wakes BRP, and offers no settings link', () => {
+		expect(byKey.brp.unconfiguredMessage).toMatch(/integration\.brp\.mode/)
+		expect(byKey.brp.unconfiguredMessage).not.toMatch(/not built/i)
+		expect(byKey.brp.settingsUrl).toBeUndefined()
 	})
 
-	it('say Not checked yet everywhere else', () => {
-		const rest = rows.filter(
-			(r) =>
-				r.status !== 'unavailable'
-				&& r.status !== 'simulated'
-				&& r.key !== 'brp',
+	it('names the adapter key of the two mock-backed seams', () => {
+		expect(byKey.berichtenbox.adapter.configKey).toBe('berichtenbox_adapter')
+		expect(byKey.templates.adapter.configKey).toBe(
+			'beschikking_template_adapter',
 		)
-		expect(rest).toHaveLength(8)
-		for (const row of rest) {
-			expect(row.status).toBe('unconfigured')
-			expect(row.statusMessage).toBe('Not checked yet')
+		for (const key of ['berichtenbox', 'templates']) {
+			expect(byKey[key].adapter.simulatedMessage).toMatch(/mock/i)
+			expect(byKey[key].settingsUrl).toBeUndefined()
 		}
 	})
 
-	it('link only to an anchor AdminRoot.vue actually carries', () => {
-		for (const row of rows) {
-			if (row.settingsUrl === '') {
-				continue
-			}
-			const anchor = row.settingsUrl.split('#')[1]
-			expect(row.settingsUrl.startsWith('/settings/admin/dossiq#')).toBe(true)
+	// Contract D4 rule 3 (hydra#673) matches the key's value against
+	// `simulatedValues`. Naming the mock class in the key binds the mock too,
+	// so the list has to carry that class or the row reads Configured while
+	// the mock answers.
+	//
+	// The two seams differ about the empty string, and that is deliberate.
+	// An empty `beschikking_template_adapter` still falls back to its mock, so
+	// empty is simulated there. An empty `berichtenbox_adapter` binds
+	// IntegriqAdapter, which refuses rather than simulating, so listing empty
+	// there reported a mock that was not answering.
+	it('reads Simulated only when a mock really answers', () => {
+		expect(byKey.berichtenbox.adapter.simulatedValues).toEqual([
+			'OCA\\Dossiq\\Service\\BerichtenboxAdapter\\MockAdapter',
+			'mock',
+		])
+		expect(byKey.templates.adapter.simulatedValues).toEqual([
+			'',
+			'OCA\\Dossiq\\Service\\Beschikking\\MockTemplateEngineAdapter',
+		])
+		expect(connections.some((c) => 'reportedOnly' in c)).toBe(false)
+	})
+
+	// No admin section writes `digital_post_source`, and integriq refuses a
+	// send over an empty one before it looks anything up. So the row names the
+	// key, the way the BRP row names its own.
+	it('names the digital post source the Berichtenbox row needs', () => {
+		expect(byKey.berichtenbox.requiredConfig).toEqual(['digital_post_source'])
+		expect(byKey.berichtenbox.unconfiguredMessage).toMatch(/digital_post_source/)
+	})
+
+	it('lets the probed connections arrive as reports', () => {
+		for (const key of ['stuf', 'mailbox', 'store']) {
+			expect(byKey[key].requiredConfig).toBeUndefined()
+			expect(byKey[key].adapter).toBeUndefined()
+		}
+	})
+
+	it('links only to an anchor AdminRoot.vue actually carries', () => {
+		const linked = connections.filter((c) => c.settingsUrl !== undefined)
+		expect(linked).toHaveLength(7)
+		for (const connection of linked) {
+			const anchor = connection.settingsUrl.split('#')[1]
+			expect(
+				connection.settingsUrl.startsWith('/settings/admin/dossiq#'),
+			).toBe(true)
 			expect(adminRoot).toContain(`id="${anchor}"`)
 		}
 	})
 
-	it('leave PDOK unlinked, because it has no admin section at all', () => {
-		const pdok = rows.find((r) => r.key === 'pdok')
-		expect(pdok.settingsUrl).toBe('')
+	it('leaves PDOK unlinked, because it has no admin section at all', () => {
+		expect(byKey.pdok.settingsUrl).toBeUndefined()
 		expect(adminRoot).not.toContain('id="section-pdok"')
 	})
+})
 
-	it('write every row against the schema the page reads', () => {
-		for (const row of rows) {
-			expect(row['@self'].register).toBe('dossiq')
-			expect(row['@self'].schema).toBe('dossiqIntegration')
-			expect(schema.properties.key.enum).toContain(row.key)
+describe('the old dossiqIntegration schema', () => {
+	it('stays in the register for one release, with a note naming the change', () => {
+		expect(oldSchema).toBeDefined()
+		expect(register.components.registers.dossiq.schemas).toContain(
+			'dossiqIntegration',
+		)
+		expect(oldSchema._meta.change).toBe(
+			'openspec/changes/adopt-connection-registry',
+		)
+	})
+
+	it('is seeded by no register.d fragment', () => {
+		const dir = path.join(ROOT, 'lib', 'Settings', 'register.d')
+		for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+			const fragment = JSON.parse(
+				fs.readFileSync(path.join(dir, file), 'utf8'),
+			)
+			const objects = fragment?.components?.objects ?? []
+			expect(
+				objects.filter((o) => o?.['@self']?.schema === 'dossiqIntegration'),
+				`${file} still seeds dossiqIntegration rows`,
+			).toEqual([])
 		}
+	})
+
+	// Kept while the schema is: a revert brings the old page back onto it.
+	it('still restricts every action to admins', () => {
+		expect(oldSchema.authorization).toEqual({
+			read: ['admin'],
+			create: ['admin'],
+			update: ['admin'],
+			delete: ['admin'],
+		})
 	})
 })
 
@@ -288,15 +325,5 @@ describe('the admin page anchors', () => {
 			(m) => m[1],
 		)
 		expect(new Set(ids).size).toBe(ids.length)
-	})
-
-	it('cover every section a seeded row links to', () => {
-		const linked = rows
-			.filter((r) => r.settingsUrl !== '')
-			.map((r) => r.settingsUrl.split('#')[1])
-		expect(linked).toHaveLength(7)
-		for (const anchor of linked) {
-			expect(adminRoot).toContain(`id="${anchor}"`)
-		}
 	})
 })

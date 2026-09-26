@@ -39,6 +39,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\CaseSharingService;
 use OCA\Dossiq\Service\CaseTransferService;
+use OCA\Dossiq\Service\Sharing\CaseAccessLinkService;
+use OCA\Dossiq\Service\Sharing\CaseLinkShares;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -105,52 +107,170 @@ class CaseSharingController extends Controller {
 		}
 
 		if ($shareType === 'partner') {
-			$partnerId = $this->request->getParam('partnerId');
-			if (empty($partnerId) === true) {
-				return new JSONResponse(
-					['success' => false, 'error' => 'partnerId is required for partner shares'],
-					400
-				);
-			}
-
-			$partnerShare = $this->caseSharingService->createPartnerShare(
-				$caseId,
-				$partnerId,
-				$permissionLevel,
-				$user->getUID(),
+			return $this->partnerShare(
+				caseId: $caseId,
+				permissionLevel: (string)$permissionLevel,
+				createdBy: $user->getUID(),
 			);
+		}
 
-			if (isset($partnerShare['error']) === true) {
-				return new JSONResponse(
-					['success' => false, 'error' => $partnerShare['error']],
-					Http::STATUS_BAD_GATEWAY
-				);
-			}
-
-			return new JSONResponse(['success' => true, 'share' => $partnerShare]);
-		}//end if
-
-		// Public "track your case" token link — minted through the OR
-		// shares integration leaf (ADR-022). The leaf owns token
-		// generation, expiry and the RBAC-respecting public resolve
-		// path; dossiq no longer stores a token, password or
-		// field-exclusion list. The C2 owner/handler guard above is the
-		// authz scope for minting a public surface (ADR-005).
+		// A public case link is an OpenRegister access link (#3817). It owns
+		// the anchor, the expiry, the password check and the revoke; dossiq
+		// stores none of them. The C2 owner/handler guard above is the authz
+		// scope for publishing a case (ADR-005).
 		$expiresAt = $this->request->getParam('expiresAt');
+		$password = $this->request->getParam('password');
+		$capabilities = $this->request->getParam('capabilities');
+		$documents = $this->request->getParam('sharedDocuments');
 
 		$share = $this->caseSharingService->createTokenShare(
-			$caseId,
-			$label,
-			$user->getUID(),
-			$expiresAt,
+			caseId: $caseId,
+			label: (string)$label,
+			createdBy: $user->getUID(),
+			expiresAt: $expiresAt,
+			capabilities: $this->asList(value: $capabilities, fallback: CaseAccessLinkService::DEFAULT_CAPABILITIES),
+			password: $this->optionalText(value: $password),
+			sharedDocuments: $this->asList(value: $documents, fallback: []),
 		);
 
 		if (isset($share['error']) === true) {
-			return new JSONResponse(['success' => false, 'error' => $share['error']], Http::STATUS_BAD_GATEWAY);
+			return $this->refusedMint(share: $share);
 		}
 
-		return new JSONResponse(['success' => true, 'share' => $share]);
+		return new JSONResponse(['success' => true, 'share' => $share['share'], 'url' => $share['url']]);
 	}//end createShare()
+
+	/**
+	 * Share a case with a partner organisation, or say why it did not leave.
+	 *
+	 * @param string $caseId          The case.
+	 * @param string $permissionLevel What the partner may do.
+	 * @param string $createdBy       Who is sharing it.
+	 *
+	 * @return JSONResponse The share, or the refusal.
+	 *
+	 * @spec openspec/specs/case-share-via-shares-leaf/spec.md#requirement-partner-organisation-handover-is-out-of-scope-for-the-shares-leaf
+	 */
+	private function partnerShare(string $caseId, string $permissionLevel, string $createdBy): JSONResponse {
+		$partnerId = $this->request->getParam('partnerId');
+		if (empty($partnerId) === true) {
+			return new JSONResponse(
+				['success' => false, 'error' => 'partnerId is required for partner shares'],
+				400
+			);
+		}
+
+		$partnerShare = $this->caseSharingService->createPartnerShare(
+			$caseId,
+			$partnerId,
+			$permissionLevel,
+			$createdBy,
+		);
+
+		if (isset($partnerShare['error']) === false) {
+			return new JSONResponse(['success' => true, 'share' => $partnerShare]);
+		}
+
+		// A REFUSAL IS NOT AN UPSTREAM FAILURE. 502 says OpenRegister broke; a
+		// missing or lapsed consent is this instance deciding, correctly, that
+		// the case does not leave. The rule slug is carried so the caller can
+		// tell the two apart and say which of case, receiver or period was the
+		// one that did not match.
+		if (isset($partnerShare['rule']) === true && $partnerShare['rule'] !== '') {
+			return new JSONResponse(
+				['success' => false, 'error' => $partnerShare['error'], 'rule' => $partnerShare['rule']],
+				Http::STATUS_CONFLICT
+			);
+		}
+
+		return new JSONResponse(
+			['success' => false, 'error' => $partnerShare['error']],
+			Http::STATUS_BAD_GATEWAY
+		);
+	}//end partnerShare()
+
+	/**
+	 * The answer when a link share was not minted.
+	 *
+	 * A 502 says the app upstream broke. When this instance simply never
+	 * mapped the case share schema, nothing upstream broke and naming
+	 * OpenRegister sends the reader to the wrong app. 503 with the message the
+	 * service wrote says what is missing and who fixes it.
+	 *
+	 * `linksNotRevoked` is carried when a link was minted, the record failed,
+	 * and OpenRegister then refused to withdraw the link. A share reported as
+	 * failed whose link still opens is the worst of the three outcomes, so the
+	 * caller is told which ids are still live rather than left to find out.
+	 *
+	 * Extracted rather than written inline: `createShare()` already sat over
+	 * phpmd's cyclomatic and NPath thresholds on `development`, and these two
+	 * branches took it over the method-length threshold as well.
+	 *
+	 * @param array<string, mixed> $share What the sharing service answered.
+	 *
+	 * @return JSONResponse The refusal.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function refusedMint(array $share): JSONResponse {
+		$status = Http::STATUS_BAD_GATEWAY;
+		if (($share['reason'] ?? '') === CaseLinkShares::REASON_NOT_CONFIGURED) {
+			$status = Http::STATUS_SERVICE_UNAVAILABLE;
+		}
+
+		$body = ['success' => false, 'error' => $share['error']];
+		if (isset($share['linksNotRevoked']) === true) {
+			$body['linksNotRevoked'] = $share['linksNotRevoked'];
+		}
+
+		return new JSONResponse($body, $status);
+	}//end refusedMint()
+
+	/**
+	 * Read a request parameter that may arrive as a list or as a
+	 * comma-separated string.
+	 *
+	 * @param mixed $value What the request carried
+	 * @param array<int, string> $fallback What to use when it carried nothing
+	 *
+	 * @return array<int, string> The list
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function asList(mixed $value, array $fallback): array {
+		if (is_array($value) === true) {
+			return array_values(array_map(static fn ($entry): string => (string)$entry, $value));
+		}
+
+		$raw = trim((string)$value);
+		if ($raw === '') {
+			return $fallback;
+		}
+
+		return array_values(array_filter(array_map('trim', explode(',', $raw))));
+	}//end asList()
+
+	/**
+	 * A request parameter as trimmed text, or null when it carried nothing.
+	 *
+	 * @param mixed $value What the request carried
+	 *
+	 * @return string|null The text, or null
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function optionalText(mixed $value): ?string {
+		if ($value === null) {
+			return null;
+		}
+
+		$text = trim((string)$value);
+		if ($text === '') {
+			return null;
+		}
+
+		return $text;
+	}//end optionalText()
 
 	/**
 	 * Revoke a case share.
@@ -167,30 +287,6 @@ class CaseSharingController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// Public "track your case" token revoke — delegated to the OR shares
-		// leaf (ADR-022). A `caseId` param signals the {shareId} addresses a
-		// leaf-minted token. IDOR guard (ADR-005, Rule 3): the caller must be
-		// an owner/handler of the case AND the token must actually belong to
-		// that case (so a handler of case A cannot revoke case B's token by id).
-		$tokenCaseId = $this->request->getParam('caseId');
-		if (empty($tokenCaseId) === false) {
-			if ($this->caseSharingService->canUserAccessCase($tokenCaseId, $user->getUID()) === false
-				|| $this->caseSharingService->tokenBelongsToCase($shareId, $tokenCaseId) === false
-			) {
-				return new JSONResponse(
-					['success' => false, 'error' => 'Access denied: you are not assigned to this case'],
-					Http::STATUS_FORBIDDEN
-				);
-			}
-
-			$revoked = $this->caseSharingService->revokeTokenShare($shareId);
-			if ($revoked === false) {
-				return new JSONResponse(['success' => false, 'error' => 'Could not revoke share link'], Http::STATUS_BAD_GATEWAY);
-			}
-
-			return new JSONResponse(['success' => true]);
 		}
 
 		// Partner-organisation handover revoke (zaak-domain, in-app object).

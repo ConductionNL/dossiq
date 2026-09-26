@@ -27,6 +27,7 @@
  *
  * @covers \OCA\Dossiq\Flow\DossiqAskPersonNode
  * @uses   \OCA\Dossiq\Flow\AskPersonTaskStore
+ * @uses   \OCA\Dossiq\Service\AssigneeResolver
  *
  * @spec openspec/changes/askperson-recovers-a-missed-answer/specs/case-flow-human-steps/spec.md
  */

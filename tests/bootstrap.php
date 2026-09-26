@@ -321,6 +321,12 @@ require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 // load order relative to the stub block below does not matter.
 require_once __DIR__ . '/Unit/Fixtures/FlowTimerEngineFake.php';
 
+// Shared engine-calendar fake for the Algemene termijnenwet roll. Mirrors the
+// REAL WorkingCalendarService::resolve() and SlaCalculator::add() signatures,
+// so a term site that drifts off the engine's contract fails here instead of
+// agreeing with itself.
+require_once __DIR__ . '/Unit/Fixtures/WorkingCalendarEngineFake.php';
+
 // Schema-aware stand-in for StufRegisterAccess. Reproduces the two live object
 // store behaviours a hand-written mock hides — a save drops what the schema
 // does not declare, and a filter on an undeclared property matches zero rows —
@@ -456,15 +462,36 @@ if (class_exists('\\OCA\\Decidiq\\Event\\DecisionStateRequestedEvent') === false
 }
 
 // Integriq's ADR-041 delivery-seam contract (absorb-dossiq-deliveries).
+// The connection-registry events (adopt-connection-registry) ride the same loop:
+// IntegrationStatusService sends them by name, exactly like the delivery seam.
 // PublicationService dispatches DeliveryRequestedEvent and
 // DeliveryConcludedListener consumes DeliveryConcludedEvent; both resolve the
 // classes by name so dossiq stays installable without integriq. The stubs
 // mirror integriq's real constructor signatures verbatim and no-op when the
 // real classes are present.
-foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
+// IntakeMessageRoutedEvent rides the same loop (an-intake-message-opens-a-case):
+// integriq's channel intake asks whoever owns the target to open one, and
+// IntakeMessageRoutedListener answers it by name for the same reason.
+// The two digital post events ride the same loop (digital-post-reaches-integriq):
+// IntegriqAdapter dispatches DigitalPostSendRequestedEvent and reads its result
+// slot, and DigitalPostDeliveredListener consumes DigitalPostDeliveredEvent,
+// both resolved by name so dossiq stays installable without integriq. Without
+// these stubs the adapter's resolve would only ever answer null, every test
+// would exercise the absent branch alone, and the branch that turns a handled
+// event with no tracked message into a refusal could never be reached.
+foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'IntakeMessageRoutedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent', 'MessageReceivedEvent'] as $stubEvent) {
 	if (class_exists('\\OCA\\Integriq\\Event\\' . $stubEvent) === false) {
 		include_once __DIR__ . '/Stubs/Integriq/Event/' . $stubEvent . '.php';
 	}
+}
+
+// Shillinq's payment-request leaf (fees-and-payments-on-the-case). dossiq reads
+// a case's payment state through it and resolves the class by name, so the app
+// stays installable without the money app. Without this stub the lookup can
+// only ever answer false, every test of the reader would exercise the absent
+// branch alone, and static analysis would report the resolution as dead code.
+if (class_exists('\\OCA\\Shillinq\\Integration\\PaymentRequestLeafProvider') === false) {
+	include_once __DIR__ . '/Stubs/Shillinq/Integration/PaymentRequestLeafProvider.php';
 }
 
 // Hermiq's oversight contract. procest resolves it by name so it stays
@@ -472,6 +499,26 @@ foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent'] as $stubEvent) {
 // tests if something supplies the class.
 if (class_exists('\\OCA\\Hermiq\\Event\\AiOversightRecordedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Hermiq/Event/AiOversightRecordedEvent.php';
+}
+
+// OpenRegister's bulk-action contract. dossiq's four case actions IMPLEMENT the
+// interface and RETURN the result type, so without these stubs they cannot even
+// be loaded in a unit test on a host where OpenRegister is absent. BulkJobMember
+// is here for its four outcome constants, which is all BulkActionResult names.
+if (class_exists('\\OCA\\OpenRegister\\Db\\BulkJobMember') === false) {
+	include_once __DIR__ . '/Stubs/Db/BulkJobMember.php';
+}
+
+if (interface_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionInterface') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionInterface.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\BulkAction\\BulkActionResult') === false) {
+	include_once __DIR__ . '/Stubs/BulkAction/BulkActionResult.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\BulkActionRegistrationEvent') === false) {
+	include_once __DIR__ . '/Stubs/Event/BulkActionRegistrationEvent.php';
 }
 
 // OpenRegister's flow-node contract. procest's six action nodes implement it,
@@ -569,6 +616,24 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
 	include_once __DIR__ . '/Stubs/Event/ObjectCreatedEventStub.php';
 }
 
+// people-on-the-case: OpenRegister's three person-link events, so
+// PersonLinkListenerTest can exercise handle() against the real getLink()
+// shape on a bare container. Declaration-only stubs, shared with psalm and
+// phpstan (see psalm.xml <stubs> and phpstan.neon scanFiles).
+if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonLinkUpdatedEvent.php';
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
+}
+
+// case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
+// `::class`, which does not autoload, so the registration is silent at runtime
+// without openregister and reads to the analysers as a class that does not
+// exist. Declaration-only, shared with psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectsMergedEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/ObjectsMergedEvent.php';
+}
+
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
@@ -598,6 +663,16 @@ if (class_exists('\\OCA\\OpenRegister\\AppHost\\Bootstrap') === false) {
 
 if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardController') === false) {
 	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericDashboardController.php';
+}
+
+// Observability plane (ADR-006): HealthController and MetricsController extend
+// these, so a reflection over either controller loads the parent or dies.
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericHealthController') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericHealthController.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericMetricsController') === false) {
+	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericMetricsController.php';
 }
 
 // Store plane (ADR-080): OpenRegister owns discovery, dossiq owns install.

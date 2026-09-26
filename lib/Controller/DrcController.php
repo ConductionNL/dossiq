@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
@@ -45,7 +46,6 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  * @SuppressWarnings(PHPMD.TooManyPublicMethods)
@@ -108,7 +108,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -204,7 +204,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -412,7 +412,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -448,7 +448,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -483,7 +483,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -518,7 +518,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -623,7 +623,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 60, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function download(string $uuid): DataDownloadResponse|JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -695,7 +695,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function lock(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -822,7 +822,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function unlock(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -973,7 +973,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -1017,7 +1017,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -1170,6 +1170,9 @@ class DrcController extends ZgwController {
 	 * @param string $eioUuid The EIO UUID
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function cascadeDeleteGebruiksrechten(string $eioUuid): void {
 		$objectService = $this->zgwService->getObjectService();
@@ -1182,11 +1185,23 @@ class DrcController extends ZgwController {
 			return;
 		}
 
+		// An unsearchable scope answers this cascade with an empty page and no
+		// error ({@see ZgwSearchScope}), so the EIO goes and its gebruiksrechten
+		// stay behind pointing at a document that no longer exists. Name it.
+		$grScope = ZgwSearchScope::fromMapping(mappingConfig: $grConfig);
+		if ($grScope === null) {
+			$this->zgwService->getLogger()->error(
+				'drc-008: gebruiksrechten mapping has no searchable register/schema, so the '
+				. 'gebruiksrechten of ' . $eioUuid . ' are being left behind as orphans'
+			);
+			return;
+		}
+
 		try {
 			$query = $objectService->buildSearchQuery(
 				requestParams: ['document' => '%' . $eioUuid . '%', '_limit' => 100],
-				register: $grConfig['sourceRegister'],
-				schema: $grConfig['sourceSchema']
+				register: $grScope->register,
+				schema: $grScope->schema
 			);
 			$result = $objectService->searchObjectsPaginated(query: $query);
 
@@ -1274,6 +1289,9 @@ class DrcController extends ZgwController {
 	 * @param string $eioUuid The EIO UUID
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function checkAndClearIndicationGebruiksrecht(string $eioUuid): void {
 		$objectService = $this->zgwService->getObjectService();
@@ -1286,11 +1304,26 @@ class DrcController extends ZgwController {
 			return;
 		}
 
+		// 🔴 A ZERO THIS CODE CANNOT TRUST MUST NOT CLEAR A USAGE RIGHT.
+		// `total: 0` is also what a gebruiksrechten mapping whose register or
+		// schema OpenRegister cannot resolve answers, with no error at all
+		// ({@see ZgwSearchScope}). Clearing indicatieGebruiksrecht on that
+		// zero states "this document carries no usage restrictions" about a
+		// document whose gebruiksrechten were never counted.
+		$grScope = ZgwSearchScope::fromMapping(mappingConfig: $grConfig);
+		if ($grScope === null) {
+			$this->zgwService->getLogger()->warning(
+				'drc-006: gebruiksrechten mapping has no searchable register/schema, '
+				. 'leaving indicatieGebruiksrecht as it is for ' . $eioUuid
+			);
+			return;
+		}
+
 		try {
 			$query = $objectService->buildSearchQuery(
 				requestParams: ['document' => $eioUuid, '_limit' => 1],
-				register: $grConfig['sourceRegister'],
-				schema: $grConfig['sourceSchema']
+				register: $grScope->register,
+				schema: $grScope->schema
 			);
 			$result = $objectService->searchObjectsPaginated(query: $query);
 			$total = $result['total'] ?? count($result['results'] ?? []);
@@ -1400,7 +1433,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function uploadChunk(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
