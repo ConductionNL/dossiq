@@ -687,10 +687,10 @@
 			"name": "OpenCase",
 			"vendor": "Lamotech",
 			"readOn": "2026-09-26",
-			"drivenOn": "2026-09-07",
+			"drivenOn": "2026-09-26",
 			"readVersion": "OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea)",
 			"evidenceGrade": "driven",
-			"unknownReason": "Source read on 2026-09-26 at OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea), the version the 2026-09-07 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
+			"unknownReason": "Source read on 2026-09-26 at OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea), the version the 2026-09-07 click-through drive used, which this reading replaces; the same release was booted again in the lab-dossiq-opencase lab on 2026-09-26 for the cells the source could not settle, and those cells say driven. Cells resting on the closed enterprise package (AI, digital post, CPR and CVR lookup, the Office add-ins) stay unknown: no trial accounts. A cell neither settled says why on the cell."
 		},
 		{
 			"key": "gzac",
@@ -729,10 +729,11 @@
 			"name": "Open Zaak",
 			"vendor": "Maykin Media",
 			"readOn": "2026-09-26",
+			"drivenOn": "2026-09-26",
 			"readVersion": "Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version)",
 			"columnAddedOn": "2026-09-26",
-			"evidenceGrade": "docs-only",
-			"unknownReason": "Source read on 2026-09-26 at Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version), not driven; the drive notes are in the lab README. A cell the source did not settle says why on the cell."
+			"evidenceGrade": "driven",
+			"unknownReason": "Source read on 2026-09-26 at Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version), and the same version booted in the lab-dossiq-openzaak lab (market-intelligence dossiq/openzaak) on 2026-09-26 to settle the six cells the source could not; those cells say driven. A cell neither settled says why on the cell."
 		}
 	],
 	"providers": [
@@ -1670,7 +1671,7 @@
 				"gzac": "gzac@13.4.1 frontend/src/environments/environment.ts:142 admin menu Case migration (beta); frontend/projects/valtimo/case-migration/src/lib/case-migration-routing.module.ts:26-29 ROLE_ADMIN; services/case-migration.service.ts:40,47 migrate all documents of one definition to another. Batch admin migration, not a per-case change | round 2 drive: procest/valtimo/round2/code-census.md:370 \"case migration between case type versions with patches :: partial (beta)\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionsDialog/CaseActionsDialogContent.tsx:77 changeCaseType admin action; packages/common/src/domains/case/actions.requests.ts:341-343 /api/v2/cm/case/casetype/update | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:299 \"change case type/version of a running case :: yes\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt updateZaak patches ZGW fields without the case type; no rebind route | round 3 drive: procest/zac/round3/rows/rows-1-3.md:34 \"no | `ZaakRestService.updateZaak` (line 569) patches ZGW fields through `toPatchZaak` and the case type is not among them; there is no route that rebinds\"",
-				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:523-530 zaaktype is immutable on the API (LooseFkIsImmutableValidator); admin/zaken.py:773-777,842 the Django admin form keeps _zaaktype as an editable raw id field. Django admin only, a raw data edit | open for the lab: In the Open Zaak admin, can the zaaktype of an existing zaak be changed and saved, and what happens to its statuses?"
+				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: set _zaaktype of a zaak with one status from zaaktype A to B in the Django admin change form; it saved (\"met succes gewijzigd\") and the status kept its statustype of zaaktype A, so the change is a raw data edit with no migration of statuses. Django admin only | source: openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:523-530 zaaktype is immutable on the API (LooseFkIsImmutableValidator); admin/zaken.py:773-777,842 the Django admin form keeps _zaaktype as an editable raw id field. Django admin only, a raw data edit"
 			}
 		},
 		{
@@ -2948,7 +2949,7 @@
 			"name": "MS Office add-ins or Teams integration",
 			"name_nl": "MS Office-invoegtoepassingen of Teams-koppeling",
 			"dossiq": "no",
-			"opencase": "partial",
+			"opencase": "unknown",
 			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "no",
@@ -2958,7 +2959,7 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "opencase@1.1.0 lib/Controller/SettingsController.php:80,126-138 serves Outlook, Word, Excel, PowerPoint manifests from msoffice/<app>/manifest.xml; appinfo/routes.php CORS preflight routes for the add-in; but msoffice/ is absent from the 1143dbea tree (README.md:25,84 points to it), so the add-in source is not public | round 2 drive: procest/opencase/round2/code-census.md:217 \"Edit in Nextcloud Office and via MS Office add-ins :: yes\" | open for the lab: Does Nextcloud admin, OpenCase, MS Office offer a manifest that downloads and loads in Outlook?",
+				"opencase": "not checked: driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): GET /apps/opencase/settings/msoffice/outlook/manifest.xml and .../word/manifest.xml return 404 and the installed app has no msoffice/ folder, so the public release serves no add-in; whether the closed enterprise package ships one could not be read | source: opencase@1.1.0 lib/Controller/SettingsController.php:80,126-138 serves Outlook, Word, Excel, PowerPoint manifests from msoffice/<app>/manifest.xml; appinfo/routes.php CORS preflight routes for the add-in; but msoffice/ is absent from the 1143dbea tree (README.md:25,84 points to it), so the add-in source is not public | round 2 drive: procest/opencase/round2/code-census.md:217 \"Edit in Nextcloud Office and via MS Office add-ins :: yes\"",
 				"gzac": "gzac@13.4.1 grep -i 'teams|add-in|addin|office365' over backend and frontend/projects finds no Office add-in or Teams integration | round 2 drive: procest/valtimo/round2/code-census.md:401 \"office add-ins :: no :: (no source)\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/createCase/library.ts:7-22 create-case screen for party teams, sharepoint, outlook that calls back to teams.zaken.xxllnc.nl; Configuration.fixtures.ts:260 iframeable_in_teams; the Teams or Office app itself is not in this repo | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:390 \"WOPI Office online, Zoho, MS Teams/SharePoint/Outlook :: yes\"",
 				"zac": "zac@1.0.316 grep -i 'teams|addin|add-in' over src/main/kotlin and src/main/app/src/app returns only unrelated identifiers (addInformatieObjectToZip); nearest is the WebDAV hand-off in WebdavHelper.kt:47 | round 3 drive: procest/zac/round3/rows/rows-4-6.md:15 \"no | zero hits for teams, add-in, addin, outlook add-in. The nearest thing is the WebDAV protocol handoff in\"",
@@ -5620,7 +5621,7 @@
 				"gzac": "valtimo@13.4.1 frontend/projects/valtimo/logging/src/logging-routing.module.ts:24-27 admin-only application log with filters on message, level and time (log-search.component.html:22-45) but no export anywhere in logging/src; the case audit tab (case/src/lib/components/case-detail/tab/audit/audit.component.ts:61) is paged with no filter and no export | round 2 drive: procest/valtimo/round2/pages/Admin-Logs.md:6 \"a filter button; table Tijd, Log-niveau, Bericht\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/Routes.tsx:28 log route; modules/log/Log.tsx:23 filters, Log.requests.ts:8 /api/v2/admin/logging/get_eventlogs; log/ActionBar/ExportDialog export job of log items | round 2 drive: procest/xxllnc-zaken/round2/pages/Logboek.md:10 \"filters_columns: columns Zaak #, Datum, Gebeurtenis, Component, Behandelaar, Details; date filter; export CSV\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/history/ZaakHistoryService.kt history per case shown on the case; no global log view, no filter and no export in the Angular routes | round 3 drive: procest/zac/round3/rows/rows-7-10.md:42 \"partial | history is per object, in the UI, with no filtering and no export. `src/main/kotlin/nl/info/zac/history/ZaakHistoryService.kt` and the\"",
-				"openzaak": "openzaak@1.30.0 src/openzaak/conf/includes/base.py:104 vng_api_common.audittrails installed; utils/admin.py:135 AuditTrailAdminMixin shows the trail per object in the Django admin; zaken/openapi.yaml:10402 GET /zaken/{uuid}/audittrail has only the path parameter; no export | open for the lab: In the Open Zaak admin, is there a global audit trail list with filters on bron, actie and resultaat, and can it be exported?"
+				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: /admin/audittrails/audittrail/ is a global list with filters on bron, resource, actie, applicatie id, resultaat and aanmaakdatum; no search box, no export action, no export link | source: openzaak@1.30.0 src/openzaak/conf/includes/base.py:104 vng_api_common.audittrails installed; utils/admin.py:135 AuditTrailAdminMixin shows the trail per object in the Django admin; zaken/openapi.yaml:10402 GET /zaken/{uuid}/audittrail has only the path parameter; no export"
 			}
 		},
 		{
@@ -5647,7 +5648,7 @@
 				"gzac": "gzac@13.4.1 backend/core/src/main/java/com/ritense/valtimo/web/rest/ReportingResource.java:82,90,119 instance counts, instance statistics, tasks average; dashboard widget data endpoints return counts per data source; no general reporting query API | round 2 drive: procest/valtimo/round2/code-census.md:444 \"reporting endpoints (instance counts, tasks per person, pending by role) :: partial (API only)\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/bi-dumper/README.md and src/zsnl_dumper/__init__.py:220 per-instance BI dump of the database as gzipped JSON to S3 when BI integration is configured; a data feed for external reporting, not a statistics API | round 2 drive: procest/_round2/compare/M1-functionality.md:219 \"| 10.6 | Statistics or reporting API | partial `API.md:56` | partial `backend/core/src/main/java/com/ritense/valtimo/web/rest/ReportingResource.java` | no |\"",
 				"zac": "zac@1.0.316 grep -riE 'statistiek|rapportage|reporting' over src/main/kotlin and src/main/java finds no endpoint; search facets are the nearest | round 3 drive: procest/zac/round3/rows/rows-7-10.md:43 \"no | zero hits for `statistiek`, `rapportage`, `reporting`, `metrics` or `prometheus` in `src/main/kotlin` and `src/main/java`. Nearest is the search\"",
-				"openzaak": "openzaak@1.30.0 no statistics endpoint in any component openapi.yaml; src/openzaak/components/zaken/metrics.py exposes operational metrics, not reporting | open for the lab: Does Open Zaak 1.30 expose case counts through its metrics endpoint that a reporting tool could read?"
+				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: GET /metrics returns 404; zaken/metrics.py only defines OpenTelemetry counters of API creates, updates and deletes pushed over OTLP when enabled, not case counts a reporting tool could query | source: openzaak@1.30.0 no statistics endpoint in any component openapi.yaml; src/openzaak/components/zaken/metrics.py exposes operational metrics, not reporting"
 			}
 		},
 		{
@@ -7414,7 +7415,7 @@
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php; openregister#3966 16fce31bc"
 			},
 			"evidence": {
-				"opencase": "opencase@1.1.0 src/views/DocumentDetailView.vue:241 opens DocumentShareDialog; src/components/DocumentShareDialog.vue:4,26,44 share one document to a user, read or edit, with expiry; lib/Service/PermissionService.php:274,280,365 per-user document override (read, write, deny) checked before case access | round 2 drive: procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\" | open for the lab: Is there any screen that restricts one document for one user (deny), or only the share dialog that widens access?",
+				"opencase": "settled from source by the lane on 2026-09-26, no lab needed: PermissionService.php:274-279 honours a per-user deny override, but no screen writes one (grep -i deny over src finds none); DocumentShareDialog only widens access, which is the override this row asks for | source: opencase@1.1.0 src/views/DocumentDetailView.vue:241 opens DocumentShareDialog; src/components/DocumentShareDialog.vue:4,26,44 share one document to a user, read or edit, with expiry; lib/Service/PermissionService.php:274,280,365 per-user document override (read, write, deny) checked before case access | round 2 drive: procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\"",
 				"gzac": "gzac@13.4.1 backend/resource/src/main/kotlin/com/ritense/resource/authorization/ResourcePermission.kt:19 an empty marker class; backend/zgw/documenten-api/src/main/kotlin/com/ritense/documentenapi/client/DocumentenApiClient.kt:71,75 every Documenten API call checks that role-wide permission, with nothing per document | round 2 drive: procest/valtimo/round2/pages/CaseDefinition-ZGW.md:6 \"Document upload-velden: table Veld, Standaardwaarde, Zichtbaar, Alleen lezen (Bestandsnaam, Titel, Auteur, Beschrijving, Taal, Vertrouwelijkheidsaanduiding\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/document/repositories/document.py:55,57 a document trust level marks it confidential; document.py:286,293,312 such a document needs a confidential case type right to be read | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:403 \"document-level confidentiality / trust level :: yes\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/document-rechten.rego:15,34,40 document rights follow the zaaktype and the zaak's zaakspecifiek flag, plus lock and definitief state; nothing per document or per user | round 3 drive: procest/zac/round3/rows/rows-11-13.md:66 \"no | `src/main/resources/policies/document-rechten.rego` derives every right from the document's zaak (`document.zaaktype`, `document.zaak_open`\"",
@@ -7701,7 +7702,7 @@
 				"evidence": "lib/Service/TenantAuditTrailService.php"
 			},
 			"evidence": {
-				"opencase": "opencase@1.1.0 grep -ri 'twofactor|login_history' over lib and src returns nothing; login is SAML (lib/Controller/SamlController.php) or the Nextcloud session, so 2FA and login history are the platform's | round 2 drive: procest/_round2/compare/M1-functionality.md:300 \"| 13.15 | Two-factor authentication and login history | partial `appinfo/info.xml` (Nextcloud) |\" | open for the lab: On the running Nextcloud, is a two-factor provider enabled and is a login history visible to an admin?",
+				"opencase": "driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): twofactor_totp and twofactor_backupcodes are enabled (a user may opt in, nothing enforces it) and admin_audit is not enabled, so no admin-visible login history out of the box; both are the platform's, not OpenCase's | source: opencase@1.1.0 grep -ri 'twofactor|login_history' over lib and src returns nothing; login is SAML (lib/Controller/SamlController.php) or the Nextcloud session, so 2FA and login history are the platform's | round 2 drive: procest/_round2/compare/M1-functionality.md:300 \"| 13.15 | Two-factor authentication and login history | partial `appinfo/info.xml` (Nextcloud) |\"",
 				"gzac": "gzac@13.4.1 authentication is Keycloak (backend/keycloak-iam); grep -riE 'totp|twofactor|mfa' over backend returns nothing, so 2FA and login history are the Keycloak realm's | round 2 drive: procest/valtimo/round2/pages/Login.md:15 \"MFA variants exist in the realm (admin-mfa) but were not used.\" | open for the lab: In the shipped Keycloak realm, is an OTP required action or login event history enabled?",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:683,714 login history per employee with export; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:46 two-factor serves the alternative (citizen) accounts | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:180 \"two-factor (`auth_twofactor`, Plugins/Twofactor.pm, 18 endpoints)\"",
 				"zac": "zac@1.0.316 grep -riE 'mfa|totp|twofactor' over src/main returns nothing; authentication is Keycloak OIDC consumed by src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt, which logs a session start but stores no history | round 3 drive: procest/zac/round3/rows/rows-11-13.md:76 \"partial, delegated to Keycloak | zero hits for mfa, totp or 2fa under `src/main`. Authentication is entirely Keycloak's (`UserPrincipalFilter` only\" | open for the lab: Does the shipped Keycloak realm require OTP, and are login events kept?",
@@ -7988,7 +7989,7 @@
 			"feature": "doorlooptijd-dashboard",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "opencase@1.1.0 lib/Service/AuditService.php:32-99 logs case and document events only; lib/Controller/SettingsController.php uses TransactionLogService only to read the log (:396,425); no write of a settings change to any log | open for the lab: Does Nextcloud's admin_audit log record a change to an OpenCase admin setting?",
+				"opencase": "driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): admin_audit is not enabled in the default install, so nothing records a settings change; OpenCase itself writes none | source: opencase@1.1.0 lib/Service/AuditService.php:32-99 logs case and document events only; lib/Controller/SettingsController.php uses TransactionLogService only to read the log (:396,425); no write of a settings change to any log",
 				"gzac": "gzac@13.4.1 backend/changelog/.../domain/Changeset.kt:29-52 records each deployed configuration changeset with filename, date executed and checksum; the audit module (backend/audit AuditEvent types) covers case, task and note events only; edits made in the admin screens are not logged",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/DB/Component/Logging/Sysin/Interface/Create.pm, Update.pm, Activate.pm for integration changes; Casetype/Publish.pm, Mutation.pm for case types; Role/Update.pm and Ou/Update.pm for roles and departments; shown in the log viewer (modules/log)",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/admin/ZaaktypeCmmnConfigurationBeheerService.kt:169-171 only writes a server log line without the user when zaaktype parameters are updated; no audit of configuration changes",
@@ -8355,21 +8356,21 @@
 			"source": "round 4 batch 4",
 			"dossiq": "partial",
 			"dossiqNote": "dossiq has no credentials of its own. Authentication and password policy are Nextcloud's.",
-			"opencase": "partial",
+			"opencase": "yes",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "partial",
-			"openzaak": "unknown",
+			"openzaak": "yes",
 			"provider": "nextcloud",
 			"providerHow": "note-names-platform",
 			"feature": "case-access-control",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "opencase@1.1.0 the app sets no user password of its own: SAML provisioning creates users (lib/Controller/SamlController.php:1054); password policy is whatever the Nextcloud platform enforces | open for the lab: With a local Nextcloud user, does setting a weak password get refused with a specific reason?",
+				"opencase": "driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): occ user:add with password1 was refused with \"Password is among the 1,000,000 most common ones\", \"at least 10 characters long\" and \"present in compromised password list\"; this is the Nextcloud password_policy app, enabled in the nextcloud:34 image, not OpenCase code | source: opencase@1.1.0 the app sets no user password of its own: SAML provisioning creates users (lib/Controller/SamlController.php:1054); password policy is whatever the Nextcloud platform enforces",
 				"gzac": "gzac@13.4.1 passwords are held by Keycloak (backend/keycloak-iam); the product sets none, so refusal of a weak password is the realm's password policy | open for the lab: Does the shipped Keycloak realm have a password policy, and does it name the rule that failed?",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:15,45 a password shorter than MINIMUM_PASSWORD_LENGTH (Constants.pm:335, 20) or without upper and lower case is refused with a message naming the rule; Twofactor.pm error map names a password containing the username",
 				"zac": "zac@1.0.316 ZAC holds no passwords; login is Keycloak (src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt), so any refusal is the realm's password policy | open for the lab: Does the shipped Keycloak realm have a password policy and does it name the failed rule?",
-				"openzaak": "not checked: openzaak@1.30.0 src/openzaak/conf/includes/base.py:12 imports settings from open_api_framework, which is not in this tree, so AUTH_PASSWORD_VALIDATORS cannot be read here | open for the lab: In the Open Zaak admin, set a user password to 'password1': is it refused, and does the message name the rule?"
+				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: the admin password change form (/admin/accounts/user/1/password/) refused password1 with \"Dit wachtwoord is te algemeen.\"; AUTH_PASSWORD_VALIDATORS are Django's four (similarity, minimum length, common, numeric) from open_api_framework conf/base.py:1060 | source: openzaak@1.30.0 src/openzaak/conf/includes/base.py:12 imports settings from open_api_framework, which is not in this tree, so AUTH_PASSWORD_VALIDATORS cannot be read here"
 			}
 		},
 		{
@@ -8390,11 +8391,11 @@
 			"feature": "termijn-binding",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "opencase@1.1.0 lib/Service/AccessDeadlineService.php:20-39 counts with new DateTime() in the PHP default zone; grep -i timezone over lib/Service finds no read of the user or instance time zone | open for the lab: With a user time zone of Europe/Copenhagen, does an FOI request received at 23:30 local get the deadline of that day or the next?",
+				"opencase": "driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): Nextcloud forces the PHP default zone to UTC (lib/base.php:661 date_default_timezone_set('UTC')), so AccessDeadlineService's new DateTime() counts in UTC whatever the user or instance time zone | source: opencase@1.1.0 lib/Service/AccessDeadlineService.php:20-39 counts with new DateTime() in the PHP default zone; grep -i timezone over lib/Service finds no read of the user or instance time zone",
 				"gzac": "gzac@13.4.1 backend/app/gzac/src/main/resources/application.yml:100 JDBC time_zone UTC for storage; LocalDate.now() in ZakenApiPlugin.kt:250,784 uses the JVM default zone of the deployment; no product setting for a zone | open for the lab: Which time zone does the shipped gzac image run in, and can an operator set Europe/Amsterdam?",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/minty/date_calculation.py:28 and entities/case.py:798,831,981 hard-code Europe/Amsterdam; the Perl side stores UTC (backend/perl-api/lib/Zaaksysteem/DB/Component/ZaaktypeFase.pm:150-151); no configurable zone",
 				"zac": "zac@1.0.316 charts/zac/templates/config.yaml:101 sets TZ Europe/Amsterdam for the container; the date code uses the default zone (SuspensionZaakHelper.kt:65 ZonedDateTime.now()); a deployment value, not a product setting",
-				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:945-956 zaak.einddatum is taken in the client's own offset from datum_status_gezet; the server TIME_ZONE comes from open_api_framework (src/openzaak/conf/includes/base.py:12), not in this clone | open for the lab: Does Open Zaak accept TIME_ZONE=Europe/Amsterdam from the environment?"
+				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: settings.TIME_ZONE is UTC, hardcoded in open_api_framework 0.14.1 conf/base.py:114 with no environment override, so a buyer cannot set Europe/Amsterdam; datetimes carry the client offset | source: openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:945-956 zaak.einddatum is taken in the client's own offset from datum_status_gezet; the server TIME_ZONE comes from open_api_framework (src/openzaak/conf/includes/base.py:12), not in this clone"
 			}
 		},
 		{
@@ -8409,7 +8410,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-email-integration",
@@ -8419,7 +8420,7 @@
 				"gzac": "gzac@13.4.1 backend/notes/src/main/kotlin/com/ritense/note/service/NoteService.kt:103-111 editNote copies the note with new content and saves it; only the creator is kept, the NoteUpdated outbox event carries the new state",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/communication/commands.py has create_note, create_contact_moment and delete_message but no edit command; messages cannot be edited, only deleted",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/note/NoteService.kt:44-46 updateNote merges over the row; Note.kt:51,55 keeps only the last modified time and username",
-				"openzaak": "not checked: openzaak@1.30.0 src/openzaak/components/zaken/api/viewsets.py:2006-2008 ZaakNotitieViewSet uses NotitieViewSetMixin from commonground-api-common and no AuditTrailViewsetMixin, unlike ZaakViewSet at :284; whether the library mixin writes an audit trail is not in this tree | open for the lab: PATCH a zaaknotitie and read /zaken/{uuid}/audittrail: is there an entry with oud and nieuw text and the client that changed it?"
+				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: ZaakNotitieViewSet inherits vng_api_common.notes NotitieViewSetMixin (commonground-api-common 2.14.0), which only sets filters and a serializer and has no audit trail; ZaakNotitieAdmin (admin/zaken.py:660) lacks AuditTrailAdminMixin; the note keeps wijzigingsdatum, not the text it replaced | source: openzaak@1.30.0 src/openzaak/components/zaken/api/viewsets.py:2006-2008 ZaakNotitieViewSet uses NotitieViewSetMixin from commonground-api-common and no AuditTrailViewsetMixin, unlike ZaakViewSet at :284; whether the library mixin writes an audit trail is not in this tree"
 			}
 		},
 		{
@@ -8891,7 +8892,7 @@
 			"feature": "archief-edepot-handover",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "opencase@1.1.0 status 3 Arkiveret is set by hand (src/views/CaseDetailView.vue:84-86) or after XML export (lib/Service/CaseExportService.php:68-70); lib/Service/CaseService.php:305-309 allows archived back to closed, but no button offers it (Genåbn shows only for status 2); lists only filter by status (CaseListView.vue:20) and nothing enforces read-only | open for the lab: Is an archived case hidden from Alle sager and search by default, and can it still be edited?",
+				"opencase": "settled from source by the lane on 2026-09-26, no lab needed: CaseMapper.php:755-757 filters on status only when a status_id is passed, so Alle sager and search show archived cases by default; CaseService.php:151 update() has no status guard, so an archived case stays editable | source: opencase@1.1.0 status 3 Arkiveret is set by hand (src/views/CaseDetailView.vue:84-86) or after XML export (lib/Service/CaseExportService.php:68-70); lib/Service/CaseService.php:305-309 allows archived back to closed, but no button offers it (Genåbn shows only for status 2); lists only filter by status (CaseListView.vue:20) and nothing enforces read-only",
 				"gzac": "gzac@13.4.1 an internal status can be hidden from the case list by default (backend/case/src/main/kotlin/com/ritense/document/domain/InternalCaseStatus.kt:33-34 visibleInCaseListByDefault); nothing makes such a case read-only or restores it, and grep -il retention over backend main finds no retention or archive worker at 13.4.1",
 				"zaaksysteem": "zaaksysteem@b7354824 a resolved case drops out of the open work views and is edited only after reopening (Zaken/Roles/Acties.pm:290-291 set_heropen via admin setStatus); archive states are transfer or destroy with a destruction date (actions.requests.ts:227-231), and search still returns it",
 				"zac": "zac@1.0.316 closed cases leave the werkvoorraad for zaken/afgehandeld (zaken-routing.module.ts:50), are read-only for handlers (policies/zaak-rechten.rego:80-90 wijzigen needs zaak.open unless recordmanager) and come back with heropenen; they stay in search, and archiefstatus is Open Zaak data",
@@ -14691,9 +14692,9 @@
 			"system": "opencase",
 			"on": "2026-09-26",
 			"from": "yes",
-			"to": "partial",
-			"cause": "source-read",
-			"pack": "r3"
+			"to": "unknown",
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "4.9",
@@ -15132,8 +15133,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "no",
-			"cause": "source-read",
-			"pack": "r5"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q10.14",
@@ -15281,9 +15282,9 @@
 			"system": "opencase",
 			"on": "2026-09-26",
 			"from": "unknown",
-			"to": "partial",
-			"cause": "source-read",
-			"pack": "r6"
+			"to": "yes",
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q13.23",
@@ -15382,8 +15383,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r1"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q3.21",
@@ -15502,8 +15503,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "no",
-			"cause": "source-read",
-			"pack": "r2"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q8.20",
@@ -15642,8 +15643,8 @@
 			"on": "2026-09-26",
 			"from": "yes",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r5"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "11.15",
@@ -16132,8 +16133,8 @@
 			"on": "2026-09-26",
 			"from": "no",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r1"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "2.16",
@@ -16946,6 +16947,16 @@
 			"pack": "r6"
 		},
 		{
+			"id": "Q13.22",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "yes",
+			"cause": "drive",
+			"pack": "drive"
+		},
+		{
 			"id": "Q13.23",
 			"kind": "pending",
 			"system": "openzaak",
@@ -17086,6 +17097,16 @@
 			"pack": "r3"
 		},
 		{
+			"id": "Q6.17",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "drive",
+			"pack": "drive"
+		},
+		{
 			"id": "Q6.18",
 			"kind": "pending",
 			"system": "openzaak",
@@ -17152,8 +17173,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r2"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q8.20",
