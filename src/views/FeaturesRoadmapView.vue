@@ -343,6 +343,17 @@ import {
 	RATING_COLUMNS,
 } from '../utils/capabilityComparison.js'
 
+/**
+ * Whether a column was read on a day other than the comparison's own.
+ *
+ * @param {object} system A `systems` entry.
+ * @return {boolean} True when it carries a `readOn` that is not `comparedOn`.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+ */
+function isLate(system) {
+	return Boolean(system.readOn) && system.readOn !== comparison.comparedOn
+}
+
 export default {
 	name: 'FeaturesRoadmapView',
 
@@ -488,14 +499,16 @@ export default {
 		},
 
 		/**
-		 * The systems read on `comparedOn`, which is every system that does
-		 * not carry a reading date of its own.
+		 * The systems read on `comparedOn`: every system with no reading date
+		 * of its own, or whose reading date is `comparedOn` itself. Since the
+		 * 2026-09-26 round every competitor carries `readOn`, and a column read
+		 * on the round's own day is not a late column.
 		 *
 		 * @return {Array<object>} System entries.
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
 		 */
 		systemsOnComparedOn() {
-			return comparison.systems.filter((system) => !system.readOn)
+			return comparison.systems.filter((system) => !isLate(system))
 		},
 
 		/**
@@ -635,10 +648,10 @@ export default {
 		 */
 		systemNotes() {
 			return comparison.systems
-				.filter((system) => system.readOn || system.ownsNoData)
+				.filter((system) => isLate(system) || system.ownsNoData)
 				.map((system) => {
 					const paragraphs = []
-					if (system.readOn) {
+					if (isLate(system)) {
 						paragraphs.push(
 							t(
 								'dossiq',
