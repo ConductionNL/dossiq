@@ -7294,7 +7294,7 @@
 				"gzac": "gzac@13.4.1 backend/authorization/src/main/kotlin/com/ritense/authorization/role/Role.kt role keyed on Keycloak role names; backend/authorization/src/main/kotlin/com/ritense/authorization/web/RoleManagementResource.kt:52,58 list and create roles; frontend/src/environments/environment.ts:120 Access Control menu entry | round 2 drive: procest/valtimo/round2/code-census.md:234 \"Roles: `Role(id, key)` (`backend/authorization/.../role/Role.kt`), keys are Keycloak role names.\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/domains/session/session.types.ts:86,99 thirteen system roles (Administrator to Zaakverdeler) plus custom roles; backend/zaken/src/zsnl_domains/auth/entities/role.py:13 a role carries its permissions; backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:161,164 user and role admin for useradmin | round 2 drive: procest/xxllnc-zaken/round2/pages/Gebruikers.md:15 \"notes: Roles are seeded: Administrator, Zaaksysteembeheerder, Zaaktypebeheerder\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/rollen.rego:10,26 application roles behandelaar, coordinator, recordmanager, beheerder, raadpleger plus brpZoeken and zaakspecifiekGeautoriseerd flags; src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt maps them per zaaktype from PABC | round 3 drive: procest/zac/round3/rows/rows-11-13.md:62 \"yes | seven names in `src/main/resources/policies/rollen.rego`: `behandelaar`, `coordinator`, `recordmanager`, `beheerder`, `raadpleger`, plus the two\"",
-				"openzaak": "zaakafhandelapp#723 row 13.1: procest/openzaak/docs/11-admin-manual.md:13: default groups table (Admin, API admin, per-component admin/lezen roles)"
+				"openzaak": "openzaak@1.30.0 src/openzaak/accounts/admin.py:12 user admin with Django groups and a privilege escalation guard; src/openzaak/components/autorisaties/admin.py:63 Applicatie admin for API clients"
 			}
 		},
 		{
@@ -7321,7 +7321,7 @@
 				"gzac": "gzac@13.4.1 backend/authorization/src/main/kotlin/com/ritense/authorization/permission/condition/PermissionConditionType.kt:22,24 container, field and expression conditions; backend/contract/src/main/kotlin/com/ritense/valtimo/contract/authorization/PermissionConditionKey.kt:18,21 current user placeholders; backend/app/gzac/src/main/resources/config/pbac/document.permission.json:44,46 assigneeId equals current user | round 2 drive: procest/valtimo/round2/code-census.md:479 \"PBAC with field, expression and container conditions compiled to SQL :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/admin/catalog/entities/versioned_casetype.py:840,846 rights per department and role per case type with a confidential flag; backend/zaken/src/zsnl_domains/shared/repositories/case_access_level.py:10,32 access also from requestor, assignee and coordinator | round 2 drive: procest/xxllnc-zaken/round2/case-type-editor-anatomy.md:21 \"department x role matrix: Zoeken, Raadplegen, Behandelen, Beheren, per confidentiality\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:64,67 zaak_allowed on the zaakspecifiek flag; :80,95,381 rights conditioned on zaak.open and brondatum state, evaluated by OPA per request (assertPolicy, e.g. ZaakAssignAndReleaseRestService.kt:91) | round 3 drive: procest/zac/round3/findings.md:94 \"The policies themselves are real attribute-based rules, not a role lookup. `verlengen` requires\"",
-				"openzaak": "zaakafhandelapp#723 row 13.2: procest/openzaak/specs/autorisaties-model/spec.md:171: vertrouwelijkheid filtering (records above max_vertrouwelijkheidaanduiding are filtered out) combined with type-scoped scopes is attribute-based access control"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/models.py:50 max_vertrouwelijkheidaanduiding per authorisation; src/openzaak/utils/query.py:92,118 list queries filter each object on type and confidentiality against the client's authorisations"
 			}
 		},
 		{
@@ -7356,7 +7356,7 @@
 				"gzac": "gzac@13.4.1 backend/app/gzac/src/main/resources/config/pbac/document.permission.json:44,46 access follows the assignee through a role permission condition; frontend/projects/valtimo/access-control-management/src/lib/access-control-management-routing.module.ts:26,29 rules are edited per role by an admin, not on the case | round 2 drive: procest/valtimo/round2/code-census.md:238 \"The shipped `document.permission.json` gives ROLE_USER view/modify/export only on cases assigned to them or their team\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionDialog/CaseActionDialog.locale.ts:236,241,250 Rechten wijzigen on the case, add department and role, cascade to related, sub and follow-up cases; frontend-mono/packages/common/src/domains/case/actions.requests.ts:281; backend/zaken/src/zsnl_domains/database/schema.py:1340,1344 zaak_authorisation | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:399 \"per-case ACL (search/read/write/manage) editable per case with cascade :: yes\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:64,68 a case marked zaakspecifiek geautoriseerd is readable only with that role flag; the flag is set in Open Zaak and the holders in PABC, not in a ZAC screen (src/main/app/src/app/admin/admin.routes.ts:13,71 has no rights screen) | round 3 drive: procest/zac/round3/pages/casetype-wizard.md:18 \"and a read-only \"Case specific authorisation possible\" flag |\"",
-				"openzaak": "zaakafhandelapp#723 row 13.3: procest/openzaak/specs/autorisaties-model/spec.md:22: authorization is per Applicatie (client), scoped by zaaktype and confidentiality, not a per-case ACL editable on the case itself"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/models.py:23,29 authorisations are per application and zaaktype or catalogus; no model grants a user or client rights on one zaak"
 			}
 		},
 		{
@@ -7383,7 +7383,7 @@
 				"gzac": "gzac@13.4.1 backend/authorization/src/main/kotlin/com/ritense/authorization/permission/Permission.kt:70 a permission has resource, actions, conditions, role and context, no validity period; PermissionConditionKey.kt:18,23 offers no date placeholder | round 2 drive: procest/_round2/compare/M1-functionality.md:289 \"| 13.4 | Time-limited access grants | yes `lib/Db/CaseUserEntity.php` | no |\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/database/schema.py:1344,1354 zaak_authorisation holds capability, entity and scope 'instance' only, no expiry column; CaseActionDialog.locale.ts:236,262 the rights dialog has no date | round 2 drive: procest/_round2/compare/M1-functionality.md:289 \"| 13.4 | Time-limited access grants | yes `lib/Db/CaseUserEntity.php` | no | no |\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/rollen.rego:10,30 roles and flags carry no validity; grep -riE 'expir' over src/main/kotlin/nl/info/zac/policy returns nothing | round 3 drive: procest/zac/round3/rows/rows-11-13.md:65 \"no | zero hits for an expiring grant. The nearest time-limited artefacts are the WebDAV one-time document token in `WebdavHelper` and the 12-hour BSN\"",
-				"openzaak": "zaakafhandelapp#723 row 13.4: procest/openzaak/docs/10-installation-deployment.md:92: JWT_EXPIRY governs token life, not a time-limited access grant to a case or resource"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/models.py:23,50 authorisations carry no validity period; JWT expiry limits a token, not a grant"
 			}
 		},
 		{
@@ -7418,7 +7418,7 @@
 				"gzac": "gzac@13.4.1 backend/resource/src/main/kotlin/com/ritense/resource/authorization/ResourcePermission.kt:19 an empty marker class; backend/zgw/documenten-api/src/main/kotlin/com/ritense/documentenapi/client/DocumentenApiClient.kt:71,75 every Documenten API call checks that role-wide permission, with nothing per document | round 2 drive: procest/valtimo/round2/pages/CaseDefinition-ZGW.md:6 \"Document upload-velden: table Veld, Standaardwaarde, Zichtbaar, Alleen lezen (Bestandsnaam, Titel, Auteur, Beschrijving, Taal, Vertrouwelijkheidsaanduiding\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/document/repositories/document.py:55,57 a document trust level marks it confidential; document.py:286,293,312 such a document needs a confidential case type right to be read | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:403 \"document-level confidentiality / trust level :: yes\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/document-rechten.rego:15,34,40 document rights follow the zaaktype and the zaak's zaakspecifiek flag, plus lock and definitief state; nothing per document or per user | round 3 drive: procest/zac/round3/rows/rows-11-13.md:66 \"no | `src/main/resources/policies/document-rechten.rego` derives every right from the document's zaak (`document.zaaktype`, `document.zaak_open`\"",
-				"openzaak": "zaakafhandelapp#723 row 13.5: procest/openzaak/docs/15-archiving-confidentiality.md:100: override possible per individual Zaak or InformatieObject"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/models.py:88 vertrouwelijkheidaanduiding per informatieobject; src/openzaak/components/documenten/query/django.py:24,34 a document above the client's max_vertrouwelijkheidaanduiding is filtered out"
 			}
 		},
 		{
@@ -7454,7 +7454,7 @@
 				"gzac": "gzac@13.4.1 no team module in backend/ (ls backend has no team) and PermissionConditionKey.kt:18,23 has no team placeholder; a Keycloak role can stand for a department and CONTAINER conditions scope it per case definition (PermissionConditionType.kt:22) | round 2 drive: procest/valtimo/round2/code-census.md:482 \"teams and team-based visibility (`${currentUserTeams}`) :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/database/schema.py:2118 ZaaktypeAuthorisation(recht, role_id, ou_id, confidential); versioned_casetype.py:840,846 rights per department and role; frontend-mono/apps/main/src/modules/caseTypeManagement/locale/auth.locale.ts Rechten tab | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:398 \"department x role rights per case type (search/read/edit/manage) with confidential split :: yes\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:52,55 zaaktype_allowed reads applicationRolesPerZaaktype built from PABC in UserPrincipalFilter.kt; groups drive assignment, not visibility | round 3 drive: procest/zac/round3/rows/rows-11-13.md:67 \"partial, visibility is per zaaktype not per team | `UserPrincipalFilter.buildApplicationRoleMappingsFromPabc` turns PABC's answer into\"",
-				"openzaak": "zaakafhandelapp#723 row 13.6: procest/openzaak/specs/autorisaties-model/spec.md:22: authorization is per application, not per team or department"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/models.py:23 authorisation belongs to an Applicatie; no team or department dimension"
 			}
 		},
 		{
@@ -7477,7 +7477,7 @@
 				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/domain/CreateZaakRequest.kt:41 and PatchZaakRequest.kt:42 set vertrouwelijkheidaanduiding on the zaak; backend/zgw/documenten-api/src/main/kotlin/com/ritense/documentenapi/domain/DocumentenApiColumnKey.kt:26 shown as a document column | round 2 drive: procest/valtimo/round2/code-census.md:485 \"Documenten API vertrouwelijkheidaanduiding column and upload field :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/shared/entities/case_type.py eight vertrouwelijkheidsaanduiding levels; frontend-mono/apps/main/src/modules/case/Case.locale.ts:355 changing a case's confidentiality warns you may lock yourself out; versioned_casetype.py:840 confidential rights split | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:401 \"case type confidentiality designation (8 levels) :: yes\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/solr/schema/SolrSchemaV1.kt:71 vertrouwelijkheidaanduiding indexed and filterable; not an input to any policy in src/main/resources/policies | round 3 drive: procest/zac/round3/rows/rows-11-13.md:68 \"partial, recorded but not enforced | `vertrouwelijkheidaanduiding` is carried on the zaak and the informatieobject from ZGW, indexed by\"",
-				"openzaak": "zaakafhandelapp#723 row 13.7: procest/openzaak/docs/15-archiving-confidentiality.md:80: full 8-level vertrouwelijkheidaanduiding classification on the case"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:256 vertrouwelijkheidaanduiding on the zaak; src/openzaak/utils/query.py:118 enforced in queries"
 			},
 			"built": {
 				"state": "built",
@@ -7518,7 +7518,7 @@
 				"gzac": "gzac@13.4.1 backend/case/src/main/kotlin/com/ritense/case_/service/CaseWidgetTabWidgetActionProvider.kt and backend/case/src/main/kotlin/com/ritense/case/service/CaseTabActionProvider.kt give view rights per case tab and per widget, so a widget of fields can be hidden per role | round 2 drive: procest/valtimo/round2/code-census.md:236 \"`EXPRESSION` (`ExpressionPermissionCondition(field, path, operator, value, clazz)`, JSON-path into a JSON column)\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/shared/repositories/attribute_acl.py:10,42 readable attributes filtered per department and role, sensitive_field attributes only for admin and case managers | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:402 \"per-attribute permissions and sensitive fields :: yes\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:134 bekijken_zaakdata for beheerder only gates the raw zaakdata block; src/main/kotlin/nl/info/client/brp/util/FieldPropertyVisibilityStrategy.kt:11 trims BRP fields | round 3 drive: procest/zac/round3/rows/rows-11-13.md:69 \"partial, two special cases | `bekijken_zaakdata` in `zaak-rechten.rego` is beheerder-only and gates the whole raw zaakdata block; BRP response fields are\"",
-				"openzaak": "zaakafhandelapp#723 row 13.8: procest/openzaak/docs/15-archiving-confidentiality.md:103: confidentiality is applied at the whole zaak/document level, not per field"
+				"openzaak": "openzaak@1.30.0 src/openzaak/utils/query.py:92,118 filtering works on whole objects; no per-field authorisation in src/openzaak/components/autorisaties/models.py"
 			}
 		},
 		{
@@ -7541,7 +7541,7 @@
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-detail/tab/audit/audit.component.html case audit timeline of change events (backend/audit/src/main/java/com/ritense/audit/domain/AuditRecord.java); backend/case/src/main/java/com/ritense/document/service/impl/JsonSchemaDocumentService.java:171,172 a view emits DocumentViewed to the outbox only | round 2 drive: procest/valtimo/round2/code-census.md:243 \"Audit: `AuditRecord` per `AuditEvent`; 22 audit event classes found\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Betrokkene.pm:2094,2095 subject/inspect logged when a BSN is revealed; backend/zaken/src/zsnl_amqp_consumers/event_logger_document.py:457 case/document/download; subject/contact_viewed and subject/search events | round 2 drive: procest/xxllnc-zaken/round2/pages/Logboek.md:15 \"show that viewing a person is itself logged (AVG inspection log)\" | open for the lab: Does opening a case produce any Logboek entry, or only person views and downloads?",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/history/ZaakHistoryService.kt:45 renders the ZGW audittrail of changes; src/main/kotlin/nl/info/client/brp/util/BrpProtocolleringContext.kt sends doelbinding and user on every BRP read | round 3 drive: procest/zac/round3/rows/rows-11-13.md:70 \"partial, mutations plus statutory BRP read logging | mutations come from the ZGW audittrail and are rendered by `nl.info.zac.history.ZaakHistoryService`\"",
-				"openzaak": "zaakafhandelapp#723 row 13.9: procest/openzaak/specs/11-audit-trail.md:14: full VNG audit trail records every write action (create, update, delete); docs/09-zgw-standards-notificaties.md:57: zaak-geopend (viewed by end user) exists only as an experimental, non-production cloud event"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/viewsets.py:36,40 audit trail mixins log create, update and destroy; viewsets.py:487,490 an experimental zaak-geopend cloud event when a client PATCHes laatstGeopend"
 			},
 			"built": {
 				"state": "built",
@@ -7573,7 +7573,7 @@
 				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/domain/PatchZaakRequest.kt:52,54 a process can set archiefnominatie and archiefactiedatum on the zaak through the patch-zaak action (ZakenApiPlugin.kt:288); grep -riE 'retentionPeriod' over backend returns nothing | round 2 drive: procest/valtimo/round2/code-census.md:484 \"retention and automatic deletion :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/admin/catalog/entities/versioned_casetype.py:228,1599 retention and archival nomination per result; backend/perl-api/lib/Zaaksysteem/Controller/Zaak/Destroy.pm:36,39 bulk destroy by a case manager; Zaken/ComponentZaak.pm:1463 refuses while Bewaartermijn is niet verstreken | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:218 \"the case stores result, archival_state (vernietigen|overdragen), destruction_date (+recalculate)\"",
 				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:381,384 recordmanager sets the brondatum on a closed zaak so Open Zaak computes the archiefactiedatum; destruction is the separate Open Archiefbeheer service in docker-compose.yaml | round 3 drive: procest/zac/round3/rows/rows-11-13.md:71 \"partial, ZAC sets the clock, another component destroys | `brondatum_zetten` in `zaak-rechten.rego` (recordmanager, only on a closed zaak whose brondatum\"",
-				"openzaak": "zaakafhandelapp#723 row 13.10: procest/openzaak/specs/07-archiving-selectielijst.md:24: integration with Open Archiefbeheer (external archive management) performs the actual destruction, OpenZaak calculates the dates but does not auto-delete"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/brondatum.py:19,26,61 derives brondatum and archiefnominatie from the result type; src/openzaak/components/zaken/models/zaken.py:353,374 archiefnominatie and archiefactiedatum on the zaak"
 			}
 		},
 		{
@@ -7596,7 +7596,7 @@
 				"gzac": "gzac@13.4.1 grep -riE 'avg|gdpr|verwerkingsregister|persoonsgegevens' over backend/case and frontend/projects/valtimo/case-management returns no processing register on the case definition | round 2 drive: procest/_round2/compare/M1-functionality.md:296 \"| 13.11 | GDPR register per case type | no | no |\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/caseTypeManagement/locale/form.locale.ts:15,223,226 AVG section with Verwerkt persoonsgegevens and Soort persoonsgegevens on the case type; backend/zaken/src/zsnl_domains/admin/catalog/entities/versioned_casetype.py:269 GdprSource settings | round 2 drive: procest/xxllnc-zaken/round2/case-type-editor-anatomy.md:34 \"**AVG**: Verwerkt persoonsgegevens, Soort persoonsgegevens (11 checkboxes\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/admin/model/ZaaktypeBrpParameters.kt:29 doelbinding and verwerking per zaaktype; src/main/kotlin/nl/info/zac/admin/model/ReferenceTable.kt:43 BRP_VERWERKINGSREGISTER_WAARDE | round 3 drive: procest/zac/round3/rows/rows-11-13.md:72 \"partial, BRP only | `nl.info.zac.admin.model.ZaaktypeBrpParameters` per zaaktype plus the three system reference tables `BRP_DOELBINDING_ZOEK_WAARDE`\"",
-				"openzaak": "zaakafhandelapp#723 row 13.11: procest/openzaak/no GDPR register per case type is documented anywhere in the research"
+				"openzaak": "openzaak@1.30.0 grep -riE 'gdpr|verwerkingsregister|persoonsgegevens' over src/openzaak/components/catalogi/models returns no processing register on the zaaktype"
 			},
 			"built": {
 				"state": "built",
@@ -7628,7 +7628,7 @@
 				"gzac": "gzac@13.4.1 grep -riE 'vervang|afwezig|delegat' over backend returns nothing; machtiging appears only as the ZGW rol field (backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/domain/rol/IndicatieMachtiging.kt) | round 2 drive: procest/valtimo/round2/code-census.md:486 \"delegation / mandates / substitutes :: no :: (no source)\"",
 				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'mandaat|delegat|afwezig|vervanger' over backend/zaken/src/zsnl_domains returns nothing; gemachtigd is a citizen-side PIP flag (backend/zaken/src/zsnl_domains/case_management/repositories/pip_acl.py:50) | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:206 \"Delegation / mandates: no mandate entity (zero hits for mandaat/mandate/delegat in zsnl_domains and controllers).\"",
 				"zac": "zac@1.0.316 grep -riE 'afwezig|vervang|waarneming' over src/main/kotlin, src/main/java and src/main/app/src/app returns nothing; indicatieMachtiging on nl/info/client/zgw/zrc/model/Rol.kt is citizen party data | round 3 drive: procest/zac/round3/rows/rows-11-13.md:73 \"no | zero hits for vervanging, waarneming or a substitute handler. The only related field is the ZGW `indicatieMachtiging` on\"",
-				"openzaak": "zaakafhandelapp#723 row 13.12: procest/openzaak/docs/12-client-development.md:99: DigiD Machtigen, eHerkenning and ketenmachtiging mandate support exists; internal staff substitute delegation is not documented"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:1161 indicatie_machtiging on a Rol records a gemachtigde or machtiginggever"
 			}
 		},
 		{
@@ -7655,7 +7655,7 @@
 				"gzac": "gzac@13.4.1 backend/zgw/portaaltaak/src/main/kotlin/com/ritense/portaaltaak/PortaaltaakPlugin.kt:87,164 create and complete a portal task addressed to a receiver in the Objecten API; backend/zgw/zaakdetails publishes case details for an external portal | round 2 drive: procest/valtimo/round2/code-census.md:342 \"Citizen-facing interaction is delegated to external systems: **Portaaltaak** creates a \"taak\" object in the Objecten API for an external portal\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/repositories/pip_acl.py:48,50 PIP access for the requestor and pip_authorized betrokkenen unless the case type has prevent_pip | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:404 \"PIP access for requestor and authorised subjects, prevent_pip per case type :: yes\"",
 				"zac": "zac@1.0.316 citizens never authenticate to ZAC (docs/solution-architecture/iamArchitecture.md); src/main/kotlin/nl/info/zac/authentication/RequestAuthorizationFilter.kt lets only webdav through without a session | round 3 drive: procest/zac/round3/rows/rows-11-13.md:74 \"no | zero hits for a PIP or portal ACL. Citizens do not authenticate to ZAC at all (`docs/solution-architecture/iamArchitecture.md`); the portal side is\"",
-				"openzaak": "zaakafhandelapp#723 row 13.13: procest/openzaak/docs/13-ecosystem-community.md:66: citizen portal access is Open Inwoner's responsibility, not OpenZaak's"
+				"openzaak": "openzaak@1.30.0 no portal; access is per API client (src/openzaak/components/autorisaties/models.py:23), and the portal enforces its own citizen rights"
 			}
 		},
 		{
@@ -7668,7 +7668,7 @@
 			"gzac": "yes",
 			"zaaksysteem": "partial",
 			"zac": "no",
-			"openzaak": "partial",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-access-control",
@@ -7678,7 +7678,7 @@
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/task/src/lib/components/task-list/task-list.component.ts:508 caseLocked set from the view permission; task-list.component.html:87,92 locked row with the task-list.caseLocked tooltip | round 2 drive: procest/valtimo/round2/code-census.md:487 \"locked rows for cases/tasks the user may not open :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/admin/catalog/entities/versioned_casetype.py:846 a zaak_search right separate from zaak_read lets a case be found but not opened; grep for a lock marker over frontend-mono/apps/main/src/modules/advancedSearch returns nothing | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:203 \"`get_case_access_levels`: admin -> all four, requestor -> search+read\" | open for the lab: With only Zoeken rights on a case type, does the case appear in search results, and what happens on click?",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/search/SearchService.kt:188 adds a negative filter so zaakspecifiek cases the user may not see never appear | round 3 drive: procest/zac/round3/rows/rows-11-13.md:75 \"no, ZAC hides rather than locks | `nl.info.zac.search.SearchService.getZaakspecifiekGeautoriseerdFilterQuery` adds a negative Solr filter (`-(zaaktype:\"X\"\"",
-				"openzaak": "zaakafhandelapp#723 row 13.14: procest/openzaak/docs/15-archiving-confidentiality.md:104: restricted cases are made completely invisible in listings, not shown as locked or greyed-out rows"
+				"openzaak": "openzaak@1.30.0 src/openzaak/utils/query.py:92,118 restricted objects are left out of list responses"
 			}
 		},
 		{
@@ -7705,7 +7705,7 @@
 				"gzac": "gzac@13.4.1 authentication is Keycloak (backend/keycloak-iam); grep -riE 'totp|twofactor|mfa' over backend returns nothing, so 2FA and login history are the Keycloak realm's | round 2 drive: procest/valtimo/round2/pages/Login.md:15 \"MFA variants exist in the realm (admin-mfa) but were not used.\" | open for the lab: In the shipped Keycloak realm, is an OTP required action or login event history enabled?",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:683,714 login history per employee with export; backend/perl-api/lib/Zaaksysteem/Controller/Plugins/Twofactor.pm:46 two-factor serves the alternative (citizen) accounts | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:180 \"two-factor (`auth_twofactor`, Plugins/Twofactor.pm, 18 endpoints)\"",
 				"zac": "zac@1.0.316 grep -riE 'mfa|totp|twofactor' over src/main returns nothing; authentication is Keycloak OIDC consumed by src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt, which logs a session start but stores no history | round 3 drive: procest/zac/round3/rows/rows-11-13.md:76 \"partial, delegated to Keycloak | zero hits for mfa, totp or 2fa under `src/main`. Authentication is entirely Keycloak's (`UserPrincipalFilter` only\" | open for the lab: Does the shipped Keycloak realm require OTP, and are login events kept?",
-				"openzaak": "zaakafhandelapp#723 row 13.15: procest/openzaak/specs/00-overview.md:43: TOTP devices and Webauthn devices for 2FA; docs/11-admin-manual.md:41: access attempts and access logs for brute-force protection and session logging"
+				"openzaak": "openzaak@1.30.0 src/openzaak/conf/includes/base.py:144,328 maykin_2fa OTP and WebAuthn on the admin; base.py:152 axes middleware logs access attempts"
 			}
 		},
 		{
@@ -7741,7 +7741,7 @@
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/access-control-management/src/lib/access-control-management-routing.module.ts:26,32 overview and per-role editor for ROLE_ADMIN; components editor, role-metadata-modal, export-role-modal, delete-role-modal; RoleManagementResource.kt:89,107 read and replace a role's permissions | round 2 drive: procest/valtimo/round2/code-census.md:481 \"access-control admin UI with form and JSON editors and export :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:161,217,837 user admin, move to department, add department or role; caseTypeManagement Rechten tab (auth.locale.ts); CaseActionDialog.locale.ts:236 per-case rights | round 2 drive: procest/xxllnc-zaken/round2/pages/Gebruikers.md:9 \"actions: Exporteren, Bewerken (department), add user, edit user, move to OU, add/remove role, login history\"",
 				"zac": "zac@1.0.316 src/main/app/src/app/admin/admin.routes.ts:13,20,35,42,49,56 groepen, parameters, bpmn, referentietabellen, check and mailtemplates, no rights screen; mappings are administered in PABC (pabc-api in docker-compose.yaml), users in Keycloak | round 3 drive: procest/zac/round3/rows/rows-11-13.md:77 \"partial, and it is a different product | there is no access-control screen in ZAC: `src/main/app/src/app/admin/admin.routes.ts` has only groepen\"",
-				"openzaak": "zaakafhandelapp#723 row 13.16: procest/openzaak/docs/15-archiving-confidentiality.md:98: per-application, per-type, per-confidentiality-level authorization configuration UI in the admin"
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/admin.py:63,68 Applicatie admin with heeft_alle_autorisaties and per-type authorisations (admin_views.py); src/openzaak/accounts/admin.py:12 users and groups"
 			}
 		},
 		{
@@ -7774,7 +7774,7 @@
 			},
 			"addedOn": "2026-09-09",
 			"evidence": {
-				"openzaak": "zaakafhandelapp#723 row 13.17: procest/openzaak/no out-of-office or stand-in feature is documented anywhere in the research",
+				"openzaak": "openzaak@1.30.0 no user work model: Open Zaak has no case-worker screen; grep -riE 'afwezig|vervang' over src/openzaak returns nothing",
 				"opencase": "opencase@1.1.0 grep -riE 'OutOfOffice|IAvailability|fravaer|stedfortr' over lib returns nothing; lib/Notification/FileShareNotifier.php:47,202 notification subjects carry no stand-in",
 				"gzac": "gzac@13.4.1 grep -riE 'out.?of.?office|afwezig|vervang' over backend and frontend/projects returns nothing",
 				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'afwezig|out.?of.?office|vervanger' over backend/zaken/src and frontend-mono/apps returns nothing relevant (only a document category in Constants.pm:2682)",
@@ -7811,7 +7811,7 @@
 			},
 			"addedOn": "2026-09-09",
 			"evidence": {
-				"openzaak": "zaakafhandelapp#723 row 13.18: procest/openzaak/no watcher concept separate from Rol assignment is documented anywhere in the research",
+				"openzaak": "openzaak@1.30.0 Rol (src/openzaak/components/zaken/models/zaken.py) records betrokkenen; notifications go to subscribed API clients, not to watching people",
 				"opencase": "opencase@1.1.0 src/components/CaseCaseworkerList.vue lists other caseworkers who get write access, and FavoriteButton is a personal bookmark; lib/Notification/FileShareNotifier.php:47,202 no subject notifies a follower of case changes",
 				"gzac": "gzac@13.4.1 backend/case/src/main/kotlin/com/ritense/document/listener/DocumentEventListener.kt:30,35 SSE subscriptions refresh open screens; grep -riE 'watcher|follower' over backend returns nothing and the case carries only an assignee",
 				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'volg|follow|subscri' over frontend-mono/apps/main/src/modules/case returns no follow action; the case has assignee and coordinator only (case_access_level.py:12,13)",
@@ -8082,7 +8082,7 @@
 			"gzac": "no",
 			"zaaksysteem": "yes",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "yes",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -8091,7 +8091,8 @@
 				"opencase": "opencase@1.1.0 lib/Migration/Version000001Date20260729000000.php:791,793 an API client carries valid_for and mapped_to_user; lib/Middleware/PublicDataApiMiddleware.php:116,125 the request runs as that mapped user",
 				"gzac": "gzac@13.4.1 backend/core/src/main/java/com/ritense/valtimo/security/config/ApiLoginHttpSecurityConfigurer.java:31 only a login endpoint; grep -riE 'apitoken|personal.?access' over backend returns nothing; machine clients are Keycloak clients configured outside the product | open for the lab: Can a user or admin issue an API token from within GZAC, or only through Keycloak?",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/API.pm:63,75,88 an API key acts as a chosen employee, a Toegangsniveau read-only caps it even when that employee can write, and a saved search limits which objects it sees",
-				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/authentication/ZacApiKeyAuthFilter.kt:17,28 one configured X-API-KEY for internal cron endpoints; every other call needs an OIDC session (RequestAuthorizationFilter.kt); no user-issued token"
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/authentication/ZacApiKeyAuthFilter.kt:17,28 one configured X-API-KEY for internal cron endpoints; every other call needs an OIDC session (RequestAuthorizationFilter.kt); no user-issued token",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/admin.py:63 an administrator registers an Applicatie with its own scopes per component; src/openzaak/components/autorisaties/models.py:23,50 limited to catalogus or zaaktype and a maximum confidentiality"
 			}
 		},
 		{
@@ -8207,7 +8208,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "multi-tenancy",
@@ -8216,7 +8217,8 @@
 				"opencase": "opencase@1.1.0 grep -ri quota over lib returns nothing (only src/components/AiSidePanel.vue); files live in the OpenCase mount (lib/Mount/OpenCaseMountProvider.php), so any limit is the Nextcloud quota, not the app's",
 				"gzac": "gzac@13.4.1 grep -riE 'quota|storage.?limit' over backend returns nothing",
 				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'quota|opslaglimiet' over backend/zaken/src and backend/perl-api/lib returns nothing",
-				"zac": "zac@1.0.316 grep -ri quota over src/main returns nothing; documents live in the Documenten API"
+				"zac": "zac@1.0.316 grep -ri quota over src/main returns nothing; documents live in the Documenten API",
+				"openzaak": "openzaak@1.30.0 grep -ri quota over src/openzaak returns nothing"
 			}
 		},
 		{
@@ -8366,7 +8368,8 @@
 				"opencase": "opencase@1.1.0 the app sets no user password of its own: SAML provisioning creates users (lib/Controller/SamlController.php:1054); password policy is whatever the Nextcloud platform enforces | open for the lab: With a local Nextcloud user, does setting a weak password get refused with a specific reason?",
 				"gzac": "gzac@13.4.1 passwords are held by Keycloak (backend/keycloak-iam); the product sets none, so refusal of a weak password is the realm's password policy | open for the lab: Does the shipped Keycloak realm have a password policy, and does it name the rule that failed?",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:15,45 a password shorter than MINIMUM_PASSWORD_LENGTH (Constants.pm:335, 20) or without upper and lower case is refused with a message naming the rule; Twofactor.pm error map names a password containing the username",
-				"zac": "zac@1.0.316 ZAC holds no passwords; login is Keycloak (src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt), so any refusal is the realm's password policy | open for the lab: Does the shipped Keycloak realm have a password policy and does it name the failed rule?"
+				"zac": "zac@1.0.316 ZAC holds no passwords; login is Keycloak (src/main/kotlin/nl/info/zac/authentication/UserPrincipalFilter.kt), so any refusal is the realm's password policy | open for the lab: Does the shipped Keycloak realm have a password policy and does it name the failed rule?",
+				"openzaak": "not checked: openzaak@1.30.0 src/openzaak/conf/includes/base.py:12 imports settings from open_api_framework, which is not in this tree, so AUTH_PASSWORD_VALIDATORS cannot be read here | open for the lab: In the Open Zaak admin, set a user password to 'password1': is it refused, and does the message name the rule?"
 			}
 		},
 		{
@@ -8606,7 +8609,7 @@
 			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "unknown",
-			"openzaak": "unknown",
+			"openzaak": "yes",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -8615,7 +8618,8 @@
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:17,267 a privilege on KLE '27.%' matches every descendant code; lib/Service/PrivilegeService.php:274 the organisation match is exact, and lib/Service/PermissionService.php:141 reads no parentCaseId",
 				"gzac": "gzac@13.4.1 backend/authorization/src/main/kotlin/com/ritense/authorization/permission/Permission.kt:70,90 each permission names one resource type; a CONTAINER condition (PermissionConditionType.kt:22) narrows a child permission by its parent but a task or note still needs its own grant",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionDialog/CaseActionDialog.locale.ts:241,245 Geldt ook voor Deelzaken applies a case right to sub-cases in the same action | open for the lab: Does a sub-case created after the grant inherit the parent's case rights, and does a right for a parent department reach its child departments?",
-				"zac": "not checked: zac@1.0.316 ZAC reads a flat map of application roles per zaaktype (src/main/resources/policies/zaak-rechten.rego:52,55); PABC groups zaaktypen in domeinen but its code is not in this tree | open for the lab: In PABC, does a mapping made on a domein reach every zaaktype in it, including one added later, without a second grant?"
+				"zac": "not checked: zac@1.0.316 ZAC reads a flat map of application roles per zaaktype (src/main/resources/policies/zaak-rechten.rego:52,55); PABC groups zaaktypen in domeinen but its code is not in this tree | open for the lab: In PABC, does a mapping made on a domein reach every zaaktype in it, including one added later, without a second grant?",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/models.py:23,29 CatalogusAutorisatie grants rights on a catalogus; models.py:72,76 sync extends it to every zaaktype, informatieobjecttype and besluittype created in that catalogus later"
 			}
 		},
 		{
@@ -8931,7 +8935,7 @@
 			"gzac": "yes",
 			"zaaksysteem": "partial",
 			"zac": "partial",
-			"openzaak": "unknown",
+			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "case-access-control",
@@ -8940,7 +8944,8 @@
 				"opencase": "opencase@1.1.0 lib/Service/RoleService.php:18,55 the three roles are a fixed map; lib/Migration/SeedReferenceData.php:259 seeds them; no route creates a role",
 				"gzac": "gzac@13.4.1 backend/authorization/src/main/kotlin/com/ritense/authorization/web/RoleManagementResource.kt:58,107 create a role and set its permissions; frontend/projects/valtimo/access-control-management/src/lib/components/role-metadata-modal and editor reach them from Access Control",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Medewerker.pm:820,828 an admin adds a custom role; backend/perl-api/lib/Zaaksysteem/Backend/Roles/Component.pm:128,151,156 a custom role only toggles the behandelaar pair gebruiker and dashboard; system roles cannot be changed",
-				"zac": "zac@1.0.316 src/main/resources/policies/rollen.rego:10,26 the five application roles are fixed in code; a functional role is made in Keycloak and mapped to them per zaaktype in PABC"
+				"zac": "zac@1.0.316 src/main/resources/policies/rollen.rego:10,26 the five application roles are fixed in code; a functional role is made in Keycloak and mapped to them per zaaktype in PABC",
+				"openzaak": "openzaak@1.30.0 src/openzaak/accounts/admin.py:12 Django user and group admin: an administrator creates a group and ticks its model permissions"
 			}
 		},
 		{
@@ -8980,7 +8985,7 @@
 			"gzac": "partial",
 			"zaaksysteem": "partial",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "yes",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -8989,7 +8994,8 @@
 				"opencase": "opencase@1.1.0 roles cannot be defined (lib/Service/RoleService.php:55); privileges come from SAML groups or local privileges (lib/Service/PrivilegeService.php:51) and are removed by deleting the privilege (appinfo/routes.php:104); the only negative right is the per-document deny (lib/Service/PermissionService.php:280)",
 				"gzac": "gzac@13.4.1 RoleManagementResource.kt:107 a role's permissions are the list the admin writes (resource, action, conditions); backend/authorization/src/main/kotlin/com/ritense/authorization/Action.kt:30,45 deny is only the internal fallback, not a grantable right",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/admin/catalog/entities/versioned_casetype.py:840,846 a role's case rights come from the case type Rechten matrix, removable by unticking; Roles/Component.pm:300,329 set_db_right and unset_db_right on custom roles",
-				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:72,95 each right lists the application roles that hold it in Rego; nothing an admin edits adds or removes one right from a role"
+				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:72,95 each right lists the application roles that hold it in Rego; nothing an admin edits adds or removes one right from a role",
+				"openzaak": "openzaak@1.30.0 src/openzaak/accounts/admin.py:12 group permissions are Django model permissions, ticked on or off; PreventPrivilegeEscalationMixin stops granting more than one holds"
 			}
 		},
 		{
@@ -11007,7 +11013,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11016,7 +11022,8 @@
 				"opencase": "opencase@1.1.0 lib/Service/AccessDecisionService.php:56,62 approve sets approvedBy to the caller with no check against the drafter; lib/Service/WorkflowService.php:107 only skips sharing to the creator, it does not bar them",
 				"gzac": "gzac@13.4.1 grep -riE 'four.?eyes|vier.?ogen' over backend and frontend/projects returns nothing; OperatonTaskActionProvider gives complete as a plain role action with no check against who prepared the case",
 				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'vier.?ogen|four.?eyes|fiatte|goedkeur' over zsnl_domains and frontend-mono/apps/main/src returns nothing; phase advance needs write only (backend/zaken/src/zsnl_domains/case_management/commands/case.py:213)",
-				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:110,118 behandelen and afbreken depend on role and zaak state only; grep -riE 'four.?eyes|vier.?ogen' over src/main returns nothing"
+				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:110,118 behandelen and afbreken depend on role and zaak state only; grep -riE 'four.?eyes|vier.?ogen' over src/main returns nothing",
+				"openzaak": "openzaak@1.30.0 grep -riE 'four.?eyes|vier.?ogen' over src/openzaak returns nothing; status changes check scopes only"
 			}
 		},
 		{
@@ -11032,7 +11039,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11041,7 +11048,8 @@
 				"opencase": "opencase@1.1.0 access comes from responsible, grants and profiles (lib/Service/PermissionService.php:141); grants are made by another user in GrantAccessDialog; grep -riE 'emergency|break.?glass|noedadgang' over lib returns nothing",
 				"gzac": "gzac@13.4.1 grep -riE 'emergency|break.?glass|nood' over backend/authorization returns nothing; permissions change only through the admin role editor (RoleManagementResource.kt:107)",
 				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'break.?glass|noodtoegang|emergency' over zsnl_domains returns nothing; rights change only through CaseActionDialog or the case type",
-				"zac": "zac@1.0.316 grep -riE 'emergency|break.?glass|noodtoegang' over src/main/kotlin returns nothing; rights come only from PABC mappings"
+				"zac": "zac@1.0.316 grep -riE 'emergency|break.?glass|noodtoegang' over src/main/kotlin returns nothing; rights come only from PABC mappings",
+				"openzaak": "openzaak@1.30.0 grep -riE 'emergency|break.?glass' over src/openzaak returns nothing"
 			}
 		},
 		{
@@ -11057,7 +11065,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "dossiq-sociaal-domein-wmo",
@@ -11066,7 +11074,8 @@
 				"opencase": "opencase@1.1.0 grep -riE 'consent|samtykke' over lib returns nothing; the responsible user changes through the case update (lib/Controller/CaseController.php:319) with no consent check",
 				"gzac": "gzac@13.4.1 grep -riE 'consent|toestemming' over backend returns nothing; bulk and single assign (JsonSchemaDocumentResource.java:128,139) have no consent step",
 				"zaaksysteem": "zaaksysteem@b7354824 toestemming appears only as a result type (versioned_casetype.py:118) and a DSO form label; AssignToUser (commands/case.py:416) has no consent step",
-				"zac": "zac@1.0.316 grep -riE 'consent|toestemming' over src/main/kotlin and src/main/app/src/app returns nothing; toekennen (ZaakAssignAndReleaseRestService.kt:86,91) has no consent step"
+				"zac": "zac@1.0.316 grep -riE 'consent|toestemming' over src/main/kotlin and src/main/app/src/app returns nothing; toekennen (ZaakAssignAndReleaseRestService.kt:86,91) has no consent step",
+				"openzaak": "openzaak@1.30.0 grep -riE 'consent|toestemming' over src/openzaak/components returns nothing"
 			}
 		},
 		{
@@ -11082,7 +11091,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "archief-edepot-handover",
@@ -11091,7 +11100,8 @@
 				"opencase": "opencase@1.1.0 no case delete route in appinfo/routes.php; grep -riE 'erase|anonymi|glemt' over lib returns nothing; gdpr_access requests are insight only (lib/Service/AccessRequestService.php:15)",
 				"gzac": "gzac@13.4.1 grep -riE 'anonymi|erase|vergeten' over backend returns nothing; no screen finds all cases of one person to erase them",
 				"zaaksysteem": "zaaksysteem@b7354824 no command deletes or anonymises one person across cases (grep -riE 'class Delete(Subject|Contact|Person)' over zsnl_domains finds only DeleteSubjectRelation at commands/subject_relation.py:208)",
-				"zac": "zac@1.0.316 grep -riE 'anonymi|vergeten|erase' over src/main/kotlin returns nothing; no screen erases one person across zaken"
+				"zac": "zac@1.0.316 grep -riE 'anonymi|vergeten|erase' over src/main/kotlin returns nothing; no screen erases one person across zaken",
+				"openzaak": "openzaak@1.30.0 grep -riE 'anonymi|erase' over src/openzaak returns nothing; deletion is per object through the API"
 			}
 		},
 		{
@@ -11107,7 +11117,7 @@
 			"gzac": "partial",
 			"zaaksysteem": "partial",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11116,7 +11126,8 @@
 				"opencase": "opencase@1.1.0 lib/Service/PermissionService.php:147,178,202 the responsible user slot always carries read and write, so the right moves with the occupant; other party roles (CaseParticipant) carry no rights",
 				"gzac": "gzac@13.4.1 backend/app/gzac/src/main/resources/config/pbac/document.permission.json:44,46 rights attach to the assignee field, so they move when the case handler changes",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/shared/repositories/case_access_level.py:12,13,32 assignee and coordinator slots carry search, read and write; frontend-mono/apps/main/src/modules/case/views/relations/Relations.locale.ts:116,133 a betrokkene gets its own permission",
-				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:72,80 rights test the user's application role for the zaaktype, never whether the user is the zaak's behandelaar"
+				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:72,80 rights test the user's application role for the zaaktype, never whether the user is the zaak's behandelaar",
+				"openzaak": "openzaak@1.30.0 Rol records carry no rights; access is per Applicatie (src/openzaak/components/autorisaties/models.py:23)"
 			}
 		},
 		{
@@ -11132,7 +11143,7 @@
 			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "archief-edepot-handover",
@@ -11141,7 +11152,8 @@
 				"opencase": "opencase@1.1.0 nothing destroys cases (no case DELETE in appinfo/routes.php); grep -riE 'destruct|kassation|vernietig' over lib returns nothing",
 				"gzac": "gzac@13.4.1 grep -riE 'vernietigingslijst|destruction' over backend and frontend/projects returns nothing",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Zaak/Destroy.pm:36,76 a selection is checked per case, errors block and warnings need confirmation before destruction; frontend-mono/packages/common/src/domains/session/session.types.ts:78 vernietigingslijst capability",
-				"zac": "zac@1.0.316 grep -riE 'vernietigingslijst|destruction' over src/main returns nothing; destruction lists are Open Archiefbeheer, a separate service in docker-compose.yaml"
+				"zac": "zac@1.0.316 grep -riE 'vernietigingslijst|destruction' over src/main returns nothing; destruction lists are Open Archiefbeheer, a separate service in docker-compose.yaml",
+				"openzaak": "openzaak@1.30.0 grep -riE 'vernietigingslijst|destruction.?list' over src/openzaak returns nothing; destruction lists live in Open Archiefbeheer"
 			}
 		},
 		{
@@ -11157,7 +11169,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "archief-edepot-handover",
@@ -11166,7 +11178,8 @@
 				"opencase": "opencase@1.1.0 grep -ri anonymi over lib and src returns nothing; no retention outcome exists to attach it to",
 				"gzac": "gzac@13.4.1 grep -ri anonymi over backend and frontend/projects returns nothing",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/admin/catalog/entities/versioned_casetype.py:228,236 archival nominations are Bewaren, Conversie, Migratie, Overbrengen, Overdracht, Publicatie, Nader te bepalen, Vernietigen; Anonymize.tsx is document redaction, not a retention outcome",
-				"zac": "zac@1.0.316 grep -ri anonymi over src/main returns nothing"
+				"zac": "zac@1.0.316 grep -ri anonymi over src/main returns nothing",
+				"openzaak": "openzaak@1.30.0 grep -ri anonymi over src/openzaak returns nothing; archiefnominatie is blijvend_bewaren or vernietigen (brondatum.py:61)"
 			}
 		},
 		{
@@ -11182,7 +11195,7 @@
 			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
 			"feature": "zaakportaal-mijngemeente",
@@ -11191,7 +11204,8 @@
 				"opencase": "opencase@1.1.0 no unauthenticated intake: public routes are mTLS receivers only (lib/Controller/PublicApi/PublicApiController.php); grep -riE 'whistle|anonym' returns nothing",
 				"gzac": "gzac@13.4.1 no permitAll intake endpoint besides ping, login, form-file, notificaties callback and mandrill webhook (backend/core/src/main/java/com/ritense/valtimo/security/config/ApiLoginHttpSecurityConfigurer.java:31); no reporter receipt code",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Form.pm:360,365 a web form with a preset client accepts a request with no login; caseTypeManagement/locale/form.locale.ts:364,366 anonieme aanvragen",
-				"zac": "zac@1.0.316 no unauthenticated intake: RequestAuthorizationFilter.kt lets only webdav through; productaanvragen arrive from Open Formulieren via notifications"
+				"zac": "zac@1.0.316 no unauthenticated intake: RequestAuthorizationFilter.kt lets only webdav through; productaanvragen arrive from Open Formulieren via notifications",
+				"openzaak": "openzaak@1.30.0 every API call needs a client JWT (src/openzaak/components/autorisaties); no anonymous intake"
 			}
 		},
 		{
@@ -11207,7 +11221,7 @@
 			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11216,7 +11230,8 @@
 				"opencase": "opencase@1.1.0 no external party login and no relationship model; parties (CaseParticipant) carry no rights (lib/Service/PermissionService.php:141)",
 				"gzac": "gzac@13.4.1 no external party login; ZGW rol indicatieMachtiging is stored and shown only (backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/domain/rol/IndicatieMachtiging.kt)",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/repositories/pip_acl.py:50 a betrokkene marked pip_authorized sees that case on the PIP; backend/zaken/src/zsnl_domains/case_management/constants.py:16 subject relation permission none, search, read, write",
-				"zac": "zac@1.0.316 no external party access; indicatieMachtiging (nl/info/client/zgw/zrc/model/Rol.kt) is stored, not acted on"
+				"zac": "zac@1.0.316 no external party access; indicatieMachtiging (nl/info/client/zgw/zrc/model/Rol.kt) is stored, not acted on",
+				"openzaak": "openzaak@1.30.0 zaken.py:1161 indicatie_machtiging is stored on a Rol; nothing grants access from it"
 			}
 		},
 		{
@@ -11232,7 +11247,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11241,7 +11256,8 @@
 				"opencase": "opencase@1.1.0 lib/Service/AuditService.php:32,299 writes plain rows to the audit log; grep -riE 'hash_hmac|prev_hash|chain' over lib/Service/AuditService.php and lib/Db returns nothing",
 				"gzac": "gzac@13.4.1 backend/audit/src/main/java/com/ritense/audit/domain/AuditRecord.java plain rows with no hash chain (the only hash is hashCode at :99)",
 				"zaaksysteem": "zaaksysteem@b7354824 grep -iE 'hash|signature' over the Logging model in backend/zaken/src/zsnl_domains/database/schema.py returns nothing; events are plain rows",
-				"zac": "zac@1.0.316 history is read from the ZGW audittrail (ZaakHistoryService.kt:45); grep -riE 'hash.?chain|tamper' over src/main returns nothing"
+				"zac": "zac@1.0.316 history is read from the ZGW audittrail (ZaakHistoryService.kt:45); grep -riE 'hash.?chain|tamper' over src/main returns nothing",
+				"openzaak": "openzaak@1.30.0 viewsets.py:36,40 audit trail rows from vng_api_common; grep for a hash chain over src/openzaak finds only document content checksums (documenten/models.py)"
 			}
 		},
 		{
@@ -11257,7 +11273,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "dossiq-sociaal-domein-wmo",
@@ -11266,7 +11282,8 @@
 				"opencase": "opencase@1.1.0 the only case link is parentCaseId (lib/Db/CaseEntity.php, src/components/CaseHierarchyTab.vue); no typed link and no field exposure",
 				"gzac": "gzac@13.4.1 relateer-zaken (backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:933) links cases with no field-level exposure",
 				"zaaksysteem": "zaaksysteem@b7354824 case relation types (deelzaak, gerelateerd, vervolgzaak) in backend/zaken/src/zsnl_domains/case_management/entities/case_relation.py carry no field exposure",
-				"zac": "zac@1.0.316 zaak-rechten.rego:204,211 koppelen links zaken as a whole; no field exposure per link"
+				"zac": "zac@1.0.316 zaak-rechten.rego:204,211 koppelen links zaken as a whole; no field exposure per link",
+				"openzaak": "openzaak@1.30.0 relevante andere zaken and zaak-objecten link whole resources; no field exposure per link in src/openzaak/components/zaken/models/zaken.py"
 			}
 		},
 		{
@@ -11282,7 +11299,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
 			"feature": "leges-heffingen",
@@ -11292,7 +11309,8 @@
 				"opencase": "opencase@1.1.0 no citizen or company portal; the public routes are mTLS receivers only (lib/Controller/PublicApi/PublicApiController.php)",
 				"gzac": "gzac@13.4.1 no portal ships; Portaaltaak addresses one receiver identifier (PortaaltaakPlugin.kt:87) with no party tree",
 				"zaaksysteem": "zaaksysteem@b7354824 pip_acl.py:48,50 PIP access is requestor or authorised betrokkene per case; no party hierarchy is read",
-				"zac": "zac@1.0.316 no portal in ZAC (RequestAuthorizationFilter.kt)"
+				"zac": "zac@1.0.316 no portal in ZAC (RequestAuthorizationFilter.kt)",
+				"openzaak": "openzaak@1.30.0 no portal; no party tree in the Zaken API"
 			}
 		},
 		{
@@ -11308,7 +11326,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "filinq",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11317,7 +11335,8 @@
 				"opencase": "opencase@1.1.0 lib/Controller/FileController.php:349 a download is audited only; lib/Notification/FileShareNotifier.php:47,202 no download subject",
 				"gzac": "gzac@13.4.1 grep -riE 'download' over backend/audit and backend/zgw/documenten-api/src/main/kotlin/com/ritense/documentenapi/event returns no download notification",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_amqp_consumers/event_logger_document.py:457 a download is logged as an event only; no notification is sent from it",
-				"zac": "zac@1.0.316 grep -riE 'download' over src/main/kotlin/nl/info/zac/signalering returns no download signal"
+				"zac": "zac@1.0.316 grep -riE 'download' over src/main/kotlin/nl/info/zac/signalering returns no download signal",
+				"openzaak": "openzaak@1.30.0 grep -riE 'download' over src/openzaak/notifications and src/openzaak/components/documenten/api returns no download notification"
 			}
 		},
 		{
@@ -11333,7 +11352,7 @@
 			"gzac": "yes",
 			"zaaksysteem": "no",
 			"zac": "yes",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11342,7 +11361,8 @@
 				"opencase": "opencase@1.1.0 responsible user is set through the case update (lib/Controller/CaseController.php:319) under ordinary write access; lib/Service/PermissionService.php:141,170 has only read and write",
 				"gzac": "gzac@13.4.1 backend/authorization/src/main/kotlin/com/ritense/authorization/Action.kt:41,43 assign and assignable are actions of their own; backend/case/src/main/java/com/ritense/document/service/JsonSchemaDocumentActionProvider.java:33,40 on cases, next to view and modify",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/commands/case.py:374,396,416,436 assign to department or user requires write on the case; the case_allocation capability (session.types.ts:59) has no backend check",
-				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:23,95 toekennen is its own right next to lezen and wijzigen; src/main/resources/policies/werklijst-rechten.rego:50,52 zaken_taken_verdelen only for coordinator, recordmanager and beheerder, checked in ZaakAssignAndReleaseRestService.kt:62,66"
+				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:23,95 toekennen is its own right next to lezen and wijzigen; src/main/resources/policies/werklijst-rechten.rego:50,52 zaken_taken_verdelen only for coordinator, recordmanager and beheerder, checked in ZaakAssignAndReleaseRestService.kt:62,66",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/scopes.py:12,42,58,77 scopes are create, update, read, delete, reopen and status; no assign scope"
 			}
 		},
 		{
@@ -11358,7 +11378,7 @@
 			"gzac": "partial",
 			"zaaksysteem": "partial",
 			"zac": "partial",
-			"openzaak": "unknown",
+			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
@@ -11367,7 +11387,8 @@
 				"opencase": "opencase@1.1.0 src/components/CaseAccessPanel.vue:17,78,81,84,135 the Adgang tab shows the access profile, each user's source (Ansvarlig, Sagsbehandler, Direkte) and the users holding the profile; privileges come from SAML groups (lib/Service/PrivilegeService.php:51)",
 				"gzac": "gzac@13.4.1 permissions are rows per role with conditions filtered in SQL (backend/authorization/src/main/kotlin/com/ritense/authorization/permission/Permission.kt:70); the role editor shows which role grants what",
 				"zaaksysteem": "zaaksysteem@b7354824 CaseActionDialog.locale.ts:236,250,253 the Rechten dialog lists department and role rows with the Hoogste rechtenniveau; versioned_casetype.py:840 case type rows per department and role",
-				"zac": "zac@1.0.316 group-to-application-role mappings per zaaktype (PABC) feed zaaktype_allowed (zaak-rechten.rego:52,55)"
+				"zac": "zac@1.0.316 group-to-application-role mappings per zaaktype (PABC) feed zaaktype_allowed (zaak-rechten.rego:52,55)",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/admin.py:68,82,83 shows whether an Applicatie's rights come from heeft_alle_autorisaties, a CatalogusAutorisatie or a per-type Autorisatie"
 			}
 		},
 		{
@@ -11383,7 +11404,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "zaakportaal-mijngemeente",
@@ -11392,7 +11413,8 @@
 				"opencase": "opencase@1.1.0 shares go to a Nextcloud user (src/components/DocumentShareDialog.vue:17 Soeg bruger); no anonymous link route in appinfo/routes.php",
 				"gzac": "gzac@13.4.1 grep -riE 'share.?link|bearer.?link|magic.?link' over backend returns nothing; case routes require login",
 				"zaaksysteem": "zaaksysteem@b7354824 anonymous routes (backend/perl-api/lib/Zaaksysteem/Controller/Page.pm:495,535 allowlist) cover forms, PIP login and integrations, no case link by token",
-				"zac": "zac@1.0.316 the only token link is the WebDAV one-time document token (src/main/kotlin/nl/info/zac/webdav/WebdavHelper.kt); a zaak needs a session"
+				"zac": "zac@1.0.316 the only token link is the WebDAV one-time document token (src/main/kotlin/nl/info/zac/webdav/WebdavHelper.kt); a zaak needs a session",
+				"openzaak": "openzaak@1.30.0 every zaak read needs a client JWT; no link token"
 			}
 		},
 		{
@@ -11408,7 +11430,7 @@
 			"gzac": "no",
 			"zaaksysteem": "no",
 			"zac": "no",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "archief-edepot-handover",
@@ -11417,7 +11439,8 @@
 				"opencase": "opencase@1.1.0 there is no destruction to suspend; grep -riE 'legal.?hold|litigation' over lib returns nothing",
 				"gzac": "gzac@13.4.1 grep -riE 'legal.?hold' returns nothing; set-zaakopschorting (ZakenApiPlugin.kt:737) suspends handling, not destruction",
 				"zaaksysteem": "zaaksysteem@b7354824 Zaken/ComponentZaak.pm:1463 destruction is blocked only by an open case or unexpired retention of the case, parent or sub-case; grep -riE 'legal.?hold|bewaarplicht' returns nothing",
-				"zac": "zac@1.0.316 grep -riE 'legal.?hold' over src/main returns nothing; opschorten (zaak-rechten.rego:161) suspends handling, not destruction"
+				"zac": "zac@1.0.316 grep -riE 'legal.?hold' over src/main returns nothing; opschorten (zaak-rechten.rego:161) suspends handling, not destruction",
+				"openzaak": "openzaak@1.30.0 grep -riE 'legal.?hold|bewaarplicht' over src/openzaak returns nothing"
 			}
 		},
 		{
@@ -11433,7 +11456,7 @@
 			"gzac": "yes",
 			"zaaksysteem": "yes",
 			"zac": "yes",
-			"openzaak": "unknown",
+			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "case-access-control",
@@ -11442,7 +11465,8 @@
 				"opencase": "opencase@1.1.0 lib/Controller/AdminController.php:239 bulk grants access profiles to a user, not a caseload; grep -ri reassign over lib returns nothing",
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-list/case-list.component.html:112,175 select cases in the list and open the bulk assign modal; services/case-bulk-assign.service.ts:37 POST v1/document/assign; backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentResource.java:139 | open for the lab: Can the case list be filtered to one handler's cases before selecting all for bulk assign?",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/advancedSearch/components/Main/Results/components/Actions/Actions.tsx:144,147 bulk assign and setAssignee on selected results; AdvancedSearch.locale.ts:64 Behandelaar wijzigen; filters on behandelaar in components/EditForm/Filters/library/Filters.library.tsx",
-				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaken-werkvoorraad/zaken-werkvoorraad.component.html:29,343 select all with a behandelaar filter; zaken.service.ts:153 PUT /rest/zaken/lijst/verdelen; ZaakAssignAndReleaseRestService.kt:62,66 behind zaken_taken_verdelen"
+				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaken-werkvoorraad/zaken-werkvoorraad.component.html:29,343 select all with a behandelaar filter; zaken.service.ts:153 PUT /rest/zaken/lijst/verdelen; ZaakAssignAndReleaseRestService.kt:62,66 behind zaken_taken_verdelen",
+				"openzaak": "openzaak@1.30.0 no case-worker screen; assignment is a Rol written by the calling client"
 			}
 		},
 		{
@@ -15872,6 +15896,196 @@
 			"pack": "r5"
 		},
 		{
+			"id": "13.14",
+			"kind": "row",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.26",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.27",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.28",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.29",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.30",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.31",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.32",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.33",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.34",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.35",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.36",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.38",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.39",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.40",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.41",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.42",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.43",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "13.44",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
 			"id": "14.1",
 			"kind": "pending",
 			"system": "openzaak",
@@ -16710,6 +16924,56 @@
 			"to": "yes",
 			"cause": "source-read",
 			"pack": "r5"
+		},
+		{
+			"id": "Q13.20",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "Q13.21",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "Q13.23",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "Q13.24",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r6"
+		},
+		{
+			"id": "Q13.25",
+			"kind": "pending",
+			"system": "openzaak",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "yes",
+			"cause": "source-read",
+			"pack": "r6"
 		},
 		{
 			"id": "Q2.27",
