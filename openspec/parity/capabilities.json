@@ -8609,7 +8609,7 @@
 			"opencase": "partial",
 			"gzac": "no",
 			"zaaksysteem": "partial",
-			"zac": "unknown",
+			"zac": "yes",
 			"openzaak": "yes",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
@@ -8619,7 +8619,7 @@
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:17,267 a privilege on KLE '27.%' matches every descendant code; lib/Service/PrivilegeService.php:274 the organisation match is exact, and lib/Service/PermissionService.php:141 reads no parentCaseId",
 				"gzac": "gzac@13.4.1 backend/authorization/src/main/kotlin/com/ritense/authorization/permission/Permission.kt:70,90 each permission names one resource type; a CONTAINER condition (PermissionConditionType.kt:22) narrows a child permission by its parent but a task or note still needs its own grant",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/packages/common/src/components/dialogs/CaseActionDialog/CaseActionDialog.locale.ts:241,245 Geldt ook voor Deelzaken applies a case right to sub-cases in the same action | open for the lab: Does a sub-case created after the grant inherit the parent's case rights, and does a right for a parent department reach its child departments?",
-				"zac": "not checked: zac@1.0.316 ZAC reads a flat map of application roles per zaaktype (src/main/resources/policies/zaak-rechten.rego:52,55); PABC groups zaaktypen in domeinen but its code is not in this tree | open for the lab: In PABC, does a mapping made on a domein reach every zaaktype in it, including one added later, without a second grant?",
+				"zac": "settled from source by the lane on 2026-09-26, so the ZAC lab was not booted: PABC v1.1.1 (commit 519b8c9e, the pabc-api image ZAC's docker-compose.yaml pins) PABC.Server/Features/GetApplicationRolesPerEntityType/GetApplicationRolesPerEntityTypeController.cs:26-45 resolves a domain mapping over m.Domain.EntityTypes at request time and an IsAllEntityTypes mapping over every entity type, so a zaaktype added to the domain later is covered without a second grant | source: zac@1.0.316 ZAC reads a flat map of application roles per zaaktype (src/main/resources/policies/zaak-rechten.rego:52,55); PABC groups zaaktypen in domeinen but its code is not in this tree",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/models.py:23,29 CatalogusAutorisatie grants rights on a catalogus; models.py:72,76 sync extends it to every zaaktype, informatieobjecttype and besluittype created in that catalogus later"
 			}
 		},
@@ -8920,7 +8920,7 @@
 				"opencase": "opencase@1.1.0 deadline_at has one writer (lib/Service/AccessRequestService.php:63) and extended_deadline_at one (:87); the screens show a single computed effective_deadline_at (:145, AccessDeadlineService.php:66-68) in the list and the detail badge",
 				"gzac": "gzac@13.4.1 backend/zgw/zaken-api/src/main/kotlin/com/ritense/zakenapi/ZakenApiPlugin.kt:251-252 create sets uiterlijkeEinddatumAfdoening from doorlooptijd, :803,835-843 hersteltermijn moves it, :737-765 set-zaakopschorting records a verlenging duur without moving it, :288 patch-zaak writes any value; the paths follow different rules",
 				"zaaksysteem": "zaaksysteem@b7354824 three date calculators: backend/perl-api/lib/Zaaksysteem/Backend/Tools/Term.pm:59-93, DB/Component/ZaaktypeRegel.pm:645-657 (its own copy with a +1 day correction and a note to use Term.pm on the next overhaul) and Python backend/zaken/src/minty/date_calculation.py:12-45 with a different holiday library; Perl stores streefafhandeldatum as a UTC timestamp (Schema/Zaak.pm:162-165), Python presents a date",
-				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:640-655 the screen sends the new end dates and duurDagen side by side to SuspensionZaakHelper.extendZaak, while net/atos/zac/flowable/delegate/ExtendZaakDelegate.kt:67-70 computes them with plusDays; all other writers add calendar days to LocalDate | open for the lab: In the extension dialog, can the entered days and the entered end date disagree, and which one is stored?",
+				"zac": "settled from source by the lane on 2026-09-26, so the ZAC lab was not booted: zac@1.0.316 src/main/app/src/app/zaken/zaak-verlengen-dialog/zaak-verlengen-dialog.component.ts:135-158,161-173 every change to days or to either date recomputes the other fields with emitEvent false, so on screen they cannot disagree; ZaakRestService.kt:640-655 still accepts duurDagen and both dates side by side, so an API client can send values that disagree and the dates are stored as sent | source: zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:640-655 the screen sends the new end dates and duurDagen side by side to SuspensionZaakHelper.extendZaak, while net/atos/zac/flowable/delegate/ExtendZaakDelegate.kt:67-70 computes them with plusDays; all other writers add calendar days to LocalDate",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:676-690 derives einddatum_gepland and uiterlijke_einddatum_afdoening only when the client leaves them empty; every later write is the client's value and verlenging does not touch them (:733-742)"
 			}
 		},
@@ -9218,7 +9218,7 @@
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
-			"zac": "partial",
+			"zac": "yes",
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
@@ -9228,7 +9228,7 @@
 				"opencase": "opencase@1.1.0 lib/Service/CaseService.php:291-316 closing checks only write access and the fixed transition table; open document workflows or reminders do not block it",
 				"gzac": "gzac@13.4.1 no dependency check on case status; the status follows whatever the BPMN does",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Zaken/Roles/DeelzaakObjecten.pm:501 subcases_complete, DocumentenObjecten.pm:207 documents in queue, KenmerkenObjecten.pm:328 pending PIP updates and ChecklistObjecten.pm:55 each fail the advance to the next or closing phase",
-				"zac": "zac@1.0.316 open task counts are shown (app/zaak/converter/RestOpenstaandeTakenConverter.kt:16-19) and Open Zaak refuses an eindstatus while deelzaken lack a resultaat; the ZAC menu itself does not withhold closing | open for the lab: Is Zaak afhandelen offered while the case still has open tasks?",
+				"zac": "settled from source by the lane on 2026-09-26, so the ZAC lab was not booted: zac@1.0.316 src/main/resources/cmmn/Generiek_zaakafhandelmodel.cmmn.xml:227 the ZAAK_AFHANDELEN user event listener is available only when planItemInstances.currentStage().active().count() == 0, and zaak-view-menu.builder.ts:80-90 offers only available listeners, so Zaak afhandelen is withheld while a task in the stage is open; Open Zaak also refuses an eindstatus while deelzaken lack a resultaat. The heropend path (menu builder :254-258 Afsluiten) has no such check | source: zac@1.0.316 open task counts are shown (app/zaak/converter/RestOpenstaandeTakenConverter.kt:16-19) and Open Zaak refuses an eindstatus while deelzaken lack a resultaat; the ZAC menu itself does not withhold closing",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:919 deelzaak-resultaat-does-not-exist refuses an eindstatus while a deelzaak has no resultaat; the only dependency checked, and it refuses rather than withholds"
 			}
 		},
@@ -10139,7 +10139,7 @@
 				"opencase": "opencase@1.1.0 notifications go through the Nextcloud notifications app (src/services/api.js:890-896); no app-level kind or channel choice",
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/components/src/lib/components/right-sidebar/right-sidebar.component.html:181-212 each user toggles task notifications and an e-mail digest; no administrator forcing",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/contactView/information/Information.locale.ts:171-180 each user picks the events that send them e-mail; caseTypeManagement/locale/form.locale.ts:437-463 the case type sets the events; one channel, nothing forced",
-				"zac": "zac@1.0.316 src/main/app/src/app/signaleringen/signaleringen-settings/signaleringen-settings.component.html:13-31 per user and signalering type a dashboard and a mail checkbox; admin/groep-signaleringen/groep-signaleringen.component.ts:58 the administrator sets the same per group, not forced over the user | open for the lab: Does a group setting made by the administrator override a user's own choice, or only set a default?",
+				"zac": "settled from source by the lane on 2026-09-26, so the ZAC lab was not booted: zac@1.0.316 src/main/kotlin/nl/info/zac/signalering/SignaleringService.kt:333-346 readInstellingen reads the settings of the signalering's own target, a user or a group; a group setting applies to signaleringen addressed to the group and never overrides a user's own choice, so the administrator sets a default for group traffic, not a forced channel | source: zac@1.0.316 src/main/app/src/app/signaleringen/signaleringen-settings/signaleringen-settings.component.html:13-31 per user and signalering type a dashboard and a mail checkbox; admin/groep-signaleringen/groep-signaleringen.component.ts:58 the administrator sets the same per group, not forced over the user",
 				"openzaak": "openzaak@1.30.0 no user notifications"
 			}
 		},
@@ -19902,9 +19902,9 @@
 			"system": "zac",
 			"on": "2026-09-26",
 			"from": "unknown",
-			"to": "partial",
-			"cause": "source-read",
-			"pack": "r1"
+			"to": "yes",
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "2.40",
@@ -20313,8 +20313,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r3"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "7.8",
@@ -20677,6 +20677,16 @@
 			"pack": "drive"
 		},
 		{
+			"id": "Q13.23",
+			"kind": "pending",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "unknown",
+			"to": "yes",
+			"cause": "drive",
+			"pack": "drive"
+		},
+		{
 			"id": "Q13.24",
 			"kind": "pending",
 			"system": "zac",
@@ -20913,8 +20923,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r2"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q8.23",
