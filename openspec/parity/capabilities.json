@@ -666,6 +666,14 @@
 			"to": "yes",
 			"cause": "corrected",
 			"reason": "the embedded intake chain is wired end to end in portaliq: src/portal/components/EmbeddedForm.jsx (mounted from src/portal/main.jsx:89-95) posts to POST /portal/api/embed/submit (appinfo/routes.php:178-179); lib/Controller/PortalEmbedController.php:163 submit() calls PortalIntakeQueue::accept() (lib/Service/Intake/PortalIntakeQueue.php:98); lib/BackgroundJob/PortalIntakeDeliveryJob.php:102-138 deliver() creates the case in the form binding's caseRegister and caseSchema (portaliq matrix rows int-embedded-form and sib-dossiq-q1-16)."
+		},
+		{
+			"id": "3.7",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "`verbs()` in src/views/tasks/TaskDetailView.vue:413 offers claim (Pick up) and unclaim (Hand back) only. Nothing assigns a task to another user or to a team: the team is shown read-only from candidateGroups and is set only by task declarations (lib/Service/Transitions/CreateTaskHandler.php). Found by the dossiq evidence backfill lane (dossiq#3135)."
 		}
 	],
 	"systems": [
@@ -2203,7 +2211,7 @@
 			"area": "tasks-and-phases",
 			"name": "Task assign, claim, unassign, assign to team",
 			"name_nl": "Taak toewijzen, oppakken, vrijgeven of aan een team geven",
-			"dossiq": "yes",
+			"dossiq": "partial",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -2221,7 +2229,9 @@
 			"built": {
 				"state": "built",
 				"evidence": "src/views/tasks/TaskDetailView.vue:413 verbs() offers claim (Pick up) and unclaim (Hand back) through the engine; team shown read-only from candidateGroups at :364, set only by task declarations (lib/Service/Transitions/CreateTaskHandler.php)",
-				"reachedOn": "#TaskDetail header buttons \"Pick up\" / \"Hand back\""
+				"reachedOn": "#TaskDetail header buttons \"Pick up\" / \"Hand back\"",
+				"readOn": "2026-09-26",
+				"note": "Claim and unclaim only: verbs() at src/views/tasks/TaskDetailView.vue:413 offers Pick up when nobody holds the task and Hand back when someone does, plus Complete and Cancel. There is no verb to assign the task to another user, and the team (candidateGroups) is read-only on the page, set only by the case type's task declarations. Assign to someone else and assign to a team are missing: partial."
 			}
 		},
 		{
@@ -7742,7 +7752,7 @@
 			"status": "pending",
 			"source": "round 4 batch 7",
 			"dossiq": "partial",
-			"dossiqNote": "Rated from the matrix: rows 9.3 and 10.10 record `allowSavedViews` on the Cases, Queue and Tasks pages (`src/manifest.json:1014,1115`), a personal saved view inside a page; nothing makes it a page. Vikunja stores a saved filter as a project with a negative id and four views of its own, measured as project -5; Kanboard's custom filter is a query string on one project's board. Numbered 9.16 because batch 8 merged first with a 9.15.",
+			"dossiqNote": "Rated from the matrix: row 9.3 records `allowSavedViews` on the Cases, Queue, CaseObjects, Contacts and Organisations pages (`src/manifest.json:1580,1409,4154,6787,6836`), a personal saved view inside a page; the Tasks page has `allowSavedViews` false (`src/manifest.json:3967`), so it has none. Nothing makes a saved view a page. Vikunja stores a saved filter as a project with a negative id and four views of its own, measured as project -5; Kanboard's custom filter is a query string on one project's board. Numbered 9.16 because batch 8 merged first with a 9.15.",
 			"opencase": "unknown",
 			"gzac": "unknown",
 			"zaaksysteem": "unknown",
