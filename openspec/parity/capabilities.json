@@ -697,10 +697,10 @@
 			"name": "Valtimo/GZAC",
 			"vendor": "Ritense",
 			"readOn": "2026-09-26",
-			"drivenOn": "2026-09-07",
+			"drivenOn": "2026-09-26",
 			"readVersion": "Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs; gradle.properties in that tree says projectVersion=13.0.2, a label the release workflow does not update (it reads 13.0.2 at every tag from 13.3.0 to 13.6.0), so the tree is the 13.4.1 tag and only the label lags",
 			"evidenceGrade": "driven",
-			"unknownReason": "Source read on 2026-09-26 at Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs; gradle.properties in that tree says projectVersion=13.0.2, a label the release workflow does not update (it reads 13.0.2 at every tag from 13.3.0 to 13.6.0), so the tree is the 13.4.1 tag and only the label lags, the version the 2026-09-07 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
+			"unknownReason": "Source read on 2026-09-26 at Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs; gradle.properties in that tree says projectVersion=13.0.2, a label the release workflow does not update (it reads 13.0.2 at every tag from 13.3.0 to 13.6.0), so the tree is the 13.4.1 tag and only the label lags, the version the 2026-09-07 click-through drive of the GZAC Evenementenvergunning demo used, which this reading replaces; the same 13.4.1 demo was booted again in the lab-dossiq-gzac lab on 2026-09-26 (its app.jar holds the Valtimo modules as 13.4.1.RELEASE) for the cells the source could not settle, and those cells say driven. A cell neither settled says why on the cell."
 		},
 		{
 			"key": "zaaksysteem",
@@ -1524,7 +1524,7 @@
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseEntity.php fixed columns with no tag or label field; grep -i tag over src/components finds no case tagging | round 2 drive: procest/opencase/round2/code-census.md:77 \"Case core: `CaseEntity` (caseNumber, title, accessProfileId, orgUuid, year, statusId, casetypeId\"",
-				"gzac": "gzac@13.4.1 backend/case/src/main/kotlin/com/ritense/document/domain/CaseTag.kt with colour, managed per case type (web/rest/CaseTagResource.kt:49-77, case-management-tags tab); set on a case by the process (process-document/.../DocumentDelegateService.kt:112,119 addCaseTag, removeCaseTag); shown at case-detail.component.html:28-32 and in the case list | round 2 drive: procest/valtimo/round2/case-definition-editor-anatomy.md:23 \"per-type tags: Naam, Key, Kleur\" | open for the lab: Can a case handler add or remove a tag by hand on the case page, or only a BPMN step?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): the case page (tabs Gegevens, Voortgang, Log, Notities) has no control to add or remove a tag; caseTags on the document are set by the process only, so tags exist but not by hand | source: gzac@13.4.1 backend/case/src/main/kotlin/com/ritense/document/domain/CaseTag.kt with colour, managed per case type (web/rest/CaseTagResource.kt:49-77, case-management-tags tab); set on a case by the process (process-document/.../DocumentDelegateService.kt:112,119 addCaseTag, removeCaseTag); shown at case-detail.component.html:28-32 and in the case list | round 2 drive: procest/valtimo/round2/case-definition-editor-anatomy.md:23 \"per-type tags: Naam, Key, Kleur\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/saved_search.py:911 labels belong to saved searches; case.py has no tag or label field on the case | round 2 drive: procest/xxllnc-zaken/round2/search-anatomy.md:33 \"Free-text labels on a saved search (Meer opties > Labels)\"",
 				"zac": "zac@1.0.316 no tag field on the case; src/main/kotlin/nl/info/zac/search/model/ZaakIndicatie.kt is a fixed derived set, not user labels | round 3 drive: procest/zac/round3/rows/rows-1-3.md:29 \"no | No tag or label field on the case. Zero hits for a case tag concept; the only `tag` hits in `src/main/kotlin` are `SearchService.kt` (Solr) and\"",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/admin/zaken.py:651 ZaakKenmerk holds external identifiers (kenmerk plus bron), not labels; no tag field on Zaak"
@@ -1745,7 +1745,7 @@
 			"featureConfidence": "high",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/AuditService.php:42-48 case_metadata_changed stores from and to per field; src/components/CaseAuditLog.vue:206-222 the Log tab renders them (title, organisation, KLE, sensitivity changed from to); a change log, not a restorable snapshot | round 2 drive: procest/opencase/round2/pages/CaseDetail-Log.md:15 \"Access granted (with expiry), Case handler added, Case summary changed\"",
-				"gzac": "gzac@13.4.1 backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentSnapshotResource.java:58,67 snapshot API with no frontend caller (grep document-snapshot over frontend finds none); case-detail/tab/audit/audit.component.html renders a timeline of events; JsonSchemaDocumentModifiedEvent.java:38 carries field changes | round 2 drive: procest/valtimo/round2/code-census.md:368 \"case snapshots / document version history :: yes\" | open for the lab: On the case audit tab, does a data change show the old and new values of the field?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): after a PUT /api/v1/document changing evenementNaam, the Log tab showed \"Dossier aangepast\" by admin@example.com with no field, old or new value, also when the entry is clicked | source: gzac@13.4.1 backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentSnapshotResource.java:58,67 snapshot API with no frontend caller (grep document-snapshot over frontend finds none); case-detail/tab/audit/audit.component.html renders a timeline of events; JsonSchemaDocumentModifiedEvent.java:38 carries field changes | round 2 drive: procest/valtimo/round2/code-census.md:368 \"case snapshots / document version history :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/DB/Component/Logging/Case/Attribute/Update.pm:27-51 logs Kenmerk gewijzigd with the new value only; the timeline shows it, no previous value and no snapshot | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:237 \"attribute create/update/remove, checklist item create/update/remove\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/zaak/ZaakRestService.kt:372 /zaak/{uuid}/historie over history/converter ZaakHistoryLineConverter with per-attribute old and new; UI zaken/zaken-historie/zaak-historie.component.ts | round 3 drive: procest/zac/round3/rows/rows-1-3.md:37 \"yes | `ZaakRestService.kt:372 /zaak/{uuid}/historie` over `src/main/kotlin/nl/info/zac/history/converter/ZaakHistoryLineConverter.kt`, which turns the ZGW\"",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/urls.py:46 nested audittrail on each zaak (viewsets.py:1481 ZaakAuditTrailViewSet) with oud and nieuw resource versions; utils/admin.py:191-192 admin edits are written to it too"
@@ -5327,7 +5327,7 @@
 			"name_nl": "Zoeken in contacten en personen",
 			"dossiq": "partial",
 			"opencase": "yes",
-			"gzac": "yes",
+			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "partial",
@@ -5350,7 +5350,7 @@
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js /search/citizen and /search/company; lib/Controller/CitizenController.php:143,158 GET /api/v1/citizen/search uses the CPR service when enterprise is on and a local fallback search (:106) when it is off; /api/v1/citizen/cases and /documents give the 360 view | round 2 drive: procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\"",
-				"gzac": "gzac@13.4.1 frontend/projects/valtimo/iko/src/lib/services/iko-menu.service.ts:34-46 IKO menu with search pages; iko-routing.module.ts iko/:key search, list and details; backend/zgw/klantinteracties-api/.../ikorepository/KlantinteractiesApiIkoRepository.kt:64-93 searches partijen; demo config ships BSN and address search fields for klant | round 2 drive: procest/valtimo/round2/usability.md:13 \"No global search box exists. Search is per case type through admin-configured fields; the demo has none on the applicant, so a citizen name finds nothing\" | open for the lab: Is an IKO klant search reachable from the GZAC menu and does a BSN find a partij?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): the main menu is Dashboard, Dossiers, Taken, Analyse and Admin with no IKO entry, and app.jar has no iko module (klantinteracties-api is there); the IKO search pages in the 13.4.1 tree are an optional module this distribution does not ship | source: gzac@13.4.1 frontend/projects/valtimo/iko/src/lib/services/iko-menu.service.ts:34-46 IKO menu with search pages; iko-routing.module.ts iko/:key search, list and details; backend/zgw/klantinteracties-api/.../ikorepository/KlantinteractiesApiIkoRepository.kt:64-93 searches partijen; demo config ships BSN and address search fields for klant | round 2 drive: procest/valtimo/round2/usability.md:13 \"No global search box exists. Search is per case type through admin-configured fields; the demo has none on the applicant, so a citizen name finds nothing\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/Routes.tsx:88 contact-search route; packages/common/src/components/ContactSearch/ContactSearch.requests.ts person search by BSN, postcode and house number or birth date and surname; Routes.tsx:96 contact-view | round 2 drive: procest/xxllnc-zaken/round2/search-anatomy.md:50 \"Contact zoeken: person by BSN, or postcode + house number, or birth date + surname (max 10 results)\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/app/klant/KlantRestService.kt:67,197,208,239 PUT klanten/personen with BRP parameters and PUT klanten/bedrijven via KVK | round 3 drive: procest/zac/round3/rows/rows-7-10.md:34 \"yes | `src/main/kotlin/nl/info/zac/app/klant/KlantRestService.kt` `@Path(\"klanten\")` exposes `personen` (BRP, with `personen/parameters` and\"",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/admin/betrokkenen.py:35-47 Django admin only: NatuurlijkPersoon betrokkenen searchable by BSN or anp identificatie; no contact register"
@@ -6359,7 +6359,7 @@
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:7,10,14 Prerequisites section checks required Nextcloud apps (group folders, full text search) and shows an error box; nothing checks case types or code lists for gaps | round 2 drive: procest/opencase/round2/pages/AdminSettings.md:6 \"Prerequisites (Group folders, Full text search x3)\"",
-				"gzac": "gzac@13.4.1 grep ConfigurationIssue over backend and frontend/projects returns nothing at this version; case-management html only has per-field form validation (case-management-create.component.html:56,88) | round 2 drive: procest/valtimo/round2/code-census.md:462 \"configuration issue detection banner :: yes\" | open for the lab: On 13.4.1, does the case definition page warn about anything missing, such as a status without a process or a tab without a form?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): Admin, Dossiers, evenementenvergunning 1.0.7 shows Algemeen, Processen, Beslistabellen, Document, Formulieren, Form flows, Taken, Dossierlijst, Dossierdetails and ZGW tabs and a read-only notice for the final version; no warning or configuration issue is shown anywhere | source: gzac@13.4.1 grep ConfigurationIssue over backend and frontend/projects returns nothing at this version; case-management html only has per-field form validation (case-management-create.component.html:56,88) | round 2 drive: procest/valtimo/round2/code-census.md:462 \"configuration issue detection banner :: yes\"",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/caseTypeManagement/CaseTypeManagement.validity.ts:24,31 checks per tab; locale/caseTypeManagement.locale.ts:56-62 'kan enkel gepubliceerd worden wanneer de volgende problemen opgelost zijn' with named problems (no name, incomplete term, no result, incomplete rights). Publish-time, per case type, no system-wide check | round 2 drive: procest/_round2/compare/M1-functionality.md:246 \"yes `backend/case/src/main/kotlin/com/ritense/case/domain/CaseDefinitionConfigurationIssue.kt` | no |\"",
 				"zac": "zac@1.0.316 src/main/app/src/app/admin/admin.routes.ts:11,49 admin opens on check (inrichtingscheck); src/main/kotlin/nl/info/zac/app/admin/HealthCheckRestService.kt:29,40,41 health-check/zaaktypes; nl/info/zac/healthcheck/model/ZaaktypeInrichtingscheck.kt:16 per zaaktype checks with a valid roll-up | round 3 drive: procest/zac/round3/findings.md:35 \"A per-case-type validator that says, in domain language, exactly what is missing:\"",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/catalogi/validators.py:105 validate_zaaktype_for_publish; admin/zaaktypen.py:341,345 the publish view lists the errors (missing related types) before publishing. Publish-time only"
@@ -7043,7 +7043,7 @@
 			"featureConfidence": "high",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:16,26,78-89 Elasticsearch index with the ingest-attachment pipeline for file content | round 2 drive: procest/opencase/round2/code-census.md:107 \"Search: Elasticsearch with a `danish_content` analyzer\"",
-				"gzac": "gzac@13.4.1 backend/settings.gradle lists no search engine module; grep -riE 'opensearch|elasticsearch|solr' over backend returns nothing; case search runs on the relational database (JsonSchemaDocumentSearchService.java) | round 2 drive: procest/valtimo/round2/code-census.md:170 \"case-opensearch: optional OpenSearch index for case search with reindex/reconcile\" | open for the lab: Does a GZAC 13.4.1 deployment offer any OpenSearch setting?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): app.jar holds a search module (case search on the database) and no OpenSearch or Elasticsearch library; the Admin menu has no search engine setting | source: gzac@13.4.1 backend/settings.gradle lists no search engine module; grep -riE 'opensearch|elasticsearch|solr' over backend returns nothing; case search runs on the relational database (JsonSchemaDocumentSearchService.java) | round 2 drive: procest/valtimo/round2/code-census.md:170 \"case-opensearch: optional OpenSearch index for case search with reindex/reconcile\"",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/document/infrastructures/tika.py text extraction into a PostgreSQL full-text index (document/repositories/database_queries.py:473) | round 2 drive: procest/xxllnc-zaken/round2/code-census.md:176 \"Search: Elasticsearch model referenced in Perl\"",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/solr/SolrDeployerService.kt and nl/info/zac/search/IndexingService.kt, SearchService.kt on Solr | round 3 drive: procest/zac/round3/code-census.md:39 \"BPMN engine. Solr 9 for search. Keycloak 26 for identity.\"",
 				"openzaak": "openzaak@1.30.0 no search engine dependency in requirements or src/openzaak"
@@ -7174,7 +7174,7 @@
 			"featureConfidence": "low",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Mount/OpenCaseMountProvider.php:102 case files live in datadirectory/opencase_storage on the local filesystem, outside Nextcloud's object store | round 2 drive: procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no |\"",
-				"gzac": "gzac@13.4.1 backend/settings.gradle:64-66 resource modules are local-resource and temporary-resource-storage only; frontend shared config.ts:153 has an S3 option and core OperatonTaskService.java:356 an optional amazonS3Service hook, but no S3 implementation is in the tree | round 2 drive: procest/valtimo/round2/code-census.md:471 \"S3 storage :: yes\" | open for the lab: Can a GZAC 13.4.1 image be configured to store uploads in S3?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): app.jar holds resource and temporary-resource-storage only, no S3 or AWS SDK library, and the backend has no S3 environment variable | source: gzac@13.4.1 backend/settings.gradle:64-66 resource modules are local-resource and temporary-resource-storage only; frontend shared config.ts:153 has an S3 option and core OperatonTaskService.java:356 an optional amazonS3Service hook, but no S3 implementation is in the tree | round 2 drive: procest/valtimo/round2/code-census.md:471 \"S3 storage :: yes\"",
 				"zaaksysteem": "xxllnc@b7354824 backend/zaken/src/minty_infra_storage/s3.py:23 S3Wrapper (minio client, :58) with upload :126 and presigned download :241, used by backend/zaken/src/zsnl_domains/document/repositories/document.py; docker-compose.yml:43 ships minio | round 2 drive: procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no | yes `backend/aws/s3-resource/` | yes `backend/zaken/src/zsnl_domains/document/entities/document.py` (MinIO) |\"",
 				"zac": "zac@1.0.316 no s3 or minio in src/main or charts; document bytes live in the Documenten API | round 3 drive: procest/zac/round3/rows/rows-11-13.md:58 \"no | zero hits for s3 or minio under `src/main` and `charts`. Document bytes live in the ZGW Documenten API, fetched through\"",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/storage.py:16,25,99-100 S3Storage backend for Documenten; conf/includes/base.py:811 S3 settings, next to Azure Blob (:703)"
@@ -8090,7 +8090,7 @@
 			"featureConfidence": "medium",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Migration/Version000001Date20260729000000.php:791,793 an API client carries valid_for and mapped_to_user; lib/Middleware/PublicDataApiMiddleware.php:116,125 the request runs as that mapped user",
-				"gzac": "gzac@13.4.1 backend/core/src/main/java/com/ritense/valtimo/security/config/ApiLoginHttpSecurityConfigurer.java:31 only a login endpoint; grep -riE 'apitoken|personal.?access' over backend returns nothing; machine clients are Keycloak clients configured outside the product | open for the lab: Can a user or admin issue an API token from within GZAC, or only through Keycloak?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): the Admin menu (Configuration, Object management, System processes, Overig) has no API token page; tokens come from Keycloak clients only | source: gzac@13.4.1 backend/core/src/main/java/com/ritense/valtimo/security/config/ApiLoginHttpSecurityConfigurer.java:31 only a login endpoint; grep -riE 'apitoken|personal.?access' over backend returns nothing; machine clients are Keycloak clients configured outside the product",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Backend/Sysin/Modules/API.pm:63,75,88 an API key acts as a chosen employee, a Toegangsniveau read-only caps it even when that employee can write, and a saved search limits which objects it sees",
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/authentication/ZacApiKeyAuthFilter.kt:17,28 one configured X-API-KEY for internal cron endpoints; every other call needs an OIDC session (RequestAuthorizationFilter.kt); no user-issued token",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/admin.py:63 an administrator registers an Applicatie with its own scopes per component; src/openzaak/components/autorisaties/models.py:23,50 limited to catalogus or zaaktype and a maximum confidentiality"
@@ -8392,7 +8392,7 @@
 			"featureConfidence": "high",
 			"evidence": {
 				"opencase": "driven 2026-09-26 on the lab-dossiq-opencase instance (OpenCase 1.1.0 release tarball on nextcloud:34-apache): Nextcloud forces the PHP default zone to UTC (lib/base.php:661 date_default_timezone_set('UTC')), so AccessDeadlineService's new DateTime() counts in UTC whatever the user or instance time zone | source: opencase@1.1.0 lib/Service/AccessDeadlineService.php:20-39 counts with new DateTime() in the PHP default zone; grep -i timezone over lib/Service finds no read of the user or instance time zone",
-				"gzac": "gzac@13.4.1 backend/app/gzac/src/main/resources/application.yml:100 JDBC time_zone UTC for storage; LocalDate.now() in ZakenApiPlugin.kt:250,784 uses the JVM default zone of the deployment; no product setting for a zone | open for the lab: Which time zone does the shipped gzac image run in, and can an operator set Europe/Amsterdam?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): the backend container runs Etc/UTC with no TZ or user.timezone set in the shipped compose; an operator can set the JVM zone, but no product setting exists | source: gzac@13.4.1 backend/app/gzac/src/main/resources/application.yml:100 JDBC time_zone UTC for storage; LocalDate.now() in ZakenApiPlugin.kt:250,784 uses the JVM default zone of the deployment; no product setting for a zone",
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/minty/date_calculation.py:28 and entities/case.py:798,831,981 hard-code Europe/Amsterdam; the Perl side stores UTC (backend/perl-api/lib/Zaaksysteem/DB/Component/ZaaktypeFase.pm:150-151); no configurable zone",
 				"zac": "zac@1.0.316 charts/zac/templates/config.yaml:101 sets TZ Europe/Amsterdam for the container; the date code uses the default zone (SuspensionZaakHelper.kt:65 ZonedDateTime.now()); a deployment value, not a product setting",
 				"openzaak": "driven 2026-09-26 on the lab-dossiq-openzaak 1.30.0 instance: settings.TIME_ZONE is UTC, hardcoded in open_api_framework 0.14.1 conf/base.py:114 with no environment override, so a buyer cannot set Europe/Amsterdam; datetimes carry the client offset | source: openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:945-956 zaak.einddatum is taken in the client's own offset from datum_status_gezet; the server TIME_ZONE comes from open_api_framework (src/openzaak/conf/includes/base.py:12), not in this clone"
@@ -10579,7 +10579,7 @@
 			"featureConfidence": "high",
 			"evidence": {
 				"opencase": "opencase@1.1.0 no conditional field logic in src/components/EditCaseDialog.vue or lib/Service; fields are fixed",
-				"gzac": "gzac@13.4.1 backend/case/src/main/java/com/ritense/document/domain/impl/JsonSchema.java:35-39,86,90 every document write is validated against the case's draft-07 JSON schema, which can express required-if through if and then; show, hide and read-only depend on form.io conditional logic inside the form only | open for the lab: Add an if and then required rule to a case document schema and write the document through the API without that field: is the write refused?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): PUT /api/v1/document with verwachteBezoekers \"veel\" was refused 400 with \"#/evenementDetails/verwachteBezoekers: expected type: Integer, found: String\", so the schema is enforced on API writes; the if and then rule itself was not added in this drive | source: gzac@13.4.1 backend/case/src/main/java/com/ritense/document/domain/impl/JsonSchema.java:35-39,86,90 every document write is validated against the case's draft-07 JSON schema, which can express required-if through if and then; show, hide and read-only depend on form.io conditional logic inside the form only",
 				"zaaksysteem": "zaaksysteem@b7354824 rules show, hide and set attributes from other attribute values (backend/perl-api/lib/Zaaksysteem/Backend/Rules/Rule/Action/ShowHide.pm, SetValue.pm), served to the form by Controller/API/Rules.pm:9-26 and run server-side on case events (backend/zaken/src/zsnl_domains/case_management/entities/case.py:46-81); no rule action makes a field required | open for the lab: With a rule that hides an attribute unless another holds a value, update the hidden attribute through the v2 API: is the write accepted?",
 				"zac": "zac@1.0.316 conditional behaviour lives in uploaded Form.io JSON rendered client-side (src/main/app/package.json:39); task data is stored as process variables without server-side re-evaluation",
 				"openzaak": "openzaak@1.30.0 validators under components/zaken/api/validators.py are fixed by the standard; no configurable dependency between fields"
@@ -11454,7 +11454,7 @@
 			"dossiqNote": "CaseReassignmentService and SelectionReassignmentService move a whole caseload at once, by handler or by selection. Added so the instrument can record a strength.",
 			"name_nl": "Zaaklast van een vertrekkende behandelaar in bulk herverdelen",
 			"opencase": "no",
-			"gzac": "yes",
+			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "no",
@@ -11464,7 +11464,7 @@
 			"featureConfidence": "low",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/AdminController.php:239 bulk grants access profiles to a user, not a caseload; grep -ri reassign over lib returns nothing",
-				"gzac": "gzac@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-list/case-list.component.html:112,175 select cases in the list and open the bulk assign modal; services/case-bulk-assign.service.ts:37 POST v1/document/assign; backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentResource.java:139 | open for the lab: Can the case list be filtered to one handler's cases before selecting all for bulk assign?",
+				"gzac": "driven 2026-09-26 on the lab-dossiq-gzac instance (ritense/gzac-evenementenvergunning-demo 13.4.1, whose app.jar holds the Valtimo modules as 13.4.1.RELEASE): the case list offers select rows and Toewijzen in bulk, but only the tabs Alle, Mijn and Niet-toegewezen dossiers and the shipped search fields Status, Type, Locatie, Evenement and Datum evenement; no filter on another handler, so a departing handler's caseload can only be found by sorting on Behandelaar | source: gzac@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-list/case-list.component.html:112,175 select cases in the list and open the bulk assign modal; services/case-bulk-assign.service.ts:37 POST v1/document/assign; backend/case/src/main/java/com/ritense/document/web/rest/impl/JsonSchemaDocumentResource.java:139",
 				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/advancedSearch/components/Main/Results/components/Actions/Actions.tsx:144,147 bulk assign and setAssignee on selected results; AdvancedSearch.locale.ts:64 Behandelaar wijzigen; filters on behandelaar in components/EditForm/Filters/library/Filters.library.tsx",
 				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaken-werkvoorraad/zaken-werkvoorraad.component.html:29,343 select all with a behandelaar filter; zaken.service.ts:153 PUT /rest/zaken/lijst/verdelen; ZaakAssignAndReleaseRestService.kt:62,66 behind zaken_taken_verdelen",
 				"openzaak": "openzaak@1.30.0 no case-worker screen; assignment is a Rol written by the calling client"
@@ -11723,8 +11723,8 @@
 			"on": "2026-09-26",
 			"from": "yes",
 			"to": "no",
-			"cause": "source-read",
-			"pack": "r4"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "11.21",
@@ -11793,8 +11793,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r4"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "11.38",
@@ -11983,8 +11983,8 @@
 			"on": "2026-09-26",
 			"from": "partial",
 			"to": "no",
-			"cause": "source-read",
-			"pack": "r5"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "12.16",
@@ -12003,8 +12003,8 @@
 			"on": "2026-09-26",
 			"from": "yes",
 			"to": "no",
-			"cause": "source-read",
-			"pack": "r5"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "12.6",
@@ -12222,9 +12222,9 @@
 			"system": "gzac",
 			"on": "2026-09-26",
 			"from": "unknown",
-			"to": "yes",
-			"cause": "source-read",
-			"pack": "r6"
+			"to": "partial",
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "13.5",
@@ -12303,8 +12303,8 @@
 			"on": "2026-09-26",
 			"from": "yes",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r1"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "2.22",
@@ -13212,9 +13212,9 @@
 			"system": "gzac",
 			"on": "2026-09-26",
 			"from": "no",
-			"to": "yes",
-			"cause": "source-read",
-			"pack": "r5"
+			"to": "partial",
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q1.14",
@@ -13393,8 +13393,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "no",
-			"cause": "source-read",
-			"pack": "r6"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q13.21",
@@ -13633,8 +13633,8 @@
 			"on": "2026-09-26",
 			"from": "unknown",
 			"to": "partial",
-			"cause": "source-read",
-			"pack": "r2"
+			"cause": "drive",
+			"pack": "drive"
 		},
 		{
 			"id": "Q8.20",
