@@ -21294,6 +21294,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"provider": "filinq",
+			"providerHow": "note-names-app",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/LibreOfficeService.php:19,30 converts to plain PDF (writer_pdf_Export), used only by TalkController.php:31 to share a file; lib/Service/CaseExportService.php:55,162 the archive export writes case.xml and moves the case to Arkiveret without converting files",
 				"gzac": "gzac@13.4.1 grep -ri pdfa, pdf/a and archive method over backend and frontend/projects returns nothing; PDF archive methods in the documenten-api-preview plugin arrived in 13.26.0 per its release notes, after this version",
@@ -21317,6 +21319,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/services/api.js:433 removeCaseworker only takes a caseworker off a case; there is no intake state or central case queue to send a case back to (the inbound list at api.js:130 holds documents, not cases)",
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-assign-user/case-assign-user.component.ts:70,74 unassign the handler, leaving the case unassigned; no refuse act with a reason and no change of case definition for a running case",
@@ -21340,6 +21344,8 @@
 			"openzaak": "partial",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/413426",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri retention, kassation, bevar and arkiv over lib, src and l10n finds only the Arkiveret case status (lib/Service/CaseExportService.php:69); no archive attributes exist to change",
 				"gzac": "gzac@13.4.1 grep -ri retention, archiefnominatie, archiefactiedatum and bewaartermijn over backend and frontend/projects finds only Java RetentionPolicy annotations; case retention on a status arrived in 13.16.0 per its release notes",
@@ -21363,6 +21369,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'callback request|ring tilbage|tilbagekald' over lib and src finds only Serviceplatformen and Talk callbacks",
 				"gzac": "gzac@13.4.1 backend/app/gzac/imports/objecttypes-api/fixtures/demodata.json:1586 a demo objecttype for terugbelverzoeken in the sample app, no product screen, term or alert The one trace is a demo objecttype in the sample app, a fixture rather than a product capability, so the cell is partial at most and reads no here.",
@@ -21386,6 +21394,8 @@
 			"openzaak": "partial",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE '(related|parent|child).{0,60}(destruction|retention)' over lib and src returns nothing",
 				"gzac": "gzac@13.4.1 grep of destruction or archiefactiedatum near related, parent or child over backend and frontend returns nothing",
@@ -21409,6 +21419,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'i-?navigator' returns nothing",
 				"gzac": "gzac@13.4.1 grep -riE 'i-?navigator' over backend and frontend returns nothing",
@@ -21432,6 +21444,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/400508",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:322,385-398 full-text search as multi_match with fuzziness AUTO over titles, case number and file content; no type-ahead suggestions found",
 				"gzac": "gzac@13.4.1 grep -riE 'fuzzy|levenshtein|trigram|fuzziness' over backend and frontend/projects returns nothing",
@@ -21455,6 +21469,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"provider": "buildiq",
+			"providerHow": "note-names-app",
 			"evidence": {
 				"opencase": "opencase@1.1.0 no citizen web form builder; grep -riE 'inputMask|mask' over lib and src finds only a bundled vendor file",
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/form-management/src/lib/components/form-management-edit/form-management-edit.component.html:35-37 admin Form.io builder, which carries required, input mask and e-mail and phone components; these forms serve staff and task forms, citizen web forms run in Open Formulieren (backend/app/gzac/imports/open-formulieren is only the sample setup)",
@@ -21478,6 +21494,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:39-134,353 step users belong to a document approval workflow; no handler per case status found",
 				"gzac": "gzac@13.4.1 backend/core/src/main/java/com/ritense/valtimo/service/OperatonTaskService.java:308-317 each BPMN user task goes to its candidate groups, so the work moves per step, but the case assignee is not changed by the step",
@@ -21501,6 +21519,8 @@
 			"openzaak": "partial",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PermissionService.php:490-530 only documents with a final status are locked; no refusal of edits on a closed case found in lib/Controller/CaseController.php",
 				"gzac": "gzac@13.4.1 grep of closed or ended near throw or forbid over backend/case and backend/document returns nothing",
@@ -21524,6 +21544,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'permission.?matrix|export.{0,20}(permission|role)' over lib and src returns nothing",
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/access-control-management/src/lib/services/access-control-export.service.ts:26-52 exports the permissions of chosen roles as JSON configuration; it does not list which users hold the roles",
@@ -21547,6 +21569,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/413426",
+			"provider": "portaliq",
+			"providerHow": "note-names-app",
 			"evidence": {
 				"opencase": "opencase@1.1.0 no citizen web form; grep of prefill over lib and src finds only separation sheet code lists (src/components/CreateSeparationSheetDialog.vue:259)",
 				"gzac": "gzac@13.4.1 backend/form-flow/src/main/kotlin/com/ritense/formflow/handler/FormFlowStepTypeFormHandler.kt:37-49 PrefillFormService fills staff forms from case and process data; citizen forms run in Open Formulieren, outside the product",
@@ -21570,6 +21594,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"provider": "portaliq",
+			"providerHow": "note-names-app",
 			"evidence": {
 				"opencase": "opencase@1.1.0 no citizen web form",
 				"gzac": "gzac@13.4.1 form flows keep step data for staff (backend/form-flow), citizen forms run in Open Formulieren outside the product",
@@ -21593,6 +21619,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/EmailController.php:329-374 a sent mail is saved as one .eml document on the case, attachments inside it, not split",
 				"gzac": "gzac@13.4.1 grep of eml, rfc822 or mail import over backend returns nothing for case mail storage",
@@ -21616,6 +21644,8 @@
 			"openzaak": "no",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php:213,240 merge fields are filled in each template's own header and footer parts; no shared letterhead",
 				"gzac": "gzac@13.4.1 mail layout lives in the external mail provider's templates (backend/mail/flowmailer/src/main/kotlin/com/ritense/mail/flowmailer/domain/SubmitMessage.kt:63-64 sends a template id with sender fields); no central header or footer in the product",
@@ -21639,6 +21669,8 @@
 			"openzaak": "no",
 			"origin": "changelog",
 			"originUrl": "https://docs.valtimo.nl/valtimo-docs-v3/release-notes/13.x.x/13.19.0.md",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep of unread or seen next to task over lib and src returns nothing",
 				"gzac": "gzac@13.4.1 grep of unread or seen next to task returns nothing; the highlight arrived in 13.19.0, after this version",
@@ -21662,6 +21694,8 @@
 			"openzaak": "no",
 			"origin": "changelog",
 			"originUrl": "https://github.com/infonl/dimpact-zaakafhandelcomponent/releases/tag/v5.6.0",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'doelbinding|verwerking|protocoller' returns nothing; person lookups go to the Danish CPR",
 				"gzac": "gzac@13.4.1 grep -riE 'doelbinding|x-verwerking|protocoller' over backend returns nothing",
@@ -21685,6 +21719,8 @@
 			"openzaak": "partial",
 			"origin": "tender",
 			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep of integration log, retry or failed message over lib returns only search indexing and file code",
 				"gzac": "gzac@13.4.1 frontend/projects/valtimo/logging/src/logging-routing.module.ts:24 an admin screen to search application logs (components log-search, log-details); no per-connection view and no retry",
