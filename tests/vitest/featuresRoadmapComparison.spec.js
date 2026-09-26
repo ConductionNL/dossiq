@@ -139,20 +139,29 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 
 	it('dates a column read on its own day, without moving the shared date', async () => {
 		const text = (await mountComparison()).text()
-		const late = data.systems.filter((system) => system.readOn)
-
-		expect(late.length).toBeGreaterThan(0)
-		// The shared sentence now counts the systems it actually covers, so a
-		// fifth column read a day later cannot make it claim the fifth.
-		expect(text).toContain(
-			`We read ${data.systems.length - late.length} of the ${data.systems.length} systems`,
+		// Late is a reading date other than `comparedOn`, the view's `isLate`.
+		// Since 2026-09-26 every competitor carries `readOn`, and a column read
+		// on the round's own day is on time.
+		const late = data.systems.filter(
+			(system) => system.readOn && system.readOn !== data.comparedOn,
 		)
-		expect(text).toContain('not on the date above')
+
+		// The shared sentence counts the systems it actually covers, so a
+		// column read on another day cannot make it claim that column.
+		if (late.length) {
+			expect(text).toContain(
+				`We read ${data.systems.length - late.length} of the ${data.systems.length} systems`,
+			)
+			expect(text).toContain('not on the date above')
+		} else {
+			expect(text).toContain(`We read all ${data.systems.length} systems`)
+			expect(text).not.toContain('not on the date above')
+		}
 	})
 
 	it('dates the reading in the reader-s own language', async () => {
 		const text = (await mountComparison()).text()
-		expect(text).toContain('September 7, 2026')
+		expect(text).toContain('September 26, 2026')
 	})
 
 	it('counts only ratings it moved as corrections, not rows it added', async () => {
@@ -234,16 +243,18 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 
 		expect(headers).toContain('Unknown')
 
-		// Every competitor column is unrated on exactly the added rows, so
-		// each Unknown cell has to carry that number rather than a zero. That
-		// now includes the column added last: it was read before those rows
-		// existed, so it is as empty on them as the other three.
-		const added = data.capabilities.filter((row) => row.addedOn).length
+		// Each Unknown cell carries that column's own count of unknown rows
+		// rather than a zero. Since the 2026-09-26 source reading those are
+		// the cells the code could not settle, which is ten OpenCase cells
+		// behind its closed enterprise package and none elsewhere.
 		const rows = wrapper.findAll('.features-roadmap__table tbody tr')
 		for (const system of data.systems.filter((s) => !s.isSelf)) {
+			const unknown = data.capabilities.filter(
+				(c) => !['yes', 'partial', 'no'].includes(c[system.key]),
+			).length
 			const row = rows.find((r) => r.text().startsWith(system.name))
 			expect(row, system.key).toBeTruthy()
-			expect(row.findAll('td').at(3).text(), system.key).toBe(String(added))
+			expect(row.findAll('td').at(3).text(), system.key).toBe(String(unknown))
 		}
 	})
 })
