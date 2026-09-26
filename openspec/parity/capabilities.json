@@ -946,7 +946,9 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/contacts-domain"
+				"change": "dossiq/contacts-domain",
+				"evidence": "src/manifest.json:6891 #ContactDetail headerAction new-case-for-contact (open-form on case, requester prefilled from @objectId; same action on #OrganisationDetail at src/manifest.json:7183)",
+				"reachedOn": "#ContactDetail and #OrganisationDetail header action \"New case\", via menu Contacts / Organisations"
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:9 \"result view: Create case (prefilled with this citizen)\"",
@@ -1659,6 +1661,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:368 \"case snapshots / document version history :: yes\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:237 \"attribute create/update/remove, checklist item create/update/remove\"",
 				"zac": "procest/zac/round3/rows/rows-1-3.md:37 \"yes | `ZaakRestService.kt:372 /zaak/{uuid}/historie` over `src/main/kotlin/nl/info/zac/history/converter/ZaakHistoryLineConverter.kt`, which turns the ZGW\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:3125 #CaseDetail sidebar tab audit (OpenRegister audit trail, actor, action and changes per row)",
+				"reachedOn": "#CaseDetail sidebar tab \"History\""
 			}
 		},
 		{
@@ -2210,6 +2217,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:379 \"task assign / claim / unassign, assign to team :: yes\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/case-detail-anatomy.md:35 \"adds a free task with title, note, assignee (employee or external contact when the case type allows), deadline\"",
 				"zac": "procest/zac/round3/rows/rows-1-3.md:50 \"yes | `TaskRestService.kt` exposes `toekennen`, `toekennen/mij`, `lijst/verdelen`, `lijst/vrijgeven` and `lijst/toekennen/mij`.\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/views/tasks/TaskDetailView.vue:413 verbs() offers claim (Pick up) and unclaim (Hand back) through the engine; team shown read-only from candidateGroups at :364, set only by task declarations (lib/Service/Transitions/CreateTaskHandler.php)",
+				"reachedOn": "#TaskDetail header buttons \"Pick up\" / \"Hand back\""
 			}
 		},
 		{
@@ -2575,7 +2587,9 @@
 						"number": 3933,
 						"mergedAt": "2026-09-18T18:35:00Z"
 					}
-				]
+				],
+				"evidence": "src/manifest.json:1542 #Cases bulkActions (reassign, transition, suspend, resume, extend-term), one act each; several changes per transition via automaticActions such as lib/Service/Transitions/SetFieldHandler.php:65 handle()",
+				"reachedOn": "#Cases list selection bulk actions; no next-item navigation after the write"
 			},
 			"addedOn": "2026-09-09"
 		},
@@ -3264,6 +3278,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:405 \"ZGW zaakrollen (natuurlijk persoon, niet-natuurlijk persoon, medewerker, organisatorische eenheid, vestiging) :: partial (plugin)\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/case-detail-anatomy.md:48 \"Betrokkenen (Type, Rol, Naam, Magicstring prefix, Gemachtigd\"",
 				"zac": "procest/zac/round3/rows/rows-4-6.md:36 \"yes | `src/main/app/src/app/zaken/zaak-betrokkenen-list/zaak-betrokkene-list.component.ts` and\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:2485 #CaseDetail People tab section Roles (case-party-roles, CasePartiesWidget) plus headerAction add-party at src/manifest.json:3197 writing a role row with RoleTypePicker",
+				"reachedOn": "#CaseDetail tab \"People\" (Parties, Roles) and header action \"Add party\""
 			}
 		},
 		{
@@ -3282,7 +3301,9 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/contacts-domain"
+				"change": "dossiq/contacts-domain",
+				"evidence": "src/manifest.json:6780 #Contacts index over brpPerson and src/manifest.json:6829 #Organisations index over kvkCompany",
+				"reachedOn": "app menu \"Contacts\" (src/manifest.json:239) with child \"Organisations\" (src/manifest.json:247)"
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:15 \"the search runs over locally stored parties only\"",
@@ -4279,6 +4300,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:253 \"`InternalCaseStatus(id{caseDefinitionId,key}, title, visibleInCaseListByDefault, order, retentionPeriodInDays, color, label)`\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:348 \"result drives archival nomination, selection list, retention period :: yes\"",
 				"zac": "procest/zac/round3/archival.md:43 \"*why you closed a case determines how long you keep it*. And ZAC surfaces that link in its admin UI:\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/Archival/ArchivalNominationDeriver.php:144 derive() sets archiveNomination and archiveActionDate from resultType; called via lib/Service/Transitions/CaseResultWriter.php:150 archivalFuture() from lib/Service/StatusTransitionService.php:567 on closing",
+				"reachedOn": "#CaseDetail case-stages move to a final status; result shown in tab \"Archiving\" (src/manifest.json:2952)"
 			}
 		},
 		{
@@ -4459,6 +4485,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:428 \"retention period per status with automatic deletion :: yes\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:354 \"destruction date, recalculation and destruction list :: yes\"",
 				"zac": "procest/zac/round3/rows/rows-7-10.md:22 \"partial | ZAC writes the brondatum (`ZgwApiService.processBrondatumProcedure`) and reads back `archiefnominatie` and `archiefactiedatum`, which it indexes\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/Recycle/RetentionClocks.php:108 clocksFor() (lawful purpose and archive dates) and lib/Service/Recycle/CaseDestructionService.php:163 destroy(); no automatic deletion job in dossiq",
+				"reachedOn": "#CasesDeleted (menu \"Deleted cases\", src/manifest.json:261) via src/views/cases/DeletedCasesView.vue, API /api/case/{caseId}/destroy and /retention-clocks"
 			}
 		},
 		{
@@ -4608,7 +4639,12 @@
 			"providerHow": "note-names-dossiq-service",
 			"feature": "termijn-binding",
 			"featureConfidence": "high",
-			"addedOn": "2026-09-09"
+			"addedOn": "2026-09-09",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/DeadlinePauseService.php:94 registerPauze() extends einddatumActueel by the pause and :303 resumeAfterPauze() gives back only the unconsumed days; called from lib/Service/CaseLifecycleService.php:142 suspend() and :187 resume()",
+				"reachedOn": "#CaseDetail header action \"Lifecycle\" (Suspend, Resume in src/dialogs/CaseLifecycleMenuDialog.vue:267) and #Cases bulk actions Suspend / Resume; API /api/case/{caseId}/suspend and /resume"
+			}
 		},
 		{
 			"id": "8.14",
@@ -4624,7 +4660,12 @@
 			"providerHow": "note-names-dossiq-service",
 			"feature": "termijn-binding",
 			"featureConfidence": "high",
-			"addedOn": "2026-09-09"
+			"addedOn": "2026-09-09",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/DeadlineEscalationService.php:58 DEFAULT_MATRIX four rungs (14d handler, 7d plus teamleader, 2d plus manager, 0d overschreden critical), fired by lib/Listener/TermijnTimerFiredListener.php:204 notifyThreshold(); share based rungs in lib/Service/Term/ThresholdShares.php:73 rulesFor()",
+				"reachedOn": "background timer, delivered as Nextcloud notifications; terms overview on #TermijnDashboard (menu src/manifest.json:396)"
+			}
 		},
 		{
 			"id": "8.15",
@@ -4640,7 +4681,12 @@
 			"providerHow": "note-names-dossiq-service",
 			"feature": "termijn-binding",
 			"featureConfidence": "high",
-			"addedOn": "2026-09-09"
+			"addedOn": "2026-09-09",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/TermijnService.php:156 stores the term end as a Y-m-d date (counted and rolled by the Awt roll in lib/Service/Termijn/TermEndRoll.php:102); lib/Service/CaseTermsService.php:525 daysLeft() compares whole days, so a term is overdue only after its end day",
+				"reachedOn": "#CaseDetail sidebar tab \"Terms\" (src/manifest.json:3136, CaseTermsTab) and the Deadline tile (src/manifest.json:2097)"
+			}
 		},
 		{
 			"id": "9.1",
@@ -4742,6 +4788,11 @@
 				"gzac": "procest/valtimo/round2/pages/CaseList.md:10 \"Zoekopdracht opslaan (save the search as a personal saved filter)\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:253 \"user-created searches with name, owner, kind, filters, columns, sort, labels\"",
 				"zac": "procest/zac/round3/usability.md:24 \"**Saved searches are made from what you are looking at.** A star in the filter row saves the current\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:1580 #Cases allowSavedViews true (also #Queue at :1409, #CaseObjects at :4154, #Contacts at :6787, #Organisations at :6836): the CnIndexPage Views dropdown over the user's OpenRegister saved views",
+				"reachedOn": "#Cases, #Queue, #CaseObjects, #Contacts, #Organisations list header \"Views\" dropdown, \"Save current view\"; not on #Tasks (allowSavedViews false at src/manifest.json:3967)"
 			}
 		},
 		{
@@ -4784,6 +4835,11 @@
 				"gzac": "procest/valtimo/round2/pages/CaseList.md:9 \"column chooser \"8/8\" (Selecteer zichtbare kolommen, per-column checkboxes, persisted per user)\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/search-anatomy.md:25 \"\"Zoek een kolom of kenmerk…\" adds columns\"",
 				"zac": "procest/zac/round3/pages/cases-queue.md:14 \"| column controls | \"Reset columns\" and \"Change columns\" buttons in the last header cell |\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:1923 #Cases sidebar enabled, mounting CnIndexSidebar whose Columns tab toggles visible columns",
+				"reachedOn": "#Cases list sidebar tab \"Columns\""
 			}
 		},
 		{
@@ -4923,6 +4979,11 @@
 				"gzac": "procest/valtimo/round2/pages/Admin-Objecten.md:15 \"once registered, an object type gets its own list page and search fields, the same mechanism as the case list.\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/search-anatomy.md:7 \"Kind switch: **Zaken** | **Objecten** (custom objects).\"",
 				"zac": "procest/zac/round3/rows/rows-7-10.md:35 \"partial | BAG objects only, no generic custom object type. `src/main/java/net/atos/zac/app/bag/BagRestService.java` `@Path(\"bag\")` searches addresses\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:4118 #CaseObjects index over caseObject with search and saved views (:4154)",
+				"reachedOn": "app menu \"Objects\" (src/manifest.json:268), #CaseObjects list search; row action opens the linked case"
 			}
 		},
 		{
@@ -4982,7 +5043,9 @@
 						"number": 3899,
 						"mergedAt": "2026-09-18T15:10:00Z"
 					}
-				]
+				],
+				"evidence": "src/manifest.json:7534 deepLinks (case, objectionProceeding, beroep, brpPerson, kvkCompany) handed to OpenRegister's unified search provider through the AppHost registration in lib/AppInfo/Registrar/AppHostRegistrar.php:99 register(); no dossiq IProvider of its own; engine tasks have no provider",
+				"reachedOn": "Nextcloud header unified search, results open /apps/dossiq/cases/{uuid} (#CaseDetail) and the other detail pages"
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\"",
@@ -5250,6 +5313,11 @@
 				"gzac": "procest/valtimo/round2/pages/CaseDetail-Log.md:5 \"Chronological audit list of case events\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Case-Tijdlijn.md:5 \"purpose: One chronological feed of everything that happened on the case\"",
 				"zac": "procest/zac/round3/rows/rows-7-10.md:46 \"yes | `src/main/app/src/app/zaken/zaken-historie/zaak-historie.component.ts` renders the case history tab against `ZaakRestService`\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:3125 #CaseDetail sidebar tab audit (CnAuditTrailTab over the OpenRegister audit trail, actor and action per row) plus src/manifest.json:2450 case-timeline-panel (case-timeline-pane over notes, calls and messages)",
+				"reachedOn": "#CaseDetail sidebar tab \"History\" and body tab \"Timeline\""
 			}
 		},
 		{
@@ -5309,7 +5377,9 @@
 						"number": 2368,
 						"mergedAt": "2026-06-01T00:00:00Z"
 					}
-				]
+				],
+				"evidence": "src/manifest.json:2025 #CaseDetail widget case-kpis-hours (integration humaniq-hours, placed at layout src/manifest.json:3021); booking itself lives in humaniq",
+				"reachedOn": "#CaseDetail grid tile \"Hours booked\" (humaniq leaf; renders only with humaniq installed)"
 			},
 			"addedOn": "2026-09-09"
 		},
@@ -5924,6 +5994,11 @@
 				"gzac": "procest/_round2/compare/M1-functionality.md:250 \"| 11.22 | GDPR register fields per case type | no | no |\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/case-type-editor-anatomy.md:15 \"AVG block (verwerkt persoonsgegevens, soort persoonsgegevens 11 categories, verwerkingssoort, grondslag, doorgifte buitenland)\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:36 \"yes, for the BRP leg | `nl.info.zac.admin.model.ZaaktypeBrpParameters` holds `zoekWaarde`, `raadpleegWaarde` and `verwerkingregisterWaarde` per zaaktype\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "lib/Settings/dossiq_register.json:455 caseType.processesPersonalData, :462 personalDataCategories, :483 legalBasis, :497 verwerkingsactiviteit; shown by src/manifest.json:6382 #CaseTypeDetail widget case-type-privacy",
+				"reachedOn": "#CaseTypeDetail widget \"Personal data\" (Settings, menu \"Case types\" src/manifest.json:365)"
 			}
 		},
 		{
@@ -6561,6 +6636,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:471 \"S3 storage :: yes\"",
 				"zaaksysteem": "procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no | yes `backend/aws/s3-resource/` | yes `backend/zaken/src/zsnl_domains/document/entities/document.py` (MinIO) |\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:58 \"no | zero hits for s3 or minio under `src/main` and `charts`. Document bytes live in the ZGW Documenten API, fetched through\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:2357 #CaseDetail case-files (Nextcloud Files leaf); dossiq writes files through OCP\\Files\\IRootFolder (e.g. lib/Controller/SavedMailController.php:89), so S3 comes only from Nextcloud primary object storage",
+				"reachedOn": "#CaseDetail tab \"Files\"; S3 is Nextcloud server configuration, nothing in dossiq"
 			}
 		},
 		{
@@ -6837,6 +6917,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:485 \"Documenten API vertrouwelijkheidaanduiding column and upload field :: yes\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:401 \"case type confidentiality designation (8 levels) :: yes\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:68 \"partial, recorded but not enforced | `vertrouwelijkheidaanduiding` is carried on the zaak and the informatieobject from ZGW, indexed by\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "lib/Settings/dossiq_register.json:2747 case.confidentiality (ZGW enum openbaar to zeer_geheim), default from caseType.confidentiality at :216; enforced for documents by lib/Service/InformatieobjectAccessGuard.php:49",
+				"reachedOn": "#CaseDetail edit form field \"Confidentiality\" (src/manifest.json:1970) and Files action \"Change confidentiality\" (src/manifest.json:2395)"
 			}
 		},
 		{
@@ -6892,6 +6977,11 @@
 				"gzac": "procest/valtimo/round2/code-census.md:243 \"Audit: `AuditRecord` per `AuditEvent`; 22 audit event classes found\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Logboek.md:15 \"show that viewing a person is itself logged (AVG inspection log)\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:70 \"partial, mutations plus statutory BRP read logging | mutations come from the ZGW audittrail and are rendered by `nl.info.zac.history.ZaakHistoryService`\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:3125 #CaseDetail sidebar tab audit over the OpenRegister audit trail, which records reads beside writes (tab note: opens unfiltered over writes and reads); citizen lookups logged as action read by lib/Service/Kcc/CitizenLookupRecorder.php:180",
+				"reachedOn": "#CaseDetail sidebar tab \"History\" (Action and User filters)"
 			}
 		},
 		{
@@ -6938,6 +7028,11 @@
 				"gzac": "procest/_round2/compare/M1-functionality.md:296 \"| 13.11 | GDPR register per case type | no | no |\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/case-type-editor-anatomy.md:34 \"**AVG**: Verwerkt persoonsgegevens, Soort persoonsgegevens (11 checkboxes\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:72 \"partial, BRP only | `nl.info.zac.admin.model.ZaaktypeBrpParameters` per zaaktype plus the three system reference tables `BRP_DOELBINDING_ZOEK_WAARDE`\""
+			},
+			"built": {
+				"state": "built",
+				"evidence": "lib/Settings/dossiq_register.json:497 caseType.verwerkingsactiviteit links each case type to OpenRegister's AVG register, seeded by lib/Repair/SeedVerwerkingsactiviteiten.php:96 run() (repair step in appinfo/info.xml:459); shown by src/manifest.json:6382 case-type-privacy",
+				"reachedOn": "#CaseTypeDetail widget \"Personal data\"; register itself via menu link \"Processing activities (AVG)\" (src/manifest.json:507, OpenRegister /avg)"
 			}
 		},
 		{
