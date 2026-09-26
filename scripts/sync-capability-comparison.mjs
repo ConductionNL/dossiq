@@ -298,7 +298,7 @@ export function build(corpus, current, on) {
 	const logged = new Set(
 		(current._rerated ?? [])
 			.filter((entry) => pendingIds.has(entry.id) && !rowIds.has(entry.id))
-			.filter((entry) => !(previous.has(entry.id)))
+			.filter((entry) => !previous.has(entry.id))
 			.map((entry) => entry.id),
 	)
 	const rerated = [
