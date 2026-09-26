@@ -987,7 +987,7 @@
 			"name_nl": "Postbak voor binnenkomende documenten (koppelen of afwijzen)",
 			"dossiq": "partial",
 			"opencase": "yes",
-			"gzac": "partial",
+			"gzac": "no",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "no",
@@ -1015,8 +1015,8 @@
 				"evidence": "filinq src/views/intake/IntakeIndex.vue; filinq lib/Service/IntakeService.php; filinq appinfo/routes.php:77-79; filinq#1119; filinq#1132 e5580bbb4"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:142 \"are moved to a case or a new case from `src/views/InboundDocumentsView.vue` (`MoveToCaseDialog`, `MoveToNewCaseDialog`)\"",
-				"gzac": "procest/valtimo/round2/code-census.md:354 \"generic inbound CloudEvents inbox :: partial :: `backend/inbox/src/main/kotlin/com/ritense/inbox/consumer/InboxCloudEventConsumer.kt`\"",
+				"opencase": "opencase@1.1.0 src/router/index.js:138 route /inbound -> InboundDocumentsView (nav src/App.vue:148); filled by lib/BackgroundJob/ProcessImportsJob.php:392 (folder and IMAP import into an inbox case); src/views/DocumentDetailView.vue:74,81 journaliser on an existing or a new case; :91 Slet. Reject is a delete with a confirm, no reason is recorded | round 2 drive: procest/opencase/round2/code-census.md:142 \"are moved to a case or a new case from `src/views/InboundDocumentsView.vue` (`MoveToCaseDialog`, `MoveToNewCaseDialog`)\"",
+				"gzac": "valtimo@13.4.1 backend/inbox/src/main/kotlin/com/ritense/inbox/consumer/InboxCloudEventConsumer.kt:22-24 is a machine CloudEvents consumer handed to process handlers; no frontend module reads it (grep inbox over frontend/projects hits only an unrelated input property) and no route lists unlinked documents | round 2 drive: procest/valtimo/round2/code-census.md:354 \"generic inbound CloudEvents inbox :: partial :: `backend/inbox/src/main/kotlin/com/ritense/inbox/consumer/InboxCloudEventConsumer.kt`\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:289 \"document intake queue with assignment and reject :: yes\"",
 				"zac": "procest/zac/round3/rows/rows-1-3.md:12 \"yes | `src/main/app/src/app/documenten/inbox-documenten-list/inbox-documenten-list.component.html` gives each row a link action (routerLink into\"",
 				"openzaak": "zaakafhandelapp#723 row 1.4: procest/openzaak/MERGED-ANALYSIS.md:13: API-only backend with no case handling UI, no document intake queue is documented"
@@ -1199,7 +1199,7 @@
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
-			"zac": "partial",
+			"zac": "no",
 			"openzaak": "partial",
 			"provider": "shillinq",
 			"providerHow": "ledger-change",
@@ -1209,7 +1209,7 @@
 				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
 				"gzac": "procest/_round2/compare/M1-functionality.md:46 \"| 1.11 | Online payment during intake | no | no |\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:285 \"online payment in web form (Ogone/Worldline, offline payment) :: yes\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:19 \"partial | Data only, and dead data at that. `src/main/resources/json-schemas/productaanvraag/productaanvraag-dimpact.json:128` defines a `betaling` block\"",
+				"zac": "zac@1.0.316 src/main/resources/json-schemas/productaanvraag/productaanvraag-dimpact.json:128 defines betaling, and src/main/kotlin/nl/info/zac/productaanvraag/ProductaanvraagService.kt:135 only registers a JSON adapter for its status; nothing reads the value and no file under src/main/app mentions betaling. Payment, where it happens, is Open Formulieren's | round 3 drive: procest/zac/round3/rows/rows-1-3.md:19 \"partial | Data only, and dead data at that. `src/main/resources/json-schemas/productaanvraag/productaanvraag-dimpact.json:128` defines a `betaling` block\"",
 				"openzaak": "zaakafhandelapp#723 row 1.11: procest/openzaak/docs/03-api-specifications.md:75: betalingsindicatie new payment values (gefactureerd, gecrediteerd, betaald, nvt) is a status field only, no payment processing"
 			}
 		},
@@ -1878,7 +1878,7 @@
 			},
 			"evidence": {
 				"opencase": "procest/_round2/compare/M1-functionality.md:73 \"| 2.20 | Live updates on the case page | no |\"",
-				"gzac": "procest/valtimo/round2/code-census.md:275 \"Live updates via SSE (`CASE_UNASSIGNED`, `CASE_ASSIGNED`, `CASE_STATUS_UPDATED`) refresh status and assignee\"",
+				"gzac": "valtimo@13.4.1 backend/case/src/main/kotlin/com/ritense/document/mapper/DocumentSseEventMapper.kt:39 emits DOCUMENT_UPDATED; frontend/projects/valtimo/case/src/lib/components/case-detail-header-widget/case-detail-header-widget.component.ts:95 and case-detail/tab/widgets/widgets.component.ts:68 refresh on it; case-menu.service.ts:75 on CASE_ASSIGNED and CASE_UNASSIGNED | round 2 drive: procest/valtimo/round2/code-census.md:275 \"Live updates via SSE (`CASE_UNASSIGNED`, `CASE_ASSIGNED`, `CASE_STATUS_UPDATED`) refresh status and assignee\"",
 				"zaaksysteem": "procest/_round2/compare/M1-functionality.md:73 \"| 2.20 | Live updates on the case page | no | yes `frontend/projects/valtimo/sse/` | no |\"",
 				"zac": "procest/zac/round3/install.md:99 \"updates then connected with no console errors, so **row 2.20 is a verified `yes`, not a code-read\"",
 				"openzaak": "zaakafhandelapp#723 row 2.20: procest/openzaak/specs/00-overview.md:23: no case page UI exists for live updates"
@@ -2271,7 +2271,7 @@
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
-			"zac": "yes",
+			"zac": "partial",
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
@@ -2286,7 +2286,7 @@
 				"opencase": "procest/opencase/round2/code-census.md:163 \"\"Foreslået arbejde\" (suggested work, lines 82-160): pending document workflow steps for me\"",
 				"gzac": "procest/valtimo/round2/code-census.md:378 \"task list tabs My / Unassigned / Team / All with per-case-type columns and search fields :: yes\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/dashboard-anatomy.md:25 \"filters: medewerker, afdeling, zaaktype, trefwoord, zaaknummer; column settings\"",
-				"zac": "procest/zac/round3/rows/rows-1-3.md:48 \"yes | `src/main/java/net/atos/zac/gebruikersvoorkeuren/model/Werklijst.java` defines MIJN_TAKEN and WERKVOORRAAD_TAKEN as the two presets\"",
+				"zac": "zac@1.0.316 src/main/app/src/app/taken/taken-routing.module.ts:19,30 two presets, werkvoorraad and mijn (Werklijst.java:10,12); the work queue has GROEP and BEHANDELAAR facets (taken-werkvoorraad/taken-werkvoorraad.component.html:197,222) but no named Unassigned or All view. Drive question: does the BEHANDELAAR facet offer not assigned | round 3 drive: procest/zac/round3/rows/rows-1-3.md:48 \"yes | `src/main/java/net/atos/zac/gebruikersvoorkeuren/model/Werklijst.java` defines MIJN_TAKEN and WERKVOORRAAD_TAKEN as the two presets\"",
 				"openzaak": "zaakafhandelapp#723 row 3.5: procest/openzaak/openzaak.md:73: Task assignment | No | Yes"
 			}
 		},
@@ -3390,7 +3390,7 @@
 			"name": "Upload with drag and drop",
 			"name_nl": "Uploaden met slepen en neerzetten",
 			"dossiq": "yes",
-			"opencase": "yes",
+			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
 			"zac": "yes",
@@ -3413,7 +3413,7 @@
 				"evidence": "lib/Service/Zaakdossier/DossierUploadHandler.php; dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/journeys.md:19 \"Native picker; no drag and drop seen\"",
+				"opencase": "opencase@1.1.0 grep for @drop, dragover, dropzone over src/ returns no handler; upload is a file input in src/components/NewDocumentDialog.vue; the virtual Files mount refuses new paths (lib/Storage/OpenCaseStorage.php:324-327 fopen returns false unless the path resolves to an existing file), so dragging into Files does not upload either. Agrees with the drive (journeys.md:19) | round 2 drive: procest/opencase/round2/journeys.md:19 \"Native picker; no drag and drop seen\"",
 				"gzac": "procest/valtimo/round2/code-census.md:394 \"S3 / local file storage documents tab with dropzone :: yes\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/journeys.md:19 \"uploaded and listed; no dialog needed; the document also appears on the timeline\"",
 				"zac": "procest/zac/round3/rows/rows-4-6.md:31 \"yes | `src/main/app/src/app/shared/directives/file-drag-and-drop.directive.ts`, consumed by `src/main/app/src/app/shared/form/file/file.html` and so by\"",
@@ -3520,7 +3520,7 @@
 			"name_nl": "Bevraging van landelijke registers (BRP, KvK)",
 			"dossiq": "yes",
 			"opencase": "partial",
-			"gzac": "partial",
+			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "yes",
 			"openzaak": "partial",
@@ -3534,7 +3534,7 @@
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/code-census.md:226 \"CPR/CVR lookup (Datafordeler) :: partial (enterprise)\"",
-				"gzac": "procest/valtimo/round2/code-census.md:407 \"Klantinteracties \"Create persoon\" :: partial (plugin)\"",
+				"gzac": "valtimo@13.4.1 no Haal Centraal BRP or KvK client in backend/ (grep haalcentraal, handelsregister over *.kt returns none); backend/zgw/zaken-api/.../provider/BsnProvider.kt and KvkProvider.kt only read an identifier off the zaak role; backend/zgw/klantinteracties-api/.../KlantinteractiesApiPlugin.kt:83 writes a partij with codeRegister BRP to Open Klant, which is storing a number, not a lookup | round 2 drive: procest/valtimo/round2/code-census.md:407 \"Klantinteracties \"Create persoon\" :: partial (plugin)\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:384 \"StUF-BG (BRP) and StUF-DCR :: partial\"",
 				"zac": "procest/zac/round3/rows/rows-4-6.md:38 \"yes | `src/main/kotlin/nl/info/client/brp/PersonenApi.kt` and `BrpClientService.kt` for Haal Centraal BRP; `src/main/kotlin/nl/info/client/kvk/` for KvK\"",
 				"openzaak": "zaakafhandelapp#723 row 5.3: procest/openzaak/docs/13-ecosystem-community.md:85: Haal Centraal (person/address data for roles) is listed as an external system integration, not a built-in lookup UI"
@@ -4532,7 +4532,7 @@
 			"name_nl": "Werkomgeving voor bezwaarbehandeling",
 			"dossiq": "yes",
 			"opencase": "no",
-			"gzac": "partial",
+			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "no",
 			"openzaak": "partial",
@@ -4546,7 +4546,7 @@
 			},
 			"evidence": {
 				"opencase": "procest/_round2/compare/M1-functionality.md:175 \"| 7.6 | Objection handling surface | no |\"",
-				"gzac": "procest/valtimo/round2/code-census.md:258 \"Example `case-definition.json`: `{\"key\":\"bezwaar\",\"name\":\"Bezwaar\",\"versionTag\":\"1.0.0\",\"final\":true\"",
+				"gzac": "valtimo@13.4.1 backend/app/gzac/src/main/resources/config/case/bezwaar/1-0-1/bpmn/bezwaar.bpmn is a demo case type whose only user tasks are 'Valideer gegevens aanvrager' and 'In behandeling' plus tag tasks; nothing links it to the contested decision, a hearing or an advisory committee. A configurable case type is not an objection surface | round 2 drive: procest/valtimo/round2/code-census.md:258 \"Example `case-definition.json`: `{\"key\":\"bezwaar\",\"name\":\"Bezwaar\",\"versionTag\":\"1.0.0\",\"final\":true\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:275 \"Objection app (frontend-mono/apps/objection-app): standalone \"Bezwaarformulier\" for WOZ assessments built on Form.io\"",
 				"zac": "procest/zac/round3/rows/rows-7-10.md:14 \"no | zero hits for `bezwaar` in `src/main/kotlin` and `src/main/java`; the single frontend hit is a fixture string in\"",
 				"openzaak": "zaakafhandelapp#723 row 7.6: procest/openzaak/specs/besluiten-api/spec.md:34: uiterlijke_reactiedatum (deadline for response/objection) is a data field only, no objection-handling workflow or surface"
@@ -5008,7 +5008,7 @@
 			"name_nl": "Globaal snelzoeken",
 			"dossiq": "partial",
 			"opencase": "yes",
-			"gzac": "yes",
+			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "yes",
 			"openzaak": "no",
@@ -5030,7 +5030,7 @@
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\"",
-				"gzac": "procest/valtimo/round2/code-census.md:435 \"global search / quick search saved per user :: yes\"",
+				"gzac": "valtimo@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-list/case-list.component.html:50 mounts valtimo-quick-search, which is saved search tags on one case type's list; the topbar (frontend/projects/valtimo/components/src/lib/components/topbar/) and layout carry no search input, so there is no search across case types from anywhere. The round 2 census line was read from branch next-minor | round 2 drive: procest/valtimo/round2/code-census.md:435 \"global search / quick search saved per user :: yes\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/GlobaalZoeken.md:5 \"purpose: Global search over cases, contacts, employees, documents, saved searches, objects, case types\"",
 				"zac": "procest/zac/round3/menu-tree.md:86 \"The search field is in the top bar on every page rather than on a search page\"",
 				"openzaak": "zaakafhandelapp#723 row 9.1: procest/openzaak/specs/00-overview.md:23: no UI, no search box"
@@ -5535,7 +5535,7 @@
 			"name_nl": "Logboek bekijken met filters en export",
 			"dossiq": "partial",
 			"opencase": "partial",
-			"gzac": "yes",
+			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "partial",
 			"openzaak": "yes",
@@ -5549,7 +5549,7 @@
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/code-census.md:259 \"Transaction log viewer for admins :: yes\"",
-				"gzac": "procest/valtimo/round2/pages/Admin-Logs.md:6 \"a filter button; table Tijd, Log-niveau, Bericht\"",
+				"gzac": "valtimo@13.4.1 frontend/projects/valtimo/logging/src/logging-routing.module.ts:24-27 admin-only application log with filters on message, level and time (log-search.component.html:22-45) but no export anywhere in logging/src; the case audit tab (case/src/lib/components/case-detail/tab/audit/audit.component.ts:61) is paged with no filter and no export | round 2 drive: procest/valtimo/round2/pages/Admin-Logs.md:6 \"a filter button; table Tijd, Log-niveau, Bericht\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Logboek.md:10 \"filters_columns: columns Zaak #, Datum, Gebeurtenis, Component, Behandelaar, Details; date filter; export CSV\"",
 				"zac": "procest/zac/round3/rows/rows-7-10.md:42 \"partial | history is per object, in the UI, with no filtering and no export. `src/main/kotlin/nl/info/zac/history/ZaakHistoryService.kt` and the\"",
 				"openzaak": "zaakafhandelapp#723 row 10.5: procest/openzaak/specs/00-overview.md:73: audit trails are VNG-compliant per API component, filterable by bron, resource, actie, applicatie, resultaat"
@@ -6453,7 +6453,7 @@
 			"name_nl": "Beheerscherm voor de omgeving (meldingsteksten, portaalteksten, CORS)",
 			"dossiq": "yes",
 			"opencase": "partial",
-			"gzac": "yes",
+			"gzac": "partial",
 			"zaaksysteem": "yes",
 			"zac": "partial",
 			"openzaak": "partial",
@@ -6467,7 +6467,7 @@
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/pages/Configuration-Settings.md:5 \"In-app configuration; the Settings section holds one value.\"",
-				"gzac": "procest/valtimo/round2/code-census.md:164 \"admin-settings: logo, accent colours, feature-toggle overrides stored in DB\"",
+				"gzac": "valtimo@13.4.1 the only instance configuration screen is translation-management (frontend/projects/valtimo/layout/src/lib/translation-management-routing.module.ts:24, ROLE_ADMIN); no admin-settings route exists at this tag (grep AdminSettings and accent over frontend/ returns none), so logo, colours and feature toggles are a later branch (the census read next-minor 51eddc25). Notification texts and CORS are deployment configuration | round 2 drive: procest/valtimo/round2/code-census.md:164 \"admin-settings: logo, accent colours, feature-toggle overrides stored in DB\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/pages/Configuratie.md:15 \"notes: Zaken: notification templates per event\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:38 \"partial | the error-page text is an editable system reference table (`SystemReferenceTable.SERVER_ERROR_ERROR_PAGINA_TEKST`), and per-group signalering\"",
 				"openzaak": "zaakafhandelapp#723 row 11.24: procest/openzaak/specs/00-overview.md:61: Websites (Django Sites framework, domain configuration) and Notificatiescomponentconfiguratie exist; CORS is an environment variable (docs/12-client-development.md:31), not an admin UI setting"
@@ -6683,7 +6683,7 @@
 			"name_nl": "Landelijke personen- en bedrijvenregisters",
 			"dossiq": "yes",
 			"opencase": "partial",
-			"gzac": "partial",
+			"gzac": "no",
 			"zaaksysteem": "partial",
 			"zac": "yes",
 			"openzaak": "partial",
@@ -6697,7 +6697,7 @@
 			},
 			"evidence": {
 				"opencase": "procest/opencase/round2/code-census.md:103 \"Datafordeler (`lib/Service/Datafordeler/`: CPR CitizenData, CVR CompanyData, BBR/MAT estate data)\"",
-				"gzac": "procest/valtimo/round2/code-census.md:209 \"Klantinteracties API (\"Create persoon\")\"",
+				"gzac": "valtimo@13.4.1 as 5.3: no BRP or KvK connector in backend/zgw (besluiten-api catalogi-api documenten-api klantinteracties-api notificaties-api objecten-api objecttypen-api portaaltaak verzoek zaakdetails zaken-api); release plugins are only @valtimo-plugins/freemarker and smtpmail | round 2 drive: procest/valtimo/round2/code-census.md:209 \"Klantinteracties API (\"Create persoon\")\"",
 				"zaaksysteem": "procest/xxllnc-zaken/round2/code-census.md:385 \"KvK API, Overheid.io, BAG :: partial\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:44 \"yes | BRP through `nl.info.client.brp.BrpClientService` and `PersonenApi` (Haal Centraal, spec `src/main/resources/api-specs/brp/brp-openapi.yaml`), KvK\"",
 				"openzaak": "zaakafhandelapp#723 row 12.6: procest/openzaak/docs/13-ecosystem-community.md:85: Haal Centraal (person/address data for roles) is listed under external system integration"
@@ -7094,7 +7094,7 @@
 			"evidence": {
 				"opencase": "procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no |\"",
 				"gzac": "procest/valtimo/round2/code-census.md:471 \"S3 storage :: yes\"",
-				"zaaksysteem": "procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no | yes `backend/aws/s3-resource/` | yes `backend/zaken/src/zsnl_domains/document/entities/document.py` (MinIO) |\"",
+				"zaaksysteem": "xxllnc@b7354824 backend/zaken/src/minty_infra_storage/s3.py:23 S3Wrapper (minio client, :58) with upload :126 and presigned download :241, used by backend/zaken/src/zsnl_domains/document/repositories/document.py; docker-compose.yml:43 ships minio | round 2 drive: procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no | yes `backend/aws/s3-resource/` | yes `backend/zaken/src/zsnl_domains/document/entities/document.py` (MinIO) |\"",
 				"zac": "procest/zac/round3/rows/rows-11-13.md:58 \"no | zero hits for s3 or minio under `src/main` and `charts`. Document bytes live in the ZGW Documenten API, fetched through\"",
 				"openzaak": "zaakafhandelapp#723 row 12.20: procest/openzaak/docs/10-installation-deployment.md:96: S3 Storage, S3-compatible storage such as AWS or MinIO"
 			},
@@ -10460,6 +10460,108 @@
 			"providerHow": "ledger-change",
 			"feature": "multi-tenancy",
 			"featureConfidence": "high"
+		}
+	],
+	"_competitorRerated": [
+		{
+			"id": "1.4",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "10.5",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "11.24",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "12.6",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "5.3",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "7.6",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "9.1",
+			"kind": "row",
+			"system": "gzac",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "4.22",
+			"kind": "row",
+			"system": "opencase",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "1.11",
+			"kind": "row",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "partial",
+			"to": "no",
+			"cause": "source-read",
+			"pack": "contested"
+		},
+		{
+			"id": "3.5",
+			"kind": "row",
+			"system": "zac",
+			"on": "2026-09-26",
+			"from": "yes",
+			"to": "partial",
+			"cause": "source-read",
+			"pack": "contested"
 		}
 	]
 }
