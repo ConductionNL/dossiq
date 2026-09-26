@@ -128,6 +128,10 @@ const AUTHORED_FIELDS = [
 	// A row-level sentence a reader needs to read the ratings right, such as
 	// a question answered literally, where a yes is the bad answer.
 	'note',
+	// The date our own column was read on a proposal that a later reading
+	// corrected. It is authored with that correction and the corpus has no field
+	// for it.
+	'readOn',
 ]
 
 /**
@@ -285,11 +289,22 @@ export function build(corpus, current, on) {
 	})
 
 	const rowIds = new Set(capabilities.map((c) => c.id))
+	const pendingIds = new Set(pending.map((c) => c.id))
 	// Entries for rows that are still rows, plus one per rating the corpus moved.
 	// An entry for a row that became a pending proposal leaves with it: the
-	// proposal carries the same sentence as its `dossiqNote`.
+	// proposal carries the same sentence as its `dossiqNote`. An entry logged
+	// against a proposal itself (our own column on it corrected after a
+	// re-reading) stays, because nothing else records that move.
+	const logged = new Set(
+		(current._rerated ?? [])
+			.filter((entry) => pendingIds.has(entry.id) && !rowIds.has(entry.id))
+			.filter((entry) => !(previous.has(entry.id)))
+			.map((entry) => entry.id),
+	)
 	const rerated = [
-		...(current._rerated ?? []).filter((entry) => rowIds.has(entry.id)),
+		...(current._rerated ?? []).filter(
+			(entry) => rowIds.has(entry.id) || logged.has(entry.id),
+		),
 		...moved,
 	]
 	for (const entry of moved) {
