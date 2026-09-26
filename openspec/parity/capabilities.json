@@ -899,7 +899,8 @@
 				"evidence": "lib/Service/FormsIntakeService.php; dossiq#2927 58f2b2c28"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:352 \"intake from Open Formulieren \"verzoek\" object via Notificaties API :: partial (plugin)\""
 			}
 		},
 		{
@@ -921,7 +922,8 @@
 				"evidence": "src/manifest.json#Dashboard/headerActions.new-case"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/create-case-anatomy.md:3 \"The app header Create menu opens a modal \"Create new <type> case\" on whatever page you are on\""
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:3 \"The app header Create menu opens a modal \"Create new <type> case\" on whatever page you are on\"",
+				"gzac": "procest/valtimo/round2/pages/CaseCreate.md:5 \"Start the case's start process through a multi-step form.io form flow; the case is created when the last step is submitted\""
 			}
 		},
 		{
@@ -943,7 +945,8 @@
 				"change": "dossiq/contacts-domain"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:9 \"result view: Create case (prefilled with this citizen)\""
+				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:9 \"result view: Create case (prefilled with this citizen)\"",
+				"gzac": "procest/valtimo/round2/journeys.md:12 \"The citizen is four text fields in the case JSON; no BRP lookup, no party record, no duplicate check\""
 			}
 		},
 		{
@@ -980,7 +983,8 @@
 				"evidence": "filinq src/views/intake/IntakeIndex.vue; filinq lib/Service/IntakeService.php; filinq appinfo/routes.php:77-79; filinq#1119; filinq#1132 e5580bbb4"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:142 \"are moved to a case or a new case from `src/views/InboundDocumentsView.vue` (`MoveToCaseDialog`, `MoveToNewCaseDialog`)\""
+				"opencase": "procest/opencase/round2/code-census.md:142 \"are moved to a case or a new case from `src/views/InboundDocumentsView.vue` (`MoveToCaseDialog`, `MoveToNewCaseDialog`)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:354 \"generic inbound CloudEvents inbox :: partial :: `backend/inbox/src/main/kotlin/com/ritense/inbox/consumer/InboxCloudEventConsumer.kt`\""
 			}
 		},
 		{
@@ -1011,7 +1015,8 @@
 				"evidence": "lib/Service/Email/UnmatchedMailIntake.php; integriq#2052 e8e127fa8"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\""
+				"opencase": "procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:187 \"mail (+ flowmailer, local-mail, mandrill, wordpress-mail): `MailDispatcher`, blacklist/whitelist/redirect filters, provider senders\""
 			}
 		},
 		{
@@ -1029,7 +1034,8 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:189 \"Separation sheets and QR cover sheets for scanning :: yes :: lib/Service/SeparationSheetService.php\""
+				"opencase": "procest/opencase/round2/code-census.md:189 \"Separation sheets and QR cover sheets for scanning :: yes :: lib/Service/SeparationSheetService.php\"",
+				"gzac": "procest/valtimo/round2/code-census.md:149 \"There is no first-party \"document\" entity: case files live in the Documenten API (ZGW) or S3\""
 			}
 		},
 		{
@@ -1051,7 +1057,8 @@
 				"evidence": "lib/Controller/ZrcController.php; lib/Controller/DSOIntakeController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:192 \"Public data API to create cases and documents :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:192 \"Public data API to create cases and documents :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:342 \"**Verzoek** turns an Open Formulieren \"verzoek\" object (received via Notificaties API) into a new case\""
 			}
 		},
 		{
@@ -1082,7 +1089,8 @@
 				"evidence": "#CaseDetail/headerActions.plan-follow-up; lib/Service/Flow/PlannedFollowUpDocument.php; dossiq#2732 110476a9e"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:97 \"AccessDeadlineNotificationJob, BulkReindexJob, ExportClosedCasesJob, IndexFileJob, ProcessImportsJob, SyncFilecache, SyncOrganisationsJob.\""
+				"opencase": "procest/opencase/round2/code-census.md:97 \"AccessDeadlineNotificationJob, BulkReindexJob, ExportClosedCasesJob, IndexFileJob, ProcessImportsJob, SyncFilecache, SyncOrganisationsJob.\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:43 \"| 1.8 | Scheduled or recurring planned cases | no | no |\""
 			}
 		},
 		{
@@ -1100,7 +1108,8 @@
 			"feature": "zaakportaal-mijngemeente",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\""
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:214 \"**Office add-ins**: none.\""
 			}
 		},
 		{
@@ -1118,7 +1127,8 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:191 \"Save any Nextcloud file or Talk chat to a case :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:191 \"Save any Nextcloud file or Talk chat to a case :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:45 \"| 1.10 | Save any platform file or chat to a case | yes `src/files-plugin.js`, `src/talk-plugin.js` | no |\""
 			}
 		},
 		{
@@ -1136,7 +1146,8 @@
 			"feature": "leges-heffingen",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\""
+				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:46 \"| 1.11 | Online payment during intake | no | no |\""
 			}
 		},
 		{
@@ -1158,7 +1169,8 @@
 				"evidence": "lib/Controller/RoutingController.php; lib/Service/Routing/Strategy/*; lib/Service/Kcc/RoutingEngine.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:177 \"Indkommende dokumenter (defaults for inbound documents: organisation, sensitivity, KLE, facet, insight level)\""
+				"opencase": "procest/opencase/round2/code-census.md:177 \"Indkommende dokumenter (defaults for inbound documents: organisation, sensitivity, KLE, facet, insight level)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:240 \"cases and tasks can be assigned to a team (`JsonSchemaDocument.assignedTeamKey`, `TaskTeam`)\""
 			}
 		},
 		{
@@ -1180,7 +1192,8 @@
 				"evidence": "src/manifest.json#Dashboard/headerActions.new-case; lib/Dashboard/StartCaseWidget.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/NextcloudDashboardWidgets.md:9 \"each row links into /apps/opencase/case/<id> or /document/<id>.\""
+				"opencase": "procest/opencase/round2/pages/NextcloudDashboardWidgets.md:9 \"each row links into /apps/opencase/case/<id> or /document/<id>.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:351 \"create case from a dashboard/IKO widget action `createNewCase` :: yes\""
 			}
 		},
 		{
@@ -1211,7 +1224,8 @@
 				"evidence": "openregister#3785 e7ac79d12"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:15 \"From the mask `yyyy-#####` in Configuration.\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:15 \"From the mask `yyyy-#####` in Configuration.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:360 \"case sequence number (reference number) :: yes\""
 			}
 		},
 		{
@@ -1233,7 +1247,8 @@
 				"evidence": "dossiq_register.json#propertyDefinition; src/views/settings/tabs/PropertiesTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\""
+				"opencase": "procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\"",
+				"gzac": "procest/valtimo/round2/code-census.md:358 \"JSON-schema typed case data per case type :: yes\""
 			}
 		},
 		{
@@ -1262,7 +1277,8 @@
 				"evidence": "dossiq_register.json#workflowTemplate; caseType.isDraft/validFrom/validUntil; procest/_round4/discovery/casetype-configurability.md"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:11 \"semver versions, draft from a release (\"Conceptversie maken\"), release info (Gemaakt door, Gemaakt op, Beschrijving), which version is \"Globaal actief\"\""
 			}
 		},
 		{
@@ -1293,7 +1309,8 @@
 				"evidence": "src/manifest.json#Queue; #Cases/bulkActions.reassign; dossiq#2723 d7d8ec7c3"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:130 \"responsible user (`setResponsibleUser`)\""
+				"opencase": "procest/opencase/round2/code-census.md:130 \"responsible user (`setResponsibleUser`)\"",
+				"gzac": "procest/valtimo/round2/case-detail-anatomy.md:15 \"`Claimen` (claim for me), `Toewijzing ongedaan maken` (unassign, disabled until assigned)\""
 			}
 		},
 		{
@@ -1324,7 +1341,8 @@
 				"evidence": "src/manifest.json; dossiq#2849 132decb34"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:18 \"The SF1500 unit that owns the case.\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:18 \"The SF1500 unit that owns the case.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:361 \"assign case to user or team, claim, unassign, candidate users/teams :: yes\""
 			}
 		},
 		{
@@ -1346,7 +1364,8 @@
 				"evidence": "src/manifest.json#Cases/bulkActions.reassign; src/dialogs/BulkTransitionDialog.vue; lib/Service/BulkStatusTransitionService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:169 \"No column chooser, no saved searches, no bulk actions.\""
+				"opencase": "procest/opencase/round2/code-census.md:169 \"No column chooser, no saved searches, no bulk actions.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseList.md:9 \"row checkbox selection turns the action bar into \"1 dossier geselecteerd | Toewijzen | Cancel\"\""
 			}
 		},
 		{
@@ -1368,7 +1387,8 @@
 				"evidence": "dossiq_register.json#statusType; src/views/settings/tabs/StatusesTab.vue; procest/_round4/discovery/casetype-configurability.md; StatusesTab.vue:47"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/Configuration-CodeLists.md:10 \"Case status columns: Danish, English, Expired.\""
+				"opencase": "procest/opencase/round2/pages/Configuration-CodeLists.md:10 \"Case status columns: Danish, English, Expired.\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:22 \"internal statuses: name, key (auto), colour, \"Standaardzichtbaarheid in dossierlijst\", order\""
 			}
 		},
 		{
@@ -1390,7 +1410,8 @@
 				"evidence": "dossiq_register.json#case.tags"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:77 \"Case core: `CaseEntity` (caseNumber, title, accessProfileId, orgUuid, year, statusId, casetypeId\""
+				"opencase": "procest/opencase/round2/code-census.md:77 \"Case core: `CaseEntity` (caseNumber, title, accessProfileId, orgUuid, year, statusId, casetypeId\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:23 \"per-type tags: Naam, Key, Kleur\""
 			}
 		},
 		{
@@ -1412,7 +1433,8 @@
 				"evidence": "lib/Service/CaseCopyService.php; lib/Controller/CaseActionsController.php; #CaseDetail/headerActions.copy-case"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:22 \"Edit, Copy case, Create subcase, New reminder\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:22 \"Edit, Copy case, Create subcase, New reminder\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:62 \"| 2.9 | Copy case | yes `src/components/CopyCaseDialog.vue` | no |\""
 			}
 		},
 		{
@@ -1434,7 +1456,8 @@
 				"evidence": "#CaseDetail/case-sub-cases; lib/Controller/CaseRelationController.php; case.parentCase/relatedCases"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-CaseHierarchy.md:5 \"Tree of parent and sub-cases.\""
+				"opencase": "procest/opencase/round2/pages/CaseDetail-CaseHierarchy.md:5 \"Tree of parent and sub-cases.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:355 \"duplicate/related case linking (relevanteAndereZaken) :: partial (ZGW plugin action)\""
 			}
 		},
 		{
@@ -1456,7 +1479,8 @@
 				"evidence": "lib/Service/DeadlinePauseService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:429 \"ZGW hersteltermijn start/end and case suspension :: partial (plugin)\""
 			}
 		},
 		{
@@ -1478,7 +1502,8 @@
 				"evidence": "/api/case/{caseId}/reopen; appinfo/routes.php:443"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:202 \"Case status open/closed/archived with reopen :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:202 \"Case status open/closed/archived with reopen :: yes\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDefinition-Statussen.md:15 \"never by hand from the case page; there is no status dropdown for a handler\""
 			}
 		},
 		{
@@ -1509,7 +1534,8 @@
 				"evidence": "src/manifest.json:3465; src/dialogs/CaseRebindDialog.vue; lib/Service/CaseRebindService.php; appinfo/routes.php:162-164; dossiq#2914 8f2cd30b"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:16 \"A code-list value; changes only via Edit.\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:16 \"A code-list value; changes only via Edit.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:370 \"case migration between case type versions with patches :: partial (beta)\""
 			}
 		},
 		{
@@ -1531,7 +1557,8 @@
 				"evidence": "dossiq_register.json#case-location; #CaseDetail/case-locaties; src/components/map/LocationPicker.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/EstateDetail.md:5 \"An estate (property) as a first-class object with its cadastral sub-objects and the cases on it.\""
+				"opencase": "procest/opencase/round2/pages/EstateDetail.md:5 \"An estate (property) as a first-class object with its cadastral sub-objects and the cases on it.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:290 \"| `map` | Leaflet-style map of GeoJSON | `geoJsonSources[{key}]` (Dutch address geocoding via PDOK\""
 			}
 		},
 		{
@@ -1553,7 +1580,8 @@
 				"evidence": "/case-objects"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:204 \"Estates (property) as a first-class linked object :: yes :: src/components/CaseEstateList.vue\""
+				"opencase": "procest/opencase/round2/code-census.md:204 \"Estates (property) as a first-class linked object :: yes :: src/components/CaseEstateList.vue\"",
+				"gzac": "procest/valtimo/round2/code-census.md:460 \"object management (typed Objecten API objects with view/edit forms) :: yes\""
 			}
 		},
 		{
@@ -1571,7 +1599,8 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-Log.md:15 \"Access granted (with expiry), Case handler added, Case summary changed\""
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Log.md:15 \"Access granted (with expiry), Case handler added, Case summary changed\"",
+				"gzac": "procest/valtimo/round2/code-census.md:368 \"case snapshots / document version history :: yes\""
 			}
 		},
 		{
@@ -1602,7 +1631,8 @@
 				"evidence": "lib/Listener/BezwaarLegalHoldListener.php; src/modals/DeelzaakDeleteWarningModal.vue; dossiq#2729 022f821b7"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:22 \"Close case (Reopen case and Archive when closed)\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:22 \"Close case (Reopen case and Archive when closed)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:274 \"Supporting-process start modal `<valtimo-case-supporting-process-start-modal>`; delete confirmation modal\""
 			}
 		},
 		{
@@ -1624,7 +1654,8 @@
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:197 \"KLE classification, facet, sensitivity, insight level on the case :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:197 \"KLE classification, facet, sensitivity, insight level on the case :: yes\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:25 \"upload fields (Bestandsnaam, Titel, Auteur, Beschrijving, Taal, Vertrouwelijkheidsaanduiding\""
 			}
 		},
 		{
@@ -1661,7 +1692,8 @@
 				"evidence": "openregister#3766 77bdb1901; dossiq#2875 a4919e93a"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:201 \"Favourites and recent items (cases and documents) :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:201 \"Favourites and recent items (cases and documents) :: yes\"",
+				"gzac": "procest/valtimo/round2/dashboard-anatomy.md:17 \"There is no task widget, no overdue widget, no recent-items widget, no per-user layout\""
 			}
 		},
 		{
@@ -1692,7 +1724,8 @@
 				"evidence": "src/main.js:243; src/services/caseLiveUpdates.js; src/manifest.json:2058; dossiq#2925 29488fa7"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:73 \"| 2.20 | Live updates on the case page | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:73 \"| 2.20 | Live updates on the case page | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:275 \"Live updates via SSE (`CASE_UNASSIGNED`, `CASE_ASSIGNED`, `CASE_STATUS_UPDATED`) refresh status and assignee\""
 			}
 		},
 		{
@@ -1723,7 +1756,8 @@
 			},
 			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/ProposalController.php and appinfo/routes.php:242-251 implement the change-proposal queue, but nothing calls it: no portal-SPA propose button, no admin page, no accept or reject UI, and no sibling app calls /api/proposals (portaliq matrix row sib-dossiq-2-21). register.d/50-zaakportaal.json#portaalVerzoek is dossiq's register entry, not a caller of the queue.",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:74 \"| 2.21 | Change proposals from colleagues or citizens queued for acceptance | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:74 \"| 2.21 | Change proposals from colleagues or citizens queued for acceptance | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:74 \"| 2.21 | Change proposals from colleagues or citizens queued for acceptance | no | no |\""
 			}
 		},
 		{
@@ -1754,7 +1788,8 @@
 				"evidence": "src/manifest.json#StatusRecordDetail; dossiq#2912 7146db3bc"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:69 \"Admin settings (Nextcloud admin > OpenCase, `lib/Settings/AdminSettings.php`, `src/AdminSettings.vue`) sections: Serviceplatformen, Datafordeler\""
+				"opencase": "procest/opencase/round2/code-census.md:69 \"Admin settings (Nextcloud admin > OpenCase, `lib/Settings/AdminSettings.php`, `src/AdminSettings.vue`) sections: Serviceplatformen, Datafordeler\"",
+				"gzac": "procest/valtimo/round2/code-census.md:317 \"tabs Document (edit raw JSON), Processes (instances, incidents, tasks, variables add/edit/delete, jobs, diagram)\""
 			}
 		},
 		{
@@ -1941,7 +1976,8 @@
 				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:276 \"BPM engine :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:216 \"**BPM**: Operaton 1.0.3 (Camunda 7 fork) embedded; BPMN + DMN.\""
 			}
 		},
 		{
@@ -1963,7 +1999,8 @@
 				"evidence": "src/views/settings/tabs/StatusesTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:255 \"**Phases and checklists**: none as first-class objects.\""
 			}
 		},
 		{
@@ -1985,7 +2022,8 @@
 				"evidence": "lib/Service/Transitions/ChecklistGuard.php; procest/_round4/discovery/casetype-configurability.md; StatusTypeForm.vue:118"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:207 \"Phases or checklists on a case :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:207 \"Phases or checklists on a case :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:387 \"phases / checklists as first-class objects :: no (only Operaton state + internal status)\""
 			}
 		},
 		{
@@ -2020,7 +2058,8 @@
 				"evidence": "lib/Flow/DossiqAskPersonNode.php:141,394; dossiq#3086 6a1ab145"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/journeys.md:24 \"the only completable work item is a step in a document review or approval chain\""
+				"opencase": "procest/opencase/round2/journeys.md:24 \"the only completable work item is a step in a document review or approval chain\"",
+				"gzac": "procest/valtimo/round2/code-census.md:377 \"BPMN user tasks with form.io / form-flow / URL / plugin / custom UI links :: yes\""
 			}
 		},
 		{
@@ -2043,7 +2082,8 @@
 				"evidence": "src/manifest.json#Tasks; #Dashboard/my-tasks"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:163 \"\"Foreslået arbejde\" (suggested work, lines 82-160): pending document workflow steps for me\""
+				"opencase": "procest/opencase/round2/code-census.md:163 \"\"Foreslået arbejde\" (suggested work, lines 82-160): pending document workflow steps for me\"",
+				"gzac": "procest/valtimo/round2/code-census.md:378 \"task list tabs My / Unassigned / Team / All with per-case-type columns and search fields :: yes\""
 			}
 		},
 		{
@@ -2065,7 +2105,8 @@
 				"evidence": "#Dashboard/task-reminders"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:139 \"an optional deadline that is split evenly across steps (`calculateStepDeadlines`)\""
+				"opencase": "procest/opencase/round2/code-census.md:139 \"an optional deadline that is split evenly across steps (`calculateStepDeadlines`)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:380 \"task due date set/remove :: yes\""
 			}
 		},
 		{
@@ -2083,7 +2124,8 @@
 			"feature": "workflow-definition-engine",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/DocumentDetail-Workflow.md:9 \"Users in order with Add and reorder arrows\""
+				"opencase": "procest/opencase/round2/pages/DocumentDetail-Workflow.md:9 \"Users in order with Add and reorder arrows\"",
+				"gzac": "procest/valtimo/round2/code-census.md:379 \"task assign / claim / unassign, assign to team :: yes\""
 			}
 		},
 		{
@@ -2114,7 +2156,8 @@
 				"evidence": "lib/Service/Transitions/CreateTaskHandler.php; lib/Service/Routing/*; dossiq#2721 cf3eff839"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\""
+				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDefinition-Algemeen.md:15 \"\"Alle taken worden toegewezen aan de behandelaar\" is why the second task landed on Asha Miller without anyone assigning it.\""
 			}
 		},
 		{
@@ -2136,7 +2179,8 @@
 				"evidence": "lib/Service/Transitions/*Handler.php; lib/Flow/DossiqTx*Node.php; DossiqMergeTemplateNode.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:191 \"plugin definitions/configurations/actions and process-link listeners binding plugin actions to BPMN activities\""
 			}
 		},
 		{
@@ -2158,7 +2202,8 @@
 				"evidence": "src/dialogs/CaseStartFlowDialog.vue; /apps/dossiq/api/case/{id}/startable-flows; lib/Flow/DossiqTxCreateSubCaseNode.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:108 \"BPM: none. Document review/approval workflow only\""
+				"opencase": "procest/opencase/round2/code-census.md:108 \"BPM: none. Document review/approval workflow only\"",
+				"gzac": "procest/valtimo/round2/code-census.md:383 \"start sub/supporting processes and building blocks from the case :: yes\""
 			}
 		},
 		{
@@ -2180,7 +2225,8 @@
 				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Service/Dmn/DecisionTableService.php; src/views/settings/tabs/DecisionTablesTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Beslistabellen.md:15 \"\"Beoordeel evenement\" decides Regulier versus Versneld handling in the BPMN based on visitor count.\""
 			}
 		},
 		{
@@ -2198,7 +2244,8 @@
 			"feature": "vth-module",
 			"featureConfidence": "medium",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\""
+				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
+				"gzac": "procest/valtimo/round2/code-census.md:389 \"multi-step form flows with conditional next steps :: yes\""
 			}
 		},
 		{
@@ -2227,7 +2274,8 @@
 				"evidence": "src/manifest.json:2317; src/registry.js:651; src/modals/DocumentMetadataDialog.vue:152; dossiq#3083 19b334fb"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:208 \"Document review/approval workflow with ordered users and deadlines :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:208 \"Document review/approval workflow with ordered users and deadlines :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:93 \"| 3.13 | Document review or approval workflow | yes `lib/Service/WorkflowService.php` | no |\""
 			}
 		},
 		{
@@ -2245,7 +2293,8 @@
 			"feature": "workflow-definition-engine",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\""
+				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDetail-TaskPanel.md:6 \"On click the pane becomes the task form: toolbar icons (save as draft, reset, close)\""
 			}
 		},
 		{
@@ -2267,7 +2316,8 @@
 				"evidence": "src/manifest.json#CaseDetail/case-kpi-progress; lib/Service/MilestoneService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\""
+				"opencase": "procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDetail-Voortgang.md:5 \"Show the running BPMN process instance with executed and current tasks highlighted\""
 			}
 		},
 		{
@@ -2298,7 +2348,8 @@
 				"evidence": "lib/Command/MigrateWorkflowDefinitionsToFlowsCommand.php; openregister#3871 80fc3cd2"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Procesmigratie.md:5 \"Migrate running process instances from one BPMN definition version to another, side by side\""
 			}
 		},
 		{
@@ -2320,7 +2371,8 @@
 				"evidence": "lib/Service/Dmn/DecisionTableService.php; lib/Service/TermijnService.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:97 \"| 3.17 | Formula-based field fill and date calculation | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:97 \"| 3.17 | Formula-based field fill and date calculation | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:198 \"value-resolver: `pv:` and fixed-value resolvers (`backend/value-resolver`).\""
 			}
 		},
 		{
@@ -2350,7 +2402,8 @@
 				"evidence": "#CaseDetail/case-tasks"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:54 \"No tasks tab: work items are workflow steps on documents and reminders on the case.\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:54 \"No tasks tab: work items are workflow steps on documents and reminders on the case.\"",
+				"gzac": "procest/valtimo/round2/case-detail-anatomy.md:30 \"the **Taken** panel, only on tabs whose \"Takenlijst zichtbaar\" is on\""
 			}
 		},
 		{
@@ -2382,7 +2435,8 @@
 			},
 			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/PartnerTaskController.php:83-129 ask() is built and RBAC-guarded (appinfo/routes.php:269) but has no caller in portaliq's src/ or in dossiq (portaliq matrix rows tsk-ask-partner and sib-dossiq-3-19). dossiq's own src/manifest.d/consultation-public.json ExternalConsultationResponse page is the older flow, not the portaliq partner task.",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:343 \"the Portaaltaak plugin is the only external-task mechanism.\""
 			}
 		},
 		{
@@ -2436,7 +2490,8 @@
 				"evidence": "register.d/70-document-zaakdossier.json#informatieobject; dossiq_register.json#document; lib/Service/ZaakdossierService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:214 \"Document as a container of files with metadata and numbering :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:214 \"Document as a container of files with metadata and numbering :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:149 \"There is no first-party \"document\" entity: case files live in the Documenten API (ZGW) or S3\""
 			}
 		},
 		{
@@ -2467,7 +2522,8 @@
 				"evidence": "dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-Files.md:5 \"Flat list of every file across the case's documents.\""
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Files.md:5 \"Flat list of every file across the case's documents.\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:106 \"| 4.2 | Folder structure inside a case | no | no |\""
 			}
 		},
 		{
@@ -2498,7 +2554,8 @@
 				"evidence": "src/manifest.json:2321; dossiq#3078 8babeadf; dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/usability.md:15 \"file versions can be viewed and restored\""
+				"opencase": "procest/opencase/round2/usability.md:15 \"file versions can be viewed and restored\"",
+				"gzac": "procest/valtimo/round2/code-census.md:392 \"ZGW Documenten API document list with configurable columns, filters, tags (trefwoorden), metadata edit, versions, preview, download :: yes (needs plugin config)\""
 			}
 		},
 		{
@@ -2520,7 +2577,8 @@
 				"evidence": "lib/Flow/DossiqMergeTemplateNode.php; lib/Service/BeschikkingGenerationService.php; lib/Controller/TemplateController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:216 \"New file from template with merge fields :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:216 \"New file from template with merge fields :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:396 \"document generation via SmartDocuments :: partial (plugin)\""
 			}
 		},
 		{
@@ -2551,7 +2609,8 @@
 				"evidence": "dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\""
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:109 \"| 4.5 | In-browser office editing (Collabora, WOPI) | yes `lib/Service/FileService.php` | no |\""
 			}
 		},
 		{
@@ -2569,7 +2628,8 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:217 \"Edit in Nextcloud Office and via MS Office add-ins :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:217 \"Edit in Nextcloud Office and via MS Office add-ins :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:401 \"office add-ins :: no :: (no source)\""
 			}
 		},
 		{
@@ -2591,7 +2651,8 @@
 				"evidence": "src/modals/DocumentMetadataDialog.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:78 \"`Document` (caseId, documentNumber, title, documentType, status, insightLevelId, documentDate, receivedDate, registeredDate, documentCategoryId\""
+				"opencase": "procest/opencase/round2/code-census.md:78 \"`Document` (caseId, documentNumber, title, documentType, status, insightLevelId, documentDate, receivedDate, registeredDate, documentCategoryId\"",
+				"gzac": "procest/valtimo/round2/code-census.md:393 \"upload with configurable metadata fields (titel, beschrijving, taal, vertrouwelijkheidaanduiding, informatieobjecttype, status, trefwoorden, ...) :: yes\""
 			}
 		},
 		{
@@ -2609,7 +2670,8 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\""
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDefinition-ZGW.md:6 \"Document kolommen: sortable table Kolom, Standaardsortering (Titel; Aanmaakdatum Aflopend; Auteur; Bestandsomvang; Informatieobjecttype)\""
 			}
 		},
 		{
@@ -2631,7 +2693,8 @@
 				"evidence": "70-document-zaakdossier.json#informatieobject.keywords"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\""
+				"opencase": "procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\"",
+				"gzac": "procest/valtimo/round2/code-census.md:392 \"filters, tags (trefwoorden), metadata edit\""
 			}
 		},
 		{
@@ -2662,7 +2725,8 @@
 				"evidence": "dossiq_register.json#caseShare; dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:218 \"Per-file share to a user with read/write and expiry :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:218 \"Per-file share to a user with read/write and expiry :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:114 \"| 4.10 | Per-file share to a user with read/write and expiry | yes `lib/Db/FileShareEntity.php` | no |\""
 			}
 		},
 		{
@@ -2693,7 +2757,8 @@
 				"evidence": "lib/Controller/DrcController.php; dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:115 \"| 4.11 | Document locking for shared editing | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:115 \"| 4.11 | Document locking for shared editing | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:115 \"| 4.11 | Document locking for shared editing | no | no |\""
 			}
 		},
 		{
@@ -2715,7 +2780,8 @@
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php; /api/beschikkingen/{id}/onderteken"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:105 \"E-signing: none found (no sign/signature service in `lib/Service`).\""
+				"opencase": "procest/opencase/round2/code-census.md:105 \"E-signing: none found (no sign/signature service in `lib/Service`).\"",
+				"gzac": "procest/valtimo/round2/code-census.md:400 \"e-signing :: no :: (no source)\""
 			}
 		},
 		{
@@ -2737,7 +2803,8 @@
 				"evidence": "lib/Service/WOORedactionService.php; WOOAnonymisationAssistService.php; src/dialogs/RedactionAssistDialog.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/AccessRequestDetail.md:5 \"per-document decisions, redaction uploads and a decision letter.\""
+				"opencase": "procest/opencase/round2/pages/AccessRequestDetail.md:5 \"per-document decisions, redaction uploads and a decision letter.\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:117 \"| 4.13 | Anonymise or redact documents | partial `src/components/AccessRedactionList.vue` (manual redacted upload) | no |\""
 			}
 		},
 		{
@@ -2767,7 +2834,8 @@
 				"evidence": "lib/Service/Zaakdossier/DossierZipExporter.php; lib/Service/EmailArchivalService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:110 \"PDF conversion via LibreOffice binary (`lib/Service/LibreOfficeService.php:64`)\""
+				"opencase": "procest/opencase/round2/code-census.md:110 \"PDF conversion via LibreOffice binary (`lib/Service/LibreOfficeService.php:64`)\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:118 \"| 4.14 | Merge to PDF, copy to another case | partial `lib/Service/LibreOfficeService.php` (PDF conversion) | no |\""
 			}
 		},
 		{
@@ -2785,7 +2853,8 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/usability.md:15 \"No undo after a save, participants and notes delete from a row button\""
+				"opencase": "procest/opencase/round2/usability.md:15 \"No undo after a save, participants and notes delete from a row button\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:119 \"| 4.15 | Trash and restore for documents | no | no |\""
 			}
 		},
 		{
@@ -2816,7 +2885,8 @@
 				"evidence": "#CaseDetail/case-files; dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:152 \"`FileList.vue` (edit, view, download, versions, log, share, delete, new file from template)\""
+				"opencase": "procest/opencase/round2/code-census.md:152 \"`FileList.vue` (edit, view, download, versions, log, share, delete, new file from template)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:398 \"document preview (PDF viewer) :: yes\""
 			}
 		},
 		{
@@ -2847,7 +2917,8 @@
 				"evidence": "openregister lib/Listener/FileChangeListener.php; openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3903; openregister's own matrix (openregister#4040) reads this as API only with no screen, which misses ObjectsProvider.php:519: Nextcloud's search bar is a screen and it searches file text"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:250 \"Full-text search over file content (Elasticsearch, Danish analyzer) :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:250 \"Full-text search over file content (Elasticsearch, Danish analyzer) :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:436 \"OpenSearch full-text index with reindex admin :: partial (optional)\""
 			}
 		},
 		{
@@ -2865,7 +2936,8 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/DocumentDetail-Notes.md:5 \"Rich-text notes on the document.\""
+				"opencase": "procest/opencase/round2/pages/DocumentDetail-Notes.md:5 \"Rich-text notes on the document.\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:122 \"| 4.18 | Notes or annotations on a document | yes `lib/Db/DocumentNote.php` | no |\""
 			}
 		},
 		{
@@ -2896,7 +2968,8 @@
 				"evidence": "register.d/50-subsidie.json#bewijsstuk.fileHashSha256; dossiq#2919 1a2482883"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:123 \"| 4.19 | Virus scan and integrity check | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:123 \"| 4.19 | Virus scan and integrity check | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:123 \"| 4.19 | Virus scan and integrity check | no | no |\""
 			}
 		},
 		{
@@ -2927,7 +3000,8 @@
 				"evidence": "src/manifest.json:3363; dossiq#3078 8babeadf"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\""
+				"opencase": "procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:124 \"| 4.20 | Archive export of closed cases (XML, SIP, TMLO/MDTO) | yes `lib/Service/CaseExportService.php` | no |\""
 			}
 		},
 		{
@@ -2949,7 +3023,8 @@
 				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:498 \"everything citizen-facing is via Portaaltaak/Verzoek/Notificaties/zaakdetails objects for an external portal.\""
 			}
 		},
 		{
@@ -2980,7 +3055,8 @@
 				"evidence": "lib/Service/Zaakdossier/DossierUploadHandler.php; dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/journeys.md:19 \"Native picker; no drag and drop seen\""
+				"opencase": "procest/opencase/round2/journeys.md:19 \"Native picker; no drag and drop seen\"",
+				"gzac": "procest/valtimo/round2/code-census.md:394 \"S3 / local file storage documents tab with dropzone :: yes\""
 			}
 		},
 		{
@@ -3011,7 +3087,8 @@
 				"evidence": "dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:220 \"Virtual case folder in Files/Mail/Talk :: yes :: lib/Storage/OpenCaseStorage.php\""
+				"opencase": "procest/opencase/round2/code-census.md:220 \"Virtual case folder in Files/Mail/Talk :: yes :: lib/Storage/OpenCaseStorage.php\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:127 \"| 4.23 | Case files visible in the platform file manager | yes `lib/Storage/OpenCaseStorage.php` | no |\""
 			}
 		},
 		{
@@ -3029,7 +3106,8 @@
 			"feature": "kcc-werkplek-zaaksysteem-bridge",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:225 \"Parties tab with roles, citizen or company, address protection :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:225 \"Parties tab with roles, citizen or company, address protection :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:405 \"ZGW zaakrollen (natuurlijk persoon, niet-natuurlijk persoon, medewerker, organisatorische eenheid, vestiging) :: partial (plugin)\""
 			}
 		},
 		{
@@ -3051,7 +3129,8 @@
 				"change": "dossiq/contacts-domain"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:15 \"the search runs over locally stored parties only\""
+				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:15 \"the search runs over locally stored parties only\"",
+				"gzac": "procest/valtimo/round2/code-census.md:408 \"party/contact entity, address book, mandates :: no :: (no entity found)\""
 			}
 		},
 		{
@@ -3073,7 +3152,8 @@
 				"evidence": "lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php; src/components/initiator/InitiatorPicker.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:226 \"CPR/CVR lookup (Datafordeler) :: partial (enterprise)\""
+				"opencase": "procest/opencase/round2/code-census.md:226 \"CPR/CVR lookup (Datafordeler) :: partial (enterprise)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:407 \"Klantinteracties \"Create persoon\" :: partial (plugin)\""
 			}
 		},
 		{
@@ -3104,7 +3184,8 @@
 				"evidence": "src/manifest.json:7053,7145,7344,7436; dossiq#3083 19b334fb; openregister#3893 caf4fd43a"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/journeys.md:29 \"One match jumps straight to a citizen 360 view: card with masked CPR, tabs Cases (1) and Documents, Create case button.\""
+				"opencase": "procest/opencase/round2/journeys.md:29 \"One match jumps straight to a citizen 360 view: card with masked CPR, tabs Cases (1) and Documents, Create case button.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:150 \"**parties / contacts**: none. No party, person, organisation, address or contact entity exists in the backend.\""
 			}
 		},
 		{
@@ -3126,7 +3207,8 @@
 				"evidence": "25-brp-kvk.json#brpPerson.indicatieGeheim"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:283 \"Address protection reveal with audit :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:283 \"Address protection reveal with audit :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:137 \"| 5.5 | Address protection or secrecy indication | yes `src/views/CaseDetailView.vue:40` | no |\""
 			}
 		},
 		{
@@ -3157,7 +3239,8 @@
 				"evidence": "register.d/50-sociaal-domein.json#gdprClassification.accessRestriction; lib/Service/CitizenLookupGuard.php; dossiq#2926 e4b78094"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/create-case-anatomy.md:27 \"Organisation, KLE code and Sensitivity together form the access profile of the case.\""
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:27 \"Organisation, KLE code and Sensitivity together form the access profile of the case.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:236 \"Condition types (`PermissionConditionType.kt`): `FIELD` (`FieldPermissionCondition(field, operator, value)`)\""
 			}
 		},
 		{
@@ -3179,7 +3262,8 @@
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; RolNode.vue; register.d/61-mandaat-matrix.json#organisatieRol"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:229 \"Organisation tree and employee search :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:229 \"Organisation tree and employee search :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:197 \"team: teams and team membership, team assignment of cases/tasks (`backend/team`).\""
 			}
 		},
 		{
@@ -3210,7 +3294,8 @@
 				"evidence": "lib/Settings/bezwaar_seed_data.json; dossiq#2918 d1ab0af9"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:82 \"`AccessRequest` (type public_access / party_access / gdpr_access\""
+				"opencase": "procest/opencase/round2/code-census.md:82 \"`AccessRequest` (type public_access / party_access / gdpr_access\"",
+				"gzac": "procest/valtimo/round2/code-census.md:239 \"Delegation / mandates: none. No delegation, mandate (machtiging) or substitute entity\""
 			}
 		},
 		{
@@ -3232,7 +3317,8 @@
 				"evidence": "src/manifest.json#CaseDetail/initiator"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:20 \"person icon, masked CPR button 010180XXXX, name, address\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:20 \"person icon, masked CPR button 010180XXXX, name, address\"",
+				"gzac": "procest/valtimo/round2/code-census.md:292 \"| `person-card` | person card | `icon`, `person{fullName, birthDate, bsn, phone, email, city}` (each a resolver path)\""
 			}
 		},
 		{
@@ -3254,7 +3340,8 @@
 				"evidence": "dossiq_register.json#case-location; lib/Controller/BagController.php; BrkController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:12 \"Estates are first-class objects; see `pages/EstateDetail.md`.\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:12 \"Estates are first-class objects; see `pages/EstateDetail.md`.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:150 \"No party, person, organisation, address or contact entity exists in the backend.\""
 			}
 		},
 		{
@@ -3272,7 +3359,8 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:231 \"CPR event subscriptions :: partial (enterprise)\""
+				"opencase": "procest/opencase/round2/code-census.md:231 \"CPR event subscriptions :: partial (enterprise)\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:143 \"| 5.11 | Contact import and change subscriptions from registries | partial `lib/Db/CprEvent.php` (enterprise) | no |\""
 			}
 		},
 		{
@@ -3301,7 +3389,8 @@
 				"evidence": "dossiq_register.json#dispatch"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:228 \"Document senders/recipients :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:228 \"Document senders/recipients :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:144 \"| 5.12 | Document senders and recipients | yes `src/components/DocumentContactList.vue` | no |\""
 			}
 		},
 		{
@@ -3332,7 +3421,8 @@
 				"evidence": "src/components/map/AddressSearch.vue; openregister#3900 11cd9c2e9"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:145 \"| 5.13 | External register views embedded in the app | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:145 \"| 5.13 | External register views embedded in the app | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:406 \"external register lookup views (IKO views with search actions, list, tabs, widgets) :: partial (needs IKO server)\""
 			}
 		},
 		{
@@ -3354,7 +3444,8 @@
 				"evidence": "#CaseDetail/case-notes"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:234 \"Journal notes (rich text, lockable) :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:234 \"Journal notes (rich text, lockable) :: yes\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDetail-Notities.md:5 \"Free-text notes on the case, per author, editable and deletable by the author\""
 			}
 		},
 		{
@@ -3385,7 +3476,8 @@
 				"evidence": "register.d/30-kcc.json#customerContact; 40-kcc-werkplek.json#contactmoment; lib/Controller/ContactMomentController.php; pipelinq#1970 428bd3a6b"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:80 \"Communication: `JournalNote` (title, text, isLocked), `DpShipment`\""
+				"opencase": "procest/opencase/round2/code-census.md:80 \"Communication: `JournalNote` (title, text, isLocked), `DpShipment`\"",
+				"gzac": "procest/valtimo/round2/code-census.md:419 \"in-app messaging / contact moments UI :: no (label only)\""
 			}
 		},
 		{
@@ -3407,7 +3499,8 @@
 				"evidence": "src/views/cases/components/CaseEmailTab.vue; /api/email/{caseId}/send-template; dossiq_register.json#emailTemplate"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:112 \"E-mail: sending a document from the user's own Mail-app account\""
+				"opencase": "procest/opencase/round2/code-census.md:112 \"E-mail: sending a document from the user's own Mail-app account\"",
+				"gzac": "procest/valtimo/round2/code-census.md:413 \"outbound mail with blacklist/whitelist/redirect filters and providers (Flowmailer, Mandrill, local, WordPress, SMTP plugin) :: yes\""
 			}
 		},
 		{
@@ -3444,7 +3537,8 @@
 				"evidence": "lib/Service/Timeline/TimelineKinds.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:154 \"| 6.4 | Unified communication timeline per case (notes, mail, messages) | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:154 \"| 6.4 | Unified communication timeline per case (notes, mail, messages) | no |\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDetail-Notities.md:15 \"Adding a note writes nothing to the Log tab.\""
 			}
 		},
 		{
@@ -3475,7 +3569,8 @@
 				"evidence": "/api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/IncomingDocuments.md:5 \"Inbox of documents that arrived from Digital Post, watched folders or IMAP mailboxes, to be journalised on an existing or new case.\""
+				"opencase": "procest/opencase/round2/pages/IncomingDocuments.md:5 \"Inbox of documents that arrived from Digital Post, watched folders or IMAP mailboxes, to be journalised on an existing or new case.\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:155 \"| 6.5 | Organisation-wide message inbox with assign to case | partial `src/views/InboundDocumentsView.vue` | no |\""
 			}
 		},
 		{
@@ -3506,7 +3601,8 @@
 				"evidence": "src/manifest.json:3347; lib/Service/DigitalPost/BerichtenboxProvider.php; PostexProvider.php; LogDigitalPostProvider.php; dossiq#3081 226b7e0b; integriq#2062 626d8dabc"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:236 \"Digital post shipment with reply flag and status :: partial (enterprise)\""
+				"opencase": "procest/opencase/round2/code-census.md:236 \"Digital post shipment with reply flag and status :: partial (enterprise)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:474 \"StUF, DSO, MijnOverheid/Berichtenbox, e-signing :: no :: (no source)\""
 			}
 		},
 		{
@@ -3545,7 +3641,8 @@
 			},
 			"note": "Noted 2026-09-26, rating unchanged: dossiq portaalBericht rows reach portaliq's merged inbox, but portaliq src/portal/components/InboxPage.jsx:86-148 never renders a dossiq portaalBericht's attachments, and the field contract differs: dossiq writes content, sentAt and readByRecipientAt where portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702). This is part of why the row stays partial.",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:212 \"**Digital post / citizen delivery**: only indirectly through the Portaaltaak plugin\""
 			}
 		},
 		{
@@ -3567,7 +3664,8 @@
 				"evidence": "lib/Notification/Notifier.php; lib/Service/MentionNotificationService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/menu-tree.md:44 \"Notifications: opens the app's own Notifications dialog (workflow steps to act on, files shared with me).\""
+				"opencase": "procest/opencase/round2/menu-tree.md:44 \"Notifications: opens the app's own Notifications dialog (workflow steps to act on, files shared with me).\"",
+				"gzac": "procest/valtimo/round2/pages/UserPanel.md:15 \"the e-mail notification toggles (task assigned, daily digest) are the only notification settings in the product.\""
 			}
 		},
 		{
@@ -3598,7 +3696,8 @@
 				"evidence": "lib/Service/TermijnNotificationService.php; lib/Flow/DossiqScheduleReminderNode.php; openregister#3912 042864247"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:159 \"| 6.9 | Scheduled or planned e-mails | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:159 \"| 6.9 | Scheduled or planned e-mails | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:247 \"**BPMN**: Operaton user tasks, service tasks, call activities, message/timer events\""
 			}
 		},
 		{
@@ -3629,7 +3728,8 @@
 				"evidence": "dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\""
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:160 \"| 6.10 | Import .msg or .eml into a case | partial `lib/Service/AddinOriginService.php` (Outlook add-in) | no |\""
 			}
 		},
 		{
@@ -3651,7 +3751,8 @@
 				"evidence": "lib/Service/Transitions/WebhookHandler.php; lib/Controller/NrcController.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:161 \"| 6.11 | Event outbox or webhooks on case events | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:161 \"| 6.11 | Event outbox or webhooks on case events | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:417 \"outbox CloudEvents to RabbitMQ :: yes\""
 			}
 		},
 		{
@@ -3682,7 +3783,8 @@
 				"evidence": "lib/Service/Conversation/CaseConversationService.php; CaseConversationsPanel.vue; openregister#3897 2a56f39b5"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:238 \"Talk chat export to case :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:238 \"Talk chat export to case :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:162 \"| 6.12 | Chat capture into the case | yes `src/talk-plugin.js` | no |\""
 			}
 		},
 		{
@@ -3719,7 +3821,8 @@
 				"evidence": "lib/Controller/KccContactController.php; BelplanController.php; lib/Service/DoorverbindingService.php; src/views/settings/KccIntegrationSettings.vue; integriq#2072 3db280a65; integriq#2076 82bfbe6b0"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:163 \"| 6.13 | Telephony (KCC) panel | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:163 \"| 6.13 | Telephony (KCC) panel | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:163 \"| 6.13 | Telephony (KCC) panel | no | no |\""
 			}
 		},
 		{
@@ -3750,7 +3853,8 @@
 				"evidence": "dossiq#3116 fc7fc1bc8; dossiq#3086 6a1ab145; integriq#2070 fe1704f5f"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:164 \"| 6.14 | Notes synced to an external case register | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:164 \"| 6.14 | Notes synced to an external case register | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:412 \"sync notes to ZGW zaaknotitie :: partial\""
 			}
 		},
 		{
@@ -3817,7 +3921,8 @@
 				"evidence": "dossiq_register.json#resultType; src/views/settings/tabs/ResultsTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:242 \"Formal case decision or result type :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:242 \"Formal case decision or result type :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:209 \"Catalogi API 8 (statustypen, resultaattypen, besluittype, eigenschap, informatieobjecttype(n))\""
 			}
 		},
 		{
@@ -3839,7 +3944,8 @@
 				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Controller/DecisionTableController.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:171 \"| 7.2 | Decision tables (DMN) | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:171 \"| 7.2 | Decision tables (DMN) | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:422 \"DMN decision tables with modeller :: yes\""
 			}
 		},
 		{
@@ -3861,7 +3967,8 @@
 				"evidence": "dossiq_register.json#decision; register.d/30-beschikking.json#beschikking; #CaseDetail/case-decidesk-decisions"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:82 \"Decisions: FOI only: `AccessRequest`\""
+				"opencase": "procest/opencase/round2/code-census.md:82 \"Decisions: FOI only: `AccessRequest`\"",
+				"gzac": "procest/valtimo/round2/code-census.md:423 \"ZGW besluit create/patch/get/link document :: partial (plugin)\""
 			}
 		},
 		{
@@ -3883,7 +3990,8 @@
 				"evidence": "src/dialogs/BeschikkingComposerDialog.vue; lib/Service/BeschikkingGenerationService.php; lib/Flow/DossiqRequestDecisionNode.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:82 \"`AccessDecision` (decisionText, complaintGuidance, approvedBy, sentBy, deliveryMethod)\""
+				"opencase": "procest/opencase/round2/code-census.md:82 \"`AccessDecision` (decisionText, complaintGuidance, approvedBy, sentBy, deliveryMethod)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:218 \"(`LocalPdfDocumentGenerator`, `LocalOperatonProcessDocumentGenerator`), SmartDocuments plugin, freemarker plugin (release build only).\""
 			}
 		},
 		{
@@ -3905,7 +4013,8 @@
 				"evidence": "lib/Controller/WOOAssessmentController.php; lib/Service/WOODocumentAssessmentService.php; src/views/doorlooptijd/widgets/DtWooWidget.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:241 \"FOI (aktindsigt) request with per-document decision, redaction upload, decision letter, export ZIP :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:241 \"FOI (aktindsigt) request with per-document decision, redaction upload, decision letter, export ZIP :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:174 \"| 7.5 | FOI or Woo request with per-document assessment and redaction | yes `src/views/AccessRequestDetailView.vue` | no |\""
 			}
 		},
 		{
@@ -3927,7 +4036,8 @@
 				"evidence": "src/manifest.json#BezwaarDetail; lib/Service/Bezwaar/*"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:175 \"| 7.6 | Objection handling surface | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:175 \"| 7.6 | Objection handling surface | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:258 \"Example `case-definition.json`: `{\"key\":\"bezwaar\",\"name\":\"Bezwaar\",\"versionTag\":\"1.0.0\",\"final\":true\""
 			}
 		},
 		{
@@ -3945,7 +4055,8 @@
 			"feature": "archief-edepot-handover",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:176 \"| 7.7 | Result drives archival nomination and retention | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:176 \"| 7.7 | Result drives archival nomination and retention | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:253 \"`InternalCaseStatus(id{caseDefinitionId,key}, title, visibleInCaseListByDefault, order, retentionPeriodInDays, color, label)`\""
 			}
 		},
 		{
@@ -3967,7 +4078,8 @@
 				"evidence": "register.d/60-termijnbewaking.json#deadlineDefinition; src/views/settings/tabs/TermijnDefinitiesTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:247 \"Case lead time or due date :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:247 \"Case lead time or due date :: no\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:65 \"No per-case-type deadline or term, no SLA, no priority\""
 			}
 		},
 		{
@@ -3989,7 +4101,8 @@
 				"evidence": "#CaseDetail/case-kpi-time-left; #Dashboard/overdue-cases; #Doorlooptijd/dt-atrisk"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:19 \"Red when overdue (1 sep on a 7 sep instance).\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:19 \"Red when overdue (1 sep on a 7 sep instance).\"",
+				"gzac": "procest/valtimo/round2/journeys.md:30 \"No overdue concept exists on a case; J7 is not achievable without configuring a due date in the process and a dashboard condition on it\""
 			}
 		},
 		{
@@ -4011,7 +4124,8 @@
 				"evidence": "dossiq_register.json#caseTask.dueDate"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/DocumentDetail-Workflow.md:6 \"ordered step list (n. user, step deadline\""
+				"opencase": "procest/opencase/round2/pages/DocumentDetail-Workflow.md:6 \"ordered step list (n. user, step deadline\"",
+				"gzac": "procest/valtimo/round2/code-census.md:427 \"task due dates :: yes\""
 			}
 		},
 		{
@@ -4042,7 +4156,8 @@
 				"evidence": "lib/Flow/DossiqScheduleReminderNode.php; #Dashboard/task-reminders; dossiq#2920 3e36eb6c"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:209 \"Reminders with deadline and responsible user on cases and documents :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:209 \"Reminders with deadline and responsible user on cases and documents :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:185 \"| 8.4 | Reminders on a case with a responsible user | yes `lib/Db/Reminder.php` | no |\""
 			}
 		},
 		{
@@ -4064,7 +4179,8 @@
 				"evidence": "lib/Service/DeadlineExtensionService.php; /api/termijn/instances/{id}/verleng; caseType.extensionAllowed/extensionPeriod"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:83 \"`AccessRequest.deadlineAt` / `extendedDeadlineAt` (7-day FOI deadline\""
+				"opencase": "procest/opencase/round2/code-census.md:83 \"`AccessRequest.deadlineAt` / `extendedDeadlineAt` (7-day FOI deadline\"",
+				"gzac": "procest/valtimo/round2/code-census.md:154 \"used by Zaken API actions \"Start/End hersteltermijn\"\""
 			}
 		},
 		{
@@ -4086,7 +4202,8 @@
 				"evidence": "lib/BackgroundJob/DeadlineNotificationDispatchJob.php; lib/Service/TermijnNotificationService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:245 \"FOI statutory deadline with extension and notification job :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:245 \"FOI statutory deadline with extension and notification job :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:414 \"task and reminder email notifications per user :: yes\""
 			}
 		},
 		{
@@ -4104,7 +4221,8 @@
 			"feature": "archief-edepot-handover",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:222 \"Closed-case XML export for archive :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:222 \"Closed-case XML export for archive :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:428 \"retention period per status with automatic deletion :: yes\""
 			}
 		},
 		{
@@ -4126,7 +4244,8 @@
 				"evidence": "register.d/65-milestone-tracking.json#milestoneDefinition; lib/Service/MilestoneService.php; #CaseDetail/case-kpi-progress"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\""
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:430 \"milestones with planned intervals :: partial (dormant, not in menu, no listener)\""
 			}
 		},
 		{
@@ -4148,7 +4267,8 @@
 				"evidence": "lib/Service/TermijnTimerService.php; lib/Listener/TermijnTimerFiredListener.php; lib/Repair/ArmTermijnEngineTimers.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:431 \"BPMN timer events :: yes\""
 			}
 		},
 		{
@@ -4170,7 +4290,8 @@
 				"evidence": "lib/Service/DeadlinePauseService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:191 \"| 8.10 | Suspension term with automatic resume | no | no |\""
 			}
 		},
 		{
@@ -4306,7 +4427,8 @@
 				"evidence": "lib/Search/ObjectsProvider.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:435 \"global search / quick search saved per user :: yes\""
 			}
 		},
 		{
@@ -4351,7 +4473,8 @@
 				"evidence": "CaseTypeFieldFilters.vue; dossiq#3085 87ec6952"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:8 \"Ten fields on one form. No deadline or date-range filter on cases.\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:8 \"Ten fields on one form. No deadline or date-range filter on cases.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDefinition-Dossierlijst.md:5 \"Configure the case list columns and the search fields per case type\""
 			}
 		},
 		{
@@ -4369,7 +4492,8 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:26 \"None. No saved views, no pinned filters, no recent queries.\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:26 \"None. No saved views, no pinned filters, no recent queries.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseList.md:10 \"Zoekopdracht opslaan (save the search as a personal saved filter)\""
 			}
 		},
 		{
@@ -4387,7 +4511,8 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "medium",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:253 \"Saved searches :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:39 \"Saved searches (\"Zoekopdracht opslaan\" on the list) are stored per user on top of this.\""
 			}
 		},
 		{
@@ -4405,7 +4530,8 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "medium",
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseList.md:9 \"column chooser \"8/8\" (Selecteer zichtbare kolommen, per-column checkboxes, persisted per user)\""
 			}
 		},
 		{
@@ -4436,7 +4562,8 @@
 				"evidence": "openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3892"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:7 \"The only search that reads inside files.\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:7 \"The only search that reads inside files.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:215 \"with optional OpenSearch (`backend/case-opensearch`\""
 			}
 		},
 		{
@@ -4458,7 +4585,8 @@
 				"evidence": "lib/Service/CaseAccessGuard.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:254 \"Search results filtered by access profile :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:254 \"Search results filtered by access profile :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:238 \"Per-object access: yes, by condition on entity fields\""
 			}
 		},
 		{
@@ -4480,7 +4608,8 @@
 				"evidence": "src/manifest.json#Cases"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:30 \"dossiq's Cases index (CnIndexPage) carries saved views, table, cards and map view modes\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:30 \"dossiq's Cases index (CnIndexPage) carries saved views, table, cards and map view modes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:204 \"| 9.8 | Map view of search results | no | no |\""
 			}
 		},
 		{
@@ -4511,7 +4640,8 @@
 				"evidence": "src/components/initiator/InitiatorPicker.vue; openregister#3893 caf4fd43a"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\""
+				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\"",
+				"gzac": "procest/valtimo/round2/usability.md:13 \"No global search box exists. Search is per case type through admin-configured fields; the demo has none on the applicant, so a citizen name finds nothing\""
 			}
 		},
 		{
@@ -4529,7 +4659,8 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/Search-Estate.md:5 \"Find an estate by BFE number or address\""
+				"opencase": "procest/opencase/round2/pages/Search-Estate.md:5 \"Find an estate by BFE number or address\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Objecten.md:15 \"once registered, an object type gets its own list page and search fields, the same mechanism as the case list.\""
 			}
 		},
 		{
@@ -4560,7 +4691,8 @@
 				"evidence": "dossiq#2898 75d5c333"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\""
+				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:437 \"task search fields :: yes\""
 			}
 		},
 		{
@@ -4589,7 +4721,8 @@
 				]
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\""
+				"opencase": "procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:208 \"| 9.12 | Platform-level unified search integration | yes `lib/Search/` | no |\""
 			}
 		},
 		{
@@ -4636,7 +4769,8 @@
 				"evidence": "/apps/dossiq/api/dashboard/kpis; lib/Controller/KpiController.php; dossiq#3085 87ec6952; nextcloud-vue#1209 744a5a12f"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/home-anatomy.md:5 \"There are no KPI numbers, no charts and no list of cases on the page.\""
+				"opencase": "procest/opencase/round2/home-anatomy.md:5 \"There are no KPI numbers, no charts and no list of cases on the page.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:441 \"configurable dashboards with number, gauge, meter, donut, bar-chart widgets :: yes\""
 			}
 		},
 		{
@@ -4658,7 +4792,8 @@
 				"evidence": "lib/Dashboard/*Widget.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/menu-tree.md:53 \"Dashboard widgets (`/apps/dashboard`, Customize): Mine sager, Indkommende dokumenter, Favoritter, Seneste.\""
+				"opencase": "procest/opencase/round2/menu-tree.md:53 \"Dashboard widgets (`/apps/dashboard`, Customize): Mine sager, Indkommende dokumenter, Favoritter, Seneste.\"",
+				"gzac": "procest/valtimo/round2/dashboard-anatomy.md:7 \"Dashboards are role-scoped\""
 			}
 		},
 		{
@@ -4680,7 +4815,8 @@
 				"evidence": "src/components/export/CaseListExportAction.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\""
+				"opencase": "procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:316 \"Export: CSV/XLSX-style export of the list\""
 			}
 		},
 		{
@@ -4702,7 +4838,8 @@
 				"evidence": "src/manifest.json#ProcessMiningDashboard; lib/Service/ProcessMiningService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:258 \"Report pages or charts :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:258 \"Report pages or charts :: no\"",
+				"gzac": "procest/valtimo/round2/pages/Analyse.md:5 \"Show a BPMN definition with a heatmap of how often (Count) or how long (Duration) each task ran across instances\""
 			}
 		},
 		{
@@ -4724,7 +4861,8 @@
 				"evidence": "src/views/settings/StufAuditLog.vue; lib/Controller/AiAuditExportController.php; openregister src/views/logs/AuditTrailIndex.vue and export at appinfo/routes.php:1350 are admin-only; openregister#4018 adds GET /api/audit-trails/readable with no screen"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:259 \"Transaction log viewer for admins :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:259 \"Transaction log viewer for admins :: yes\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Logs.md:6 \"a filter button; table Tijd, Log-niveau, Bericht\""
 			}
 		},
 		{
@@ -4746,7 +4884,8 @@
 				"evidence": "/api/dashboard/kpis; /api/reports/process-mining; /api/metrics"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:122 \"Statistics endpoint `GET /api/v1/cases/statistics` (`API.md:56`).\""
+				"opencase": "procest/opencase/round2/code-census.md:122 \"Statistics endpoint `GET /api/v1/cases/statistics` (`API.md:56`).\"",
+				"gzac": "procest/valtimo/round2/code-census.md:444 \"reporting endpoints (instance counts, tasks per person, pending by role) :: partial (API only)\""
 			}
 		},
 		{
@@ -4768,7 +4907,8 @@
 				"evidence": "openregister lib/Db/ExportRun.php; openregister appinfo/routes.php:1937"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:220 \"| 10.7 | Export files area with expiry and download counts | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:220 \"| 10.7 | Export files area with expiry and download counts | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:220 \"| 10.7 | Export files area with expiry and download counts | no | no |\""
 			}
 		},
 		{
@@ -4805,7 +4945,8 @@
 				"evidence": "lib/Controller/DossierExportController.php; lib/Service/BeroepDossierExport.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:221 \"| 10.8 | Timeline export per case or contact | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:221 \"| 10.8 | Timeline export per case or contact | no |\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDetail-Log.md:9 \"none (read-only, no filter, no export)\""
 			}
 		},
 		{
@@ -4823,7 +4964,8 @@
 			"feature": "doorlooptijd-dashboard",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-Log.md:5 \"Audit trail including every read.\""
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Log.md:5 \"Audit trail including every read.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDetail-Log.md:5 \"Chronological audit list of case events\""
 			}
 		},
 		{
@@ -4854,7 +4996,8 @@
 				"evidence": "nextcloud-vue#1209 744a5a12f"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:253 \"Saved searches :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:306 \"`case-count` (`documentDefinition`, `queryConditions[]`)\""
 			}
 		},
 		{
@@ -4903,7 +5046,8 @@
 				"evidence": "src/views/settings/CaseTypeDetail.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:177 \"There is no case type editor.\""
+				"opencase": "procest/opencase/round2/code-census.md:177 \"There is no case type editor.\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:3 \"Entry: Admin > Dossiers (`/case-management`) > row.\""
 			}
 		},
 		{
@@ -4934,7 +5078,8 @@
 				"evidence": "src/manifest.json:6588; dossiq#3084 1c85c2a5"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:230 \"| 11.2 | Config as code, import and export of case types | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:230 \"| 11.2 | Config as code, import and export of case types | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:450 \"zip export/import of case definitions with manifest and dependencies :: yes\""
 			}
 		},
 		{
@@ -4956,7 +5101,8 @@
 				"evidence": "dossiq_register.json#propertyDefinition; PropertiesTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\""
+				"opencase": "procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDefinition-Document.md:5 \"The JSON Schema (draft-07) of the case document, in a Monaco code viewer with a Download button\""
 			}
 		},
 		{
@@ -4974,7 +5120,8 @@
 			"feature": "case-types",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\""
+				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Formulieren.md:9 \"Formulier creëren (opens the form.io builder)\""
 			}
 		},
 		{
@@ -5016,7 +5163,8 @@
 				"evidence": "src/views/settings/WorkflowEditor.vue; WorkflowTab.vue; openregister#3944 878de2cd; openregister#3948 de4079be; openregister has no BPMN modeller page; BPMN only through appinfo/routes.php:825-826 (openregister#4040)"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:276 \"BPM engine :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:451 \"in-browser BPMN modeller :: yes\""
 			}
 		},
 		{
@@ -5034,7 +5182,8 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:20 \"the tabs of the case page: name, key, type (Standaardtabblad, FormIO component, Maatwerkcomponent, Widgets component)\""
 			}
 		},
 		{
@@ -5052,7 +5201,8 @@
 			"feature": "case-map-overview",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\""
+				"opencase": "procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:55 \"a live 13.4.1 admin can place five types plus a divider through the UI (the JSON editor accepts the others)\""
 			}
 		},
 		{
@@ -5070,7 +5220,8 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:24 \"one header widget (wizard: type, style, content; only \"tile\" type in this build)\""
 			}
 		},
 		{
@@ -5101,7 +5252,8 @@
 				"evidence": "lib/Settings/register.d/39-case-type-list-layout.json; dossiq#3112 a7118ddf1; dossiq#3085 87ec6952; nextcloud-vue#1213 93efc0c58"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:173 \"Per-case-type column configuration: none.\""
+				"opencase": "procest/opencase/round2/code-census.md:173 \"Per-case-type column configuration: none.\"",
+				"gzac": "procest/valtimo/round2/case-definition-editor-anatomy.md:19 \"case list columns and search fields, see below\""
 			}
 		},
 		{
@@ -5132,7 +5284,8 @@
 				"evidence": "dossiq#2913 7b9c360a"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:262 \"Code lists editable by admin :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:262 \"Code lists editable by admin :: yes\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Keuzevelden.md:5 \"Reusable option lists (key, title, values) for forms\""
 			}
 		},
 		{
@@ -5154,7 +5307,8 @@
 				"evidence": "lib/Controller/TemplateController.php; lib/Service/TemplateLibraryService.php; lib/Controller/VTHTemplateController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/ManageTemplates.md:5 \"Upload, create and manage document templates that merge case, document and address fields.\""
+				"opencase": "procest/opencase/round2/pages/ManageTemplates.md:5 \"Upload, create and manage document templates that merge case, document and address fields.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:177 \":smartdocuments (SmartDocuments plugin: \"Generate document\", \"Get Template Names\")\""
 			}
 		},
 		{
@@ -5176,7 +5330,8 @@
 				"evidence": "src/views/casetypes/components/EmailTemplateAdmin.vue; dossiq_register.json#emailTemplate; lib/Controller/EmailTemplateController.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:240 \"| 11.12 | E-mail template library | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:240 \"| 11.12 | E-mail template library | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:415 \"mail template / text template :: partial (release-only freemarker plugin)\""
 			}
 		},
 		{
@@ -5207,7 +5362,8 @@
 				"evidence": "src/manifest.json:6509,6573; dossiq#3084 1c85c2a5"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:241 \"| 11.13 | Translation management in the UI | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:241 \"| 11.13 | Translation management in the UI | no |\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Vertalingen.md:5 \"Runtime overrides of UI labels per language\""
 			}
 		},
 		{
@@ -5229,7 +5385,8 @@
 				"evidence": "lib/Service/Tenant/TenantBrandingSanitiser.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:242 \"| 11.14 | Branding and theming | partial `appinfo/info.xml` (Nextcloud theming) |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:242 \"| 11.14 | Branding and theming | partial `appinfo/info.xml` (Nextcloud theming) |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:164 \"admin-settings: logo, accent colours, feature-toggle overrides stored in DB\""
 			}
 		},
 		{
@@ -5260,7 +5417,8 @@
 				"evidence": "lib/Controller/SettingsController.php; openregister#3902 5b6834c6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:4 \"gates it on `enterprise_version` (`lib/Service/Configuration.php:140`) and `ai_enabled`\""
+				"opencase": "procest/opencase/round2/code-census.md:4 \"gates it on `enterprise_version` (`lib/Service/Configuration.php:140`) and `ai_enabled`\"",
+				"gzac": "procest/valtimo/round2/code-census.md:335 \"DB overrides of the 30 feature toggles\""
 			}
 		},
 		{
@@ -5282,7 +5440,8 @@
 				"evidence": "src/views/settings/StufEndpoints.vue; ZgwMappingSettings.vue; KccIntegrationSettings.vue; tabs/StoreSettingsTab.vue; tabs/FinancialIntegrationTab.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:69 \"API (API clients, certificates)\""
+				"opencase": "procest/opencase/round2/code-census.md:69 \"API (API clients, certificates)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:337 \"Plugins (`/plugins`): instantiate plugin configurations with encrypted properties (`PluginConfiguration.encryptionService`)\""
 			}
 		},
 		{
@@ -5313,7 +5472,8 @@
 				"evidence": "dossiq_register.json#caseObject; dossiq#2911 fffc5d7d"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:245 \"| 11.17 | Custom object type management | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:245 \"| 11.17 | Custom object type management | no |\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Objecten.md:5 \"Register object types from the Objecten API so they can be listed, searched and edited inside GZAC\""
 			}
 		},
 		{
@@ -5335,7 +5495,8 @@
 				"evidence": "src/views/settings/components/WorkflowValidationBanner.vue; /api/case-definitions/validate"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/AdminSettings.md:6 \"Prerequisites (Group folders, Full text search x3)\""
+				"opencase": "procest/opencase/round2/pages/AdminSettings.md:6 \"Prerequisites (Group folders, Full text search x3)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:462 \"configuration issue detection banner :: yes\""
 			}
 		},
 		{
@@ -5366,7 +5527,8 @@
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; MandaatToewijzingenTable.vue; openregister#3874 18628dff"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:69 \"Lokale brugere (local users and privileges)\""
+				"opencase": "procest/opencase/round2/code-census.md:69 \"Lokale brugere (local users and privileges)\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-AccessControl.md:5 \"Roles (from Keycloak) with a JSON permission set each\""
 			}
 		},
 		{
@@ -5388,7 +5550,8 @@
 				"evidence": "lib/Service/Transitions/GuardRegistry.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDefinition-Beslistabellen.md:5 \"DMN decision tables scoped to this case type\""
 			}
 		},
 		{
@@ -5410,7 +5573,8 @@
 				"evidence": "lib/Service/CaseTypeResolver.php; tests/e2e/case-type-parent-chain.spec.ts"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:249 \"| 11.21 | Mother and child case types (inheritance) | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:249 \"| 11.21 | Mother and child case types (inheritance) | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:168 \"building-block: reusable \"building block\" packages (own document definition, BPMN, forms, form flows, DMN) instantiated inside a case via call activities\""
 			}
 		},
 		{
@@ -5428,7 +5592,8 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:250 \"| 11.22 | GDPR register fields per case type | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:250 \"| 11.22 | GDPR register fields per case type | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:250 \"| 11.22 | GDPR register fields per case type | no | no |\""
 			}
 		},
 		{
@@ -5459,7 +5624,8 @@
 				"evidence": "dossiq#2915 0c78cefa"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:251 \"| 11.23 | Catalog with folders for case types, attributes, templates | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:251 \"| 11.23 | Catalog with folders for case types, attributes, templates | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:251 \"| 11.23 | Catalog with folders for case types, attributes, templates | no | no |\""
 			}
 		},
 		{
@@ -5481,7 +5647,8 @@
 				"evidence": "src/views/settings/tabs/GeneralTab.vue; lib/Controller/SettingsController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/Configuration-Settings.md:5 \"In-app configuration; the Settings section holds one value.\""
+				"opencase": "procest/opencase/round2/pages/Configuration-Settings.md:5 \"In-app configuration; the Settings section holds one value.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:164 \"admin-settings: logo, accent colours, feature-toggle overrides stored in DB\""
 			}
 		},
 		{
@@ -5567,7 +5734,8 @@
 				"evidence": "lib/Controller/ZrcController.php; ZtcController.php; DrcController.php; BrcController.php; lib/Service/External/Zgw/*"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:465 \"ZGW Zaken/Documenten/Catalogi/Besluiten/Notificaties/Objecten/Objecttypen API plugins :: yes\""
 			}
 		},
 		{
@@ -5589,7 +5757,8 @@
 				"evidence": "lib/Controller/NrcController.php; lib/Service/NotificatieService.php; dossiq_register.json#abonnement"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\""
+				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:418 \"ZGW notifications publish/subscribe with failed-event retry UI :: yes\""
 			}
 		},
 		{
@@ -5607,7 +5776,8 @@
 			"feature": "zgw-api-mapping",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\""
+				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
+				"gzac": "procest/valtimo/round2/pages/Admin-Plugins.md:9 \"Notificaties API, OpenNotificaties, Objecten API, Object token authenticatie, Objecttypen API\""
 			}
 		},
 		{
@@ -5629,7 +5799,8 @@
 				"evidence": "lib/Service/Stuf/*; lib/Controller/StufController.php; src/views/settings/StufEndpoints.vue"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\""
+				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:210 \"**StUF**: nothing. `grep -rli stuf backend` finds no StUF module.\""
 			}
 		},
 		{
@@ -5651,7 +5822,8 @@
 				"evidence": "lib/Controller/DsoController.php; DSOIntakeController.php; lib/Service/DsoIntakeService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:211 \"**DSO**: nothing.\""
 			}
 		},
 		{
@@ -5673,7 +5845,8 @@
 				"evidence": "lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:103 \"Datafordeler (`lib/Service/Datafordeler/`: CPR CitizenData, CVR CompanyData, BBR/MAT estate data)\""
+				"opencase": "procest/opencase/round2/code-census.md:103 \"Datafordeler (`lib/Service/Datafordeler/`: CPR CitizenData, CVR CompanyData, BBR/MAT estate data)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:209 \"Klantinteracties API (\"Create persoon\")\""
 			}
 		},
 		{
@@ -5695,7 +5868,8 @@
 				"evidence": "lib/Service/TenantAuthenticationService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:272 \"SAML login with privilege groups :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:272 \"SAML login with privilege groups :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:478 \"Keycloak OIDC with realm/client role mapping :: yes\""
 			}
 		},
 		{
@@ -5717,7 +5891,8 @@
 				"evidence": "lib/Service/Auth/SimulatorDigidSamlAdapter.php; SimulatorEHerkenningSamlAdapter.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:181 \"The only unauthenticated surfaces are the mTLS receiver endpoints and the SAML endpoints\""
+				"opencase": "procest/opencase/round2/code-census.md:181 \"The only unauthenticated surfaces are the mTLS receiver endpoints and the SAML endpoints\"",
+				"gzac": "procest/valtimo/round2/code-census.md:341 \"No citizen or portal UI ships in this repo.\""
 			}
 		},
 		{
@@ -5748,7 +5923,8 @@
 				"evidence": "dossiq#3081 226b7e0b; integriq#2062 626d8dabc"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:104 \"Digital post: `lib/Controller/DigitalPostController.php` (check, createShipment, latestShipment\""
+				"opencase": "procest/opencase/round2/code-census.md:104 \"Digital post: `lib/Controller/DigitalPostController.php` (check, createShipment, latestShipment\"",
+				"gzac": "procest/valtimo/round2/code-census.md:212 \"No MijnOverheid/Berichtenbox integration.\""
 			}
 		},
 		{
@@ -5770,7 +5946,8 @@
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:275 \"E-signing :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:275 \"E-signing :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:213 \"**E-signing**: none found\""
 			}
 		},
 		{
@@ -5801,7 +5978,8 @@
 				"evidence": "lib/Service/Beschikking/TemplateEngineAdapterInterface.php; MockTemplateEngineAdapter.php; integriq#2080 472b0721"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\""
+				"opencase": "procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\"",
+				"gzac": "procest/valtimo/round2/code-census.md:214 \"Document generation is server-side only (SmartDocuments plugin, local PDF generator, freemarker plugin in release builds).\""
 			}
 		},
 		{
@@ -5831,7 +6009,8 @@
 				"evidence": "lib/Controller/DwangsomPaymentCallbackController.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:269 \"| 12.12 | Payments | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:269 \"| 12.12 | Payments | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:269 \"| 12.12 | Payments | no | no |\""
 			}
 		},
 		{
@@ -5853,7 +6032,8 @@
 				"evidence": "lib/Service/AppointmentService.php; AppointmentBackend/JccBackend.php; QmaticBackend.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:270 \"| 12.13 | Appointment booking | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:270 \"| 12.13 | Appointment booking | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:270 \"| 12.13 | Appointment booking | no | no |\""
 			}
 		},
 		{
@@ -5875,7 +6055,8 @@
 				"evidence": "lib/Service/Transitions/WebhookHandler.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:271 \"| 12.14 | Message broker or event streaming | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:271 \"| 12.14 | Message broker or event streaming | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:220 \"**Messaging**: outbox to RabbitMQ\""
 			}
 		},
 		{
@@ -5893,7 +6074,8 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:107 \"Search: Elasticsearch with a `danish_content` analyzer\""
+				"opencase": "procest/opencase/round2/code-census.md:107 \"Search: Elasticsearch with a `danish_content` analyzer\"",
+				"gzac": "procest/valtimo/round2/code-census.md:170 \"case-opensearch: optional OpenSearch index for case search with reindex/reconcile\""
 			}
 		},
 		{
@@ -5915,7 +6097,8 @@
 				"evidence": "lib/Service/Pdok/PdokLocatieserverService.php; PdokBagService.php; lib/Controller/BagController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/EstateDetail.md:15 \"Enterprise edition fetches it from Datafordeler; Basic edition lets you type it.\""
+				"opencase": "procest/opencase/round2/pages/EstateDetail.md:15 \"Enterprise edition fetches it from Datafordeler; Basic edition lets you type it.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:222 \"PDOK Locatieserver geocoding for the map widget\""
 			}
 		},
 		{
@@ -5937,7 +6120,8 @@
 				"evidence": "lib/Service/External/IntegrationMode.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:90 \"OpenCase has no plugin system of its own.\""
+				"opencase": "procest/opencase/round2/code-census.md:90 \"OpenCase has no plugin system of its own.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:475 \"generic plugin framework (definition, configuration, actions bound to BPMN activities) :: yes\""
 			}
 		},
 		{
@@ -5959,7 +6143,8 @@
 				"evidence": "lib/Controller/ZgwOpenApiController.php; lib/Settings/dossiq_register.json"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:121 \"`openapi.json` exists but holds 1 path\""
+				"opencase": "procest/opencase/round2/code-census.md:121 \"`openapi.json` exists but holds 1 path\"",
+				"gzac": "procest/valtimo/round2/code-census.md:228 \"OpenAPI: springdoc is a dependency of `backend/web`\""
 			}
 		},
 		{
@@ -5981,7 +6166,8 @@
 				"evidence": "lib/Middleware/ZgwAuthMiddleware.php; lib/Service/ZgwJwtValidator.php; lib/Controller/AcController.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:273 \"mTLS and bearer API clients :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:273 \"mTLS and bearer API clients :: yes\"",
+				"gzac": "procest/valtimo/round2/code-census.md:497 \"No `/api/v1/public`.\""
 			}
 		},
 		{
@@ -5999,7 +6185,8 @@
 			"feature": "zgw-api-mapping",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:471 \"S3 storage :: yes\""
 			}
 		},
 		{
@@ -6030,7 +6217,8 @@
 				"evidence": "dossiq#2642 a4685e7a6"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\""
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\"",
+				"gzac": "procest/valtimo/round2/code-census.md:214 \"**Office add-ins**: none.\""
 			}
 		},
 		{
@@ -6048,7 +6236,8 @@
 			"feature": "zgw-api-mapping",
 			"featureConfidence": "low",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:279 \"| 12.22 | Cloud events inbound | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:279 \"| 12.22 | Cloud events inbound | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:183 \"inbox: consumes CloudEvents (`InboxCloudEventConsumer`, `LocalCloudEventListener`)\""
 			}
 		},
 		{
@@ -6070,7 +6259,8 @@
 				"evidence": "lib/Controller/AssistantController.php; lib/Controller/AiController.php; lib/Mcp/DossiqToolProvider.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:113 \"AI: chat side panel with a prompt library and executable actions\""
+				"opencase": "procest/opencase/round2/code-census.md:113 \"AI: chat side panel with a prompt library and executable actions\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:280 \"| 12.23 | AI assistant with executable actions | partial `src/components/AiSidePanel.vue` (enterprise) | no |\""
 			}
 		},
 		{
@@ -6092,7 +6282,8 @@
 				"evidence": "lib/Repair/ProvisionAssignedGroups.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:131 \"Roles: `User`, `Administrator`, `Template Designer`\""
+				"opencase": "procest/opencase/round2/code-census.md:131 \"Roles: `User`, `Administrator`, `Template Designer`\"",
+				"gzac": "procest/valtimo/round2/code-census.md:234 \"Roles: `Role(id, key)` (`backend/authorization/.../role/Role.kt`), keys are Keycloak role names.\""
 			}
 		},
 		{
@@ -6114,7 +6305,8 @@
 				"evidence": "lib/Service/Sharing/CaseAccessPolicy.php; lib/Service/CaseAccessGuard.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:128 \"Access profile = unique tuple (organisation, KLE classification code, sensitivity)\""
+				"opencase": "procest/opencase/round2/code-census.md:128 \"Access profile = unique tuple (organisation, KLE classification code, sensitivity)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:479 \"PBAC with field, expression and container conditions compiled to SQL :: yes\""
 			}
 		},
 		{
@@ -6144,7 +6336,8 @@
 				"evidence": "src/views/cases/components/CaseSharingTab.vue; openregister#3966 16fce31bc"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/pages/CaseDetail-Access.md:9 \"Grant access (user, Read or Write, Time-limited with Expires date); row Remove access\""
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Access.md:9 \"Grant access (user, Read or Write, Time-limited with Expires date); row Remove access\"",
+				"gzac": "procest/valtimo/round2/code-census.md:238 \"The shipped `document.permission.json` gives ROLE_USER view/modify/export only on cases assigned to them or their team\""
 			}
 		},
 		{
@@ -6166,7 +6359,8 @@
 				"evidence": "register.d/62-handler-vervanging.json#substitution.endDate"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:280 \"Direct time-limited case grants :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:280 \"Direct time-limited case grants :: yes\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:289 \"| 13.4 | Time-limited access grants | yes `lib/Db/CaseUserEntity.php` | no |\""
 			}
 		},
 		{
@@ -6196,7 +6390,8 @@
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php; openregister#3966 16fce31bc"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\""
+				"opencase": "procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\"",
+				"gzac": "procest/valtimo/round2/pages/CaseDefinition-ZGW.md:6 \"Document upload-velden: table Veld, Standaardwaarde, Zichtbaar, Alleen lezen (Bestandsnaam, Titel, Auteur, Beschrijving, Taal, Vertrouwelijkheidsaanduiding\""
 			}
 		},
 		{
@@ -6227,7 +6422,8 @@
 				"evidence": "organisatieRol.department/team; openregister#3874 18628dff; openregister lib/Service/Object/PermissionHandler.php:2699 compileDepartmentMatrix enforces the matrix; no screen sets it (openregister#4040)"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:79 \"`Organisation` (orgUuid, orgParentUuid, ncGroupId, groupfolderId)\""
+				"opencase": "procest/opencase/round2/code-census.md:79 \"`Organisation` (orgUuid, orgParentUuid, ncGroupId, groupfolderId)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:482 \"teams and team-based visibility (`${currentUserTeams}`) :: yes\""
 			}
 		},
 		{
@@ -6245,7 +6441,8 @@
 			"feature": "case-access-control",
 			"featureConfidence": "high",
 			"evidence": {
-				"opencase": "procest/opencase/round2/create-case-anatomy.md:23 \"Open (Public), Internal, Limited (Confidential), Closed (Highly Confidential/Personal)\""
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:23 \"Open (Public), Internal, Limited (Confidential), Closed (Highly Confidential/Personal)\"",
+				"gzac": "procest/valtimo/round2/code-census.md:485 \"Documenten API vertrouwelijkheidaanduiding column and upload field :: yes\""
 			}
 		},
 		{
@@ -6276,7 +6473,8 @@
 				"evidence": "dossiq#2899 8de94cb4a"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:293 \"| 13.8 | Field-level permissions | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:293 \"| 13.8 | Field-level permissions | no |\"",
+				"gzac": "procest/valtimo/round2/code-census.md:236 \"`EXPRESSION` (`ExpressionPermissionCondition(field, path, operator, value, clazz)`, JSON-path into a JSON column)\""
 			}
 		},
 		{
@@ -6294,7 +6492,8 @@
 			"feature": "case-access-control",
 			"featureConfidence": "medium",
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:134 \"Every read is audited\""
+				"opencase": "procest/opencase/round2/code-census.md:134 \"Every read is audited\"",
+				"gzac": "procest/valtimo/round2/code-census.md:243 \"Audit: `AuditRecord` per `AuditEvent`; 22 audit event classes found\""
 			}
 		},
 		{
@@ -6316,7 +6515,8 @@
 				"evidence": "lib/Listener/BezwaarLegalHoldListener.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\""
+				"opencase": "procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\"",
+				"gzac": "procest/valtimo/round2/code-census.md:484 \"retention and automatic deletion :: yes\""
 			}
 		},
 		{
@@ -6334,7 +6534,8 @@
 			"feature": "archief-edepot-handover",
 			"featureConfidence": "medium",
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:296 \"| 13.11 | GDPR register per case type | no |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:296 \"| 13.11 | GDPR register per case type | no |\"",
+				"gzac": "procest/_round2/compare/M1-functionality.md:296 \"| 13.11 | GDPR register per case type | no | no |\""
 			}
 		},
 		{
@@ -6356,7 +6557,8 @@
 				"evidence": "register.d/62-handler-vervanging.json#substitution; register.d/61-mandaat-matrix.json#mandate; lib/Service/MandaatCheckService.php"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:284 \"Delegation or mandates :: no\""
+				"opencase": "procest/opencase/round2/code-census.md:284 \"Delegation or mandates :: no\"",
+				"gzac": "procest/valtimo/round2/code-census.md:486 \"delegation / mandates / substitutes :: no :: (no source)\""
 			}
 		},
 		{
@@ -6378,7 +6580,8 @@
 				"evidence": "lib/Service/Sharing/CaseTokenShareService.php; register.d/50-zaakportaal.json"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:342 \"Citizen-facing interaction is delegated to external systems: **Portaaltaak** creates a \"taak\" object in the Objecten API for an external portal\""
 			}
 		},
 		{
@@ -6396,7 +6599,8 @@
 			"feature": "case-access-control",
 			"featureConfidence": "medium",
 			"evidence": {
-				"opencase": "procest/opencase/round2/create-case-anatomy.md:27 \"only users whose privilege patterns match (organisation, KLE pattern such as `28.%`, sensitivity) can see the case afterwards\""
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:27 \"only users whose privilege patterns match (organisation, KLE pattern such as `28.%`, sensitivity) can see the case afterwards\"",
+				"gzac": "procest/valtimo/round2/code-census.md:487 \"locked rows for cases/tasks the user may not open :: yes\""
 			}
 		},
 		{
@@ -6418,7 +6622,8 @@
 				"evidence": "lib/Service/TenantAuditTrailService.php"
 			},
 			"evidence": {
-				"opencase": "procest/_round2/compare/M1-functionality.md:300 \"| 13.15 | Two-factor authentication and login history | partial `appinfo/info.xml` (Nextcloud) |\""
+				"opencase": "procest/_round2/compare/M1-functionality.md:300 \"| 13.15 | Two-factor authentication and login history | partial `appinfo/info.xml` (Nextcloud) |\"",
+				"gzac": "procest/valtimo/round2/pages/Login.md:15 \"MFA variants exist in the realm (admin-mfa) but were not used.\""
 			}
 		},
 		{
@@ -6449,7 +6654,8 @@
 				"evidence": "src/views/settings/tabs/MandaatMatrixTab.vue; OrganisatieRolManager.vue; openregister#3874 18628dff"
 			},
 			"evidence": {
-				"opencase": "procest/opencase/round2/code-census.md:177 \"Users and privileges: `/settings/local-users/{userId}/privileges`.\""
+				"opencase": "procest/opencase/round2/code-census.md:177 \"Users and privileges: `/settings/local-users/{userId}/privileges`.\"",
+				"gzac": "procest/valtimo/round2/code-census.md:481 \"access-control admin UI with form and JSON editors and export :: yes\""
 			}
 		},
 		{
