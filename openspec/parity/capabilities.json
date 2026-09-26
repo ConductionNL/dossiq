@@ -4,7 +4,7 @@
 		"repo": "ConductionNL/market-intelligence",
 		"file": "procest/_round4/tools/corpus-rows.json",
 		"rows": 225,
-		"pending": 146
+		"pending": 164
 	},
 	"comparedOn": "2026-09-26",
 	"rowsAddedOn": "2026-09-09",
@@ -10072,7 +10072,66 @@
 			"drivenOn": "2026-09-26",
 			"readVersion": "OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea)",
 			"evidenceGrade": "driven",
-			"unknownReason": "Source read on 2026-09-26 at OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea), the version the 2026-09-07 click-through drive used, which this reading replaces; the same release was booted again in the lab-dossiq-opencase lab on 2026-09-26 for the cells the source could not settle, and those cells say driven. Cells resting on the closed enterprise package (AI, digital post, CPR and CVR lookup, the Office add-ins) stay unknown: no trial accounts. A cell neither settled says why on the cell."
+			"unknownReason": "Source read on 2026-09-26 at OpenCase 1.1.0 (tag 1.1.0, commit 1143dbea), the version the 2026-09-07 click-through drive used, which this reading replaces; the same release was booted again in the lab-dossiq-opencase lab on 2026-09-26 for the cells the source could not settle, and those cells say driven. Cells resting on the closed enterprise package (AI, digital post, CPR and CVR lookup, the Office add-ins) stay unknown: no trial accounts. A cell neither settled says why on the cell.",
+			"sources": {
+				"docs": [
+					"https://docs.opencase.dk/",
+					"https://docs.opencase.dk/administrator/"
+				],
+				"sourceRepo": {
+					"url": "https://github.com/lamotech/opencase",
+					"tag": "1.1.0",
+					"commit": "1143dbea"
+				},
+				"featurePage": [
+					"https://opencase.dk/",
+					"https://lamotech.dk/en/opencase"
+				],
+				"featureRequests": {
+					"url": "https://github.com/lamotech/opencase/issues?q=is%3Aissue+label%3Aenhancement",
+					"featureLabel": "enhancement",
+					"openCount": 0
+				},
+				"issueTracker": {
+					"url": "https://github.com/lamotech/opencase/issues",
+					"featureLabel": "enhancement",
+					"openCount": 0
+				},
+				"roadmap": null,
+				"changelog": [
+					"https://github.com/lamotech/opencase/blob/main/CHANGELOG.md",
+					"https://github.com/lamotech/opencase/releases"
+				],
+				"apiReference": "https://docs.opencase.dk/api/",
+				"marketplace": "https://apps.nextcloud.com/apps/opencase",
+				"pricing": null,
+				"accessibilityStatement": null,
+				"securityDocs": null,
+				"demoInstance": null,
+				"community": null,
+				"reviews": null,
+				"videos": null,
+				"caseStudies": null,
+				"partnerDirectory": null,
+				"trainingCurriculum": null,
+				"jobPostings": null,
+				"tenders": null,
+				"nullReasons": {
+					"roadmap": "no roadmap on opencase.dk, docs.opencase.dk or the GitHub repo (no projects, no milestones)",
+					"pricing": "opencase.dk has no price page; the intelligence db records a basic and a separate non-public enterprise package without prices (docs: installation-basic-version, installation-enterprise-version)",
+					"accessibilityStatement": "none found on opencase.dk, lamotech.dk or docs.opencase.dk",
+					"securityDocs": "no SECURITY.md in the 1.1.0 tree and no security page on the sites; the GitHub security tab holds no policy",
+					"demoInstance": "only a book-a-demo form at https://opencase.dk/demo, no public instance",
+					"community": "no forum, chat or discussions; the GitHub repo has discussions switched off",
+					"reviews": "no reviews found on the Nextcloud app store page or elsewhere in a web search",
+					"videos": "none linked from opencase.dk, lamotech.dk or the docs",
+					"caseStudies": "lamotech.dk/en/customers is generic co-creation prose with no named customer or case",
+					"partnerDirectory": "no partner list; only integration pages at opencase.dk/integrationer/*",
+					"trainingCurriculum": "none beyond the user guide at docs.opencase.dk (kom-godt-i-gang)",
+					"jobPostings": "no careers page on lamotech.dk",
+					"tenders": "intelligence db: no tender names OpenCase or Lamotech in name, description, winner or award vendor (competitor id 1635); OpenCase targets Danish municipalities and TenderNed is the Dutch feed"
+				}
+			}
 		},
 		{
 			"key": "gzac",
@@ -10082,7 +10141,77 @@
 			"drivenOn": "2026-09-26",
 			"readVersion": "Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs; gradle.properties in that tree says projectVersion=13.0.2, a label the release workflow does not update (it reads 13.0.2 at every tag from 13.3.0 to 13.6.0), so the tree is the 13.4.1 tag and only the label lags",
 			"evidenceGrade": "driven",
-			"unknownReason": "Source read on 2026-09-26 at Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs; gradle.properties in that tree says projectVersion=13.0.2, a label the release workflow does not update (it reads 13.0.2 at every tag from 13.3.0 to 13.6.0), so the tree is the 13.4.1 tag and only the label lags, the version the 2026-09-07 click-through drive of the GZAC Evenementenvergunning demo used, which this reading replaces; the same 13.4.1 demo was booted again in the lab-dossiq-gzac lab on 2026-09-26 (its app.jar holds the Valtimo modules as 13.4.1.RELEASE) for the cells the source could not settle, and those cells say driven. A cell neither settled says why on the cell."
+			"unknownReason": "Source read on 2026-09-26 at Valtimo 13.4.1 (tag 13.4.1, commit 23a8d4c0), the release the GZAC 13.4.1 Evenementenvergunning demo runs; gradle.properties in that tree says projectVersion=13.0.2, a label the release workflow does not update (it reads 13.0.2 at every tag from 13.3.0 to 13.6.0), so the tree is the 13.4.1 tag and only the label lags, the version the 2026-09-07 click-through drive of the GZAC Evenementenvergunning demo used, which this reading replaces; the same 13.4.1 demo was booted again in the lab-dossiq-gzac lab on 2026-09-26 (its app.jar holds the Valtimo modules as 13.4.1.RELEASE) for the cells the source could not settle, and those cells say driven. A cell neither settled says why on the cell.",
+			"sources": {
+				"docs": "https://docs.valtimo.nl/",
+				"sourceRepo": {
+					"url": "https://github.com/valtimo-platform/valtimo",
+					"tag": "13.4.1",
+					"commit": "23a8d4c0",
+					"note": "gradle.properties in the tree says 13.0.2, a label the release workflow never updates"
+				},
+				"featurePage": [
+					"https://www.valtimo.nl/features/",
+					"https://docs.valtimo.nl/introduction/core-features"
+				],
+				"featureRequests": {
+					"url": "https://github.com/valtimo-platform/valtimo/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement",
+					"featureLabel": "enhancement",
+					"openCount": 0,
+					"note": "2 open issues in total, neither labelled enhancement; https://docs.valtimo.nl/support/feedback is a heading with no content"
+				},
+				"issueTracker": {
+					"url": "https://github.com/valtimo-platform/valtimo/issues",
+					"featureLabel": "enhancement"
+				},
+				"roadmap": null,
+				"changelog": [
+					"https://docs.valtimo.nl/release-notes/13.x.x",
+					"https://docs.valtimo.nl/valtimo-docs-v3/release-notes/13.x.x.md",
+					"https://github.com/valtimo-platform/valtimo/releases"
+				],
+				"apiReference": null,
+				"marketplace": [
+					"https://exchange.gzac.nl/catalog",
+					"https://docs.valtimo.nl/valtimo-docs-v3/fundamentals/process-exchange.md"
+				],
+				"pricing": null,
+				"accessibilityStatement": null,
+				"securityDocs": [
+					"https://docs.valtimo.nl/valtimo-docs-v3/running-valtimo/application-configuration/security-baseline.md",
+					"https://docs.valtimo.nl/valtimo-docs-v3/running-valtimo/application-configuration/security-testing.md"
+				],
+				"demoInstance": null,
+				"community": null,
+				"reviews": null,
+				"videos": null,
+				"caseStudies": null,
+				"partnerDirectory": null,
+				"trainingCurriculum": "https://docs.valtimo.nl/support/training-and-learning-resources",
+				"jobPostings": "https://ritense.com/werken-bij/",
+				"tenders": {
+					"count": 4,
+					"query": "intelligence db, tenders name/description/winner/award vendor matching valtimo, gzac or ritense (competitor ids 63, 98)",
+					"note": "all four are support and development contracts for GZAC won by Ritense, none is a case-system selection",
+					"urls": [
+						"https://www.tenderned.nl/aankondigingen/overzicht/405759",
+						"https://www.tenderned.nl/aankondigingen/overzicht/359535",
+						"https://www.tenderned.nl/aankondigingen/overzicht/337458"
+					]
+				},
+				"nullReasons": {
+					"roadmap": "docs.valtimo.nl/roadmap and valtimo.nl/roadmap are 404; no roadmap in the docs index (llms.txt) or on GitHub",
+					"apiReference": "no published REST reference in the docs index; the docs only carry the ZGW plugin pages and a REST endpoint security test",
+					"pricing": "valtimo.nl has no price page (valtimo.nl/prijzen redirects to the home page); the intelligence db records support-based pricing without figures",
+					"accessibilityStatement": "none found on valtimo.nl or docs.valtimo.nl",
+					"demoInstance": "https://valtimo.request.demo.k8s.ritense.com/ is a request-a-demo form, not an open instance",
+					"community": "no forum or chat linked from valtimo.nl or the docs; GitHub discussions are off",
+					"reviews": "none found",
+					"videos": "none linked from valtimo.nl or the docs index; training-and-learning-resources is a heading without links",
+					"caseStudies": "valtimo.nl/knowledge lists no named customer case in its rendered text",
+					"partnerDirectory": "no partner list on valtimo.nl or ritense.com found"
+				}
+			}
 		},
 		{
 			"key": "zaaksysteem",
@@ -10092,7 +10221,80 @@
 			"drivenOn": "2026-09-07",
 			"readVersion": "xxllnc Zaken master at commit b7354824 (no release tag; the drive read this commit)",
 			"evidenceGrade": "driven",
-			"unknownReason": "Source read on 2026-09-26 at xxllnc Zaken master at commit b7354824 (no release tag; the drive read this commit), the version the 2026-09-07 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
+			"unknownReason": "Source read on 2026-09-26 at xxllnc Zaken master at commit b7354824 (no release tag; the drive read this commit), the version the 2026-09-07 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell.",
+			"sources": {
+				"docs": [
+					{
+						"url": "https://help.zaaksysteem.nl/hc/nl",
+						"note": "user help centre, answers 403 to scripted fetches"
+					},
+					{
+						"url": "https://beheerders.zaaksysteem.nl/hc/nl/sections/360000379278-API",
+						"note": "administrator help centre, seen in search results, 403 to scripted fetches"
+					}
+				],
+				"sourceRepo": {
+					"url": "https://gitlab.com/xxllnc/zaakgericht/zaken/start",
+					"tag": null,
+					"commit": "b7354824",
+					"note": "master at 2026-09-07; the project tags every build (1.1.NNNN-master), no release tags"
+				},
+				"featurePage": [
+					"https://xxllnc.nl/applicaties/zaken",
+					"https://xxllnc.nl/teams/zaakgericht"
+				],
+				"featureRequests": null,
+				"issueTracker": null,
+				"roadmap": null,
+				"changelog": null,
+				"apiReference": {
+					"url": "https://beheerders.zaaksysteem.nl/hc/nl/articles/360002226057-Apidocs",
+					"note": "says the spec is served per environment at https://{omgeving}/apidocs; seen in search results, 403 to scripted fetches"
+				},
+				"marketplace": null,
+				"pricing": null,
+				"accessibilityStatement": {
+					"url": "https://xxllnc.nl/blog/toegankelijk-zaaksysteem",
+					"note": "a blog post on accessibility, not a formal statement"
+				},
+				"securityDocs": [
+					"https://xxllnc.nl/beveiliging",
+					"https://xxllnc.nl/.well-known/security.txt"
+				],
+				"demoInstance": null,
+				"community": null,
+				"reviews": null,
+				"videos": "https://xxllnc.nl/blog/webinar-ai-en-xxllnc-zaken",
+				"caseStudies": [
+					"https://xxllnc.nl/succesverhalen/epe",
+					"https://xxllnc.nl/blog/xxllncZaakgericht-en-Gemeente-Utrecht"
+				],
+				"partnerDirectory": "https://xxllnc.nl/partners",
+				"trainingCurriculum": "https://academy.xxllnc.nl/discover",
+				"jobPostings": "https://careers.xxllnc.com/",
+				"tenders": {
+					"count": 51,
+					"caseSystemCount": 20,
+					"query": "intelligence db, tenders name/description/winner/award vendor matching xxllnc, zaaksysteem.nl or mintlab (competitor id 65)",
+					"note": "51 matches include WOZ, social domain and VTH contracts won by other xxllnc units; 20 are case-system tenders, among them Houten and Coevorden from the tender-reqs set",
+					"urls": [
+						"https://www.tenderned.nl/aankondigingen/overzicht/433203",
+						"https://www.tenderned.nl/aankondigingen/overzicht/417627",
+						"https://www.tenderned.nl/aankondigingen/overzicht/400508"
+					]
+				},
+				"nullReasons": {
+					"featureRequests": "the GitLab project has issues switched off (API returns issues_enabled null and no issues); requests go through the closed support portal",
+					"issueTracker": "no public tracker: GitLab issues are off and https://support.xxllnc.nl/ is a login-only TOPdesk portal",
+					"roadmap": "xxllnc.nl/roadmap is 404 and no roadmap is linked from the site or repo",
+					"changelog": "no public release notes: xxllnc.nl/releasenotes is 404, xxllnc.nl/updates is a news list, status.xxllnc.nl only announces maintenance windows, and GitLab has build tags without notes",
+					"marketplace": "no app store or marketplace listing",
+					"pricing": "no price page (xxllnc.nl/prijzen is 404)",
+					"demoInstance": "only a demo request form at https://xxllnc.nl/demo-aanvragen",
+					"community": "no public forum or chat; the user association is not linked from the site",
+					"reviews": "none found"
+				}
+			}
 		},
 		{
 			"key": "zac",
@@ -10104,7 +10306,64 @@
 			"columnAddedOn": "2026-09-10",
 			"ownsNoData": "Open Zaak",
 			"evidenceGrade": "driven",
-			"unknownReason": "Source read on 2026-09-26 at Dimpact ZAC at tag zaakafhandelcomponent-1.0.316, commit e2c8399e; that tag is the Helm chart release (Chart.yaml version 1.0.316, appVersion 5.7) and the tree is application tag v5.7.0 plus 27 commits, so publiccode.yaml says v5.7.0, the version the 2026-09-08 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell."
+			"unknownReason": "Source read on 2026-09-26 at Dimpact ZAC at tag zaakafhandelcomponent-1.0.316, commit e2c8399e; that tag is the Helm chart release (Chart.yaml version 1.0.316, appVersion 5.7) and the tree is application tag v5.7.0 plus 27 commits, so publiccode.yaml says v5.7.0, the version the 2026-09-08 click-through drive used; that drive is what this reading replaces. A cell the source did not settle says why on the cell.",
+			"sources": {
+				"docs": [
+					"https://github.com/infonl/dimpact-zaakafhandelcomponent/tree/main/docs",
+					"https://github.com/infonl/dimpact-zaakafhandelcomponent/blob/main/docs/manuals/ZAC-gebruikershandleiding/ZAC-gebruikershandleiding.md",
+					"https://github.com/infonl/dimpact-zaakafhandelcomponent/blob/main/docs/manuals/inrichting-zaakafhandelcomponent/inrichting-zaakafhandelcomponent.md"
+				],
+				"sourceRepo": {
+					"url": "https://github.com/infonl/dimpact-zaakafhandelcomponent",
+					"tag": "zaakafhandelcomponent-1.0.316",
+					"commit": "e2c8399e",
+					"note": "Helm chart release; the application inside is v5.7.0 plus 27 commits (publiccode.yaml softwareVersion v5.7.0)"
+				},
+				"featurePage": "https://www.dimpact.nl/podiumd-zaak/",
+				"featureRequests": {
+					"url": "https://github.com/infonl/dimpact-zaakafhandelcomponent/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement",
+					"featureLabel": "enhancement",
+					"openCount": 1,
+					"note": "5 open issues in total (2026-09-26); product backlog is kept elsewhere (commit titles cite PZ- tickets)"
+				},
+				"issueTracker": {
+					"url": "https://github.com/infonl/dimpact-zaakafhandelcomponent/issues",
+					"featureLabel": "enhancement"
+				},
+				"roadmap": null,
+				"changelog": "https://github.com/infonl/dimpact-zaakafhandelcomponent/releases",
+				"apiReference": null,
+				"marketplace": null,
+				"pricing": null,
+				"accessibilityStatement": null,
+				"securityDocs": "https://github.com/infonl/dimpact-zaakafhandelcomponent/blob/main/SECURITY.md",
+				"demoInstance": null,
+				"community": "https://github.com/infonl/dimpact-zaakafhandelcomponent/discussions",
+				"reviews": null,
+				"videos": null,
+				"caseStudies": null,
+				"partnerDirectory": null,
+				"trainingCurriculum": null,
+				"jobPostings": {
+					"url": "https://www.dimpact.nl/vacatures/",
+					"note": "vacancies of Dimpact, the funder; INFO.nl, the builder, redirects its vacancy paths to its home page"
+				},
+				"tenders": null,
+				"nullReasons": {
+					"roadmap": "no roadmap in the repo docs or on dimpact.nl; GitHub projects and milestones are not used publicly",
+					"apiReference": "ZAC generates its OpenAPI spec at build time (docs/development/endToEndTypeSafety.md: build/generated/openapi) and does not publish it; src/main/resources/api-specs holds the specs ZAC consumes",
+					"marketplace": "no marketplace listing; distributed as ghcr.io images and a Helm chart",
+					"pricing": "no price published; ZAC is funded by Dimpact for its member municipalities (intelligence db pricing model not established)",
+					"accessibilityStatement": "none in the repo or on dimpact.nl (dimpact.nl/toegankelijkheid is 404)",
+					"demoInstance": "no public demo; the repo ships a docker compose setup only",
+					"reviews": "none found",
+					"videos": "none linked from the repo or dimpact.nl",
+					"caseStudies": "publiccode.yaml usedBy names Gemeente Assen and Gemeente Groningen, but no published case study was found",
+					"partnerDirectory": "none; publiccode.yaml names INFO as sole contractor",
+					"trainingCurriculum": "none beyond the user and configuration manuals in docs/manuals",
+					"tenders": "intelligence db (competitor id 53): no tender names the Dimpact ZAC; the 6 matches on the word zaakafhandelcomponent are GZAC support contracts (for example tenderned 405759) or generic case-system tenders (367903, 364027), and the one Dimpact winner match is a US award to an unrelated A1FEDIMPACT LLC"
+				}
+			}
 		},
 		{
 			"key": "openzaak",
@@ -10115,7 +10374,71 @@
 			"readVersion": "Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version)",
 			"columnAddedOn": "2026-09-26",
 			"evidenceGrade": "driven",
-			"unknownReason": "Source read on 2026-09-26 at Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version), and the same version booted in the lab-dossiq-openzaak lab (market-intelligence dossiq/openzaak) on 2026-09-26 to settle the six cells the source could not; those cells say driven. A cell neither settled says why on the cell."
+			"unknownReason": "Source read on 2026-09-26 at Open Zaak 1.30.0 (tag 1.30.0, commit 71c52aed, the latest release; the matrix named no version), and the same version booted in the lab-dossiq-openzaak lab (market-intelligence dossiq/openzaak) on 2026-09-26 to settle the six cells the source could not; those cells say driven. A cell neither settled says why on the cell.",
+			"sources": {
+				"docs": "https://open-zaak.readthedocs.io/en/latest/",
+				"sourceRepo": {
+					"url": "https://github.com/open-zaak/open-zaak",
+					"tag": "1.30.0",
+					"commit": "71c52ae"
+				},
+				"featurePage": "https://openzaak.org/",
+				"featureRequests": {
+					"url": "https://github.com/open-zaak/open-zaak/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement",
+					"featureLabel": "enhancement",
+					"openCount": 36,
+					"note": "73 open issues in total on 2026-09-26"
+				},
+				"issueTracker": {
+					"url": "https://github.com/open-zaak/open-zaak/issues",
+					"featureLabel": "enhancement"
+				},
+				"roadmap": "https://open-zaak.readthedocs.io/en/latest/development/roadmap.html",
+				"changelog": [
+					"https://open-zaak.readthedocs.io/en/latest/development/changelog.html",
+					"https://github.com/open-zaak/open-zaak/blob/1.30.0/CHANGELOG.rst"
+				],
+				"apiReference": "https://open-zaak.readthedocs.io/en/latest/api/index.html",
+				"marketplace": {
+					"url": "https://hub.docker.com/r/openzaak/open-zaak",
+					"note": "container image registry, no app marketplace"
+				},
+				"pricing": null,
+				"accessibilityStatement": null,
+				"securityDocs": [
+					"https://open-zaak.readthedocs.io/en/latest/development/security.html",
+					"https://github.com/open-zaak/open-zaak/security/policy"
+				],
+				"demoInstance": null,
+				"community": [
+					"https://openzaak.org/community/",
+					"https://github.com/open-zaak/open-zaak/discussions",
+					"https://samenorganiseren.slack.com/archives/CT6UH711Q"
+				],
+				"reviews": null,
+				"videos": null,
+				"caseStudies": {
+					"url": "https://openzaak.org/using-openzaak/",
+					"note": "list of municipalities using Open Zaak rather than written cases"
+				},
+				"partnerDirectory": {
+					"url": "https://opengem.nl/producten/open-zaak/",
+					"note": "OpenGem hosting offer; openzaak.org also links suppliers such as Maykin, Contezza, Exxellence"
+				},
+				"trainingCurriculum": null,
+				"jobPostings": null,
+				"tenders": null,
+				"nullReasons": {
+					"pricing": "open source with no licence fee; no price published by Maykin or on openzaak.org",
+					"accessibilityStatement": "none on openzaak.org or in the docs; Open Zaak has no end-user UI beyond the admin",
+					"demoInstance": "no public demo; the docs point to docker compose",
+					"reviews": "none found",
+					"videos": "none linked from openzaak.org or the docs",
+					"trainingCurriculum": "none published",
+					"jobPostings": "maykin.nl/vacatures and maykin.nl/nl/vacatures are 404",
+					"tenders": "intelligence db (competitor id 58): no tender names Open Zaak in name or description; the 2 Maykin Media wins are for e-dienstverlening and a newsroom, not Open Zaak"
+				}
+			}
 		}
 	],
 	"providers": [
@@ -20954,6 +21277,420 @@
 				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/minty/infrastructure/__init__.py:136-151 configuration, and with it the database, is resolved per instance hostname, so one deployment serves several customers with separated data; style bundles per tenant (configuration/CustomStylesSection.library.ts:11); no quotas found",
 				"zac": "zac@1.0.316 one municipality per deployment (GEMEENTE_CODE in charts/zac/templates/config.yaml)",
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/autorisaties/models.py:23,29,50 authorisations per application scoped by catalogus, zaaktype and confidentiality let several organisations share one instance with separated access; no quotas"
+			}
+		},
+		{
+			"id": "Q4.29",
+			"area": "documents",
+			"name": "Documents of a case due for archiving are kept in their original format and also in a durable archive format such as PDF/A",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 7 of 10 tenders (Coevorden, Zuidplas, Beverwijk, SSC Ons, Druten Wijchen, Molenlanden, Leusden); also in ZAC v5.7.0 (e-mail PDF as PDF/A-2b) and Valtimo 13.26.0 (PDF archive methods) release notes",
+			"dossiq": "no",
+			"dossiqNote": "dossiq@48c4b5b2 lib/Service/EmailArchivalService.php:6-9,118 only records pdfStatus pending and delegates any conversion to docudesk; lib/Service/Beschikking/OpenRegisterArchivalAdapter.php:79-100 records an archive id for an already signed PDF/A-3 decision without converting; grep pdfa or pdf/a over lib finds no conversion of case documents at archiving",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "partial",
+			"zac": "partial",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"evidence": {
+				"opencase": "opencase@1.1.0 lib/Service/LibreOfficeService.php:19,30 converts to plain PDF (writer_pdf_Export), used only by TalkController.php:31 to share a file; lib/Service/CaseExportService.php:55,162 the archive export writes case.xml and moves the case to Arkiveret without converting files",
+				"gzac": "gzac@13.4.1 grep -ri pdfa, pdf/a and archive method over backend and frontend/projects returns nothing; PDF archive methods in the documenten-api-preview plugin arrived in 13.26.0 per its release notes, after this version",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/components/PhaseActions/PhaseActions.locale.ts:65 a phase action stores a generated document as pdf (PDF/A-1); backend/perl-api/lib/Zaaksysteem/DocumentConverter.pm:82 conversion uses PDF/A for application/pdf; only for template output, no dual-format copy at archiving found",
+				"zac": "zac@1.0.316 src/main/app/src/app/informatie-objecten/informatie-object-view/informatie-object-view.component.ts:351 staff convert a final document; EnkelvoudigInformatieObjectConvertService.kt:38-58 stores the PDF as a new version so the original stays as the earlier one; nl/info/client/officeconverter/OfficeConverterClientService.kt:25,32 PDF/A-2b; manual per document, not at archiving",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/documenten/models.py:104-109 only a help text saying status gearchiveerd implies a durable format; no conversion code (grep pdfa over src returns none)"
+			}
+		},
+		{
+			"id": "Q1.19",
+			"area": "intake",
+			"name": "A handler refuses a case before starting on it, either giving it another case type with its data and documents carried over or sending it back to the central queue",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 6 of 10 tenders (Coevorden, Zuidplas, SSC Ons, Druten Wijchen, Molenlanden, Leusden), near-identical wording in each programme of requirements",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 lib/Service/CaseAssignmentService.php:127 release puts a claimed case back unassigned; src/dialogs/CaseRebindDialog.vue with lib/Controller/CaseRebindController.php:55 moves a running case to another case type with an asked-for status mapping; two separate acts, no refuse step with a reason and no intake-only guard",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes",
+			"zac": "partial",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"evidence": {
+				"opencase": "opencase@1.1.0 src/services/api.js:433 removeCaseworker only takes a caseworker off a case; there is no intake state or central case queue to send a case back to (the inbound list at api.js:130 holds documents, not cases)",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/case/src/lib/components/case-assign-user/case-assign-user.component.ts:70,74 unassign the handler, leaving the case unassigned; no refuse act with a reason and no change of case definition for a running case",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/client/src/shared/case/caseActions/allocation.js:149-157,201 Weigeren on allocation posts /api/v1/case/{uuid}/reject with a comment; Controller/API/v1/Case.pm:909-930 only in intake state; Zaken/ComponentZaak.pm:618-660 clears the handler and routes to the configured distributor group and role (Configuration.locale.ts:76 Afgewezen zaken)",
+				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaken-werkvoorraad/zaken-werkvoorraad.component.ts:81 ZakenVrijgevenDialog; ZaakAssignAndReleaseRestService.kt:146-147 lijst/vrijgeven with RestZakenVrijgevenGegevens.kt:16 reden puts cases back on the group queue; no change of zaaktype on a running case found",
+				"openzaak": "openzaak@1.30.0 API backend with no intake state or queue; a client could remove the behandelaar rol through the Zaken API, but no refusal concept exists in src/openzaak/components/zaken (grep weiger or reject returns none)"
+			}
+		},
+		{
+			"id": "Q13.45",
+			"area": "access-and-privacy",
+			"name": "An authorised records manager changes the archive attributes of a case, such as archival nomination, retention start and destruction date, on one case or on many at once",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 6 of 10 tenders require manual change of archive attributes by authorised users (Coevorden, Zuidplas, Beverwijk, SSC Ons, Druten Wijchen, Molenlanden), 3 ask for it in bulk (SSC Ons, Druten Wijchen, Molenlanden); ZAC v5.6.0 added a record manager setting brondatum on closed cases",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 src/components/case/CaseArchivalPanel.vue:117 and src/services/archivalApi.js:111 recompute a case nomination in openregister with a required reason, per case; the archival values themselves are derived, not typed in; lib/BulkAction/SetCaseAttributeAction.php:130-141 writes one case field in bulk but no archive attribute bulk action exists",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "partial",
+			"openzaak": "partial",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/413426",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep -ri retention, kassation, bevar and arkiv over lib, src and l10n finds only the Arkiveret case status (lib/Service/CaseExportService.php:69); no archive attributes exist to change",
+				"gzac": "gzac@13.4.1 grep -ri retention, archiefnominatie, archiefactiedatum and bewaartermijn over backend and frontend/projects finds only Java RetentionPolicy annotations; case retention on a status arrived in 13.16.0 per its release notes",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/client/src/shared/case/caseActions/index.js:943-947 case action Vernietigingsdatum wijzigen; packages/common/src/components/dialogs/CaseActionDialog/CaseActionDialog.locale.ts:204-220 the same as a bulk case action; backend/zaken/src/zsnl_domains/jobs/entities/job.py:223 JobDescriptionSetCaseDestructionDate; case_management/commands/case.py:1307 set_destruction_date",
+				"zac": "zac@1.0.316 src/main/app/src/app/zaken/zaak-view/utils/zaak-view-menu.builder.ts:265-270 actie.zaak.brondatumZetten behind a right; zaak-brondatum-zetten-dialog; ZaakBrondatumRestService.kt:40-43 policy brondatumZetten; brondatum only, per case, no bulk and no nomination or destruction date edit",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/admin/zaken.py:795-830 Django admin edits a zaak with archiefnominatie and archiefactiedatum editable, one zaak at a time; api/scopes.py:68-69 zaken.geforceerd-bijwerken lets a client change a closed zaak; Django admin only, no bulk action"
+			}
+		},
+		{
+			"id": "Q6.29",
+			"area": "communication",
+			"name": "A callback request for a colleague gets a term, and the colleague is alerted when it is assigned and when it is still open at the term",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 8 of 10 tenders ask to register and handle callback requests; 6 (Druten Wijchen, Molenlanden, Coevorden, Gulpen-Wittem, Zuidplas, Beverwijk) add a term on the follow-up and a notification to the handler",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 lib/Settings/register.d/30-kcc.json:202 callbackRequest schema; lib/Service/Kcc/CallbackService.php:79-110,125 schedule with preferredAgent and scheduledFor; lib/Service/Kcc/SlaCalculator.php:6-8 SLA deadline for callbacks; lib/Controller/KccContactController.php:244 list scoped to the agent; no staff screen for callbacks in src/manifest.json and no overdue alert found",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "no",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep -riE 'callback request|ring tilbage|tilbagekald' over lib and src finds only Serviceplatformen and Talk callbacks",
+				"gzac": "gzac@13.4.1 backend/app/gzac/imports/objecttypes-api/fixtures/demodata.json:1586 a demo objecttype for terugbelverzoeken in the sample app, no product screen, term or alert The one trace is a demo objecttype in the sample app, a fixture rather than a product capability, so the cell is partial at most and reads no here.",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'terugbel|belnotitie' over the whole tree returns nothing; contact moments exist without a callback term",
+				"zac": "zac@1.0.316 src/main/resources/json-schemas/productaanvraag/productaanvraag-dimpact.json:31 terugbelnotitie only as an example productaanvraag type; no callback object or alert",
+				"openzaak": "openzaak@1.30.0 API registry for Zaken, Documenten, Catalogi and Besluiten; grep -ri terugbel over src returns nothing"
+			}
+		},
+		{
+			"id": "Q8.31",
+			"area": "deadlines",
+			"name": "The product warns when a case's destruction date conflicts with that of a related case, such as a parent or sub-case that must be kept longer",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 4 of 10 tenders (Druten Wijchen, Molenlanden, Coevorden, SSC Ons), same wording: check the destruction term against related cases (referential integrity) and warn",
+			"dossiq": "no",
+			"dossiqNote": "dossiq@48c4b5b2 lib/Service/Recycle/CaseDestructionService.php:91-97 the refusals are case_not_deleted, destroy role, retention_clocks_disagree and recovery window, none about related cases; grep for destruction next to relation, parent or child over lib finds nothing",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "partial",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep -riE '(related|parent|child).{0,60}(destruction|retention)' over lib and src returns nothing",
+				"gzac": "gzac@13.4.1 grep of destruction or archiefactiedatum near related, parent or child over backend and frontend returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/_shared.py:168-240 check_case_can_delete refuses while a child or parent case is unresolved or its destruction date has not passed; _shared.py:228-281 _check_case_delete_warnings warns 'Destruction date of related case has not passed'",
+				"zac": "zac@1.0.316 grep of archiefactiedatum near hoofdzaak or deelzaak over src returns nothing; ZAC delegates retention to Open Zaak",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:1060-1090 closing a hoofdzaak copies its brondatum and archiefactiedatum onto deelzaken whose result type derives from the hoofdzaak; brondatum.py:95-106 refuses that derivation without a hoofdzaak; keeps them consistent by derivation, no warning to a user"
+			}
+		},
+		{
+			"id": "Q11.54",
+			"area": "configuration",
+			"name": "Case types are imported from an i-Navigator process export and updated per case type when the process changes there",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 5 of 10 tenders (Druten Wijchen, Leusden, Molenlanden, SSC Ons, Zuidplas) name i-Navigator as the source of process information to reuse in the case type catalogue",
+			"dossiq": "no",
+			"dossiqNote": "dossiq@48c4b5b2 grep -riE 'i-?navigator' over lib and src returns nothing; case types come in only through the own import (lib/Service/CaseDefinitionImportService.php)",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep -riE 'i-?navigator' returns nothing",
+				"gzac": "gzac@13.4.1 grep -riE 'i-?navigator' over backend and frontend returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Beheer/Import/INavigator.pm:32 admin import turns an i-Navigator XML into case types; lib/Zaaksysteem/Zaaktypen/INavigator.pm:402-502 apply_inavigator_settings updates an existing case type's settings and documents; root/tpl/zaak_v1/nl_NL/beheer/zaaktypen/import/inavigator/import.tt the admin screen",
+				"zac": "zac@1.0.316 grep -riE 'i-?navigator' returns nothing",
+				"openzaak": "openzaak@1.30.0 grep -riE 'i-?navigator' over src returns nothing; catalogi come in through the API or the admin import of a Catalogi export"
+			}
+		},
+		{
+			"id": "Q9.19",
+			"area": "search",
+			"name": "Search forgives spelling mistakes and suggests matches while the user is still typing",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 5 of 10 tenders (Leusden, Coevorden, Zuidplas, Molenlanden, Beverwijk) ask for search support such as suggestions and fuzzy search",
+			"dossiq": "no",
+			"dossiqNote": "dossiq@48c4b5b2 no search service in lib/Service and no search provider in lib; the only levenshtein matching is duplicate detection config (lib/Settings/dossiq_register.json:1682, onCreate warn), not search",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "partial",
+			"zac": "no",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/400508",
+			"evidence": {
+				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:322,385-398 full-text search as multi_match with fuzziness AUTO over titles, case number and file content; no type-ahead suggestions found",
+				"gzac": "gzac@13.4.1 grep -riE 'fuzzy|levenshtein|trigram|fuzziness' over backend and frontend/projects returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/client/src/shared/ui/zsSpotEnlighter/SpotEnlighterController.js:445-461 the quick search shows suggestions while typing and filters them with the fuzzy library; server search uses trigram indexes for substring matching (db/upgrade/v2024.6.2/pre-1000-document_search_term_index.sql:1), not typo tolerance",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/search/SearchService.kt:157-167 Solr filter queries match the typed text exactly, with wildcards only for case identifiers; no fuzzy or suggest configuration found",
+				"openzaak": "openzaak@1.30.0 API filters only; grep for fuzzy in src finds only test data factories and FUZZY_PAGINATION (conf/includes/base.py:566), which is about page counts"
+			}
+		},
+		{
+			"id": "Q1.20",
+			"area": "intake",
+			"name": "An administrator makes web form fields required and gives each a format check, such as letters, dates, numbers, e-mail address or phone number",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 5 of 10 tenders (Coevorden, Leusden, SSC Ons, Molenlanden, Zuidplas), same wording: required fields and masks per field for validation",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 src/components/PropertyDefinitionFields.vue:31-82,199-202 the case type field editor sets type, format and Always required; src/services/propertyVocabulary.js:39-51 formats date, url and email come from the validator; no phone or pattern mask offered in the editor",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"evidence": {
+				"opencase": "opencase@1.1.0 no citizen web form builder; grep -riE 'inputMask|mask' over lib and src finds only a bundled vendor file",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/form-management/src/lib/components/form-management-edit/form-management-edit.component.html:35-37 admin Form.io builder, which carries required, input mask and e-mail and phone components; these forms serve staff and task forms, citizen web forms run in Open Formulieren (backend/app/gzac/imports/open-formulieren is only the sample setup)",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case.py:1033-1133,1373-1378 each case type attribute is validated by its type: email, url, number, iban, currency, phone number, uppercase text; the same attributes drive the web form (backend/perl-api/lib/Zaaksysteem/Controller/Form.pm)",
+				"zac": "zac@1.0.316 no own citizen form builder; src/main/app/src/app/formulieren/formio-wrapper/formio-wrapper.i18n-translations.nl.ts:36 only renders Form.io task forms, web forms come from Open Formulieren (scripts/docker-compose/imports/openformulieren is the sample setup)",
+				"openzaak": "openzaak@1.30.0 API registry without forms"
+			}
+		},
+		{
+			"id": "Q3.33",
+			"area": "tasks-and-phases",
+			"name": "Each phase of a case type names its own handler or team, and the case moves to them by itself when it reaches that phase",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 3 of 10 tenders (Zuidplas, Druten Wijchen, Molenlanden): a different handler per phase configured in the catalogue, changed automatically at the status transition; Valtimo 13.24.0 added automatic team assignment via candidate groups",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 lib/Service/Transitions/SetFieldHandler.php:5 a transition's setField action can write any case field, so an administrator can set assignee or assignedGroup on a transition; lib/Service/CaseType/CaseTypeHandling.php:35-46,166 the case type has one defaultAssignee, not one per phase",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes",
+			"zac": "partial",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"evidence": {
+				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:39-134,353 step users belong to a document approval workflow; no handler per case status found",
+				"gzac": "gzac@13.4.1 backend/core/src/main/java/com/ritense/valtimo/service/OperatonTaskService.java:308-317 each BPMN user task goes to its candidate groups, so the work moves per step, but the case assignee is not changed by the step",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/case_management/entities/case_type_version.py:530-532 each case type phase carries an allocation (department and role); repositories/case.py:2686-2693 reaching the phase queues an allocation action that routes the case to it; commands/case.py:639-665 the first phase's allocation applies at registration",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/admin/model/ZaaktypeCmmnHumantaskParameters.kt:60-61 each task of the case type is set to a group; the case's own group is set once, not per status",
+				"openzaak": "openzaak@1.30.0 API registry; statustypen carry no handler or group (grep of assignee or behandelaar near statustype returns nothing)"
+			}
+		},
+		{
+			"id": "Q2.52",
+			"area": "case-core",
+			"name": "Once the last status is set the handler can only add documents, and changing data, documents or the result of the closed case takes an authorised user",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 3 of 10 tenders (Druten Wijchen, Molenlanden, Leusden); Open Zaak issue 2273 asks to modify the result of a closed case (open, 8 comments)",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 lib/Controller/ZrcController.php:202-219,441-451 the ZGW facade refuses writes on a closed case unless the consumer holds zaken.geforceerd-bijwerken; no matching lock for staff in the dossiq case screens found (grep of closed near read only or refuse over lib finds none)",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "partial",
+			"openzaak": "partial",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"evidence": {
+				"opencase": "opencase@1.1.0 lib/Service/PermissionService.php:490-530 only documents with a final status are locked; no refusal of edits on a closed case found in lib/Controller/CaseController.php",
+				"gzac": "gzac@13.4.1 grep of closed or ended near throw or forbid over backend/case and backend/document returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/API/v1/Case.pm:974-980 updates to a closed case refused with 409 unless allow_closed, Case.pm:481-486 transitions refused; frontend-mono/packages/common/src/domains/case/actions.requests.ts:188-231 admin actions to correct registration, target, completion and destruction date",
+				"zac": "zac@1.0.316 src/main/resources/policies/zaak-rechten.rego:79-92 wijzigen needs an open case unless the user is recordmanager or beheerder; :188-201 adding a document to a closed case is also left to recordmanager or beheerder, so the handler cannot add one",
+				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/mixins.py:24-34 writes to a closed zaak need the scope zaken.geforceerd-bijwerken; changing the result of a closed zaak is still an open request (issue 2273)"
+			}
+		},
+		{
+			"id": "Q13.46",
+			"area": "access-and-privacy",
+			"name": "An administrator downloads an authorisation matrix showing which users are in which groups and what each group may read and change",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 3 of 10 tenders (Beverwijk for NIS2, Druten Wijchen and Molenlanden for ENSIA); ZAC v5.6.0 release notes list a permission matrix",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 src/views/cases/components/CaseAccessTab.vue:273-274,436-438 the access tab of one case shows the permission catalogue and role grants (src/services/caseAccessApi.js:132,160 via OpenRegister compare-roles); no instance-wide matrix or download found",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes",
+			"zac": "partial",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/414248",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep -riE 'permission.?matrix|export.{0,20}(permission|role)' over lib and src returns nothing",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/access-control-management/src/lib/services/access-control-export.service.ts:26-52 exports the permissions of chosen roles as JSON configuration; it does not list which users hold the roles",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/jobs/commands/base.py:680-694 admin-only user management export job, two CSVs in a zip; jobs/repositories/user_management_export.py:88-100 the permissions CSV lists per case type the group, role, permission and confidentiality",
+				"zac": "zac@1.0.316 openspec/specs/application-role-permission-matrix/spec.md the role to permission matrix is kept as a specification (v5.6.0 'Permission matrix'), not as an export in the product",
+				"openzaak": "openzaak@1.30.0 src/openzaak/js/components/admin/applicatie-autorisaties/autorisatie-form.js:174 authorisations are edited per API application in the admin; no export found"
+			}
+		},
+		{
+			"id": "Q1.21",
+			"area": "intake",
+			"name": "After logging in with DigiD or eHerkenning, the applicant finds the web form already filled with their details from the BRP or the trade register",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 3 of 10 tenders (SSC Ons, Molenlanden, Druten Wijchen): web forms filled from BRP, GBA-V and HR after authentication",
+			"dossiq": "no",
+			"dossiqNote": "dossiq@48c4b5b2 no citizen web form controller in lib/Controller (intake runs through DSO, mail, triage and appointments); lib/Service/BurgerIdentificationService.php:137 resolveFromDigiD exists but nothing calls it",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/413426",
+			"evidence": {
+				"opencase": "opencase@1.1.0 no citizen web form; grep of prefill over lib and src finds only separation sheet code lists (src/components/CreateSeparationSheetDialog.vue:259)",
+				"gzac": "gzac@13.4.1 backend/form-flow/src/main/kotlin/com/ritense/formflow/handler/FormFlowStepTypeFormHandler.kt:37-49 PrefillFormService fills staff forms from case and process data; citizen forms run in Open Formulieren, outside the product",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/root/tpl/zaak_v1/nl_NL/form/aanvrager.tt:17-25 after login the web form loads the applicant's details from the municipal base registration; form/aanvraag_picker_openkvk.tt the company variant from the trade register",
+				"zac": "zac@1.0.316 no own citizen form; scripts/docker-compose/imports/openformulieren/forms/formVariables.json:5-10 prefill is configured in the sample Open Formulieren, outside the product",
+				"openzaak": "openzaak@1.30.0 API registry without forms"
+			}
+		},
+		{
+			"id": "Q1.22",
+			"area": "intake",
+			"name": "An applicant saves an unfinished web form after logging in, resumes it later, or throws it away with everything they entered",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 2 of 10 tenders (Molenlanden, Leusden); proposed by reader r1 from xxllnc code",
+			"dossiq": "no",
+			"dossiqNote": "dossiq@48c4b5b2 no citizen web form in lib/Controller; grep of concept or draft submission for a public form over lib finds none",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"evidence": {
+				"opencase": "opencase@1.1.0 no citizen web form",
+				"gzac": "gzac@13.4.1 form flows keep step data for staff (backend/form-flow), citizen forms run in Open Formulieren outside the product",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/perl-api/lib/Zaaksysteem/Controller/Form.pm:836-850,957-1000 _get_concept_zaak, submit_to_pip and resume_from_pip keep the form as a concept case and reopen it from the portal; Form.pm:1178 delete_concept_case discards the saved concept",
+				"zac": "zac@1.0.316 no own citizen form; web forms come from Open Formulieren",
+				"openzaak": "openzaak@1.30.0 API registry without forms"
+			}
+		},
+		{
+			"id": "Q6.30",
+			"area": "communication",
+			"name": "A mail stored on a case keeps its layout and metadata, and each attachment becomes a separate document",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 2 of 10 tenders (Druten Wijchen, Molenlanden), same wording: message and attachments stored as separate files with the message's structure, metadata and images kept",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 lib/Service/Email/SavedMailImport.php:110-190 a saved .eml or .msg is read into a message on the case and the original file is kept; lib/Service/Email/NextcloudMailGateway.php:427-449 attachments are listed by name, type and size only, not filed as documents",
+			"opencase": "partial",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "partial",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"evidence": {
+				"opencase": "opencase@1.1.0 lib/Controller/EmailController.php:329-374 a sent mail is saved as one .eml document on the case, attachments inside it, not split",
+				"gzac": "gzac@13.4.1 grep of eml, rfc822 or mail import over backend returns nothing for case mail storage",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/communication/commands.py:164 store_attachments keeps each attachment of a message apart; :966 generate_pdf_derivative renders the message; zsnl_domains/document/commands.py:131 create_document_from_attachment turns one into a case document",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/zac/mail/MailService.kt:197,232 a sent mail is stored as a PDF naming its attachments, which are already case documents; no inbound mail",
+				"openzaak": "openzaak@1.30.0 API registry; stores whatever document a client sends"
+			}
+		},
+		{
+			"id": "Q11.55",
+			"area": "configuration",
+			"name": "Letterhead, header and footer are set once and applied to every document and e-mail template",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: 5 of 10 tenders (Molenlanden, Leusden, Zuidplas, Gulpen-Wittem, SSC Ons): document and e-mail templates with headers and footers configured centrally",
+			"dossiq": "no",
+			"dossiqNote": "dossiq@48c4b5b2 src/views/casetypes/components/EmailTemplateAdmin.vue:193 e-mail templates are kept per case type with placeholders; grep of footer, letterhead or briefpapier over lib/Service and the settings views finds no shared layout",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "no",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/415259",
+			"evidence": {
+				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php:213,240 merge fields are filled in each template's own header and footer parts; no shared letterhead",
+				"gzac": "gzac@13.4.1 mail layout lives in the external mail provider's templates (backend/mail/flowmailer/src/main/kotlin/com/ritense/mail/flowmailer/domain/SubmitMessage.kt:63-64 sends a template id with sender fields); no central header or footer in the product",
+				"zaaksysteem": "zaaksysteem@b7354824 backend/zaken/src/zsnl_domains/communication/repositories/message.py:1330-1360 every outgoing mail is wrapped in an HTML layout with an image chosen from rich_email_templates on the mail interface, the first one by default; admin/catalog/entities/versioned_casetype.py:2405-2414 a case type rule can pick another layout",
+				"zac": "zac@1.0.316 src/main/app/src/app/admin/mailtemplates/mailtemplates.component.html:51 each mail template holds its own full body; grep of footer or signature over src/main/kotlin/nl/info/zac/mail finds none",
+				"openzaak": "openzaak@1.30.0 API registry without templates"
+			}
+		},
+		{
+			"id": "Q3.34",
+			"area": "tasks-and-phases",
+			"name": "A task the user has not opened yet stands out as unread in their task list",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, changelog: Valtimo 13.19.0 (2026-03-11) 'Unread tasks highlighted in the task list'; 3 tenders (Coevorden, Druten Wijchen, Molenlanden) ask the work list to flag changes the handler has not seen",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 src/manifest.json:1466-1470 an Unread column with the unreadIndicator widget on case lists, from OpenRegister's per-reader @self.unread; no unread state on tasks found",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "partial",
+			"openzaak": "no",
+			"origin": "changelog",
+			"originUrl": "https://docs.valtimo.nl/valtimo-docs-v3/release-notes/13.x.x/13.19.0.md",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep of unread or seen next to task over lib and src returns nothing",
+				"gzac": "gzac@13.4.1 grep of unread or seen next to task returns nothing; the highlight arrived in 13.19.0, after this version",
+				"zaaksysteem": "zaaksysteem@b7354824 grep of unread or seen next to task returns nothing; frontend-mono/apps/main/src/modules/dashboard/components/widgets/Tasks/Tasks.library.tsx:221 isNew is a column setting, not a task state",
+				"zac": "zac@1.0.316 src/main/app/src/app/dashboard/dashboard.component.ts:128-132 a dashboard card lists new tasks put on the user's name, driven by the TAAK_OP_NAAM signal; the task list itself carries no unread mark",
+				"openzaak": "openzaak@1.30.0 API registry without tasks"
+			}
+		},
+		{
+			"id": "Q13.47",
+			"area": "access-and-privacy",
+			"name": "Every BRP lookup made for a case sends the purpose and processing activity of that case type, so the BRP can record why the person was looked up",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, changelog: ZAC v5.6.0 (2026-08-20) 'make BRP verwerkingregister extension with zaaktype configurable', following v5.0.1 'make BRP protocollering headers fully configurable'; no other system sends it",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 src/manifest.json:6386-6394 the case type records its verwerkingsactiviteit; lib/Service/External/Brp/HaalCentraalBrpAdapter.php:88-109 a lookup sends only Content-Type, Accept and X-API-KEY, no purpose or processing headers",
+			"opencase": "no",
+			"gzac": "no",
+			"zaaksysteem": "no",
+			"zac": "yes",
+			"openzaak": "no",
+			"origin": "changelog",
+			"originUrl": "https://github.com/infonl/dimpact-zaakafhandelcomponent/releases/tag/v5.6.0",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep -riE 'doelbinding|verwerking|protocoller' returns nothing; person lookups go to the Danish CPR",
+				"gzac": "gzac@13.4.1 grep -riE 'doelbinding|x-verwerking|protocoller' over backend returns nothing",
+				"zaaksysteem": "zaaksysteem@b7354824 grep -riE 'doelbinding|x-verwerking|protocoller' returns nothing",
+				"zac": "zac@1.0.316 src/main/kotlin/nl/info/client/brp/BrpClientService.kt:69-79,101 person queries and retrievals clear and fill the BRP protocollering headers when enabled; src/main/kotlin/nl/info/zac/admin/model/ZaaktypeBrpParameters.kt:40-47 per case type a zoekWaarde, raadpleegWaarde and verwerkingregisterWaarde",
+				"openzaak": "openzaak@1.30.0 API registry that does not query the BRP"
+			}
+		},
+		{
+			"id": "Q12.27",
+			"area": "integrations",
+			"name": "An administrator reads the message log of each connection, filters it to the failures, retries a failed message and exports the log",
+			"status": "pending",
+			"source": "wave-5 demand reading 2026-09-26, tender: Leusden requires monitoring of StUF message traffic to trace errors; Valtimo 13.7.0 added retry cycles for failed jobs; proposed by reader r4 from xxllnc code",
+			"dossiq": "partial",
+			"dossiqNote": "dossiq@48c4b5b2 src/views/settings/StufAuditLog.vue:17-39 admin log of StUF messages filtered by endpoint, message kind and status, with CSV export; StUF only and no retry",
+			"opencase": "no",
+			"gzac": "partial",
+			"zaaksysteem": "yes",
+			"zac": "no",
+			"openzaak": "partial",
+			"origin": "tender",
+			"originUrl": "https://www.tenderned.nl/aankondigingen/overzicht/419447",
+			"evidence": {
+				"opencase": "opencase@1.1.0 grep of integration log, retry or failed message over lib returns only search indexing and file code",
+				"gzac": "gzac@13.4.1 frontend/projects/valtimo/logging/src/logging-routing.module.ts:24 an admin screen to search application logs (components log-search, log-details); no per-connection view and no retry",
+				"zaaksysteem": "zaaksysteem@b7354824 frontend-mono/apps/main/src/modules/transactions/Transactions/Transactions.tsx:39-47 transactions per integration with an only-errors filter; Transactions.requests.ts:35-36 actions on transactions (retry, delete, export) through /sysin/transaction",
+				"zac": "zac@1.0.316 no connection log screen found; src/main/kotlin/nl/info/zac/notification/NotificationReceiver.kt only logs inbound notifications",
+				"openzaak": "openzaak@1.30.0 src/openzaak/notifications/viewsets.py:55 a notification that fails to send is stored as a failed notification that can be rescheduled from the admin; notifications only"
 			}
 		}
 	]
