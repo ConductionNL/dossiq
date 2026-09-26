@@ -106,8 +106,12 @@ const COMMENT = [
 
 /** Ratings the page understands. A corpus `unread` becomes `unknown` here. */
 const RATINGS = ['yes', 'partial', 'no']
-/** The five columns the page publishes, in the order it renders them. */
-const COLUMNS = ['dossiq', 'opencase', 'gzac', 'zaaksysteem', 'zac']
+/**
+ * The six columns the page publishes, in the order it renders them. Open Zaak
+ * joined on 2026-09-26 with the wave-5 source reading, which the corpus holds
+ * as `procest/_round5/dossiq-source-read.json` and folds into corpus-rows.json.
+ */
+const COLUMNS = ['dossiq', 'opencase', 'gzac', 'zaaksysteem', 'zac', 'openzaak']
 
 // Authored per row and absent from the corpus: who provides the capability,
 // how that was derived, which feature bundles it, and how sure that is; then
@@ -253,15 +257,25 @@ export function build(corpus, current, on) {
 		if (nl) {
 			out.name_nl = nl
 		}
-		// Every competitor is unread in the corpus, which is `unknown` here:
-		// the page's word for a cell nobody has filled. It is never `no`.
+		// A competitor cell nobody read is `unread` in the corpus, which is
+		// `unknown` here: the page's word for a cell nobody has filled. It is
+		// never `no`. Since the 2026-09-26 source reading a proposal can carry
+		// a competitor rating; it is still a proposal, counted in no total.
 		for (const column of COLUMNS.filter((c) => c !== 'dossiq')) {
-			if (row[column] !== 'unread') {
-				die(
-					`pending ${row.id} column ${column} is "${row[column]}", expected unread`,
-				)
+			const value = row[column] ?? 'unread'
+			if (value === 'unread') {
+				out[column] = 'unknown'
+			} else if ([...RATINGS, 'unknown'].includes(value)) {
+				out[column] = value
+			} else {
+				die(`pending ${row.id} column ${column} is "${value}"`)
 			}
-			out[column] = 'unknown'
+		}
+		// A proposal mined from a demand signal says where it came from.
+		for (const field of ['origin', 'originUrl']) {
+			if (row[field] !== undefined) {
+				out[field] = row[field]
+			}
 		}
 		Object.assign(out, authored.get(row.id) ?? {})
 		return out
@@ -303,6 +317,11 @@ export function build(corpus, current, on) {
 			.at(-1),
 		dossiqRevision: current.dossiqRevision,
 		_rerated: rerated,
+		// The log of competitor cells a source reading moved. Authored with
+		// the reading, like `systems`, and carried as it stands.
+		...(current._competitorRerated
+			? { _competitorRerated: current._competitorRerated }
+			: {}),
 		systems: current.systems,
 		// Authored dictionaries, not derivable from the corpus.
 		...(current.providers ? { providers: current.providers } : {}),
