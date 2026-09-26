@@ -897,6 +897,9 @@
 					}
 				],
 				"evidence": "lib/Service/FormsIntakeService.php; dossiq#2927 58f2b2c28"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
 			}
 		},
 		{
@@ -916,6 +919,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#Dashboard/headerActions.new-case"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:3 \"The app header Create menu opens a modal \"Create new <type> case\" on whatever page you are on\""
 			}
 		},
 		{
@@ -935,6 +941,9 @@
 			"built": {
 				"state": "built",
 				"change": "dossiq/contacts-domain"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:9 \"result view: Create case (prefilled with this citizen)\""
 			}
 		},
 		{
@@ -969,6 +978,9 @@
 					}
 				],
 				"evidence": "filinq src/views/intake/IntakeIndex.vue; filinq lib/Service/IntakeService.php; filinq appinfo/routes.php:77-79; filinq#1119; filinq#1132 e5580bbb4"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:142 \"are moved to a case or a new case from `src/views/InboundDocumentsView.vue` (`MoveToCaseDialog`, `MoveToNewCaseDialog`)\""
 			}
 		},
 		{
@@ -997,6 +1009,9 @@
 					}
 				],
 				"evidence": "lib/Service/Email/UnmatchedMailIntake.php; integriq#2052 e8e127fa8"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\""
 			}
 		},
 		{
@@ -1012,7 +1027,10 @@
 			"provider": "filinq",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:189 \"Separation sheets and QR cover sheets for scanning :: yes :: lib/Service/SeparationSheetService.php\""
+			}
 		},
 		{
 			"id": "1.7",
@@ -1031,6 +1049,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/ZrcController.php; lib/Controller/DSOIntakeController.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:192 \"Public data API to create cases and documents :: yes\""
 			}
 		},
 		{
@@ -1059,6 +1080,9 @@
 					}
 				],
 				"evidence": "#CaseDetail/headerActions.plan-follow-up; lib/Service/Flow/PlannedFollowUpDocument.php; dossiq#2732 110476a9e"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:97 \"AccessDeadlineNotificationJob, BulkReindexJob, ExportClosedCasesJob, IndexFileJob, ProcessImportsJob, SyncFilecache, SyncOrganisationsJob.\""
 			}
 		},
 		{
@@ -1074,7 +1098,10 @@
 			"provider": "integriq",
 			"providerHow": "note-names-app",
 			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\""
+			}
 		},
 		{
 			"id": "1.10",
@@ -1089,7 +1116,10 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:191 \"Save any Nextcloud file or Talk chat to a case :: yes\""
+			}
 		},
 		{
 			"id": "1.11",
@@ -1104,7 +1134,10 @@
 			"provider": "shillinq",
 			"providerHow": "ledger-change",
 			"feature": "leges-heffingen",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\""
+			}
 		},
 		{
 			"id": "1.12",
@@ -1123,6 +1156,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/RoutingController.php; lib/Service/Routing/Strategy/*; lib/Service/Kcc/RoutingEngine.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:177 \"Indkommende dokumenter (defaults for inbound documents: organisation, sensitivity, KLE, facet, insight level)\""
 			}
 		},
 		{
@@ -1142,6 +1178,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#Dashboard/headerActions.new-case; lib/Dashboard/StartCaseWidget.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/NextcloudDashboardWidgets.md:9 \"each row links into /apps/opencase/case/<id> or /document/<id>.\""
 			}
 		},
 		{
@@ -1170,6 +1209,9 @@
 					}
 				],
 				"evidence": "openregister#3785 e7ac79d12"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:15 \"From the mask `yyyy-#####` in Configuration.\""
 			}
 		},
 		{
@@ -1189,6 +1231,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#propertyDefinition; src/views/settings/tabs/PropertiesTab.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\""
 			}
 		},
 		{
@@ -1215,6 +1260,9 @@
 					}
 				],
 				"evidence": "dossiq_register.json#workflowTemplate; caseType.isDraft/validFrom/validUntil; procest/_round4/discovery/casetype-configurability.md"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
 			}
 		},
 		{
@@ -1243,6 +1291,9 @@
 					}
 				],
 				"evidence": "src/manifest.json#Queue; #Cases/bulkActions.reassign; dossiq#2723 d7d8ec7c3"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:130 \"responsible user (`setResponsibleUser`)\""
 			}
 		},
 		{
@@ -1271,6 +1322,9 @@
 					}
 				],
 				"evidence": "src/manifest.json; dossiq#2849 132decb34"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:18 \"The SF1500 unit that owns the case.\""
 			}
 		},
 		{
@@ -1290,6 +1344,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#Cases/bulkActions.reassign; src/dialogs/BulkTransitionDialog.vue; lib/Service/BulkStatusTransitionService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:169 \"No column chooser, no saved searches, no bulk actions.\""
 			}
 		},
 		{
@@ -1309,6 +1366,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#statusType; src/views/settings/tabs/StatusesTab.vue; procest/_round4/discovery/casetype-configurability.md; StatusesTab.vue:47"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/Configuration-CodeLists.md:10 \"Case status columns: Danish, English, Expired.\""
 			}
 		},
 		{
@@ -1328,6 +1388,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#case.tags"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:77 \"Case core: `CaseEntity` (caseNumber, title, accessProfileId, orgUuid, year, statusId, casetypeId\""
 			}
 		},
 		{
@@ -1347,6 +1410,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/CaseCopyService.php; lib/Controller/CaseActionsController.php; #CaseDetail/headerActions.copy-case"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:22 \"Edit, Copy case, Create subcase, New reminder\""
 			}
 		},
 		{
@@ -1366,6 +1432,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "#CaseDetail/case-sub-cases; lib/Controller/CaseRelationController.php; case.parentCase/relatedCases"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/CaseDetail-CaseHierarchy.md:5 \"Tree of parent and sub-cases.\""
 			}
 		},
 		{
@@ -1385,6 +1454,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/DeadlinePauseService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\""
 			}
 		},
 		{
@@ -1404,6 +1476,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "/api/case/{caseId}/reopen; appinfo/routes.php:443"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:202 \"Case status open/closed/archived with reopen :: yes\""
 			}
 		},
 		{
@@ -1432,6 +1507,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:3465; src/dialogs/CaseRebindDialog.vue; lib/Service/CaseRebindService.php; appinfo/routes.php:162-164; dossiq#2914 8f2cd30b"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:16 \"A code-list value; changes only via Edit.\""
 			}
 		},
 		{
@@ -1451,6 +1529,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#case-location; #CaseDetail/case-locaties; src/components/map/LocationPicker.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/EstateDetail.md:5 \"An estate (property) as a first-class object with its cadastral sub-objects and the cases on it.\""
 			}
 		},
 		{
@@ -1470,6 +1551,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "/case-objects"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:204 \"Estates (property) as a first-class linked object :: yes :: src/components/CaseEstateList.vue\""
 			}
 		},
 		{
@@ -1485,7 +1569,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Log.md:15 \"Access granted (with expiry), Case handler added, Case summary changed\""
+			}
 		},
 		{
 			"id": "2.17",
@@ -1513,6 +1600,9 @@
 					}
 				],
 				"evidence": "lib/Listener/BezwaarLegalHoldListener.php; src/modals/DeelzaakDeleteWarningModal.vue; dossiq#2729 022f821b7"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:22 \"Close case (Reopen case and Archive when closed)\""
 			}
 		},
 		{
@@ -1532,6 +1622,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:197 \"KLE classification, facet, sensitivity, insight level on the case :: yes\""
 			}
 		},
 		{
@@ -1566,6 +1659,9 @@
 					}
 				],
 				"evidence": "openregister#3766 77bdb1901; dossiq#2875 a4919e93a"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:201 \"Favourites and recent items (cases and documents) :: yes\""
 			}
 		},
 		{
@@ -1594,6 +1690,9 @@
 					}
 				],
 				"evidence": "src/main.js:243; src/services/caseLiveUpdates.js; src/manifest.json:2058; dossiq#2925 29488fa7"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:73 \"| 2.20 | Live updates on the case page | no |\""
 			}
 		},
 		{
@@ -1622,7 +1721,10 @@
 				"evidence": "register.d/50-zaakportaal.json#portaalVerzoek",
 				"readOn": "2026-09-26"
 			},
-			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/ProposalController.php and appinfo/routes.php:242-251 implement the change-proposal queue, but nothing calls it: no portal-SPA propose button, no admin page, no accept or reject UI, and no sibling app calls /api/proposals (portaliq matrix row sib-dossiq-2-21). register.d/50-zaakportaal.json#portaalVerzoek is dossiq's register entry, not a caller of the queue."
+			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/ProposalController.php and appinfo/routes.php:242-251 implement the change-proposal queue, but nothing calls it: no portal-SPA propose button, no admin page, no accept or reject UI, and no sibling app calls /api/proposals (portaliq matrix row sib-dossiq-2-21). register.d/50-zaakportaal.json#portaalVerzoek is dossiq's register entry, not a caller of the queue.",
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:74 \"| 2.21 | Change proposals from colleagues or citizens queued for acceptance | no |\""
+			}
 		},
 		{
 			"id": "2.22",
@@ -1650,6 +1752,9 @@
 					}
 				],
 				"evidence": "src/manifest.json#StatusRecordDetail; dossiq#2912 7146db3bc"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:69 \"Admin settings (Nextcloud admin > OpenCase, `lib/Settings/AdminSettings.php`, `src/AdminSettings.vue`) sections: Serviceplatformen, Datafordeler\""
 			}
 		},
 		{
@@ -1834,6 +1939,9 @@
 					}
 				],
 				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:276 \"BPM engine :: no\""
 			}
 		},
 		{
@@ -1853,6 +1961,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/settings/tabs/StatusesTab.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\""
 			}
 		},
 		{
@@ -1872,6 +1983,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Transitions/ChecklistGuard.php; procest/_round4/discovery/casetype-configurability.md; StatusTypeForm.vue:118"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:207 \"Phases or checklists on a case :: no\""
 			}
 		},
 		{
@@ -1904,6 +2018,9 @@
 					}
 				],
 				"evidence": "lib/Flow/DossiqAskPersonNode.php:141,394; dossiq#3086 6a1ab145"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/journeys.md:24 \"the only completable work item is a step in a document review or approval chain\""
 			}
 		},
 		{
@@ -1924,6 +2041,9 @@
 				"state": "built",
 				"change": "dossiq/one-case-list",
 				"evidence": "src/manifest.json#Tasks; #Dashboard/my-tasks"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:163 \"\"Foreslået arbejde\" (suggested work, lines 82-160): pending document workflow steps for me\""
 			}
 		},
 		{
@@ -1943,6 +2063,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "#Dashboard/task-reminders"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:139 \"an optional deadline that is split evenly across steps (`calculateStepDeadlines`)\""
 			}
 		},
 		{
@@ -1958,7 +2081,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "workflow-definition-engine",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/DocumentDetail-Workflow.md:9 \"Users in order with Add and reorder arrows\""
+			}
 		},
 		{
 			"id": "3.8",
@@ -1986,6 +2112,9 @@
 					}
 				],
 				"evidence": "lib/Service/Transitions/CreateTaskHandler.php; lib/Service/Routing/*; dossiq#2721 cf3eff839"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\""
 			}
 		},
 		{
@@ -2005,6 +2134,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Transitions/*Handler.php; lib/Flow/DossiqTx*Node.php; DossiqMergeTemplateNode.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\""
 			}
 		},
 		{
@@ -2024,6 +2156,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/dialogs/CaseStartFlowDialog.vue; /apps/dossiq/api/case/{id}/startable-flows; lib/Flow/DossiqTxCreateSubCaseNode.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:108 \"BPM: none. Document review/approval workflow only\""
 			}
 		},
 		{
@@ -2043,6 +2178,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Service/Dmn/DecisionTableService.php; src/views/settings/tabs/DecisionTablesTab.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
 			}
 		},
 		{
@@ -2058,7 +2196,10 @@
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
 			"feature": "vth-module",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\""
+			}
 		},
 		{
 			"id": "3.13",
@@ -2084,6 +2225,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:2317; src/registry.js:651; src/modals/DocumentMetadataDialog.vue:152; dossiq#3083 19b334fb"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:208 \"Document review/approval workflow with ordered users and deadlines :: yes\""
 			}
 		},
 		{
@@ -2099,7 +2243,10 @@
 			"provider": "nextcloud-vue",
 			"providerHow": "ledger-change",
 			"feature": "workflow-definition-engine",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\""
+			}
 		},
 		{
 			"id": "3.15",
@@ -2118,6 +2265,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#CaseDetail/case-kpi-progress; lib/Service/MilestoneService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\""
 			}
 		},
 		{
@@ -2146,6 +2296,9 @@
 					}
 				],
 				"evidence": "lib/Command/MigrateWorkflowDefinitionsToFlowsCommand.php; openregister#3871 80fc3cd2"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\""
 			}
 		},
 		{
@@ -2165,6 +2318,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Dmn/DecisionTableService.php; lib/Service/TermijnService.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:97 \"| 3.17 | Formula-based field fill and date calculation | no |\""
 			}
 		},
 		{
@@ -2192,6 +2348,9 @@
 					}
 				],
 				"evidence": "#CaseDetail/case-tasks"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:54 \"No tasks tab: work items are workflow steps on documents and reminders on the case.\""
 			}
 		},
 		{
@@ -2221,7 +2380,10 @@
 				"evidence": "src/manifest.d/consultation-public.json#ExternalConsultationResponse",
 				"readOn": "2026-09-26"
 			},
-			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/PartnerTaskController.php:83-129 ask() is built and RBAC-guarded (appinfo/routes.php:269) but has no caller in portaliq's src/ or in dossiq (portaliq matrix rows tsk-ask-partner and sib-dossiq-3-19). dossiq's own src/manifest.d/consultation-public.json ExternalConsultationResponse page is the older flow, not the portaliq partner task."
+			"note": "Re-rated partial to no on 2026-09-26: portaliq lib/Controller/PartnerTaskController.php:83-129 ask() is built and RBAC-guarded (appinfo/routes.php:269) but has no caller in portaliq's src/ or in dossiq (portaliq matrix rows tsk-ask-partner and sib-dossiq-3-19). dossiq's own src/manifest.d/consultation-public.json ExternalConsultationResponse page is the older flow, not the portaliq partner task.",
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\""
+			}
 		},
 		{
 			"id": "3.20",
@@ -2272,6 +2434,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "register.d/70-document-zaakdossier.json#informatieobject; dossiq_register.json#document; lib/Service/ZaakdossierService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:214 \"Document as a container of files with metadata and numbering :: yes\""
 			}
 		},
 		{
@@ -2300,6 +2465,9 @@
 					}
 				],
 				"evidence": "dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Files.md:5 \"Flat list of every file across the case's documents.\""
 			}
 		},
 		{
@@ -2328,6 +2496,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:2321; dossiq#3078 8babeadf; dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/usability.md:15 \"file versions can be viewed and restored\""
 			}
 		},
 		{
@@ -2347,6 +2518,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Flow/DossiqMergeTemplateNode.php; lib/Service/BeschikkingGenerationService.php; lib/Controller/TemplateController.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:216 \"New file from template with merge fields :: yes\""
 			}
 		},
 		{
@@ -2375,6 +2549,9 @@
 					}
 				],
 				"evidence": "dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\""
 			}
 		},
 		{
@@ -2390,7 +2567,10 @@
 			"provider": "nextcloud",
 			"providerHow": "note-names-platform",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:217 \"Edit in Nextcloud Office and via MS Office add-ins :: yes\""
+			}
 		},
 		{
 			"id": "4.7",
@@ -2409,6 +2589,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/modals/DocumentMetadataDialog.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:78 \"`Document` (caseId, documentNumber, title, documentType, status, insightLevelId, documentDate, receivedDate, registeredDate, documentCategoryId\""
 			}
 		},
 		{
@@ -2424,7 +2607,10 @@
 			"provider": "nextcloud-vue",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\""
+			}
 		},
 		{
 			"id": "4.9",
@@ -2443,6 +2629,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "70-document-zaakdossier.json#informatieobject.keywords"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\""
 			}
 		},
 		{
@@ -2471,6 +2660,9 @@
 					}
 				],
 				"evidence": "dossiq_register.json#caseShare; dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:218 \"Per-file share to a user with read/write and expiry :: yes\""
 			}
 		},
 		{
@@ -2499,6 +2691,9 @@
 					}
 				],
 				"evidence": "lib/Controller/DrcController.php; dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:115 \"| 4.11 | Document locking for shared editing | no |\""
 			}
 		},
 		{
@@ -2518,6 +2713,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php; /api/beschikkingen/{id}/onderteken"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:105 \"E-signing: none found (no sign/signature service in `lib/Service`).\""
 			}
 		},
 		{
@@ -2537,6 +2735,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/WOORedactionService.php; WOOAnonymisationAssistService.php; src/dialogs/RedactionAssistDialog.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/AccessRequestDetail.md:5 \"per-document decisions, redaction uploads and a decision letter.\""
 			}
 		},
 		{
@@ -2564,6 +2765,9 @@
 					}
 				],
 				"evidence": "lib/Service/Zaakdossier/DossierZipExporter.php; lib/Service/EmailArchivalService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:110 \"PDF conversion via LibreOffice binary (`lib/Service/LibreOfficeService.php:64`)\""
 			}
 		},
 		{
@@ -2579,7 +2783,10 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/usability.md:15 \"No undo after a save, participants and notes delete from a row button\""
+			}
 		},
 		{
 			"id": "4.16",
@@ -2607,6 +2814,9 @@
 					}
 				],
 				"evidence": "#CaseDetail/case-files; dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:152 \"`FileList.vue` (edit, view, download, versions, log, share, delete, new file from template)\""
 			}
 		},
 		{
@@ -2635,6 +2845,9 @@
 					}
 				],
 				"evidence": "openregister lib/Listener/FileChangeListener.php; openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3903; openregister's own matrix (openregister#4040) reads this as API only with no screen, which misses ObjectsProvider.php:519: Nextcloud's search bar is a screen and it searches file text"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:250 \"Full-text search over file content (Elasticsearch, Danish analyzer) :: yes\""
 			}
 		},
 		{
@@ -2650,7 +2863,10 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/DocumentDetail-Notes.md:5 \"Rich-text notes on the document.\""
+			}
 		},
 		{
 			"id": "4.19",
@@ -2678,6 +2894,9 @@
 					}
 				],
 				"evidence": "register.d/50-subsidie.json#bewijsstuk.fileHashSha256; dossiq#2919 1a2482883"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:123 \"| 4.19 | Virus scan and integrity check | no |\""
 			}
 		},
 		{
@@ -2706,6 +2925,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:3363; dossiq#3078 8babeadf"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\""
 			}
 		},
 		{
@@ -2725,6 +2947,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
 			}
 		},
 		{
@@ -2753,6 +2978,9 @@
 					}
 				],
 				"evidence": "lib/Service/Zaakdossier/DossierUploadHandler.php; dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/journeys.md:19 \"Native picker; no drag and drop seen\""
 			}
 		},
 		{
@@ -2781,6 +3009,9 @@
 					}
 				],
 				"evidence": "dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:220 \"Virtual case folder in Files/Mail/Talk :: yes :: lib/Storage/OpenCaseStorage.php\""
 			}
 		},
 		{
@@ -2796,7 +3027,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "kcc-werkplek-zaaksysteem-bridge",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:225 \"Parties tab with roles, citizen or company, address protection :: yes\""
+			}
 		},
 		{
 			"id": "5.2",
@@ -2815,6 +3049,9 @@
 			"built": {
 				"state": "built",
 				"change": "dossiq/contacts-domain"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:15 \"the search runs over locally stored parties only\""
 			}
 		},
 		{
@@ -2834,6 +3071,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php; src/components/initiator/InitiatorPicker.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:226 \"CPR/CVR lookup (Datafordeler) :: partial (enterprise)\""
 			}
 		},
 		{
@@ -2862,6 +3102,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:7053,7145,7344,7436; dossiq#3083 19b334fb; openregister#3893 caf4fd43a"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/journeys.md:29 \"One match jumps straight to a citizen 360 view: card with masked CPR, tabs Cases (1) and Documents, Create case button.\""
 			}
 		},
 		{
@@ -2881,6 +3124,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "25-brp-kvk.json#brpPerson.indicatieGeheim"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:283 \"Address protection reveal with audit :: yes\""
 			}
 		},
 		{
@@ -2909,6 +3155,9 @@
 					}
 				],
 				"evidence": "register.d/50-sociaal-domein.json#gdprClassification.accessRestriction; lib/Service/CitizenLookupGuard.php; dossiq#2926 e4b78094"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:27 \"Organisation, KLE code and Sensitivity together form the access profile of the case.\""
 			}
 		},
 		{
@@ -2928,6 +3177,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; RolNode.vue; register.d/61-mandaat-matrix.json#organisatieRol"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:229 \"Organisation tree and employee search :: yes\""
 			}
 		},
 		{
@@ -2956,6 +3208,9 @@
 					}
 				],
 				"evidence": "lib/Settings/bezwaar_seed_data.json; dossiq#2918 d1ab0af9"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:82 \"`AccessRequest` (type public_access / party_access / gdpr_access\""
 			}
 		},
 		{
@@ -2975,6 +3230,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#CaseDetail/initiator"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:20 \"person icon, masked CPR button 010180XXXX, name, address\""
 			}
 		},
 		{
@@ -2994,6 +3252,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#case-location; lib/Controller/BagController.php; BrkController.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:12 \"Estates are first-class objects; see `pages/EstateDetail.md`.\""
 			}
 		},
 		{
@@ -3009,7 +3270,10 @@
 			"provider": "integriq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:231 \"CPR event subscriptions :: partial (enterprise)\""
+			}
 		},
 		{
 			"id": "5.12",
@@ -3035,6 +3299,9 @@
 					}
 				],
 				"evidence": "dossiq_register.json#dispatch"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:228 \"Document senders/recipients :: yes\""
 			}
 		},
 		{
@@ -3063,6 +3330,9 @@
 					}
 				],
 				"evidence": "src/components/map/AddressSearch.vue; openregister#3900 11cd9c2e9"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:145 \"| 5.13 | External register views embedded in the app | no |\""
 			}
 		},
 		{
@@ -3082,6 +3352,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "#CaseDetail/case-notes"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:234 \"Journal notes (rich text, lockable) :: yes\""
 			}
 		},
 		{
@@ -3110,6 +3383,9 @@
 					}
 				],
 				"evidence": "register.d/30-kcc.json#customerContact; 40-kcc-werkplek.json#contactmoment; lib/Controller/ContactMomentController.php; pipelinq#1970 428bd3a6b"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:80 \"Communication: `JournalNote` (title, text, isLocked), `DpShipment`\""
 			}
 		},
 		{
@@ -3129,6 +3405,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/cases/components/CaseEmailTab.vue; /api/email/{caseId}/send-template; dossiq_register.json#emailTemplate"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:112 \"E-mail: sending a document from the user's own Mail-app account\""
 			}
 		},
 		{
@@ -3163,6 +3442,9 @@
 					}
 				],
 				"evidence": "lib/Service/Timeline/TimelineKinds.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:154 \"| 6.4 | Unified communication timeline per case (notes, mail, messages) | no |\""
 			}
 		},
 		{
@@ -3191,6 +3473,9 @@
 					}
 				],
 				"evidence": "/api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/IncomingDocuments.md:5 \"Inbox of documents that arrived from Digital Post, watched folders or IMAP mailboxes, to be journalised on an existing or new case.\""
 			}
 		},
 		{
@@ -3219,6 +3504,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:3347; lib/Service/DigitalPost/BerichtenboxProvider.php; PostexProvider.php; LogDigitalPostProvider.php; dossiq#3081 226b7e0b; integriq#2062 626d8dabc"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:236 \"Digital post shipment with reply flag and status :: partial (enterprise)\""
 			}
 		},
 		{
@@ -3255,7 +3543,10 @@
 				"evidence": "register.d/50-zaakportaal.json#portaalBericht; portaliq#607 809fde293; dossiq#2928 1184f78f2",
 				"readOn": "2026-09-26"
 			},
-			"note": "Noted 2026-09-26, rating unchanged: dossiq portaalBericht rows reach portaliq's merged inbox, but portaliq src/portal/components/InboxPage.jsx:86-148 never renders a dossiq portaalBericht's attachments, and the field contract differs: dossiq writes content, sentAt and readByRecipientAt where portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702). This is part of why the row stays partial."
+			"note": "Noted 2026-09-26, rating unchanged: dossiq portaalBericht rows reach portaliq's merged inbox, but portaliq src/portal/components/InboxPage.jsx:86-148 never renders a dossiq portaalBericht's attachments, and the field contract differs: dossiq writes content, sentAt and readByRecipientAt where portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702). This is part of why the row stays partial.",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
+			}
 		},
 		{
 			"id": "6.8",
@@ -3274,6 +3565,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Notification/Notifier.php; lib/Service/MentionNotificationService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/menu-tree.md:44 \"Notifications: opens the app's own Notifications dialog (workflow steps to act on, files shared with me).\""
 			}
 		},
 		{
@@ -3302,6 +3596,9 @@
 					}
 				],
 				"evidence": "lib/Service/TermijnNotificationService.php; lib/Flow/DossiqScheduleReminderNode.php; openregister#3912 042864247"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:159 \"| 6.9 | Scheduled or planned e-mails | no |\""
 			}
 		},
 		{
@@ -3330,6 +3627,9 @@
 					}
 				],
 				"evidence": "dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\""
 			}
 		},
 		{
@@ -3349,6 +3649,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Transitions/WebhookHandler.php; lib/Controller/NrcController.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:161 \"| 6.11 | Event outbox or webhooks on case events | no |\""
 			}
 		},
 		{
@@ -3377,6 +3680,9 @@
 					}
 				],
 				"evidence": "lib/Service/Conversation/CaseConversationService.php; CaseConversationsPanel.vue; openregister#3897 2a56f39b5"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:238 \"Talk chat export to case :: yes\""
 			}
 		},
 		{
@@ -3411,6 +3717,9 @@
 					}
 				],
 				"evidence": "lib/Controller/KccContactController.php; BelplanController.php; lib/Service/DoorverbindingService.php; src/views/settings/KccIntegrationSettings.vue; integriq#2072 3db280a65; integriq#2076 82bfbe6b0"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:163 \"| 6.13 | Telephony (KCC) panel | no |\""
 			}
 		},
 		{
@@ -3439,6 +3748,9 @@
 					}
 				],
 				"evidence": "dossiq#3116 fc7fc1bc8; dossiq#3086 6a1ab145; integriq#2070 fe1704f5f"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:164 \"| 6.14 | Notes synced to an external case register | no |\""
 			}
 		},
 		{
@@ -3503,6 +3815,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#resultType; src/views/settings/tabs/ResultsTab.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:242 \"Formal case decision or result type :: no\""
 			}
 		},
 		{
@@ -3522,6 +3837,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Controller/DecisionTableController.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:171 \"| 7.2 | Decision tables (DMN) | no |\""
 			}
 		},
 		{
@@ -3541,6 +3859,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#decision; register.d/30-beschikking.json#beschikking; #CaseDetail/case-decidesk-decisions"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:82 \"Decisions: FOI only: `AccessRequest`\""
 			}
 		},
 		{
@@ -3560,6 +3881,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/dialogs/BeschikkingComposerDialog.vue; lib/Service/BeschikkingGenerationService.php; lib/Flow/DossiqRequestDecisionNode.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:82 \"`AccessDecision` (decisionText, complaintGuidance, approvedBy, sentBy, deliveryMethod)\""
 			}
 		},
 		{
@@ -3579,6 +3903,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/WOOAssessmentController.php; lib/Service/WOODocumentAssessmentService.php; src/views/doorlooptijd/widgets/DtWooWidget.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:241 \"FOI (aktindsigt) request with per-document decision, redaction upload, decision letter, export ZIP :: yes\""
 			}
 		},
 		{
@@ -3598,6 +3925,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#BezwaarDetail; lib/Service/Bezwaar/*"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:175 \"| 7.6 | Objection handling surface | no |\""
 			}
 		},
 		{
@@ -3613,7 +3943,10 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "archief-edepot-handover",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:176 \"| 7.7 | Result drives archival nomination and retention | no |\""
+			}
 		},
 		{
 			"id": "8.1",
@@ -3632,6 +3965,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "register.d/60-termijnbewaking.json#deadlineDefinition; src/views/settings/tabs/TermijnDefinitiesTab.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:247 \"Case lead time or due date :: no\""
 			}
 		},
 		{
@@ -3651,6 +3987,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "#CaseDetail/case-kpi-time-left; #Dashboard/overdue-cases; #Doorlooptijd/dt-atrisk"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:19 \"Red when overdue (1 sep on a 7 sep instance).\""
 			}
 		},
 		{
@@ -3670,6 +4009,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#caseTask.dueDate"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/DocumentDetail-Workflow.md:6 \"ordered step list (n. user, step deadline\""
 			}
 		},
 		{
@@ -3698,6 +4040,9 @@
 					}
 				],
 				"evidence": "lib/Flow/DossiqScheduleReminderNode.php; #Dashboard/task-reminders; dossiq#2920 3e36eb6c"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:209 \"Reminders with deadline and responsible user on cases and documents :: yes\""
 			}
 		},
 		{
@@ -3717,6 +4062,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/DeadlineExtensionService.php; /api/termijn/instances/{id}/verleng; caseType.extensionAllowed/extensionPeriod"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:83 \"`AccessRequest.deadlineAt` / `extendedDeadlineAt` (7-day FOI deadline\""
 			}
 		},
 		{
@@ -3736,6 +4084,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/BackgroundJob/DeadlineNotificationDispatchJob.php; lib/Service/TermijnNotificationService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:245 \"FOI statutory deadline with extension and notification job :: yes\""
 			}
 		},
 		{
@@ -3751,7 +4102,10 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "archief-edepot-handover",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:222 \"Closed-case XML export for archive :: yes\""
+			}
 		},
 		{
 			"id": "8.8",
@@ -3770,6 +4124,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "register.d/65-milestone-tracking.json#milestoneDefinition; lib/Service/MilestoneService.php; #CaseDetail/case-kpi-progress"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\""
 			}
 		},
 		{
@@ -3789,6 +4146,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/TermijnTimerService.php; lib/Listener/TermijnTimerFiredListener.php; lib/Repair/ArmTermijnEngineTimers.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\""
 			}
 		},
 		{
@@ -3808,6 +4168,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/DeadlinePauseService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\""
 			}
 		},
 		{
@@ -3941,6 +4304,9 @@
 					}
 				],
 				"evidence": "lib/Search/ObjectsProvider.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\""
 			}
 		},
 		{
@@ -3983,6 +4349,9 @@
 					}
 				],
 				"evidence": "CaseTypeFieldFilters.vue; dossiq#3085 87ec6952"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:8 \"Ten fields on one form. No deadline or date-range filter on cases.\""
 			}
 		},
 		{
@@ -3998,7 +4367,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:26 \"None. No saved views, no pinned filters, no recent queries.\""
+			}
 		},
 		{
 			"id": "9.4",
@@ -4013,7 +4385,10 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:253 \"Saved searches :: no\""
+			}
 		},
 		{
 			"id": "9.5",
@@ -4028,7 +4403,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\""
+			}
 		},
 		{
 			"id": "9.6",
@@ -4056,6 +4434,9 @@
 					}
 				],
 				"evidence": "openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3892"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:7 \"The only search that reads inside files.\""
 			}
 		},
 		{
@@ -4075,6 +4456,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/CaseAccessGuard.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:254 \"Search results filtered by access profile :: yes\""
 			}
 		},
 		{
@@ -4094,6 +4478,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#Cases"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:30 \"dossiq's Cases index (CnIndexPage) carries saved views, table, cards and map view modes\""
 			}
 		},
 		{
@@ -4122,6 +4509,9 @@
 					}
 				],
 				"evidence": "src/components/initiator/InitiatorPicker.vue; openregister#3893 caf4fd43a"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\""
 			}
 		},
 		{
@@ -4137,7 +4527,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/Search-Estate.md:5 \"Find an estate by BFE number or address\""
+			}
 		},
 		{
 			"id": "9.11",
@@ -4165,6 +4558,9 @@
 					}
 				],
 				"evidence": "dossiq#2898 75d5c333"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\""
 			}
 		},
 		{
@@ -4191,6 +4587,9 @@
 						"mergedAt": "2026-09-18T15:10:00Z"
 					}
 				]
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\""
 			}
 		},
 		{
@@ -4235,6 +4634,9 @@
 					}
 				],
 				"evidence": "/apps/dossiq/api/dashboard/kpis; lib/Controller/KpiController.php; dossiq#3085 87ec6952; nextcloud-vue#1209 744a5a12f"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/home-anatomy.md:5 \"There are no KPI numbers, no charts and no list of cases on the page.\""
 			}
 		},
 		{
@@ -4254,6 +4656,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Dashboard/*Widget.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/menu-tree.md:53 \"Dashboard widgets (`/apps/dashboard`, Customize): Mine sager, Indkommende dokumenter, Favoritter, Seneste.\""
 			}
 		},
 		{
@@ -4273,6 +4678,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/components/export/CaseListExportAction.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\""
 			}
 		},
 		{
@@ -4292,6 +4700,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/manifest.json#ProcessMiningDashboard; lib/Service/ProcessMiningService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:258 \"Report pages or charts :: no\""
 			}
 		},
 		{
@@ -4311,6 +4722,9 @@
 			"built": {
 				"state": "specified",
 				"evidence": "src/views/settings/StufAuditLog.vue; lib/Controller/AiAuditExportController.php; openregister src/views/logs/AuditTrailIndex.vue and export at appinfo/routes.php:1350 are admin-only; openregister#4018 adds GET /api/audit-trails/readable with no screen"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:259 \"Transaction log viewer for admins :: yes\""
 			}
 		},
 		{
@@ -4330,6 +4744,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "/api/dashboard/kpis; /api/reports/process-mining; /api/metrics"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:122 \"Statistics endpoint `GET /api/v1/cases/statistics` (`API.md:56`).\""
 			}
 		},
 		{
@@ -4349,6 +4766,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "openregister lib/Db/ExportRun.php; openregister appinfo/routes.php:1937"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:220 \"| 10.7 | Export files area with expiry and download counts | no |\""
 			}
 		},
 		{
@@ -4383,6 +4803,9 @@
 					}
 				],
 				"evidence": "lib/Controller/DossierExportController.php; lib/Service/BeroepDossierExport.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:221 \"| 10.8 | Timeline export per case or contact | no |\""
 			}
 		},
 		{
@@ -4398,7 +4821,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "doorlooptijd-dashboard",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Log.md:5 \"Audit trail including every read.\""
+			}
 		},
 		{
 			"id": "10.10",
@@ -4426,6 +4852,9 @@
 					}
 				],
 				"evidence": "nextcloud-vue#1209 744a5a12f"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:253 \"Saved searches :: no\""
 			}
 		},
 		{
@@ -4472,6 +4901,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/settings/CaseTypeDetail.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:177 \"There is no case type editor.\""
 			}
 		},
 		{
@@ -4500,6 +4932,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:6588; dossiq#3084 1c85c2a5"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:230 \"| 11.2 | Config as code, import and export of case types | no |\""
 			}
 		},
 		{
@@ -4519,6 +4954,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "dossiq_register.json#propertyDefinition; PropertiesTab.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\""
 			}
 		},
 		{
@@ -4534,7 +4972,10 @@
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\""
+			}
 		},
 		{
 			"id": "11.5",
@@ -4573,6 +5014,9 @@
 					}
 				],
 				"evidence": "src/views/settings/WorkflowEditor.vue; WorkflowTab.vue; openregister#3944 878de2cd; openregister#3948 de4079be; openregister has no BPMN modeller page; BPMN only through appinfo/routes.php:825-826 (openregister#4040)"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:276 \"BPM engine :: no\""
 			}
 		},
 		{
@@ -4588,7 +5032,10 @@
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
+			}
 		},
 		{
 			"id": "11.7",
@@ -4603,7 +5050,10 @@
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
 			"feature": "case-map-overview",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\""
+			}
 		},
 		{
 			"id": "11.8",
@@ -4618,7 +5068,10 @@
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
+			}
 		},
 		{
 			"id": "11.9",
@@ -4646,6 +5099,9 @@
 					}
 				],
 				"evidence": "lib/Settings/register.d/39-case-type-list-layout.json; dossiq#3112 a7118ddf1; dossiq#3085 87ec6952; nextcloud-vue#1213 93efc0c58"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:173 \"Per-case-type column configuration: none.\""
 			}
 		},
 		{
@@ -4674,6 +5130,9 @@
 					}
 				],
 				"evidence": "dossiq#2913 7b9c360a"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:262 \"Code lists editable by admin :: yes\""
 			}
 		},
 		{
@@ -4693,6 +5152,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/TemplateController.php; lib/Service/TemplateLibraryService.php; lib/Controller/VTHTemplateController.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/ManageTemplates.md:5 \"Upload, create and manage document templates that merge case, document and address fields.\""
 			}
 		},
 		{
@@ -4712,6 +5174,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/casetypes/components/EmailTemplateAdmin.vue; dossiq_register.json#emailTemplate; lib/Controller/EmailTemplateController.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:240 \"| 11.12 | E-mail template library | no |\""
 			}
 		},
 		{
@@ -4740,6 +5205,9 @@
 					}
 				],
 				"evidence": "src/manifest.json:6509,6573; dossiq#3084 1c85c2a5"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:241 \"| 11.13 | Translation management in the UI | no |\""
 			}
 		},
 		{
@@ -4759,6 +5227,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Tenant/TenantBrandingSanitiser.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:242 \"| 11.14 | Branding and theming | partial `appinfo/info.xml` (Nextcloud theming) |\""
 			}
 		},
 		{
@@ -4787,6 +5258,9 @@
 					}
 				],
 				"evidence": "lib/Controller/SettingsController.php; openregister#3902 5b6834c6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:4 \"gates it on `enterprise_version` (`lib/Service/Configuration.php:140`) and `ai_enabled`\""
 			}
 		},
 		{
@@ -4806,6 +5280,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/settings/StufEndpoints.vue; ZgwMappingSettings.vue; KccIntegrationSettings.vue; tabs/StoreSettingsTab.vue; tabs/FinancialIntegrationTab.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:69 \"API (API clients, certificates)\""
 			}
 		},
 		{
@@ -4834,6 +5311,9 @@
 					}
 				],
 				"evidence": "dossiq_register.json#caseObject; dossiq#2911 fffc5d7d"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:245 \"| 11.17 | Custom object type management | no |\""
 			}
 		},
 		{
@@ -4853,6 +5333,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/settings/components/WorkflowValidationBanner.vue; /api/case-definitions/validate"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/AdminSettings.md:6 \"Prerequisites (Group folders, Full text search x3)\""
 			}
 		},
 		{
@@ -4881,6 +5364,9 @@
 					}
 				],
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; MandaatToewijzingenTable.vue; openregister#3874 18628dff"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:69 \"Lokale brugere (local users and privileges)\""
 			}
 		},
 		{
@@ -4900,6 +5386,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Transitions/GuardRegistry.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\""
 			}
 		},
 		{
@@ -4919,6 +5408,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/CaseTypeResolver.php; tests/e2e/case-type-parent-chain.spec.ts"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:249 \"| 11.21 | Mother and child case types (inheritance) | no |\""
 			}
 		},
 		{
@@ -4934,7 +5426,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-schema",
 			"feature": "case-types",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:250 \"| 11.22 | GDPR register fields per case type | no |\""
+			}
 		},
 		{
 			"id": "11.23",
@@ -4962,6 +5457,9 @@
 					}
 				],
 				"evidence": "dossiq#2915 0c78cefa"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:251 \"| 11.23 | Catalog with folders for case types, attributes, templates | no |\""
 			}
 		},
 		{
@@ -4981,6 +5479,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "src/views/settings/tabs/GeneralTab.vue; lib/Controller/SettingsController.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/Configuration-Settings.md:5 \"In-app configuration; the Settings section holds one value.\""
 			}
 		},
 		{
@@ -5064,6 +5565,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/ZrcController.php; ZtcController.php; DrcController.php; BrcController.php; lib/Service/External/Zgw/*"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\""
 			}
 		},
 		{
@@ -5083,6 +5587,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/NrcController.php; lib/Service/NotificatieService.php; dossiq_register.json#abonnement"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\""
 			}
 		},
 		{
@@ -5098,7 +5605,10 @@
 			"provider": "integriq",
 			"providerHow": "ledger-change",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\""
+			}
 		},
 		{
 			"id": "12.4",
@@ -5117,6 +5627,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Stuf/*; lib/Controller/StufController.php; src/views/settings/StufEndpoints.vue"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\""
 			}
 		},
 		{
@@ -5136,6 +5649,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/DsoController.php; DSOIntakeController.php; lib/Service/DsoIntakeService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\""
 			}
 		},
 		{
@@ -5155,6 +5671,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:103 \"Datafordeler (`lib/Service/Datafordeler/`: CPR CitizenData, CVR CompanyData, BBR/MAT estate data)\""
 			}
 		},
 		{
@@ -5174,6 +5693,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/TenantAuthenticationService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:272 \"SAML login with privilege groups :: yes\""
 			}
 		},
 		{
@@ -5193,6 +5715,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Auth/SimulatorDigidSamlAdapter.php; SimulatorEHerkenningSamlAdapter.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:181 \"The only unauthenticated surfaces are the mTLS receiver endpoints and the SAML endpoints\""
 			}
 		},
 		{
@@ -5221,6 +5746,9 @@
 					}
 				],
 				"evidence": "dossiq#3081 226b7e0b; integriq#2062 626d8dabc"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:104 \"Digital post: `lib/Controller/DigitalPostController.php` (check, createShipment, latestShipment\""
 			}
 		},
 		{
@@ -5240,6 +5768,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:275 \"E-signing :: no\""
 			}
 		},
 		{
@@ -5268,6 +5799,9 @@
 					}
 				],
 				"evidence": "lib/Service/Beschikking/TemplateEngineAdapterInterface.php; MockTemplateEngineAdapter.php; integriq#2080 472b0721"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\""
 			}
 		},
 		{
@@ -5295,6 +5829,9 @@
 					}
 				],
 				"evidence": "lib/Controller/DwangsomPaymentCallbackController.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:269 \"| 12.12 | Payments | no |\""
 			}
 		},
 		{
@@ -5314,6 +5851,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/AppointmentService.php; AppointmentBackend/JccBackend.php; QmaticBackend.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:270 \"| 12.13 | Appointment booking | no |\""
 			}
 		},
 		{
@@ -5333,6 +5873,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Transitions/WebhookHandler.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:271 \"| 12.14 | Message broker or event streaming | no |\""
 			}
 		},
 		{
@@ -5348,7 +5891,10 @@
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-types",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:107 \"Search: Elasticsearch with a `danish_content` analyzer\""
+			}
 		},
 		{
 			"id": "12.16",
@@ -5367,6 +5913,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Pdok/PdokLocatieserverService.php; PdokBagService.php; lib/Controller/BagController.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/EstateDetail.md:15 \"Enterprise edition fetches it from Datafordeler; Basic edition lets you type it.\""
 			}
 		},
 		{
@@ -5386,6 +5935,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/External/IntegrationMode.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:90 \"OpenCase has no plugin system of its own.\""
 			}
 		},
 		{
@@ -5405,6 +5957,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/ZgwOpenApiController.php; lib/Settings/dossiq_register.json"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:121 \"`openapi.json` exists but holds 1 path\""
 			}
 		},
 		{
@@ -5424,6 +5979,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Middleware/ZgwAuthMiddleware.php; lib/Service/ZgwJwtValidator.php; lib/Controller/AcController.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:273 \"mTLS and bearer API clients :: yes\""
 			}
 		},
 		{
@@ -5439,7 +5997,10 @@
 			"provider": "nextcloud",
 			"providerHow": "note-names-platform",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:277 \"| 12.20 | Object storage (S3) | no |\""
+			}
 		},
 		{
 			"id": "12.21",
@@ -5467,6 +6028,9 @@
 					}
 				],
 				"evidence": "dossiq#2642 a4685e7a6"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:106 \"Nextcloud Office (Collabora/ONLYOFFICE) for in-browser editing via the virtual mount\""
 			}
 		},
 		{
@@ -5482,7 +6046,10 @@
 			"provider": "integriq",
 			"providerHow": "ledger-change",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low"
+			"featureConfidence": "low",
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:279 \"| 12.22 | Cloud events inbound | no |\""
+			}
 		},
 		{
 			"id": "12.23",
@@ -5501,6 +6068,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Controller/AssistantController.php; lib/Controller/AiController.php; lib/Mcp/DossiqToolProvider.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:113 \"AI: chat side panel with a prompt library and executable actions\""
 			}
 		},
 		{
@@ -5520,6 +6090,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Repair/ProvisionAssignedGroups.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:131 \"Roles: `User`, `Administrator`, `Template Designer`\""
 			}
 		},
 		{
@@ -5539,6 +6112,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Sharing/CaseAccessPolicy.php; lib/Service/CaseAccessGuard.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:128 \"Access profile = unique tuple (organisation, KLE classification code, sensitivity)\""
 			}
 		},
 		{
@@ -5566,6 +6142,9 @@
 					}
 				],
 				"evidence": "src/views/cases/components/CaseSharingTab.vue; openregister#3966 16fce31bc"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/pages/CaseDetail-Access.md:9 \"Grant access (user, Read or Write, Time-limited with Expires date); row Remove access\""
 			}
 		},
 		{
@@ -5585,6 +6164,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "register.d/62-handler-vervanging.json#substitution.endDate"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:280 \"Direct time-limited case grants :: yes\""
 			}
 		},
 		{
@@ -5612,6 +6194,9 @@
 					}
 				],
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php; openregister#3966 16fce31bc"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\""
 			}
 		},
 		{
@@ -5640,6 +6225,9 @@
 					}
 				],
 				"evidence": "organisatieRol.department/team; openregister#3874 18628dff; openregister lib/Service/Object/PermissionHandler.php:2699 compileDepartmentMatrix enforces the matrix; no screen sets it (openregister#4040)"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:79 \"`Organisation` (orgUuid, orgParentUuid, ncGroupId, groupfolderId)\""
 			}
 		},
 		{
@@ -5655,7 +6243,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-schema",
 			"feature": "case-access-control",
-			"featureConfidence": "high"
+			"featureConfidence": "high",
+			"evidence": {
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:23 \"Open (Public), Internal, Limited (Confidential), Closed (Highly Confidential/Personal)\""
+			}
 		},
 		{
 			"id": "13.8",
@@ -5683,6 +6274,9 @@
 					}
 				],
 				"evidence": "dossiq#2899 8de94cb4a"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:293 \"| 13.8 | Field-level permissions | no |\""
 			}
 		},
 		{
@@ -5698,7 +6292,10 @@
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-access-control",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:134 \"Every read is audited\""
+			}
 		},
 		{
 			"id": "13.10",
@@ -5717,6 +6314,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Listener/BezwaarLegalHoldListener.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\""
 			}
 		},
 		{
@@ -5732,7 +6332,10 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-schema",
 			"feature": "archief-edepot-handover",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:296 \"| 13.11 | GDPR register per case type | no |\""
+			}
 		},
 		{
 			"id": "13.12",
@@ -5751,6 +6354,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "register.d/62-handler-vervanging.json#substitution; register.d/61-mandaat-matrix.json#mandate; lib/Service/MandaatCheckService.php"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:284 \"Delegation or mandates :: no\""
 			}
 		},
 		{
@@ -5770,6 +6376,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/Sharing/CaseTokenShareService.php; register.d/50-zaakportaal.json"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\""
 			}
 		},
 		{
@@ -5785,7 +6394,10 @@
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-access-control",
-			"featureConfidence": "medium"
+			"featureConfidence": "medium",
+			"evidence": {
+				"opencase": "procest/opencase/round2/create-case-anatomy.md:27 \"only users whose privilege patterns match (organisation, KLE pattern such as `28.%`, sensitivity) can see the case afterwards\""
+			}
 		},
 		{
 			"id": "13.15",
@@ -5804,6 +6416,9 @@
 			"built": {
 				"state": "none",
 				"evidence": "lib/Service/TenantAuditTrailService.php"
+			},
+			"evidence": {
+				"opencase": "procest/_round2/compare/M1-functionality.md:300 \"| 13.15 | Two-factor authentication and login history | partial `appinfo/info.xml` (Nextcloud) |\""
 			}
 		},
 		{
@@ -5832,6 +6447,9 @@
 					}
 				],
 				"evidence": "src/views/settings/tabs/MandaatMatrixTab.vue; OrganisatieRolManager.vue; openregister#3874 18628dff"
+			},
+			"evidence": {
+				"opencase": "procest/opencase/round2/code-census.md:177 \"Users and privileges: `/settings/local-users/{userId}/privileges`.\""
 			}
 		},
 		{
