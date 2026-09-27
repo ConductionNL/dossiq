@@ -42,6 +42,7 @@ namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -71,19 +72,50 @@ class WorkflowLifecycleGuard {
 	/**
 	 * Constructor.
 	 *
+	 * The task-declaration validator is resolved from the container when a
+	 * publish first needs it, not injected. Injected, it closed a constructor
+	 * cycle: WorkflowDefinitionService needs this guard, the validator needs
+	 * TaskDeclarationReader, and the reader needs WorkflowDefinitionService.
+	 * PHP 8.4 absorbs that cycle with lazy objects; on PHP 8.3 with Nextcloud
+	 * 32 the container recursed until the stack ran out, so `app:enable dossiq`
+	 * failed outright. By the time a publish runs, WorkflowDefinitionService
+	 * already exists and the container hands the same instance back.
+	 *
 	 * @param WorkflowDefinitionRepository $repository The definition repository.
-	 * @param LoggerInterface $logger The logger.
-	 * @param TaskDeclarationValidator|null $taskDeclarations Publish-time check of the
-	 *                                                       per-task declaration blocks.
+	 * @param LoggerInterface              $logger     The logger.
+	 * @param ContainerInterface|null      $container  Resolves the publish-time
+	 *                                                 task-declaration check; null
+	 *                                                 (as in unit tests) skips it.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly WorkflowDefinitionRepository $repository,
 		private readonly LoggerInterface $logger,
-		private readonly ?TaskDeclarationValidator $taskDeclarations = null,
+		private readonly ?ContainerInterface $container = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The publish-time check of the per-task declaration blocks.
+	 *
+	 * Resolved on first use to keep the constructor free of the cycle described
+	 * on the constructor. A container that cannot build the validator throws:
+	 * publishing without the check it exists to run would be a silent pass.
+	 *
+	 * @return TaskDeclarationValidator|null The validator, or null without a container.
+	 */
+	private function taskDeclarationValidator(): ?TaskDeclarationValidator {
+		if ($this->container === null) {
+			return null;
+		}
+
+		if ($this->taskDeclarations === null) {
+			$this->taskDeclarations = $this->container->get(TaskDeclarationValidator::class);
+		}
+
+		return $this->taskDeclarations;
+	}//end taskDeclarationValidator()
 
 	/**
 	 * Why the last publish check refused, in the administrator's own words.
@@ -97,6 +129,13 @@ class WorkflowLifecycleGuard {
 	 * @var array<int, array{path: string, code: string, message: string}>
 	 */
 	private array $lastRefusals = [];
+
+	/**
+	 * The task-declaration validator, once a publish has resolved it.
+	 *
+	 * @var TaskDeclarationValidator|null
+	 */
+	private ?TaskDeclarationValidator $taskDeclarations = null;
 
 	/**
 	 * The refusals of the most recent publish check, newest call only.
@@ -335,11 +374,12 @@ class WorkflowLifecycleGuard {
 	 */
 	private function taskDeclarationsResolve(array $definition, string $id): bool {
 		$this->lastRefusals = [];
-		if ($this->taskDeclarations === null) {
+		$validator          = $this->taskDeclarationValidator();
+		if ($validator === null) {
 			return true;
 		}
 
-		$this->lastRefusals = $this->taskDeclarations->refusalsFor(definition: $definition);
+		$this->lastRefusals = $validator->refusalsFor(definition: $definition);
 		if ($this->lastRefusals === []) {
 			return true;
 		}
