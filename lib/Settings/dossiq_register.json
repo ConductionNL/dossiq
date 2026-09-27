@@ -1555,7 +1555,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.31.0",
+                "version": "1.32.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1753,6 +1753,11 @@
                             "schema": "statusType",
                             "mode": "relatedObject",
                             "field": "status"
+                        },
+                        "result": {
+                            "schema": "result",
+                            "mode": "relatedObject",
+                            "field": "result"
                         }
                     },
                     "x-openregister-calculations": {
@@ -1857,6 +1862,22 @@
                             "description": "What the applicant is told the current status means, from the linked statusType's publicDescription. Empty when the status declares none, and it never falls back to the internal description: that one is written for a colleague. Materialised and rematerialised like statusPublicLabel.",
                             "expression": {
                                 "prop": "@ref.statusType.publicDescription"
+                            }
+                        },
+                        "resultPublicLabel": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "What the applicant reads for the outcome of this case: the linked result record's name, which the result writer takes from the result type (for example Vergunning verleend). It lives on the case for the reason statusPublicLabel does: the portal projects the case to a field whitelist and cannot follow the result reference, so without it the applicant is shown the result's uuid. Empty until a result is set. Materialised for the reason isFinalStatus is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener. After renaming a result, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "prop": "@ref.result.name"
+                            }
+                        },
+                        "resultPublicDescription": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "The organisation's explanation of the outcome for the applicant, from the linked result record's publicExplanation. Empty when none was written, and it never falls back to the result's description: that one is written for a colleague, the way statusPublicDescription never falls back to a status type's internal description. Materialised and rematerialised like resultPublicLabel.",
+                            "expression": {
+                                "prop": "@ref.result.publicExplanation"
                             }
                         },
                         "waitingOn": {
@@ -2586,6 +2607,24 @@
                         "description": "What the applicant is told the current status means.",
                         "x-notes": "Computed declaratively from the linked statusType's publicDescription (x-openregister-calculations.statusPublicDescription), empty when it declares none. Rematerialised like statusPublicLabel.",
                         "title": "Status description, as the applicant reads it"
+                    },
+                    "resultPublicLabel": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "What the applicant reads for the outcome of this case.",
+                        "x-notes": "Computed declaratively from the linked result record (x-openregister-calculations.resultPublicLabel): its name. It lives on the CASE because the portal projects the case to a field whitelist and cannot follow `result` to the result record, so without it the applicant sees a uuid (dossiq#3143). Materialised for the reason isFinalStatus is; after renaming a result, run occ openregister:rematerialise-calculations.",
+                        "title": "Result, as the applicant reads it"
+                    },
+                    "resultPublicDescription": {
+                        "matchType": "fulltext",
+                        "inputControl": "text",
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "What the applicant is told about the outcome of this case.",
+                        "x-notes": "Computed declaratively from the linked result record's publicExplanation (x-openregister-calculations.resultPublicDescription), empty when none was written. It never falls back to the result's description, which is written for a colleague. Rematerialised like resultPublicLabel.",
+                        "title": "Result explanation, as the applicant reads it"
                     },
                     "waitingOn": {
                         "type": "string",
@@ -3812,7 +3851,7 @@
             "result": {
                 "slug": "result",
                 "icon": "FlagCheckered",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Thing",
                 "x-zgw-equivalent": "Resultaat",
                 "title": "Result",
@@ -3848,6 +3887,12 @@
                         "type": "string",
                         "description": "Description of this result",
                         "title": "Description"
+                    },
+                    "publicExplanation": {
+                        "type": "string",
+                        "description": "The explanation of this outcome the applicant reads in the portal. Leave it empty to show only the result.",
+                        "x-notes": "Read onto the case by x-openregister-calculations.resultPublicDescription (dossiq#3143). Separate from description, which is written for a colleague and never reaches the applicant.",
+                        "title": "Explanation for the applicant"
                     }
                 }
             },
