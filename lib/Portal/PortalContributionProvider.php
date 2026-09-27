@@ -118,7 +118,13 @@ class PortalContributionProvider {
 		'status',
 		StatusPublicLabels::CASE_LABEL_FIELD,
 		StatusPublicLabels::CASE_DESCRIPTION_FIELD,
-		'result',
+		// THE OUTCOME IN WORDS, NOT ITS UUID. `result` is a uuid reference to
+		// the result record and says nothing to a person, so a resident read
+		// their outcome as a long code (dossiq#3143). The case schema carries
+		// the result's name and its public explanation as calculations over
+		// the result record, the way it carries the status label.
+		'resultPublicLabel',
+		'resultPublicDescription',
 		'startDate',
 		'endDate',
 		'deadline',
@@ -131,6 +137,44 @@ class PortalContributionProvider {
 		// case down to this list and the ontvangstbevestiging quotes it back,
 		// so adding them here is what puts the answer on BOTH surfaces from
 		// one definition.
+		'receivedAt',
+		'termStartsAt',
+		'receivedOutsideWorkingHours',
+	];
+
+	/**
+	 * The columns of the resident's case list, in portaliq's `{field, label, render}` shape.
+	 *
+	 * Every field is on {@see self::CITIZEN_CASE_FIELDS}; no uuid is a column.
+	 *
+	 * @var array<int, array<string, string>>
+	 */
+	public const CITIZEN_CASE_COLUMNS = [
+		['field' => 'identifier', 'label' => 'Zaaknummer', 'render' => 'text'],
+		['field' => 'title', 'label' => 'Onderwerp', 'render' => 'text'],
+		['field' => StatusPublicLabels::CASE_LABEL_FIELD, 'label' => 'Status', 'render' => 'badge'],
+		['field' => 'resultPublicLabel', 'label' => 'Uitkomst', 'render' => 'text'],
+		['field' => 'startDate', 'label' => 'Gestart op', 'render' => 'date'],
+		['field' => 'deadline', 'label' => 'Uiterlijk klaar op', 'render' => 'date'],
+		['field' => 'termStartsAt', 'label' => 'Termijn loopt vanaf', 'render' => 'date'],
+		['field' => 'receivedOutsideWorkingHours', 'label' => 'Ontvangen buiten kantoortijd', 'render' => 'boolean'],
+	];
+
+	/**
+	 * The fields a resident reads when they open one case. No uuid.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CITIZEN_CASE_DETAIL_FIELDS = [
+		'identifier',
+		'title',
+		StatusPublicLabels::CASE_LABEL_FIELD,
+		StatusPublicLabels::CASE_DESCRIPTION_FIELD,
+		'resultPublicLabel',
+		'resultPublicDescription',
+		'startDate',
+		'endDate',
+		'deadline',
 		'receivedAt',
 		'termStartsAt',
 		'receivedOutsideWorkingHours',
@@ -427,6 +471,16 @@ class PortalContributionProvider {
 				'listable' => true,
 				'minTrust' => 'low',
 				'fields' => self::CITIZEN_CASE_FIELDS,
+				// WHAT THE RESIDENT READS, labelled and typed. Without these
+				// portaliq falls back to every projected field as plain text
+				// under its key, uuids included (dossiq#3143). `caseType` and
+				// `status` stay in the projection because the portal tells
+				// cases and statuses apart by them; they are simply not shown.
+				'columns' => self::CITIZEN_CASE_COLUMNS,
+				'detail' => [
+					'layout' => 'card',
+					'fields' => self::CITIZEN_CASE_DETAIL_FIELDS,
+				],
 				// The case detail carries what has happened on it. The
 				// contract names the method rather than embedding the
 				// entries, because the manifest is built once per subject

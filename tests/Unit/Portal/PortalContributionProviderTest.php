@@ -325,6 +325,143 @@ class PortalContributionProviderTest extends TestCase {
 	}
 
 	/**
+	 * The fields of the citizen case list that are uuids, and say nothing to a person.
+	 *
+	 * @var array<int, string>
+	 */
+	private const UUID_FIELDS = ['caseType', 'status', 'result'];
+
+	/**
+	 * The column render kinds portaliq's contract accepts (IPortalContributionProvider,
+	 * CollectionConfigNormaliser::RENDER_KINDS at portaliq development).
+	 *
+	 * @var array<int, string>
+	 */
+	private const RENDER_KINDS = ['text', 'date', 'datetime', 'badge', 'currency', 'boolean', 'link'];
+
+	/**
+	 * The citizen case collection.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function mijnZaken(): array {
+		$contribution = $this->provider->getContribution(['audience' => 'citizen']);
+		$cases = $contribution['collections'][0];
+		$this->assertSame('mijnZaken', $cases['id']);
+
+		return $cases;
+	}
+
+	/**
+	 * The resident reads the outcome in words, not as the result's uuid (dossiq#3143).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	public function testTheCaseListCarriesTheOutcomeInWordsAndNotItsUuid(): void {
+		$fields = $this->mijnZaken()['fields'];
+
+		$this->assertNotContains('result', $fields, 'the result uuid says nothing to a resident');
+		$this->assertContains('resultPublicLabel', $fields);
+		$this->assertContains('resultPublicDescription', $fields);
+	}
+
+	/**
+	 * The case list declares labelled, typed columns and shows no uuid.
+	 *
+	 * Without columns portaliq falls back to every projected field as plain
+	 * text under its key, which is how a resident came to read
+	 * `receivedOutsideWorkingHours: true` and a status uuid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	public function testTheCaseListDeclaresLabelledColumnsWithoutUuids(): void {
+		$cases = $this->mijnZaken();
+		$this->assertArrayHasKey('columns', $cases);
+		$this->assertNotEmpty($cases['columns']);
+
+		$byField = [];
+		foreach ($cases['columns'] as $column) {
+			$this->assertContains($column['field'], $cases['fields'], $column['field'] . ' is a column but not a projected field');
+			$this->assertNotContains($column['field'], self::UUID_FIELDS, $column['field'] . ' is a uuid and must not be a column');
+			$this->assertNotSame('', trim((string)($column['label'] ?? '')), $column['field'] . ' has no label');
+			$this->assertNotSame($column['field'], $column['label'], $column['field'] . ' is labelled with its own key');
+			$this->assertContains($column['render'] ?? '', self::RENDER_KINDS);
+			$byField[$column['field']] = $column['render'];
+		}
+
+		$this->assertSame(
+			[
+				'identifier' => 'text',
+				'title' => 'text',
+				'statusPublicLabel' => 'badge',
+				'resultPublicLabel' => 'text',
+				'startDate' => 'date',
+				'deadline' => 'date',
+				'termStartsAt' => 'date',
+				'receivedOutsideWorkingHours' => 'boolean',
+			],
+			$byField
+		);
+	}
+
+	/**
+	 * The case detail lists the readable fields, and no uuid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	public function testTheCaseDetailListsTheReadableFields(): void {
+		$cases = $this->mijnZaken();
+		$this->assertArrayHasKey('detail', $cases);
+		$this->assertSame('card', $cases['detail']['layout']);
+		$this->assertNotEmpty($cases['detail']['fields']);
+
+		foreach ($cases['detail']['fields'] as $field) {
+			$this->assertContains($field, $cases['fields'], $field . ' is a detail field but not a projected field');
+			$this->assertNotContains($field, self::UUID_FIELDS, $field . ' is a uuid and must not be shown');
+		}
+
+		$this->assertContains('resultPublicLabel', $cases['detail']['fields']);
+		$this->assertContains('resultPublicDescription', $cases['detail']['fields']);
+	}
+
+	/**
+	 * The two result fields are calculated the way the status label is.
+	 *
+	 * Read from the raw register, because the calculation is what fills them:
+	 * a property with no calculation behind it would be projected and always
+	 * empty.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	public function testTheResultFieldsAreCalculatedFromTheResultRecord(): void {
+		$register = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'), true);
+		$case = $register['components']['schemas']['case'];
+
+		$this->assertSame(
+			['schema' => 'result', 'mode' => 'relatedObject', 'field' => 'result'],
+			$case['configuration']['x-openregister-references']['result']
+		);
+
+		$calculations = $case['configuration']['x-openregister-calculations'];
+		$this->assertSame(['prop' => '@ref.result.name'], $calculations['resultPublicLabel']['expression']);
+		$this->assertSame(['prop' => '@ref.result.publicExplanation'], $calculations['resultPublicDescription']['expression']);
+		$this->assertTrue($calculations['resultPublicLabel']['materialise']);
+		$this->assertTrue($calculations['resultPublicDescription']['materialise']);
+
+		$this->assertArrayHasKey('publicExplanation', $register['components']['schemas']['result']['properties']);
+		$this->assertTrue($case['properties']['resultPublicLabel']['readOnly']);
+		$this->assertTrue($case['properties']['resultPublicDescription']['readOnly']);
+	}
+
+	/**
 	 * Read the schema definitions from one register JSON file, keyed by slug.
 	 *
 	 * @param string $path The register/fragment JSON path.
