@@ -485,6 +485,18 @@ foreach (['DeliveryRequestedEvent', 'DeliveryConcludedEvent', 'ConnectionStatusR
 	}
 }
 
+// Portaliq's citizen write and withdrawal facts (dossiq#3142). portaliq raises
+// one typed event per act a resident takes on their own case, and dossiq's two
+// listeners tell the case handler. Both are bound by FQN string behind a
+// class_exists guard so dossiq stays installable without portaliq; without
+// these stubs the guard could only ever answer false and the listeners could
+// never be exercised against the real getter names.
+foreach (['PortalClientWriteEvent', 'PortalClientWithdrawalEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Portaliq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Portaliq/Event/' . $stubEvent . '.php';
+	}
+}
+
 // Shillinq's payment-request leaf (fees-and-payments-on-the-case). dossiq reads
 // a case's payment state through it and resolves the class by name, so the app
 // stays installable without the money app. Without this stub the lookup can

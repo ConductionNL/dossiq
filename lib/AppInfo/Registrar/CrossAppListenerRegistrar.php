@@ -3,10 +3,10 @@
 /**
  * Dossiq cross-app listener registrar.
  *
- * The two registrations that reach into another app's event classes: the flow
- * nodes dossiq contributes to OpenRegister, and the delivery seam integriq
- * concludes. Both are guarded on the event class existing, because both apps
- * are optional at runtime.
+ * The registrations that reach into another app's event classes: the flow
+ * nodes dossiq contributes to OpenRegister, the seams integriq concludes, and
+ * the citizen facts portaliq raises. Each is guarded on the event class
+ * existing, because every one of those apps is optional at runtime.
  *
  * They live here rather than in {@see ListenerRegistrar} because a class that
  * names another app's event AND its own listener couples to three more objects
@@ -51,6 +51,7 @@ class CrossAppListenerRegistrar {
 		$this->registerFlowNodes(context: $context);
 		$this->registerDeliveryListeners(context: $context);
 		$this->registerIntakeListeners(context: $context);
+		$this->registerPortalListeners(context: $context);
 	}//end register()
 
 	/**
@@ -184,4 +185,39 @@ class CrossAppListenerRegistrar {
 			);
 		}
 	}//end registerIntakeListeners()
+
+	/**
+	 * Listen for what a resident did on their own case in the portal.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 */
+	private function registerPortalListeners(IRegistrationContext $context): void {
+		// Issue dossiq#3142. Portaliq raises one typed fact per act a resident takes
+		// on their own case (`portal.write.client`) and a separate one when
+		// they withdraw it (`portal.withdraw.client`). portaliq is the source
+		// and does nothing further by design; the case app tells the handler.
+		// FQN string and a `class_exists` guard, the same as the integriq
+		// seams above and for the same reason: portaliq is optional (ADR-046)
+		// and a cross-app event class name is a runtime lookup this app can
+		// only follow.
+		//
+		// It fails towards doing nothing: a wrong name registers nothing, the
+		// resident's write still lands on the case, and the handler is simply
+		// not told, which is what happened before this block existed.
+		if (class_exists(\OCA\Dossiq\Listener\PortalClientWriteListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\PortalClientWriteListener::EVENT,
+				\OCA\Dossiq\Listener\PortalClientWriteListener::class
+			);
+		}
+
+		if (class_exists(\OCA\Dossiq\Listener\PortalClientWithdrawalListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\PortalClientWithdrawalListener::EVENT,
+				\OCA\Dossiq\Listener\PortalClientWithdrawalListener::class
+			);
+		}
+	}//end registerPortalListeners()
 }//end class
