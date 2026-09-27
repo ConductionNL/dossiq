@@ -40,6 +40,8 @@
  * is open until a handler says otherwise. A logged phone call usually is not:
  * most are answered while the handler is still on the phone, and opening a
  * follow-up on each would make the follow-up count mean nothing.
+ * The applicant's own portal acts carry one for the reason mail does: each is
+ * something the applicant sent, and it is open until a handler has seen it.
  *
  * @category Service
  * @package  OCA\Dossiq\Service\Timeline
@@ -136,6 +138,18 @@ final class TimelineKinds {
 	 * @var string
 	 */
 	public const DATA_SUBJECT_REQUEST = 'avg-verzoek';
+
+	/**
+	 * Something the applicant did on their own case through the portal.
+	 *
+	 * One kind for the four acts portaliq raises (an amended answer, an added
+	 * document, an answered task, a withdrawal), for the reason the AVG kind
+	 * is one: a handler reading the case wants what the applicant did in one
+	 * strand, and `act` already says which it was.
+	 *
+	 * @var string
+	 */
+	public const APPLICANT_RESPONSE = 'reactie-indiener';
 
 	/**
 	 * Every declaration, in the shape `TimelineKindService::declareKind()` takes.
@@ -276,6 +290,28 @@ final class TimelineKinds {
 			],
 			'required' => ['act'],
 			'followUp' => false,
+		],
+		[
+			// A FOLLOW-UP ON EVERY ENTRY, for the reason inbound mail carries
+			// one: something the applicant sent is open until a handler has
+			// looked at it. An amended answer, a new document, an answered task
+			// or a withdrawal each asks the handler to act, and the follow-up
+			// is what puts the case back in the handler's queue.
+			'slug' => self::APPLICANT_RESPONSE,
+			'title' => 'Reactie van de indiener',
+			'description' => 'Something the applicant did on their own case through the portal. Open until a handler has looked at it.',
+			'properties' => [
+				'act' => [
+					'type' => 'string',
+					'enum' => ['amendment', 'document', 'task-answer', 'withdrawal'],
+				],
+				'fields' => ['type' => 'string'],
+				'status' => ['type' => 'string'],
+				'reason' => ['type' => 'string'],
+				'occurredAt' => ['type' => 'string'],
+			],
+			'required' => ['act'],
+			'followUp' => true,
 		],
 	];
 

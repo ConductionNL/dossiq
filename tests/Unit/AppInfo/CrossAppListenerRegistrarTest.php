@@ -121,6 +121,73 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	}//end testTheChannelIntakeSeamIsRegisteredWhereIntegriqIsPresent()
 
 	/**
+	 * Both portaliq citizen facts are bound when portaliq is installed.
+	 *
+	 * The stubs in tests/bootstrap.php make both classes loadable here, so the
+	 * guard takes its true branch and the binding itself is asserted, not only
+	 * its absence. Without these two a resident's write or withdrawal lands on
+	 * the case and the handler is told nothing (dossiq#3142).
+	 *
+	 * @param string $event    The portaliq event class.
+	 * @param string $listener The dossiq listener class.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider portalFacts
+	 */
+	public function testBothPortalFactsAreBoundWherePortaliqIsPresent(string $event, string $listener): void {
+		$this->assertTrue(class_exists($event), $event . ' must be loadable in the test env for this to prove anything');
+
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		$this->assertSame(
+			expected: [$listener],
+			actual: ($registered[$event] ?? []),
+			message: 'without this binding the handler is never told what the resident did in the portal',
+		);
+	}//end testBothPortalFactsAreBoundWherePortaliqIsPresent()
+
+	/**
+	 * The two portaliq facts and the listener each one is bound to.
+	 *
+	 * @return array<string, array<int, string>> The cases.
+	 */
+	public static function portalFacts(): array {
+		return [
+			'write' => ['OCA\Portaliq\Event\PortalClientWriteEvent', 'OCA\Dossiq\Listener\PortalClientWriteListener'],
+			'withdrawal' => ['OCA\Portaliq\Event\PortalClientWithdrawalEvent', 'OCA\Dossiq\Listener\PortalClientWithdrawalListener'],
+		];
+	}//end portalFacts()
+
+	/**
+	 * The portaliq bindings are guarded, so an instance without portaliq boots.
+	 *
+	 * Source-read, because the stub makes the class loadable here and a run
+	 * cannot take the false branch. A binding without the guard would fatal
+	 * nowhere and register a listener for an event nobody raises, but a type
+	 * hint or `::class` import on the portaliq class would.
+	 *
+	 * @return void
+	 */
+	public function testThePortalBindingsAreGuardedOnTheEventClass(): void {
+		$source = $this->source(class: CrossAppListenerRegistrar::class);
+
+		foreach (['PortalClientWriteListener', 'PortalClientWithdrawalListener'] as $listener) {
+			$this->assertStringContainsString(
+				needle: 'class_exists(\\OCA\\Dossiq\\Listener\\' . $listener . '::EVENT) === true',
+				haystack: $source,
+				message: $listener . ' is bound without a class_exists guard',
+			);
+		}
+
+		$this->assertStringNotContainsString(
+			needle: 'Portaliq\\Event\\PortalClientWriteEvent::class',
+			haystack: $source,
+			message: 'the portaliq class must be named by string, never by ::class',
+		);
+	}//end testThePortalBindingsAreGuardedOnTheEventClass()
+
+	/**
 	 * The composite still delegates to the cross-app registrar.
 	 *
 	 * This is the assertion that catches the move itself, and it reads the
