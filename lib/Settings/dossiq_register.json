@@ -4952,8 +4952,7 @@
                             "createDocument",
                             "notifyRole",
                             "callWebhook",
-                            "mergeTemplate",
-                            "scheduleReminder"
+                            "mergeTemplate"
                         ],
                         "description": "Action handler type: must match a registered ActionHandlerInterface implementation",
                         "title": "Type"

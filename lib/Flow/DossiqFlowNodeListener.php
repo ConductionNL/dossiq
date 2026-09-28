@@ -90,7 +90,6 @@ class DossiqFlowNodeListener implements IEventListener {
         DossiqCallWebhookNode::class,
         DossiqCreateDocumentNode::class,
         DossiqMergeTemplateNode::class,
-        DossiqScheduleReminderNode::class,
     ];
 
 

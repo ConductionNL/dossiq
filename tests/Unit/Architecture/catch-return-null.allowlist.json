@@ -1,5 +1,5 @@
 {
-  "ceiling": 269,
+  "ceiling": 268,
   "measured": "2026-09-19",
   "window": 3,
   "about": [
@@ -22,7 +22,8 @@
     "2026-09-18, the parity/round2 quality sweep: eighteen sites arrived with the case merge, the split and its incidents, the custody chain and its takeover, the consent gate, pipelinq's party-kind acceptance and the working-day roll. Eleven are degradations of OpenRegister, pipelinq or the organisation calendar being absent or answering badly, and each logs at warning naming what it could not read; seven are read misses on a stored value, five of them a date the reader reports as undated rather than inventing a moment. None is a refusal: every rule these changes enforce throws RefusedException and is translated by its controller, which is why the merge's, the split's and the hand-off's own refusals are nowhere on this list. The ceiling went 238 to 269, and only eighteen of those thirty-one are this entry's: the file already held 251 entries against a ceiling of 238, because thirteen earlier changes on this branch added their sites and left the number alone. That is why the ceiling assertion was red before any of the eighteen were written, and it is the reason the number is restated here rather than incremented.",
     "2026-09-19: the ceiling moved UP, 269 -> 271, for the first time, and that is a deliberate exception to \"only goes down\" rather than an oversight. lib/Service/Termijn/WorkingDayRoll.php arrived with terms-on-the-engine-calendar (#3009) carrying two catches whose null IS the method's declared return contract, not a swallowed failure. The alternative was to make a calendar outage fatal to every deadline in the app. Both are classed degradation and both log at warning. Nothing else was added, and the rule stands for everything that is not a documented nullable contract.",
     "2026-09-19: the ceiling went 271 -> 270. `Email/NextcloudMailGateway::unpackSynchronisation` no longer has a catch of its own: its three reads of the Mail event go through the class's existing `call()` helper, which already carries the `method_exists` guard and the throw handling, and the method now logs at warning when the event cannot be read at all rather than only when a getter threw.",
-    "2026-09-21, merging feature/bug-fixes: the ceiling went 270 -> 269. `Besluitvorming/TemplateBundleSeeder::findByIdentifier` throws instead of answering null, so a failed lookup is no longer read as an absent case type (fix(seed): a seed step sees the case types it created)."
+    "2026-09-21, merging feature/bug-fixes: the ceiling went 270 -> 269. `Besluitvorming/TemplateBundleSeeder::findByIdentifier` throws instead of answering null, so a failed lookup is no longer read as an absent case type (fix(seed): a seed step sees the case types it created).",
+    "2026-09-28, refactor/flow-drop-schedule-reminder-and-set-status: the ceiling went 269 -> 268. `Actions/ScheduleReminderHandler::computeFireTime` left with its class: the reminder action queued a job class that never existed, so it was removed rather than fixed."
   ],
   "classes": {
     "refusal": "A rule said no. Throw a typed exception and let the controller translate it (ADR-105). Never allowlisted: converting it is the fix.",
@@ -85,13 +86,6 @@
       "occurrence": 1,
       "class": "degradation",
       "reason": "`resolveZaakdossierService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
-    },
-    {
-      "file": "lib/Service/Actions/ScheduleReminderHandler.php",
-      "method": "computeFireTime",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`computeFireTime()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
     },
     {
       "file": "lib/Service/Actions/SendEmailHandler.php",
