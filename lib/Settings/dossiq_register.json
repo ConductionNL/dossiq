@@ -4095,26 +4095,38 @@
                         "title": "Woo publication",
                         "properties": {
                             "publicationId": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Publication id",
+                                "description": "The id of the publication in OpenCatalogi."
                             },
                             "publicationUrl": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Publication link",
+                                "description": "The path to the publication in OpenCatalogi."
                             },
                             "status": {
                                 "type": "string",
+                                "title": "Publication status",
+                                "description": "Whether the decision is published or withdrawn.",
                                 "enum": [
                                     "published",
                                     "withdrawn"
                                 ]
                             },
                             "category": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Woo category",
+                                "description": "The Woo information category the publication is filed under."
                             },
                             "publishedAt": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Published at",
+                                "description": "When the decision was published."
                             },
                             "withdrawnAt": {
-                                "type": "string"
+                                "type": "string",
+                                "title": "Withdrawn at",
+                                "description": "When the publication was withdrawn."
                             }
                         }
                     },
@@ -4124,13 +4136,19 @@
                         "title": "Woo summary",
                         "properties": {
                             "openbaar": {
-                                "type": "integer"
+                                "type": "integer",
+                                "title": "Disclosed in full",
+                                "description": "How many documents are disclosed in full."
                             },
                             "deels_openbaar": {
-                                "type": "integer"
+                                "type": "integer",
+                                "title": "Disclosed in part",
+                                "description": "How many documents are disclosed in part."
                             },
                             "niet_openbaar": {
-                                "type": "integer"
+                                "type": "integer",
+                                "title": "Not disclosed",
+                                "description": "How many documents are not disclosed."
                             }
                         }
                     },
