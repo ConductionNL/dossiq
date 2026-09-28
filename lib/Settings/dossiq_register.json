@@ -4010,7 +4010,7 @@
             "decision": {
                 "slug": "decision",
                 "icon": "Gavel",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:ChooseAction",
                 "x-zgw-equivalent": "Besluit",
                 "title": "Decision",
@@ -4088,6 +4088,69 @@
                         "type": "string",
                         "description": "The governing body that made the decision (bestuursorgaan)",
                         "title": "Governing Body"
+                    },
+                    "wooPublication": {
+                        "type": "object",
+                        "description": "The OpenCatalogi publication this decision went out as under the Woo. Written by dossiq when it publishes or withdraws the decision; withdrawing reads the publication id from here.",
+                        "title": "Woo publication",
+                        "properties": {
+                            "publicationId": {
+                                "type": "string"
+                            },
+                            "publicationUrl": {
+                                "type": "string"
+                            },
+                            "status": {
+                                "type": "string",
+                                "enum": [
+                                    "published",
+                                    "withdrawn"
+                                ]
+                            },
+                            "category": {
+                                "type": "string"
+                            },
+                            "publishedAt": {
+                                "type": "string"
+                            },
+                            "withdrawnAt": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "wooSummary": {
+                        "type": "object",
+                        "description": "How many documents the Woo decision discloses in full, in part and not at all.",
+                        "title": "Woo summary",
+                        "properties": {
+                            "openbaar": {
+                                "type": "integer"
+                            },
+                            "deels_openbaar": {
+                                "type": "integer"
+                            },
+                            "niet_openbaar": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "weigeringsgronden": {
+                        "type": "array",
+                        "description": "The Woo grounds for refusal the assessed documents cite.",
+                        "title": "Grounds for refusal",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "assessmentCount": {
+                        "type": "integer",
+                        "description": "How many document assessments the Woo decision was assembled from.",
+                        "title": "Assessment count"
+                    },
+                    "decidedBy": {
+                        "type": "string",
+                        "description": "The user who assembled the Woo decision.",
+                        "title": "Decided by"
                     }
                 }
             },
