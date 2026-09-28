@@ -13286,9 +13286,9 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php",
+				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php Corrections round 8 (2026-09-28), dossiq#3162: publish writes wooPublication onto the decision at lib/Service/WooPublicationService.php:255-261, but the decision schema at lib/Settings/dossiq_register.json:4010 declares none of the Woo fields and every dossiq schema is magic-mapped (lib/Service/Settings/RegisterStorageDeclaration.php:114), so the reference is dropped on save and withdraw at lib/Service/WooPublicationService.php:406-408 finds no publication, at c8ac742.",
 				"owner": "ConductionNL/opencatalogi",
-				"note": "OpenSpec pass 2026-09-27: matrix corrected (opencatalogi lane: existing): rated yes with built.state none. lib/Service/WooPublicationService.php and lib/Service/PublicationService.php read at dossiq 96b8ef8f (corrected 2026-09-28)."
+				"note": "OpenSpec pass 2026-09-27: matrix corrected (opencatalogi lane: existing): rated yes with built.state none. lib/Service/WooPublicationService.php and lib/Service/PublicationService.php read at dossiq 96b8ef8f (corrected 2026-09-28). Corrections round 8 (2026-09-28): the publication reference is not stored because the decision schema does not declare it, so a published Woo decision cannot be withdrawn and publishing again creates a second publication (live check in woo-publish-decision-from-the-case task 1.1), dossiq#3162; rating kept because the publish itself still reaches OpenCatalogi."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no portal or publication code: appinfo/routes.php has no publish route and lib/Db/Document.php:44-56 no publication flag | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
