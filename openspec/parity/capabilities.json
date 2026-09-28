@@ -13185,7 +13185,8 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
-				"note": "OpenSpec pass 2026-09-27: decided no, platform-provided. The gap scan of 2026-09-19 (market-intelligence procest/_ledger/gap-scan/b.json) rates it platform: Nextcloud provides it and dossiq reaches it by holding case documents and sessions in the platform. dossiq builds nothing here.",
+				"evidence": "lib/Controller/DashboardController.php:96-99 (loads the Files app's scripts on dossiq pages); nextcloud-vue 2.57.1 src/components/CnFilesBrowser/CnFilesBrowser.vue:412-417 (each case file row's menu is the Files app's getFileActions(), delete among them); the deleted file goes to Nextcloud's trash bin, restore is the Files app's Deleted files view",
+				"note": "OpenSpec pass 2026-09-27: decided no, platform-provided. The gap scan of 2026-09-19 (market-intelligence procest/_ledger/gap-scan/b.json) rates it platform: Nextcloud provides it and dossiq reaches it by holding case documents and sessions in the platform. dossiq builds nothing here. corrections round 9 (2026-09-28): rated partial by the corpus re-rate in market-intelligence#191, and this evidence added so the rating carries a path and a line.",
 				"owner": "nextcloud/server"
 			},
 			"evidence": {
