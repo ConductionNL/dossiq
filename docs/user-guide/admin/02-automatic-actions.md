@@ -6,7 +6,7 @@ description: "Automatic actions are OpenRegister flows. Migrate the old records,
 
 # Set up automatic actions
 
-Automatic actions are **OpenRegister flows**. Dossiq contributes the action nodes — send an email, notify a role, call a webhook, create a document, merge a template, schedule a reminder — and OpenRegister's flow engine runs them.
+Automatic actions are **OpenRegister flows**. Dossiq contributes the action nodes: send an email, notify a role, call a webhook, create a document and merge a template. OpenRegister's flow engine runs them.
 
 :::warning What changed, and why this page was wrong
 
@@ -83,7 +83,8 @@ You have it working when the flow appears on the **Flows** page with app `dossiq
 |---|---|
 | `occ dossiq:actions:migrate-to-flows` says `--user is required` | It has no default on purpose: the created flows inherit that user's identity and organisation permanently. Pass a real uid. |
 | The command reports `OpenRegister exposes no FlowService on this instance` | OpenRegister is missing or too old. Flows live in OpenRegister; Dossiq only contributes nodes. |
-| An action was `skipped` | Its `type` is not one Dossiq implements a node for. The six are `sendEmail`, `notifyRole`, `callWebhook`, `createDocument`, `mergeTemplate` and `scheduleReminder`. |
+| An action was `skipped` | Its `type` is not one Dossiq implements a node for. The five are `sendEmail`, `notifyRole`, `callWebhook`, `createDocument` and `mergeTemplate`. |
+| A `scheduleReminder` action was `skipped` | Dossiq no longer offers a reminder action. It never sent a reminder: the job it queued did not exist. The stored record is kept, but no flow is made from it. Build the reminder as a flow instead. |
 | A flow saves but will not run | Check it has both a trigger node and an end node. OpenRegister reports a flow with neither as not runnable. |
 | Actions attached to a status transition are not on this page | Those are a different mechanism: they live on the case type's workflow, not here. See [Configure case types and workflows](./01-configure-case-types.md). |
 

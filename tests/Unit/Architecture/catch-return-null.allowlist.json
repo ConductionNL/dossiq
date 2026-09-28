@@ -87,13 +87,6 @@
       "reason": "`resolveZaakdossierService()` answers `return null` when its collaborator is absent or unresolvable; the catch logs nothing and the caller carries on without it."
     },
     {
-      "file": "lib/Service/Actions/ScheduleReminderHandler.php",
-      "method": "computeFireTime",
-      "occurrence": 1,
-      "class": "read-miss",
-      "reason": "`computeFireTime()` answers `return null` when the read fails; the catch logs nothing, so a failed read and an absent record are the same answer."
-    },
-    {
       "file": "lib/Service/Actions/SendEmailHandler.php",
       "method": "resolveEmailService",
       "occurrence": 1,

@@ -35,8 +35,7 @@ namespace OCA\Dossiq\Service\Actions;
  * Implementations MUST:
  *  - Return the value of {@see type()} matching the `type` field on
  *    `automaticAction` objects they handle (one of `sendEmail`,
- *    `createDocument`, `notifyRole`, `callWebhook`, `mergeTemplate`,
- *    `scheduleReminder`).
+ *    `createDocument`, `notifyRole`, `callWebhook`, `mergeTemplate`).
  *  - Catch `\Throwable` inside {@see handle()}, log via LoggerInterface, and
  *    return `new ActionResult(succeeded: false, error: ...)` with a static error code. Handlers
  *    MUST NEVER bubble exceptions or include `$e->getMessage()` in

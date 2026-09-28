@@ -24,7 +24,6 @@ use OCA\Dossiq\Flow\DossiqCreateDocumentNode;
 use OCA\Dossiq\Flow\DossiqFlowNodeListener;
 use OCA\Dossiq\Flow\DossiqMergeTemplateNode;
 use OCA\Dossiq\Flow\DossiqNotifyRoleNode;
-use OCA\Dossiq\Flow\DossiqScheduleReminderNode;
 use OCA\Dossiq\Flow\DossiqSendEmailNode;
 use OCA\Dossiq\Flow\DossiqTxSendEmailNode;
 use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
@@ -79,7 +78,6 @@ class DossiqFlowNodeListenerTest extends TestCase {
         DossiqCallWebhookNode::class => 'dossiq.action.callWebhook',
         DossiqCreateDocumentNode::class => 'dossiq.action.createDocument',
         DossiqMergeTemplateNode::class => 'dossiq.action.mergeTemplate',
-        DossiqScheduleReminderNode::class => 'dossiq.action.scheduleReminder',
     ];
 
 
