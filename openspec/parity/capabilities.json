@@ -8,7 +8,7 @@
 	},
 	"comparedOn": "2026-09-26",
 	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-09-26",
+	"reratedOn": "2026-09-28",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -674,6 +674,110 @@
 			"to": "partial",
 			"cause": "corrected",
 			"reason": "`verbs()` in src/views/tasks/TaskDetailView.vue:413 offers claim (Pick up) and unclaim (Hand back) only. Nothing assigns a task to another user or to a team: the team is shown read-only from candidateGroups and is set only by task declarations (lib/Service/Transitions/CreateTaskHandler.php). Found by the dossiq evidence backfill lane (dossiq#3135)."
+		},
+		{
+			"id": "2.4",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Claim takes an unassigned case in one click. It is a row action on the Queue (`src/manifest.json:1435`) and on the Cases list (`:1632`), and a header action on the case (`:3381`), with Release beside it (`:3396`). Both post to `CaseAssignmentService` (`appinfo/routes.php:492-493`), which refuses a case somebody else holds. Assigning a named colleague stays Edit and the bulk Reassign on Cases (`:1544`). Shipped by dossiq#2723 (d7d8ec7c3)."
+		},
+		{
+			"id": "2.17",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "`lib/Listener/CaseDeleteGuardListener.php` listens on OpenRegister's `ObjectDeletingEvent`, registered in `ObjectListenerRegistrar.php:102-106`, and refuses the delete of a case with an open term, sub-cases, a legal hold or a running retention. One refusal names every rule that holds. `BezwaarLegalHoldListener` and `DeelzaakDeleteWarningModal.vue` still sit beside it. Shipped by dossiq#2729 (022f821b7)."
+		},
+		{
+			"id": "2.22",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Two admin-only header actions on the case: Inspect raw data opens `CaseRawDataDialog` on the record as stored (`src/manifest.json:3516`), and Inspect flow runs opens OpenRegister's run inspector filtered to this case (`:3529`). Both hide behind GET `/api/inspect/availability` (`appinfo/routes.php:568`). `#StatusRecordDetail` keeps the evaluated guards and dispatched actions, and the audit sidebar the change log. Shipped by dossiq#2912 (7146db3bc)."
+		},
+		{
+			"id": "4.5",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Nextcloud Office opens a case document in the browser from the case. `lib/Controller/DashboardController.php:96-99` loads the Viewer and the Files app's scripts on every dossiq page, and a row click in the case Files tab runs the Files `view` action (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:990`), which hands an office file to Collabora when richdocuments is installed. dossiq carries no WOPI code. Provider nextcloud (gap scan 2026-09-19, pack b, verdict platform)."
+		},
+		{
+			"id": "4.11",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Nextcloud locks a case file for shared editing. The case Files tab offers the Files app's plugin actions on each row, lock among them when files_lock is installed (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:412-417`), and Collabora locks a document while it is open. `lib/Controller/DrcController.php` `drc#lock` and `drc#unlock` are the ZGW API contract for outside systems, not a second lock. Provider nextcloud (gap scan 2026-09-19, pack b, verdict platform)."
+		},
+		{
+			"id": "4.15",
+			"on": "2026-09-28",
+			"from": "no",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "Delete is a Files action on every case file row (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:412-417`), and a deleted file goes to Nextcloud's trash bin, where restore puts it back in the case folder. Raised from no to partial rather than to yes: restore is the Files app's Deleted files view, and neither the case nor Show in Files opens it. dossiq's own recycle work is about cases, not documents. Provider nextcloud (gap scan 2026-09-19, pack b, verdict platform)."
+		},
+		{
+			"id": "4.16",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "A row click in the case Files tab runs the Files `view` action (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:990`), which opens the Nextcloud Viewer on the page, because `DashboardController.php:96-99` loads it. Thumbnails come from `/core/preview` (`CnFilesBrowser.vue:1519`). The blank tab the old note described is the baseline before dossiq#2642 (a4685e7a6). Provider nextcloud (gap scan 2026-09-19, pack b, verdict platform)."
+		},
+		{
+			"id": "4.23",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Case files are ordinary Nextcloud files in the case's object folder under `Open Registers/`, so the Files app shows them. The case Files tab lists that folder with the same PROPFIND the Files app sends, and every row carries Show in Files (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:265`). dossiq ships no storage wrapper, since that would be a second answer to where a case file lives. Moved there by dossiq#2642 (a4685e7a6). Provider nextcloud (gap scan 2026-09-19, pack b)."
+		},
+		{
+			"id": "5.6",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "The BSN and the special-category fields carry a property-level `authorization.read` for the `dossiq-sensitive` group: `citizenServiceNumber` in `lib/Settings/register.d/25-brp-kvk.json:26`, nineteen fields in `50-sociaal-domein.json` and four in `40-kcc-werkplek.json`. `lib/Repair/ProvisionAssignedGroups.php:156` creates the group empty, so an administrator names who may read. `CitizenLookupGuard` guards the lookup with the same group. Shipped by dossiq#2926 (e4b780948)."
+		},
+		{
+			"id": "5.12",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Document properties on every case file row (`src/manifest.json:2363`) opens `DocumentMetadataDialog`, which records the sender and the recipients a direction allows (`src/modals/DocumentMetadataDialog.vue:68-82`, over `src/services/documentCorrespondents.js`). The People tab shows per party what they sent and received (`CasePartiesWidget.vue:397`). The join is `lib/Settings/register.d/71-document-correspondents.json`. Shipped by dossiq#2905 (5c00dc566)."
+		},
+		{
+			"id": "12.7",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Nextcloud's user_saml and user_oidc apps log staff in with SAML or OIDC, and dossiq mounts no staff login of its own: its staff pages run behind the Nextcloud session. A caseworker logged in through SSO is logged into dossiq by the same act. The tenant half is dossiq's and exists: eHerkenning SAML in `lib/Service/TenantAuthenticationService.php` and `TenantSessionService.php`, guarded by `MandateValidationMiddleware.php`. Provider nextcloud (gap scan 2026-09-19, pack d, verdict platform)."
+		},
+		{
+			"id": "12.17",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "integriq is the connector framework (`IntegrationProvider`, the vendor catalogue), and dossiq plugs into it. `lib/Settings/connections.json` declares twelve connections, integriq's `ConnectionRegistryService` syncs every app's declaration into its `app_connection` schema, and dossiq's Integrations page lists those rows (`src/manifest.json:6708`). `lib/Service/External/IntegrationMode.php` and the registrars per register are dossiq's own seam. pluggable-integration-registry closed 14 of 14 tasks. Gap scan 2026-09-19, pack d, verdict sibling-has."
+		},
+		{
+			"id": "12.21",
+			"on": "2026-09-28",
+			"from": "partial",
+			"to": "yes",
+			"cause": "corrected",
+			"reason": "Nextcloud Office is the platform office. dossiq#2642 (a4685e7a6) moved case documents into a real Nextcloud folder, and a row click in the case Files tab hands an office file to the Viewer and to Collabora (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:990`, `DashboardController.php:96-99`). `grep -rn WOPI lib src` returns nothing, as it should. Provider nextcloud (gap scan 2026-09-19, pack d, verdict platform)."
 		}
 	],
 	"_competitorRerated": [
@@ -11128,7 +11232,7 @@
 			"area": "case-core",
 			"name": "Assign case to a user, claim, unassign",
 			"name_nl": "Zaak toewijzen, oppakken en vrijgeven",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -11530,7 +11634,7 @@
 			"area": "case-core",
 			"name": "Delete case with guard",
 			"name_nl": "Zaak verwijderen met controle vooraf",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -11714,7 +11818,7 @@
 			"area": "case-core",
 			"name": "Raw case inspection for admins (data, variables, logs)",
 			"name_nl": "Ruwe zaakinspectie voor beheerders (data, variabelen, logs)",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "no",
@@ -12746,7 +12850,7 @@
 			"area": "documents",
 			"name": "In-browser office editing (Collabora, WOPI)",
 			"name_nl": "Office bewerken in de browser (Collabora, WOPI)",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -12937,7 +13041,7 @@
 			"area": "documents",
 			"name": "Document locking for shared editing",
 			"name_nl": "Documenten vergrendelen bij gedeeld bewerken",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -13069,7 +13173,7 @@
 			"area": "documents",
 			"name": "Trash and restore for documents",
 			"name_nl": "Prullenbak en terugzetten voor documenten",
-			"dossiq": "no",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "yes",
@@ -13081,7 +13185,8 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
-				"note": "OpenSpec pass 2026-09-27: decided no, platform-provided. The gap scan of 2026-09-19 (market-intelligence procest/_ledger/gap-scan/b.json) rates it platform: Nextcloud provides it and dossiq reaches it by holding case documents and sessions in the platform. dossiq builds nothing here.",
+				"evidence": "lib/Controller/DashboardController.php:96-99 (loads the Files app's scripts on dossiq pages); nextcloud-vue 2.57.1 src/components/CnFilesBrowser/CnFilesBrowser.vue:412-417 (each case file row's menu is the Files app's getFileActions(), delete among them); the deleted file goes to Nextcloud's trash bin, restore is the Files app's Deleted files view",
+				"note": "OpenSpec pass 2026-09-27: decided no, platform-provided. The gap scan of 2026-09-19 (market-intelligence procest/_ledger/gap-scan/b.json) rates it platform: Nextcloud provides it and dossiq reaches it by holding case documents and sessions in the platform. dossiq builds nothing here. corrections round 9 (2026-09-28): rated partial by the corpus re-rate in market-intelligence#191, and this evidence added so the rating carries a path and a line.",
 				"owner": "nextcloud/server"
 			},
 			"evidence": {
@@ -13097,7 +13202,7 @@
 			"area": "documents",
 			"name": "Document preview",
 			"name_nl": "Documentvoorbeeld",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -13340,7 +13445,7 @@
 			"area": "documents",
 			"name": "Case files visible in the platform file manager",
 			"name_nl": "Zaakbestanden zichtbaar in de bestandsbeheerder van het platform",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "no",
@@ -13532,7 +13637,7 @@
 			"area": "parties-and-contacts",
 			"name": "Sensitive personal data behind an extra permission",
 			"name_nl": "Bijzondere persoonsgegevens achter een extra recht",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "partial",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -13724,7 +13829,7 @@
 			"area": "parties-and-contacts",
 			"name": "Document senders and recipients",
 			"name_nl": "Afzenders en ontvangers van documenten",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "partial",
@@ -16888,7 +16993,7 @@
 			"area": "integrations",
 			"name": "Staff SSO (SAML or OIDC)",
 			"name_nl": "Eenmalig aanmelden voor medewerkers (SAML of OIDC)",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -17204,7 +17309,7 @@
 			"area": "integrations",
 			"name": "Generic plugin or connector framework",
 			"name_nl": "Generiek plug-in- of connectorraamwerk",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -17323,7 +17428,7 @@
 			"area": "integrations",
 			"name": "Office online (WOPI) or platform office",
 			"name_nl": "Office online (WOPI) of office van het platform",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "yes",
 			"gzac": "no",
 			"zaaksysteem": "yes",
