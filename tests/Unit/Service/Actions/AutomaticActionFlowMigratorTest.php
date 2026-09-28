@@ -18,6 +18,11 @@ namespace OCA\Dossiq\Tests\Unit\Service\Actions;
 
 use OCA\Dossiq\Service\Actions\AutomaticActionFlowMigrator;
 use OCA\Dossiq\Service\SettingsService;
+use OCP\IL10N;
+use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
+use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
+use OCA\Dossiq\Service\Flow\RetiredNodeMap;
+use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -230,6 +235,10 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			}
 		);
 
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		$syntax = new RetiredTemplateSyntax();
+
 		$appConfig = $this->createMock(IAppConfig::class);
 		$appConfig->method('getValueString')->willReturnCallback(
 			static fn (string $app, string $key, string $default = ''): string => ($key === 'register') ? '17' : '115'
@@ -240,6 +249,8 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			$container,
 			$appConfig,
 			$this->createMock(LoggerInterface::class),
+			new RetiredNodeMap(),
+			new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax)),
 		);
 	}
 
@@ -257,11 +268,11 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 					'slug' => 'send-decision-email',
 					'title' => 'Send decision email',
 					'type' => 'sendEmail',
-					'config' => '{"subject":"Uw besluit"}',
+					'config' => '{"recipientRef":"indiener","subjectTemplate":"Uw besluit","bodyTemplate":"Zie {{case.title}}"}',
 				],
 			],
 			$flowService,
-			['dossiq.action.sendEmail'],
+			['openregister.send-email'],
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
@@ -275,11 +286,15 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 		$this->assertTrue($document['enabled']);
 		$this->assertSame('manual', $document['trigger']);
 		$this->assertSame(
-			['openregister.trigger-manual', 'dossiq.action.sendEmail', 'openregister.end'],
+			['openregister.trigger-manual', 'openregister.send-email', 'openregister.end'],
 			array_column($document['nodes'], 'type'),
 			'A flow OpenRegister will run needs an entry and an exit around the action.'
 		);
-		$this->assertSame(['subject' => 'Uw besluit'], $document['nodes'][1]['config']);
+		$this->assertSame(
+			['recipients' => ['{{ indiener }}'], 'externalRecipients' => 'object', 'subject' => 'Uw besluit', 'body' => 'Zie {{ title }}'],
+			$document['nodes'][1]['config'],
+			'The catalogue config is translated into the send-email step\'s own.'
+		);
 		$this->assertSame('dossiq:automaticAction:tenant-a:send-decision-email', $document['notes']);
 	}
 
@@ -297,7 +312,7 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 		$migrator = $this->migrator(
 			[['tenantId' => 't', 'slug' => 'carrier-pigeon', 'title' => 'Pigeon', 'type' => 'sendCarrierPigeon']],
 			$flowService,
-			['dossiq.action.sendEmail'],
+			['openregister.send-email'],
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
@@ -325,11 +340,11 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 					'slug' => 'send-decision-email',
 					'title' => 'Send decision email',
 					'type' => 'sendEmail',
-					'config' => '{}',
+					'config' => '{"recipientRef":"email:loket@example.org","bodyTemplate":"Hallo"}',
 				],
 			],
 			$flowService,
-			['dossiq.action.sendEmail'],
+			['openregister.send-email'],
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
@@ -352,7 +367,7 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 		$migrator = $this->migrator(
 			[['slug' => 'no-tenant', 'title' => 'Orphan', 'type' => 'sendEmail']],
 			$flowService,
-			['dossiq.action.sendEmail'],
+			['openregister.send-email'],
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
@@ -369,9 +384,9 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 	public function testADryRunWritesNothing(): void {
 		$flowService = $this->flowServiceFake();
 		$migrator = $this->migrator(
-			[['tenantId' => 't', 'slug' => 's', 'title' => 'T', 'type' => 'sendEmail', 'config' => '{}']],
+			[['tenantId' => 't', 'slug' => 's', 'title' => 'T', 'type' => 'sendEmail', 'config' => '{"recipientRef":"email:loket@example.org","bodyTemplate":"Hallo"}']],
 			$flowService,
-			['dossiq.action.sendEmail'],
+			['openregister.send-email'],
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: true);
@@ -447,11 +462,11 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 
 		$migrator = $this->migrator(
 			[
-				['tenantId' => 't', 'slug' => 'boom', 'title' => 'Boom', 'type' => 'sendEmail', 'config' => '{}'],
-				['tenantId' => 't', 'slug' => 'fine', 'title' => 'Fine', 'type' => 'sendEmail', 'config' => '{}'],
+				['tenantId' => 't', 'slug' => 'boom', 'title' => 'Boom', 'type' => 'sendEmail', 'config' => '{"recipientRef":"email:loket@example.org","bodyTemplate":"Hallo"}'],
+				['tenantId' => 't', 'slug' => 'fine', 'title' => 'Fine', 'type' => 'sendEmail', 'config' => '{"recipientRef":"email:loket@example.org","bodyTemplate":"Hallo"}'],
 			],
 			$flowService,
-			['dossiq.action.sendEmail'],
+			['openregister.send-email'],
 		);
 
 		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
@@ -459,5 +474,45 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 		$this->assertSame(1, $summary['failed']);
 		$this->assertSame(1, $summary['created']);
 		$this->assertCount(1, $flowService->saves);
+	}
+
+	/**
+	 * A webhook action has no replacement that takes a URL, so it is skipped with the reason.
+	 *
+	 * @return void
+	 */
+	public function testAWebhookActionIsSkippedNamingWhy(): void {
+		$flowService = $this->flowServiceFake();
+		$migrator = $this->migrator(
+			[['tenantId' => 't', 'slug' => 'hook', 'title' => 'Hook', 'type' => 'callWebhook', 'config' => '{"url":"https://hooks.example.org/x"}']],
+			$flowService,
+			['openregister.send-email'],
+		);
+
+		$summary = $migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$this->assertSame(1, $summary['skipped']);
+		$this->assertStringContainsString('hooks.example.org', $summary['rows'][0]['detail']);
+		$this->assertSame([], $flowService->saves);
+	}
+
+	/**
+	 * A document action becomes Filinq's step and carries what the dossier needs to file it.
+	 *
+	 * @return void
+	 */
+	public function testADocumentActionBecomesFilinqsStep(): void {
+		$flowService = $this->flowServiceFake();
+		$migrator = $this->migrator(
+			[['tenantId' => 't', 'slug' => 'brief', 'title' => 'Brief', 'type' => 'createDocument', 'config' => '{"templateSlug":"Beste {{case.title}}","outputName":"brief.md","documentType":"type-1"}']],
+			$flowService,
+			['filinq.generate-document'],
+		);
+
+		$migrator->migrate(user: $this->createMock(IUser::class), dryRun: false);
+
+		$node = $flowService->saves[0]['document']['nodes'][1];
+		$this->assertSame('filinq.generate-document', $node['type']);
+		$this->assertSame('type-1', $node['config']['metadata']['informatieobjecttype']);
 	}
 }

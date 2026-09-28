@@ -2132,7 +2132,7 @@
                                 },
                                 {
                                     "id": "decide-register-b",
-                                    "type": "dossiq.requestDecision",
+                                    "type": "decidiq.request-decision",
                                     "config": {
                                         "question": "Toets de aanvraag aan register B",
                                         "decisionType": "advice",
@@ -2141,7 +2141,7 @@
                                 },
                                 {
                                     "id": "decide-tweede-toets",
-                                    "type": "dossiq.requestDecision",
+                                    "type": "decidiq.request-decision",
                                     "config": {
                                         "question": "Tweede inhoudelijke toets",
                                         "decisionType": "advice",
@@ -2170,7 +2170,7 @@
                                 },
                                 {
                                     "id": "decide-commissie",
-                                    "type": "dossiq.requestDecision",
+                                    "type": "decidiq.request-decision",
                                     "config": {
                                         "question": "Definitief besluit van de planningscommissie",
                                         "decisionType": "report-adoption",
@@ -2184,12 +2184,14 @@
                                 },
                                 {
                                     "id": "besluit-document",
-                                    "type": "dossiq.action.mergeTemplate",
-                                    "_note": "The keys are the ones DossiqMergeTemplateNode REQUIRES (templateSlug + targetField); the first shipped config said template/outputName, which validateConfig refuses at execute(), so every run stranded here and no case could ever close. The `template` key carries the inline template text (HandlesTemplates::renderTemplate reads it first and treats it as the template itself, not a lookup key). targetField must be a property the case schema declares, or the store silently strips the rendered document on save.",
+                                    "type": "filinq.generate-document",
+                                    "_note": "Filinq renders the decision text and writes it into besluitDocument, and nothing else on the case. It replaced dossiq.action.mergeTemplate (change flow-nodes-to-their-owners). storeFile is false because this step never filed a document: it fills a field. The template is Twig with the case fields at the top level and the whole case under item. targetField must be a property the case schema declares, or the store silently strips the rendered text on save. output keeps actionResult, the key the retired step used, so nothing after this step reads a different name.",
                                     "config": {
-                                        "templateSlug": "besluit",
-                                        "template": "Besluit op de aanvraag {{case.title}} ({{case.identifier}}). De planningscommissie heeft de aanvraag beoordeeld. Uitkomst: {{case.commissieBesluit.decision}}. Dit besluit is vastgelegd bij afronding van de behandeling.",
-                                        "targetField": "besluitDocument"
+                                        "template": "Besluit op de aanvraag {{ item.title }} ({{ item.identifier }}). De planningscommissie heeft de aanvraag beoordeeld. Uitkomst: {{ item.commissieBesluit.decision }}. Dit besluit is vastgelegd bij afronding van de behandeling.",
+                                        "storeFile": false,
+                                        "targetField": "besluitDocument",
+                                        "requestingApp": "dossiq",
+                                        "output": "actionResult"
                                     }
                                 },
                                 {
@@ -3477,7 +3479,7 @@
                     "besluitDocument": {
                         "type": "string",
                         "title": "Decision document",
-                        "description": "The rendered decision text the case flow's document step (besluit-document, dossiq.action.mergeTemplate) writes before the case reaches its final status. Declared here because the store strips what the schema does not declare: without this property the merge would report success while the document silently never persisted, and the case would close undocumented. Empty for cases the flow has not decided.",
+                        "description": "The rendered decision text the case flow's document step (besluit-document, filinq.generate-document) writes before the case reaches its final status. Declared here because the store strips what the schema does not declare: without this property the merge would report success while the document silently never persisted, and the case would close undocumented. Empty for cases the flow has not decided.",
                         "visible": false
                     },
                     "aanvulling": {
@@ -5035,7 +5037,7 @@
                             "callWebhook",
                             "mergeTemplate"
                         ],
-                        "description": "Action handler type: must match a registered ActionHandlerInterface implementation",
+                        "description": "What the action does. occ dossiq:actions:migrate-to-flows turns each one into the flow step of the app that owns it: sendEmail and notifyRole into OpenRegister's mail and notification steps, createDocument and mergeTemplate into Filinq's document step. callWebhook has no equivalent and is reported, not migrated.",
                         "title": "Type"
                     },
                     "tenantId": {

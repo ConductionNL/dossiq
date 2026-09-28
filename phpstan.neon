@@ -56,6 +56,9 @@ parameters:
         # OpenRegister's people-on-objects event contract, same
         # declaration-only-stub discipline as the apps above.
         - tests/Stubs/OpenRegister/Event
+        # Filinq's document events (flow-nodes-to-their-owners), same
+        # declaration-only-stub discipline as the apps above.
+        - tests/Stubs/Filinq
         # OpenRegister's AppHost store plane (ADR-080). StoreController takes
         # GenericStoreService as an INJECTED type-hint rather than extending a
         # cross-app base, precisely so one scanned stub resolves it; an

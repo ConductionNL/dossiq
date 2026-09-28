@@ -95,7 +95,7 @@ class AssignedCasesSource extends RegisterBackedSource {
 	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
-		return ['notification:caseAssigned', 'notification:caseHandoffIntake', 'flow:DossiqTxSetFieldNode'];
+		return ['notification:caseAssigned', 'notification:caseHandoffIntake'];
 	}//end mechanisms()
 
 	/**

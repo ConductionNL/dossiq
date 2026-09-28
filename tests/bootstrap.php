@@ -638,6 +638,21 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\PersonLinkedEvent') === false) {
 	include_once __DIR__ . '/Stubs/OpenRegister/Event/PersonUnlinkedEvent.php';
 }
 
+// flow-nodes-to-their-owners: the events that hand a sent mail and a generated
+// document back to dossiq. OpenRegister's FlowEmailSentEvent (from
+// feat/flow-send-email-external-recipients) and Filinq's two document events.
+// Verbatim copies, loaded only when the real classes are absent, shared with
+// psalm and phpstan.
+if (class_exists('\\OCA\\OpenRegister\\Event\\FlowEmailSentEvent') === false) {
+	include_once __DIR__ . '/Stubs/OpenRegister/Event/FlowEmailSentEvent.php';
+}
+
+foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stubEvent) {
+	if (class_exists('\\OCA\\Filinq\\Event\\' . $stubEvent) === false) {
+		include_once __DIR__ . '/Stubs/Filinq/Event/' . $stubEvent . '.php';
+	}
+}
+
 // case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
 // `::class`, which does not autoload, so the registration is silent at runtime
 // without openregister and reads to the analysers as a class that does not

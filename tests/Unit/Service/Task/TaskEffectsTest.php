@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service\Task;
 
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Task\CaseTaskActions;
 use OCA\Dossiq\Service\Task\TaskEffects;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
@@ -137,8 +138,8 @@ class TaskEffectsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnresolvableEffectIsNamed(): void {
-		$missing = $this->effects(handlers: ['sendEmail' => $this->handler(succeeded: true)])
-			->unresolved(effects: [['type' => 'sendEmail'], ['type' => 'teleport'], ['type' => 'teleport']]);
+		$missing = $this->effects(handlers: ['createTask' => $this->handler(succeeded: true)])
+			->unresolved(effects: [['type' => 'createTask'], ['type' => 'teleport'], ['type' => 'teleport']]);
 
 		$this->assertSame(expected: ['teleport'], actual: $missing);
 	}
@@ -252,4 +253,32 @@ class TaskEffectsTest extends TestCase {
 			}
 		};
 	}
-}//end class
+
+	/**
+	 * An effect whose handler left dossiq runs as its replacement and is not unresolved.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function testARetiredEffectRunsAsItsReplacement(): void {
+		$retired = $this->getMockBuilder(RetiredActionRunner::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['runnableTypes', 'run'])
+			->getMock();
+		$retired->method('runnableTypes')->willReturn(['sendEmail', 'notify', 'setField', 'evaluateDecision']);
+		$retired->expects($this->once())->method('run')
+			->with('notify', ['type' => 'notify', 'message' => 'Klaar'], ['id' => 'c'], ['taskId' => 't'])
+			->willReturn(['type' => 'notify', 'ok' => false, 'error' => 'retired_action_needs_openregister']);
+
+		$registry = $this->createMock(originalClassName: ActionHandlerRegistry::class);
+		$effects = new TaskEffects(handlers: $registry, logger: new NullLogger(), retired: $retired);
+
+		$this->assertSame([], $effects->unresolved(effects: [['type' => 'notify']]));
+		$this->assertSame(['webhook'], $effects->unresolved(effects: [['type' => 'webhook']]));
+		$this->assertSame(
+			[['type' => 'notify', 'ran' => false, 'error' => 'retired_action_needs_openregister']],
+			$effects->run(effects: [['type' => 'notify', 'message' => 'Klaar']], case: ['id' => 'c'], context: ['taskId' => 't'])
+		);
+	}
+}

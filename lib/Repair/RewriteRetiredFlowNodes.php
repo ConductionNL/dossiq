@@ -6,7 +6,9 @@
  * Removing a node from the catalogue does not remove it from the flows people
  * saved. This step walks every flow dossiq owns and applies
  * {@see \OCA\Dossiq\Service\Flow\RetiredNodeMap}: a step with a replacement is
- * renamed, a step without one is removed and its edges are bridged. Every
+ * renamed or translated into the steps that replace it, a step without one is
+ * removed and its edges are bridged, and a step whose configuration cannot be
+ * carried over faithfully is left in place and logged as a warning. Every
  * change is logged with the flow and the step it touched.
  *
  * A PUBLISHED FLOW IS REWRITTEN THROUGH A NEW VERSION. OpenRegister runs the
@@ -19,7 +21,8 @@
  * Those are data somebody entered, so they are logged and left alone.
  *
  * Idempotent: a flow with no retired step is not touched, so a second run
- * changes nothing.
+ * changes nothing. A step left in place is reported again on every run, which
+ * is the point: it still needs a person.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -197,6 +200,15 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 			$this->report(change: $change, label: $label, output: $output);
 		}
 
+		// A flow whose only retired steps could not be carried over has
+		// nothing to save: the graph is what it was, and the warnings above
+		// are the whole outcome. Saving it anyway would mint a version that
+		// differs from the last in nothing but its number.
+		$unmappable = array_filter($result['changes'], static fn (array $change): bool => $change['outcome'] === 'unmappable');
+		if (count($unmappable) === count($result['changes'])) {
+			return false;
+		}
+
 		try {
 			$published = ((string)$flow->getLifecycleStatus() === self::PUBLISHED);
 			if ($published === true) {
@@ -231,6 +243,14 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 	 */
 	private function report(array $change, string $label, IOutput $output): void {
 		$context = ['app' => Application::APP_ID, 'flow' => $label, 'step' => $change['step'], 'type' => $change['type']];
+
+		if ($change['outcome'] === 'unmappable') {
+			$message = 'Dossiq: flow ' . $label . ', step "' . $change['step'] . '" could not be carried over: '
+				. $change['type'] . ' is retired (' . $change['reason'] . '). Rebuild it in the flow editor; until then the run stops at it.';
+			$output->warning($message);
+			$this->logger->warning($message, $context);
+			return;
+		}
 
 		if ($change['outcome'] === 'replaced') {
 			$message = 'Dossiq: flow ' . $label . ', step "' . $change['step'] . '": ' . $change['type']

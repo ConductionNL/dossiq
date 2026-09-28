@@ -31,13 +31,12 @@ use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\DocumentCorrespondents;
 
 /**
- * The addressed parties of a case, for a handler that files a letter.
+ * The addressed parties of a case, for a class that files a letter.
  *
- * Requires the using class to hold a `$container`, which both handlers do and
- * which is how they already reach the dossier service. Through the container
- * rather than the constructor for the same reason: a handler is built
- * whenever the Flow node catalogue is, and a constructor dependency would
- * drag the party stack into every catalogue read.
+ * Requires the using class to hold a `$container`, which
+ * {@see \OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler} does. Through
+ * the container rather than the constructor, so an instance without the
+ * party writer still files the letter, with no addressee.
  *
  * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md
  */

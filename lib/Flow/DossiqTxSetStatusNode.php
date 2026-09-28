@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
-use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCP\IL10N;
@@ -28,7 +27,7 @@ use UnexpectedValueException;
  *
  * A thin wrapper: SetStatusHandler keeps the logic.
  *
- * Distinct from `dossiq.setField` because `status` is not an ordinary field. It
+ * Distinct from a field write (the retired `dossiq.setField`) because `status` is not an ordinary field. It
  * is a reference to a `statusType` whose uuid is minted per installation, so a
  * SHIPPED flow can only name the status — never carry its id. This node takes
  * that name and the handler resolves it inside the case's own case type.
@@ -60,9 +59,9 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
+     * @return TransitionActionHandler The action handler.
      */
-    protected function handler(): CatalogueActionHandler|TransitionActionHandler {
+    protected function handler(): TransitionActionHandler {
         return $this->handler;
 
     }//end handler()

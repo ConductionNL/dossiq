@@ -79,9 +79,9 @@ import {
  * every path that opens this dialog.
  *
  * The templates come from `TemplateController#index`, the single library, and
- * the chosen one is rendered and filed by `MergeTemplateHandler` with NO
- * `targetField` — the same branch `DossiqMergeTemplateNode` will run once the
- * library can dispatch the action directly.
+ * the chosen one is rendered by Filinq and filed on the case by
+ * `CaseDocumentGenerationService`, the same filing a flow's
+ * `filinq.generate-document` step gets.
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  * @spec openspec/specs/template-library/spec.md

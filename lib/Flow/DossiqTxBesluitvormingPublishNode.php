@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
-use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCA\Dossiq\Service\Transitions\BesluitvormingPublishHandler;
 use OCP\IL10N;
@@ -27,8 +26,7 @@ use OCP\IURLGenerator;
  *
  * A thin wrapper: BesluitvormingPublishHandler keeps the logic. This is the vocabulary
  * SideEffectDispatcher actually fires on every status change, which is why it
- * takes the plain `dossiq.besluitvormingPublish` id rather than the `dossiq.action.*`
- * prefix the configured-action catalogue uses.
+ * takes the plain `dossiq.besluitvormingPublish` id.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
@@ -57,9 +55,9 @@ class DossiqTxBesluitvormingPublishNode extends DossiqTransitionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
+     * @return TransitionActionHandler The action handler.
      */
-    protected function handler(): CatalogueActionHandler|TransitionActionHandler {
+    protected function handler(): TransitionActionHandler {
         return $this->handler;
 
     }//end handler()

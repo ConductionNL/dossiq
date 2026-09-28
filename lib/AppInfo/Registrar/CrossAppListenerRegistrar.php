@@ -38,6 +38,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * Registers the listeners that depend on another app being installed.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/automatic-actions/spec.md
  */
 class CrossAppListenerRegistrar {
 	/**
@@ -46,25 +48,60 @@ class CrossAppListenerRegistrar {
 	 * @param IRegistrationContext $context The registration context.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/automatic-actions/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$this->registerFlowNodes(context: $context);
+		$this->registerOwnedStepListeners(context: $context);
 		$this->registerDeliveryListeners(context: $context);
 		$this->registerIntakeListeners(context: $context);
 		$this->registerPortalListeners(context: $context);
 	}//end register()
 
 	/**
-	 * Offer OpenRegister's flow engine the six things a case can do.
+	 * Take back what the apps that own mail and documents did for a case.
+	 *
+	 * Dossiq's mail and document steps are OpenRegister's and Filinq's now.
+	 * Each announces what it did, and dossiq files it on the case: the sent
+	 * mail on the case and its timeline, the generated document in the
+	 * dossier. Guarded on the event class and named by string, like every
+	 * registration here, because both apps are optional at runtime and an
+	 * older OpenRegister does not announce sent mail at all.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	private function registerOwnedStepListeners(IRegistrationContext $context): void {
+		if (class_exists(\OCA\Dossiq\Listener\FlowEmailSentListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\FlowEmailSentListener::EVENT,
+				\OCA\Dossiq\Listener\FlowEmailSentListener::class
+			);
+		}
+
+		if (class_exists(\OCA\Dossiq\Listener\DocumentGeneratedListener::EVENT) === true) {
+			$context->registerEventListener(
+				\OCA\Dossiq\Listener\DocumentGeneratedListener::EVENT,
+				\OCA\Dossiq\Listener\DocumentGeneratedListener::class
+			);
+		}
+	}//end registerOwnedStepListeners()
+
+	/**
+	 * Offer OpenRegister's flow engine what a case can do and no other app owns.
 	 *
 	 * @param IRegistrationContext $context The registration context.
 	 *
 	 * @return void
 	 */
 	private function registerFlowNodes(IRegistrationContext $context): void {
-		// ADR-065: OpenRegister owns the flow engine; dossiq contributes the six
-		// things a case can DO, because every one of OpenRegister's own nineteen
-		// nodes is control-flow or data and none of them acts outward.
+		// ADR-065: OpenRegister owns the flow engine; dossiq contributes what
+		// only a case can do. Mail, notifications, object writes, decision
+		// tables, documents, decisions and outbound calls are their owners'.
 		//
 		// Guarded on the event class, the same way hermiq guards its node
 		// listener: `::class` is a compile-time string and does not autoload, so

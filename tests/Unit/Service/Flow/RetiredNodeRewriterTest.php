@@ -54,8 +54,8 @@ class RetiredNodeRewriterTest extends TestCase {
 		$row = $map->rowFor(type: 'dossiq.action.scheduleReminder');
 		self::assertNotNull($row);
 		self::assertNull($row['replacement']);
-		self::assertNull($map->rowFor(type: 'dossiq.action.sendEmail'));
-		self::assertSame(['scheduleReminder'], array_keys($map->retiredActionTypes()));
+		self::assertNull($map->rowFor(type: 'dossiq.setStatus'));
+		self::assertSame(['scheduleReminder', 'callWebhook'], array_keys($map->retiredActionTypes()));
 	}//end testTheShippedTableRetiresTheReminderWithoutReplacement()
 
 	/**

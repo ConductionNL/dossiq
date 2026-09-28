@@ -92,7 +92,7 @@ class MentionSource implements QueueSource {
 	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
-		return ['flow:DossiqTxNotifyNode'];
+		return [];
 	}//end mechanisms()
 
 	/**

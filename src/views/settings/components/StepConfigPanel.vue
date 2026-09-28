@@ -302,9 +302,10 @@
 						<option value="notify">
 							{{ t('dossiq', 'Send notification') }}
 						</option>
-						<option value="webhook">
-							{{ t('dossiq', 'Call webhook') }}
-						</option>
+						<!-- No "Call webhook": dossiq no longer calls a URL itself
+							(flow-nodes-to-their-owners). Integriq owns outbound
+							calls, through a configured source. An action saved
+							earlier still shows its URL below. -->
 					</select>
 					<input
 						v-if="action.type === 'createTask'"

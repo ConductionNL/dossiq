@@ -102,9 +102,9 @@ class LocalDecisionAuthoringTest extends TestCase {
 	];
 
 	/**
-	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The first two
-	 * are deprecated stock (dossiq-decisions-to-decidiq) and shrink to empty
-	 * when openregister flow-decision-tables lands; the KCC entry is a
+	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The first one
+	 * is deprecated stock (dossiq-decisions-to-decidiq) and leaves
+	 * when its endpoint moves to OpenRegister; the KCC entry is a
 	 * sanctioned non-decision consumer and stays. A new entry needs the same
 	 * argument the KCC one made: rules that are not case verdicts, evaluated
 	 * on the SHARED engine with the domain dialect kept app-side.
@@ -112,7 +112,6 @@ class LocalDecisionAuthoringTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWED_EVALUATOR_CONSUMERS = [
-		'lib/Service/Transitions/EvaluateDecisionHandler.php' => 'The live evaluateDecision transition action, until flow-decision-tables lands in OpenRegister.',
 		'lib/Controller/DecisionTableController.php' => 'The standalone /api/decisions/{id}/evaluate endpoint, until flow-decision-tables lands in OpenRegister.',
 		'lib/Service/Kcc/RoutingTableEvaluator.php' => 'SANCTIONED, not deprecated stock: KCC contact-moment routing compiled onto the shared evaluator (kcc-routing-onto-or-decision-tables). Routing a call is triage, not a case verdict; the alternative to this consumer is the private matcher wave 4 retires.',
 	];
@@ -155,7 +154,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		self::assertSame(
 			[],
 			$offenders,
-			"These files write decision-schema objects locally. dossiq owns cases; decidiq owns decisions. Raise the decision in decidiq via ContractDecisionDelegationService (or the dossiq.requestDecision flow node) and let BesluitMaterialisationService record the outcome. Only when the file verifiably records rather than decides may it join ALLOWED_DECISION_WRITERS, with the reason:\n - "
+			"These files write decision-schema objects locally. dossiq owns cases; decidiq owns decisions. Raise the decision in decidiq via ContractDecisionDelegationService (or Decidiq's decidiq.request-decision flow step) and let BesluitMaterialisationService record the outcome. Only when the file verifiably records rather than decides may it join ALLOWED_DECISION_WRITERS, with the reason:\n - "
 			. implode("\n - ", $offenders)
 		);
 

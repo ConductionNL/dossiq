@@ -3,7 +3,8 @@
 /**
  * Move a case to a named status.
  *
- * WHY THIS EXISTS ALONGSIDE {@see SetFieldHandler}. `setField` writes a literal
+ * WHY THIS IS NOT A FIELD WRITE. Writing a field (`setField`, now OpenRegister's
+ * object-write step) stores a literal
  * value, which is right for a date or a flag and wrong for `status`: status is a
  * reference to a `statusType` object whose uuid is minted per installation. A
  * flow SHIPPED with the app therefore cannot carry one — it would be correct on

@@ -20,6 +20,10 @@ use ArrayObject;
 use OCA\Dossiq\Repair\RewriteRetiredFlowNodes;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
+use OCP\IL10N;
+use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
+use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
+use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -181,7 +185,9 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 
 			public function searchObjectsBySlug(string $register, string $schema, array $filters, bool $_rbac = true, bool $_multitenancy = true): array {
 				$this->calls[] = 'search:' . $schema . ':' . (string)($filters['type'] ?? '');
-				return $this->actions;
+				return array_values(
+					array_filter($this->actions, static fn (array $row): bool => ($row['type'] ?? '') === ($filters['type'] ?? ''))
+				);
 			}
 		};
 
@@ -194,7 +200,7 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 
 		$map = new RetiredNodeMap();
 
-		return new RewriteRetiredFlowNodes($container, $settings, $map, new RetiredNodeRewriter($map), new NullLogger());
+		return new RewriteRetiredFlowNodes($container, $settings, $map, new RetiredNodeRewriter($map, $this->translator()), new NullLogger());
 	}//end step()
 
 	/**
@@ -246,7 +252,7 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 		self::assertSame(['trigger', 'end'], array_column($flow->nodes, 'id'));
 		self::assertSame('published', $flow->status);
 		self::assertSame(
-			['findAllFlows:dossiq', 'createDraft:herinnering', 'setNodes:herinnering', 'update:herinnering', 'publish:herinnering', 'search:automaticAction:scheduleReminder'],
+			['findAllFlows:dossiq', 'createDraft:herinnering', 'setNodes:herinnering', 'update:herinnering', 'publish:herinnering', 'search:automaticAction:scheduleReminder', 'search:automaticAction:callWebhook'],
 			$this->calls->getArrayCopy()
 		);
 		self::assertCount(1, $this->warnings);
@@ -286,7 +292,7 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 		$step->run($this->recordingOutput());
 
 		self::assertSame(
-			['findAllFlows:dossiq', 'search:automaticAction:scheduleReminder'],
+			['findAllFlows:dossiq', 'search:automaticAction:scheduleReminder', 'search:automaticAction:callWebhook'],
 			$this->calls->getArrayCopy()
 		);
 	}//end testAFlowWithoutARetiredStepIsNotSaved()
@@ -333,7 +339,80 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 	public function testWithoutOpenRegisterFlowsTheStepStillReportsActions(): void {
 		$this->step([], actions: [['slug' => 'x', 'type' => 'scheduleReminder']], flowsPresent: false)->run($this->recordingOutput());
 
-		self::assertSame(['search:automaticAction:scheduleReminder'], $this->calls->getArrayCopy());
+		self::assertSame(['search:automaticAction:scheduleReminder', 'search:automaticAction:callWebhook'], $this->calls->getArrayCopy());
 		self::assertCount(1, $this->warnings);
 	}//end testWithoutOpenRegisterFlowsTheStepStillReportsActions()
+
+	/**
+	 * The real translator, over a configured register and case schema.
+	 *
+	 * @return RetiredNodeTranslator The translator.
+	 */
+	private function translator(): RetiredNodeTranslator {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
+		);
+		$syntax = new RetiredTemplateSyntax();
+
+		return new RetiredNodeTranslator(
+			$settings,
+			$this->createMock(ContainerInterface::class),
+			$this->createMock(IL10N::class),
+			$syntax,
+			new RetiredDocumentSteps($syntax)
+		);
+	}//end translator()
+
+	/**
+	 * A flow whose only retired step cannot be carried over is warned about and not saved.
+	 *
+	 * @return void
+	 */
+	public function testAnUnmappableStepIsWarnedAboutAndTheFlowIsNotSaved(): void {
+		$flow = $this->flow(
+			'webhook',
+			'published',
+			[
+				['id' => 'trigger', 'type' => 'openregister.trigger-manual'],
+				['id' => 'hook', 'type' => 'dossiq.webhook', 'config' => ['url' => 'https://hooks.example.org/x']],
+				['id' => 'end', 'type' => 'openregister.end'],
+			],
+			[['id' => 'e', 'from' => 'trigger', 'to' => 'hook'], ['id' => 'f', 'from' => 'hook', 'to' => 'end']]
+		);
+
+		$this->step([$flow])->run($this->recordingOutput());
+
+		self::assertSame('dossiq.webhook', $flow->nodes[1]['type']);
+		self::assertNotContains('update:webhook', $this->calls->getArrayCopy());
+		self::assertNotContains('createDraft:webhook', $this->calls->getArrayCopy());
+		self::assertCount(1, $this->warnings);
+		self::assertStringContainsString('step "hook" could not be carried over', $this->warnings[0]);
+		self::assertStringContainsString('hooks.example.org', $this->warnings[0]);
+	}//end testAnUnmappableStepIsWarnedAboutAndTheFlowIsNotSaved()
+
+	/**
+	 * A translated step is saved as its replacement, through a new version.
+	 *
+	 * @return void
+	 */
+	public function testATranslatedStepIsSavedAsItsReplacement(): void {
+		$flow = $this->flow(
+			'besluit',
+			'published',
+			[
+				['id' => 'trigger', 'type' => 'openregister.trigger-manual'],
+				['id' => 'doc', 'type' => 'dossiq.action.mergeTemplate', 'config' => ['template' => 'B {{case.title}}', 'targetField' => 'besluitDocument']],
+				['id' => 'end', 'type' => 'openregister.end'],
+			],
+			[['id' => 'e', 'from' => 'trigger', 'to' => 'doc'], ['id' => 'f', 'from' => 'doc', 'to' => 'end']]
+		);
+
+		$this->step([$flow])->run($this->recordingOutput());
+
+		self::assertSame('filinq.generate-document', $flow->nodes[1]['type']);
+		self::assertSame('B {{ item.title }}', $flow->nodes[1]['config']['template']);
+		self::assertContains('publish:besluit', $this->calls->getArrayCopy());
+		self::assertSame([], $this->warnings->getArrayCopy());
+	}//end testATranslatedStepIsSavedAsItsReplacement()
 }//end class
