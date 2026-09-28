@@ -167,7 +167,8 @@ class RewriteRetiredFlowNodes implements IRepairStep {
 			}
 
 			$offset += self::PAGE;
-		} while (count($page) === self::PAGE);
+			$full = (count($page) === self::PAGE);
+		} while ($full === true);
 
 		$output->info('Dossiq: rewrote ' . $rewritten . ' flow(s) that used a retired step type.');
 	}//end rewriteFlows()

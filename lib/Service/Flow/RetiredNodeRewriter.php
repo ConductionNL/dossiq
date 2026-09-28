@@ -123,18 +123,7 @@ class RetiredNodeRewriter {
 	 *         inbound edges were dropped because the step had no successor.
 	 */
 	private function bridge(array $edges, string $stepId): array {
-		$successors = [];
-		foreach ($edges as $edge) {
-			if (is_array($edge) === true && in_array($stepId, $this->endpoints(value: ($edge['from'] ?? null)), true) === true) {
-				foreach ($this->endpoints(value: ($edge['to'] ?? null)) as $target) {
-					if ($target !== $stepId) {
-						$successors[$target] = true;
-					}
-				}
-			}
-		}
-
-		$successors = array_keys($successors);
+		$successors = $this->successorsOf(edges: $edges, stepId: $stepId);
 		$orphaned = false;
 		$out = [];
 
@@ -146,6 +135,8 @@ class RetiredNodeRewriter {
 
 			$from = $this->endpoints(value: ($edge['from'] ?? null));
 			if (in_array($stepId, $from, true) === true) {
+				// An edge out of the removed step goes with it, unless it also
+				// leaves from another step, which keeps it.
 				$rest = array_values(array_diff($from, [$stepId]));
 				if ($rest === []) {
 					continue;
@@ -166,13 +157,36 @@ class RetiredNodeRewriter {
 				continue;
 			}
 
-			foreach ($this->reshape(edge: $edge, targets: $retargeted) as $reshaped) {
-				$out[] = $reshaped;
-			}
+			array_push($out, ...$this->reshape(edge: $edge, targets: $retargeted));
 		}//end foreach
 
 		return ['edges' => $out, 'orphaned' => $orphaned];
 	}//end bridge()
+
+	/**
+	 * The steps a step leads to, itself excluded.
+	 *
+	 * @param array<int, mixed> $edges  The current edges.
+	 * @param string            $stepId The step.
+	 *
+	 * @return array<int, string> The successor ids, each once.
+	 */
+	private function successorsOf(array $edges, string $stepId): array {
+		$successors = [];
+		foreach ($edges as $edge) {
+			if (is_array($edge) === false || in_array($stepId, $this->endpoints(value: ($edge['from'] ?? null)), true) === false) {
+				continue;
+			}
+
+			foreach ($this->endpoints(value: ($edge['to'] ?? null)) as $target) {
+				$successors[$target] = true;
+			}
+		}
+
+		unset($successors[$stepId]);
+
+		return array_map('strval', array_keys($successors));
+	}//end successorsOf()
 
 	/**
 	 * Give an edge its new targets in the shape it was stored in.
