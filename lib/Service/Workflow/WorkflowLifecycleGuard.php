@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Workflow;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\StepConfigValidator;
 use OCA\Dossiq\Service\Task\TaskDeclarationValidator;
 use Psr\Log\LoggerInterface;
 
@@ -108,6 +109,29 @@ class WorkflowLifecycleGuard {
 	public function lastRefusals(): array {
 		return $this->lastRefusals;
 	}//end lastRefusals()
+
+	/**
+	 * What the last publish check found wrong in the steps' `config` blocks.
+	 *
+	 * Kept apart from the task refusals because the two answer differently:
+	 * a task refusal's message is written for the administrator, while a step
+	 * config error's `message` is internal and the spec says a caller never
+	 * shows it. The controller answers with each error's path and code.
+	 *
+	 * @var array<int, array{path: string, code: string, message: string}>
+	 */
+	private array $lastStepConfigErrors = [];
+
+	/**
+	 * The step config errors of the most recent publish check, newest call only.
+	 *
+	 * @return array<int, array{path: string, code: string, message: string}> The errors.
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	public function lastStepConfigErrors(): array {
+		return $this->lastStepConfigErrors;
+	}//end lastStepConfigErrors()
 
 	/**
 	 * Resolve the authoritative lifecycle status of a row.
@@ -274,7 +298,8 @@ class WorkflowLifecycleGuard {
 
 	/**
 	 * Assert a row may be published: it MUST be a draft, carry a caseType
-	 * reference, and only reference statuses owned by that caseType.
+	 * reference, only reference statuses owned by that caseType, and every
+	 * step's `config` block MUST pass StepConfigValidator.
 	 *
 	 * @param array<string, mixed> $current The definition row to check.
 	 * @param array<int, mixed> $transitions The row's decoded transitions.
@@ -283,8 +308,11 @@ class WorkflowLifecycleGuard {
 	 * @return bool True when the row may be published.
 	 *
 	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 * @spec openspec/specs/process-step-configuration/spec.md
 	 */
 	public function isPublishableDraft(array $current, array $transitions, string $id): bool {
+		$this->lastStepConfigErrors = [];
+
 		// A task naming a form, a group or an effect handler that is not there
 		// is refused HERE, with the other publish preconditions, because
 		// publishing is the last moment somebody is present to fix it. After
@@ -299,6 +327,14 @@ class WorkflowLifecycleGuard {
 				'Dossiq: publish() — definition is not a draft',
 				['app' => Application::APP_ID, 'id' => $id]
 			);
+			return false;
+		}
+
+		// The SLA, escalation and required-field blocks the workflow editor
+		// writes onto a step are checked HERE and not on draft save
+		// (process-step-configuration design): a draft may hold a half-typed
+		// config, a published template is what the term engine reads.
+		if ($this->stepConfigsHold(definition: $current, id: $id) === false) {
 			return false;
 		}
 
@@ -351,6 +387,59 @@ class WorkflowLifecycleGuard {
 
 		return false;
 	}//end taskDeclarationsResolve()
+
+	/**
+	 * Whether every step's `config` block passes StepConfigValidator.
+	 *
+	 * The validator is asked once per step, with the step's position in the
+	 * template as its index, so an error names the step an administrator has
+	 * to open. It is given no case type schema: the case type row carries
+	 * neither `properties` nor `roleTypes`, which is what the validator reads
+	 * field and role references from, so those two reference checks are
+	 * skipped here exactly as the validator documents for an empty schema.
+	 * The shape rules (SLA, escalation timing, auto-action keys) all run.
+	 *
+	 * @param array<string, mixed> $definition The definition row being published.
+	 * @param string               $id         The definition uuid, for the log.
+	 *
+	 * @return boolean True when every step config holds.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) StepConfigValidator is a pure validator whose
+	 *                                       contract is a static validate() (the spec's REQ-001).
+	 *
+	 * @spec openspec/specs/process-step-configuration/spec.md
+	 */
+	private function stepConfigsHold(array $definition, string $id): bool {
+		$steps = ($definition['steps'] ?? []);
+		if (is_string($steps) === true) {
+			$steps = json_decode($steps, true);
+		}
+
+		if (is_array($steps) === false) {
+			return true;
+		}
+
+		$errors = [];
+		foreach ($steps as $index => $step) {
+			if (is_array($step) === false) {
+				continue;
+			}
+
+			$errors = array_merge($errors, StepConfigValidator::validate(step: $step, stepIndex: (int)$index));
+		}
+
+		$this->lastStepConfigErrors = $errors;
+		if ($errors === []) {
+			return true;
+		}
+
+		$this->logger->warning(
+			'Dossiq: publish() — a step configuration does not hold',
+			['app' => Application::APP_ID, 'id' => $id, 'errors' => $errors]
+		);
+
+		return false;
+	}//end stepConfigsHold()
 
 	/**
 	 * Assert a published row may be deprecated: it MUST be published, and

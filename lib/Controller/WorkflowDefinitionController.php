@@ -102,6 +102,25 @@ class WorkflowDefinitionController extends Controller {
 				);
 			}
 
+			// A step whose SLA or escalation block does not hold names WHERE
+			// and WHAT by path and code. The validator's own message is an
+			// internal description the spec keeps out of the response.
+			$stepConfigErrors = $this->guard->lastStepConfigErrors();
+			if ($stepConfigErrors !== []) {
+				return new JSONResponse(
+					[
+						'success' => false,
+						'error' => 'step_config_invalid',
+						'message' => 'A step configuration is not valid. Each entry in errors names the step and field, and what is wrong with it.',
+						'errors' => array_map(
+							static fn (array $error): array => ['path' => $error['path'], 'code' => $error['code']],
+							$stepConfigErrors
+						),
+					],
+					422,
+				);
+			}
+
 			return new JSONResponse(
 				['success' => false, 'error' => 'Could not publish workflow definition'],
 				400,
