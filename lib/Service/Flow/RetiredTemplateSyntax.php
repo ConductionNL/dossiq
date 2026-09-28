@@ -130,6 +130,34 @@ class RetiredTemplateSyntax {
 	}//end forDocument()
 
 	/**
+	 * Rewrite a payload template for Integriq's source-call step.
+	 *
+	 * The item is the case, so `{{case.a.b}}` becomes `{{ a.b }}`; Integriq
+	 * reads dotted paths. Dossiq blanked a placeholder outside `case.`, so it
+	 * is blanked here rather than left for Integriq to read.
+	 *
+	 * @param string $template The dossiq template.
+	 *
+	 * @return string The template in Integriq's flow-template syntax.
+	 *
+	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+	 */
+	public function forSourceCall(string $template): string {
+		return (string)preg_replace_callback(
+			self::PLACEHOLDER,
+			static function (array $match): string {
+				$path = $match[1];
+				if (str_starts_with($path, self::CASE_ROOT) === false || $path === self::CASE_ROOT) {
+					return '';
+				}
+
+				return '{{ ' . substr($path, strlen(self::CASE_ROOT)) . ' }}';
+			},
+			$template
+		);
+	}//end forSourceCall()
+
+	/**
 	 * Put the merge fields a createDocument step computed into its template.
 	 *
 	 * Dossiq rendered each merge field first and exposed the result as

@@ -24,6 +24,11 @@ use OCP\IL10N;
 use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
+use OCA\Dossiq\Service\Flow\RetiredWebhookSteps;
+use OCA\Integriq\Event\SourceRequestedEvent;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IUserSession;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
@@ -126,10 +131,11 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 	 * @param array<int, array>  $actions       Stored automaticAction rows of the retired type.
 	 * @param bool               $flowsPresent  Whether OpenRegister's flow classes resolve.
 	 * @param bool               $publishFails  Whether publishing throws.
+	 * @param IEventDispatcher|null $events Carries a Source request to integriq; a silent one when null.
 	 *
 	 * @return RewriteRetiredFlowNodes The step.
 	 */
-	private function step(array $flows, array $actions = [], bool $flowsPresent = true, bool $publishFails = false): RewriteRetiredFlowNodes {
+	private function step(array $flows, array $actions = [], bool $flowsPresent = true, bool $publishFails = false, ?IEventDispatcher $events = null): RewriteRetiredFlowNodes {
 		$calls = $this->calls;
 
 		$mapper = new class($flows, $calls) {
@@ -200,7 +206,7 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 
 		$map = new RetiredNodeMap();
 
-		return new RewriteRetiredFlowNodes($container, $settings, $map, new RetiredNodeRewriter($map, $this->translator()), new NullLogger());
+		return new RewriteRetiredFlowNodes($container, $settings, $map, new RetiredNodeRewriter($map, $this->translator(events: $events)), new NullLogger());
 	}//end step()
 
 	/**
@@ -252,7 +258,7 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 		self::assertSame(['trigger', 'end'], array_column($flow->nodes, 'id'));
 		self::assertSame('published', $flow->status);
 		self::assertSame(
-			['findAllFlows:dossiq', 'createDraft:herinnering', 'setNodes:herinnering', 'update:herinnering', 'publish:herinnering', 'search:automaticAction:scheduleReminder', 'search:automaticAction:callWebhook'],
+			['findAllFlows:dossiq', 'createDraft:herinnering', 'setNodes:herinnering', 'update:herinnering', 'publish:herinnering', 'search:automaticAction:scheduleReminder'],
 			$this->calls->getArrayCopy()
 		);
 		self::assertCount(1, $this->warnings);
@@ -292,7 +298,7 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 		$step->run($this->recordingOutput());
 
 		self::assertSame(
-			['findAllFlows:dossiq', 'search:automaticAction:scheduleReminder', 'search:automaticAction:callWebhook'],
+			['findAllFlows:dossiq', 'search:automaticAction:scheduleReminder'],
 			$this->calls->getArrayCopy()
 		);
 	}//end testAFlowWithoutARetiredStepIsNotSaved()
@@ -339,16 +345,18 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 	public function testWithoutOpenRegisterFlowsTheStepStillReportsActions(): void {
 		$this->step([], actions: [['slug' => 'x', 'type' => 'scheduleReminder']], flowsPresent: false)->run($this->recordingOutput());
 
-		self::assertSame(['search:automaticAction:scheduleReminder', 'search:automaticAction:callWebhook'], $this->calls->getArrayCopy());
+		self::assertSame(['search:automaticAction:scheduleReminder'], $this->calls->getArrayCopy());
 		self::assertCount(1, $this->warnings);
 	}//end testWithoutOpenRegisterFlowsTheStepStillReportsActions()
 
 	/**
 	 * The real translator, over a configured register and case schema.
 	 *
+	 * @param IEventDispatcher|null $events Carries a Source request to integriq; a silent one when null.
+	 *
 	 * @return RetiredNodeTranslator The translator.
 	 */
-	private function translator(): RetiredNodeTranslator {
+	private function translator(?IEventDispatcher $events = null): RetiredNodeTranslator {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
@@ -360,9 +368,44 @@ class RewriteRetiredFlowNodesTest extends TestCase {
 			$this->createMock(ContainerInterface::class),
 			$this->createMock(IL10N::class),
 			$syntax,
-			new RetiredDocumentSteps($syntax)
+			new RetiredDocumentSteps($syntax),
+			new RetiredWebhookSteps(($events ?? $this->createMock(IEventDispatcher::class)), $this->createMock(IUserSession::class), $syntax)
 		);
 	}//end translator()
+
+	/**
+	 * A webhook step becomes integriq's source call when integriq gives a Source for its URL.
+	 *
+	 * @return void
+	 */
+	public function testAWebhookStepIsRewrittenToASourceCall(): void {
+		$events = $this->createMock(IEventDispatcher::class);
+		$events->expects($this->once())->method('dispatchTyped')->willReturnCallback(
+			static function (Event $event): void {
+				if ($event instanceof SourceRequestedEvent) {
+					$event->setSource(sourceId: 'src-hooks', sourceSlug: 'url-https-hooks-example-org', created: true);
+				}
+			}
+		);
+		$flow = $this->flow(
+			'webhook',
+			'published',
+			[
+				['id' => 'trigger', 'type' => 'openregister.trigger-manual'],
+				['id' => 'hook', 'type' => 'dossiq.webhook', 'config' => ['url' => 'https://hooks.example.org/x']],
+				['id' => 'end', 'type' => 'openregister.end'],
+			],
+			[['id' => 'e', 'from' => 'trigger', 'to' => 'hook'], ['id' => 'f', 'from' => 'hook', 'to' => 'end']]
+		);
+
+		$this->step([$flow], events: $events)->run($this->recordingOutput());
+
+		self::assertSame('openconnector.source-call', $flow->nodes[1]['type']);
+		self::assertSame('src-hooks', $flow->nodes[1]['config']['source']);
+		self::assertSame('/x', $flow->nodes[1]['config']['endpoint']);
+		self::assertSame(['case' => '{{ @item }}'], $flow->nodes[1]['config']['body']);
+		self::assertContains('publish:webhook', $this->calls->getArrayCopy());
+	}//end testAWebhookStepIsRewrittenToASourceCall()
 
 	/**
 	 * A flow whose only retired step cannot be carried over is warned about and not saved.

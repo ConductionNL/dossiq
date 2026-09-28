@@ -15,6 +15,7 @@ Automatic actions are **OpenRegister flows**. A flow is built from steps, and ea
 | Write a field on the case | `openregister.object-write` | OpenRegister |
 | Evaluate a decision table | `openregister.decision-table` | OpenRegister |
 | Generate a document | `filinq.generate-document` | Filinq |
+| Call a webhook | `openconnector.source-call` | Integriq |
 | Ask for a decision | `decidiq.request-decision` | Decidiq |
 | Set the status, create a task or sub-case, ask a person, publish a besluit | `dossiq.*` | Dossiq |
 
@@ -28,6 +29,7 @@ What Dossiq still does for you:
 - A mail a flow sends about a case is filed on the case and shows on its timeline.
 - A document Filinq generates for a case is filed in the case dossier, when the step names a document type.
 - A decision Decidiq concludes for a case becomes the case's besluit.
+- A webhook step keeps calling its URL. Integriq makes the call now, through a source for the URL's scheme, host and port. The upgrade asks Integriq for that source, and Integriq creates it the first time, enabled and without credentials, with a description that says Dossiq asked for it. The rest of the URL becomes the step's endpoint. The step posts the case, as before. A webhook a case type declares on a status transition also still posts the transition beside the case.
 :::
 
 :::warning An older version of this page was wrong
@@ -44,6 +46,7 @@ By the end you will have migrated any existing automatic actions to flows, and k
 - OpenRegister installed (Dossiq requires it).
 - Filinq installed, for any step that generates a document, including the **Generate document** button on a case.
 - Decidiq installed, for any step that asks for a decision.
+- Integriq installed, for any step that calls a webhook.
 - The user you migrate as must belong to an organisation. A flow takes its owner and organisation from that user, permanently.
 
 ## Migrate existing automatic actions
@@ -104,12 +107,14 @@ You have it working when the flow appears on the **Flows** page with app `dossiq
 |---|---|
 | `occ dossiq:actions:migrate-to-flows` says `--user is required` | It has no default on purpose: the created flows inherit that user's identity and organisation permanently. Pass a real uid. |
 | The command reports `OpenRegister exposes no FlowService on this instance` | OpenRegister is missing or too old. Flows live in OpenRegister. |
-| A `callWebhook` action was `skipped`, or the upgrade log says a webhook step "could not be carried over" | Dossiq no longer calls a URL itself, and no step takes a bare URL: Integriq makes outbound calls through a configured source. Set up a source in Integriq for the host the log names, then replace the step with Integriq's source call step. Until then the flow stops at that step. |
+| The upgrade log says a webhook step "could not be carried over" | The log gives the reason. Integriq is not installed, or it refused the URL (not http or https, or a local or private address this instance may not call), or the step's URL was chosen per tenant when it ran, or the step sent an `Authorization` or other credential header. Install Integriq, or set the credential on the source in Integriq, then run the upgrade again, or rebuild the step with Integriq's source call step. Until then the flow stops at that step. |
+| A webhook on a status transition fails, saying the run is unattributed | Integriq makes a call only on behalf of a user, and this transition was made by the system rather than by a person. Move the webhook into a flow that runs as its owner. |
+| A webhook needs a secret | The source Integriq created for it carries none. Open the source in Integriq and add the credential there. Every step calling that host uses it. |
 | The upgrade log says a step "could not be carried over" for another reason | The log names the flow, the step and the reason, for example a template that reads a nested case field in a mail, or a mail that used a stored email template. Rebuild the step in the flow editor. |
 | A `scheduleReminder` action was `skipped` | Dossiq no longer offers a reminder action. It never sent a reminder: the job it queued did not exist. The stored record is kept, but no flow is made from it. Build the reminder as a flow instead. |
 | **Generate document** says it needs Filinq | Install and enable Filinq. Dossiq no longer renders documents itself. |
 | A flow saves but will not run | Check it has both a trigger step and an end step. OpenRegister reports a flow with neither as not runnable. |
-| Actions attached to a status transition are not on this page | Those are a different mechanism: they live on the case type's workflow, not here. A transition action of a retired type (send email, notify, set field) still runs, as the step that replaced it. See [Configure case types and workflows](./01-configure-case-types.md). |
+| Actions attached to a status transition are not on this page | Those are a different mechanism: they live on the case type's workflow, not here. A transition action of a retired type (send email, notify, set field, webhook) still runs, as the step that replaced it. See [Configure case types and workflows](./01-configure-case-types.md). |
 
 ## Reference
 

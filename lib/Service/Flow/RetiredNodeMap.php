@@ -64,7 +64,8 @@ class RetiredNodeMap {
 	public const DECISION = 'decision';
 	public const DOCUMENT_CREATE = 'document-create';
 	public const DOCUMENT_MERGE = 'document-merge';
-	public const WEBHOOK = 'webhook';
+	public const WEBHOOK_TRANSITION = 'webhook-transition';
+	public const WEBHOOK_ACTION = 'webhook-action';
 
 	/**
 	 * Why the owned-elsewhere steps left, written into every log line.
@@ -73,7 +74,7 @@ class RetiredNodeMap {
 	 */
 	private const OWNED_BY_OPENREGISTER = 'OpenRegister now sends mail and notifications, writes objects and evaluates decision tables itself';
 	private const OWNED_BY_FILINQ = 'Filinq now generates documents for the fleet';
-	private const OWNED_BY_INTEGRIQ = 'Integriq now owns outbound calls';
+	private const OWNED_BY_INTEGRIQ = 'Integriq now makes outbound calls, through a source for the URL\'s base';
 
 	/**
 	 * The retired node types.
@@ -134,14 +135,14 @@ class RetiredNodeMap {
 			'reason' => 'Decidiq now raises decisions from a flow itself, with the same configuration',
 		],
 		'dossiq.webhook' => [
-			'replacement' => null,
+			'replacement' => RetiredWebhookSteps::SOURCE_CALL,
 			'reason' => self::OWNED_BY_INTEGRIQ,
-			'translation' => self::WEBHOOK,
+			'translation' => self::WEBHOOK_TRANSITION,
 		],
 		'dossiq.action.callWebhook' => [
-			'replacement' => null,
+			'replacement' => RetiredWebhookSteps::SOURCE_CALL,
 			'reason' => self::OWNED_BY_INTEGRIQ,
-			'translation' => self::WEBHOOK,
+			'translation' => self::WEBHOOK_ACTION,
 		],
 	];
 

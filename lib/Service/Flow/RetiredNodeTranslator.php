@@ -3,8 +3,8 @@
 /**
  * Turns the configuration of a retired dossiq step into the steps that replace it.
  *
- * Dossiq's own mail, notification, field, decision and document steps are
- * gone because their owners now provide them. A stored flow still names the
+ * Dossiq's own mail, notification, field, decision, document and webhook
+ * steps are gone because their owners now provide them. A stored flow still names the
  * old type with the old configuration keys, so renaming the type is not
  * enough: the keys, the template syntax and sometimes the number of steps
  * differ. This class holds one translation per retired type.
@@ -117,6 +117,7 @@ class RetiredNodeTranslator {
 	 * @param IL10N                 $l10n            Wording for a notification the old step left to dossiq's notifier.
 	 * @param RetiredTemplateSyntax $syntax          Template rewrites.
 	 * @param RetiredDocumentSteps  $documents       The document translations.
+	 * @param RetiredWebhookSteps   $webhooks        The webhook translations.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -124,6 +125,7 @@ class RetiredNodeTranslator {
 		private readonly IL10N $l10n,
 		private readonly RetiredTemplateSyntax $syntax,
 		private readonly RetiredDocumentSteps $documents,
+		private readonly RetiredWebhookSteps $webhooks,
 	) {
 	}//end __construct()
 
@@ -138,6 +140,7 @@ class RetiredNodeTranslator {
 	 * @throws UnmappableStep When the configuration has no faithful equivalent.
 	 *
 	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function translate(string $translation, array $config): array {
 		return match ($translation) {
@@ -149,7 +152,8 @@ class RetiredNodeTranslator {
 			RetiredNodeMap::DECISION => $this->decision(config: $config),
 			RetiredNodeMap::DOCUMENT_CREATE => [$this->documents->create(config: $config)],
 			RetiredNodeMap::DOCUMENT_MERGE => [$this->documents->merge(config: $config)],
-			RetiredNodeMap::WEBHOOK => throw $this->webhook(config: $config),
+			RetiredNodeMap::WEBHOOK_TRANSITION => [$this->webhooks->transition(config: $config)],
+			RetiredNodeMap::WEBHOOK_ACTION => [$this->webhooks->action(config: $config)],
 			default => throw new UnmappableStep(message: 'no translation is known for "' . $translation . '"'),
 		};
 	}//end translate()
@@ -458,32 +462,4 @@ class RetiredNodeTranslator {
 			],
 		];
 	}//end caseWrite()
-
-	/**
-	 * `dossiq.webhook` and `dossiq.action.callWebhook`: a call to a raw URL.
-	 *
-	 * Integriq owns outbound calls, and each of its steps goes through a
-	 * configured source or a subscription. None takes a URL, so there is no
-	 * step to become; the reason names the host so an administrator can set
-	 * up the source.
-	 *
-	 * @param array<string, mixed> $config The retired configuration.
-	 *
-	 * @return UnmappableStep The refusal to throw.
-	 */
-	private function webhook(array $config): UnmappableStep {
-		$url = trim((string)($config['url'] ?? ''));
-		$host = '';
-		if ($url !== '') {
-			$host = (string)parse_url($url, PHP_URL_HOST);
-		}
-
-		if ($host === '') {
-			$host = 'an unnamed host';
-		}
-
-		return new UnmappableStep(message: 
-			'it calls ' . $host . ' directly, and every Integriq step needs a configured source or subscription instead of a URL'
-		);
-	}//end webhook()
 }//end class

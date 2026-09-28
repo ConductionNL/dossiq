@@ -41,10 +41,11 @@ be logged as a warning naming the flow, the step and why.
 - **THEN** the step SHALL become an `openregister.set-fields` step computing `closedAt` as `now`, followed by an `openregister.object-write` update of `closedAt` on the case
 - **AND** the step's outgoing edges SHALL leave from the second step
 
-#### Scenario: A webhook step is reported and left
+#### Scenario: A webhook step Integriq gives no source for is reported and left
 @e2e exclude Repair-step rewrite runs under occ upgrade; RewriteRetiredFlowNodesTest covers it.
 
 - **GIVEN** a flow with a `dossiq.webhook` step calling `https://hooks.example.org/x`
+- **AND** Integriq does not answer with a source for `https://hooks.example.org` (the mapping itself is change `webhook-steps-through-integriq`)
 - **WHEN** the upgrade runs
 - **THEN** the step SHALL be unchanged
 - **AND** a warning SHALL name the flow, the step and `hooks.example.org`
@@ -61,8 +62,9 @@ be logged as a warning naming the flow, the step and why.
 A transition's `automaticActions` entry or a task effect of type `sendEmail`,
 `notify`, `setField` or `evaluateDecision` SHALL run as its translated
 replacement steps, with the acting user of the transition as the run's
-identity. A declared `webhook` SHALL be reported as unable to run, with the
-reason. A failure SHALL be a failed result row and SHALL NOT roll back the
+identity. A declared `webhook` SHALL run as Integriq's source call (change
+`webhook-steps-through-integriq`), and SHALL be reported as unable to run, with
+the reason, when it cannot be mapped. A failure SHALL be a failed result row and SHALL NOT roll back the
 transition.
 
 #### Scenario: A declared notification runs as OpenRegister's

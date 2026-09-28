@@ -46,5 +46,6 @@ drift, and the copy in the leaf app is the one nobody else maintains.
 - Uses openregister#4120 (the `externalRecipients` allowlist on the
   send-email step and FlowEmailSentEvent), merged into development.
 - The shipped case flow now needs Filinq for its decision document.
-- Webhook steps have no replacement that takes a raw URL; they are reported,
-  not rewritten.
+- Webhook steps have no replacement that takes a raw URL; they were reported,
+  not rewritten. Change `webhook-steps-through-integriq` rewrites them onto
+  Integriq's source call step.
