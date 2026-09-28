@@ -198,7 +198,10 @@ class RetiredWebhookSteps {
 		if ($slug !== '') {
 			foreach ($map as $key => $entry) {
 				if (is_array($entry) === true && isset($entry[$slug]) === true) {
-					throw new UnmappableStep(message: 'its URL "' . $slug . '" is chosen per tenant ("' . (string)$key . '") when the step runs, and a source-call step names one source');
+					throw new UnmappableStep(
+						message: 'its URL "' . $slug . '" is chosen per tenant ("' . (string)$key . '") when the step runs, '
+							. 'and a source-call step names one source'
+					);
 				}
 			}
 
@@ -222,37 +225,7 @@ class RetiredWebhookSteps {
 	 * @throws UnmappableStep When the URL is unusable or Integriq gives no Source.
 	 */
 	private function call(string $url, int $timeout, array $output): array {
-		if ($url === '') {
-			throw new UnmappableStep(message: 'the step names no URL');
-		}
-
-		$parts = parse_url($url);
-		if (is_array($parts) === false) {
-			$parts = [];
-		}
-
-		$scheme = strtolower((string)($parts['scheme'] ?? ''));
-		if (in_array($scheme, ['http', 'https'], true) === false || (string)($parts['host'] ?? '') === '') {
-			throw new UnmappableStep(message: 'its URL is not an http or https URL with a host');
-		}
-
-		if (isset($parts['user']) === true || isset($parts['pass']) === true) {
-			throw new UnmappableStep(message: 'its URL carries a user name or password, which belong on the source in Integriq');
-		}
-
-		$base = $scheme . '://' . strtolower((string)$parts['host']);
-		if (isset($parts['port']) === true) {
-			$base .= ':' . (int)$parts['port'];
-		}
-
-		$endpoint = (string)($parts['path'] ?? '');
-		if ($endpoint === '' || str_starts_with($endpoint, '/') === false) {
-			$endpoint = '/' . $endpoint;
-		}
-
-		if (isset($parts['query']) === true) {
-			$endpoint .= '?' . $parts['query'];
-		}
+		[$base, $endpoint] = $this->baseAndEndpoint(url: $url);
 
 		$outputKey = trim((string)($output['output'] ?? ''));
 		if ($outputKey === '') {
@@ -271,6 +244,43 @@ class RetiredWebhookSteps {
 	}//end call()
 
 	/**
+	 * Split a URL into its base (scheme, host and port) and its endpoint (path and query).
+	 *
+	 * @param string $url The URL the retired step called.
+	 *
+	 * @return array{0: string, 1: string} The base and the endpoint.
+	 *
+	 * @throws UnmappableStep When the URL is not a usable http or https URL.
+	 */
+	private function baseAndEndpoint(string $url): array {
+		$parts = parse_url($url);
+		if ($url === '' || is_array($parts) === false) {
+			throw new UnmappableStep(message: 'the step names no URL that can be read');
+		}
+
+		$scheme = strtolower((string)($parts['scheme'] ?? ''));
+		if (in_array($scheme, ['http', 'https'], true) === false || (string)($parts['host'] ?? '') === '') {
+			throw new UnmappableStep(message: 'its URL is not an http or https URL with a host');
+		}
+
+		if (isset($parts['user']) === true || isset($parts['pass']) === true) {
+			throw new UnmappableStep(message: 'its URL carries a user name or password, which belong on the source in Integriq');
+		}
+
+		$base = $scheme . '://' . strtolower((string)$parts['host']);
+		if (isset($parts['port']) === true) {
+			$base .= ':' . (int)$parts['port'];
+		}
+
+		$endpoint = '/' . ltrim((string)($parts['path'] ?? ''), '/');
+		if (isset($parts['query']) === true) {
+			$endpoint .= '?' . $parts['query'];
+		}
+
+		return [$base, $endpoint];
+	}//end baseAndEndpoint()
+
+	/**
 	 * The uuid of Integriq's Source for a base URL, found or created on request.
 	 *
 	 * @param string $base    The base URL.
@@ -283,7 +293,9 @@ class RetiredWebhookSteps {
 	private function source(string $base, int $timeout): string {
 		$eventClass = '\\' . self::SOURCE_EVENT;
 		if (class_exists($eventClass) === false) {
-			throw new UnmappableStep(message: 'it calls ' . $base . ', and Integriq, which now makes outbound calls, is not installed to provide a source for it');
+			throw new UnmappableStep(
+				message: 'it calls ' . $base . ', and Integriq, which now makes outbound calls, is not installed to provide a source for it'
+			);
 		}
 
 		$event = new $eventClass(

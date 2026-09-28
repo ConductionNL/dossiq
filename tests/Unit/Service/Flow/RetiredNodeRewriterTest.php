@@ -55,7 +55,8 @@ class RetiredNodeRewriterTest extends TestCase {
 		self::assertNotNull($row);
 		self::assertNull($row['replacement']);
 		self::assertNull($map->rowFor(type: 'dossiq.setStatus'));
-		self::assertSame(['scheduleReminder', 'callWebhook'], array_keys($map->retiredActionTypes()));
+		// callWebhook runs again, as Integriq's source call, so only the reminder is left.
+		self::assertSame(['scheduleReminder'], array_keys($map->retiredActionTypes()));
 	}//end testTheShippedTableRetiresTheReminderWithoutReplacement()
 
 	/**
