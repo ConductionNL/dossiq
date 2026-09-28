@@ -13,7 +13,7 @@
 | `dossiq.action.createDocument` | `filinq.generate-document` | merge fields inlined; text rewritten; `storeFile`, `format: pdf`, metadata with the document type |
 | `dossiq.action.mergeTemplate` | `filinq.generate-document` | with `targetField`: `storeFile: false`, the field; without: as createDocument |
 | `dossiq.requestDecision` | `decidiq.request-decision` | none, the config is identical |
-| `dossiq.webhook`, `dossiq.action.callWebhook` | none | refused, naming the host |
+| `dossiq.webhook`, `dossiq.action.callWebhook` | `openconnector.source-call` | the URL's base becomes an Integriq Source, its path and query the endpoint; see change `webhook-steps-through-integriq` |
 
 ## Template syntax
 
@@ -33,13 +33,13 @@ compute step and an object write. The rewriter keeps the original step id on
 the first, names the next `<id>--2`, chains them and moves the outgoing edges
 to the last.
 
-## Why webhooks are not rewritten
+## Why webhooks were first left in place
 
-Every Integriq step reaches the outside through a configured Source
-(`openconnector.source-call`, endpoint relative to it) or a subscription
-(`openconnector.event-emit`, DeliveryRequestedEvent). None takes a URL. Making
-a Source per URL during an upgrade would create configuration nobody chose, so
-the step stays and the log names the flow, the step and the host.
+Every Integriq step reaches the outside through a configured Source, and none
+takes a URL, so this change left webhook steps in place and logged them. That
+made them fail at run time. Change `webhook-steps-through-integriq` closes the
+gap: dossiq asks Integriq for the Source of the URL's base by
+`SourceRequestedEvent`, and maps the step onto `openconnector.source-call`.
 
 ## Declared actions keep working
 

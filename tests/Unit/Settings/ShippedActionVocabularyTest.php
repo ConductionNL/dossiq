@@ -19,6 +19,9 @@ namespace OCA\Dossiq\Tests\Unit\Settings;
 use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
+use OCA\Dossiq\Service\Flow\RetiredWebhookSteps;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IUserSession;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
 use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
@@ -102,7 +105,7 @@ class ShippedActionVocabularyTest extends TestCase {
 		$l10n->method('t')->willReturnArgument(0);
 		$syntax = new RetiredTemplateSyntax();
 
-		return new RetiredNodeTranslator($settings, $this->createMock(ContainerInterface::class), $l10n, $syntax, new RetiredDocumentSteps($syntax));
+		return new RetiredNodeTranslator($settings, $this->createMock(ContainerInterface::class), $l10n, $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax));
 	}
 
 	/**

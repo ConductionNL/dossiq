@@ -23,6 +23,8 @@ use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
+use OCA\Dossiq\Service\Flow\RetiredWebhookSteps;
+use OCP\IUserSession;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -250,7 +252,7 @@ class AutomaticActionFlowMigratorTest extends TestCase {
 			$appConfig,
 			$this->createMock(LoggerInterface::class),
 			new RetiredNodeMap(),
-			new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax)),
+			new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)),
 		);
 	}
 

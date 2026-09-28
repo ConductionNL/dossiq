@@ -18,6 +18,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use OCA\OpenRegister\Service\Flow\IFlowNode;
+use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
@@ -29,7 +30,10 @@ use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
 use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
+use OCA\Dossiq\Service\Flow\RetiredWebhookSteps;
+use OCP\IUserSession;
 use OCA\Dossiq\Service\Flow\RetiredActionRunner;
+use OCA\Integriq\Event\SourceRequestedEvent;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -256,11 +260,12 @@ class SideEffectDispatcherTest extends TestCase {
     /**
      * The real retired-action runner over a node catalogue.
      *
-     * @param FlowNodeRegistry $nodes The catalogue.
+     * @param FlowNodeRegistry      $nodes      The catalogue.
+     * @param IEventDispatcher|null $dispatcher Carries the Source request to integriq; a silent one when null.
      *
      * @return RetiredActionRunner The runner.
      */
-    private function retired(FlowNodeRegistry $nodes): RetiredActionRunner {
+    private function retired(FlowNodeRegistry $nodes, ?IEventDispatcher $dispatcher=null): RetiredActionRunner {
         $settings = $this->createMock(SettingsService::class);
         $settings->method('getConfigValue')->willReturnCallback(
             static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
@@ -275,7 +280,7 @@ class SideEffectDispatcherTest extends TestCase {
 
         return new RetiredActionRunner(
             new RetiredNodeMap(),
-            new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax)),
+            new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax), new RetiredWebhookSteps(($dispatcher ?? $this->createMock(IEventDispatcher::class)), $this->createMock(IUserSession::class), $syntax)),
             $container,
             $this->createMock(LoggerInterface::class)
         );
@@ -359,11 +364,62 @@ class SideEffectDispatcherTest extends TestCase {
 
 
     /**
-     * A declared webhook has no replacement and says so, rather than reading as unknown.
+     * A declared webhook runs as integriq's source call: the URL's base as a Source, the case and the transition as the body.
      *
      * @return void
      *
-     * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+     * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
+     */
+    public function testARetiredWebhookRunsAsASourceCall(): void {
+        $requested = [];
+        $events    = $this->createMock(IEventDispatcher::class);
+        $events->expects($this->once())->method('dispatchTyped')->willReturnCallback(
+            static function (Event $event) use (&$requested): void {
+                if ($event instanceof SourceRequestedEvent) {
+                    $requested = ['base' => $event->getBaseUrl(), 'timeout' => $event->getTimeoutSeconds()];
+                    $event->setSource(sourceId: 'src-1', sourceSlug: 'url-https-hooks-example-org', created: true);
+                }
+            }
+        );
+
+        $seen     = [];
+        $registry = $this->registry();
+        $node     = $this->createMock(IFlowNode::class);
+        $node->method('getId')->willReturn('openconnector.source-call');
+        $node->expects($this->once())->method('execute')->willReturnCallback(
+            static function (array $items, array $config, array $context) use (&$seen): array {
+                $seen = ['items' => $items, 'config' => $config, 'context' => $context];
+                return $items;
+            }
+        );
+        $registry->register($node);
+
+        $transition = ['transitionLabel' => 'Afronden', 'userId' => 'behandelaar1', 'to' => 'afgehandeld'];
+        $results    = $this->dispatcher($registry, null, $this->retired($registry, $events))->dispatch(
+            [['type' => 'webhook', 'url' => 'https://hooks.example.org/case-events?kind=status', 'headers' => ['X-Zaak' => 'ja']]],
+            ['id' => 'case-1'],
+            $transition
+        );
+
+        $this->assertSame([['type' => 'webhook', 'ok' => true]], $results);
+        $this->assertSame(['base' => 'https://hooks.example.org', 'timeout' => 5], $requested);
+        $this->assertSame('src-1', $seen['config']['source']);
+        $this->assertSame('/case-events?kind=status', $seen['config']['endpoint']);
+        $this->assertSame('POST', $seen['config']['method']);
+        $this->assertSame(['X-Zaak' => 'ja'], $seen['config']['headers']);
+        $this->assertSame(['case' => '{{ @item }}', 'transition' => $transition], $seen['config']['body']);
+        $this->assertSame('behandelaar1', $seen['context']['triggeredBy']);
+        $this->assertSame('case-1', $seen['items'][0]['json']['id']);
+
+    }//end testARetiredWebhookRunsAsASourceCall()
+
+
+    /**
+     * Without integriq answering, a declared webhook fails with the reason rather than reading as unknown.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
      */
     public function testARetiredWebhookReportsWhyItCannotRun(): void {
         $registry = $this->registry();

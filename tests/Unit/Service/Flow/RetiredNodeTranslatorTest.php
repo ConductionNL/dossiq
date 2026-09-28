@@ -21,9 +21,14 @@ use OCA\Dossiq\Service\Flow\RetiredNodeMap;
 use OCA\Dossiq\Service\Flow\RetiredNodeRewriter;
 use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
 use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
+use OCA\Dossiq\Service\Flow\RetiredWebhookSteps;
 use OCA\Dossiq\Service\Flow\UnmappableStep;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Integriq\Event\SourceRequestedEvent;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IL10N;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
@@ -34,6 +39,7 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeMap
  * @covers \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
+ * @covers \OCA\Dossiq\Service\Flow\RetiredWebhookSteps
  */
 class RetiredNodeTranslatorTest extends TestCase {
 
@@ -42,10 +48,11 @@ class RetiredNodeTranslatorTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|null $table The decision table the store answers with.
 	 * @param bool                      $configured Whether register and schema are set.
+	 * @param IEventDispatcher|null     $events     Carries a Source request to integriq; a silent one when null.
 	 *
 	 * @return RetiredNodeTranslator The translator.
 	 */
-	private function translator(?array $table = null, bool $configured = true): RetiredNodeTranslator {
+	private function translator(?array $table = null, bool $configured = true, ?IEventDispatcher $events = null): RetiredNodeTranslator {
 		$settings = $this->createMock(SettingsService::class);
 		$settings->method('getConfigValue')->willReturnCallback(
 			static fn (string $key): string => $configured === true
@@ -66,7 +73,9 @@ class RetiredNodeTranslatorTest extends TestCase {
 
 		$syntax = new RetiredTemplateSyntax();
 
-		return new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax));
+		$webhooks = new RetiredWebhookSteps(($events ?? $this->createMock(IEventDispatcher::class)), $this->createMock(IUserSession::class), $syntax);
+
+		return new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax), $webhooks);
 	}//end translator()
 
 	/**
@@ -87,8 +96,8 @@ class RetiredNodeTranslatorTest extends TestCase {
 			'dossiq.action.createDocument' => 'filinq.generate-document',
 			'dossiq.action.mergeTemplate' => 'filinq.generate-document',
 			'dossiq.requestDecision' => 'decidiq.request-decision',
-			'dossiq.webhook' => null,
-			'dossiq.action.callWebhook' => null,
+			'dossiq.webhook' => 'openconnector.source-call',
+			'dossiq.action.callWebhook' => 'openconnector.source-call',
 		];
 
 		foreach ($expected as $type => $replacement) {
@@ -100,7 +109,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 		self::assertArrayNotHasKey('translation', (array)$map->rowFor(type: 'dossiq.requestDecision'));
 		self::assertNull($map->rowFor(type: 'dossiq.setStatus'));
 		self::assertNull($map->rowFor(type: 'dossiq.askPerson'));
-		self::assertSame(['scheduleReminder', 'callWebhook'], array_keys($map->retiredActionTypes()));
+		self::assertSame(['scheduleReminder'], array_keys($map->retiredActionTypes()));
 	}//end testTheShippedTableMapsEveryRemovedNodeToItsOwner()
 
 	/**
@@ -399,19 +408,67 @@ class RetiredNodeTranslatorTest extends TestCase {
 	}//end testTwigSyntaxInADocumentIsRefused()
 
 	/**
-	 * A webhook has no Integriq equivalent, and the refusal names the host.
+	 * A transition webhook becomes a POST source call to the Source integriq gives for its base URL.
 	 *
 	 * @return void
 	 */
-	public function testAWebhookIsRefusedNamingItsHost(): void {
+	public function testAWebhookBecomesASourceCall(): void {
+		$steps = $this->translator(events: $this->answering(sourceId: 'src-1'))->translate(
+			translation: RetiredNodeMap::WEBHOOK_TRANSITION,
+			config: ['url' => 'https://hooks.example.org:8443/case?kind=status', 'output' => 'hook']
+		);
+
+		self::assertSame(
+			[
+				[
+					'type' => 'openconnector.source-call',
+					'config' => [
+						'source' => 'src-1',
+						'endpoint' => '/case?kind=status',
+						'method' => 'POST',
+						'output' => 'hook',
+						'body' => ['case' => '{{ @item }}'],
+					],
+				],
+			],
+			$steps
+		);
+	}//end testAWebhookBecomesASourceCall()
+
+	/**
+	 * A webhook integriq gives no Source for is refused, naming the host.
+	 *
+	 * @return void
+	 */
+	public function testAWebhookWithoutASourceIsRefusedNamingItsHost(): void {
 		$this->expectException(UnmappableStep::class);
 		$this->expectExceptionMessage('hooks.example.org');
 
 		$this->translator()->translate(
-			translation: RetiredNodeMap::WEBHOOK,
+			translation: RetiredNodeMap::WEBHOOK_TRANSITION,
 			config: ['url' => 'https://hooks.example.org/case?token=secret']
 		);
-	}//end testAWebhookIsRefusedNamingItsHost()
+	}//end testAWebhookWithoutASourceIsRefusedNamingItsHost()
+
+	/**
+	 * A dispatcher that answers every Source request with the given Source.
+	 *
+	 * @param string $sourceId The Source uuid.
+	 *
+	 * @return IEventDispatcher The dispatcher.
+	 */
+	private function answering(string $sourceId): IEventDispatcher {
+		$events = $this->createMock(IEventDispatcher::class);
+		$events->method('dispatchTyped')->willReturnCallback(
+			static function (Event $event) use ($sourceId): void {
+				if ($event instanceof SourceRequestedEvent) {
+					$event->setSource(sourceId: $sourceId, sourceSlug: 'url-slug', created: false);
+				}
+			}
+		);
+
+		return $events;
+	}//end answering()
 
 	/**
 	 * A step that becomes two keeps its id for the first and hands its exits to the second.
@@ -451,7 +508,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 	}//end testTheRewriterChainsATwoStepTranslation()
 
 	/**
-	 * A refused step stays in the graph, untouched, and says why.
+	 * A refused step (here a webhook integriq gives no Source for) stays in the graph, untouched, and says why.
 	 *
 	 * @return void
 	 */
@@ -484,7 +541,8 @@ class RetiredNodeTranslatorTest extends TestCase {
 			$container,
 			$this->createMock(IL10N::class),
 			$syntax,
-			new RetiredDocumentSteps($syntax)
+			new RetiredDocumentSteps($syntax),
+			new RetiredWebhookSteps($this->createMock(IEventDispatcher::class), $this->createMock(IUserSession::class), $syntax)
 		);
 
 		$this->expectException(UnmappableStep::class);

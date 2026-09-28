@@ -80,6 +80,13 @@ class RetiredActionRunner {
 	private const RUN_AS = 'runAs';
 
 	/**
+	 * The context key Integriq's nodes read the run owner from, and refuse to run without.
+	 *
+	 * @var string
+	 */
+	private const TRIGGERED_BY = 'triggeredBy';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param RetiredNodeMap        $map        The retired-node table.
@@ -138,6 +145,7 @@ class RetiredActionRunner {
 	 * @return array{type: string, ok: bool, error?: string} The result row.
 	 *
 	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 * @spec openspec/changes/webhook-steps-through-integriq/specs/webhook-steps-through-integriq/spec.md
 	 */
 	public function run(string $type, array $action, array $case, array $context): array {
 		try {
@@ -156,8 +164,10 @@ class RetiredActionRunner {
 		}
 
 		$runContext = $context;
-		if (trim((string)($runContext[self::RUN_AS] ?? '')) === '' && trim((string)($context['userId'] ?? '')) !== '') {
-			$runContext[self::RUN_AS] = (string)$context['userId'];
+		foreach ([self::RUN_AS, self::TRIGGERED_BY] as $ownerKey) {
+			if (trim((string)($runContext[$ownerKey] ?? '')) === '' && trim((string)($context['userId'] ?? '')) !== '') {
+				$runContext[$ownerKey] = (string)$context['userId'];
+			}
 		}
 
 		$items = [['json' => $case]];
@@ -182,7 +192,8 @@ class RetiredActionRunner {
 	 *
 	 * A transition knew its own label, and the retired handlers used it: as
 	 * the mail's subject when none was written, and in the notification's
-	 * title. It is handed to the translation the same way.
+	 * title. It is handed to the translation the same way, and so is the whole
+	 * transition context a webhook posted.
 	 *
 	 * @param string               $type    The declared type.
 	 * @param array<string, mixed> $action  The declaration.
@@ -204,6 +215,12 @@ class RetiredActionRunner {
 			if ($type === 'sendEmail') {
 				$action += ['subject' => $label];
 			}
+		}
+
+		// The retired webhook posted the transition beside the case. A stored
+		// flow cannot reach it, but a declaration runs here, where it is known.
+		if ($type === 'webhook') {
+			$action[RetiredWebhookSteps::TRANSITION_KEY] = $context;
 		}
 
 		return $this->translator->stepsFor(row: $row, config: $action);
