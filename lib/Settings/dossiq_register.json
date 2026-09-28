@@ -4956,7 +4956,7 @@
                             "callWebhook",
                             "mergeTemplate"
                         ],
-                        "description": "Action handler type: must match a registered ActionHandlerInterface implementation",
+                        "description": "What the action does. occ dossiq:actions:migrate-to-flows turns each one into the flow step of the app that owns it: sendEmail and notifyRole into OpenRegister's mail and notification steps, createDocument and mergeTemplate into Filinq's document step. callWebhook has no equivalent and is reported, not migrated.",
                         "title": "Type"
                     },
                     "tenantId": {

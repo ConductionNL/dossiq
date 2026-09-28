@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\DecisionConcludedListener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CaseObjectReference;
 use OCA\OpenRegister\Db\FlowRun;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
@@ -433,4 +434,108 @@ class DecisionConcludedListenerTest extends TestCase {
 			'corr-1'
 		);
 	}//end event()
+	/**
+	 * The case recogniser over dossiq's configured register (12) and case schema (34).
+	 *
+	 * @return CaseObjectReference The recogniser.
+	 */
+	private function caseReference(): CaseObjectReference {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
+		);
+
+		return new CaseObjectReference($settings);
+	}//end caseReference()
+
+	/**
+	 * A decision raised by Decidiq's flow step.
+	 *
+	 * @param string $register The subject register.
+	 * @param string $schema   The subject schema.
+	 *
+	 * @return DecisionConcludedEvent The event.
+	 */
+	private function flowEvent(string $register, string $schema): DecisionConcludedEvent {
+		return new DecisionConcludedEvent(
+			'dec-7',
+			'advice',
+			'approved',
+			'granted',
+			false,
+			null,
+			[],
+			'2026-09-28T10:00:00+00:00',
+			'decidiq-flow',
+			$register,
+			$schema,
+			'case-5',
+			'flow-run:run-1:decide-commissie',
+			'corr-7'
+		);
+	}//end flowEvent()
+
+	/**
+	 * A flow decision about a dossiq case becomes its besluit, on the subject, and wakes no run.
+	 *
+	 * Decidiq's own listener wakes the run that asked; waking it here as well
+	 * would signal it twice.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function testAFlowDecisionOnADossiqCaseIsMaterialisedOnItsSubject(): void {
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([]);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->once())
+			->method('materialiseFromConcludedEvent')
+			->with('case-5', '', $this->anything())
+			->willReturn(['ok' => true]);
+
+		$mapper = $this->createMock(FlowRunMapper::class);
+		$mapper->expects($this->never())->method('findSuspendedBySubject');
+
+		$listener = new DecisionConcludedListener(
+			$settings,
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$this->createMock(LoggerInterface::class),
+			$mapper,
+			null,
+			$this->caseReference()
+		);
+
+		$listener->handle($this->flowEvent(register: '12', schema: '34'));
+	}//end testAFlowDecisionOnADossiqCaseIsMaterialisedOnItsSubject()
+
+	/**
+	 * A flow decision about another app's object is left alone.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function testAFlowDecisionOnAnotherAppsObjectIsIgnored(): void {
+		$materialiser = $this->createMock(BesluitMaterialisationService::class);
+		$materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
+
+		$listener = new DecisionConcludedListener(
+			$this->createMock(SettingsService::class),
+			$materialiser,
+			$this->createMock(AdvisoryCommitteeService::class),
+			$this->createMock(LoggerInterface::class),
+			null,
+			null,
+			$this->caseReference()
+		);
+
+		$listener->handle($this->flowEvent(register: '12', schema: '99'));
+		$listener->handle($this->flowEvent(register: 'pipelinq', schema: 'case'));
+	}//end testAFlowDecisionOnAnotherAppsObjectIsIgnored()
 }//end class

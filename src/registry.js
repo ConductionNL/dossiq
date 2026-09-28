@@ -743,7 +743,7 @@ const registry = {
 		kind: 'modal',
 		component: BeschikkingComposerDialog,
 		propsSchema: {},
-		_note: "Picks a template from TemplateController#index and files the rendered letter on the case through MergeTemplateHandler with no targetField. Opened by the CaseDetail `generate-document` header action as `type: open-modal`, the interim for a `run-action` the library cannot dispatch yet (design D4). The action passes `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim, and the dialog renders on `open`; `caseId` is passed for the same reason and IGNORED when it still holds the unresolved `@objectId` token, because open-modal resolves no tokens.",
+		_note: "Picks a template from TemplateController#index and has Filinq render the letter and files it on the case through CaseDocumentGenerationService. Opened by the CaseDetail `generate-document` header action as `type: open-modal`, the interim for a `run-action` the library cannot dispatch yet (design D4). The action passes `open: true` because CnAppRoot mounts a registry modal with the action's props verbatim, and the dialog renders on `open`; `caseId` is passed for the same reason and IGNORED when it still holds the unresolved `@objectId` token, because open-modal resolves no tokens.",
 	},
 
 	// --- The case file as a tab on the case page (documents-on-the-case). ---

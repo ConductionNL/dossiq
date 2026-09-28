@@ -1126,10 +1126,10 @@ $extra = [
     ['name' => 'fileRequest#parties',              'url' => '/api/cases/{caseId}/file-requests/parties',       'verb' => 'GET'],
     ['name' => 'fileRequest#create',               'url' => '/api/cases/{caseId}/file-requests',               'verb' => 'POST'],
     ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
-        // Generate document: renders a library template over the case and
-        // files the result as an informatieobject + join, through the same
-        // MergeTemplateHandler branch DossiqMergeTemplateNode will run once
-        // nextcloud-vue can dispatch a `run-action` header action.
+        // Generate document: asks Filinq to render a library template over
+        // the case (DocumentGenerationRequestedEvent) and files the result
+        // as an informatieobject + join, the same filing a flow's
+        // filinq.generate-document step gets.
     ['name' => 'caseDocumentGeneration#generateDocument', 'url' => '/api/cases/{caseId}/dossier/generate',        'verb' => 'POST'],
     ['name' => 'zaakdossier#linkExisting',         'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'POST'],
     ['name' => 'zaakdossier#unlinkDocument',       'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'DELETE'],

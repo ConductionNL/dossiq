@@ -72,7 +72,9 @@ class MigrateAutomaticActionsToFlowsCommand extends Command {
 			->setDescription(
 				'Migrate Dossiq automatic actions to OpenRegister flows (idempotent). '
 				. 'The flows are created ENABLED, so actions that never fired before will start firing — '
-				. 'use --dry-run first.'
+				. 'use --dry-run first. Each action becomes the step of the app that owns it: mail and '
+				. 'notifications OpenRegister, documents Filinq. A webhook action has no such step and '
+				. 'is skipped with the reason.'
 			)
 			->addOption(
 				name: 'user',

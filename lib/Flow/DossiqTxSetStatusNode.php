@@ -27,7 +27,7 @@ use UnexpectedValueException;
  *
  * A thin wrapper: SetStatusHandler keeps the logic.
  *
- * Distinct from `dossiq.setField` because `status` is not an ordinary field. It
+ * Distinct from a field write (the retired `dossiq.setField`) because `status` is not an ordinary field. It
  * is a reference to a `statusType` whose uuid is minted per installation, so a
  * SHIPPED flow can only name the status — never carry its id. This node takes
  * that name and the handler resolves it inside the case's own case type.
