@@ -78,6 +78,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'MigrateCommitteesToDecidiq' => 'raises existing committees; a fresh install seeds none',
 		'ArmTermijnEngineTimers' => 'arms existing TermijnInstances; none exist yet',
 		'RetireOriRegister' => 'retires a register a fresh install never had',
+		'RewriteRetiredFlowNodes' => 'rewrites stored flows; a fresh install has none',
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
 		'BackfillInformatieobjectMetadata' => 'backfill over existing documents',
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
