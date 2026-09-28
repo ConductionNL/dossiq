@@ -173,9 +173,10 @@
 						<option value="createSubCase">
 							{{ t('dossiq', 'Create sub-case') }}
 						</option>
-						<option value="webhook">
-							{{ t('dossiq', 'Call webhook') }}
-						</option>
+						<!-- No "Call webhook": dossiq no longer calls a URL itself
+							(flow-nodes-to-their-owners). Integriq owns outbound
+							calls, through a configured source. An action saved
+							earlier still shows its URL below. -->
 						<option value="setField">
 							{{ t('dossiq', 'Set field value') }}
 						</option>
