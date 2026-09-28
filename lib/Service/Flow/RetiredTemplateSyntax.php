@@ -3,7 +3,7 @@
 /**
  * Rewrites dossiq's `{{case.path}}` templates into the syntax of the node that replaces them.
  *
- * dossiq's retired actions rendered `{{case.x}}` against a context whose one
+ * Dossiq's retired actions rendered `{{case.x}}` against a context whose one
  * root was the case: a dotted path walked into it, anything else (including a
  * path without the `case.` root) rendered as the empty string, and nothing else
  * in the text was syntax.
@@ -85,7 +85,7 @@ class RetiredTemplateSyntax {
 
 				$field = substr($path, strlen(self::CASE_ROOT));
 				if ($field === '' || str_contains($field, '.') === true) {
-					throw new UnmappableStep(
+					throw new UnmappableStep(message: 
 						'the ' . $what . ' uses {{' . $path . '}}, and the OpenRegister message step reads only top-level fields'
 					);
 				}
@@ -110,7 +110,7 @@ class RetiredTemplateSyntax {
 	 */
 	public function forDocument(string $template, string $what): string {
 		if (str_contains($template, '{%') === true || str_contains($template, '{#') === true) {
-			throw new UnmappableStep(
+			throw new UnmappableStep(message: 
 				'the ' . $what . ' contains "{%" or "{#", which dossiq printed as text and Filinq would run as template code'
 			);
 		}
@@ -132,7 +132,7 @@ class RetiredTemplateSyntax {
 	/**
 	 * Put the merge fields a createDocument step computed into its template.
 	 *
-	 * dossiq rendered each merge field first and exposed the result as
+	 * Dossiq rendered each merge field first and exposed the result as
 	 * `{{case.mergeFields.<name>}}`. Filinq has no merge fields, so the field's
 	 * own template is placed where the reference was; rendering it in place
 	 * gives the same text.

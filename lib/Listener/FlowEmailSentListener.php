@@ -3,7 +3,7 @@
 /**
  * Records a mail an OpenRegister flow sent about a dossiq case, on that case.
  *
- * dossiq's own mail steps are gone: OpenRegister's `openregister.send-email`
+ * Dossiq's own mail steps are gone: OpenRegister's `openregister.send-email`
  * sends now. What dossiq still owns is the case's record of it, the stored
  * message on the case and the line on its timeline, which CaseEmailService
  * wrote whenever it sent. OpenRegister announces every mail a flow sent with

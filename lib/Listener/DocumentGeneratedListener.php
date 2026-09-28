@@ -3,7 +3,7 @@
 /**
  * Files a document Filinq generated for a dossiq case in that case's dossier.
  *
- * dossiq's own document steps (createDocument, mergeTemplate) are gone:
+ * Dossiq's own document steps (createDocument, mergeTemplate) are gone:
  * Filinq's `filinq.generate-document` renders the document now, and stores
  * it in the acting user's Files. What dossiq still owns is the dossier, so
  * this listener takes Filinq's DocumentGeneratedEvent and, when the document

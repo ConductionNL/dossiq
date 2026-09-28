@@ -349,7 +349,7 @@ class AutomaticActionFlowMigrator {
 		}
 
 		if ($row['replacement'] === null) {
-			throw new UnmappableStep('it is retired and nothing replaces it (' . $row['reason'] . ')');
+			throw new UnmappableStep(message: 'it is retired and nothing replaces it (' . $row['reason'] . ')');
 		}
 
 		return [['type' => $row['replacement'], 'config' => $config]];

@@ -170,7 +170,7 @@ class RetiredDocumentSteps {
 	 */
 	private function filed(string $text, string $name, string $documentType, string $output): array {
 		if ($documentType === '') {
-			throw new UnmappableStep('the step names no document type, which the case dossier needs to file the document');
+			throw new UnmappableStep(message: 'the step names no document type, which the case dossier needs to file the document');
 		}
 
 		$title = (string)preg_replace('/\.[A-Za-z0-9]{1,5}$/', '', $name);
@@ -205,7 +205,7 @@ class RetiredDocumentSteps {
 	 */
 	private function text(string $text): string {
 		if (trim($text) === '') {
-			throw new UnmappableStep('the step has no template text');
+			throw new UnmappableStep(message: 'the step has no template text');
 		}
 
 		return $this->syntax->forDocument(template: $text, what: 'template');

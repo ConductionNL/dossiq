@@ -43,9 +43,8 @@ drift, and the copy in the leaf app is the one nobody else maintains.
 
 ## Impact
 
-- Depends on openregister branch `feat/flow-send-email-external-recipients`
-  (the `externalRecipients` allowlist and FlowEmailSentEvent). It must merge
-  first.
+- Uses openregister#4120 (the `externalRecipients` allowlist on the
+  send-email step and FlowEmailSentEvent), merged into development.
 - The shipped case flow now needs Filinq for its decision document.
 - Webhook steps have no replacement that takes a raw URL; they are reported,
   not rewritten.

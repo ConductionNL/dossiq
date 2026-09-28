@@ -3,7 +3,7 @@
 /**
  * Turns the configuration of a retired dossiq step into the steps that replace it.
  *
- * dossiq's own mail, notification, field, decision and document steps are
+ * Dossiq's own mail, notification, field, decision and document steps are
  * gone because their owners now provide them. A stored flow still names the
  * old type with the old configuration keys, so renaming the type is not
  * enough: the keys, the template syntax and sometimes the number of steps
@@ -150,7 +150,7 @@ class RetiredNodeTranslator {
 			RetiredNodeMap::DOCUMENT_CREATE => [$this->documents->create(config: $config)],
 			RetiredNodeMap::DOCUMENT_MERGE => [$this->documents->merge(config: $config)],
 			RetiredNodeMap::WEBHOOK => throw $this->webhook(config: $config),
-			default => throw new UnmappableStep('no translation is known for "' . $translation . '"'),
+			default => throw new UnmappableStep(message: 'no translation is known for "' . $translation . '"'),
 		};
 	}//end translate()
 
@@ -165,7 +165,7 @@ class RetiredNodeTranslator {
 		$recipient = $this->recipientFromRef(ref: trim((string)($config['recipientRef'] ?? '')));
 		$body = $this->syntax->forMessaging(template: (string)($config['bodyTemplate'] ?? ''), what: 'body');
 		if (trim($body) === '') {
-			throw new UnmappableStep('the step has no body, which the send-email step refuses');
+			throw new UnmappableStep(message: 'the step has no body, which the send-email step refuses');
 		}
 
 		return [
@@ -193,7 +193,7 @@ class RetiredNodeTranslator {
 	 */
 	private function recipientFromRef(string $ref): string {
 		if ($ref === '') {
-			throw new UnmappableStep('the step names no recipient');
+			throw new UnmappableStep(message: 'the step names no recipient');
 		}
 
 		if (str_starts_with($ref, 'email:') === true) {
@@ -201,7 +201,7 @@ class RetiredNodeTranslator {
 		}
 
 		if (preg_match('/^[a-zA-Z0-9_-]+$/', $ref) !== 1) {
-			throw new UnmappableStep('the recipient "' . $ref . '" is not a field name the send-email step can read');
+			throw new UnmappableStep(message: 'the recipient "' . $ref . '" is not a field name the send-email step can read');
 		}
 
 		return '{{ ' . $ref . ' }}';
@@ -221,19 +221,19 @@ class RetiredNodeTranslator {
 	private function emailFromTransition(array $config): array {
 		$template = trim((string)($config['template'] ?? ''));
 		if ($template !== '') {
-			throw new UnmappableStep(
+			throw new UnmappableStep(message: 
 				'the step sends the stored email template "' . $template . '", and the send-email step has no template reference'
 			);
 		}
 
 		$recipient = trim((string)($config['to'] ?? ($config['recipient'] ?? '')));
 		if ($recipient === '') {
-			throw new UnmappableStep('the step names no recipient');
+			throw new UnmappableStep(message: 'the step names no recipient');
 		}
 
 		$body = (string)($config['body'] ?? '');
 		if (trim($body) === '') {
-			throw new UnmappableStep('the step has no body, which the send-email step refuses');
+			throw new UnmappableStep(message: 'the step has no body, which the send-email step refuses');
 		}
 
 		return [
@@ -261,7 +261,7 @@ class RetiredNodeTranslator {
 	private function notifyRole(array $config): array {
 		$role = trim((string)($config['roleSlug'] ?? ''));
 		if ($role === '' || preg_match('/^[a-zA-Z0-9_-]+$/', $role) !== 1) {
-			throw new UnmappableStep('the step names no role field the send-notification step can read');
+			throw new UnmappableStep(message: 'the step names no role field the send-notification step can read');
 		}
 
 		$message = trim($this->syntax->forMessaging(template: (string)($config['messageTemplate'] ?? ''), what: 'message'));
@@ -328,7 +328,7 @@ class RetiredNodeTranslator {
 	private function setField(array $config): array {
 		$field = trim((string)($config['field'] ?? ''));
 		if ($field === '' || preg_match('/^[a-zA-Z0-9_-]+$/', $field) !== 1) {
-			throw new UnmappableStep('the step names no field that can be written as one property');
+			throw new UnmappableStep(message: 'the step names no field that can be written as one property');
 		}
 
 		$value = ($config['value'] ?? null);
@@ -338,7 +338,7 @@ class RetiredNodeTranslator {
 		}
 
 		if (is_string($value) === true && $value !== self::NOW_MACRO && str_contains($value, '{{') === true) {
-			throw new UnmappableStep('the value holds "{{", which dossiq wrote as text and OpenRegister would read as a placeholder');
+			throw new UnmappableStep(message: 'the value holds "{{", which dossiq wrote as text and OpenRegister would read as a placeholder');
 		}
 
 		return [
@@ -361,7 +361,7 @@ class RetiredNodeTranslator {
 	private function decision(array $config): array {
 		$key = trim((string)($config['decisionKey'] ?? ''));
 		if ($key === '') {
-			throw new UnmappableStep('the step names no decision table');
+			throw new UnmappableStep(message: 'the step names no decision table');
 		}
 
 		$table = $this->decisionTable(key: $key);
@@ -375,7 +375,7 @@ class RetiredNodeTranslator {
 		}
 
 		if ($fields === []) {
-			throw new UnmappableStep('the decision table "' . $key . '" declares no outputs to write');
+			throw new UnmappableStep(message: 'the decision table "' . $key . '" declares no outputs to write');
 		}
 
 		$step = ['table' => $table];
@@ -408,11 +408,11 @@ class RetiredNodeTranslator {
 				$table = $service->findByKey(key: $key);
 			}
 		} catch (Throwable $e) {
-			throw new UnmappableStep('the decision table "' . $key . '" could not be read: ' . $e->getMessage());
+			throw new UnmappableStep(message: 'the decision table "' . $key . '" could not be read: ' . $e->getMessage());
 		}
 
 		if (is_array($table) === false || $table === []) {
-			throw new UnmappableStep('no decision table has the key "' . $key . '"');
+			throw new UnmappableStep(message: 'no decision table has the key "' . $key . '"');
 		}
 
 		unset($table['@self'], $table['id'], $table['uuid']);
@@ -434,7 +434,7 @@ class RetiredNodeTranslator {
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		$schema = $this->settingsService->getConfigValue(key: 'case_schema');
 		if ($register === '' || $schema === '') {
-			throw new UnmappableStep('dossiq has no register or case schema configured to write the case to');
+			throw new UnmappableStep(message: 'dossiq has no register or case schema configured to write the case to');
 		}
 
 		$map = [];
@@ -482,7 +482,7 @@ class RetiredNodeTranslator {
 			$host = 'an unnamed host';
 		}
 
-		return new UnmappableStep(
+		return new UnmappableStep(message: 
 			'it calls ' . $host . ' directly, and every Integriq step needs a configured source or subscription instead of a URL'
 		);
 	}//end webhook()

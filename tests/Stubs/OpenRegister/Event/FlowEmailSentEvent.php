@@ -3,8 +3,8 @@
 /**
  * OpenRegister FlowEmailSentEvent test stub.
  *
- * A verbatim copy of openregister's class (lib/Event/FlowEmailSentEvent.php on
- * branch feat/flow-send-email-external-recipients, read 2026-09-28), so
+ * A verbatim copy of openregister's class (lib/Event/FlowEmailSentEvent.php, merged
+ * into development by openregister#4120, read 2026-09-28), so
  * FlowEmailSentListener can be tested and analysed without that OpenRegister.
  * tests/bootstrap.php loads it only when the real class is absent.
  *

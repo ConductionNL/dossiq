@@ -46,6 +46,8 @@ class CrossAppListenerRegistrar {
 	 * @param IRegistrationContext $context The registration context.
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/specs/automatic-actions/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
 		$this->registerFlowNodes(context: $context);
@@ -58,7 +60,7 @@ class CrossAppListenerRegistrar {
 	/**
 	 * Take back what the apps that own mail and documents did for a case.
 	 *
-	 * dossiq's mail and document steps are OpenRegister's and Filinq's now.
+	 * Dossiq's mail and document steps are OpenRegister's and Filinq's now.
 	 * Each announces what it did, and dossiq files it on the case: the sent
 	 * mail on the case and its timeline, the generated document in the
 	 * dossier. Guarded on the event class and named by string, like every

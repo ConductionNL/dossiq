@@ -195,7 +195,7 @@ class RetiredActionRunner {
 	private function steps(string $type, array $action, array $context): array {
 		$row = $this->map->rowFor(type: self::NODE_PREFIX . $type);
 		if ($row === null) {
-			throw new UnmappableStep('"' . $type . '" is not a retired action');
+			throw new UnmappableStep(message: '"' . $type . '" is not a retired action');
 		}
 
 		$label = trim((string)($context['transitionLabel'] ?? ''));
@@ -211,7 +211,7 @@ class RetiredActionRunner {
 		}
 
 		if ($row['replacement'] === null) {
-			throw new UnmappableStep('nothing replaces it (' . $row['reason'] . ')');
+			throw new UnmappableStep(message: 'nothing replaces it (' . $row['reason'] . ')');
 		}
 
 		return [['type' => $row['replacement'], 'config' => $action]];
