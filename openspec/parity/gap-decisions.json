@@ -998,5 +998,85 @@
     "reason": "Partial and built; two competitors rate it yes (nl-portal, xxllnc PIP). The field contract differs (dossiq writes content, sentAt and readByRecipientAt; portaliq reads body, receivedAt and read), so only the subject shows, and attachments never render (portaliq#702).",
     "change": "communication-portal-conversation-on-the-case",
     "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "cases-my-cases-page",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "kind cases and closedField on mijnZaken. Portaliq change cases-my-cases-page (merged, T08 hands this half to dossiq) lists no dossiq case until mijnZaken declares kind cases and closedField endDate; dossiq#3152 records it live (PortalCaseListReader keeps only kind cases). Reading the code also showed the case collection is served to no audience a portal login carries (dossiq answers citizen, DigiD sessions carry client, eHerkenning supplier), so the change serves it to those too. No dossiq change covers it. Build: a half a merged sibling change depends on.",
+    "change": "portal-case-list-declarations",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "signin-eherkenning-branch",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "branchField on the case collection. Portaliq change signin-eherkenning-branch (merged, T07 hands this half to dossiq) needs a case app to store the branch a business filed under and declare branchField; until then a branch-restricted session sees none of its cases. The case schema has no branch field. Build: a half a merged sibling change depends on.",
+    "change": "portal-case-list-declarations",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "identity-ways-in-screens",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "referenceField on the case collection. Portaliq change identity-ways-in-screens (merged) needs the case app to declare which field holds the case number for a reference session. The change declares referenceField identifier and portalIdentityKind on the case type, and admits reference on no case type while portaliq issues a reference link without checking the address against the case. Build: a half a merged sibling change depends on.",
+    "change": "portal-case-list-declarations",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "what-the-citizen-may-write-on-their-own-case",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "citizenWrite update action. Portaliq changes what-the-citizen-may-write-on-their-own-case, case-actions-withdraw-screen and withdrawing-your-own-case-from-the-portal (merged) depend on a dossiq update action on case carrying citizenWrite and on the case type declaring portalWritable, the two windows and portalWithdrawal; without it CitizenCaseController answers 403 portal-writes-not-declared for every dossiq case (dossiq#3152). No dossiq change covers it. Build: a half merged sibling changes depend on.",
+    "change": "portal-citizen-writes-on-the-case",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "partner-tasks-in-the-portal",
+    "matrix": "portaliq",
+    "decision": "existing",
+    "reason": "ask-partner row action. Portaliq change partner-tasks-in-the-portal asks dossiq to declare ask-partner and retire ExternalConsultationResponse (dossiq row 3.19). Open dossiq change case-sharing-mints-access-links covers row 3.19 by capability on another road: an external party answers a case through an OpenRegister access link with the comment capability, and it already deleted the ExternalConsultationResponse token page (its tasks 5.1 to 5.4). Whether dossiq should also declare portaliq's partner-audience ask-partner as a second road is a product question, not a gap.",
+    "change": "case-sharing-mints-access-links",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "change-proposal-queue",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "propose-change row action. Portaliq change change-proposal-queue (merged) hands dossiq the propose-change action with its proposable list and the queue on the case page (dossiq row 2.21). The dossiq umbrella competitor-parity-2026-09 lists this half without a change, and case-sharing-mints-access-links leaves the portal queue for 2.21 out. Build: a half a merged sibling change depends on.",
+    "change": "portal-change-proposals-on-the-case",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "identity-profile-page",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "contact-details listener. Portaliq change identity-profile-page (merged) raises PortalContactDetailsChangedEvent when a resident sets their contact channel and says a case app that sends letters listens for it; dossiq reads case.communicationChannel as the recorded choice (CaseTypeAcknowledgement::channelFor) and nothing sets it from the portal. Build: a half a merged sibling change depends on. The listener stays inert until portaliq emits the event.",
+    "change": "portal-contact-channel-follows-the-resident",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "inbox-notifications-and-preferences",
+    "matrix": "portaliq",
+    "decision": "existing",
+    "reason": "client-write listener. Portaliq change inbox-notifications-and-preferences asks dossiq for a listener on PortalClientWriteEvent that tells the handler about a resident's amendment, document or task answer. Built without an OpenSpec change by dossiq#3144 (commit 9d8fde86a): lib/Listener/PortalClientWriteListener.php hands each act to ApplicantPortalActs, which records it on the timeline with a follow-up and notifies the assignee. It hears nothing until portal-citizen-writes-on-the-case lets portaliq accept the writes.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "integration-case-bridge",
+    "matrix": "planninq",
+    "decision": "build",
+    "reason": "planninq projects leaf on the case schema. Planninq change integration-case-bridge (merged) asks dossiq to add planninq-projects to the case schema's linked types so the Projects panel shows on the case page; its rows int-project-from-case and int-archive-to-case carry tender demand (TenderNed 365739). No dossiq change places it. Build: a half a merged sibling change depends on.",
+    "change": "projects-from-planninq-on-the-case",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "11.14",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "TenantBrandingSanitiser parallel path, the half the thematiq lane handed to dossiq: branding is thematiq's (row 11.14 provider thematiq, built.owner ConductionNL/thematiq; hydra ADR-010 openspec/architecture/adr-010-nl-design.md, theme switching through the nldesign token sets), so dossiq builds no branding of its own. The parallel path is unreached code, not a capability: TenantConfigurationService::getThemingTokens(), sanitiseBranding() and sanitiseCustomCss(), and the TenantBrandingSanitiser behind them, have no caller in lib/ or src/ at c8ac7427e. Removing it is inherited debt for the sweep.",
+    "change": null,
+    "decidedOn": "2026-09-28"
   }
 ]
