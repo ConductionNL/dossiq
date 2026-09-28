@@ -10798,8 +10798,10 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/filinq"
+				"state": "specified",
+				"owner": "ConductionNL/filinq",
+				"change": "filinq/scan-intake-with-separator-sheets",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/filinq openspec/changes/scan-intake-with-separator-sheets (filinq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:38-52,112 folder import locations scanned on a timer, PDFs split on QR separation sheets into existing case, new case, inbox or attachment; lib/Service/SeparationSheetService.php generates the sheets | round 2 drive: procest/opencase/round2/code-census.md:189 \"Separation sheets and QR cover sheets for scanning :: yes :: lib/Service/SeparationSheetService.php\"",
@@ -10891,8 +10893,10 @@
 			"feature": "zaakportaal-mijngemeente",
 			"featureConfidence": "low",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/integriq"
+				"state": "specified",
+				"owner": "ConductionNL/integriq",
+				"change": "integriq/messaging-intake-routing-rules",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/integriq openspec/changes/messaging-intake-routing-rules (integriq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 docs/dokumenter/ms-office.md:8,50-62 (vendor docs, not code) Outlook task pane can create a new case and save the mail as a document, Enterprise only; appinfo/routes.php:70,91 login-flow helper and manifest download serve the add-in; the add-in source (msoffice/) is not in the public tree | round 2 drive: procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\" | open for the lab: On an Enterprise instance with the Outlook add-in installed, does the task pane offer Opret ny sag and create the case with the mail saved on it?",
@@ -10918,8 +10922,10 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/openregister"
+				"state": "specified",
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/files-leaf-save-to-object",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/files-leaf-save-to-object (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/files-plugin.js:21-23 Save to OpenCase file action and src/talk-plugin.js:32 Talk message action, loaded by lib/Listener/FilesIntegrationListener.php:42 and TalkIntegrationListener.php:42; backend lib/Controller/FilesIntegrationController.php:48 and TalkController.php:48 | round 2 drive: procest/opencase/round2/code-census.md:191 \"Save any Nextcloud file or Talk chat to a case :: yes\"",
@@ -10945,8 +10951,10 @@
 			"feature": "leges-heffingen",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/shillinq"
+				"state": "specified",
+				"owner": "ConductionNL/shillinq",
+				"change": "shillinq/leges-at-intake",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/shillinq openspec/changes/leges-at-intake (shillinq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -il payment, betaling, mollie, stripe over lib and src returns nothing; no citizen intake exists to pay in | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -11869,7 +11877,7 @@
 			"feature": "visual-workflow-editor",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/relation-types-with-inverses",
 				"prs": [
 					{
@@ -11880,7 +11888,8 @@
 					}
 				],
 				"evidence": "openregister#3764 4d8f0d2e2",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/relation-types-with-inverses (openregister lane)."
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/constants.py:99-111 aard_relatie vervolg, onderwerp, bijdrage on RelevanteZaakRelatie (models/zaken.py:715-760), one-sided; hoofdzaak and deelzaken are the only paired link",
@@ -11945,7 +11954,7 @@
 			"feature": "visual-workflow-editor",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/flow-bpmn-interchange",
 				"prs": [
 					{
@@ -11967,7 +11976,8 @@
 					}
 				],
 				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ril bpmn over lib and src returns nothing; lib/Service/WorkflowService.php:46 the only workflow is a document review or approval with two fixed types | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -12306,8 +12316,10 @@
 			"feature": "vth-module",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/buildiq"
+				"state": "specified",
+				"owner": "ConductionNL/buildiq",
+				"change": "buildiq/registration-form-builder",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/registration-form-builder (buildiq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no forms engine; dialogs are fixed Vue components (src/components/*Dialog.vue); no citizen or step form | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -12368,8 +12380,10 @@
 			"feature": "workflow-definition-engine",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/nextcloud-vue"
+				"state": "specified",
+				"owner": "ConductionNL/nextcloud-vue",
+				"change": "nextcloud-vue/form-dialog-autosave",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/form-dialog-autosave (nextcloud-vue lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no task forms to save part-way; workflow actions are single submits (lib/Service/WorkflowService.php:134) | round 2 drive: procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
@@ -12424,7 +12438,7 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/migrate-run-between-versions",
 				"prs": [
 					{
@@ -12435,7 +12449,8 @@
 					}
 				],
 				"evidence": "lib/Command/MigrateWorkflowDefinitionsToFlowsCommand.php; openregister#3871 80fc3cd2",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/migrate-run-between-versions (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types have no versions or definitions to migrate between (src/views/ConfigurationView.vue:229 code list only) | round 2 drive: procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
@@ -12461,9 +12476,11 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Service/Dmn/DecisionTableService.php; lib/Service/TermijnService.php",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/2026-06-14-computed-fields",
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-computed-fields (save-time computed fields with date arithmetic); dossiq's half is in lib/Service/Dmn/DecisionTableService.php and lib/Service/TermijnService.php, read at dossiq 96b8ef8f. The missing scalar functions are openregister's calc-engine-scalar-functions (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no formula or computed field; the only date arithmetic is the FOI deadline in lib/Service/AccessDeadlineService.php:20-28 and workflow step splitting | round 2 drive: procest/_round2/compare/M1-functionality.md:97 \"| 3.17 | Formula-based field fill and date calculation | no |\"",
@@ -12489,8 +12506,8 @@
 			"feature": "workflow-definition-engine",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
-				"change": "buildiq/case-page-layout-per-case-type",
+				"state": "specified",
+				"change": "buildiq/pages-task-panel-beside-case-tabs",
 				"prs": [
 					{
 						"repo": "buildiq",
@@ -12499,7 +12516,8 @@
 					}
 				],
 				"evidence": "#CaseDetail/case-tasks",
-				"owner": "ConductionNL/buildiq"
+				"owner": "ConductionNL/buildiq",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/pages-task-panel-beside-case-tabs (buildiq lane). built.change previously named buildiq/case-page-layout-per-case-type, which carried the built half."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tabs only, no side panel; the case shows only a reminder banner (lines 24-32) | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:54 \"No tasks tab: work items are workflow steps on documents and reminders on the case.\"",
@@ -12563,7 +12581,7 @@
 			"feature": "workflow-definition-engine",
 			"featureConfidence": "low",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/macro-flows-with-next-item",
 				"prs": [
 					{
@@ -12579,7 +12597,8 @@
 				],
 				"evidence": "src/manifest.json:1542 #Cases bulkActions (reassign, transition, suspend, resume, extend-term), one act each; several changes per transition via automaticActions such as lib/Service/Transitions/SetFieldHandler.php:65 handle()",
 				"reachedOn": "#Cases list selection bulk actions; no next-item navigation after the write",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/macro-flows-with-next-item (openregister lane)."
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 grep -ri macro over src returns nothing; an API has no one-click action for a handler",
@@ -12833,8 +12852,10 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/nextcloud-vue"
+				"state": "specified",
+				"owner": "ConductionNL/nextcloud-vue",
+				"change": "nextcloud-vue/files-browser-columns",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/files-browser-columns (nextcloud-vue lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/DocumentList.vue renders fixed rows with Åbn and Slet actions (lines 25,29); grep -i 'column' finds no chooser or column setting | round 2 drive: procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\"",
@@ -13264,9 +13285,10 @@
 			"feature": "zaakportaal-mijngemeente",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php",
-				"owner": "ConductionNL/opencatalogi"
+				"owner": "ConductionNL/opencatalogi",
+				"note": "OpenSpec pass 2026-09-27: matrix corrected (opencatalogi lane: existing): rated yes with built.state none. lib/Service/WooPublicationService.php and lib/Service/PublicationService.php read at dossiq 96b8ef8f (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no portal or publication code: appinfo/routes.php has no publish route and lib/Db/Document.php:44-56 no publication flag | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
@@ -13684,8 +13706,10 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/integriq"
+				"state": "building",
+				"owner": "ConductionNL/integriq",
+				"change": "integriq/registry-subscription-connector",
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/registry-subscription-connector, an existing open change, covers it (integriq lane)."
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Db/CprEvent.php entity and lib/Service/AuditService.php:630,637 logCprEventReceived have no caller in the public tree; the CPR subscription and receiver sit in the enterprise package; not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:231 \"CPR event subscriptions :: partial (enterprise)\" | open for the lab: With the enterprise package, does a CPR change event for a party land on its cases as a log entry?",
@@ -13747,7 +13771,7 @@
 			"feature": "case-map-overview",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/external-register-view-leaf",
 				"prs": [
 					{
@@ -13758,7 +13782,8 @@
 					}
 				],
 				"evidence": "src/components/map/AddressSearch.vue; openregister#3900 11cd9c2e9",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/external-register-view-leaf (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 src/router/index.js routes search-citizen, search-company, search-estate and estate-detail show register data with the cases on it, but live CPR, CVR and BBR reads need EnterpriseClient classes absent from the public tree (lib/Controller/EstateController.php:95-110 falls back to local rows); not checked: enterprise package is closed source | round 2 drive: procest/_round2/compare/M1-functionality.md:145 \"| 5.13 | External register views embedded in the app | no |\" | open for the lab: With the enterprise package, does /estate/<bfe> show BBR building data fetched live?",
@@ -13813,7 +13838,7 @@
 			"feature": "kcc-werkplek-zaaksysteem-bridge",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "pipelinq/contact-moments-on-pipelinq-schema",
 				"prs": [
 					{
@@ -13824,7 +13849,8 @@
 					}
 				],
 				"evidence": "register.d/30-kcc.json#customerContact; 40-kcc-werkplek.json#contactmoment; lib/Controller/ContactMomentController.php; pipelinq#1970 428bd3a6b",
-				"owner": "ConductionNL/pipelinq"
+				"owner": "ConductionNL/pipelinq",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/pipelinq openspec/changes/contact-moments-on-pipelinq-schema (pipelinq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no contact moment entity in lib/Db and no channel or direction on journal notes (lib/Db/JournalNote.php:30-36) | round 2 drive: procest/opencase/round2/code-census.md:80 \"Communication: `JournalNote` (title, text, isLocked), `DpShipment`\"",
@@ -14071,7 +14097,7 @@
 			"feature": "case-email-integration",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/send-at-on-the-messaging-leaf",
 				"prs": [
 					{
@@ -14082,7 +14108,8 @@
 					}
 				],
 				"evidence": "lib/Service/TermijnNotificationService.php; lib/Flow/DossiqScheduleReminderNode.php; openregister#3912 042864247",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/send-at-on-the-messaging-leaf (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'send_at|scheduled|planlagt|udskudt' near mail over lib and src returns nothing; lib/BackgroundJob holds import, index, export and access deadline jobs, no mail queue | round 2 drive: procest/_round2/compare/M1-functionality.md:159 \"| 6.9 | Scheduled or planned e-mails | no |\"",
@@ -14174,7 +14201,7 @@
 			"feature": "bezwaar-beroep-workflow",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/files-leaf-save-to-object",
 				"prs": [
 					{
@@ -14185,7 +14212,8 @@
 					}
 				],
 				"evidence": "lib/Service/Conversation/CaseConversationService.php; CaseConversationsPanel.vue; openregister#3897 2a56f39b5",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/files-leaf-save-to-object (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/talk-plugin.js:32-33,73 registers a Talk message action that posts to talk/save-chat, loaded by lib/Listener/TalkIntegrationListener.php:42; lib/Controller/TalkController.php:49,137 saves the transcript as a case document, PDF via LibreOffice | round 2 drive: procest/opencase/round2/code-census.md:238 \"Talk chat export to case :: yes\"",
@@ -14211,7 +14239,7 @@
 			"feature": "kcc-werkplek-zaaksysteem-bridge",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "building",
 				"change": "integriq/kcc-cti-adapter",
 				"prs": [
 					{
@@ -14228,7 +14256,8 @@
 					}
 				],
 				"evidence": "lib/Controller/KccContactController.php; BelplanController.php; lib/Service/DoorverbindingService.php; src/views/settings/KccIntegrationSettings.vue; integriq#2072 3db280a65; integriq#2076 82bfbe6b0",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/kcc-cti-adapter, an existing open change, covers it (integriq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'telefon|pbx|softphone|opkald' over lib and src hits only phone number fields in party dialogs | round 2 drive: procest/_round2/compare/M1-functionality.md:163 \"| 6.13 | Telephony (KCC) panel | no |\"",
@@ -15024,7 +15053,7 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/unified-search-index",
 				"prs": [
 					{
@@ -15034,7 +15063,8 @@
 					}
 				],
 				"evidence": "lib/Search/ObjectsProvider.php",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:36 nav entry to the search page; src/views/SearchView.vue:7,229 one box over content, titles and case numbers, dispatches the store search; lib/Controller/SearchController.php:61 GET /api/v1/search returns cases, documents and files; lib/AppInfo/Application.php:114-116 three Nextcloud unified search providers in the header | round 2 drive: procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\"",
@@ -15140,8 +15170,10 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/openregister"
+				"state": "specified",
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/view-group-share",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/view-group-share (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches exist at all (see 9.3), so none can be shared | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
@@ -15196,7 +15228,7 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/content-search-index",
 				"prs": [
 					{
@@ -15207,7 +15239,8 @@
 					}
 				],
 				"evidence": "openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3892",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/content-search-index (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:78-89 ingest-attachment pipeline extracts all file text, :169-176 attachment.content indexed with a Danish analyzer; lib/Service/SearchService.php:205-210 search page queries it; src/views/SearchView.vue:8 placeholder Søg i indhold | round 2 drive: procest/opencase/round2/search-anatomy.md:7 \"The only search that reads inside files.\"",
@@ -15233,9 +15266,10 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Service/CaseAccessGuard.php",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: matrix corrected: rated yes with built.state none. Access-filtered search is built: openregister lib/Db/MagicMapper/MagicRbacHandler.php filters rows in SQL (read at openregister 555af721); dossiq lib/Service/CaseAccessGuard.php (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/SearchService.php:64 refuses users without any access, :208-210 passes access profile ids and direct case ids to Elasticsearch; ElasticsearchService.php:337 terms filter on access_profile_id; lib/Db/CaseMapper.php:892-894 case query joined on the user's case access | round 2 drive: procest/opencase/round2/code-census.md:254 \"Search results filtered by access profile :: yes\"",
@@ -15290,7 +15324,7 @@
 			"feature": "brp-integration",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/contacts-leaf-cases-panel",
 				"prs": [
 					{
@@ -15301,7 +15335,8 @@
 					}
 				],
 				"evidence": "src/components/initiator/InitiatorPicker.vue; openregister#3893 caf4fd43a",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/contacts-leaf-cases-panel (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js /search/citizen and /search/company; lib/Controller/CitizenController.php:143,158 GET /api/v1/citizen/search uses the CPR service when enterprise is on and a local fallback search (:106) when it is off; /api/v1/citizen/cases and /documents give the 360 view | round 2 drive: procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\"",
@@ -15393,7 +15428,7 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/unified-search-index",
 				"prs": [
 					{
@@ -15404,7 +15439,8 @@
 				],
 				"evidence": "src/manifest.json:7534 deepLinks (case, objectionProceeding, beroep, brpPerson, kvkCompany) handed to OpenRegister's unified search provider through the AppHost registration in lib/AppInfo/Registrar/AppHostRegistrar.php:99 register(); no dossiq IProvider of its own; engine tasks have no provider",
 				"reachedOn": "Nextcloud header unified search, results open /apps/dossiq/cases/{uuid} (#CaseDetail) and the other detail pages",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/AppInfo/Application.php:114-116 registers OpenCaseCasesSearchProvider, OpenCaseDocumentsSearchProvider and OpenCaseFilesSearchProvider; lib/Search/OpenCaseCasesSearchProvider.php:43-74 returns cases linking to case/{id} | round 2 drive: procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\"",
@@ -15430,8 +15466,10 @@
 			"feature": "case-search-and-lists",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/openregister"
+				"state": "specified",
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/saved-view-count-alert",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/saved-view-count-alert (openregister lane)."
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no saved searches and no threshold alerting in src/openzaak",
@@ -15584,7 +15622,9 @@
 			"built": {
 				"state": "specified",
 				"evidence": "src/views/settings/StufAuditLog.vue; lib/Controller/AiAuditExportController.php; openregister src/views/logs/AuditTrailIndex.vue and export at appinfo/routes.php:1350 are admin-only; openregister#4018 adds GET /api/audit-trails/readable with no screen",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/audit-log-page",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/audit-log-page (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1268-1350 Transaktionslog tab with filters on user, from and to time, log source (searches and lookups or audit trail) and type, plus Eksporter til CSV (:2555); appinfo/routes.php:94-95 settings/transaction-log | round 2 drive: procest/opencase/round2/code-census.md:259 \"Transaction log viewer for admins :: yes\"",
@@ -15639,9 +15679,11 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
+				"state": "specified",
 				"evidence": "openregister lib/Db/ExportRun.php; openregister appinfo/routes.php:1937",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/an-export-is-a-file-with-a-life",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/an-export-is-a-file-with-a-life (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no stored export area; the access request export streams a ZIP (src/views/AccessRequestDetailView.vue:449-451) and nothing lists past exports | round 2 drive: procest/_round2/compare/M1-functionality.md:220 \"| 10.7 | Export files area with expiry and download counts | no |\"",
@@ -15667,7 +15709,7 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/activity-leaf",
 				"prs": [
 					{
@@ -15684,7 +15726,8 @@
 					}
 				],
 				"evidence": "lib/Controller/DossierExportController.php; lib/Service/BeroepDossierExport.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/activity-leaf (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CaseAuditLog.vue:153 lists the case audit log with paging only; no export control; lib/Controller/AuditController.php:48 has no export format | round 2 drive: procest/_round2/compare/M1-functionality.md:221 \"| 10.8 | Timeline export per case or contact | no |\"",
@@ -15739,8 +15782,8 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
-				"change": "nextcloud-vue/dashboard-layout-per-user",
+				"state": "specified",
+				"change": "nextcloud-vue/a-saved-view-drives-a-widget",
 				"prs": [
 					{
 						"repo": "nextcloud-vue",
@@ -15750,7 +15793,8 @@
 					}
 				],
 				"evidence": "nextcloud-vue#1209 744a5a12f",
-				"owner": "ConductionNL/nextcloud-vue"
+				"owner": "ConductionNL/nextcloud-vue",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/a-saved-view-drives-a-widget (nextcloud-vue lane). built.change previously named nextcloud-vue/dashboard-layout-per-user, which carried the built half."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches (9.3); the four dashboard widgets (lib/Dashboard) run fixed queries | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
@@ -15909,8 +15953,10 @@
 			"feature": "case-types",
 			"featureConfidence": "low",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/buildiq"
+				"state": "specified",
+				"owner": "ConductionNL/buildiq",
+				"change": "buildiq/registration-form-builder",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/registration-form-builder (buildiq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js has no form route; src/views and src/components hold no form designer; the only field lists are hard coded dialogs such as src/components/NewCaseDialog.vue | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -15936,7 +15982,7 @@
 			"feature": "visual-workflow-editor",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/flow-bpmn-interchange",
 				"prs": [
 					{
@@ -15958,7 +16004,8 @@
 					}
 				],
 				"evidence": "src/views/settings/WorkflowEditor.vue; WorkflowTab.vue; openregister#3944 878de2cd; openregister#3948 de4079be; openregister has no BPMN modeller page; BPMN only through appinfo/routes.php:825-826 (openregister#4040)",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 package.json has no bpmn dependency; lib/Service/WorkflowService.php is a fixed review or approval step list on documents, not a process model | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -15984,8 +16031,10 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/buildiq"
+				"state": "specified",
+				"owner": "ConductionNL/buildiq",
+				"change": "buildiq/case-page-layout-per-case-type",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:447,449,456,459,465 caseTabs() is a hard coded list (Info, Dokumenter, Filer, Parter, Journalnotater, Andre sagsbehandlere, Log, Adgang plus three data-driven extras), identical for every case type | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -16011,8 +16060,10 @@
 			"feature": "case-map-overview",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/buildiq"
+				"state": "specified",
+				"owner": "ConductionNL/buildiq",
+				"change": "buildiq/case-page-layout-per-case-type",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tab bodies are fixed components (CaseInfoPanel.vue, DocumentList.vue, CaseParticipantList.vue); no widget model in lib/Db | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -16038,8 +16089,10 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/buildiq"
+				"state": "specified",
+				"owner": "ConductionNL/buildiq",
+				"change": "buildiq/case-page-layout-per-case-type",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:15-117 header is one template (title, number, type, status badge, organisation, reminder banner, primary party) for every case type | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -16235,9 +16288,11 @@
 			"feature": "case-types",
 			"featureConfidence": "low",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Service/Tenant/TenantBrandingSanitiser.php",
-				"owner": "ConductionNL/thematiq"
+				"owner": "ConductionNL/thematiq",
+				"change": "thematiq/2026-07-25-app-token-set-selection",
+				"note": "OpenSpec pass 2026-09-27: matrix corrected (thematiq lane: existing): thematiq themes every page, dossiq included (ConductionNL/thematiq openspec/changes/archive/2026-07-25-app-token-set-selection); dossiq lib/Service/Tenant/TenantBrandingSanitiser.php read at dossiq 96b8ef8f. Rating stays partial (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 the app uses Nextcloud Vue components (src/App.vue NcAppNavigation) so the host's Nextcloud theming (logo, colour) applies; the app itself has no branding setting in src/AdminSettings.vue or src/views/ConfigurationView.vue:214-218 | round 2 drive: procest/_round2/compare/M1-functionality.md:242 \"| 11.14 | Branding and theming | partial `appinfo/info.xml` (Nextcloud theming) |\"",
@@ -16263,7 +16318,7 @@
 			"feature": "ai-assistance",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/feature-toggle-surface",
 				"prs": [
 					{
@@ -16274,7 +16329,8 @@
 					}
 				],
 				"evidence": "lib/Controller/SettingsController.php; openregister#3902 5b6834c6",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/feature-toggle-surface (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/Configuration.php:140 enterprise_version gate; src/views/ConfigurationView.vue:8-30 settings tab edits config keys; lib/Command/ConfigSetCommand.php and EnterpriseEnableCommand.php. A few switches, no feature flag framework | round 2 drive: procest/opencase/round2/code-census.md:4 \"gates it on `enterprise_version` (`lib/Service/Configuration.php:140`) and `ai_enabled`\"",
@@ -16395,7 +16451,7 @@
 			"feature": "case-types",
 			"featureConfidence": "low",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/rbac-department-role-matrix",
 				"prs": [
 					{
@@ -16406,7 +16462,8 @@
 					}
 				],
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; MandaatToewijzingenTable.vue; openregister#3874 18628dff",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1034,1158,1173 Lokale brugere: search a Nextcloud user, set OpenCase user info and privilege groups, delete a privilege; lib/Controller/SettingsController.php:57-60 local-users endpoints; organisations come from the SF1500 sync or the Nextcloud groups | round 2 drive: procest/opencase/round2/code-census.md:69 \"Lokale brugere (local users and privileges)\"",
@@ -16585,7 +16642,7 @@
 			"feature": "case-types",
 			"featureConfidence": "low",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/field-rules-by-state",
 				"prs": [
 					{
@@ -16602,7 +16659,8 @@
 					}
 				],
 				"evidence": "openregister#3771 1faffb050; dossiq#2857 17c7a3102",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/field-rules-by-state (openregister lane)."
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 authorisations are per component, scope, zaaktype and confidentiality (components/autorisaties); nothing hides or locks individual fields by role or status",
@@ -16725,8 +16783,10 @@
 			"feature": "zgw-api-mapping",
 			"featureConfidence": "low",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/integriq"
+				"state": "building",
+				"owner": "ConductionNL/integriq",
+				"change": "integriq/objecten-api-facade",
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/objecten-api-facade, an existing open change, covers it (integriq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no Objecten or Objecttypen client in lib | round 2 drive: procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
@@ -16868,9 +16928,11 @@
 			"feature": "digid-eherkenning",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
+				"state": "building",
 				"evidence": "lib/Service/Auth/SimulatorDigidSamlAdapter.php; SimulatorEHerkenningSamlAdapter.php",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"change": "integriq/idp-broker-envelope-runtime",
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/idp-broker-envelope-runtime, an existing open change, covers it (integriq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'digid|eherkenning|eidas|mitid|nemlog' over lib and src returns nothing; SAML is for staff (SamlController.php) | round 2 drive: procest/opencase/round2/code-census.md:181 \"The only unauthenticated surfaces are the mTLS receiver endpoints and the SAML endpoints\"",
@@ -16962,7 +17024,7 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "building",
 				"change": "integriq/document-generation-vendor-adapter",
 				"prs": [
 					{
@@ -16973,7 +17035,8 @@
 					}
 				],
 				"evidence": "lib/Service/Beschikking/TemplateEngineAdapterInterface.php; MockTemplateEngineAdapter.php; integriq#2080 472b0721",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/document-generation-vendor-adapter, an existing open change, covers it (integriq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php merges DOCX, XLSX and ODT templates locally; no SmartDocuments or Xential client | round 2 drive: procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\"",
@@ -16999,7 +17062,7 @@
 			"feature": "leges-heffingen",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "shillinq/case-payment-requests",
 				"prs": [
 					{
@@ -17009,7 +17072,8 @@
 					}
 				],
 				"evidence": "lib/Controller/DwangsomPaymentCallbackController.php",
-				"owner": "ConductionNL/shillinq"
+				"owner": "ConductionNL/shillinq",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/shillinq openspec/changes/case-payment-requests (shillinq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'payment|betaling|mobilepay|nets' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:269 \"| 12.12 | Payments | no |\"",
@@ -17064,9 +17128,11 @@
 			"feature": "case-email-integration",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
+				"state": "building",
 				"evidence": "lib/Service/Transitions/WebhookHandler.php",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"change": "integriq/event-broker-transport",
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/event-broker-transport, an existing open change, covers it (integriq lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'rabbitmq|kafka|amqp' over lib returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:271 \"| 12.14 | Message broker or event streaming | no |\"",
@@ -17092,8 +17158,9 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/openregister"
+				"state": "decided-no",
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: decided no: Open Register keeps a single built-in database search backend (ConductionNL/openregister openspec/architecture/adr-007-single-builtin-search-backend.md); competitor-parity-2026-09 marks this row a deliberate no."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:16,26,78-89 Elasticsearch index with the ingest-attachment pipeline for file content | round 2 drive: procest/opencase/round2/code-census.md:107 \"Search: Elasticsearch with a `danish_content` analyzer\"",
@@ -17321,7 +17388,7 @@
 			"area": "integrations",
 			"name": "AI assistant with executable actions",
 			"name_nl": "AI-assistent die acties kan uitvoeren",
-			"dossiq": "yes",
+			"dossiq": "partial",
 			"opencase": "unknown",
 			"gzac": "no",
 			"zaaksysteem": "no",
@@ -17332,9 +17399,10 @@
 			"feature": "ai-assistance",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Controller/AssistantController.php; lib/Controller/AiController.php; lib/Mcp/DossiqToolProvider.php",
-				"owner": "ConductionNL/hermiq"
+				"owner": "ConductionNL/hermiq",
+				"note": "OpenSpec pass 2026-09-27: matrix corrected (hermiq lane): lib/Controller/AssistantController.php forwards to hermiq's tool-free case assistant and lib/Mcp/DossiqToolProvider.php declares two read-only tools, no executable actions, so partial and built, owned by hermiq (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 src/components/AiSidePanel.vue, AiActionsMenu.vue, AiPromptDialog.vue are the client; lib/Controller/PageController.php:71 passes ai_enabled; no AI route or service in appinfo/routes.php or lib. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:113 \"AI: chat side panel with a prompt library and executable actions\" | open for the lab: With AI enabled on an enterprise instance, can the side panel carry out an action on a case, such as creating a journal note?",
@@ -17360,9 +17428,10 @@
 			"feature": "case-access-control",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Repair/ProvisionAssignedGroups.php",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: matrix corrected: rated yes with built.state none. lib/Repair/ProvisionAssignedGroups.php read at dossiq 96b8ef8f (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/RoleService.php:18,21 privilege types map to the roles User, Administrator, Template Designer; lib/Migration/SeedReferenceData.php:259 seeds them; src/App.vue:166 Konfiguration menu gated on Administrator | round 2 drive: procest/opencase/round2/code-census.md:131 \"Roles: `User`, `Administrator`, `Template Designer`\"",
@@ -17388,9 +17457,11 @@
 			"feature": "case-configuration-i18n",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Service/Sharing/CaseAccessPolicy.php; lib/Service/CaseAccessGuard.php",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/2026-05-02-rbac-scopes",
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-05-02-rbac-scopes (conditional matching on group and object data); dossiq's half is in lib/Service/Sharing/CaseAccessPolicy.php and lib/Service/CaseAccessGuard.php, read at dossiq 96b8ef8f (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:255,267,272 a user reaches a case through a profile matched on organisation, sensitivity and a KLE LIKE pattern; lib/Service/PermissionService.php:141,159 read follows the profile level | round 2 drive: procest/opencase/round2/code-census.md:128 \"Access profile = unique tuple (organisation, KLE classification code, sensitivity)\"",
@@ -17416,7 +17487,7 @@
 			"feature": "case-access-control",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/object-level-sharing-and-private-scope",
 				"prs": [
 					{
@@ -17426,7 +17497,8 @@
 					}
 				],
 				"evidence": "src/views/cases/components/CaseSharingTab.vue; openregister#3966 16fce31bc",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/object-level-sharing-and-private-scope (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:220,456 Adgang tab mounts CaseAccessPanel; src/components/CaseAccessPanel.vue:11,109 Giv adgang and Fjern adgang; src/services/api.js:587,596 POST and DELETE cases/{id}/grants; lib/Service/PermissionService.php:153,222 grants read in the access check | round 2 drive: procest/opencase/round2/pages/CaseDetail-Access.md:9 \"Grant access (user, Read or Write, Time-limited with Expires date); row Remove access\"",
@@ -17481,7 +17553,7 @@
 			"feature": "case-access-control",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/object-level-sharing-and-private-scope",
 				"prs": [
 					{
@@ -17491,7 +17563,8 @@
 					}
 				],
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php; openregister#3966 16fce31bc",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/object-level-sharing-and-private-scope (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "settled from source by the lane on 2026-09-26, no lab needed: PermissionService.php:274-279 honours a per-user deny override, but no screen writes one (grep -i deny over src finds none); DocumentShareDialog only widens access, which is the override this row asks for | source: opencase@1.1.0 src/views/DocumentDetailView.vue:241 opens DocumentShareDialog; src/components/DocumentShareDialog.vue:4,26,44 share one document to a user, read or edit, with expiry; lib/Service/PermissionService.php:274,280,365 per-user document override (read, write, deny) checked before case access | round 2 drive: procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\"",
@@ -17517,7 +17590,7 @@
 			"feature": "case-access-control",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/rbac-department-role-matrix",
 				"prs": [
 					{
@@ -17528,7 +17601,8 @@
 					}
 				],
 				"evidence": "organisatieRol.department/team; openregister#3874 18628dff; openregister lib/Service/Object/PermissionHandler.php:2699 compileDepartmentMatrix enforces the matrix; no screen sets it (openregister#4040)",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:272,274 a privilege matches all organisations or the profile's own organisation unit; src/AdminSettings.vue:1237,1246 privilege form picks Organisationsenhed; lib/Db/Organisation (orgUuid, ncGroupId) ties units to Nextcloud groups | round 2 drive: procest/opencase/round2/code-census.md:79 \"`Organisation` (orgUuid, orgParentUuid, ncGroupId, groupfolderId)\"",
@@ -17649,9 +17723,11 @@
 			"feature": "archief-edepot-handover",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
+				"state": "built",
 				"evidence": "lib/Listener/BezwaarLegalHoldListener.php",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"change": "openregister/2026-06-14-retention-management",
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-retention-management (the destruction check job); dossiq's half, writing the retention onto the case at close, is built: lib/Service/Archival/ArchivalNominationDeriver.php:144 derive(), called from lib/Service/Transitions/CaseResultWriter.php and lib/Service/StatusTransitionService.php:567 on closing (row 7.7), read at dossiq 96b8ef8f (corrected 2026-09-28)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ExportClosedCasesJob.php:36 and lib/Service/CaseExportService.php:117,162 export closed cases as XML; appinfo/routes.php has no case DELETE route and grep -ri 'retention|kassation|bevaring' over lib returns nothing | round 2 drive: procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\"",
@@ -17820,7 +17896,7 @@
 			"feature": "case-access-control",
 			"featureConfidence": "high",
 			"built": {
-				"state": "built",
+				"state": "specified",
 				"change": "openregister/rbac-department-role-matrix",
 				"prs": [
 					{
@@ -17831,7 +17907,8 @@
 					}
 				],
 				"evidence": "src/views/settings/tabs/MandaatMatrixTab.vue; OrganisatieRolManager.vue; openregister#3874 18628dff",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1034,1188,1258 Lokale brugere section adds a privilege by type, sensitivity, KLE and organisation unit; appinfo/routes.php:104 delete privilege; lib/Controller/AdminController.php:222,239 revoke and bulk grant profiles | round 2 drive: procest/opencase/round2/code-census.md:177 \"Users and privileges: `/settings/local-users/{userId}/privileges`.\"",
