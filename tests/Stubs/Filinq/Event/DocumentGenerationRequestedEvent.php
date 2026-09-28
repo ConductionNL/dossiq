@@ -6,7 +6,9 @@
  * A verbatim copy of filinq's class (lib/Event/DocumentGenerationRequestedEvent.php, development after
  * filinq#1224, read 2026-09-28), so the dossiq code that uses it can be tested
  * and analysed without filinq installed. tests/bootstrap.php loads it only when
- * the real class is absent. If filinq changes the class, change this copy with it.
+ * the real class is absent.
+ * If filinq changes the class, change this copy with it. Its spec links
+ * point into filinq's repository and are left out here.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -30,7 +32,6 @@ use OCP\EventDispatcher\Event;
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link     https://www.filinq.app
  *
- * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
  */
 class DocumentGenerationRequestedEvent extends Event {
 
@@ -62,7 +63,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function __construct(
 		private readonly array $request,
@@ -77,7 +77,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return array<string, mixed> The request.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function getRequest(): array {
 		return $this->request;
@@ -88,7 +87,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return string The requesting app id.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function getRequestingApp(): string {
 		return $this->requestingApp;
@@ -103,7 +101,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function setResult(array $result): void {
 		$this->result = $result;
@@ -116,7 +113,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return array<string, mixed>|null Null until Filinq has generated it.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function getResult(): ?array {
 		return $this->result;
@@ -127,7 +123,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return bool True once a result is set.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function isHandled(): bool {
 		return $this->result !== null;
@@ -140,7 +135,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function setError(string $error): void {
 		$this->error = $error;
@@ -153,7 +147,6 @@ class DocumentGenerationRequestedEvent extends Event {
 	 *
 	 * @return string|null Null when it succeeded or nobody handled the event.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-other-apps-request-a-document-through-a-command-event
 	 */
 	public function getError(): ?string {
 		return $this->error;

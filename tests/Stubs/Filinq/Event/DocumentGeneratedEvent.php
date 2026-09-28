@@ -6,7 +6,9 @@
  * A verbatim copy of filinq's class (lib/Event/DocumentGeneratedEvent.php, development after
  * filinq#1224, read 2026-09-28), so the dossiq code that uses it can be tested
  * and analysed without filinq installed. tests/bootstrap.php loads it only when
- * the real class is absent. If filinq changes the class, change this copy with it.
+ * the real class is absent.
+ * If filinq changes the class, change this copy with it. Its spec links
+ * point into filinq's repository and are left out here.
  *
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
@@ -27,7 +29,6 @@ use OCP\EventDispatcher\Event;
  * @license  EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link     https://www.filinq.app
  *
- * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
  */
 class DocumentGeneratedEvent extends Event {
 
@@ -41,7 +42,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function __construct(
 		private readonly array $document,
@@ -56,7 +56,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return array<string, mixed> The document.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function getDocument(): array {
 		return $this->document;
@@ -67,7 +66,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return array{register: string, schema: string, id: string}|null Null when the request named none.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function getObject(): ?array {
 		$object = ($this->document['object'] ?? null);
@@ -87,7 +85,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return int|null Null when no file was stored (a field-only generation).
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function getFileId(): ?int {
 		$fileId = ($this->document['fileId'] ?? null);
@@ -103,7 +100,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return string|null Null when no file was stored.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function getFilePath(): ?string {
 		$path = ($this->document['path'] ?? null);
@@ -119,7 +115,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return array<string, mixed> id, slug, name and source (id, slug or inline).
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function getTemplate(): array {
 		return (array)($this->document['template'] ?? []);
@@ -130,7 +125,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return array<string, mixed> The metadata.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function getMetadata(): array {
 		return (array)($this->document['metadata'] ?? []);
@@ -141,7 +135,6 @@ class DocumentGeneratedEvent extends Event {
 	 *
 	 * @return string The requesting app id.
 	 *
-	 * @spec openspec/changes/flow-generate-document-node/specs/flow-document-generation/spec.md#requirement-every-generation-on-this-path-announces-itself
 	 */
 	public function getRequestingApp(): string {
 		return $this->requestingApp;
