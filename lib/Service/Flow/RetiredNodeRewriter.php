@@ -12,6 +12,12 @@
  * with no successor leaves its predecessors without that edge, and the change
  * row says so, because OpenRegister refuses to publish a graph with a dead end.
  *
+ * A TRANSLATED STEP may become several. The first keeps the step's id, so
+ * every edge into it still arrives; each further step gets `<id>--<n>` and
+ * an edge from the one before it, and the step's outgoing edges leave from
+ * the last one. A step the translator refuses is LEFT IN PLACE, untouched,
+ * and its change row carries the reason.
+ *
  * Edge endpoints come in two shapes in stored flows: a single node id
  * (`"to": "end"`) and a list (`"to": ["end"]`). Both are read, and each edge
  * keeps the shape it had.
@@ -45,10 +51,15 @@ class RetiredNodeRewriter {
 	/**
 	 * Constructor.
 	 *
-	 * @param RetiredNodeMap $map The retired-node table.
+	 * @param RetiredNodeMap             $map        The retired-node table.
+	 * @param RetiredNodeTranslator|null $translator Translates a row whose replacement reads a
+	 *                                               different config. Without it such a step is
+	 *                                               left in place and reported, never renamed
+	 *                                               with a config its replacement cannot read.
 	 */
 	public function __construct(
 		private readonly RetiredNodeMap $map,
+		private readonly ?RetiredNodeTranslator $translator = null,
 	) {
 	}//end __construct()
 
@@ -62,7 +73,9 @@ class RetiredNodeRewriter {
 	 *     nodes: array<int, mixed>,
 	 *     edges: array<int, mixed>,
 	 *     changes: array<int, array{step: string, type: string, outcome: string, replacement: string|null, reason: string, orphaned: bool}>
-	 * } The rewritten graph and one row per changed step. No rows means nothing changed.
+	 * } The rewritten graph and one row per retired step. `outcome` is `replaced`,
+	 *   `removed` or `unmappable`; an unmappable step is still in the graph. No rows
+	 *   means nothing was retired.
 	 *
 	 * @spec openspec/specs/automatic-actions/spec.md
 	 */
@@ -83,6 +96,14 @@ class RetiredNodeRewriter {
 			}
 
 			$stepId = (string)($node['id'] ?? '');
+
+			if (isset($row['translation']) === true) {
+				$translated = $this->translateStep(node: $node, row: $row, type: $type, edges: $edges);
+				array_push($kept, ...$translated['nodes']);
+				$edges = $translated['edges'];
+				$changes[] = $translated['change'];
+				continue;
+			}
 
 			if ($row['replacement'] !== null) {
 				$node['type'] = $row['replacement'];
@@ -112,6 +133,128 @@ class RetiredNodeRewriter {
 
 		return ['nodes' => $kept, 'edges' => $edges, 'changes' => $changes];
 	}//end rewrite()
+
+	/**
+	 * Translate one step into the steps that replace it, or leave it and say why.
+	 *
+	 * @param array<string, mixed>                                               $node  The retired step.
+	 * @param array{replacement: string|null, reason: string, translation?: string} $row   Its row.
+	 * @param string                                                             $type  Its type.
+	 * @param array<int, mixed>                                                  $edges The current edges.
+	 *
+	 * @return array{
+	 *     nodes: array<int, mixed>,
+	 *     edges: array<int, mixed>,
+	 *     change: array{step: string, type: string, outcome: string, replacement: string|null, reason: string, orphaned: bool}
+	 * } The step's replacement nodes, the edges, and the change row.
+	 */
+	private function translateStep(array $node, array $row, string $type, array $edges): array {
+		$stepId = (string)($node['id'] ?? '');
+		$change = [
+			'step' => $stepId,
+			'type' => $type,
+			'outcome' => 'unmappable',
+			'replacement' => null,
+			'reason' => $row['reason'],
+			'orphaned' => false,
+		];
+
+		if ($this->translator === null) {
+			$change['reason'] .= '; the step was left in place because no translator was available';
+			return ['nodes' => [$node], 'edges' => $edges, 'change' => $change];
+		}
+
+		try {
+			$steps = $this->translator->translate(
+				translation: (string)$row['translation'],
+				config: (array)($node['config'] ?? [])
+			);
+		} catch (UnmappableStep $e) {
+			$change['reason'] .= '; the step was left in place because ' . $e->getMessage();
+			return ['nodes' => [$node], 'edges' => $edges, 'change' => $change];
+		}
+
+		$nodes = [];
+		$ids = [];
+		foreach ($steps as $index => $step) {
+			$replacement = $node;
+			$replacement['type'] = $step['type'];
+			$replacement['config'] = $step['config'];
+			if ($index > 0) {
+				$replacement['id'] = $stepId . '--' . ($index + 1);
+				unset($replacement['_note']);
+			}
+
+			$nodes[] = $replacement;
+			$ids[] = (string)$replacement['id'];
+		}
+
+		$change['outcome'] = 'replaced';
+		$change['replacement'] = implode(' + ', array_column($steps, 'type'));
+
+		return ['nodes' => $nodes, 'edges' => $this->chain(edges: $edges, ids: $ids), 'change' => $change];
+	}//end translateStep()
+
+	/**
+	 * Wire a step that became several: outgoing edges leave from the last, and each links to the next.
+	 *
+	 * @param array<int, mixed>  $edges The current edges.
+	 * @param array<int, string> $ids   The ids of the replacing steps, the original's first.
+	 *
+	 * @return array<int, mixed> The edges.
+	 */
+	private function chain(array $edges, array $ids): array {
+		if (count($ids) < 2) {
+			return $edges;
+		}
+
+		$first = $ids[0];
+		$last = $ids[(count($ids) - 1)];
+		$out = [];
+		foreach ($edges as $edge) {
+			if (is_array($edge) === true && in_array($first, $this->endpoints(value: ($edge['from'] ?? null)), true) === true) {
+				$edge['from'] = $this->swap(value: $edge['from'], from: $first, to: $last);
+			}
+
+			$out[] = $edge;
+		}
+
+		for ($index = 1; $index < count($ids); $index++) {
+			$out[] = [
+				'id' => $ids[($index - 1)] . '-' . $ids[$index],
+				'from' => $ids[($index - 1)],
+				'to' => $ids[$index],
+			];
+		}
+
+		return $out;
+	}//end chain()
+
+	/**
+	 * Replace one node id in an edge endpoint, keeping the endpoint's shape.
+	 *
+	 * @param mixed  $value The endpoint: an id or a list of ids.
+	 * @param string $from  The id to replace.
+	 * @param string $to    Its replacement.
+	 *
+	 * @return mixed The endpoint.
+	 */
+	private function swap(mixed $value, string $from, string $to): mixed {
+		if (is_array($value) === false) {
+			return $to;
+		}
+
+		$swapped = [];
+		foreach ($value as $id) {
+			if ($id === $from) {
+				$id = $to;
+			}
+
+			$swapped[] = $id;
+		}
+
+		return $swapped;
+	}//end swap()
 
 	/**
 	 * Remove one step from the edge list, pointing its inbound edges at its successors.
