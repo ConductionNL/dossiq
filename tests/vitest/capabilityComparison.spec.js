@@ -84,8 +84,17 @@ import {
 // ten OpenCase cells that rest on its closed enterprise package. Every moved
 // competitor cell is in `_competitorRerated`, and every cell's evidence names
 // the file and line it was read from.
+//
+// On 2026-09-28 the corpus re-rate in market-intelligence#191 moved thirteen of
+// ours: twelve to yes (2.4, 2.17, 2.22, 5.6, 5.12 and 12.17 shipped their
+// missing half; 4.5, 4.11, 4.16, 4.23, 12.7 and 12.21 are Nextcloud's) and 4.15
+// from no to partial. Before that, dossiq#3161 had read 12.23 as partial while
+// the corpus still says yes, which took this file to 129/72/24 without these
+// pins moving. With both, 129/72/24 became 141/61/23. The re-issue held 12.23
+// at partial, so the sync script's check against the corpus reports that one
+// row until the corpus reads it the same way.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 130, partial: 71, no: 24, unknown: 0 },
+	dossiq: { yes: 141, partial: 61, no: 23, unknown: 0 },
 	opencase: { yes: 62, partial: 37, no: 116, unknown: 10 },
 	gzac: { yes: 66, partial: 68, no: 91, unknown: 0 },
 	zaaksysteem: { yes: 150, partial: 38, no: 37, unknown: 0 },
@@ -207,6 +216,21 @@ const CORRECTED_IDS = [
 	'Q1.16',
 	'2.47',
 	'13.38',
+	// 2026-09-28, market-intelligence#191: six rows whose missing half shipped,
+	// six the platform provides, and 4.15, which the trash bin raises to partial.
+	'2.4',
+	'2.17',
+	'2.22',
+	'5.6',
+	'5.12',
+	'12.17',
+	'4.5',
+	'4.11',
+	'4.16',
+	'4.23',
+	'12.7',
+	'12.21',
+	'4.15',
 ]
 
 // Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad
@@ -272,7 +296,12 @@ const ADDED_ON = {
 // to one row, which is the direction the paragraph above says a new column can
 // move it: 2.4, 4.16, 9.1 and 11.10 each have at least one rival that, read
 // from its code, does not have it in full.
-const BEHIND_EVERY_RIVAL = ['12.7']
+//
+// On 2026-09-28 the list emptied. 12.7, staff SSO, is Nextcloud's (user_saml
+// and user_oidc), and market-intelligence#191 rated it yes. It stays pinned
+// rather than asserted empty, so the next row that falls behind every rival
+// shows up here as a change to this line.
+const BEHIND_EVERY_RIVAL = []
 
 // Two labels are identical in English and Dutch because the Dutch IS the
 // English: `StUF (BG, ZKN, DCR)` is a Dutch standard's own name, and `Intake`
