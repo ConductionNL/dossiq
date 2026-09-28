@@ -47,7 +47,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\CaseObjectReference;
+use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowResumeState;
@@ -78,12 +78,6 @@ class DecisionConcludedListener implements IEventListener {
 	 */
 	private const SOURCE_APP = 'procest';
 
-	/**
-	 * The source Decidiq's flow step raises its decisions under.
-	 *
-	 * @var string
-	 */
-	private const FLOW_SOURCE_APP = 'decidiq-flow';
 
 	/**
 	 * Terminal decidesk statuses that materialise a Besluit. `pending` is
@@ -104,7 +98,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *                                 waiting rather than advancing it wrongly.
 	 * @param FlowRunService|null $runner Delivers the resume signal. Nullable for the
 	 *                                    same reason and with the same safe direction.
-	 * @param CaseObjectReference|null $cases Recognises a dossiq case as a flow decision's
+	 * @param FlowDecisionSubject|null $flowDecisions Recognises a flow decision about a dossiq case;
 	 *                                        subject. Nullable so no construction site breaks;
 	 *                                        absent, no flow decision is projected.
 	 */
@@ -115,7 +109,7 @@ class DecisionConcludedListener implements IEventListener {
 		private readonly LoggerInterface $logger,
 		private readonly ?FlowRunMapper $runs = null,
 		private readonly ?FlowRunService $runner = null,
-		private readonly ?CaseObjectReference $cases = null,
+		private readonly ?FlowDecisionSubject $flowDecisions = null,
 	) {
 	}//end __construct()
 
@@ -138,8 +132,8 @@ class DecisionConcludedListener implements IEventListener {
 		try {
 			// REQ-PDCD-003: only project events this app raised, or that
 			// Decidiq's flow step raised about one of this app's cases.
-			$fromFlow = $this->isFlowDecisionOnACase(event: $event);
-			if ((string)$event->getSourceApp() !== self::SOURCE_APP && $fromFlow === false) {
+			$flowCase = ($this->flowDecisions?->caseIdOf(event: $event) ?? '');
+			if ($flowCase === '' && (string)$event->getSourceApp() !== self::SOURCE_APP) {
 				return;
 			}
 
@@ -158,12 +152,7 @@ class DecisionConcludedListener implements IEventListener {
 			$register = $this->readString(event: $event, getter: 'getSubjectRegister');
 			$schema = $this->readString(event: $event, getter: 'getSubjectSchema');
 			$subjectId = $this->readString(event: $event, getter: 'getSubjectId');
-			$externalRef = $this->readString(event: $event, getter: 'getExternalReference');
-			if ($fromFlow === true) {
-				// `flow-run:<run>:<node>` names the run, not the case: the
-				// subject is the case.
-				$externalRef = $subjectId;
-			}
+			$externalRef = $this->referenceOf(event: $event, flowCase: $flowCase);
 
 			// Locate the dossiq domain record carrying this decisionRef so we
 			// can resolve the owning case and any existing besluitRef. Fall back
@@ -212,7 +201,7 @@ class DecisionConcludedListener implements IEventListener {
 			// woken, so the steps after the decision see a case that already
 			// carries its outcome rather than racing the projection.
 			// A flow decision's run is woken by Decidiq, which raised it.
-			if ($fromFlow === false) {
+			if ($flowCase === '') {
 				$this->resumeWaitingRun(caseId: $caseId, decisionRef: $decisionId, status: $status);
 			}
 		} catch (Throwable $e) {
@@ -226,28 +215,25 @@ class DecisionConcludedListener implements IEventListener {
 	}//end handle()
 
 	/**
-	 * Whether the event is a decision Decidiq's flow step raised about a dossiq case.
+	 * The reference the case is looked up by.
 	 *
-	 * @param Event $event The event.
+	 * A flow decision's external reference is `flow-run:<run>:<node>`, which
+	 * names the run, not the case: its subject is the case.
 	 *
-	 * @return bool True when it is.
+	 * @param Event  $event    The event.
+	 * @param string $flowCase The case a flow decision is about, or ''.
+	 *
+	 * @return string The reference.
 	 *
 	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
 	 */
-	private function isFlowDecisionOnACase(Event $event): bool {
-		if ($this->cases === null || $this->readString(event: $event, getter: 'getSourceApp') !== self::FLOW_SOURCE_APP) {
-			return false;
+	private function referenceOf(Event $event, string $flowCase): string {
+		if ($flowCase !== '') {
+			return $flowCase;
 		}
 
-		if ($this->readString(event: $event, getter: 'getSubjectId') === '') {
-			return false;
-		}
-
-		return $this->cases->isCase(
-			register: $this->readString(event: $event, getter: 'getSubjectRegister'),
-			schema: $this->readString(event: $event, getter: 'getSubjectSchema')
-		);
-	}//end isFlowDecisionOnACase()
+		return $this->readString(event: $event, getter: 'getExternalReference');
+	}//end referenceOf()
 
 	/**
 	 * Wake the case flow that was waiting on this decision, if one was.
@@ -491,7 +477,7 @@ class DecisionConcludedListener implements IEventListener {
 		}
 
 		$value = $event->$getter();
-		if ($value === null || is_scalar($value) === false) {
+		if (is_scalar($value) === false) {
 			return '';
 		}
 

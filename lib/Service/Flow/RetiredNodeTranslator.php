@@ -155,6 +155,34 @@ class RetiredNodeTranslator {
 	}//end translate()
 
 	/**
+	 * The steps a retired row turns one step's configuration into.
+	 *
+	 * A row with a translation is translated; a row with only a replacement
+	 * keeps the configuration under the new type; a row with neither is
+	 * refused.
+	 *
+	 * @param array{replacement: string|null, reason: string, translation?: string} $row    The row.
+	 * @param array<string, mixed>                                               $config The step's configuration.
+	 *
+	 * @return array<int, array{type: string, config: array<string, mixed>}> The replacing steps.
+	 *
+	 * @throws UnmappableStep When nothing replaces the step, or its configuration cannot be carried.
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function stepsFor(array $row, array $config): array {
+		if (isset($row['translation']) === true) {
+			return $this->translate(translation: $row['translation'], config: $config);
+		}
+
+		if ($row['replacement'] === null) {
+			throw new UnmappableStep(message: 'it is retired and nothing replaces it (' . $row['reason'] . ')');
+		}
+
+		return [['type' => $row['replacement'], 'config' => $config]];
+	}//end stepsFor()
+
+	/**
 	 * `dossiq.action.sendEmail`: a templated mail to a role or a literal address.
 	 *
 	 * @param array<string, mixed> $config The retired configuration.
@@ -162,7 +190,7 @@ class RetiredNodeTranslator {
 	 * @return array{type: string, config: array<string, mixed>} The send-email step.
 	 */
 	private function emailFromAction(array $config): array {
-		$recipient = $this->recipientFromRef(ref: trim((string)($config['recipientRef'] ?? '')));
+		$recipient = $this->syntax->recipientFromRef(ref: trim((string)($config['recipientRef'] ?? '')));
 		$body = $this->syntax->forMessaging(template: (string)($config['bodyTemplate'] ?? ''), what: 'body');
 		if (trim($body) === '') {
 			throw new UnmappableStep(message: 'the step has no body, which the send-email step refuses');
@@ -178,34 +206,6 @@ class RetiredNodeTranslator {
 			],
 		];
 	}//end emailFromAction()
-
-	/**
-	 * A catalogue recipient reference as a send-email recipient entry.
-	 *
-	 * `email:<address>` was a literal address; anything else named a case
-	 * field whose value (or whose `email`) was the address.
-	 *
-	 * @param string $ref The reference.
-	 *
-	 * @return string The recipient entry.
-	 *
-	 * @throws UnmappableStep When there is no reference.
-	 */
-	private function recipientFromRef(string $ref): string {
-		if ($ref === '') {
-			throw new UnmappableStep(message: 'the step names no recipient');
-		}
-
-		if (str_starts_with($ref, 'email:') === true) {
-			return substr($ref, 6);
-		}
-
-		if (preg_match('/^[a-zA-Z0-9_-]+$/', $ref) !== 1) {
-			throw new UnmappableStep(message: 'the recipient "' . $ref . '" is not a field name the send-email step can read');
-		}
-
-		return '{{ ' . $ref . ' }}';
-	}//end recipientFromRef()
 
 	/**
 	 * `dossiq.sendEmail`: a transition's mail to one literal address.

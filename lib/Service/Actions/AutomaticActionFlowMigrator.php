@@ -245,7 +245,7 @@ class AutomaticActionFlowMigrator {
 
 		return $this->writeFlow(
 			flowService: $flowService,
-			document: $this->flowDocument(action: $action, marker: $marker, steps: $steps),
+			document: (new AutomaticActionFlowDocument())->build(action: $action, marker: $marker, steps: $steps),
 			marker: $marker,
 			uuid: $uuid,
 		);
@@ -344,76 +344,8 @@ class AutomaticActionFlowMigrator {
 			return [['type' => $nodeType, 'config' => $config]];
 		}
 
-		if (isset($row['translation']) === true) {
-			return $this->translator->translate(translation: $row['translation'], config: $config);
-		}
-
-		if ($row['replacement'] === null) {
-			throw new UnmappableStep(message: 'it is retired and nothing replaces it (' . $row['reason'] . ')');
-		}
-
-		return [['type' => $row['replacement'], 'config' => $config]];
+		return $this->translator->stepsFor(row: $row, config: $config);
 	}//end steps()
-
-	/**
-	 * The flow document one action becomes.
-	 *
-	 * A manual trigger, the action's steps in order, and an end: a flow
-	 * OpenRegister will run needs an entry and an exit. `enabled` is true;
-	 * the stored configuration said what it wanted and had never been honoured.
-	 *
-	 * @param array<string, mixed> $action The stored automaticAction.
-	 * @param string $marker The provenance marker.
-	 * @param array<int, array{type: string, config: array<string, mixed>}> $steps The action's steps.
-	 *
-	 * @return array<string, mixed> The flow document.
-	 */
-	private function flowDocument(array $action, string $marker, array $steps): array {
-		$nodes = [['id' => 'trigger', 'type' => 'openregister.trigger-manual']];
-		$edges = [];
-		$previous = 'trigger';
-		foreach ($steps as $index => $step) {
-			$id = 'action';
-			if ($index > 0) {
-				$id = 'action--' . ($index + 1);
-			}
-
-			$nodes[] = ['id' => $id, 'type' => $step['type'], 'config' => $step['config']];
-			$edges[] = ['id' => $previous . '-' . $id, 'from' => [$previous], 'to' => [$id]];
-			$previous = $id;
-		}
-
-		$nodes[] = ['id' => 'end', 'type' => 'openregister.end'];
-		$edges[] = ['id' => $previous . '-end', 'from' => [$previous], 'to' => ['end']];
-
-		return [
-			'name' => (string)($action['title'] ?? $action['slug']),
-			'description' => $this->description(action: $action),
-			'app' => Application::APP_ID,
-			'enabled' => true,
-			'trigger' => 'manual',
-			'notes' => $marker,
-			'nodes' => $nodes,
-			'edges' => $edges,
-		];
-	}//end flowDocument()
-
-	/**
-	 * The flow's description, carrying the provenance a reader needs.
-	 *
-	 * @param array<string, mixed> $action The stored automaticAction.
-	 *
-	 * @return string The description.
-	 */
-	private function description(array $action): string {
-		$own = (string)($action['description'] ?? '');
-		$provenance = 'Migrated from the Dossiq automatic action "' . (string)($action['slug'] ?? '') . '".';
-		if ($own === '') {
-			return $provenance;
-		}
-
-		return $own . ' — ' . $provenance;
-	}//end description()
 
 	/**
 	 * Decode the action's handler config.

@@ -38,6 +38,8 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  * Registers the listeners that depend on another app being installed.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/automatic-actions/spec.md
  */
 class CrossAppListenerRegistrar {
 	/**

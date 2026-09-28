@@ -35,6 +35,7 @@ use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseObjectReference;
+use OCA\Dossiq\Service\Support\FlowDecisionSubject;
 use OCA\OpenRegister\Db\FlowRun;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
@@ -508,7 +509,7 @@ class DecisionConcludedListenerTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			$mapper,
 			null,
-			$this->caseReference()
+			new FlowDecisionSubject($this->caseReference())
 		);
 
 		$listener->handle($this->flowEvent(register: '12', schema: '34'));
@@ -532,7 +533,7 @@ class DecisionConcludedListenerTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			null,
 			null,
-			$this->caseReference()
+			new FlowDecisionSubject($this->caseReference())
 		);
 
 		$listener->handle($this->flowEvent(register: '12', schema: '99'));

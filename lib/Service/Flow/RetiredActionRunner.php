@@ -206,15 +206,7 @@ class RetiredActionRunner {
 			}
 		}
 
-		if (isset($row['translation']) === true) {
-			return $this->translator->translate(translation: $row['translation'], config: $action);
-		}
-
-		if ($row['replacement'] === null) {
-			throw new UnmappableStep(message: 'nothing replaces it (' . $row['reason'] . ')');
-		}
-
-		return [['type' => $row['replacement'], 'config' => $action]];
+		return $this->translator->stepsFor(row: $row, config: $action);
 	}//end steps()
 
 	/**

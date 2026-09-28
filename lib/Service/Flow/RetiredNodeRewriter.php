@@ -219,7 +219,8 @@ class RetiredNodeRewriter {
 			$out[] = $edge;
 		}
 
-		for ($index = 1; $index < count($ids); $index++) {
+		$total = count($ids);
+		for ($index = 1; $index < $total; $index++) {
 			$out[] = [
 				'id' => $ids[($index - 1)] . '-' . $ids[$index],
 				'from' => $ids[($index - 1)],

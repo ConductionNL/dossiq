@@ -158,4 +158,34 @@ class RetiredTemplateSyntax {
 			$template
 		);
 	}//end inlineMergeFields()
+
+	/**
+	 * A catalogue recipient reference as a send-email recipient entry.
+	 *
+	 * `email:<address>` was a literal address; anything else named a case
+	 * field whose value (or whose `email`) was the address.
+	 *
+	 * @param string $ref The reference.
+	 *
+	 * @return string The recipient entry.
+	 *
+	 * @throws UnmappableStep When there is no reference.
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function recipientFromRef(string $ref): string {
+		if ($ref === '') {
+			throw new UnmappableStep(message: 'the step names no recipient');
+		}
+
+		if (str_starts_with($ref, 'email:') === true) {
+			return substr($ref, 6);
+		}
+
+		if (preg_match('/^[a-zA-Z0-9_-]+$/', $ref) !== 1) {
+			throw new UnmappableStep(message: 'the recipient "' . $ref . '" is not a field name the send-email step can read');
+		}
+
+		return '{{ ' . $ref . ' }}';
+	}//end recipientFromRef()
 }//end class
