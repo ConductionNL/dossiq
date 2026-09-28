@@ -46,6 +46,24 @@ class WOODeadlineCheckJob extends TimedJob {
 	use SearchesObjects;
 
 	/**
+	 * The title every version of the seeded Woo request case type carries.
+	 *
+	 * `lib/Settings/templates/woo-verzoek.json` seeds it. A case refers to its
+	 * case type by uuid, so this title is only ever used to FIND those uuids,
+	 * never as a filter on the case itself.
+	 *
+	 * @var string
+	 */
+	private const WOO_CASE_TYPE_TITLE = 'WOO Verzoek';
+
+	/**
+	 * The most rows one read asks for.
+	 *
+	 * @var int
+	 */
+	private const LIMIT = 500;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory
@@ -89,27 +107,17 @@ class WOODeadlineCheckJob extends TimedJob {
 			return;
 		}
 
-		$register = $this->settingsService->getConfigValue('register');
-		$caseSchema = $this->settingsService->getConfigValue('case_schema');
-		$caseTypeTitle = 'WOO Verzoek';
-
-		if (empty($register) === true || empty($caseSchema) === true) {
+		$schemas = [
+			'register' => $this->settingsService->getConfigValue('register'),
+			'case' => $this->settingsService->getConfigValue('case_schema'),
+			'caseType' => $this->settingsService->getConfigValue('case_type_schema'),
+			'statusType' => $this->settingsService->getConfigValue('status_type_schema'),
+		];
+		if (in_array('', $schemas, true) === true) {
 			return;
 		}
 
-		// Find active WOO cases.
-		$cases = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $caseSchema,
-			filters: [
-				'caseType.title' => $caseTypeTitle,
-				'status' => ['open', 'in_handling'],
-				'_limit' => 500,
-			],
-		);
-
-		$warned = $this->warnDueCases(cases: $cases);
+		$warned = $this->warnDueCases(cases: $this->openWooCases(objectService: $objectService, schemas: $schemas));
 
 		if ($warned > 0) {
 			$this->logger->info(
@@ -118,6 +126,91 @@ class WOODeadlineCheckJob extends TimedJob {
 			);
 		}
 	}//end run()
+
+	/**
+	 * The Woo cases that are still open.
+	 *
+	 * Three reads, because a case holds its case type and its status as uuid
+	 * references and OpenRegister filters a column on what it stores:
+	 *
+	 *   1. the uuids of every Woo request case type version, found by title
+	 *      on the caseType schema, where `title` is a column;
+	 *   2. the uuids of those case types' status types that are not final;
+	 *   3. the cases on one of those case types in one of those statuses.
+	 *
+	 * The job used to ask the case for `caseType.title` and for `status` in
+	 * `open`/`in_handling`. The first is a relation path, and OpenRegister
+	 * answers a filter on a key the schema does not declare with no rows; the
+	 * second compares status NAMES against a uuid column. Either one alone
+	 * was enough to make every run find nothing.
+	 *
+	 * @param object               $objectService The OpenRegister ObjectService.
+	 * @param array<string, mixed> $schemas       The register and the three schema ids.
+	 *
+	 * @return array<int, array<string, mixed>> The open Woo cases.
+	 */
+	private function openWooCases(object $objectService, array $schemas): array {
+		$caseTypeIds = $this->idsOf(
+			rows: $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $schemas['register'],
+				schema: $schemas['caseType'],
+				filters: ['title' => self::WOO_CASE_TYPE_TITLE, '_limit' => self::LIMIT],
+			)
+		);
+		if ($caseTypeIds === []) {
+			return [];
+		}
+
+		$openStatusIds = [];
+		$statusTypes = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $schemas['register'],
+			schema: $schemas['statusType'],
+			filters: ['caseType' => $caseTypeIds, '_limit' => self::LIMIT],
+		);
+		foreach ($statusTypes as $statusType) {
+			if (in_array(($statusType['isFinal'] ?? false), [true, 1, '1', 'true'], true) === true) {
+				continue;
+			}
+
+			$openStatusIds = array_merge($openStatusIds, $this->idsOf(rows: [$statusType]));
+		}
+
+		if ($openStatusIds === []) {
+			return [];
+		}
+
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $schemas['register'],
+			schema: $schemas['case'],
+			filters: [
+				'caseType' => $caseTypeIds,
+				'status' => $openStatusIds,
+				'_limit' => self::LIMIT,
+			],
+		);
+	}//end openWooCases()
+
+	/**
+	 * The uuids of a list of rows.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The rows.
+	 *
+	 * @return array<int, string> The uuids, without empties.
+	 */
+	private function idsOf(array $rows): array {
+		$ids = [];
+		foreach ($rows as $row) {
+			$id = (string)($row['id'] ?? ($row['uuid'] ?? ''));
+			if ($id !== '') {
+				$ids[] = $id;
+			}
+		}
+
+		return array_values(array_unique($ids));
+	}//end idsOf()
 
 	/**
 	 * Emit a T-7 deadline warning for every case that still needs one.
@@ -130,9 +223,11 @@ class WOODeadlineCheckJob extends TimedJob {
 		$warned = 0;
 		foreach ($cases as $case) {
 			$caseId = $case['id'] ?? $case['uuid'] ?? null;
-			$handler = $case['handler'] ?? $case['assignedUser'] ?? null;
+			// The case schema names its handler `assignee`; `handler` and
+			// `assignedUser` are fields it does not declare, so they never held one.
+			$handler = $case['assignee'] ?? null;
 
-			if ($caseId === null || $handler === null) {
+			if ($caseId === null || is_string($handler) === false || $handler === '') {
 				continue;
 			}
 

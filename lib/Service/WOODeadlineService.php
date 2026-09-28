@@ -281,7 +281,14 @@ class WOODeadlineService {
 
 		$caseData = (array)$case;
 
-		$deadlineStr = $caseData['expectedResolution'] ?? null;
+		// `deadline` is the case schema's declared, computed deadline;
+		// `expectedResolution` is what extendDeadline() writes, which the schema
+		// does not declare. Read the extension first, then the declared field.
+		$deadlineStr = ($caseData['expectedResolution'] ?? null);
+		if (empty($deadlineStr) === true) {
+			$deadlineStr = ($caseData['deadline'] ?? null);
+		}
+
 		if (empty($deadlineStr) === true) {
 			return ['deadline' => null, 'reason' => 'No deadline set'];
 		}
