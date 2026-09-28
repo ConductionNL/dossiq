@@ -352,6 +352,7 @@ class RetiredNodeTranslatorTest extends TestCase {
 						'storeFile' => false,
 						'targetField' => 'besluitDocument',
 						'requestingApp' => 'dossiq',
+						'output' => 'actionResult',
 					],
 				],
 			],

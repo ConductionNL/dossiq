@@ -99,7 +99,7 @@ class ApprovalSource extends RegisterBackedSource {
 	 * @spec openspec/changes/one-personal-queue/specs/add-work-queue/spec.md
 	 */
 	public function mechanisms(): array {
-		return ['flow:DossiqRequestDecisionNode', 'flow:DossiqTxEvaluateDecisionNode'];
+		return [];
 	}//end mechanisms()
 
 	/**

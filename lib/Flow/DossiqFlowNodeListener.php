@@ -28,15 +28,18 @@ use Throwable;
  * Presents dossiq's case actions to OpenRegister's flow engine.
  *
  * ADR-065: OpenRegister owns the flow engine and no leaf app grows a second
- * one. dossiq does not keep one — it CONTRIBUTES what its cases can do, which
- * is what FlowNodeRegistry is built for and what hermiq already does.
+ * one. dossiq does not keep one: it CONTRIBUTES what only its cases can do,
+ * which is what FlowNodeRegistry is built for and what hermiq already does.
  *
- * TWO VOCABULARIES, DELIBERATELY DISTINCT IDS. dossiq carries two action
- * systems and both ship a `sendEmail`. The LIVE transition vocabulary — what
- * SideEffectDispatcher fires on every status change — takes the plain
- * `dossiq.*` ids; the configured-action catalogue takes `dossiq.action.*`.
- * Without that split one handler would silently shadow the other and a flow
- * builder picking "Send email" would get whichever registered last.
+ * ONLY WHAT NO OTHER APP OWNS. Sending mail and notifications, writing an
+ * object and evaluating a decision table are OpenRegister's own nodes;
+ * generating a document is Filinq's, raising a decision is Decidiq's and an
+ * outbound call is Integriq's. dossiq offered its own copies of all of those
+ * until change flow-nodes-to-their-owners retired them, and
+ * {@see \OCA\Dossiq\Service\Flow\RetiredNodeMap} rewrites stored flows that
+ * still name one. What is left here moves a case through its life: its
+ * status, its tasks and sub-cases, the person it waits on, its committee and
+ * its publication.
  *
  * NODES ARE RESOLVED FROM A LIST, not injected one per constructor parameter.
  * Fifteen named parameters is not a wiring style, it is a coupling problem —
@@ -52,13 +55,12 @@ use Throwable;
  *     the engine actually dispatches; only the proof is unavailable here.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
+ * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
  */
 class DossiqFlowNodeListener implements IEventListener {
 
     /**
      * The nodes dossiq contributes, in catalogue order.
-     *
-     * The live transition vocabulary first — it is the one that runs.
      *
      * @var class-string<IFlowNode>[]
      *
@@ -71,25 +73,12 @@ class DossiqFlowNodeListener implements IEventListener {
      *     up the only statement of intent this constant carries.
      */
     private const NODES = [
-        // Live: fired by SideEffectDispatcher on every status change.
-        DossiqTxSendEmailNode::class,
         DossiqTxCreateTaskNode::class,
         DossiqTxCreateSubCaseNode::class,
-        DossiqTxWebhookNode::class,
-        DossiqTxSetFieldNode::class,
         DossiqTxSetStatusNode::class,
         DossiqAskPersonNode::class,
-        DossiqRequestDecisionNode::class,
         DossiqEnsureCommitteeNode::class,
-        DossiqTxNotifyNode::class,
         DossiqTxBesluitvormingPublishNode::class,
-        DossiqTxEvaluateDecisionNode::class,
-        // The configured-action catalogue.
-        DossiqSendEmailNode::class,
-        DossiqNotifyRoleNode::class,
-        DossiqCallWebhookNode::class,
-        DossiqCreateDocumentNode::class,
-        DossiqMergeTemplateNode::class,
     ];
 
 
@@ -114,7 +103,7 @@ class DossiqFlowNodeListener implements IEventListener {
      *
      * A node that cannot be constructed is logged and SKIPPED rather than
      * aborting the loop: one unresolvable dependency must not cost the other
-     * fourteen their place in the catalogue, and a missing node is visible
+     * others their place in the catalogue, and a missing node is visible
      * (the flow editor simply does not offer it) where a failed registration
      * would take everything down with it.
      *

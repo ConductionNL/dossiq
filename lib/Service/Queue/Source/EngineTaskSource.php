@@ -101,7 +101,6 @@ class EngineTaskSource implements QueueSource {
 		return [
 			'flow:DossiqAskPersonNode',
 			'flow:DossiqTxCreateTaskNode',
-			'flow:DossiqNotifyRoleNode',
 		];
 	}//end mechanisms()
 

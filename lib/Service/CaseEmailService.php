@@ -166,6 +166,46 @@ class CaseEmailService {
 
 		$this->dispatchMessage(message: $message, caseId: $caseId);
 
+		$messageId = $this->recordSentEmail(
+			caseId: $caseId,
+			fromAddress: $fromAddress,
+			to: $to,
+			subject: $subject,
+			body: $body,
+		);
+
+		$this->logger->info(
+			'Email sent for case {caseId}',
+			['app' => Application::APP_ID, 'caseId' => $caseId],
+		);
+
+		return [
+			'messageId' => $messageId,
+			'to' => $to,
+			'subject' => $subject,
+			'sentAt' => date('Y-m-d\TH:i:s'),
+		];
+	}//end sendEmail()
+
+	/**
+	 * Record a mail that went out about a case: the stored message and the timeline line.
+	 *
+	 * The half of sending that is dossiq's own. A mail this service sends
+	 * comes through here, and so does one an OpenRegister flow step sent
+	 * about a dossiq case ({@see \OCA\Dossiq\Listener\FlowEmailSentListener}),
+	 * so the case reads the same whichever way the mail left.
+	 *
+	 * @param string $caseId      The case UUID.
+	 * @param string $fromAddress The envelope sender, or empty when it is not known here.
+	 * @param string $to          The recipient.
+	 * @param string $subject     The subject, as sent.
+	 * @param string $body        The body, as sent.
+	 *
+	 * @return string The stored message id.
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function recordSentEmail(string $caseId, string $fromAddress, string $to, string $subject, string $body): string {
 		// Record the sent email as a case document.
 		$messageId = $this->repository->recordSentEmail(
 			caseId: $caseId,
@@ -190,18 +230,8 @@ class CaseEmailService {
 			visibility: CaseTimeline::PUBLIC_ENTRY,
 		);
 
-		$this->logger->info(
-			'Email sent for case {caseId}',
-			['app' => Application::APP_ID, 'caseId' => $caseId],
-		);
-
-		return [
-			'messageId' => $messageId,
-			'to' => $to,
-			'subject' => $subject,
-			'sentAt' => date('Y-m-d\TH:i:s'),
-		];
-	}//end sendEmail()
+		return (string)$messageId;
+	}//end recordSentEmail()
 
 	/**
 	 * Resolve the configured envelope from-address.

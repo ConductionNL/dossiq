@@ -6,10 +6,10 @@
  *
  * Test stub for OpenRegister's decision-evaluation exception.
  *
- * dossiq catches this by type in DecisionTableController and
- * EvaluateDecisionHandler and maps its error code onto an HTTP status, so a
- * unit test cannot load those classes without it. Mirrors openregister
- * lib/Service/Dmn/DecisionEvaluationException.php — if the real error codes or
+ * dossiq catches this by type in DecisionTableController and maps its error
+ * code onto an HTTP status, so a unit test cannot load that class without it.
+ * Mirrors openregister lib/Service/Dmn/DecisionEvaluationException.php — if
+ * the real error codes or
  * accessors change, this stub is where dossiq finds out.
  *
  * @category Test

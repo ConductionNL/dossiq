@@ -17,6 +17,16 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Settings;
 
 use OCA\Dossiq\Repair\Vth\VthWorkflowGraphResolver;
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
+use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
+use OCA\Dossiq\Service\Flow\RetiredNodeMap;
+use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
+use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
+use OCA\Dossiq\Service\Flow\UnmappableStep;
+use OCA\Dossiq\Service\SettingsService;
+use OCP\IL10N;
+use Psr\Container\ContainerInterface;
+use Psr\Log\NullLogger;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -73,7 +83,73 @@ class ShippedActionVocabularyTest extends TestCase {
 		$types = [];
 		preg_match_all("/'([a-zA-Z][a-zA-Z0-9_]*)'\s*=>/", $matches[1], $types);
 
-		return $types[1];
+		// A type whose handler left dossiq still runs, as the node that
+		// replaced it (RetiredActionRunner). Read from the runner itself.
+		return array_merge($types[1], $this->runner()->runnableTypes());
+	}
+
+	/**
+	 * The real translator, over a configured register and case schema.
+	 *
+	 * @return RetiredNodeTranslator The translator.
+	 */
+	private function translator(): RetiredNodeTranslator {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
+		);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+		$syntax = new RetiredTemplateSyntax();
+
+		return new RetiredNodeTranslator($settings, $this->createMock(ContainerInterface::class), $l10n, $syntax, new RetiredDocumentSteps($syntax));
+	}
+
+	/**
+	 * The real retired-action runner.
+	 *
+	 * @return RetiredActionRunner The runner.
+	 */
+	private function runner(): RetiredActionRunner {
+		return new RetiredActionRunner(new RetiredNodeMap(), $this->translator(), $this->createMock(ContainerInterface::class), new NullLogger());
+	}
+
+	/**
+	 * Every shipped action of a retired type translates into its replacement.
+	 *
+	 * Being in the runnable list only says a replacement exists. This asks
+	 * the translation itself, with the shipped configuration, so a seeded
+	 * declaration the translator would refuse fails here rather than at the
+	 * first transition that fires it.
+	 *
+	 * @return void
+	 */
+	public function testEveryShippedRetiredActionTranslates(): void {
+		$map = new RetiredNodeMap();
+		$translator = $this->translator();
+		$refused = [];
+		$seen = 0;
+		foreach ($this->shippedJsonFiles() as $file) {
+			$data = json_decode((string)file_get_contents($file), true);
+			$found = [];
+			$this->collectActions(node: $data, path: '', found: $found);
+			foreach ($found as $entry) {
+				$row = $map->rowFor(type: 'dossiq.' . (string)($entry['action']['type'] ?? ''));
+				if ($row === null || isset($row['translation']) === false) {
+					continue;
+				}
+
+				$seen++;
+				try {
+					$translator->translate(translation: $row['translation'], config: $entry['action']);
+				} catch (UnmappableStep $e) {
+					$refused[] = basename($file) . ' ' . $entry['path'] . ': ' . $e->getMessage();
+				}
+			}
+		}
+
+		$this->assertGreaterThan(0, $seen, 'No shipped action of a retired type was found: the sweep is broken, or the seeds moved on.');
+		$this->assertSame([], $refused);
 	}
 
 	/**

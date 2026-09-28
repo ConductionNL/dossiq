@@ -57,6 +57,14 @@ class RetiredDocumentSteps {
 	public const METADATA_TYPE = 'informatieobjecttype';
 
 	/**
+	 * Where the retired steps put their result on the item. Kept, so a step
+	 * after this one that read it still finds it.
+	 *
+	 * @var string
+	 */
+	private const DEFAULT_OUTPUT = 'actionResult';
+
+	/**
 	 * The format a filed document is generated in.
 	 *
 	 * @var string
@@ -102,7 +110,8 @@ class RetiredDocumentSteps {
 		return $this->filed(
 			text: $text,
 			name: $name,
-			documentType: trim((string)($config['documentType'] ?? ''))
+			documentType: trim((string)($config['documentType'] ?? '')),
+			output: $this->output(config: $config)
 		);
 	}//end create()
 
@@ -130,7 +139,8 @@ class RetiredDocumentSteps {
 			return $this->filed(
 				text: $text,
 				name: $name,
-				documentType: trim((string)($config['documentType'] ?? ''))
+				documentType: trim((string)($config['documentType'] ?? '')),
+				output: $this->output(config: $config)
 			);
 		}
 
@@ -141,6 +151,7 @@ class RetiredDocumentSteps {
 				'storeFile' => false,
 				'targetField' => $targetField,
 				'requestingApp' => Application::APP_ID,
+				'output' => $this->output(config: $config),
 			],
 		];
 	}//end merge()
@@ -151,12 +162,13 @@ class RetiredDocumentSteps {
 	 * @param string $text         The dossiq template text.
 	 * @param string $name         The document's name, possibly with an extension.
 	 * @param string $documentType The document type the dossier files it under.
+	 * @param string $output       Where the result goes on the item.
 	 *
 	 * @return array{type: string, config: array<string, mixed>} The generate-document step.
 	 *
 	 * @throws UnmappableStep When there is no document type.
 	 */
-	private function filed(string $text, string $name, string $documentType): array {
+	private function filed(string $text, string $name, string $documentType, string $output): array {
 		if ($documentType === '') {
 			throw new UnmappableStep('the step names no document type, which the case dossier needs to file the document');
 		}
@@ -172,6 +184,7 @@ class RetiredDocumentSteps {
 				'format' => self::FILED_FORMAT,
 				'storeFile' => true,
 				'requestingApp' => Application::APP_ID,
+				'output' => $output,
 				'metadata' => [
 					self::METADATA_TYPE => $documentType,
 					'direction' => 'outgoing',
@@ -197,4 +210,19 @@ class RetiredDocumentSteps {
 
 		return $this->syntax->forDocument(template: $text, what: 'template');
 	}//end text()
+	/**
+	 * The item key the step's result goes under.
+	 *
+	 * @param array<string, mixed> $config The retired configuration.
+	 *
+	 * @return string The key.
+	 */
+	private function output(array $config): string {
+		$output = trim((string)($config['output'] ?? ''));
+		if ($output === '') {
+			return self::DEFAULT_OUTPUT;
+		}
+
+		return $output;
+	}//end output()
 }//end class

@@ -37,6 +37,9 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\Actions;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Flow\RetiredNodeMap;
+use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
+use OCA\Dossiq\Service\Flow\UnmappableStep;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\IAppConfig;
 use OCP\IUser;
@@ -51,12 +54,11 @@ use Throwable;
  */
 class AutomaticActionFlowMigrator {
 	/**
-	 * The flow-node id space Dossiq's configured-action catalogue registers under.
+	 * The flow-node id space Dossiq's configured-action catalogue registered under.
 	 *
-	 * Deliberately NOT `dossiq.*`, which is the live transition vocabulary the
-	 * SideEffectDispatcher fires. Both spaces ship a `sendEmail` implemented by
-	 * different classes with different config keys, so crossing them would run
-	 * the wrong handler against the right config.
+	 * Every node in it has since gone to the app that owns what it did, so an
+	 * action type is looked up in the retired-node table as this prefix plus
+	 * the type, and becomes whatever that table says replaces it.
 	 */
 	private const NODE_PREFIX = 'dossiq.action.';
 
@@ -82,12 +84,16 @@ class AutomaticActionFlowMigrator {
 	 * @param ContainerInterface $container Service container, for by-name resolution.
 	 * @param IAppConfig $appConfig App configuration.
 	 * @param LoggerInterface $logger Logger.
+	 * @param RetiredNodeMap $map What each retired action type became.
+	 * @param RetiredNodeTranslator $translator Turns an action's config into its replacement's.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ContainerInterface $container,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
+		private readonly RetiredNodeMap $map,
+		private readonly RetiredNodeTranslator $translator,
 	) {
 	}//end __construct()
 
@@ -208,13 +214,24 @@ class AutomaticActionFlowMigrator {
 		}
 
 		$type = (string)($action['type'] ?? '');
-		$nodeType = self::NODE_PREFIX . $type;
-		if ($this->nodeExists(nodeType: $nodeType) === false) {
+		try {
+			$steps = $this->steps(type: $type, config: $this->config(action: $action));
+		} catch (UnmappableStep $e) {
 			return [
 				'outcome' => 'skipped',
 				'marker' => $marker,
-				'detail' => 'no node implements "' . $type . '"; a flow around it would never run',
+				'detail' => '"' . $type . '" cannot become a flow step: ' . $e->getMessage(),
 			];
+		}
+
+		foreach ($steps as $step) {
+			if ($this->nodeExists(nodeType: $step['type']) === false) {
+				return [
+					'outcome' => 'skipped',
+					'marker' => $marker,
+					'detail' => 'no node implements "' . $step['type'] . '" (for "' . $type . '"); a flow around it would never run',
+				];
+			}
 		}
 
 		$uuid = ($existing[$marker] ?? null);
@@ -228,7 +245,7 @@ class AutomaticActionFlowMigrator {
 
 		return $this->writeFlow(
 			flowService: $flowService,
-			document: $this->flowDocument(action: $action, marker: $marker, nodeType: $nodeType),
+			document: $this->flowDocument(action: $action, marker: $marker, steps: $steps),
 			marker: $marker,
 			uuid: $uuid,
 		);
@@ -311,19 +328,64 @@ class AutomaticActionFlowMigrator {
 	}//end nodeExists()
 
 	/**
+	 * The steps one action becomes.
+	 *
+	 * @param string               $type   The action type.
+	 * @param array<string, mixed> $config The action's decoded config.
+	 *
+	 * @return array<int, array{type: string, config: array<string, mixed>}> The steps.
+	 *
+	 * @throws UnmappableStep When the action has no faithful equivalent.
+	 */
+	private function steps(string $type, array $config): array {
+		$nodeType = self::NODE_PREFIX . $type;
+		$row = $this->map->rowFor(type: $nodeType);
+		if ($row === null) {
+			return [['type' => $nodeType, 'config' => $config]];
+		}
+
+		if (isset($row['translation']) === true) {
+			return $this->translator->translate(translation: $row['translation'], config: $config);
+		}
+
+		if ($row['replacement'] === null) {
+			throw new UnmappableStep('it is retired and nothing replaces it (' . $row['reason'] . ')');
+		}
+
+		return [['type' => $row['replacement'], 'config' => $config]];
+	}//end steps()
+
+	/**
 	 * The flow document one action becomes.
 	 *
-	 * Three nodes, because a flow OpenRegister will run needs an entry and an
-	 * exit: a manual trigger, the action itself, and an end. `enabled` is true —
+	 * A manual trigger, the action's steps in order, and an end: a flow
+	 * OpenRegister will run needs an entry and an exit. `enabled` is true;
 	 * the stored configuration said what it wanted and had never been honoured.
 	 *
 	 * @param array<string, mixed> $action The stored automaticAction.
 	 * @param string $marker The provenance marker.
-	 * @param string $nodeType The action node id.
+	 * @param array<int, array{type: string, config: array<string, mixed>}> $steps The action's steps.
 	 *
 	 * @return array<string, mixed> The flow document.
 	 */
-	private function flowDocument(array $action, string $marker, string $nodeType): array {
+	private function flowDocument(array $action, string $marker, array $steps): array {
+		$nodes = [['id' => 'trigger', 'type' => 'openregister.trigger-manual']];
+		$edges = [];
+		$previous = 'trigger';
+		foreach ($steps as $index => $step) {
+			$id = 'action';
+			if ($index > 0) {
+				$id = 'action--' . ($index + 1);
+			}
+
+			$nodes[] = ['id' => $id, 'type' => $step['type'], 'config' => $step['config']];
+			$edges[] = ['id' => $previous . '-' . $id, 'from' => [$previous], 'to' => [$id]];
+			$previous = $id;
+		}
+
+		$nodes[] = ['id' => 'end', 'type' => 'openregister.end'];
+		$edges[] = ['id' => $previous . '-end', 'from' => [$previous], 'to' => ['end']];
+
 		return [
 			'name' => (string)($action['title'] ?? $action['slug']),
 			'description' => $this->description(action: $action),
@@ -331,15 +393,8 @@ class AutomaticActionFlowMigrator {
 			'enabled' => true,
 			'trigger' => 'manual',
 			'notes' => $marker,
-			'nodes' => [
-				['id' => 'trigger', 'type' => 'openregister.trigger-manual'],
-				['id' => 'action', 'type' => $nodeType, 'config' => $this->config(action: $action)],
-				['id' => 'end', 'type' => 'openregister.end'],
-			],
-			'edges' => [
-				['id' => 'trigger-action', 'from' => ['trigger'], 'to' => ['action']],
-				['id' => 'action-end', 'from' => ['action'], 'to' => ['end']],
-			],
+			'nodes' => $nodes,
+			'edges' => $edges,
 		];
 	}//end flowDocument()
 

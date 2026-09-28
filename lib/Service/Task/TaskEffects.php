@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -62,12 +63,17 @@ class TaskEffects {
 	/**
 	 * Constructor.
 	 *
-	 * @param ActionHandlerRegistry $handlers The handlers an effect names.
-	 * @param LoggerInterface       $logger   The logger.
+	 * @param ActionHandlerRegistry    $handlers The handlers an effect names.
+	 * @param LoggerInterface          $logger   The logger.
+	 * @param RetiredActionRunner|null $retired  Runs an effect whose handler left dossiq as
+	 *                                           the node that replaced it. Optional so an
+	 *                                           existing construction site keeps working;
+	 *                                           absent, such an effect is unresolved.
 	 */
 	public function __construct(
 		private readonly ActionHandlerRegistry $handlers,
 		private readonly LoggerInterface $logger,
+		private readonly ?RetiredActionRunner $retired = null,
 	) {
 	}//end __construct()
 
@@ -131,7 +137,7 @@ class TaskEffects {
 		$missing = [];
 		foreach ($effects as $effect) {
 			$type = trim((string)($effect['type'] ?? ''));
-			if ($type === '' || $this->handlers->getHandler(type: $type) !== null) {
+			if ($type === '' || $this->handlers->getHandler(type: $type) !== null || $this->runsRetired(type: $type) === true) {
 				continue;
 			}
 
@@ -181,6 +187,12 @@ class TaskEffects {
 	private function runOne(array $effect, array $case, array $context): array {
 		$type = trim((string)($effect['type'] ?? ''));
 		$handler = $this->handlers->getHandler(type: $type);
+		if ($handler === null && $this->retired !== null && $this->runsRetired(type: $type) === true) {
+			$row = $this->retired->run(type: $type, action: $effect, case: $case, context: $context);
+
+			return ['type' => $type, 'ran' => $row['ok'], 'error' => (string)($row['error'] ?? '')];
+		}
+
 		if ($handler === null) {
 			// Reached only when a handler disappeared between the pre-check
 			// and the run, which is a deployment changing under a request.
@@ -214,4 +226,16 @@ class TaskEffects {
 			return ['type' => $type, 'ran' => false, 'error' => $e->getMessage()];
 		}//end try
 	}//end runOne()
+	/**
+	 * Whether an effect names a retired type that its replacement still runs.
+	 *
+	 * @param string $type The effect type.
+	 *
+	 * @return bool True when the retired runner can run it.
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	private function runsRetired(string $type): bool {
+		return $this->retired !== null && in_array($type, $this->retired->runnableTypes(), true) === true;
+	}//end runsRetired()
 }//end class

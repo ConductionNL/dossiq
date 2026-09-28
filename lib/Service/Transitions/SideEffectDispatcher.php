@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\OpenRegister\Service\Flow\FlowNodeRegistry;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -46,11 +47,15 @@ class SideEffectDispatcher {
 	 *                                        for an instance without OpenRegister.
 	 * @param ContainerInterface $container Resolves OpenRegister's node catalogue lazily.
 	 * @param LoggerInterface $logger Logger
+	 * @param RetiredActionRunner|null $retired Runs a declared type whose handler left dossiq
+	 *                                          as the node that replaced it. Optional so an
+	 *                                          existing construction site keeps working.
 	 */
 	public function __construct(
 		private readonly ActionHandlerRegistry $registry,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?RetiredActionRunner $retired = null,
 	) {
 	}//end __construct()
 
@@ -71,6 +76,15 @@ class SideEffectDispatcher {
 		foreach ($actions as $action) {
 			$type = (string)($action['type'] ?? '');
 			if ($type === '') {
+				continue;
+			}
+
+			// A type dossiq no longer answers itself (mail, notification,
+			// field, decision, webhook) runs as the node that replaced it,
+			// translated the same way a stored flow step is. A case type
+			// declared before the change keeps doing what it declared.
+			if ($this->retired !== null && $this->retired->handles(type: $type) === true) {
+				$results[] = $this->retired->run(type: $type, action: $action, case: $case, context: $transitionContext);
 				continue;
 			}
 

@@ -16,7 +16,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Flow;
 
-use OCA\Dossiq\Service\Actions\ActionHandlerInterface as CatalogueActionHandler;
 use OCA\Dossiq\Service\Transitions\ActionHandlerInterface as TransitionActionHandler;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCP\IL10N;
@@ -60,9 +59,9 @@ class DossiqTxSetStatusNode extends DossiqTransitionNode {
     /**
      * The handler this node runs.
      *
-     * @return CatalogueActionHandler|TransitionActionHandler The action handler.
+     * @return TransitionActionHandler The action handler.
      */
-    protected function handler(): CatalogueActionHandler|TransitionActionHandler {
+    protected function handler(): TransitionActionHandler {
         return $this->handler;
 
     }//end handler()

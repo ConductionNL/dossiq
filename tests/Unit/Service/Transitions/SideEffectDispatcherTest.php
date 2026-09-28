@@ -23,6 +23,13 @@ use OCA\Dossiq\Service\Transitions\ActionHandlerInterface;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
 use OCA\Dossiq\Service\Transitions\ActionResult;
 use OCA\Dossiq\Service\Transitions\SideEffectDispatcher;
+use OCP\IL10N;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
+use OCA\Dossiq\Service\Flow\RetiredNodeTranslator;
+use OCA\Dossiq\Service\Flow\RetiredNodeMap;
+use OCA\Dossiq\Service\Flow\RetiredDocumentSteps;
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -67,10 +74,11 @@ class SideEffectDispatcherTest extends TestCase {
      *
      * @param FlowNodeRegistry|null      $nodes  The catalogue, or null for the fallback path.
      * @param ActionHandlerRegistry|null $legacy The local registry.
+     * @param RetiredActionRunner|null   $retired Runs retired types as their replacements.
      *
      * @return SideEffectDispatcher The dispatcher.
      */
-    private function dispatcher(?FlowNodeRegistry $nodes, ?ActionHandlerRegistry $legacy=null): SideEffectDispatcher {
+    private function dispatcher(?FlowNodeRegistry $nodes, ?ActionHandlerRegistry $legacy=null, ?RetiredActionRunner $retired=null): SideEffectDispatcher {
         $container = $this->createMock(ContainerInterface::class);
         if ($nodes !== null) {
             $container->method('get')->willReturn($nodes);
@@ -81,7 +89,8 @@ class SideEffectDispatcherTest extends TestCase {
         return new SideEffectDispatcher(
             $legacy ?? $this->createMock(ActionHandlerRegistry::class),
             $container,
-            $this->createMock(LoggerInterface::class)
+            $this->createMock(LoggerInterface::class),
+            $retired
         );
 
     }//end dispatcher()
@@ -116,15 +125,15 @@ class SideEffectDispatcherTest extends TestCase {
      */
     public function testActionsRunThroughTheSharedNode(): void {
         $registry = $this->registry();
-        $registry->register($this->node('dossiq.sendEmail'));
+        $registry->register($this->node('dossiq.createTask'));
 
         $results = $this->dispatcher($registry)->dispatch(
-            [['type' => 'sendEmail']],
+            [['type' => 'createTask']],
             ['id' => 'case-1'],
             ['transition' => 'submitted']
         );
 
-        $this->assertSame([['type' => 'sendEmail', 'ok' => true]], $results);
+        $this->assertSame([['type' => 'createTask', 'ok' => true]], $results);
 
     }//end testActionsRunThroughTheSharedNode()
 
@@ -132,9 +141,8 @@ class SideEffectDispatcherTest extends TestCase {
     /**
      * The dispatcher resolves the LIVE id space, not the catalogue's.
      *
-     * Both action systems ship a sendEmail. Resolving `dossiq.action.sendEmail`
-     * here would run the configured-action handler for a transition — a
-     * different class with different config keys.
+     * A transition type resolves as `dossiq.<type>`; a node under any other
+     * prefix is not the one a declaration means.
      *
      * @return void
      *
@@ -142,9 +150,9 @@ class SideEffectDispatcherTest extends TestCase {
      */
     public function testItResolvesTheLiveIdSpace(): void {
         $registry = $this->registry();
-        $registry->register($this->node('dossiq.action.sendEmail'));
+        $registry->register($this->node('dossiq.action.createTask'));
 
-        $results = $this->dispatcher($registry)->dispatch([['type' => 'sendEmail']], [], []);
+        $results = $this->dispatcher($registry)->dispatch([['type' => 'createTask']], [], []);
 
         $this->assertFalse($results[0]['ok']);
         $this->assertSame('unknown_action_type', $results[0]['error']);
@@ -166,11 +174,11 @@ class SideEffectDispatcherTest extends TestCase {
      */
     public function testAFailedActionDoesNotAbortTheRest(): void {
         $registry = $this->registry();
-        $registry->register($this->node('dossiq.sendEmail', new RuntimeException('smtp down')));
-        $registry->register($this->node('dossiq.createTask'));
+        $registry->register($this->node('dossiq.createTask', new RuntimeException('smtp down')));
+        $registry->register($this->node('dossiq.createSubCase'));
 
         $results = $this->dispatcher($registry)->dispatch(
-            [['type' => 'sendEmail'], ['type' => 'createTask']],
+            [['type' => 'createTask'], ['type' => 'createSubCase']],
             [],
             []
         );
@@ -222,9 +230,9 @@ class SideEffectDispatcherTest extends TestCase {
         $legacy = $this->createMock(ActionHandlerRegistry::class);
         $legacy->method('getHandler')->willReturn($handler);
 
-        $results = $this->dispatcher(null, $legacy)->dispatch([['type' => 'sendEmail']], [], []);
+        $results = $this->dispatcher(null, $legacy)->dispatch([['type' => 'createTask']], [], []);
 
-        $this->assertSame([['type' => 'sendEmail', 'ok' => true]], $results);
+        $this->assertSame([['type' => 'createTask', 'ok' => true]], $results);
 
     }//end testFallsBackToTheLocalHandlersWithoutOpenRegister()
 
@@ -243,6 +251,156 @@ class SideEffectDispatcherTest extends TestCase {
         );
 
     }//end testTypelessActionIsSkipped()
+
+
+    /**
+     * The real retired-action runner over a node catalogue.
+     *
+     * @param FlowNodeRegistry $nodes The catalogue.
+     *
+     * @return RetiredActionRunner The runner.
+     */
+    private function retired(FlowNodeRegistry $nodes): RetiredActionRunner {
+        $settings = $this->createMock(SettingsService::class);
+        $settings->method('getConfigValue')->willReturnCallback(
+            static fn (string $key): string => ['register' => '12', 'case_schema' => '34'][$key] ?? ''
+        );
+        $l10n = $this->createMock(IL10N::class);
+        $l10n->method('t')->willReturnCallback(
+            static fn (string $text, array $params=[]): string => vsprintf($text, $params)
+        );
+        $syntax    = new RetiredTemplateSyntax();
+        $container = $this->createMock(ContainerInterface::class);
+        $container->method('get')->willReturn($nodes);
+
+        return new RetiredActionRunner(
+            new RetiredNodeMap(),
+            new RetiredNodeTranslator($settings, $container, $l10n, $syntax, new RetiredDocumentSteps($syntax)),
+            $container,
+            $this->createMock(LoggerInterface::class)
+        );
+
+    }//end retired()
+
+
+    /**
+     * A declared `notify` runs OpenRegister's notification step, translated, as the user who moved the case.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+     */
+    public function testARetiredDeclarationRunsAsItsReplacement(): void {
+        $seen     = [];
+        $registry = $this->registry();
+        $node     = $this->createMock(IFlowNode::class);
+        $node->method('getId')->willReturn('openregister.send-notification');
+        $node->expects($this->once())->method('execute')->willReturnCallback(
+            static function (array $items, array $config, array $context) use (&$seen): array {
+                $seen = ['items' => $items, 'config' => $config, 'context' => $context];
+                return $items;
+            }
+        );
+        $registry->register($node);
+
+        $results = $this->dispatcher($registry, null, $this->retired($registry))->dispatch(
+            [['type' => 'notify', 'message' => 'Uw bezwaar is afgehandeld']],
+            ['id' => 'case-1', 'assignee' => 'jan'],
+            ['transitionLabel' => 'Afronden', 'userId' => 'behandelaar1']
+        );
+
+        $this->assertSame([['type' => 'notify', 'ok' => true]], $results);
+        $this->assertSame(['{{ assignee }}'], $seen['config']['recipients']);
+        $this->assertSame('A case you handle changed status: Afronden', $seen['config']['title']);
+        $this->assertSame('behandelaar1', $seen['context']['runAs']);
+        $this->assertSame('case-1', $seen['items'][0]['json']['id']);
+
+    }//end testARetiredDeclarationRunsAsItsReplacement()
+
+
+    /**
+     * A declared `setField` runs both steps it became, in order, passing the item on.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+     */
+    public function testATwoStepReplacementRunsInOrder(): void {
+        $order    = [];
+        $registry = $this->registry();
+        foreach (['openregister.set-fields', 'openregister.object-write'] as $id) {
+            $node = $this->createMock(IFlowNode::class);
+            $node->method('getId')->willReturn($id);
+            $node->method('execute')->willReturnCallback(
+                static function (array $items, array $config) use ($id, &$order): array {
+                    $order[] = $id;
+                    if ($id === 'openregister.set-fields') {
+                        $items[0]['json']['archiveStatus'] = $config['set']['archiveStatus'];
+                    } else {
+                        $order[] = $items[0]['json']['archiveStatus'];
+                    }
+
+                    return $items;
+                }
+            );
+            $registry->register($node);
+        }
+
+        $results = $this->dispatcher($registry, null, $this->retired($registry))->dispatch(
+            [['type' => 'setField', 'field' => 'archiveStatus', 'value' => 'gearchiveerd']],
+            ['id' => 'case-1'],
+            ['userId' => 'u']
+        );
+
+        $this->assertSame([['type' => 'setField', 'ok' => true]], $results);
+        $this->assertSame(['openregister.set-fields', 'openregister.object-write', 'gearchiveerd'], $order);
+
+    }//end testATwoStepReplacementRunsInOrder()
+
+
+    /**
+     * A declared webhook has no replacement and says so, rather than reading as unknown.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+     */
+    public function testARetiredWebhookReportsWhyItCannotRun(): void {
+        $registry = $this->registry();
+
+        $results = $this->dispatcher($registry, null, $this->retired($registry))->dispatch(
+            [['type' => 'webhook', 'url' => 'https://hooks.example.org/x']],
+            [],
+            []
+        );
+
+        $this->assertFalse($results[0]['ok']);
+        $this->assertStringStartsWith('retired_action_unmappable: ', $results[0]['error']);
+        $this->assertStringContainsString('hooks.example.org', $results[0]['error']);
+
+    }//end testARetiredWebhookReportsWhyItCannotRun()
+
+
+    /**
+     * The kept vocabulary still runs its own node when the runner is wired.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+     */
+    public function testAKeptTypeStillRunsItsOwnNode(): void {
+        $registry = $this->registry();
+        $registry->register($this->node('dossiq.createTask'));
+
+        $results = $this->dispatcher($registry, null, $this->retired($registry))->dispatch(
+            [['type' => 'createTask', 'title' => 'Bel de aanvrager']],
+            ['id' => 'case-1'],
+            []
+        );
+
+        $this->assertSame([['type' => 'createTask', 'ok' => true]], $results);
+
+    }//end testAKeptTypeStillRunsItsOwnNode()
 
 
 }//end class

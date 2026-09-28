@@ -16,33 +16,34 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Flow;
 
-use OCA\Dossiq\Flow\DossiqSendEmailNode;
-use OCA\Dossiq\Service\Actions\ActionResult;
-use OCA\Dossiq\Service\Actions\SendEmailHandler;
+use OCA\Dossiq\Flow\DossiqTxCreateTaskNode;
+use OCA\Dossiq\Service\Transitions\ActionResult;
+use OCA\Dossiq\Service\Transitions\CreateTaskHandler;
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use UnexpectedValueException;
 
 /**
- * Covers the action-node wrapper.
+ * Covers the shared node wrapper.
  *
- * SendEmail stands in for all six — they differ only in their handler and their
- * required keys, and the behaviour worth pinning lives in the shared base.
+ * Create-task stands in for every dossiq node: they differ only in their
+ * handler and their required keys, and the behaviour worth pinning lives in
+ * the shared base.
  *
  * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
  */
-class DossiqActionNodeTest extends TestCase {
+class DossiqTransitionNodeTest extends TestCase {
 
     /**
-     * @var SendEmailHandler&\PHPUnit\Framework\MockObject\MockObject
+     * @var CreateTaskHandler&\PHPUnit\Framework\MockObject\MockObject
      */
     private $handler;
 
     /**
-     * @var DossiqSendEmailNode
+     * @var DossiqTxCreateTaskNode
      */
-    private DossiqSendEmailNode $node;
+    private DossiqTxCreateTaskNode $node;
 
 
     /**
@@ -52,8 +53,7 @@ class DossiqActionNodeTest extends TestCase {
      */
     protected function setUp(): void {
         parent::setUp();
-        $this->handler = $this->createMock(SendEmailHandler::class);
-        $this->handler->method('type')->willReturn('sendEmail');
+        $this->handler = $this->createMock(CreateTaskHandler::class);
 
         $l10n = $this->createMock(IL10N::class);
         $l10n->method('t')->willReturnCallback(
@@ -64,7 +64,7 @@ class DossiqActionNodeTest extends TestCase {
         $urls = $this->createMock(IURLGenerator::class);
         $urls->method('imagePath')->willReturn('/apps/dossiq/img/app-dark.svg');
 
-        $this->node = new DossiqSendEmailNode($this->handler, $l10n, $urls);
+        $this->node = new DossiqTxCreateTaskNode($this->handler, $l10n, $urls);
 
     }//end setUp()
 
@@ -76,32 +76,23 @@ class DossiqActionNodeTest extends TestCase {
      */
     private function config(): array {
         return [
-            'recipientRef'    => 'behandelaar',
-            'subjectTemplate' => 'Zaak {{ title }}',
-            'bodyTemplate'    => 'Uw zaak is bijgewerkt.',
+            'title' => 'Controleer het dossier',
         ];
 
     }//end config()
 
 
     /**
-     * The node id is derived from the handler's own type slug.
-     *
-     * Deriving it is what stops a node id drifting from the handler it runs,
-     * and gives the reference migration one rule instead of six.
+     * The node takes the plain transition id.
      *
      * @return void
      *
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
-    public function testIdIsDerivedFromTheHandlerType(): void {
-        // `dossiq.action.*`, not `dossiq.*`: the LIVE transition vocabulary
-        // owns the plain names and both systems ship a sendEmail. An id
-        // collision here would have one handler silently shadow the other in
-        // the catalogue.
-        $this->assertSame('dossiq.action.sendEmail', $this->node->getId());
+    public function testTheNodeTakesThePlainTransitionId(): void {
+        $this->assertSame('dossiq.createTask', $this->node->getId());
 
-    }//end testIdIsDerivedFromTheHandlerType()
+    }//end testTheNodeTakesThePlainTransitionId()
 
 
     /**
@@ -169,11 +160,11 @@ class DossiqActionNodeTest extends TestCase {
 
         $out = $this->node->execute(
             [['json' => []]],
-            array_merge($this->config(), ['output' => 'mailResult']),
+            array_merge($this->config(), ['output' => 'taskResult']),
             []
         );
 
-        $this->assertArrayHasKey('mailResult', $out[0]['json']);
+        $this->assertArrayHasKey('taskResult', $out[0]['json']);
 
     }//end testOutputKeyIsConfigurable()
 
@@ -191,10 +182,10 @@ class DossiqActionNodeTest extends TestCase {
      * @spec openspec/changes/page-topology-cleanup/specs/automatic-actions-surface/spec.md
      */
     public function testFailedActionThrowsRatherThanPassingThrough(): void {
-        $this->handler->method('handle')->willReturn(new ActionResult(false, 'smtp_unavailable'));
+        $this->handler->method('handle')->willReturn(new ActionResult(false, 'task_store_unavailable'));
 
         $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage('smtp_unavailable');
+        $this->expectExceptionMessage('task_store_unavailable');
 
         $this->node->execute([['json' => []]], $this->config(), []);
 
@@ -215,7 +206,7 @@ class DossiqActionNodeTest extends TestCase {
         $this->handler->expects($this->never())->method('handle');
 
         $config = $this->config();
-        unset($config['recipientRef']);
+        unset($config['title']);
 
         $this->expectException(UnexpectedValueException::class);
         $this->node->execute([['json' => []]], $config, []);
@@ -232,10 +223,10 @@ class DossiqActionNodeTest extends TestCase {
      */
     public function testValidateConfigNamesTheMissingKey(): void {
         $config = $this->config();
-        unset($config['bodyTemplate']);
+        unset($config['title']);
 
         $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage('bodyTemplate');
+        $this->expectExceptionMessage('title');
 
         $this->node->validateConfig($config);
 

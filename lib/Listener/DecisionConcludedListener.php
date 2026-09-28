@@ -13,8 +13,13 @@
  * the delegation service: the full outcome now arrives synchronously on the
  * event, so there is no decidesk poll.
  *
- * The listener filters strictly to `getSourceApp() === 'procest'`; events raised
- * by any other consuming app are ignored. Its own derivation failures are
+ * The listener takes two sources. `procest` is what dossiq's own delegation
+ * raises under. `decidiq-flow` is what Decidiq's `decidiq.request-decision`
+ * flow step raises under, which replaced dossiq's own decision step (change
+ * flow-nodes-to-their-owners); such a decision is projected only when its
+ * SUBJECT is a dossiq case, because that step raises decisions for any app's
+ * objects. For a flow decision Decidiq wakes the waiting run itself, so this
+ * listener does not. Events raised by any other app are ignored. Its own derivation failures are
  * swallowed + logged so a defective lookup never blocks event delivery — but it
  * NEVER materialises a besluit on an absent/non-terminal outcome.
  *
@@ -42,6 +47,7 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\BesluitMaterialisationService;
 use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\CaseObjectReference;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowResumeState;
@@ -73,6 +79,13 @@ class DecisionConcludedListener implements IEventListener {
 	private const SOURCE_APP = 'procest';
 
 	/**
+	 * The source Decidiq's flow step raises its decisions under.
+	 *
+	 * @var string
+	 */
+	private const FLOW_SOURCE_APP = 'decidiq-flow';
+
+	/**
 	 * Terminal decidesk statuses that materialise a Besluit. `pending` is
 	 * non-terminal and is ignored (no besluit yet).
 	 */
@@ -91,6 +104,9 @@ class DecisionConcludedListener implements IEventListener {
 	 *                                 waiting rather than advancing it wrongly.
 	 * @param FlowRunService|null $runner Delivers the resume signal. Nullable for the
 	 *                                    same reason and with the same safe direction.
+	 * @param CaseObjectReference|null $cases Recognises a dossiq case as a flow decision's
+	 *                                        subject. Nullable so no construction site breaks;
+	 *                                        absent, no flow decision is projected.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -99,6 +115,7 @@ class DecisionConcludedListener implements IEventListener {
 		private readonly LoggerInterface $logger,
 		private readonly ?FlowRunMapper $runs = null,
 		private readonly ?FlowRunService $runner = null,
+		private readonly ?CaseObjectReference $cases = null,
 	) {
 	}//end __construct()
 
@@ -119,8 +136,10 @@ class DecisionConcludedListener implements IEventListener {
 		}
 
 		try {
-			// REQ-PDCD-003: only project events this app raised.
-			if ((string)$event->getSourceApp() !== self::SOURCE_APP) {
+			// REQ-PDCD-003: only project events this app raised, or that
+			// Decidiq's flow step raised about one of this app's cases.
+			$fromFlow = $this->isFlowDecisionOnACase(event: $event);
+			if ((string)$event->getSourceApp() !== self::SOURCE_APP && $fromFlow === false) {
 				return;
 			}
 
@@ -140,6 +159,11 @@ class DecisionConcludedListener implements IEventListener {
 			$schema = $this->readString(event: $event, getter: 'getSubjectSchema');
 			$subjectId = $this->readString(event: $event, getter: 'getSubjectId');
 			$externalRef = $this->readString(event: $event, getter: 'getExternalReference');
+			if ($fromFlow === true) {
+				// `flow-run:<run>:<node>` names the run, not the case: the
+				// subject is the case.
+				$externalRef = $subjectId;
+			}
 
 			// Locate the dossiq domain record carrying this decisionRef so we
 			// can resolve the owning case and any existing besluitRef. Fall back
@@ -187,7 +211,10 @@ class DecisionConcludedListener implements IEventListener {
 			// Deliberately last: the besluit is materialised before the run is
 			// woken, so the steps after the decision see a case that already
 			// carries its outcome rather than racing the projection.
-			$this->resumeWaitingRun(caseId: $caseId, decisionRef: $decisionId, status: $status);
+			// A flow decision's run is woken by Decidiq, which raised it.
+			if ($fromFlow === false) {
+				$this->resumeWaitingRun(caseId: $caseId, decisionRef: $decisionId, status: $status);
+			}
 		} catch (Throwable $e) {
 			// Never block event delivery on our own derivation failure; never
 			// author a besluit on a failed outcome.
@@ -197,6 +224,30 @@ class DecisionConcludedListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * Whether the event is a decision Decidiq's flow step raised about a dossiq case.
+	 *
+	 * @param Event $event The event.
+	 *
+	 * @return bool True when it is.
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	private function isFlowDecisionOnACase(Event $event): bool {
+		if ($this->cases === null || $this->readString(event: $event, getter: 'getSourceApp') !== self::FLOW_SOURCE_APP) {
+			return false;
+		}
+
+		if ($this->readString(event: $event, getter: 'getSubjectId') === '') {
+			return false;
+		}
+
+		return $this->cases->isCase(
+			register: $this->readString(event: $event, getter: 'getSubjectRegister'),
+			schema: $this->readString(event: $event, getter: 'getSubjectSchema')
+		);
+	}//end isFlowDecisionOnACase()
 
 	/**
 	 * Wake the case flow that was waiting on this decision, if one was.

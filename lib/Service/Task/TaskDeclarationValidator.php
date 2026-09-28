@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Task;
 
+use OCA\Dossiq\Service\Flow\RetiredActionRunner;
 use OCA\Dossiq\Service\Transitions\ActionHandlerRegistry;
 use OCA\Dossiq\Service\Workflow\WorkflowJsonProperty;
 use OCP\IGroupManager;
@@ -68,12 +69,15 @@ class TaskDeclarationValidator {
 	 * @param IGroupManager         $groups      Resolves a candidate group.
 	 * @param TaskDeclaration       $declaration Normalises one step's block.
 	 * @param WorkflowJsonProperty  $steps       Decodes a definition's steps.
+	 * @param RetiredActionRunner|null $retired  Knows the retired effect types that still run
+	 *                                           as their replacement node.
 	 */
 	public function __construct(
 		private readonly ActionHandlerRegistry $handlers,
 		private readonly IGroupManager $groups,
 		private readonly TaskDeclaration $declaration,
 		private readonly WorkflowJsonProperty $steps,
+		private readonly ?RetiredActionRunner $retired = null,
 	) {
 	}//end __construct()
 
@@ -327,6 +331,9 @@ class TaskDeclarationValidator {
 	 */
 	private function effectRefusals(array $effects, string $task, string $path): array {
 		$known = $this->handlers->getRegisteredTypes();
+		if ($this->retired !== null) {
+			$known = array_merge($known, $this->retired->runnableTypes());
+		}
 		$refusals = [];
 		foreach ($effects as $position => $effect) {
 			$type = (string)$effect['type'];
