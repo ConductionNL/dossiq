@@ -83,6 +83,8 @@ const SILENT = [
 	'mergeRelinked',
 	'missingFields',
 	'outboundCommunications',
+	'portalDocuments',
+	'portalWrites',
 	'properties',
 	'publications',
 	'relatedCases',

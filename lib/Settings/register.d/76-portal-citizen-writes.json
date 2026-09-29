@@ -22,12 +22,16 @@
           },
           "withdrawnAt": {
             "type": "string",
+            "matchType": "range",
+            "inputControl": "date-range",
             "format": "date-time",
             "title": "Withdrawn at",
             "description": "When the applicant withdrew the case in the portal."
           },
           "withdrawalReason": {
             "type": "string",
+            "matchType": "fulltext",
+            "inputControl": "text",
             "title": "Withdrawal reason",
             "description": "The reason the applicant gave when withdrawing in the portal."
           }
