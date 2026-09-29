@@ -1078,5 +1078,37 @@
     "reason": "TenantBrandingSanitiser parallel path, the half the thematiq lane handed to dossiq: branding is thematiq's (row 11.14 provider thematiq, built.owner ConductionNL/thematiq; hydra ADR-010 openspec/architecture/adr-010-nl-design.md, theme switching through the nldesign token sets), so dossiq builds no branding of its own. The parallel path is unreached code, not a capability: TenantConfigurationService::getThemingTokens(), sanitiseBranding() and sanitiseCustomCss(), and the TenantBrandingSanitiser behind them, have no caller in lib/ or src/ at c8ac7427e. Removing it is inherited debt for the sweep.",
     "change": null,
     "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "4.18",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Single competitor, no demand. Only opencase rates it yes (zaaksysteem partial, no client code), there is no tender, feature request or roadmap row, and document notes sit outside the core area (intake and case core). Reversible: set back to none if demand appears.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "6.16",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform capability another product provides: the matrix provider is pipelinq and built.owner is ConductionNL/pipelinq, and no competitor ships it. dossiq builds nothing here; pipelinq owns the survey if one is ever wanted.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "12.22",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform capability another product provides: inbound cloud events belong to integriq (provider integriq, built.owner ConductionNL/integriq). dossiq builds nothing here.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "13.14",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform capability another product provides: list access filtering is openregister's (provider openregister, built.owner ConductionNL/openregister). dossiq builds nothing here.",
+    "change": null,
+    "decidedOn": "2026-09-28"
   }
 ]
