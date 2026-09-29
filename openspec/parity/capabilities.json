@@ -13288,8 +13288,9 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/dossiq"
+				"state": "decided-no",
+				"owner": "ConductionNL/dossiq",
+				"note": "Build-all pass 2026-09-28: decided no, single competitor, no demand. Only opencase rates it yes (zaaksysteem partial, no client code), there is no tender, feature request or roadmap row, and document notes sit outside the core area (intake and case core). Reversible: set back to none if demand appears."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/DocumentNoteController.php:57,73,110,145 list, create, edit, delete notes per document; src/views/DocumentDetailView.vue:169,406 Noter tab with DocumentNoteList and DocumentNoteDialog | round 2 drive: procest/opencase/round2/pages/DocumentDetail-Notes.md:5 \"Rich-text notes on the document.\"",
@@ -14463,8 +14464,9 @@
 			"feature": "case-email-integration",
 			"featureConfidence": "low",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/pipelinq"
+				"state": "decided-no",
+				"owner": "ConductionNL/pipelinq",
+				"note": "Build-all pass 2026-09-28: decided no, platform capability another product provides: the matrix provider is pipelinq and built.owner is ConductionNL/pipelinq, and no competitor ships it. dossiq builds nothing here; pipelinq owns the survey if one is ever wanted."
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 grep -il 'tevredenheid|survey|enquete|tilfredshed|satisfaction' over src returns nothing",
@@ -17477,8 +17479,9 @@
 			"feature": "zgw-api-mapping",
 			"featureConfidence": "low",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/integriq"
+				"state": "decided-no",
+				"owner": "ConductionNL/integriq",
+				"note": "Build-all pass 2026-09-28: decided no, platform capability another product provides: inbound cloud events belong to integriq (provider integriq, built.owner ConductionNL/integriq). dossiq builds nothing here."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri cloudevent over lib returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:279 \"| 12.22 | Cloud events inbound | no |\"",
@@ -17945,8 +17948,9 @@
 			"feature": "case-access-control",
 			"featureConfidence": "medium",
 			"built": {
-				"state": "none",
-				"owner": "ConductionNL/openregister"
+				"state": "decided-no",
+				"owner": "ConductionNL/openregister",
+				"note": "Build-all pass 2026-09-28: decided no, platform capability another product provides: list access filtering is openregister's (provider openregister, built.owner ConductionNL/openregister). dossiq builds nothing here."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseMapper.php:995 list query joins opencase_user_access so unreadable cases are left out; lib/Service/PermissionService.php:559 filterReadableCases drops them; grep 'lock' over src/views/CaseListView.vue returns nothing | round 2 drive: procest/opencase/round2/create-case-anatomy.md:27 \"only users whose privilege patterns match (organisation, KLE pattern such as `28.%`, sensitivity) can see the case afterwards\"",
