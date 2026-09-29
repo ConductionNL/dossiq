@@ -23,7 +23,9 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 
 const ROOT = path.resolve(__dirname, '../..')
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'))
+const manifest = JSON.parse(
+	fs.readFileSync(path.join(ROOT, 'src', 'manifest.json'), 'utf8'),
+)
 const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 
 /**
@@ -39,7 +41,8 @@ function allWidgets() {
 			return
 		}
 		if (node === null || typeof node !== 'object') return
-		if (typeof node.type === 'string' && typeof node.id === 'string') found.push(node)
+		if (typeof node.type === 'string' && typeof node.id === 'string')
+			found.push(node)
 		Object.values(node).forEach(walk)
 	}
 	walk(caseDetail.config.widgets)
@@ -53,13 +56,20 @@ function allWidgets() {
  * @return {object} The widget.
  */
 function placedInTheGrid(integrationId) {
-	const widget = caseDetail.config.widgets.find((w) => w.integrationId === integrationId)
-	expect(widget, `${integrationId} is a top-level widget of CaseDetail`).toBeDefined()
+	const widget = caseDetail.config.widgets.find(
+		(w) => w.integrationId === integrationId,
+	)
+	expect(
+		widget,
+		`${integrationId} is a top-level widget of CaseDetail`,
+	).toBeDefined()
 	expect(widget.type).toBe('integration')
 	expect(widget.requiredApp).toBeUndefined()
 	const cell = caseDetail.config.layout.find((l) => l.widgetId === widget.id)
 	expect(cell, 'a grid widget renders only with a layout cell').toBeDefined()
-	expect(allWidgets().filter((w) => w.integrationId === integrationId)).toHaveLength(1)
+	expect(
+		allWidgets().filter((w) => w.integrationId === integrationId),
+	).toHaveLength(1)
 	return widget
 }
 
