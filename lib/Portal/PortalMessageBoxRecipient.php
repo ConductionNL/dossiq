@@ -93,20 +93,11 @@ class PortalMessageBoxRecipient {
 		try {
 			$recipient = $this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: function () use ($objectService, $register, $messageSchema, $caseSchema, $messageId): ?string {
-					$message = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $messageSchema, id: $messageId);
-					if ($message === null || ($message['direction'] ?? '') !== 'handler_to_citizen') {
-						return null;
-					}
-
-					$caseId = (string)($message['caseId'] ?? '');
-					if ($caseId === '') {
-						return null;
-					}
-
-					$case = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $caseSchema, id: $caseId);
-					return $this->applicantBsn(message: $message, case: $case);
-				}
+				operation: fn (): ?string => $this->recipientOf(
+					objectService: $objectService,
+					schemas: ['register' => $register, 'message' => $messageSchema, 'case' => $caseSchema],
+					messageId: $messageId
+				)
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning('Dossiq: the message box recipient could not be read', ['exception' => get_class($e)]);
@@ -119,6 +110,30 @@ class PortalMessageBoxRecipient {
 
 		return $recipient;
 	}//end forMessage()
+
+	/**
+	 * Read the message and its case, inside the system context.
+	 *
+	 * @param object                $objectService The OpenRegister object service.
+	 * @param array<string, string> $schemas       `register`, `message` and `case`.
+	 * @param string                $messageId     The portaalBericht uuid.
+	 *
+	 * @return string|null
+	 */
+	private function recipientOf(object $objectService, array $schemas, string $messageId): ?string {
+		$message = $this->findObjectAsArray(objectService: $objectService, register: $schemas['register'], schema: $schemas['message'], id: $messageId);
+		if ($message === null || ($message['direction'] ?? '') !== 'handler_to_citizen') {
+			return null;
+		}
+
+		$caseId = (string)($message['caseId'] ?? '');
+		if ($caseId === '') {
+			return null;
+		}
+
+		$case = $this->findObjectAsArray(objectService: $objectService, register: $schemas['register'], schema: $schemas['case'], id: $caseId);
+		return $this->applicantBsn(message: $message, case: $case);
+	}//end recipientOf()
 
 	/**
 	 * The applicant's BSN when the message is addressed to them, else null.
