@@ -612,8 +612,8 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.31.0",
-        "digest": "d98a2e2372f86f4645b1bdece167618a4ce04b565eb41d1579814aea47c4aedc"
+        "version": "1.32.0",
+        "digest": "037f1e49c678672fc7c769f37547804a8ea528a55ffd0c6c9487dccd37ca4884"
     },
     "lib/Settings/dossiq_register.json::case-location": {
         "version": "1.1.0",
@@ -692,7 +692,7 @@
         "digest": "513d4cb9be3384e17a9dab23a4f38d89aa5dacf7c545b28f3d0f11fb07032e6e"
     },
     "lib/Settings/dossiq_register.json::decision": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "327f4726c3cf622426f22770b25f6b412b9f238ee3e5dc62aac1c92271b7218c"
     },
     "lib/Settings/dossiq_register.json::decisionDocument": {
@@ -804,7 +804,7 @@
         "digest": "3c2170a71bc564ff97ae284c06128eec481db434c5ef21271e6a6f15be6b43c3"
     },
     "lib/Settings/dossiq_register.json::result": {
-        "version": "1.0.0",
+        "version": "1.1.0",
         "digest": "c34a1da55dc891a8c2b39ae5d5697c2eb6b2a2cba56de377c09486276c1d3882"
     },
     "lib/Settings/dossiq_register.json::resultType": {
@@ -1382,6 +1382,14 @@
     "lib/Settings/register.d/74-planned-actions.json::plannedActionType": {
         "version": "1.0.0",
         "digest": "b13ef24792fa9b975c69c223c4b55f7581151da0666ea252c388dafcfdaeafc5"
+    },
+    "lib/Settings/register.d/76-portal-citizen-writes.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "lib/Settings/register.d/76-portal-citizen-writes.json::caseType": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufEndpoint": {
         "version": "1.0.0",
