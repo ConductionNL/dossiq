@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -37,7 +37,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
  */
 class WOORedactionService {
 
@@ -90,7 +90,7 @@ class WOORedactionService {
 	 *
 	 * @return bool True if Docudesk is available
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
 	 */
 	public function isDocuDeskInstalled(): bool {
 		return FleetAppId::isEnabledForUser($this->appManager, self::DOCUMENT_APP);
@@ -107,7 +107,7 @@ class WOORedactionService {
 	 *
 	 * @return array<string, mixed> Redaction result with mode and per-document status
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
 	 */
 	public function queueForRedaction(string $caseId, array $documents): array {
 		if (empty($documents) === true) {
@@ -222,7 +222,7 @@ class WOORedactionService {
 	 *
 	 * @return array<string, mixed> Manual redaction metadata
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
 	 */
 	private function manualRedactionFallback(string $caseId, array $documents): array {
 		$manual = [];

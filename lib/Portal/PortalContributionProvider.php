@@ -54,7 +54,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
  */
 
 declare(strict_types=1);
@@ -75,7 +75,7 @@ use Throwable;
  * (fail-closed; the registry already filters by audience, but a provider must
  * not rely on that).
  *
- * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+ * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
  */
 class PortalContributionProvider {
 	/**
@@ -301,7 +301,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, string> The audience identifiers.
 	 *
-	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 * @spec openspec/changes/portal-case-list-declarations/tasks.md#1.1
 	 */
 	public function getAudiences(): array {
@@ -316,7 +316,7 @@ class PortalContributionProvider {
 	 *
 	 * @return string The primary audience identifier.
 	 *
-	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 */
 	public function getAudience(): string {
 		return 'supplier';
@@ -345,7 +345,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<string, mixed>|null The manifest, or null when not serving.
 	 *
-	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 */
 	public function getContribution(array $subject): ?array {
 		$audience = ($subject['audience'] ?? '');
@@ -377,7 +377,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<string, mixed> The supplier manifest.
 	 *
-	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 */
 	private function supplierContribution(): array {
 		return [
@@ -503,7 +503,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<string, mixed> The citizen manifest.
 	 *
-	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
@@ -782,7 +782,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<string, mixed> The inspector manifest.
 	 *
-	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 */
 	private function inspectorContribution(): array {
 		return [
