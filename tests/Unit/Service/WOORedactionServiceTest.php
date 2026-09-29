@@ -266,6 +266,35 @@ class WOORedactionServiceTest extends TestCase {
 	}//end testADocumentWithNoProducedFileFallsToManualWithItsOwnReason()
 
 	/**
+	 * A run filinq refused for want of a detector falls to manual with its own reason (dossiq#3191).
+	 *
+	 * The repair is to switch detection on, not to look at the document or
+	 * the redaction pass, so it gets a sentence of its own.
+	 *
+	 * @return void
+	 */
+	public function testADocumentFilinqRefusedForWantOfADetectorFallsToManualWithItsOwnReason(): void {
+		$this->appManager->method('isInstalled')->willReturn(true);
+		$this->appManager->method('isEnabledForUser')->willReturn(true);
+		$this->filinq->method('redact')->willReturn(
+			[
+				'status' => 'detection_unavailable',
+				'sourceFileId' => 55,
+				'entityCount' => 0,
+				'anonymizedFileId' => null,
+				'detectionUnavailable' => 'detection_disabled',
+			]
+		);
+
+		$result = $this->service->queueForRedaction('case-uuid-001', [['id' => 'doc-1', 'fileId' => 55]]);
+
+		$this->assertEmpty($result['redacted']);
+		$this->assertCount(1, $result['manual']);
+		$this->assertSame('filinq_has_no_live_detector', $result['manual'][0]['reason']);
+		$this->assertSame('detection_disabled', $result['manual'][0]['detectionUnavailable']);
+	}//end testADocumentFilinqRefusedForWantOfADetectorFallsToManualWithItsOwnReason()
+
+	/**
 	 * Nothing is ever reported as queued, on any branch.
 	 *
 	 * `queued` was the status the no-op invented, and it is the one word that

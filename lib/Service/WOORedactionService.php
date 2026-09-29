@@ -66,6 +66,9 @@ class WOORedactionService {
 	private const MANUAL_REASONS = [
 		'no_entities_detected' => 'filinq_detected_no_entities',
 		'no_output_produced' => 'filinq_produced_no_redacted_file',
+		// Filinq refused the run: no entity detector was live, so it wrote
+		// nothing. The repair is to switch detection on (dossiq#3191).
+		'detection_unavailable' => 'filinq_has_no_live_detector',
 	];
 
 	/**
