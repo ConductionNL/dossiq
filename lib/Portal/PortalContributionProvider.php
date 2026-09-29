@@ -236,14 +236,22 @@ class PortalContributionProvider {
 	 * The audiences this provider contributes to (contract v2, preferred).
 	 *
 	 * The registry probes for this method first. Dossiq serves suppliers, the
-	 * citizen ('Mijn gemeente') and external field inspectors.
+	 * resident ('Mijn gemeente') and external field inspectors.
+	 *
+	 * A RESIDENT ARRIVES AS `client`. Portaliq maps a DigiD or eIDAS login to
+	 * audience `client` (its OidcClaimMapperService presets), and asks only the
+	 * providers that advertise the session's audience, so a provider serving
+	 * `citizen` alone was never asked about a DigiD session (dossiq#3152).
+	 * `citizen` stays for sessions minted before `client` existed; both read
+	 * the same manifest.
 	 *
 	 * @return array<int, string> The audience identifiers.
 	 *
 	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/portal-case-list-declarations/tasks.md#1.1
 	 */
 	public function getAudiences(): array {
-		return ['supplier', 'citizen', 'inspector'];
+		return ['supplier', 'citizen', 'client', 'inspector'];
 	}//end getAudiences()
 
 	/**
@@ -292,7 +300,7 @@ class PortalContributionProvider {
 			return $this->supplierContribution();
 		}
 
-		if ($audience === 'citizen') {
+		if ($audience === 'citizen' || $audience === 'client') {
 			return $this->citizenContribution();
 		}
 
@@ -489,6 +497,21 @@ class PortalContributionProvider {
 					'label' => 'Wat er is gebeurd',
 					'provider' => 'caseTimeline',
 				],
+				// LISTED ON "MY CASES". Portaliq's merged case list keeps only
+				// collections of kind `cases` (PortalCaseListReader), and reads a
+				// row as closed when `closedField` is present and not empty.
+				// `endDate` is set when a case ends and is already projected.
+				'kind' => 'cases',
+				'closedField' => 'endDate',
+				// Where the case type of a case lives, so a portal
+				// administrator can hide a case type the portal has no form
+				// for (portaliq operate-show-per-case-type).
+				'caseTypeField' => 'caseType',
+				'caseTypeSource' => [
+					'register' => self::REGISTER,
+					'schema' => 'caseType',
+					'labelField' => 'title',
+				],
 			],
 			[
 				'id' => 'berichten',
@@ -618,8 +641,52 @@ class PortalContributionProvider {
 					],
 				],
 			],
+			$this->amendCaseAction(),
 		];
 	}//end citizenActions()
+
+	/**
+	 * The one update a resident may make on their own case.
+	 *
+	 * Portaliq's case screen (read the case with its documents, amend an
+	 * answer, add a document, withdraw) runs only under a `type: update`
+	 * action on the case's register and schema that carries `citizenWrite`;
+	 * without one every dossiq case answered 403 `portal-writes-not-declared`
+	 * (dossiq#3152). Portaliq takes the FIRST such action, so there is exactly
+	 * one.
+	 *
+	 * `fields` IS THE CEILING. Whatever a case type opens in `portalWritable`,
+	 * portaliq narrows it to this list. `description` is the resident's own
+	 * account of what they asked; nothing a handler decides (status, result,
+	 * deadlines, assignee) is on it. A withdrawal writes the status, but the
+	 * status it lands on comes from the case type's `portalWithdrawal`, never
+	 * from the request.
+	 *
+	 * `citizenWrite` names where the case type lives; portaliq reads the
+	 * windows there and records each write in `portalWrites` on the case (its
+	 * default `recordField`).
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/portal-citizen-writes-on-the-case/tasks.md#1.1
+	 */
+	private function amendCaseAction(): array {
+		return [
+			'id' => 'amendCase',
+			'type' => 'update',
+			'label' => 'Uw zaak aanpassen',
+			'register' => self::REGISTER,
+			'schema' => 'case',
+			'scopeField' => 'portalSubject',
+			'minTrust' => 'low',
+			'fields' => ['description'],
+			'citizenWrite' => [
+				'typeField' => 'caseType',
+				'typeRegister' => self::REGISTER,
+				'typeSchema' => 'caseType',
+			],
+		];
+	}//end amendCaseAction()
 
 	/**
 	 * Manifest for the `inspector` audience (an EXTERNAL field inspector).

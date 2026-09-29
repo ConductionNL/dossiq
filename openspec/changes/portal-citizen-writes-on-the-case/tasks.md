@@ -6,12 +6,12 @@ dossiq#3152.
 
 ## 1. The declaration
 
-- [ ] 1.1 `amendCase` update action with `citizenWrite` in `citizenActions()` (design D1).
+- [x] 1.1 `amendCase` update action with `citizenWrite` in `citizenActions()` (design D1).
   - unit: `PortalContributionProviderTest` asserts the action, its `fields` and that exactly one update action on `case` carries `citizenWrite`
 
 ## 2. The case and the case type
 
-- [ ] 2.1 `portalWrites` and `portalDocuments` on `case`; `portalWritable`, `portalAmendmentWindow`, `portalDocumentWindow` and `portalWithdrawal` on `caseType`, in `lib/Settings/register.d/76-portal-citizen-writes.json` with Dutch and English labels (design D2, D3).
+- [x] 2.1 (with `withdrawnAt` and `withdrawalReason`, which portaliq's withdrawal writes; none of them `readOnly`, because OpenRegister refuses an update that changes a readOnly property) `portalWrites` and `portalDocuments` on `case`; `portalWritable`, `portalAmendmentWindow`, `portalDocumentWindow` and `portalWithdrawal` on `caseType`, in `lib/Settings/register.d/76-portal-citizen-writes.json` with Dutch and English labels (design D2, D3).
   - unit: a schema test asserts the shapes against portaliq's `portalCaseType`; `npm run check:schema-l10n`
 - [ ] 2.2 The "Portal" section of the case type editor (design D3).
   - vitest: the section saves a writable field, both windows and a withdrawal

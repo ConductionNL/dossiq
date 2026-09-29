@@ -5,12 +5,12 @@ Tier: V1. Kind: code. Halves: portaliq `cases-my-cases-page`,
 
 ## 1. Audiences
 
-- [ ] 1.1 `getAudiences()` adds `client`; `getContribution()` answers the citizen manifest for `client` and `citizen`, and adds the case collection to the supplier manifest (design D1).
+- [ ] 1.1 (client and citizen done in dossiq#3152, `testAResidentSignedInWithDigidReadsTheirCases`; the supplier half is open) `getAudiences()` adds `client`; `getContribution()` answers the citizen manifest for `client` and `citizen`, and adds the case collection to the supplier manifest (design D1).
   - unit: `PortalContributionProviderTest` asserts `mijnZaken` for `client`, `citizen` and `supplier`, and none for `inspector`
 
 ## 2. My cases
 
-- [ ] 2.1 `kind: 'cases'` and `closedField: 'endDate'` on `mijnZaken` (design D2).
+- [x] 2.1 `kind: 'cases'` and `closedField: 'endDate'` on `mijnZaken` (design D2), with `caseTypeField` and `caseTypeSource` (design D5). Test: `tests/Unit/Portal/PortalCaseDeclarationsTest.php::testTheCaseCollectionIsACasesCollection`.
   - unit: the provider test asserts both keys and that `endDate` is projected
 - [ ] 2.2 Live check: portaliq's `GET /portal/api/my-cases` lists a dossiq case for a DigiD dev session, and an ended case lands under Closed (closes dossiq#3152's first half).
 
