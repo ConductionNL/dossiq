@@ -2050,7 +2050,7 @@
 						"type": "integration",
 						"integrationId": "planninq-projects",
 						"title": "Projects",
-						"icon": "FolderStarOutline",
+						"icon": "FolderMultipleOutline",
 						"_note": "projects-from-planninq-on-the-case D1 (dossiq#3190). The projects run for this case live in planninq, so planninq renders them: a PLACEMENT of its planninq-projects leaf, beside the shillinq panels. The leaf scopes to projects whose caseReference is this case's uuid because the host forwards register dossiq and schema case (planninq src/integrations/projectScope.js), and its New project action opens planninq's dialog with the case linked. dossiq keeps no copy of a project. A leaf whose app is absent is never registered, so without planninq the panel is missing rather than empty, and no requiredApp is declared."
 					},
 					{
