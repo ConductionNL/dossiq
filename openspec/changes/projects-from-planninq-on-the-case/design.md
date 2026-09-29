@@ -40,6 +40,10 @@ per app, and a duck-typed check on the old id silently no-ops). The live
 check in tasks.md fails until planninq checks `dossiq`, and the finding is
 reported to the coordinator.
 
+Update at build (dossiq `7c931b7da`, planninq development `873e2a4`): planninq
+now checks `dossiq` (`CaseHandoverService::CASE_APP`), so D2 no longer blocks
+the live check.
+
 ## Declarative-vs-imperative decision (ADR-031)
 
 | Behaviour | Path | Rationale |

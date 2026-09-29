@@ -4,8 +4,8 @@ Tier: V1. Kind: config. Half: planninq `integration-case-bridge`.
 
 ## 1. The placement
 
-- [ ] 1.1 `lib/Settings/register.d/79-planninq-projects-leaf.json` appends `planninq-projects` to `case.linkedTypes`, and `CaseDetail` places the `case-projects` integration widget (design D1).
-  - unit: a schema test asserts the linked type; `npm run check:manifest`
+- [x] 1.1 `lib/Settings/register.d/79-planninq-projects-leaf.json` appends `planninq-projects` to `case.linkedTypes`, and `CaseDetail` places the `case-projects` integration widget (design D1).
+  - unit: `tests/Unit/Service/Planninq/PlanninqProjectsLeafDeclarationTest.php` (through the real fragment merger), `tests/vitest/siblingLeavesOnTheCase.spec.js`, `tests/Unit/LeafIntegrationDeclarationsTest.php::testEveryLinkedTypeResolves`; `npm run check:manifest`
 
 ## 2. Live check
 

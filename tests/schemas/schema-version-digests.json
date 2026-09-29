@@ -1391,6 +1391,10 @@
         "version": "",
         "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
+    "lib/Settings/register.d/79-planninq-projects-leaf.json::case": {
+        "version": "",
+        "digest": "a03ddc03548b6f4f1e1b67d743e8eb531b859ee26edabf38bc67d2d223249af9"
+    },
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::stufEndpoint": {
         "version": "1.0.0",
         "digest": "a1cfe11346d67143369a78181650c21f2ff0aeab4bd1d5ce3d0317c93e0051a5"
