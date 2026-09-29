@@ -193,14 +193,41 @@ class PortalContributionProvider {
 	 * {@see self::caseDocuments()} needs the documents reader, optional for
 	 * the same reason.
 	 *
-	 * @param CaseTimeline|null        $timeline  The one reader of the public feed, or null.
-	 * @param PortalCaseDocuments|null $documents The documents a resident may see on a case, or null.
+	 * {@see self::messageBoxRecipient()} needs the recipient reader, optional
+	 * for the same reason.
+	 *
+	 * @param CaseTimeline|null              $timeline   The one reader of the public feed, or null.
+	 * @param PortalCaseDocuments|null       $documents  The documents a resident may see on a case, or null.
+	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
 		private readonly ?PortalCaseDocuments $documents = null,
+		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The identity an inbox message goes to in the resident's government
+	 * message box, or null to keep it in the portal (dossiq#3192).
+	 *
+	 * Portaliq calls this server-side, passes the value into integriq's send
+	 * event and writes it nowhere. Who is named is decided in
+	 * {@see PortalMessageBoxRecipient}, once.
+	 *
+	 * @param string $messageId The portaalBericht uuid.
+	 *
+	 * @return string|null The applicant's BSN, or null.
+	 *
+	 * @spec openspec/changes/portal-message-box-recipient/tasks.md
+	 */
+	public function messageBoxRecipient(string $messageId): ?string {
+		if ($this->messageBox === null) {
+			return null;
+		}
+
+		return $this->messageBox->forMessage(messageId: $messageId);
+	}//end messageBoxRecipient()
 
 	/**
 	 * The documents a resident may see on one case (dossiq#3205).
@@ -550,6 +577,10 @@ class PortalContributionProvider {
 			[
 				'id' => 'berichten',
 				'kind' => 'inbox',
+				// A letter from the organisation to the applicant also goes to
+				// their government message box. Portaliq holds no BSN, so it
+				// asks this method for the recipient per message (dossiq#3192).
+				'messageBox' => ['recipientProvider' => 'messageBoxRecipient'],
 				'register' => self::REGISTER,
 				'schema' => 'portaalBericht',
 				'scopeField' => 'recipientRef',
