@@ -3792,6 +3792,7 @@ OC.L10N.register(
         "Mentions option to request voorlopige voorziening at the court": "Mentions option to request voorlopige voorziening at the court",
         "Merge": "Merge",
         "Merge into": "Merge into",
+        "Merge into one PDF": "Merge into one PDF",
         "Merge manually": "Merge manually",
         "Merge state": "Merge state",
         "Merge the bundle into it": "Merge the bundle into it",
