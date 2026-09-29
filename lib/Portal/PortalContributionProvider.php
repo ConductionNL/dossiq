@@ -190,12 +190,39 @@ class PortalContributionProvider {
 	 * PortalContributionProvider()` working: the manifest below is still pure
 	 * data, and only {@see self::caseTimeline()} needs the reader.
 	 *
-	 * @param CaseTimeline|null $timeline The one reader of the public feed, or null.
+	 * {@see self::caseDocuments()} needs the documents reader, optional for
+	 * the same reason.
+	 *
+	 * @param CaseTimeline|null        $timeline  The one reader of the public feed, or null.
+	 * @param PortalCaseDocuments|null $documents The documents a resident may see on a case, or null.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
+		private readonly ?PortalCaseDocuments $documents = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * The documents a resident may see on one case (dossiq#3205).
+	 *
+	 * Portaliq calls this only after it proved the case is the resident's,
+	 * never sends the `file` reference to the browser, and on a download asks
+	 * again and streams only an entry this returned. What is published is
+	 * decided in {@see PortalCaseDocuments}, once.
+	 *
+	 * @param string $caseId The case the resident is looking at.
+	 *
+	 * @return array<int, array<string, mixed>> `{id, title, kind, date, file, mimeType?, size?}` per document.
+	 *
+	 * @spec openspec/changes/portal-case-documents/tasks.md
+	 */
+	public function caseDocuments(string $caseId): array {
+		if ($this->documents === null) {
+			return [];
+		}
+
+		return $this->documents->forCase(caseId: $caseId);
+	}//end caseDocuments()
 
 	/**
 	 * The public entries on one case, as the portal's case timeline.
@@ -496,6 +523,13 @@ class PortalContributionProvider {
 				'timeline' => [
 					'label' => 'Wat er is gebeurd',
 					'provider' => 'caseTimeline',
+				],
+				// The documents the organisation publishes on the case, the
+				// decision first. The method answers per case, and dossiq
+				// decides what a resident may see (dossiq#3205).
+				'documents' => [
+					'label' => 'Stukken',
+					'provider' => 'caseDocuments',
 				],
 				// LISTED ON "MY CASES". Portaliq's merged case list keeps only
 				// collections of kind `cases` (PortalCaseListReader), and reads a
