@@ -85,6 +85,15 @@ to the coordinator. When portaliq checks the address, dossiq declares
 `referenceAddressField` naming the case field that holds the applicant's
 address, which is a follow-up because the case holds none today.
 
+## D5. Where the case types live
+
+Added 2026-09-29 (build-all lane, dossiq#3152). portaliq#907
+(`operate-show-per-case-type`) lets a portal administrator hide a case type,
+and lists the case types a case app declares with `caseTypeSource` on a
+`kind: cases` collection. `mijnZaken` declares `caseTypeField: 'caseType'`
+and `caseTypeSource: {register: dossiq, schema: caseType, labelField: title}`.
+The collection must be `kind: cases` first, so this lands with D2.
+
 ## Declarative-vs-imperative decision (ADR-031)
 
 | Behaviour | Path | Rationale |

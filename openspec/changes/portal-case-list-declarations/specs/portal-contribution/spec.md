@@ -44,3 +44,14 @@ against the case.
 - **GIVEN** a functional administrator editing a case type
 - **WHEN** they look at who may reach its cases from the portal
 - **THEN** "With a case number and an e-mail address" MUST be shown disabled with the sentence "Available once the portal checks the address against the case."
+
+### Requirement: The case list says where its case types live (REQ-PORTAL-017)
+`mijnZaken` MUST declare `caseTypeField: 'caseType'` and
+`caseTypeSource: {register: 'dossiq', schema: 'caseType', labelField: 'title'}`,
+so a portal administrator can hide a dossiq case type the portal has no
+request form for (portaliq `operate-show-per-case-type`, portaliq#907).
+
+#### Scenario: An administrator hides a case type without a form
+- **GIVEN** a dossiq case type "Melding openbare ruimte" that no portal request form names
+- **WHEN** a portal administrator opens the case types of their portal
+- **THEN** "Melding openbare ruimte" MUST be listed under its title, and hiding it MUST keep its cases off "My cases" in that portal

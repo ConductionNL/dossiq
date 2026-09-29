@@ -80,8 +80,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertNotEmpty($this->schemas, 'the register must declare schemas');
 	}
 
-	public function testAdvertisesThreeAudiences(): void {
-		$this->assertSame(['supplier', 'citizen', 'inspector'], $this->provider->getAudiences());
+	public function testAdvertisesFourAudiences(): void {
+		$this->assertSame(['supplier', 'citizen', 'client', 'inspector'], $this->provider->getAudiences());
 	}
 
 	public function testPrimaryAudienceFallbackIsSupplier(): void {
@@ -118,11 +118,12 @@ class PortalContributionProviderTest extends TestCase {
 		$ids = array_column($contribution['collections'], 'id');
 		$this->assertSame(['mijnZaken', 'berichten', 'verzoeken'], $ids);
 
-		// Three creates. The two that name a case were deferred until Portaliq
+		// Three creates and the one update a resident makes on their own
+		// case (dossiq#3152). The two creates that name a case were deferred until Portaliq
 		// could check a reference against the sender's own scope; they are
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
-		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage'], $actionIds);
+		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage', 'amendCase'], $actionIds);
 	}
 
 	/**
@@ -321,7 +322,7 @@ class PortalContributionProviderTest extends TestCase {
 	 * @return array<int, array<int, string>>
 	 */
 	public static function audienceProvider(): array {
-		return [['supplier'], ['citizen'], ['inspector']];
+		return [['supplier'], ['citizen'], ['client'], ['inspector']];
 	}
 
 	/**
