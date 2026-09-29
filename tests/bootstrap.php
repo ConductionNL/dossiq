@@ -655,6 +655,12 @@ foreach (['DocumentGeneratedEvent', 'DocumentGenerationRequestedEvent'] as $stub
 	}
 }
 
+// Filinq's detector refusal (dossiq#3191): FilinqRedactionClient recognises it
+// by name, so only the tests need the class.
+if (class_exists('\\OCA\\Filinq\\Exception\\DetectionUnavailableException') === false) {
+	include_once __DIR__ . '/Stubs/Filinq/Exception/DetectionUnavailableException.php';
+}
+
 // case-merge: OpenRegister's merge event. CaseMergeRegistrar names it by
 // `::class`, which does not autoload, so the registration is silent at runtime
 // without openregister and reads to the analysers as a class that does not
