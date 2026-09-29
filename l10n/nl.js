@@ -5070,6 +5070,7 @@ OC.L10N.register(
         "Project start (may be years in the future)": "Start van het project (kan jaren in de toekomst liggen)",
         "Project Start Date": "Startdatum van het project",
         "Projected payment date as planned in the financial system": "Verwachte betaaldatum zoals die in het financiële systeem staat",
+        "Projects": "Projecten",
         "Promote to case": "Omzetten naar zaak",
         "Prompt": "Prompt",
         "Prompt sent to the AI model (PII-stripped if enabled)": "Prompt die naar het AI-model is gestuurd (zonder persoonsgegevens wanneer dat aanstaat)",
