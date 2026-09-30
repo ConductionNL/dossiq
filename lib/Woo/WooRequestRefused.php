@@ -62,7 +62,7 @@ class WooRequestRefused extends RuntimeException {
 		private readonly string $reason,
 		private readonly string $detail = '',
 	) {
-		parent::__construct($reason);
+		parent::__construct(message: $reason);
 	}//end __construct()
 
 	/**

@@ -34,6 +34,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
+ * @covers \OCA\Dossiq\Woo\WooRequestForm
  */
 class WooRequestIntakeTest extends TestCase {
 

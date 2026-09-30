@@ -36,7 +36,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Woo;
 
-use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\IURLGenerator;
@@ -102,7 +101,7 @@ class WooRequestIntake {
 	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-the-dossier-records-the-request-it-started-req-wri-004
 	 */
 	public function start(array $request): array {
-		$wooRequest = $this->normalise(request: $request);
+		$wooRequest = (new WooRequestForm())->normalise(request: $request);
 		$subjectRef = trim((string)$request['subjectRef']);
 
 		$objectService = $this->settingsService->getObjectService();
@@ -151,69 +150,6 @@ class WooRequestIntake {
 		return '/index.php/apps/opencatalogi/' . $catalogSlug . '/' . $publicationId;
 	}//end publicationPath()
 
-	/**
-	 * Check the request and reduce it to what the case keeps.
-	 *
-	 * @param array<string, mixed> $request The request.
-	 *
-	 * @return array<string, string> The `wooRequest` the case carries.
-	 *
-	 * @throws WooRequestRefused When it cannot be used.
-	 */
-	private function normalise(array $request): array {
-		$text = fn (string $key): string => (is_scalar($request[$key] ?? null) === true) ? trim((string)$request[$key]) : '';
-
-		if ($text('subjectRef') === '') {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The request names no resident.');
-		}
-
-		if ($text('onderwerp') === '') {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'Say what the request is about.');
-		}
-
-		$origin = $text('origin');
-		if (in_array($origin, self::ORIGINS, true) === false) {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The origin must be portal or pipelinq.');
-		}
-
-		$from = $this->date(value: $text('periodeVan'));
-		$to = $this->date(value: $text('periodeTot'));
-		if ($from !== '' && $to !== '' && $from > $to) {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The period starts after it ends.');
-		}
-
-		return [
-			'onderwerp' => $text('onderwerp'),
-			'omschrijving' => $text('omschrijving'),
-			'periodeVan' => $from,
-			'periodeTot' => $to,
-			'origin' => $origin,
-			'originReference' => $text('originReference'),
-			'collectionId' => $text('collectionId'),
-		];
-	}//end normalise()
-
-	/**
-	 * A date as `Y-m-d`, or '' when none was given.
-	 *
-	 * @param string $value The value.
-	 *
-	 * @return string
-	 *
-	 * @throws WooRequestRefused When it is given and is not a date.
-	 */
-	private function date(string $value): string {
-		if ($value === '') {
-			return '';
-		}
-
-		$date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
-		if ($date === false || $date->format('Y-m-d') !== $value) {
-			throw new WooRequestRefused(WooRequestRefused::INVALID, 'A period date must be written as YYYY-MM-DD.');
-		}
-
-		return $value;
-	}//end date()
 
 	/**
 	 * The resident's own dossier, or a refusal that does not say whether it exists.
@@ -352,7 +288,11 @@ class WooRequestIntake {
 	private function writeCaseObjects(object $objectService, string $register, string $caseId, array $collection): void {
 		$schema = $this->settingsService->getConfigValue('case_object_schema');
 		foreach ((array)($collection['items'] ?? []) as $item) {
-			$publication = (is_array($item) === true) ? trim((string)($item['publication'] ?? '')) : '';
+			if (is_array($item) === false) {
+				continue;
+			}
+
+			$publication = trim((string)($item['publication'] ?? ''));
 			if ($publication === '') {
 				continue;
 			}
@@ -416,7 +356,11 @@ class WooRequestIntake {
 			return $title . ': ' . $note;
 		}
 
-		return ($title !== '') ? $title : $note;
+		if ($title !== '') {
+			return $title;
+		}
+
+		return $note;
 	}//end describe()
 
 	/**
