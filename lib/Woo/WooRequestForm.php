@@ -69,7 +69,7 @@ class WooRequestForm {
 			throw new WooRequestRefused(WooRequestRefused::INVALID, 'The period starts after it ends.');
 		}
 
-		return [
+		$request = [
 			'onderwerp' => $fields['onderwerp'],
 			'omschrijving' => $fields['omschrijving'],
 			'periodeVan' => $from,
@@ -78,7 +78,28 @@ class WooRequestForm {
 			'originReference' => $fields['originReference'],
 			'collectionId' => $fields['collectionId'],
 		];
+
+		// A date that was not given is left out, not written as '': the case
+		// schema declares both periods with `format: date`, which refuses ''.
+		return $this->withoutEmptyPeriods(request: $request);
 	}//end normalise()
+
+	/**
+	 * The request without the period dates that were not given.
+	 *
+	 * @param array<string, string> $request The request.
+	 *
+	 * @return array<string, string>
+	 */
+	private function withoutEmptyPeriods(array $request): array {
+		foreach (['periodeVan', 'periodeTot'] as $key) {
+			if ($request[$key] === '') {
+				unset($request[$key]);
+			}
+		}
+
+		return $request;
+	}//end withoutEmptyPeriods()
 
 	/**
 	 * A scalar as trimmed text, anything else as ''.

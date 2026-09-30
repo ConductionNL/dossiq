@@ -72,6 +72,12 @@ class WooRequestIntake {
 	public const SOURCE_PREFIX = 'dossiq:case:';
 
 	/**
+	 * The case's `intakeChannel` per origin, in the case schema's own enum.
+	 * The origin itself is kept in `wooRequest.origin`.
+	 */
+	public const INTAKE_CHANNEL = ['portal' => 'website', 'pipelinq' => 'other'];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
@@ -244,7 +250,7 @@ class WooRequestIntake {
 			// the type's processingDeadline (P28D).
 			'startDate' => date('Y-m-d'),
 			'portalSubject' => $subjectRef,
-			'intakeChannel' => $wooRequest['origin'],
+			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
 			'wooRequest' => $wooRequest,
 		];
 

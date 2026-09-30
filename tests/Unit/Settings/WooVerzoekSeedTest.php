@@ -90,7 +90,7 @@ class WooVerzoekSeedTest extends TestCase {
 		self::assertSame('P28D', $type['processingDeadline']);
 		self::assertTrue($type['extensionAllowed']);
 		self::assertSame('P14D', $type['extensionPeriod']);
-		self::assertSame('woo-verzoek-ontvangst', $type['initialStatus']);
+		self::assertSame('3c0f5a00-0000-4000-a000-00000000b001', $type['initialStatus']);
 	}//end testTheCaseTypeIsSeededUnderTheIdTheIntakeOpens()
 
 	/**
@@ -129,11 +129,12 @@ class WooVerzoekSeedTest extends TestCase {
 	 */
 	public function testThePortalWindowsOpenBeforeTheAssessment(): void {
 		$type = $this->wooObjects(schema: 'caseType')[0];
-		$first = ['woo-verzoek-ontvangst', 'woo-verzoek-ontvankelijkheid'];
+		// Status uuids, because the case's status is one and portaliq compares them.
+		$first = ['3c0f5a00-0000-4000-a000-00000000b001', '3c0f5a00-0000-4000-a000-00000000b002'];
 		self::assertSame($first, $type['portalAmendmentWindow']['openStatuses']);
 		self::assertSame($first, $type['portalWithdrawal']['openStatuses']);
-		self::assertSame('woo-verzoek-afgehandeld', $type['portalWithdrawal']['targetStatus']);
-		self::assertContains('woo-verzoek-ontvangst', $type['portalDocumentWindow']['openStatuses']);
+		self::assertSame('3c0f5a00-0000-4000-a000-00000000b008', $type['portalWithdrawal']['targetStatus']);
+		self::assertContains('3c0f5a00-0000-4000-a000-00000000b001', $type['portalDocumentWindow']['openStatuses']);
 	}//end testThePortalWindowsOpenBeforeTheAssessment()
 
 	/**

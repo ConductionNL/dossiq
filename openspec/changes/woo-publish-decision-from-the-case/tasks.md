@@ -70,3 +70,5 @@ Added 2026-09-30. Design D-5 to D-8.
   - unit: `PortalContributionProviderTest` asserts the rule for `citizen` and `client`
 - [x] 5.4 The assessment schema ships and publishing reads the case's informatieobjecten (D-9).
   - unit: `WooPublishOnTheRealRegisterTest` takes its configuration from the merged register and the slug map, assesses an uploaded document and publishes it with its file
+- [x] 5.5 Every Woo write and seed row fits its schema by value (D-10).
+  - unit: `WooWritesMatchTheRealSchemasTest` (seed rows, decision, assessment, request case and case objects, publish and withdraw)

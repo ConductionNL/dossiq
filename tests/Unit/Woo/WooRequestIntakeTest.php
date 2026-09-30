@@ -153,7 +153,7 @@ class WooRequestIntakeTest extends TestCase {
 		self::assertSame('Parkeerbeleid centrum', $case['title']);
 		self::assertSame('Alle stukken over het parkeerbeleid.', $case['description']);
 		self::assertSame('status-ontvangst', $case['status']);
-		self::assertSame('portal', $case['intakeChannel']);
+		self::assertSame('website', $case['intakeChannel']);
 		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $case['startDate']);
 		self::assertSame(
 			[
@@ -252,7 +252,7 @@ class WooRequestIntakeTest extends TestCase {
 		$case = $this->store->row(schema: 'case', uuid: $result['caseId']);
 		self::assertSame(WooRequestIntake::CASE_TYPE_ID, $case['caseType']);
 		self::assertSame(self::RESIDENT, $case['portalSubject']);
-		self::assertSame('pipelinq', $case['intakeChannel']);
+		self::assertSame('other', $case['intakeChannel']);
 		self::assertSame('pipelinq:ticket:42', $case['wooRequest']['originReference']);
 		self::assertCount(2, $this->store->all(schema: 'caseObject'));
 	}//end testAConvertedQuestionOpensTheSameKindOfCase()

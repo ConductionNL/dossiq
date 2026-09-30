@@ -46,9 +46,18 @@ class WOODecisionService {
 	use SearchesObjects;
 
 	/**
-	 * Decision type name for WOO besluiten.
+	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
+	 * which the Woo request case type lists in its `decisionTypes`.
+	 *
+	 * 🔴 THE UUID, NOT THE NAME. `decision.decisionType` is a uuid reference
+	 * to a decisionType row; the name `WOO-besluit` was refused by
+	 * OpenRegister on the first real save (e2e Woo journey, portaliq#1001),
+	 * so assembling a decision answered 500.
+	 *
+	 * @var string
 	 */
-	private const DECISION_TYPE_TITLE = 'WOO-besluit';
+	public const DECISION_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000d001';
+
 
 	/**
 	 * Constructor.
@@ -117,7 +126,7 @@ class WOODecisionService {
 		$besluitData = array_merge(
 			[
 				'case' => $caseId,
-				'decisionType' => self::DECISION_TYPE_TITLE,
+				'decisionType' => self::DECISION_TYPE_ID,
 				'decisionDate' => date('Y-m-d'),
 				'description' => 'WOO besluit voor zaak ' . $caseId,
 				'wooSummary' => $summary,

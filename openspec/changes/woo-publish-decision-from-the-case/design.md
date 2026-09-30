@@ -161,3 +161,25 @@ Found by the end-to-end Woo journey (portaliq#1001) on a real instance:
   `fileId`. `OCA\Dossiq\Woo\WooCaseDocuments` lists those (legacy
   `document_schema` rows after them) and loads one with its file content, and
   both the assessment and the publication use it.
+
+### D-10. Every Woo write fits its schema by value, not only by key
+
+Found by the e2e Woo journey on :8080 (portaliq#1001):
+
+- The Woo decision was written with `decisionType: "WOO-besluit"`, a name where
+  the decision schema declares the uuid of a `decisionType`, so assembling a
+  decision answered 500. A `WOO-besluit` decision type is now seeded with a
+  fixed uuid, the Woo case type lists it in `decisionTypes`, and the decision
+  names it by that uuid.
+- The seeded Woo case type never imported: its statuses and result types named
+  the type by slug, and the type named its initial status by slug, where the
+  schemas declare uuids. Every Woo seed row now carries a fixed uuid and every
+  reference names one, the portal windows included (a case's status is a uuid).
+- A request without a period wrote `''` into two `format: date` properties, and
+  `intakeChannel` got `portal`, which is not in its enum. Empty periods are left
+  out, and the channel is `website` (portal) or `other` (pipelinq); the origin
+  itself stays in `wooRequest.origin`.
+
+`tests/Support/RealSchemaValidator.php` validates a payload against the merged
+register with opis/json-schema, formats included, and
+`WooWritesMatchTheRealSchemasTest` runs every Woo write through it.
