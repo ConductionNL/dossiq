@@ -2278,6 +2278,33 @@
 									}
 								},
 								{
+									"label": "Woo publication",
+									"widget": {
+										"id": "case-woo-publication",
+										"type": "data",
+										"title": "Woo publication",
+										"icon": "Publish",
+										"_note": "woo-publish-decision-from-the-case D-4. Only on a Woo request case: neither field has a default, so hideEmpty keeps the section off every other case.",
+										"content": {
+											"title": "Woo publication",
+											"columns": 2,
+											"include": [
+												"wooPublicationStatus",
+												"wooPublicationUrl"
+											],
+											"hideEmpty": true,
+											"overrides": {
+												"wooPublicationStatus": {
+													"editable": false
+												},
+												"wooPublicationUrl": {
+													"editable": false
+												}
+											}
+										}
+									}
+								},
+								{
 									"label": "Handled elsewhere",
 									"widget": {
 										"id": "case-external-home",
@@ -3570,6 +3597,44 @@
 							"field": "isAdmin",
 							"op": "eq",
 							"value": true
+						}
+					},
+					{
+						"id": "woo-publish",
+						"type": "api-call",
+						"label": "Publish (Woo)",
+						"icon": "Publish",
+						"url": "/apps/dossiq/api/cases/@objectId/woo/publish",
+						"method": "POST",
+						"successMessage": "The decision is published.",
+						"visibleWhen": {
+							"any": [
+								{
+									"field": "wooPublicationStatus",
+									"op": "eq",
+									"value": "ready"
+								},
+								{
+									"field": "wooPublicationStatus",
+									"op": "eq",
+									"value": "withdrawn"
+								}
+							]
+						}
+					},
+					{
+						"id": "woo-withdraw",
+						"type": "api-call",
+						"label": "Withdraw publication",
+						"icon": "PublishOff",
+						"url": "/apps/dossiq/api/cases/@objectId/woo/withdraw",
+						"method": "POST",
+						"confirm": true,
+						"successMessage": "The publication is withdrawn.",
+						"visibleWhen": {
+							"field": "wooPublicationStatus",
+							"op": "eq",
+							"value": "published"
 						}
 					}
 				]

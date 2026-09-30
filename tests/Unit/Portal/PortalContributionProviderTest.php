@@ -161,6 +161,36 @@ class PortalContributionProviderTest extends TestCase {
 	}
 
 	/**
+	 * The resident hears once when the decision on their Woo request is published.
+	 *
+	 * A portaliq change rule on a field the case list projects, so portaliq's
+	 * normaliser keeps it: inbox and email, no Berichtenbox.
+	 *
+	 * @dataProvider residentAudienceProvider
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 */
+	public function testTheResidentIsToldWhenTheWooDecisionIsPublished(string $audience): void {
+		$contribution = $this->provider->getContribution(['audience' => $audience]);
+
+		$this->assertSame(
+			[[
+				'ruleKey' => 'dossiq.wooRequest.published',
+				'collection' => 'mijnZaken',
+				'on' => ['field' => 'wooPublicationUrl', 'operator' => 'changed'],
+				'titleField' => 'title',
+			]],
+			$contribution['notifications']
+		);
+
+		$cases = $contribution['collections'][0];
+		$this->assertContains('wooPublicationUrl', $cases['fields']);
+		$this->assertContains('title', $cases['fields']);
+	}//end testTheResidentIsToldWhenTheWooDecisionIsPublished()
+
+	/**
 	 * The audiences a resident arrives as.
 	 *
 	 * @return array<int, array<int, string>>

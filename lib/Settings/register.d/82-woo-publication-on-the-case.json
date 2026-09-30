@@ -1,0 +1,33 @@
+{
+  "_note": "woo-publish-decision-from-the-case design D-2 (and hydra woo-citizen-journey C3/C6). The case carries its Woo publication state so a header action can gate on it and portaliq's change rule dossiq.wooRequest.published can fire on wooPublicationUrl. Written only by WOODecisionService::assembleDecision (ready), WooPublicationService::publish (published + url) and ::withdraw (withdrawn). No default: a case that is no Woo request carries neither field, so the Data tab section stays hidden (hideEmpty).",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "wooPublicationStatus": {
+            "type": "string",
+            "enum": [
+              "none",
+              "ready",
+              "published",
+              "withdrawn"
+            ],
+            "title": "Woo publication",
+            "description": "Whether the Woo decision of this case is ready, published or withdrawn. Set by dossiq, not by hand.",
+            "facetable": true,
+            "matchType": "exact",
+            "inputControl": "select"
+          },
+          "wooPublicationUrl": {
+            "type": "string",
+            "format": "uri",
+            "title": "Woo publication link",
+            "description": "Where the published Woo decision can be read. Set by dossiq when it publishes.",
+            "matchType": "exact",
+            "inputControl": "text"
+          }
+        }
+      }
+    }
+  }
+}

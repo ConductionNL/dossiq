@@ -140,6 +140,12 @@ class PortalContributionProvider {
 		'receivedAt',
 		'termStartsAt',
 		'receivedOutsideWorkingHours',
+		// WHERE THE DECISION ON A WOO REQUEST CAN BE READ. Set by dossiq when
+		// the decision is published (woo-publish-decision-from-the-case D-8);
+		// the change rule `dossiq.wooRequest.published` fires on it, so the
+		// notice links to a case that shows the link. A public URL, nothing
+		// internal.
+		'wooPublicationUrl',
 	];
 
 	/**
@@ -178,7 +184,15 @@ class PortalContributionProvider {
 		'receivedAt',
 		'termStartsAt',
 		'receivedOutsideWorkingHours',
+		'wooPublicationUrl',
 	];
+
+	/**
+	 * The rule key a resident is told by when the decision on their Woo request is published.
+	 *
+	 * @var string
+	 */
+	public const RULE_WOO_REQUEST_PUBLISHED = 'dossiq.wooRequest.published';
 
 	/**
 	 * Constructor.
@@ -511,9 +525,35 @@ class PortalContributionProvider {
 			'label' => 'Dossiq',
 			'collections' => $this->citizenCollections(),
 			'actions' => $this->citizenActions(),
-			'notifications' => [],
+			'notifications' => $this->citizenNotifications(),
 		];
 	}//end citizenContribution()
+
+	/**
+	 * What a resident is told about, as portaliq change rules (hydra woo-citizen-journey C3).
+	 *
+	 * `dossiq.wooRequest.published` fires when a case in `mijnZaken` gets its
+	 * `wooPublicationUrl`: once, on the first publish of its Woo decision. A
+	 * republish keeps the same link and a withdrawal leaves it, so neither
+	 * tells the resident twice. portaliq writes the inbox message and sends
+	 * the email and Berichtenbox copy by the resident's preferences; dossiq
+	 * writes no `portalMessage` of its own, because portaliq dispatches only
+	 * the messages it writes (woo-publish-decision-from-the-case D-8).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 */
+	private function citizenNotifications(): array {
+		return [
+			[
+				'ruleKey' => self::RULE_WOO_REQUEST_PUBLISHED,
+				'collection' => 'mijnZaken',
+				'on' => ['field' => 'wooPublicationUrl', 'operator' => 'changed'],
+				'titleField' => 'title',
+			],
+		];
+	}//end citizenNotifications()
 
 	/**
 	 * The collections a citizen may list, and what each one is scoped by.

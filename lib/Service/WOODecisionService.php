@@ -130,6 +130,8 @@ class WOODecisionService {
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
 
+		$this->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
+
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
 			['app' => Application::APP_ID],
@@ -143,6 +145,47 @@ class WOODecisionService {
 			'assessmentCount' => count($assessments),
 		];
 	}//end assembleDecision()
+
+	/**
+	 * The case can now be published: it reads `wooPublicationStatus: ready`
+	 * (woo-publish-decision-from-the-case design D-2), which is what shows the
+	 * Publish (Woo) header action. A decision that was published before keeps
+	 * the case's `published` state; re-assembling does not unpublish.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register The dossiq register.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	private function markCaseReady(object $objectService, string $register, string $caseId): void {
+		try {
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->settingsService->getConfigValue('case_schema'),
+				id: $caseId,
+			);
+			if ($case === null || ($case['wooPublicationStatus'] ?? '') === 'published') {
+				return;
+			}
+
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->settingsService->getConfigValue('case_schema'),
+				id: $caseId,
+				changes: ['wooPublicationStatus' => 'ready'],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'WOODecisionService: the case could not show that its decision is ready to publish',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+			);
+		}
+	}//end markCaseReady()
 
 	/**
 	 * Guard that every document of a case carries an assessment.
