@@ -738,6 +738,12 @@ class PortalContributionProvider {
 			'label' => 'Start een Woo-verzoek',
 			'endpoint' => '/index.php/apps/dossiq/api/portal/woo-verzoek',
 			'method' => 'POST',
+			// ON THE DOSSIER PAGE (hydra woo-citizen-journey C7): portaliq shows
+			// the action on opencatalogi's collection detail, proves the dossier
+			// is the resident's through opencatalogi's own scope and forwards it
+			// with `collectionId` set. WooRequestIntake checks ownership again.
+			'attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection'],
+			'rowField' => 'collectionId',
 			'minTrust' => 'low',
 			'fields' => ['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'],
 			'fieldConfigs' => [

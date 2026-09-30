@@ -152,6 +152,8 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertSame('POST', $action['method']);
 		$this->assertSame(['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'], $action['fields']);
 		$this->assertSame('Start een Woo-verzoek', $action['label']);
+		$this->assertSame(['app' => 'opencatalogi', 'schema' => 'collection'], $action['attachTo']);
+		$this->assertSame('collectionId', $action['rowField']);
 		foreach (['type', 'register', 'schema', 'subjectRef', 'origin'] as $absent) {
 			$this->assertArrayNotHasKey($absent, $action);
 			$this->assertNotContains($absent, $action['fields']);
