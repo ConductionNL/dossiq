@@ -115,11 +115,29 @@ class PortalAssertionVerifier {
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) one fail-closed guard per attack on an auth boundary.
-	 * @SuppressWarnings(PHPMD.NPathComplexity)      the guards are sequential early returns.
 	 */
 	public function verify(string $jwt): ?array {
+		$claims = $this->signedClaims(jwt: $jwt);
+		if ($claims === null) {
+			return null;
+		}
+
+		$refusal = $this->claimRefusal(claims: $claims);
+		if ($refusal !== null) {
+			return $this->reject(reason: $refusal);
+		}
+
+		return $claims;
+	}//end verify()
+
+	/**
+	 * The claims of a well-formed HS256 token signed with portaliq's secret, or null.
+	 *
+	 * @param string $jwt The raw token.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function signedClaims(string $jwt): ?array {
 		$secret = $this->secret();
 		if ($secret === null) {
 			return $this->reject(reason: 'no usable signing secret');
@@ -147,32 +165,53 @@ class PortalAssertionVerifier {
 			return $this->reject(reason: 'malformed claims');
 		}
 
+		return $claims;
+	}//end signedClaims()
+
+	/**
+	 * Why signed claims are still refused, or null when they are an assertion for a subject, now.
+	 *
+	 * @param array<string, mixed> $claims The signed claims.
+	 *
+	 * @return string|null
+	 */
+	private function claimRefusal(array $claims): ?string {
 		if (($claims['use'] ?? '') !== self::USE_ASSERTION) {
-			return $this->reject(reason: 'not an assertion');
+			return 'not an assertion';
 		}
 
 		if (($claims['iss'] ?? '') !== self::ISSUER) {
-			return $this->reject(reason: 'unexpected issuer');
-		}
-
-		$now = time();
-		$exp = ($claims['exp'] ?? null);
-		if (is_int($exp) === false || $exp <= $now) {
-			return $this->reject(reason: 'expired or missing exp');
-		}
-
-		$iat = ($claims['iat'] ?? null);
-		if (is_int($iat) === false || $iat > ($now + self::IAT_LEEWAY) || $iat > $exp) {
-			return $this->reject(reason: 'implausible iat');
+			return 'unexpected issuer';
 		}
 
 		$sub = ($claims['sub'] ?? null);
 		if (is_string($sub) === false || $sub === '') {
-			return $this->reject(reason: 'missing subject');
+			return 'missing subject';
 		}
 
-		return $claims;
-	}//end verify()
+		return $this->timeRefusal(exp: ($claims['exp'] ?? null), iat: ($claims['iat'] ?? null));
+	}//end claimRefusal()
+
+	/**
+	 * Why the validity window is refused, or null when it holds now.
+	 *
+	 * @param mixed $exp The `exp` claim.
+	 * @param mixed $iat The `iat` claim.
+	 *
+	 * @return string|null
+	 */
+	private function timeRefusal(mixed $exp, mixed $iat): ?string {
+		$now = time();
+		if (is_int($exp) === false || $exp <= $now) {
+			return 'expired or missing exp';
+		}
+
+		if (is_int($iat) === false || $iat > ($now + self::IAT_LEEWAY) || $iat > $exp) {
+			return 'implausible iat';
+		}
+
+		return null;
+	}//end timeRefusal()
 
 	/**
 	 * portaliq's dedicated secret, or null when there is no usable one.

@@ -97,6 +97,7 @@ const SILENT = [
 	'toetsRegisterB',
 	'tweedeToets',
 	'voorbereiding',
+	'wooRequest',
 ]
 
 /**
