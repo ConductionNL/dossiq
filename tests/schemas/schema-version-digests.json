@@ -612,7 +612,7 @@
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
     "lib/Settings/dossiq_register.json::case": {
-        "version": "1.32.0",
+        "version": "1.33.0",
         "digest": "037f1e49c678672fc7c769f37547804a8ea528a55ffd0c6c9487dccd37ca4884"
     },
     "lib/Settings/dossiq_register.json::case-location": {
@@ -1406,6 +1406,10 @@
     "lib/Settings/register.d/80-stuf-zkn-outbound.json::zaaksysteemMapping": {
         "version": "1.0.0",
         "digest": "14032a4608edb32ef96e09fdf5dcd87bed53a0eb15adaef6bfcfb21143496872"
+    },
+    "lib/Settings/register.d/81-woo-verzoek.json::case": {
+        "version": "",
+        "digest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
     },
     "lib/Settings/register.d/95-dmn-decision-tables.json::decisionTable": {
         "version": "1.0.0",
