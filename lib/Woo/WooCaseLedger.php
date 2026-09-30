@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Woo;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -48,12 +49,31 @@ class WooCaseLedger {
 	 *
 	 * @param SettingsService $settingsService Register, schemas and OpenRegister.
 	 * @param LoggerInterface $logger          Logger.
+	 * @param IURLGenerator|null $urlGenerator Makes the publication link absolute.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly ?IURLGenerator $urlGenerator = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * An absolute link for the resident, or the path when no URL generator is wired.
+	 *
+	 * @param string $path The instance-local path.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	public function absolute(string $path): string {
+		if ($this->urlGenerator === null) {
+			return $path;
+		}
+
+		return $this->urlGenerator->getAbsoluteURL($path);
+	}//end absolute()
 
 	/**
 	 * The case's one Woo decision: the decision on the case that carries a `wooSummary`.

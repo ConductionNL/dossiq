@@ -146,3 +146,18 @@ page that shows it. When portaliq is absent nothing listens and nothing fails.
 The notice goes to the portal inbox and by email only. Berichtenbox is not
 used in this journey (Ruben, 30 September 2026): it needs the resident's BSN,
 and nothing here stores one.
+
+### D-9. The assessment has a schema, and publishing reads the case's own documents
+
+Found by the end-to-end Woo journey (portaliq#1001) on a real instance:
+
+- `POST /api/cases/{id}/woo/assessment` answered 400 because no shipped schema
+  set `woo_assessment_schema`. `register.d/83-woo-document-assessment.json`
+  ships `wooDocumentAssessment` (not `wooAssessment`, which opencatalogi owns;
+  slugs are global on a shared OpenRegister), and the slug map sets the key.
+- The assessment and the publication read `document_schema` rows with a `case`
+  field, which nothing on a case writes. A document uploaded on a case is an
+  `informatieobject` joined by `zaakinformatieobject`, with its file in
+  `fileId`. `OCA\Dossiq\Woo\WooCaseDocuments` lists those (legacy
+  `document_schema` rows after them) and loads one with its file content, and
+  both the assessment and the publication use it.

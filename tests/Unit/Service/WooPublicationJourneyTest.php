@@ -26,6 +26,7 @@ use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Woo\WooCaseLedger;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use OCP\IURLGenerator;
@@ -124,7 +125,7 @@ class WooPublicationJourneyTest extends TestCase {
 			$apps,
 			$this->createMock(LoggerInterface::class),
 			$this->return,
-			$urls,
+			new WooCaseLedger(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
 		);
 	}//end setUp()
 

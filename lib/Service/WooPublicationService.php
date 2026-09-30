@@ -40,10 +40,10 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
+use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
-use OCP\IURLGenerator;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -100,7 +100,8 @@ class WooPublicationService {
 	 * @param IAppManager $appManager Nextcloud app manager for feature detection.
 	 * @param LoggerInterface $logger Logger.
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
-	 * @param IURLGenerator|null $urlGenerator Makes the publication link absolute for the resident.
+	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
+	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -109,9 +110,10 @@ class WooPublicationService {
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
 		private readonly ?WooDossierReturn $dossierReturn = null,
-		private readonly ?IURLGenerator $urlGenerator = null,
+		?WooCaseLedger $caseLedger = null,
+		private readonly ?WooCaseDocuments $caseDocuments = null,
 	) {
-		$this->caseLedger = new WooCaseLedger(settingsService: $settingsService, logger: $logger);
+		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
 
 	/**
@@ -323,7 +325,7 @@ class WooPublicationService {
 
 		$this->caseLedger->writeCaseState(
 			caseId: $caseId,
-			changes: ['wooPublicationStatus' => self::STATUS_PUBLISHED, 'wooPublicationUrl' => $this->absolute(path: $publicationUrl)],
+			changes: ['wooPublicationStatus' => self::STATUS_PUBLISHED, 'wooPublicationUrl' => $this->caseLedger->absolute(path: $publicationUrl)],
 		);
 
 		$this->dossierReturn?->append(case: $case, publicationId: $publicationId, title: (string)$payload['title']);
@@ -341,20 +343,6 @@ class WooPublicationService {
 	}//end publish()
 
 
-	/**
-	 * An absolute link for the resident, or the path when no URL generator is wired.
-	 *
-	 * @param string $path The instance-local path.
-	 *
-	 * @return string
-	 */
-	private function absolute(string $path): string {
-		if ($this->urlGenerator === null) {
-			return $path;
-		}
-
-		return $this->urlGenerator->getAbsoluteURL($path);
-	}//end absolute()
 
 	/**
 	 * Load the case and decision objects for a publish/withdraw request.
@@ -409,6 +397,11 @@ class WooPublicationService {
 		}
 
 		$documentLoader = function (string $documentRef) use ($objectService, $register, $documentSchema): ?array {
+			// The informatieobject the case upload wrote, with its file read in.
+			if ($this->caseDocuments !== null) {
+				return $this->caseDocuments->load(documentId: $documentRef);
+			}
+
 			if (empty($documentSchema) === true || $documentRef === '') {
 				return null;
 			}
