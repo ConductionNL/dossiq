@@ -66,17 +66,20 @@ A portaliq `create` action writes one object through its flat writer. This
 request writes a case, case objects and a collection update, so it is an
 endpoint action:
 
-- `startWooVerzoek`, `type: create`, `endpoint:
-  /index.php/apps/dossiq/api/portal/woo-verzoek`, `method: POST`, `fields:
-  [collectionId, onderwerp, omschrijving, periodeVan, periodeTot]`, offered
-  to `citizen` and `client` (both read the citizen manifest).
+- `startWooVerzoek`, `endpoint: /index.php/apps/dossiq/api/portal/woo-verzoek`,
+  `method: POST`, `fields: [collectionId, onderwerp, omschrijving, periodeVan,
+  periodeTot]`, offered to `citizen` and `client` (both read the citizen
+  manifest). No `type`, `register` or `schema`: that is the vocabulary of the
+  fleet's reference endpoint action (petstore `renamePet`), and it keeps
+  portaliq's flat writer from ever taking the action for a create of its own.
 - `PortalWooRequestController::start` is `#[PublicPage]` and
   `#[NoCSRFRequired]`: the caller is portaliq's server. The `X-Portal-Subject`
   assertion is the authentication, verified by `PortalAssertionVerifier`
   (copied from the fleet reference in petstore, with portaliq's current secret
   rule: the dedicated `jwt_signing_secret`, no fallback). `sub` is the
   `subjectRef`; the audience must be `citizen` or `client`.
-- Answers: 201 `{caseId, caseUrl}`, 401 for a bad assertion, 400 for an
+- Answers: 201 `{caseId, caseUrl}`, 401 for a bad assertion, 403 for another
+  audience, 400 for an
   unusable request, 404 for a dossier that is not the resident's, 503 when
   OpenRegister or the case type is missing.
 

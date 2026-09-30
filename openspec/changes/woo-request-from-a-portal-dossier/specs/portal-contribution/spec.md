@@ -2,13 +2,14 @@
 
 ### Requirement: A resident starts a Woo request from the portal (REQ-PORTAL-020)
 The citizen contribution, served to `citizen` and `client`, MUST offer the
-endpoint action `startWooVerzoek` (`type: create`, `POST
+endpoint action `startWooVerzoek` (`POST
 /index.php/apps/dossiq/api/portal/woo-verzoek`, fields `collectionId`,
 `onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`). The receiving
 route MUST verify portaliq's `X-Portal-Subject` assertion before anything else,
 take the resident from its `sub` claim and never from the body, and call
 `WooRequestIntake::start()` with `origin: portal`. It MUST answer 201 with
-`{caseId, caseUrl}`, 401 for a missing or invalid assertion, 400 for an
+`{caseId, caseUrl}`, 401 for a missing or invalid assertion, 403 for an
+audience other than `citizen` or `client`, 400 for an
 unusable request and 404 for a dossier that is not the resident's. Implements
 hydra `openspec/changes/woo-citizen-journey/specs/woo-citizen-journey/spec.md`, "A Woo request MUST be created by one dossiq path, from the portal and
 from pipelinq alike".
