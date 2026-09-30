@@ -102,6 +102,10 @@ class SettingsService {
 		'woo_publication_register' => 'publication',
 		'woo_publication_schema' => 'publication',
 		'woo_publication_document_schema' => 'document',
+		// The resident's dossier (hydra woo-citizen-journey C1): opencatalogi's
+		// `collection`, in the same register as its publications.
+		'woo_collection_register' => 'publication',
+		'woo_collection_schema' => 'collection',
 	];
 
 	/**

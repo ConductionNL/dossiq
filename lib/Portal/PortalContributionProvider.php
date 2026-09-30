@@ -707,8 +707,56 @@ class PortalContributionProvider {
 				],
 			],
 			$this->amendCaseAction(),
+			$this->startWooVerzoekAction(),
 		];
 	}//end citizenActions()
+
+	/**
+	 * A resident starts a Woo request from their dossier (hydra woo-citizen-journey C5).
+	 *
+	 * AN ENDPOINT ACTION, NOT A FLAT CREATE. The request writes a case, one
+	 * case object per dossier item and a link back on the dossier, which
+	 * portaliq's writer cannot do in one object. portaliq forwards the form to
+	 * dossiq with a signed `X-Portal-Subject` assertion; dossiq takes the
+	 * resident from that assertion, checks the dossier is theirs and calls
+	 * {@see \OCA\Dossiq\Woo\WooRequestIntake}, the one path pipelinq's
+	 * conversion uses too. No `type`, `register` or `schema`, the vocabulary of
+	 * the fleet's reference endpoint action, so the flat writer never takes it
+	 * for one of its own creates.
+	 *
+	 * `fields` is the whitelist portaliq rebuilds the body from. `subjectRef`
+	 * and `origin` are not on it: the first comes from the assertion, the
+	 * second is always `portal` here.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 */
+	private function startWooVerzoekAction(): array {
+		return [
+			'id' => 'startWooVerzoek',
+			'label' => 'Start een Woo-verzoek',
+			'endpoint' => '/index.php/apps/dossiq/api/portal/woo-verzoek',
+			'method' => 'POST',
+			// ON THE DOSSIER PAGE (hydra woo-citizen-journey C7): portaliq shows
+			// the action on opencatalogi's collection detail, proves the dossier
+			// is the resident's through opencatalogi's own scope and forwards it
+			// with `collectionId` set. WooRequestIntake checks ownership again.
+			'attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection'],
+			'rowField' => 'collectionId',
+			'minTrust' => 'low',
+			'fields' => ['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'],
+			'fieldConfigs' => [
+				'collectionId' => ['visible' => false],
+				'onderwerp' => ['label' => 'Waar gaat uw verzoek over?', 'required' => true],
+				'omschrijving' => ['label' => 'Welke informatie wilt u hebben?', 'size' => 'large'],
+				'periodeVan' => ['label' => 'Periode vanaf'],
+				'periodeTot' => ['label' => 'Periode tot en met'],
+			],
+			'submitLabel' => 'Verzoek versturen',
+			'successMessage' => 'Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken.',
+		];
+	}//end startWooVerzoekAction()
 
 	/**
 	 * The one update a resident may make on their own case.
