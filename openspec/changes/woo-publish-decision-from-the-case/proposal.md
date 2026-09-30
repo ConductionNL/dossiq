@@ -96,7 +96,7 @@ consumed as they are (`woo-publication-in-process-object-writes`, archived).
 
 The Woo citizen journey (hydra `woo-citizen-journey`, C6 and C3) adds three
 things to this change: the publication carries `publicationKind`,
-`informatiecategorie`, `caseReference` and `period`, with its documents as files
+`wooCategory`, `caseReference` and `period`, with its documents as files
 on the publication; a decision on a request started from a dossier is appended
 to that dossier; and the resident is told through portaliq's change rule
 `dossiq.wooRequest.published`. The request side is in

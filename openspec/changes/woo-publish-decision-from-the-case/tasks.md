@@ -55,8 +55,7 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
 
 Added 2026-09-30. Design D-5 to D-8.
 
-- [ ] 5.1 `buildPayload()` writes `publicationKind`, `informatiecategorie`,
-  `wooCategory`, `caseReference`, `period` and `publicationDate` (D-5);
+- [ ] 5.1 `buildPayload()` writes `publicationKind`, `wooCategory`, `caseReference`, `period` and `publicationDate` (D-5);
   `withdraw()` writes `depublicationDate`; documents become files on the
   publication (D-6).
   - unit: `WooPublicationServiceTest` asserts the payload, the file attach on

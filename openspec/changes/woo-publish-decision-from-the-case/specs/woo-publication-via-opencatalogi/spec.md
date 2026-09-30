@@ -59,8 +59,8 @@ keeps its publication id, url and status.
 
 ### Requirement: The publication carries the Woo journey fields (REQ-WPI-007)
 A publication created from a case MUST carry `publicationKind` `woo-besluit`,
-`informatiecategorie` (the TOOI code, `infocat014` for a Woo decision, also
-written to opencatalogi's existing `wooCategory`), `caseReference` (the case
+`wooCategory` (opencatalogi's existing information category, `infocat014`
+for a Woo decision), `caseReference` (the case
 uuid), `period` `{from, to}` from the request's `periodeVan` and `periodeTot`,
 and a `publicationDate` of the moment it is published. The disclosable
 documents MUST be files attached to the publication object itself. Withdrawing
@@ -70,7 +70,7 @@ paths MUST create a public, searchable publication".
 #### Scenario: A published decision has its category, period and documents
 - **GIVEN** a decided Woo request case for the period 2025 with two public documents
 - **WHEN** the Woo coordinator publishes it
-- **THEN** the publication MUST carry `publicationKind` woo-besluit, `informatiecategorie` infocat014, the case uuid and the period
+- **THEN** the publication MUST carry `publicationKind` woo-besluit, `wooCategory` infocat014, the case uuid and the period
 - **AND** both documents MUST be files on the publication
 
 #### Scenario: A withdrawn decision stops being public
@@ -84,8 +84,9 @@ When the case has `wooRequest.collectionId`, publishing MUST append one item
 collection, once per publication, without changing or removing any other item.
 The case MUST then read `wooPublicationUrl`, and the citizen contribution MUST
 declare the change rule `dossiq.wooRequest.published` on `mijnZaken` for that
-field, so portaliq writes the resident's notice and sends it by email and
-Berichtenbox as the resident prefers. A failure to reach the collection MUST be
+field, so portaliq writes the resident's notice in the portal inbox and sends
+it by email as the resident prefers. It MUST NOT be sent to the Berichtenbox,
+which needs a BSN this journey does not store. A failure to reach the collection MUST be
 logged and MUST NOT undo the publication. Implements hydra `openspec/changes/woo-citizen-journey/specs/woo-citizen-journey/spec.md`, "A decision on a
 request started from a dossier MUST come back to that dossier" and "Every
 answer, decision and alert MUST reach the resident through portaliq's notice
