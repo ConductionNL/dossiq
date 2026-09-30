@@ -25537,6 +25537,49 @@
         "owner": "s.elhaddad",
         "plannedFor": "2026-05-04",
         "state": "cancelled"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooDocumentAssessment",
+          "slug": "woodocumentassessment-woodocumentassessment-1-1"
+        },
+        "caseRef": "00000000-0000-4000-8000-000000000000",
+        "documentRef": "00000000-0000-4000-8000-000000000100",
+        "classification": "openbaar",
+        "weigeringsgronden": [],
+        "assessedBy": "admin",
+        "assessedAt": "2026-03-01T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooDocumentAssessment",
+          "slug": "woodocumentassessment-woodocumentassessment-2-2"
+        },
+        "caseRef": "00000000-0000-4000-8000-000000000001",
+        "documentRef": "00000000-0000-4000-8000-000000000101",
+        "classification": "deels_openbaar",
+        "weigeringsgronden": [
+          "5.1.5"
+        ],
+        "assessedBy": "admin",
+        "assessedAt": "2026-03-02T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "wooDocumentAssessment",
+          "slug": "woodocumentassessment-woodocumentassessment-3-3"
+        },
+        "caseRef": "00000000-0000-4000-8000-000000000002",
+        "documentRef": "00000000-0000-4000-8000-000000000102",
+        "classification": "niet_openbaar",
+        "weigeringsgronden": [
+          "5.2.4"
+        ],
+        "assessedBy": "admin",
+        "assessedAt": "2026-03-03T09:00:00+00:00"
       }
     ]
   }
