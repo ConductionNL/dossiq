@@ -96,3 +96,51 @@ reads "Nothing can be published yet: no document is assessed as public."
   nothing.
 - A mirror can drift. The three writers are the only writers, and the repair
   step is idempotent, so a re-run corrects a drift.
+
+## Woo journey additions (2026-09-30)
+
+Contract: hydra `openspec/changes/woo-citizen-journey/design.md` C6 and C3.
+Read against opencatalogi `development` `4f4c377a` (publication schema 0.0.5).
+
+### D-5. The publication fields
+
+`buildPayload()` adds `publicationKind: woo-besluit`, `wooCategory` (the
+mapper's code, `infocat014`: the existing field opencatalogi's Woo sitemap and
+search facet read; the settled contract has no `informatiecategorie` property),
+`caseReference` (the case uuid, as today) and `period: {from, to}` from `case.wooRequest`. `publicationDate` is the
+moment of publishing in ISO 8601: the schema declares a date-time, and public
+read access is `publicationDate <= now`. The payload stops sending
+`tooiCategorieUri`, `tooiCategorieNaam` and `documentCount`, which the schema
+does not declare and the store strips.
+
+### D-6. Documents are files on the publication
+
+opencatalogi's register has no `document` schema any more; documents are files
+attached to the publication (`attachments-are-files`). `attachDocument()` would
+throw on every publish. The disclosable documents are attached with
+`attachFile()` on the publication id. `withdraw()` writes `depublicationDate`,
+the schema's name, not `depublicatiedatum`.
+
+### D-7. Back to the dossier
+
+When `case.wooRequest.collectionId` is set, `publish()` reads the collection as
+the system and appends `{id, publication, attachment: null, note, addedAt,
+addedBy: "dossiq"}` unless an item for that publication is already there. It
+changes no other item. A failure is logged at warning and the publish still
+succeeds: the publication is the decision, the dossier item is a courtesy.
+
+### D-8. The notice rides portaliq's change rule
+
+C3 says the sender writes a `portalMessage`. portaliq's listener skips
+`portalMessage` creates ("dispatched by whoever wrote them"), so a message
+written by dossiq would reach the inbox and never the email.
+The path case notices already use is a change rule: the citizen contribution
+declares `{ruleKey: "dossiq.wooRequest.published", collection: "mijnZaken",
+on: {field: "wooPublicationUrl", operator: "changed"}, titleField: "title"}`, and portaliq writes the
+message and dispatches it when the field changes. `wooPublicationUrl` changes
+once, on the first publish, so a republish or a withdraw sends nothing.
+`wooPublicationUrl` joins the resident's case fields, so the notice links to a
+page that shows it. When portaliq is absent nothing listens and nothing fails.
+The notice goes to the portal inbox and by email only. Berichtenbox is not
+used in this journey (Ruben, 30 September 2026): it needs the resident's BSN,
+and nothing here stores one.
