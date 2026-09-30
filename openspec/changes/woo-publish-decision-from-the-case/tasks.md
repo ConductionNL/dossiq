@@ -8,9 +8,11 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
   `decision` schema today: save one, read it back through `ObjectService::find()`,
   and record the answer in the PR body.
   - verification: the read-back output pasted in the PR
-- [ ] 1.2 Declare `wooPublication`, `wooSummary`, `weigeringsgronden`,
+- [x] 1.2 Declare `wooPublication`, `wooSummary`, `weigeringsgronden`,
   `assessmentCount` and `decidedBy` on `decision` in
-  `lib/Settings/dossiq_register.json`; bump the schema version.
+  `lib/Settings/dossiq_register.json`; bump the schema version. Already on
+  `development` (decision schema 1.1.0 declares all five, read 2026-09-30);
+  the schema test is added in 5.1.
   - unit: a schema test asserting the five properties and their types
   - `composer check:strict` exit 0
 
@@ -48,3 +50,22 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
 - [ ] 4.3 Delete `src/services/wooPublicationApi.js` if nothing imports it after
   4.1, or import it from the handler that needs it.
   - `npm run lint` exit 0
+
+## 5. The Woo journey (hydra `woo-citizen-journey` C6, C3)
+
+Added 2026-09-30. Design D-5 to D-8.
+
+- [ ] 5.1 `buildPayload()` writes `publicationKind`, `informatiecategorie`,
+  `wooCategory`, `caseReference`, `period` and `publicationDate` (D-5);
+  `withdraw()` writes `depublicationDate`; documents become files on the
+  publication (D-6).
+  - unit: `WooPublicationServiceTest` asserts the payload, the file attach on
+    the publication id and the withdraw field; a schema test pins the five
+    decision properties
+- [ ] 5.2 After a publish, append the publication to `wooRequest.collectionId`
+  once, `addedBy: dossiq` (D-7).
+  - unit: appended once; republish adds nothing; no collection, no write; a
+    collection failure is logged and the publish still answers published
+- [ ] 5.3 `mijnZaken` carries `wooPublicationUrl`, and the citizen contribution
+  declares the change rule `dossiq.wooRequest.published` on it (D-8).
+  - unit: `PortalContributionProviderTest` asserts the rule for `citizen` and `client`

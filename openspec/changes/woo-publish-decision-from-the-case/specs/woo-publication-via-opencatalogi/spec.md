@@ -56,3 +56,53 @@ keeps its publication id, url and status.
 - **WHEN** any client reads the decision through OpenRegister's objects API
 - **THEN** the response MUST carry `wooPublication.publicationId` and
   `wooPublication.status` published
+
+### Requirement: The publication carries the Woo journey fields (REQ-WPI-007)
+A publication created from a case MUST carry `publicationKind` `woo-besluit`,
+`informatiecategorie` (the TOOI code, `infocat014` for a Woo decision, also
+written to opencatalogi's existing `wooCategory`), `caseReference` (the case
+uuid), `period` `{from, to}` from the request's `periodeVan` and `periodeTot`,
+and a `publicationDate` of the moment it is published. The disclosable
+documents MUST be files attached to the publication object itself. Withdrawing
+MUST set the schema's `depublicationDate`. Implements hydra `openspec/changes/woo-citizen-journey/specs/woo-citizen-journey/spec.md`, "Both publishing
+paths MUST create a public, searchable publication".
+
+#### Scenario: A published decision has its category, period and documents
+- **GIVEN** a decided Woo request case for the period 2025 with two public documents
+- **WHEN** the Woo coordinator publishes it
+- **THEN** the publication MUST carry `publicationKind` woo-besluit, `informatiecategorie` infocat014, the case uuid and the period
+- **AND** both documents MUST be files on the publication
+
+#### Scenario: A withdrawn decision stops being public
+- **GIVEN** a published decision
+- **WHEN** the Woo coordinator withdraws it
+- **THEN** the publication's `depublicationDate` MUST be set
+
+### Requirement: A decision comes back to the dossier it was asked from (REQ-WPI-008)
+When the case has `wooRequest.collectionId`, publishing MUST append one item
+`{id, publication, attachment: null, note, addedAt, addedBy: "dossiq"}` to that
+collection, once per publication, without changing or removing any other item.
+The case MUST then read `wooPublicationUrl`, and the citizen contribution MUST
+declare the change rule `dossiq.wooRequest.published` on `mijnZaken` for that
+field, so portaliq writes the resident's notice and sends it by email and
+Berichtenbox as the resident prefers. A failure to reach the collection MUST be
+logged and MUST NOT undo the publication. Implements hydra `openspec/changes/woo-citizen-journey/specs/woo-citizen-journey/spec.md`, "A decision on a
+request started from a dossier MUST come back to that dossier" and "Every
+answer, decision and alert MUST reach the resident through portaliq's notice
+path".
+
+#### Scenario: The resident finds the decision in their dossier
+- **GIVEN** a Woo request started from a dossier
+- **WHEN** its decision is published
+- **THEN** the dossier MUST hold the new publication, added by dossiq
+- **AND** the resident's case MUST carry the publication link that portaliq's change rule reports
+
+#### Scenario: Republishing does not add the item twice
+- **GIVEN** a decision already published and added to the dossier
+- **WHEN** it is published again
+- **THEN** the dossier MUST still hold one item for that publication
+
+#### Scenario: A request without a dossier
+- **GIVEN** a Woo request case with no `wooRequest.collectionId`
+- **WHEN** its decision is published
+- **THEN** the publication MUST be created and no collection MUST be written

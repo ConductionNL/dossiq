@@ -91,3 +91,13 @@ consumed as they are (`woo-publication-in-process-object-writes`, archived).
 `lib/Service/WOODecisionService.php`, `lib/Settings/dossiq_register.json`
 (`case` and `decision`), a repair step under `lib/Repair`, `src/manifest.json`
 (`#CaseDetail` header actions and one Data tab field). No new route.
+
+## Woo journey additions (2026-09-30)
+
+The Woo citizen journey (hydra `woo-citizen-journey`, C6 and C3) adds three
+things to this change: the publication carries `publicationKind`,
+`informatiecategorie`, `caseReference` and `period`, with its documents as files
+on the publication; a decision on a request started from a dossier is appended
+to that dossier; and the resident is told through portaliq's change rule
+`dossiq.wooRequest.published`. The request side is in
+`woo-request-from-a-portal-dossier`.
