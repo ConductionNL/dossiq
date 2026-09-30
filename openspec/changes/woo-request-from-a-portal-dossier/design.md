@@ -72,6 +72,10 @@ endpoint action:
   manifest). No `type`, `register` or `schema`: that is the vocabulary of the
   fleet's reference endpoint action (petstore `renamePet`), and it keeps
   portaliq's flat writer from ever taking the action for a create of its own.
+  It declares `attachTo: {app: "opencatalogi", schema: "collection"}` and
+  `rowField: "collectionId"` (hydra C7), so portaliq shows it on the dossier
+  page, proves the dossier is the resident's through opencatalogi's own scope
+  and forwards it with `collectionId` set. dossiq still checks ownership.
 - `PortalWooRequestController::start` is `#[PublicPage]` and
   `#[NoCSRFRequired]`: the caller is portaliq's server. The `X-Portal-Subject`
   assertion is the authentication, verified by `PortalAssertionVerifier`

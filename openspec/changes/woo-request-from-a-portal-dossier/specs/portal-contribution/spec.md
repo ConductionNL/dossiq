@@ -4,7 +4,9 @@
 The citizen contribution, served to `citizen` and `client`, MUST offer the
 endpoint action `startWooVerzoek` (`POST
 /index.php/apps/dossiq/api/portal/woo-verzoek`, fields `collectionId`,
-`onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`). The receiving
+`onderwerp`, `omschrijving`, `periodeVan`, `periodeTot`), attached to the
+dossier page by `attachTo: {app: "opencatalogi", schema: "collection"}` and
+`rowField: "collectionId"`. The receiving
 route MUST verify portaliq's `X-Portal-Subject` assertion before anything else,
 take the resident from its `sub` claim and never from the body, and call
 `WooRequestIntake::start()` with `origin: portal`. It MUST answer 201 with
