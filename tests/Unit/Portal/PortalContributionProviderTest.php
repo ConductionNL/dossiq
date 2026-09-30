@@ -123,7 +123,48 @@ class PortalContributionProviderTest extends TestCase {
 		// could check a reference against the sender's own scope; they are
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
-		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage', 'amendCase'], $actionIds);
+		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage', 'amendCase', 'startWooVerzoek'], $actionIds);
+	}
+
+	/**
+	 * A resident starts a Woo request from their dossier, as citizen and as client.
+	 *
+	 * An endpoint action: portaliq forwards it to dossiq with a signed
+	 * assertion, and dossiq opens the case, its case objects and the dossier
+	 * link in one go. No `type`, `register` or `schema`, so portaliq's flat
+	 * writer can never take it for a create of its own.
+	 *
+	 * @dataProvider residentAudienceProvider
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
+	 */
+	public function testAResidentStartsAWooRequestFromTheirDossier(string $audience): void {
+		$actions = [];
+		foreach ($this->provider->getContribution(['audience' => $audience])['actions'] as $action) {
+			$actions[(string)$action['id']] = $action;
+		}
+
+		$this->assertArrayHasKey('startWooVerzoek', $actions);
+		$action = $actions['startWooVerzoek'];
+		$this->assertSame('/index.php/apps/dossiq/api/portal/woo-verzoek', $action['endpoint']);
+		$this->assertSame('POST', $action['method']);
+		$this->assertSame(['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'], $action['fields']);
+		$this->assertSame('Start een Woo-verzoek', $action['label']);
+		foreach (['type', 'register', 'schema', 'subjectRef', 'origin'] as $absent) {
+			$this->assertArrayNotHasKey($absent, $action);
+			$this->assertNotContains($absent, $action['fields']);
+		}
+	}
+
+	/**
+	 * The audiences a resident arrives as.
+	 *
+	 * @return array<int, array<int, string>>
+	 */
+	public static function residentAudienceProvider(): array {
+		return [['citizen'], ['client']];
 	}
 
 	/**
@@ -299,6 +340,12 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertNotEmpty($entries);
 
 		foreach ($entries as $entry) {
+			// An endpoint action writes nothing through portaliq's flat writer;
+			// the app behind the endpoint owns what it writes.
+			if (isset($entry['endpoint']) === true) {
+				continue;
+			}
+
 			$schemaSlug = $entry['schema'];
 			$props = $this->propertiesFor($schemaSlug);
 
