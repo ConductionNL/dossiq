@@ -209,17 +209,13 @@ class WooPublicationService {
 	 *
 	 * @param array<string, mixed> $case The case object.
 	 * @param array<string, mixed> $decision The assembled decision object.
-	 * @param array<int, array<string, mixed>> $disclosable Disclosable documents (see
-	 *                                                      {@see self::selectDisclosableDocuments()}).
 	 *
 	 * @return array<string, mixed> The publication payload.
 	 *
 	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publication-carries-the-woo-journey-fields-req-wpi-007
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $disclosable stays in the signature for callers; the documents travel as files (design D-6).
 	 */
-	public function buildPayload(array $case, array $decision, array $disclosable): array {
+	public function buildPayload(array $case, array $decision): array {
 		$category = $this->categoryMapper->forDecision($decision);
 		$caseId = (string)($case['id'] ?? $case['uuid'] ?? $decision['case'] ?? '');
 
@@ -300,7 +296,7 @@ class WooPublicationService {
 			return ['available' => false, 'reason' => 'no_publishable_documents'];
 		}
 
-		$payload = $this->buildPayload(case: $case, decision: $decision, disclosable: $disclosable);
+		$payload = $this->buildPayload(case: $case, decision: $decision);
 		$existingId = (string)($decision['wooPublication']['publicationId'] ?? '');
 
 		try {
