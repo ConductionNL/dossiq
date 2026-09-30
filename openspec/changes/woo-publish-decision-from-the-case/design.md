@@ -75,8 +75,10 @@ D-1 does not depend on it.
 
 - Header action `woo-publish`, label "Publish (Woo)", `api-call` POST to
   `/apps/dossiq/api/cases/@objectId/woo/publish`, visible when
-  `wooPublicationStatus` is `ready` or `withdrawn`, success message "The
-  decision is published."
+  `wooPublicationStatus` is `ready`, success message "The decision is
+  published." (Built 30 Sep: `withdrawn` is left out because the manifest
+  schema's `visibleWhen` has no any-of; a withdrawn decision is published
+  again through the same route.)
 - Header action `woo-withdraw`, label "Withdraw publication", `api-call` POST to
   `/woo/withdraw`, visible when `wooPublicationStatus` is `published`, with a
   confirmation.

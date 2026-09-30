@@ -27,20 +27,16 @@ const caseDetail = manifest.pages.find((page) => page.id === 'CaseDetail')
 const action = (id) => caseDetail.config.headerActions.find((a) => a.id === id)
 
 describe('the Woo publication on the case page', () => {
-	it('offers Publish (Woo) on a ready or withdrawn case', () => {
+	it('offers Publish (Woo) on a case whose decision is ready', () => {
 		const publish = action('woo-publish')
 		expect(publish.type).toBe('api-call')
 		expect(publish.method).toBe('POST')
 		expect(publish.url).toBe('/apps/dossiq/api/cases/@objectId/woo/publish')
-		expect(publish.visibleWhen.any.map((c) => c.value)).toEqual([
-			'ready',
-			'withdrawn',
-		])
-		expect(
-			publish.visibleWhen.any.every(
-				(c) => c.field === 'wooPublicationStatus' && c.op === 'eq',
-			),
-		).toBe(true)
+		expect(publish.visibleWhen).toEqual({
+			field: 'wooPublicationStatus',
+			op: 'eq',
+			value: 'ready',
+		})
 	})
 
 	it('offers Withdraw publication only on a published case, after a confirmation', () => {
