@@ -215,6 +215,20 @@ class CaseTimeline {
 	 * surface that wants the whole feed reads OpenRegister's own endpoint with
 	 * a signed-in user behind it, which is where the access check belongs.
 	 *
+	 * THE READ RUNS UNSCOPED, AND THE CALLER IS WHAT MAKES THAT SAFE. A portal
+	 * request carries no Nextcloud user, so a scoped read of the case found
+	 * nothing and every resident saw an empty timeline. The public status page
+	 * reads OpenRegister's case-token endpoint and does not call this method
+	 * today, so the one caller is
+	 * {@see \OCA\Dossiq\Portal\PortalContributionProvider::caseTimeline()},
+	 * which portaliq calls only after its scoped read proved the case is the
+	 * resident's (`mijnZaken`, scope `portalSubject`); a foreign or absent case
+	 * is a 404 there and this method is never asked. The read is pinned to the
+	 * configured register and case schema, and answers only the public entries
+	 * of that one case, the same posture as
+	 * {@see \OCA\Dossiq\Portal\PortalCaseDocuments::forCase()}. A new caller
+	 * must prove the case is its reader's before it asks.
+	 *
 	 * THE AUTHOR DOES NOT TRAVEL. A handler's user id is not part of what
 	 * happened on the case as far as the applicant is concerned, and a public
 	 * projection is the last place to hand one out.
@@ -254,7 +268,18 @@ class CaseTimeline {
 		[$objectService, $register, $schema] = $coordinates;
 
 		try {
-			$object = $objectService->find($caseId, register: $register, schema: $schema);
+			// UNSCOPED, FOR THIS ONE CASE. The portal asks with no Nextcloud
+			// user, so OpenRegister's RBAC answered nothing and the resident's
+			// timeline was always empty. The caller proves the case is the
+			// reader's before asking (see the docblock), and only the public
+			// entries of the case asked for come back.
+			$object = $objectService->find(
+				$caseId,
+				register: $register,
+				schema: $schema,
+				_rbac: false,
+				_multitenancy: false
+			);
 			if ($object === null) {
 				return [];
 			}
