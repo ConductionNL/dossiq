@@ -43,10 +43,20 @@ class UuidAnsweringRegister {
 	 * @param bool       $files    Ignored.
 	 * @param int|string $register Ignored.
 	 * @param int|string $schema   The schema.
+	 * @param bool       $_rbac          Ignored: the store is not scoped.
+	 * @param bool       $_multitenancy  Ignored: the store is not scoped.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = ''): ?array {
+	public function find(
+		int|string $id,
+		mixed $_extend = null,
+		bool $files = false,
+		int|string $register = '',
+		int|string $schema = '',
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): ?array {
 		return $this->store->find(id: $id, register: $register, schema: $schema);
 	}//end find()
 
@@ -70,10 +80,19 @@ class UuidAnsweringRegister {
 	 * @param int|string           $register Ignored.
 	 * @param int|string           $schema   The schema.
 	 * @param string|null          $uuid     The uuid, or null to create.
+	 * @param bool                 $_rbac          Ignored: the store is not scoped.
+	 * @param bool                 $_multitenancy  Ignored: the store is not scoped.
 	 *
 	 * @return mixed
 	 */
-	public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): mixed {
+	public function saveObject(
+		array $object,
+		int|string $register = '',
+		int|string $schema = '',
+		?string $uuid = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): mixed {
 		$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
 		if (in_array((string)$schema, $this->schemas, true) === false) {
 			return $row;

@@ -11,8 +11,12 @@
  * receiver calls it after verifying portaliq's assertion.
  *
  * The caller is never a Nextcloud user with rights on these records: it is a
- * portal subject or a service call. So every read and write runs as the
- * system, and the one authorization is the ownership check on the dossier:
+ * portal subject or a service call. A portal forward even arrives with no
+ * Nextcloud user at all, and OpenRegister then scopes a plain read to nobody
+ * (the dossier looked missing to every resident). So every read and write
+ * runs as the system AND unscoped (`_rbac: false, _multitenancy: false`) on a
+ * register and schema this class pins itself, and the one authorization is
+ * the ownership check on the dossier:
  * its `owner` must be the `subjectRef` the request names. A dossier that does
  * not exist and one that belongs to someone else give the same refusal, so
  * nobody can probe which ids exist.
@@ -175,7 +179,7 @@ class WooRequestIntake {
 		try {
 			$collection = $this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): ?array => $this->findObjectAsArray(
+				operation: fn (): ?array => $this->findUnscoped(
 					objectService: $objectService,
 					register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
 					schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema'),
@@ -210,7 +214,7 @@ class WooRequestIntake {
 		try {
 			$caseType = $this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): ?array => $this->findObjectAsArray(
+				operation: fn (): ?array => $this->findUnscoped(
 					objectService: $objectService,
 					register: $register,
 					schema: $this->settingsService->getConfigValue('case_type_schema'),
@@ -266,6 +270,8 @@ class WooRequestIntake {
 					object: $case,
 					register: $register,
 					schema: $this->settingsService->getConfigValue('case_schema'),
+					_rbac: false,
+					_multitenancy: false,
 				)
 			);
 		} catch (Throwable $e) {
@@ -320,7 +326,7 @@ class WooRequestIntake {
 			try {
 				$this->runAsSystemIfAvailable(
 					objectService: $objectService,
-					operation: fn (): mixed => $objectService->saveObject(object: $object, register: $register, schema: $schema)
+					operation: fn (): mixed => $objectService->saveObject(object: $object, register: $register, schema: $schema, _rbac: false, _multitenancy: false)
 				);
 			} catch (Throwable $e) {
 				$this->logger->error(
@@ -345,7 +351,7 @@ class WooRequestIntake {
 		try {
 			$row = $this->runAsSystemIfAvailable(
 				objectService: $objectService,
-				operation: fn (): ?array => $this->findObjectAsArray(
+				operation: fn (): ?array => $this->findUnscoped(
 					objectService: $objectService,
 					register: $this->settingsService->getWooPublicationConfigValue('woo_publication_register'),
 					schema: $this->settingsService->getWooPublicationConfigValue('woo_publication_schema'),
@@ -400,6 +406,8 @@ class WooRequestIntake {
 					register: $this->settingsService->getWooPublicationConfigValue('woo_collection_register'),
 					schema: $this->settingsService->getWooPublicationConfigValue('woo_collection_schema'),
 					uuid: $collectionId,
+					_rbac: false,
+					_multitenancy: false,
 				)
 			);
 		} catch (Throwable $e) {
@@ -411,6 +419,49 @@ class WooRequestIntake {
 			);
 		}
 	}//end recordSource()
+
+	/**
+	 * One object by id on a register and schema this class pins, unscoped.
+	 *
+	 * Without `_rbac: false, _multitenancy: false` a request that carries no
+	 * Nextcloud user (every portal forward) finds nothing. The callers decide
+	 * who may see the row: ownedCollection() checks the owner.
+	 *
+	 * @param object     $objectService The OpenRegister ObjectService.
+	 * @param int|string $register      The register.
+	 * @param int|string $schema        The schema.
+	 * @param string     $id            The uuid.
+	 *
+	 * @return array<string, mixed>|null The object, or null when it does not exist.
+	 *
+	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 */
+	private function findUnscoped(object $objectService, int|string $register, int|string $schema, string $id): ?array {
+		try {
+			$object = $objectService->find(
+				id: $id,
+				register: $register,
+				schema: $schema,
+				_rbac: false,
+				_multitenancy: false,
+			);
+		} catch (\OCP\AppFramework\Db\DoesNotExistException $e) {
+			return null;
+		}
+
+		if (is_array($object) === true) {
+			return $object;
+		}
+
+		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+			$serialized = $object->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
+
+		return null;
+	}//end findUnscoped()
 
 	/**
 	 * The uuid of whatever saveObject() answered.

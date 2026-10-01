@@ -95,6 +95,8 @@ class InMemoryRegister {
 	 * @param bool        $files    Ignored.
 	 * @param int|string  $register Ignored.
 	 * @param int|string  $schema   The schema slug.
+	 * @param bool        $_rbac          Ignored: this store is not scoped.
+	 * @param bool        $_multitenancy  Ignored: this store is not scoped.
 	 *
 	 * @return array<string, mixed>|null The row, or null.
 	 */
@@ -104,6 +106,8 @@ class InMemoryRegister {
 		bool $files = false,
 		int|string $register = '',
 		int|string $schema = '',
+		bool $_rbac = true,
+		bool $_multitenancy = true,
 	): ?array {
 		return ($this->rows[(string)$schema][(string)$id] ?? null);
 	}//end find()
@@ -138,6 +142,8 @@ class InMemoryRegister {
 	 * @param int|string           $register Ignored.
 	 * @param int|string           $schema   The schema slug.
 	 * @param string|null          $uuid     The uuid to update, or null to create.
+	 * @param bool                 $_rbac          Ignored: this store is not scoped.
+	 * @param bool                 $_multitenancy  Ignored: this store is not scoped.
 	 *
 	 * @return array<string, mixed> The stored row.
 	 */
@@ -146,6 +152,8 @@ class InMemoryRegister {
 		int|string $register = '',
 		int|string $schema = '',
 		?string $uuid = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
 	): array {
 		$id = ($uuid ?? ('generated-' . (count($this->rows[(string)$schema] ?? []) + 1)));
 		$object['id'] = $id;
