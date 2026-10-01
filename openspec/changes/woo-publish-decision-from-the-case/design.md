@@ -183,3 +183,27 @@ Found by the e2e Woo journey on :8080 (portaliq#1001):
 `tests/Support/RealSchemaValidator.php` validates a payload against the merged
 register with opis/json-schema, formats included, and
 `WooWritesMatchTheRealSchemasTest` runs every Woo write through it.
+
+## Woo screens additions (2026-10-01)
+
+Found by the Woo journey movies lane: a coordinator could not find a
+publish button. The header actions existed (D-4) but gated on the case's
+state alone.
+
+### D-11. The action follows the endpoint's own authorization
+
+- `woo-publish` and `woo-withdraw` gate on `all: [status, any: [assignee eq
+  @me, inspect/availability isAdmin]]`. That is
+  `CaseAccessGuard::hasCaseMutationAccess` exactly: an admin, or the case's
+  `assignee`. The `assignees` array widens reads only, so it is left out.
+  `inspect/availability` asks the same `IGroupManager::isAdmin`.
+- `woo-publish` gets `confirm: true`. The dialog shows the action's label
+  and the library's question: the manifest schema (2.41.0) declares no
+  `confirmTitle` or `confirmMessage`, although `CnActionButtons` reads both.
+- `woo-publication-open`, a `navigate` action with target
+  `@object.wooPublicationUrl`, visible when the status is `published` and
+  the url is set. An absolute target is rendered as an anchor by the action
+  bar, so it opens the publication rather than pushing a route.
+- The refusal sentences move from a constant into `IL10N::t()` literals, so a
+  Dutch coordinator reads them in Dutch and the translation tooling finds
+  them.

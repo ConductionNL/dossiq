@@ -107,3 +107,32 @@ path".
 - **GIVEN** a Woo request case with no `wooRequest.collectionId`
 - **WHEN** its decision is published
 - **THEN** the publication MUST be created and no collection MUST be written
+
+### Requirement: The publish action shows only to whoever may publish, and says what happened (REQ-WPI-009)
+The case page MUST offer "Publish (Woo)" and "Withdraw publication" only to a
+user the endpoints let through: the case's assignee or an admin, as
+"Publish action authorization" states. Publishing MUST ask for confirmation
+first. A refusal MUST show the server's sentence in the user's language. Once
+the decision is published, the case header MUST offer a link to the
+publication, labelled "Published: view the publication" ("Gepubliceerd:
+publicatie bekijken"), in place of "Publish (Woo)". Hiding the action is not
+an authorization: the endpoints keep their own check.
+
+#### Scenario: A colleague who may not publish does not see the action
+- **GIVEN** a Woo case whose decision is ready, assigned to another handler
+- **WHEN** a user who is neither its assignee nor an admin opens the case page
+- **THEN** the header MUST NOT offer "Publish (Woo)" or "Withdraw publication"
+@e2e exclude evaluated through the library's own evaluateVisibleWhen; tests/vitest/wooPublishManifest.spec.js "hides from a colleague who neither handles the case nor is an admin"
+
+#### Scenario: The handler publishes after a confirmation and gets the link
+- **GIVEN** a Woo case whose decision is ready, assigned to the handler
+- **WHEN** the handler presses "Publish (Woo)" and confirms
+- **THEN** the decision MUST be published through `POST /api/cases/{id}/woo/publish`
+- **AND** the header MUST offer "Published: view the publication", linking to `wooPublicationUrl`, and MUST NOT offer "Publish (Woo)"
+@e2e exclude evaluated through the library's own evaluateVisibleWhen and interpolateActionTarget; tests/vitest/wooPublishManifest.spec.js "after publishing swaps Publish for the link to the publication"
+
+#### Scenario: A refusal reads in the user's language
+- **GIVEN** a Woo case whose decision is ready and no document assessed as public
+- **WHEN** a Dutch-speaking handler presses "Publish (Woo)" and confirms
+- **THEN** the system MUST answer 409 with the message "Er kan nog niets gepubliceerd worden: geen enkel document is als openbaar beoordeeld."
+@e2e exclude unit over the controller; WOOAssessmentControllerTest::testARefusalIsTranslatedForTheHeaderAction
