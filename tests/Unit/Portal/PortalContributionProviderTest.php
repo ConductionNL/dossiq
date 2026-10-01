@@ -223,6 +223,23 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertSame('bezwaarschrift', $actions['createBezwaar']['defaults']['kind']);
 		$this->assertNotContains('kind', $actions['createBezwaar']['fields']);
 
+		$this->assertSame('klachtschrift', $actions['createKlacht']['defaults']['kind']);
+		$this->assertNotContains('kind', $actions['createKlacht']['fields']);
+
+		// Every create on portaalVerzoek stamps a kind the schema accepts. A
+		// kind left to the client arrived as 'klacht', outside the enum, and
+		// every complaint filed from the portal answered 502 write_failed.
+		$schemas = json_decode((string)file_get_contents(__DIR__.'/../../../lib/Settings/register.d/50-zaakportaal.json'), true)['components']['schemas'];
+		$kinds = $schemas['portaalVerzoek']['properties']['kind']['enum'];
+		foreach ($actions as $id => $action) {
+			if (($action['type'] ?? '') !== 'create' || ($action['schema'] ?? '') !== 'portaalVerzoek') {
+				continue;
+			}
+
+			$this->assertContains(($action['defaults']['kind'] ?? null), $kinds, "'{$id}' must stamp a kind the schema accepts");
+			$this->assertNotContains('kind', $action['fields'], "'{$id}' must not let the sender choose the kind");
+		}
+
 		$this->assertSame('citizen_to_handler', $actions['replyToMessage']['defaults']['direction']);
 		$this->assertNotContains('direction', $actions['replyToMessage']['fields']);
 		$this->assertSame('senderRef', $actions['replyToMessage']['scopeField']);

@@ -468,7 +468,7 @@ class PortalContributionProvider {
 	 * is what these two were deferred on; without it a uuid in the body was
 	 * accepted as typed.
 	 *
-	 * Neither lets the sender choose what the write IS. The `kind` of a bezwaar
+	 * None lets the sender choose what the write IS. The `kind` of a klacht or bezwaar
 	 * and the `direction` of a reply come from `defaults`, stamped server-side
 	 * over the whitelisted body: a bezwaar and a klacht run different statutory
 	 * clocks, and a form that let the sender pick would let one arrive dressed
@@ -640,12 +640,15 @@ class PortalContributionProvider {
 				'scopeField' => 'submitterRef',
 				'minTrust' => 'low',
 				'fields' => [
-					'kind',
 					'category',
 					'subject',
 					'rationale',
 					'attachments',
 				],
+				// Stamped server-side, like the bezwaar's. Left to the
+				// sender, the portal sent 'klacht', which the schema's enum
+				// refuses, so every complaint answered 502 write_failed.
+				'defaults' => ['kind' => 'klachtschrift'],
 			],
 			[
 				'id' => 'createBezwaar',
