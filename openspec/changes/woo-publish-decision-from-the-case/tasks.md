@@ -75,10 +75,10 @@ Added 2026-09-30. Design D-5 to D-8.
 
 ## 6. The Woo screens (2026-10-01, design D-11)
 
-- [x] 6.1 `woo-publish` and `woo-withdraw` show only to the assignee or an admin; publishing asks first.
-  - vitest: `wooPublishManifest.spec.js` evaluates each gate through `evaluateVisibleWhen`
+- [x] 6.1 `woo-publish` and `woo-withdraw` show only to the assignee, decided locally and ahead of every endpoint-gated action; publishing asks first.
+  - vitest: `wooPublishHeaderBar.spec.js` renders the real headerActions through the built `CnActionButtons` with every endpoint request held open
 - [x] 6.2 After publishing, the header links to the publication (`woo-publication-open`).
-  - vitest: `wooPublishManifest.spec.js` resolves the target and checks it is external
+  - vitest: `wooPublishHeaderBar.spec.js` reads the entry's `href`
 - [x] 6.3 The refusal sentences are translated server side.
   - unit: `WOOAssessmentControllerTest::testARefusalIsTranslatedForTheHeaderAction`
   - `npm run test:l10n` exit 0

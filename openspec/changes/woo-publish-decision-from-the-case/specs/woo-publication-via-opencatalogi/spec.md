@@ -109,27 +109,37 @@ path".
 - **THEN** the publication MUST be created and no collection MUST be written
 
 ### Requirement: The publish action shows only to whoever may publish, and says what happened (REQ-WPI-009)
-The case page MUST offer "Publish (Woo)" and "Withdraw publication" only to a
-user the endpoints let through: the case's assignee or an admin, as
-"Publish action authorization" states. Publishing MUST ask for confirmation
-first. A refusal MUST show the server's sentence in the user's language. Once
-the decision is published, the case header MUST offer a link to the
-publication, labelled "Published: view the publication" ("Gepubliceerd:
-publicatie bekijken"), in place of "Publish (Woo)". Hiding the action is not
-an authorization: the endpoints keep their own check.
+The case page MUST offer "Publish (Woo)" and "Withdraw publication" only to the
+case's assignee. The endpoints also let an admin through ("Publish action
+authorization"); an admin who does not handle the case claims it first. The
+gate MUST be decided from the case itself, without a request to the server,
+so the header never shows the action while a request is pending.
+Publishing MUST ask for confirmation first. A refusal MUST show the server's
+sentence in the user's language. Once the decision is published, the case
+header MUST offer a link to the publication, labelled "Published: view the
+publication" ("Gepubliceerd: publicatie bekijken"), and MUST NOT offer
+"Publish (Woo)". Hiding the action is not an authorization: the endpoints keep
+their own check.
 
-#### Scenario: A colleague who may not publish does not see the action
+#### Scenario: A colleague who does not handle the case does not see the action
 - **GIVEN** a Woo case whose decision is ready, assigned to another handler
-- **WHEN** a user who is neither its assignee nor an admin opens the case page
+- **WHEN** a user who is not its assignee opens the case page
 - **THEN** the header MUST NOT offer "Publish (Woo)" or "Withdraw publication"
-@e2e exclude evaluated through the library's own evaluateVisibleWhen; tests/vitest/wooPublishManifest.spec.js "hides from a colleague who neither handles the case nor is an admin"
+@e2e exclude rendered through the built CnActionButtons with the real headerActions; tests/vitest/wooPublishHeaderBar.spec.js "hides Publish from a colleague who does not handle the case"
+
+#### Scenario: A published case never offers Publish, even while the page is still loading
+- **GIVEN** a Woo case whose decision is published, and a header still waiting for its server requests
+- **WHEN** anyone opens the header menu
+- **THEN** the menu MUST NOT offer "Publish (Woo)"
+- **AND** it MUST offer "Published: view the publication", linking to `wooPublicationUrl`
+@e2e exclude rendered through the built CnActionButtons with every endpoint request held open; tests/vitest/wooPublishHeaderBar.spec.js "shows only the link on a case someone else published, never Publish"
 
 #### Scenario: The handler publishes after a confirmation and gets the link
 - **GIVEN** a Woo case whose decision is ready, assigned to the handler
 - **WHEN** the handler presses "Publish (Woo)" and confirms
 - **THEN** the decision MUST be published through `POST /api/cases/{id}/woo/publish`
-- **AND** the header MUST offer "Published: view the publication", linking to `wooPublicationUrl`, and MUST NOT offer "Publish (Woo)"
-@e2e exclude evaluated through the library's own evaluateVisibleWhen and interpolateActionTarget; tests/vitest/wooPublishManifest.spec.js "after publishing swaps Publish for the link to the publication"
+- **AND** the header MUST offer "Withdraw publication" and "Published: view the publication", and MUST NOT offer "Publish (Woo)"
+@e2e exclude rendered through the built CnActionButtons; tests/vitest/wooPublishHeaderBar.spec.js "offers Publish (Woo) to the handler of a ready case" and "swaps Publish for Withdraw and the link once the handler has published"
 
 #### Scenario: A refusal reads in the user's language
 - **GIVEN** a Woo case whose decision is ready and no document assessed as public

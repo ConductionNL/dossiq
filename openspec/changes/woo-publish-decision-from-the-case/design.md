@@ -190,13 +190,22 @@ Found by the Woo journey movies lane: a coordinator could not find a
 publish button. The header actions existed (D-4) but gated on the case's
 state alone.
 
-### D-11. The action follows the endpoint's own authorization
+### D-11. The action follows the endpoint's authorization, decided locally
 
-- `woo-publish` and `woo-withdraw` gate on `all: [status, any: [assignee eq
-  @me, inspect/availability isAdmin]]`. That is
-  `CaseAccessGuard::hasCaseMutationAccess` exactly: an admin, or the case's
-  `assignee`. The `assignees` array widens reads only, so it is left out.
-  `inspect/availability` asks the same `IGroupManager::isAdmin`.
+- `woo-publish` and `woo-withdraw` gate on `all: [status, assignee eq @me]`.
+  The endpoint (`CaseAccessGuard::hasCaseMutationAccess`) also lets an admin
+  through, and the first build said so with `any: [assignee, inspect/availability
+  isAdmin]`. The live check on 1 Oct 2026 showed Publish (Woo) on an already
+  published case. `CnActionButtons` (nextcloud-vue 2.57.1,
+  `src/components/CnActionButtons/CnActionButtons.vue`, `evaluateVisibility`
+  and `visibleActions`) awaits the predicates one after another and renders
+  every action whose predicate has not answered (`visibility[id] !== false`).
+  An `endpoint` condition therefore leaves its action, and every action listed
+  after any endpoint-gated one, on screen for as long as a request is pending.
+  So every Woo gate is local, and the three actions sit before `case-rebind`,
+  the first endpoint-gated action. An admin who does not handle the case
+  claims it first. Admins are allowed again once the library hides an action
+  until its predicate has answered.
 - `woo-publish` gets `confirm: true`. The dialog shows the action's label
   and the library's question: the manifest schema (2.41.0) declares no
   `confirmTitle` or `confirmMessage`, although `CnActionButtons` reads both.
