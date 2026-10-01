@@ -78,7 +78,7 @@ class WooDossierReturnTest extends TestCase {
 			fn (string $key): string => SettingsService::WOO_PUBLICATION_DEFAULTS[$key] ?? ''
 		);
 		$random = $this->createMock(ISecureRandom::class);
-		$random->method('generate')->willReturn('newitemid');
+		$random->method('generate')->willReturn('0123456789abcdef0123456789abcdef');
 
 		$this->return = new WooDossierReturn(settingsService: $settings, random: $random, logger: $this->createMock(LoggerInterface::class));
 	}//end setUp()
@@ -106,9 +106,9 @@ class WooDossierReturnTest extends TestCase {
 		self::assertCount(2, $after['items']);
 		self::assertSame($before['items'][0], $after['items'][0]);
 		$item = $after['items'][1];
-		self::assertSame('newitemid', $item['id']);
+		self::assertSame('01234567-89ab-4def-8123-456789abcdef', $item['id']);
 		self::assertSame('pub-new', $item['publication']);
-		self::assertNull($item['attachment']);
+		self::assertArrayNotHasKey('attachment', $item);
 		self::assertSame('Besluit op uw Woo-verzoek', $item['note']);
 		self::assertSame('dossiq', $item['addedBy']);
 		self::assertNotSame('', $item['addedAt']);
@@ -116,6 +116,32 @@ class WooDossierReturnTest extends TestCase {
 			self::assertSame($before[$field], $after[$field], $field);
 		}
 	}//end testThePublicationIsAddedByDossiq()
+
+	/**
+	 * The appended item fits opencatalogi's real `collection.items[]` fragment
+	 * (register.d/citizen-collections.json): `id` is a uuid, every property is
+	 * a string, and a whole-publication item leaves `attachment` out rather
+	 * than writing null. OpenRegister refused the null on :8080, so the
+	 * decision never came back to the dossier (Woo journey e2e J5, 1 Oct 2026).
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 *
+	 * @return void
+	 */
+	public function testTheItemFitsTheCollectionItemSchema(): void {
+		$this->return->append(case: $this->case(), publicationId: 'pub-new', title: 'Besluit op uw Woo-verzoek');
+
+		$item = $this->store->row(schema: 'collection', uuid: self::COLLECTION)['items'][1];
+		foreach (['id', 'publication', 'addedAt', 'addedBy'] as $required) {
+			self::assertArrayHasKey($required, $item);
+		}
+
+		foreach ($item as $key => $value) {
+			self::assertIsString($value, 'items[].' . $key . ' is typed string in the collection schema');
+		}
+
+		self::assertMatchesRegularExpression('/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/', $item['id']);
+	}//end testTheItemFitsTheCollectionItemSchema()
 
 	/**
 	 * Republishing does not add the item twice.

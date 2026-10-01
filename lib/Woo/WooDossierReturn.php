@@ -106,10 +106,13 @@ class WooDossierReturn {
 				}
 			}
 
+			// The shape of opencatalogi's `collection.items[]`: `id` is a uuid
+			// and every property is a string, so a whole-publication item
+			// leaves `attachment` out instead of writing null (OpenRegister
+			// refuses the null, and the decision never reached the dossier).
 			$items[] = [
-				'id' => $this->random->generate(32, ISecureRandom::CHAR_LOWER . ISecureRandom::CHAR_DIGITS),
+				'id' => $this->uuid(),
 				'publication' => $publicationId,
-				'attachment' => null,
 				'note' => $title,
 				'addedAt' => date('c'),
 				'addedBy' => self::ADDED_BY,
@@ -137,4 +140,19 @@ class WooDossierReturn {
 
 		return true;
 	}//end append()
+
+	/**
+	 * A random version 4 uuid, the format the collection schema gives `items[].id`.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 */
+	private function uuid(): string {
+		$hex = $this->random->generate(32, '0123456789abcdef');
+		$hex[12] = '4';
+		$hex[16] = dechex((hexdec($hex[16]) & 0x3) | 0x8);
+
+		return substr($hex, 0, 8) . '-' . substr($hex, 8, 4) . '-' . substr($hex, 12, 4) . '-' . substr($hex, 16, 4) . '-' . substr($hex, 20, 12);
+	}//end uuid()
 }//end class
