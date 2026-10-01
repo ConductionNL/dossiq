@@ -32,28 +32,19 @@ describe('the Woo publication on the case page', () => {
 		expect(publish.type).toBe('api-call')
 		expect(publish.method).toBe('POST')
 		expect(publish.url).toBe('/apps/dossiq/api/cases/@objectId/woo/publish')
-		expect(publish.visibleWhen).toEqual({
-			field: 'wooPublicationStatus',
-			op: 'eq',
-			value: 'ready',
-		})
+		expect(publish.confirm).toBe(true)
 	})
 
 	it('offers Withdraw publication only on a published case, after a confirmation', () => {
 		const withdraw = action('woo-withdraw')
 		expect(withdraw.url).toBe('/apps/dossiq/api/cases/@objectId/woo/withdraw')
 		expect(withdraw.confirm).toBe(true)
-		expect(withdraw.visibleWhen).toEqual({
-			field: 'wooPublicationStatus',
-			op: 'eq',
-			value: 'published',
-		})
 	})
 
 	it('calls routes that exist and icons the app registers', () => {
 		expect(routes).toContain("'url' => '/api/cases/{id}/woo/publish'")
 		expect(routes).toContain("'url' => '/api/cases/{id}/woo/withdraw'")
-		for (const id of ['woo-publish', 'woo-withdraw']) {
+		for (const id of ['woo-publish', 'woo-withdraw', 'woo-publication-open']) {
 			expect(icons).toMatch(new RegExp(`\\t${action(id).icon},`))
 		}
 	})

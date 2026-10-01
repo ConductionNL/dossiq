@@ -32,6 +32,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -140,8 +141,20 @@ class WOOAssessmentControllerTest extends TestCase {
 			$this->userSession,
 			$this->caseAccessGuard,
 			$this->logger,
+			$this->untranslated(),
 		);
 	}//end setUp()
+
+	/**
+	 * Translations that hand every source sentence back unchanged.
+	 *
+	 * @return IL10N
+	 */
+	private function untranslated(): IL10N {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(static fn (string $text): string => $text);
+		return $l10n;
+	}//end untranslated()
 
 	/**
 	 * BulkAssess returns 401 when user is not authenticated.
@@ -278,6 +291,53 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
 		$this->assertSame('This case has no Woo decision yet. Assemble the decision first.', $response->getData()['message']);
 	}//end testPublishWithoutADecisionIdAnswers409WhenTheCaseHasNoWooDecision()
+
+	/**
+	 * A refusal reads in the user's language: the header action shows the
+	 * server's `message` as it is, so the server translates it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+	 */
+	public function testARefusalIsTranslatedForTheHeaderAction(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->request->method('getParam')->willReturnMap([
+			['decisionId', '', ''],
+		]);
+		$this->publicationService->method('publish')
+			->willReturn(['available' => false, 'reason' => 'no_publishable_documents']);
+
+		$dutch = $this->createMock(IL10N::class);
+		$dutch->expects($this->once())->method('t')
+			->with('Nothing can be published yet: no document is assessed as public.')
+			->willReturn('Er kan nog niets gepubliceerd worden: geen enkel document is als openbaar beoordeeld.');
+
+		$controller = new WOOAssessmentController(
+			'dossiq',
+			$this->request,
+			$this->assessmentService,
+			$this->deadlineService,
+			$this->decisionService,
+			$this->publicationService,
+			$this->anonymisationAssist,
+			$this->userSession,
+			$this->caseAccessGuard,
+			$this->logger,
+			$dutch,
+		);
+
+		$response = $controller->publishDecision('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame(
+			'Er kan nog niets gepubliceerd worden: geen enkel document is als openbaar beoordeeld.',
+			$response->getData()['message']
+		);
+	}//end testARefusalIsTranslatedForTheHeaderAction()
 
 	/**
 	 * A missing OpenCatalogi answers 503 with a sentence the header action shows.

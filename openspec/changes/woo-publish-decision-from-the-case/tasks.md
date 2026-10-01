@@ -72,3 +72,13 @@ Added 2026-09-30. Design D-5 to D-8.
   - unit: `WooPublishOnTheRealRegisterTest` takes its configuration from the merged register and the slug map, assesses an uploaded document and publishes it with its file
 - [x] 5.5 Every Woo write and seed row fits its schema by value (D-10).
   - unit: `WooWritesMatchTheRealSchemasTest` (seed rows, decision, assessment, request case and case objects, publish and withdraw)
+
+## 6. The Woo screens (2026-10-01, design D-11)
+
+- [x] 6.1 `woo-publish` and `woo-withdraw` show only to the assignee, decided locally and ahead of every endpoint-gated action; publishing asks first.
+  - vitest: `wooPublishHeaderBar.spec.js` renders the real headerActions through the built `CnActionButtons` with every endpoint request held open
+- [x] 6.2 After publishing, the header links to the publication (`woo-publication-open`).
+  - vitest: `wooPublishHeaderBar.spec.js` reads the entry's `href`
+- [x] 6.3 The refusal sentences are translated server side.
+  - unit: `WOOAssessmentControllerTest::testARefusalIsTranslatedForTheHeaderAction`
+  - `npm run test:l10n` exit 0
