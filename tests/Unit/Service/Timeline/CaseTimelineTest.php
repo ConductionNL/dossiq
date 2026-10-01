@@ -229,16 +229,44 @@ class FakeTimelineObjectService {
 	public array $unreadable = [];
 
 	/**
+	 * Whether the request has no Nextcloud user, as a portal request has not.
+	 * OpenRegister's RBAC then answers nothing for a scoped read.
+	 *
+	 * @var boolean
+	 */
+	public bool $noUser = false;
+
+	/**
+	 * The RBAC and multitenancy flags of every find, in order.
+	 *
+	 * @var array<int, array{rbac: bool, multitenancy: bool}>
+	 */
+	public array $scopes = [];
+
+	/**
 	 * Find one object.
 	 *
-	 * @param string $id       The object id.
-	 * @param mixed  $register The register.
-	 * @param mixed  $schema   The schema.
+	 * @param string $id            The object id.
+	 * @param mixed  $register      The register.
+	 * @param mixed  $schema        The schema.
+	 * @param bool   $_rbac         Whether OpenRegister applies its RBAC.
+	 * @param bool   $_multitenancy Whether OpenRegister applies multitenancy.
 	 *
 	 * @return object|null The object, or null.
 	 */
-	public function find(string $id, mixed $register = null, mixed $schema = null): ?object {
+	public function find(
+		string $id,
+		mixed $register = null,
+		mixed $schema = null,
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): ?object {
+		$this->scopes[] = ['rbac' => $_rbac, 'multitenancy' => $_multitenancy];
 		if (in_array($id, $this->unreadable, true) === true) {
+			return null;
+		}
+
+		if ($this->noUser === true && ($_rbac === true || $_multitenancy === true)) {
 			return null;
 		}
 
@@ -664,6 +692,56 @@ class CaseTimelineTest extends TestCase {
 		$this->assertSame('statuswijziging', $entries[0]['kind']);
 		$this->assertSame('Status: In behandeling', $entries[0]['message']);
 	}//end testPublicEntriesAsksForThePublicOnes()
+
+	/**
+	 * A resident reads the public entries on their case without a Nextcloud user.
+	 *
+	 * A portal request carries no Nextcloud user, so a scoped read of the case
+	 * answered nothing and the resident's timeline was always empty while
+	 * OpenRegister held public entries on it. The case id reaching this reader
+	 * was already proven to be the resident's by portaliq (the scoped read of
+	 * `mijnZaken` on `portalSubject`), so the read runs unscoped, and only the
+	 * public entries of that one case come back.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testAResidentWithoutANextcloudUserReadsThePublicEntries(): void {
+		$this->objects->noUser = true;
+		$this->reader->entries = [
+			['uuid' => 'e1', 'kind' => 'statuswijziging', 'message' => 'Status: In behandeling'],
+			['uuid' => 'e2', 'kind' => 'beschikking-verzonden', 'message' => 'Beschikking verzonden'],
+		];
+
+		$entries = $this->timeline()->publicEntries(caseId: 'case-1');
+
+		$this->assertSame(['e1', 'e2'], array_column($entries, 'id'));
+		$this->assertSame(['public'], $this->reader->asked);
+		$this->assertSame([['rbac' => false, 'multitenancy' => false]], $this->objects->scopes);
+	}//end testAResidentWithoutANextcloudUserReadsThePublicEntries()
+
+	/**
+	 * A case that is not there yields nothing, even read unscoped, and the
+	 * entries are never asked for. The unscoped read is the reader's alone:
+	 * writing an entry keeps OpenRegister's own checks.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/timeline-entries-default-internal/specs/portal-contribution/spec.md
+	 */
+	public function testTheUnscopedReadStaysInsideThePublicReader(): void {
+		$this->objects->noUser = true;
+		$this->objects->unreadable = ['case-of-someone-else'];
+
+		$this->assertSame([], $this->timeline()->publicEntries(caseId: 'case-of-someone-else'));
+		$this->assertSame([], $this->reader->asked);
+
+		$this->objects->scopes = [];
+		$this->objects->noUser = false;
+		$this->timeline()->record(caseId: 'case-1', kind: 'contactmoment', message: 'Gebeld');
+		$this->assertSame([['rbac' => true, 'multitenancy' => true]], $this->objects->scopes);
+	}//end testTheUnscopedReadStaysInsideThePublicReader()
 
 	/**
 	 * The projection drops the author, and keeps the moment.
