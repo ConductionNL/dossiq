@@ -37,6 +37,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -61,22 +62,6 @@ use Psr\Log\LoggerInterface;
  */
 class WOOAssessmentController extends Controller {
 	/**
-	 * The status a publish or withdraw refusal answers with, and the sentence
-	 * the header action shows (it reads `message` from a non-2xx answer).
-	 *
-	 * @var array<string, array{0: int, 1: string}>
-	 */
-	private const REFUSALS = [
-		'no_woo_decision' => [Http::STATUS_CONFLICT, 'This case has no Woo decision yet. Assemble the decision first.'],
-		'several_woo_decisions' => [Http::STATUS_CONFLICT, 'This case has more than one Woo decision. Publish one by its decision id.'],
-		'no_publishable_documents' => [Http::STATUS_CONFLICT, 'Nothing can be published yet: no document is assessed as public.'],
-		'no_publication' => [Http::STATUS_CONFLICT, 'This decision has not been published.'],
-		'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, 'OpenCatalogi is not installed, so nothing can be published.'],
-		'openregister_unavailable' => [Http::STATUS_SERVICE_UNAVAILABLE, 'OpenRegister is not available.'],
-		'opencatalogi_api_error' => [Http::STATUS_SERVICE_UNAVAILABLE, 'OpenCatalogi did not accept the publication. Try again later.'],
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name
@@ -90,6 +75,7 @@ class WOOAssessmentController extends Controller {
 	 * @param IUserSession $userSession Current user session
 	 * @param CaseAccessGuard $caseAccessGuard Per-case mutation authorization (fails closed)
 	 * @param LoggerInterface $logger Logger
+	 * @param IL10N $l10n Translations for the refusal a header action shows
 	 */
 	public function __construct(
 		string $appName,
@@ -102,6 +88,7 @@ class WOOAssessmentController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuard $caseAccessGuard,
 		private readonly LoggerInterface $logger,
+		private readonly IL10N $l10n,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -385,11 +372,36 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse($result);
 		}
 
-		$refusal = (self::REFUSALS[(string)($result['reason'] ?? '')] ?? [Http::STATUS_CONFLICT, 'The publication could not be changed.']);
+		$refusal = $this->refusal(reason: (string)($result['reason'] ?? ''));
 		$result['message'] = $refusal[1];
 
 		return new JSONResponse($result, $refusal[0]);
 	}//end publicationResponse()
+
+	/**
+	 * The status a publish or withdraw refusal answers with, and the sentence
+	 * the header action shows in the user's language (it reads `message` from
+	 * a non-2xx answer). Each sentence is a literal inside `t()`, so the
+	 * translation tooling finds it.
+	 *
+	 * @param string $reason The service's refusal reason.
+	 *
+	 * @return array{0: int, 1: string}
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-action-shows-only-to-whoever-may-publish-and-says-what-happened-req-wpi-009
+	 */
+	private function refusal(string $reason): array {
+		return match ($reason) {
+			'no_woo_decision' => [Http::STATUS_CONFLICT, $this->l10n->t('This case has no Woo decision yet. Assemble the decision first.')],
+			'several_woo_decisions' => [Http::STATUS_CONFLICT, $this->l10n->t('This case has more than one Woo decision. Publish one by its decision id.')],
+			'no_publishable_documents' => [Http::STATUS_CONFLICT, $this->l10n->t('Nothing can be published yet: no document is assessed as public.')],
+			'no_publication' => [Http::STATUS_CONFLICT, $this->l10n->t('This decision has not been published.')],
+			'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi is not installed, so nothing can be published.')],
+			'openregister_unavailable' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenRegister is not available.')],
+			'opencatalogi_api_error' => [Http::STATUS_SERVICE_UNAVAILABLE, $this->l10n->t('OpenCatalogi did not accept the publication. Try again later.')],
+			default => [Http::STATUS_CONFLICT, $this->l10n->t('The publication could not be changed.')],
+		};
+	}//end refusal()
 
 	/**
 	 * Require that the current user can mutate the given case.
