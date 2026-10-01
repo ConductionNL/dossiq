@@ -75,8 +75,10 @@ D-1 does not depend on it.
 
 - Header action `woo-publish`, label "Publish (Woo)", `api-call` POST to
   `/apps/dossiq/api/cases/@objectId/woo/publish`, visible when
-  `wooPublicationStatus` is `ready` or `withdrawn`, success message "The
-  decision is published."
+  `wooPublicationStatus` is `ready`, success message "The decision is
+  published." (Built 30 Sep: `withdrawn` is left out because the manifest
+  schema's `visibleWhen` has no any-of; a withdrawn decision is published
+  again through the same route.)
 - Header action `woo-withdraw`, label "Withdraw publication", `api-call` POST to
   `/woo/withdraw`, visible when `wooPublicationStatus` is `published`, with a
   confirmation.
@@ -144,3 +146,40 @@ page that shows it. When portaliq is absent nothing listens and nothing fails.
 The notice goes to the portal inbox and by email only. Berichtenbox is not
 used in this journey (Ruben, 30 September 2026): it needs the resident's BSN,
 and nothing here stores one.
+
+### D-9. The assessment has a schema, and publishing reads the case's own documents
+
+Found by the end-to-end Woo journey (portaliq#1001) on a real instance:
+
+- `POST /api/cases/{id}/woo/assessment` answered 400 because no shipped schema
+  set `woo_assessment_schema`. `register.d/83-woo-document-assessment.json`
+  ships `wooDocumentAssessment` (not `wooAssessment`, which opencatalogi owns;
+  slugs are global on a shared OpenRegister), and the slug map sets the key.
+- The assessment and the publication read `document_schema` rows with a `case`
+  field, which nothing on a case writes. A document uploaded on a case is an
+  `informatieobject` joined by `zaakinformatieobject`, with its file in
+  `fileId`. `OCA\Dossiq\Woo\WooCaseDocuments` lists those (legacy
+  `document_schema` rows after them) and loads one with its file content, and
+  both the assessment and the publication use it.
+
+### D-10. Every Woo write fits its schema by value, not only by key
+
+Found by the e2e Woo journey on :8080 (portaliq#1001):
+
+- The Woo decision was written with `decisionType: "WOO-besluit"`, a name where
+  the decision schema declares the uuid of a `decisionType`, so assembling a
+  decision answered 500. A `WOO-besluit` decision type is now seeded with a
+  fixed uuid, the Woo case type lists it in `decisionTypes`, and the decision
+  names it by that uuid.
+- The seeded Woo case type never imported: its statuses and result types named
+  the type by slug, and the type named its initial status by slug, where the
+  schemas declare uuids. Every Woo seed row now carries a fixed uuid and every
+  reference names one, the portal windows included (a case's status is a uuid).
+- A request without a period wrote `''` into two `format: date` properties, and
+  `intakeChannel` got `portal`, which is not in its enum. Empty periods are left
+  out, and the channel is `website` (portal) or `other` (pipelinq); the origin
+  itself stays in `wooRequest.origin`.
+
+`tests/Support/RealSchemaValidator.php` validates a payload against the merged
+register with opis/json-schema, formats included, and
+`WooWritesMatchTheRealSchemasTest` runs every Woo write through it.

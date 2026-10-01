@@ -61,6 +61,22 @@ use Psr\Log\LoggerInterface;
  */
 class WOOAssessmentController extends Controller {
 	/**
+	 * The status a publish or withdraw refusal answers with, and the sentence
+	 * the header action shows (it reads `message` from a non-2xx answer).
+	 *
+	 * @var array<string, array{0: int, 1: string}>
+	 */
+	private const REFUSALS = [
+		'no_woo_decision' => [Http::STATUS_CONFLICT, 'This case has no Woo decision yet. Assemble the decision first.'],
+		'several_woo_decisions' => [Http::STATUS_CONFLICT, 'This case has more than one Woo decision. Publish one by its decision id.'],
+		'no_publishable_documents' => [Http::STATUS_CONFLICT, 'Nothing can be published yet: no document is assessed as public.'],
+		'no_publication' => [Http::STATUS_CONFLICT, 'This decision has not been published.'],
+		'opencatalogi_not_installed' => [Http::STATUS_SERVICE_UNAVAILABLE, 'OpenCatalogi is not installed, so nothing can be published.'],
+		'openregister_unavailable' => [Http::STATUS_SERVICE_UNAVAILABLE, 'OpenRegister is not available.'],
+		'opencatalogi_api_error' => [Http::STATUS_SERVICE_UNAVAILABLE, 'OpenCatalogi did not accept the publication. Try again later.'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $appName The app name
@@ -220,14 +236,13 @@ class WOOAssessmentController extends Controller {
 
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
+		// Without a decision id the service uses the case's one Woo decision
+		// (design D-1), so a header action that knows only the case can publish.
 		$decisionId = (string)$this->request->getParam('decisionId', '');
-		if ($decisionId === '') {
-			return new JSONResponse(['error' => 'decisionId is required'], Http::STATUS_BAD_REQUEST);
-		}
 
 		try {
 			$result = $this->publicationService->publish(caseId: $id, decisionId: $decisionId);
-			return new JSONResponse($result);
+			return $this->publicationResponse(result: $result);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -254,13 +269,10 @@ class WOOAssessmentController extends Controller {
 		$this->requireCaseMutationAccess(caseId: $id, user: $user);
 
 		$decisionId = (string)$this->request->getParam('decisionId', '');
-		if ($decisionId === '') {
-			return new JSONResponse(['error' => 'decisionId is required'], Http::STATUS_BAD_REQUEST);
-		}
 
 		try {
-			$result = $this->publicationService->withdraw(decisionId: $decisionId);
-			return new JSONResponse($result);
+			$result = $this->publicationService->withdraw(decisionId: $decisionId, caseId: $id);
+			return $this->publicationResponse(result: $result);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -357,6 +369,27 @@ class WOOAssessmentController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end reviewRedactionProposal()
+
+	/**
+	 * The service's answer as a response: 200 when it went through, the
+	 * refusal's status and sentence when it did not.
+	 *
+	 * @param array<string, mixed> $result The service's answer.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 */
+	private function publicationResponse(array $result): JSONResponse {
+		if (($result['available'] ?? false) === true) {
+			return new JSONResponse($result);
+		}
+
+		$refusal = (self::REFUSALS[(string)($result['reason'] ?? '')] ?? [Http::STATUS_CONFLICT, 'The publication could not be changed.']);
+		$result['message'] = $refusal[1];
+
+		return new JSONResponse($result, $refusal[0]);
+	}//end publicationResponse()
 
 	/**
 	 * Require that the current user can mutate the given case.

@@ -183,6 +183,7 @@ import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import Publish from 'vue-material-design-icons/Publish.vue'
+import PublishOff from 'vue-material-design-icons/PublishOff.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
 import RobotOutline from 'vue-material-design-icons/RobotOutline.vue'
@@ -397,6 +398,7 @@ export default {
 	PowerPlugOutline,
 	ProgressClock,
 	Publish,
+	PublishOff,
 	Receipt,
 	Refresh,
 	RobotOutline,

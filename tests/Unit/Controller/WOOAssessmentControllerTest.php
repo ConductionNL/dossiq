@@ -254,13 +254,13 @@ class WOOAssessmentControllerTest extends TestCase {
 	}//end testPublishDecisionReturns401WhenNotAuthenticated()
 
 	/**
-	 * PublishDecision returns 400 when decisionId is missing.
+	 * Without a decision id the case's Woo decision is used; a case with none answers 409.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
 	 */
-	public function testPublishDecisionReturns400WhenDecisionIdMissing(): void {
+	public function testPublishWithoutADecisionIdAnswers409WhenTheCaseHasNoWooDecision(): void {
 		$user = $this->createMock(IUser::class);
 		$user->method('getUID')->willReturn('j.dejong');
 		$this->userSession->method('getUser')->willReturn($user);
@@ -269,11 +269,40 @@ class WOOAssessmentControllerTest extends TestCase {
 		$this->request->method('getParam')->willReturnMap([
 			['decisionId', '', ''],
 		]);
+		$this->publicationService->expects($this->once())->method('publish')
+			->with('case-uuid-001', '')
+			->willReturn(['available' => false, 'reason' => 'no_woo_decision']);
 
 		$response = $this->controller->publishDecision('case-uuid-001');
 
-		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-	}//end testPublishDecisionReturns400WhenDecisionIdMissing()
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('This case has no Woo decision yet. Assemble the decision first.', $response->getData()['message']);
+	}//end testPublishWithoutADecisionIdAnswers409WhenTheCaseHasNoWooDecision()
+
+	/**
+	 * A missing OpenCatalogi answers 503 with a sentence the header action shows.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-the-publish-endpoints-find-the-cases-woo-decision-req-wpi-005
+	 */
+	public function testWithdrawWithoutOpenCatalogiAnswers503(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('j.dejong');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+
+		$this->request->method('getParam')->willReturnMap([
+			['decisionId', '', ''],
+		]);
+		$this->publicationService->expects($this->once())->method('withdraw')
+			->with('', 'case-uuid-001')
+			->willReturn(['available' => false, 'reason' => 'opencatalogi_not_installed']);
+
+		$response = $this->controller->withdrawPublication('case-uuid-001');
+
+		$this->assertSame(Http::STATUS_SERVICE_UNAVAILABLE, $response->getStatus());
+	}//end testWithdrawWithoutOpenCatalogiAnswers503()
 
 	/**
 	 * PublishDecision returns the publication service result when authenticated.

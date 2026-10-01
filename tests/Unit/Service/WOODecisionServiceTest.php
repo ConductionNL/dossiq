@@ -203,4 +203,97 @@ class WOODecisionServiceTest extends TestCase {
 		$this->assertContains('5.1.5', $result['weigeringsgronden']);
 	}//end testAssembleDecisionSucceedsWhenAllAssessed()
 
+	/**
+	 * An assembled decision makes the case ready to publish, and never unpublishes it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	public function testAnAssembledDecisionMakesTheCaseReady(): void {
+		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
+
+		$store = new \OCA\Dossiq\Tests\Support\InMemoryRegister();
+		// OpenRegister answers a save with an entity that has a uuid, which the
+		// decision assembly reads; the in-memory store answers an array.
+		$objects = new class($store) {
+			/**
+			 * @param \OCA\Dossiq\Tests\Support\InMemoryRegister $store The rows.
+			 */
+			public function __construct(private readonly \OCA\Dossiq\Tests\Support\InMemoryRegister $store) {
+			}
+
+			/**
+			 * @param int|string $id       The uuid.
+			 * @param mixed      $_extend  Ignored.
+			 * @param bool       $files    Ignored.
+			 * @param int|string $register Ignored.
+			 * @param int|string $schema   The schema.
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(int|string $id, mixed $_extend = null, bool $files = false, int|string $register = '', int|string $schema = ''): ?array {
+				return $this->store->find(id: $id, register: $register, schema: $schema);
+			}
+
+			/**
+			 * @param string               $register Ignored.
+			 * @param string               $schema   The schema.
+			 * @param array<string, mixed> $filters  Filters.
+			 *
+			 * @return array<int, array<string, mixed>>
+			 */
+			public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+				return $this->store->searchObjectsBySlug($register, $schema, $filters);
+			}
+
+			/**
+			 * @param array<string, mixed> $object   The row.
+			 * @param int|string           $register Ignored.
+			 * @param int|string           $schema   The schema.
+			 * @param string|null          $uuid     The uuid.
+			 *
+			 * @return mixed
+			 */
+			public function saveObject(array $object, int|string $register = '', int|string $schema = '', ?string $uuid = null): mixed {
+				$row = $this->store->saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				if ($schema !== 'decision') {
+					return $row;
+				}
+
+				return new class((string)$row['id']) {
+					/**
+					 * @param string $id The uuid.
+					 */
+					public function __construct(private readonly string $id) {
+					}
+
+					/**
+					 * @return string
+					 */
+					public function getUuid(): string {
+						return $this->id;
+					}
+				};
+			}
+		};
+		$store->seed(schema: 'case', uuid: 'case-a', row: ['title' => 'A']);
+		$store->seed(schema: 'case', uuid: 'case-b', row: ['title' => 'B', 'wooPublicationStatus' => 'published']);
+
+		$this->settingsService->method('getObjectService')->willReturn($objects);
+		$this->settingsService->method('getConfigValue')->willReturnMap([
+			['register', '', 'dossiq'],
+			['decision_schema', '', 'decision'],
+			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', 'case'],
+		]);
+
+		$this->service->assembleDecision('case-a');
+		$this->service->assembleDecision('case-b');
+
+		$this->assertSame('ready', $store->row(schema: 'case', uuid: 'case-a')['wooPublicationStatus']);
+		$this->assertSame('A', $store->row(schema: 'case', uuid: 'case-a')['title']);
+		$this->assertSame('published', $store->row(schema: 'case', uuid: 'case-b')['wooPublicationStatus']);
+	}//end testAnAssembledDecisionMakesTheCaseReady()
+
 }//end class

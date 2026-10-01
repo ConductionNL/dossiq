@@ -218,6 +218,8 @@ class SchemaSlugMap {
 		// ZGW DRC case dossier (document-zaakdossier spec).
 		'informatieobject' => 'dossier_informatieobject_schema',
 		'zaakinformatieobject' => 'dossier_zaakinformatieobject_schema',
+		// The Woo document assessment. NOT 'wooAssessment': opencatalogi owns that slug.
+		'wooDocumentAssessment' => 'woo_assessment_schema',
 		'besluitinformatieobject' => 'dossier_besluitinformatieobject_schema',
 		'informatieobjecttype' => 'dossier_informatieobjecttype_schema',
 		// CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).

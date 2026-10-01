@@ -57,6 +57,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Woo\WooCaseLedger
  */
 class WooPublicationFieldsShippedTest extends TestCase {
 

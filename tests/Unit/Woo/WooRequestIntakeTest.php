@@ -28,6 +28,7 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Runs the intake against an in-memory register holding the seeded type and a C1-shaped dossier.
@@ -90,9 +91,20 @@ class WooRequestIntakeTest extends TestCase {
 			]
 		);
 
+		$this->intake = $this->intakeOn(store: $this->store);
+	}//end setUp()
+
+	/**
+	 * The intake on a given store.
+	 *
+	 * @param object $store The register the intake reads and writes.
+	 *
+	 * @return WooRequestIntake
+	 */
+	private function intakeOn(object $store): WooRequestIntake {
 		/** @var SettingsService&MockObject $settings */
 		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($this->store);
+		$settings->method('getObjectService')->willReturn($store);
 		$settings->method('getConfigValue')->willReturnCallback(
 			fn (string $key, string $default = ''): string => [
 				'register' => 'dossiq',
@@ -109,12 +121,88 @@ class WooRequestIntakeTest extends TestCase {
 		$urls = $this->createMock(IURLGenerator::class);
 		$urls->method('getAbsoluteURL')->willReturnCallback(fn (string $path): string => 'https://gemeente.test' . $path);
 
-		$this->intake = new WooRequestIntake(
+		return new WooRequestIntake(
 			settingsService: $settings,
 			urlGenerator: $urls,
 			logger: $this->createMock(LoggerInterface::class),
 		);
-	}//end setUp()
+	}//end intakeOn()
+
+	/**
+	 * The seeded rows in a store that behaves like OpenRegister on a request
+	 * without a Nextcloud user (a portal forward): a read scoped by RBAC or
+	 * multitenancy finds nothing and a scoped write is refused, so only
+	 * `_rbac: false, _multitenancy: false` reaches a row.
+	 *
+	 * @param InMemoryRegister $seeded The store holding the seeded rows.
+	 *
+	 * @return InMemoryRegister
+	 */
+	private function anonymousStore(InMemoryRegister $seeded): InMemoryRegister {
+		$store = new class extends InMemoryRegister {
+
+			/**
+			 * Find, unscoped only.
+			 *
+			 * @param int|string $id            The uuid.
+			 * @param mixed      $_extend       Ignored.
+			 * @param bool       $files         Ignored.
+			 * @param int|string $register      Ignored.
+			 * @param int|string $schema        The schema slug.
+			 * @param bool       $_rbac         Must be false to see a row.
+			 * @param bool       $_multitenancy Must be false to see a row.
+			 *
+			 * @return array<string, mixed>|null
+			 */
+			public function find(
+				int|string $id,
+				mixed $_extend = null,
+				bool $files = false,
+				int|string $register = '',
+				int|string $schema = '',
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): ?array {
+				if ($_rbac === true || $_multitenancy === true) {
+					return null;
+				}
+
+				return parent::find(id: $id, register: $register, schema: $schema);
+			}
+
+			/**
+			 * Save, unscoped only.
+			 *
+			 * @param array<string, mixed> $object        The row.
+			 * @param int|string           $register      Ignored.
+			 * @param int|string           $schema        The schema slug.
+			 * @param string|null          $uuid          The uuid, or null to create.
+			 * @param bool                 $_rbac         Must be false to write.
+			 * @param bool                 $_multitenancy Must be false to write.
+			 *
+			 * @return array<string, mixed>
+			 *
+			 * @throws RuntimeException When the write is scoped.
+			 */
+			public function saveObject(
+				array $object,
+				int|string $register = '',
+				int|string $schema = '',
+				?string $uuid = null,
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				if ($_rbac === true || $_multitenancy === true) {
+					throw new RuntimeException("User 'Anonymous' does not have permission to 'create' objects");
+				}
+
+				return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+			}
+		};
+		$store->rows = $seeded->rows;
+
+		return $store;
+	}//end anonymousStore()
 
 	/**
 	 * A valid portal request from the owner.
@@ -153,7 +241,7 @@ class WooRequestIntakeTest extends TestCase {
 		self::assertSame('Parkeerbeleid centrum', $case['title']);
 		self::assertSame('Alle stukken over het parkeerbeleid.', $case['description']);
 		self::assertSame('status-ontvangst', $case['status']);
-		self::assertSame('portal', $case['intakeChannel']);
+		self::assertSame('website', $case['intakeChannel']);
 		self::assertMatchesRegularExpression('/^\d{4}-\d{2}-\d{2}$/', $case['startDate']);
 		self::assertSame(
 			[
@@ -211,6 +299,56 @@ class WooRequestIntakeTest extends TestCase {
 	}//end testTheDossierRecordsTheCaseOnce()
 
 	/**
+	 * A portal forward arrives without a Nextcloud user. OpenRegister then
+	 * scopes a plain read to nobody, so the dossier looked missing and every
+	 * resident got "No such dossier." (Woo e2e J5, 1 Oct 2026). The intake pins
+	 * register and schema itself and checks the owner, so it reads and writes
+	 * unscoped, and the request goes through.
+	 *
+	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 *
+	 * @return void
+	 */
+	public function testAPortalRequestWithoutANextcloudUserStillOpensTheCase(): void {
+		$this->store = $this->anonymousStore(seeded: $this->store);
+		$this->intake = $this->intakeOn(store: $this->store);
+
+		$result = $this->intake->start($this->request());
+
+		$case = $this->store->row(schema: 'case', uuid: $result['caseId']);
+		self::assertSame(self::RESIDENT, $case['portalSubject']);
+		self::assertSame('status-ontvangst', $case['status']);
+		self::assertCount(2, $this->store->all(schema: 'caseObject'));
+		self::assertSame('Raadsbesluit parkeren 2025: Het besluit', $this->store->all(schema: 'caseObject')[0]['description']);
+		self::assertSame(
+			['dossiq:case:' . $result['caseId']],
+			$this->store->row(schema: 'collection', uuid: self::COLLECTION)['sourceOf']
+		);
+	}//end testAPortalRequestWithoutANextcloudUserStillOpensTheCase()
+
+	/**
+	 * Unscoped reads do not weaken the owner check: without a Nextcloud user,
+	 * someone else's dossier is still not found.
+	 *
+	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
+	 *
+	 * @return void
+	 */
+	public function testWithoutANextcloudUserSomeoneElsesDossierIsStillNotFound(): void {
+		$this->store = $this->anonymousStore(seeded: $this->store);
+		$this->intake = $this->intakeOn(store: $this->store);
+
+		try {
+			$this->intake->start($this->request(['subjectRef' => 'subject-ref-bob']));
+			self::fail('another subject must not start a request from this dossier');
+		} catch (WooRequestRefused $refused) {
+			self::assertSame(WooRequestRefused::NOT_FOUND, $refused->getReason());
+		}
+
+		self::assertSame([], $this->store->all(schema: 'case'));
+	}//end testWithoutANextcloudUserSomeoneElsesDossierIsStillNotFound()
+
+	/**
 	 * Someone else's dossier is refused as not found, and nothing is written.
 	 *
 	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/woo-request-intake/spec.md#requirement-only-the-owners-dossier-starts-a-request-req-wri-003
@@ -252,7 +390,7 @@ class WooRequestIntakeTest extends TestCase {
 		$case = $this->store->row(schema: 'case', uuid: $result['caseId']);
 		self::assertSame(WooRequestIntake::CASE_TYPE_ID, $case['caseType']);
 		self::assertSame(self::RESIDENT, $case['portalSubject']);
-		self::assertSame('pipelinq', $case['intakeChannel']);
+		self::assertSame('other', $case['intakeChannel']);
 		self::assertSame('pipelinq:ticket:42', $case['wooRequest']['originReference']);
 		self::assertCount(2, $this->store->all(schema: 'caseObject'));
 	}//end testAConvertedQuestionOpensTheSameKindOfCase()

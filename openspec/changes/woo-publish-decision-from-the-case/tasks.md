@@ -18,19 +18,19 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
 
 ## 2. The server finds the Woo decision
 
-- [ ] 2.1 `WooPublicationService`: resolve the case's Woo decision when no
+- [x] 2.1 `WooPublicationService`: resolve the case's Woo decision when no
   `decisionId` is given (design D-1); 409 `no_woo_decision` and
   `several_woo_decisions`.
   - unit: `WooPublicationServiceTest` covers none, one and two decisions
   - `@spec openspec/changes/woo-publish-decision-from-the-case/tasks.md#task-2.1`
-- [ ] 2.2 `WOOAssessmentController::publishDecision` and `withdrawPublication`
+- [x] 2.2 `WOOAssessmentController::publishDecision` and `withdrawPublication`
   pass an absent `decisionId` through instead of answering 400.
   - unit: `WOOAssessmentControllerTest` asserts the status of every branch;
     `WOOAssessmentControllerAuthorizationTest` stays green unchanged
 
 ## 3. The case carries its publication state
 
-- [ ] 3.1 Declare `wooPublicationStatus` and `wooPublicationUrl` on `case`
+- [ ] 3.1 (writers and schema done in `register.d/82` and `WooCaseLedger`; the repair step is NOT built: no UI path ever published a Woo case, see the PR) Declare `wooPublicationStatus` and `wooPublicationUrl` on `case`
   (design D-2); write them from `assembleDecision()`, `publish()` and
   `withdraw()`; add an idempotent repair step for existing Woo cases, registered
   post-migration with a persisted version key (ADR-106).
@@ -40,14 +40,14 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
 
 ## 4. The surface
 
-- [ ] 4.1 `src/manifest.json` `#CaseDetail`: header actions `woo-publish` and
+- [x] 4.1 `src/manifest.json` `#CaseDetail`: header actions `woo-publish` and
   `woo-withdraw` (design D-4); the two fields on the Data tab's core section.
   - `npm run check:manifest` exit 0
   - vitest: both actions present with their url, method and `visibleWhen`
 - [ ] 4.2 `tests/e2e/woo-publish-from-the-case.spec.ts`: a handler publishes a
   ready Woo decision, sees the link, withdraws it; citing the scenarios below.
   - `npx playwright test tests/e2e/woo-publish-from-the-case.spec.ts` exit 0
-- [ ] 4.3 Delete `src/services/wooPublicationApi.js` if nothing imports it after
+- [x] 4.3 Delete `src/services/wooPublicationApi.js` if nothing imports it after
   4.1, or import it from the handler that needs it.
   - `npm run lint` exit 0
 
@@ -55,16 +55,20 @@ Tier: V1. Kind: code. Rows: opencatalogi `int-case-system`, `woo-from-case`.
 
 Added 2026-09-30. Design D-5 to D-8.
 
-- [ ] 5.1 `buildPayload()` writes `publicationKind`, `wooCategory`, `caseReference`, `period` and `publicationDate` (D-5);
+- [x] 5.1 `buildPayload()` writes `publicationKind`, `wooCategory`, `caseReference`, `period` and `publicationDate` (D-5);
   `withdraw()` writes `depublicationDate`; documents become files on the
   publication (D-6).
   - unit: `WooPublicationServiceTest` asserts the payload, the file attach on
     the publication id and the withdraw field; a schema test pins the five
     decision properties
-- [ ] 5.2 After a publish, append the publication to `wooRequest.collectionId`
+- [x] 5.2 After a publish, append the publication to `wooRequest.collectionId`
   once, `addedBy: dossiq` (D-7).
   - unit: appended once; republish adds nothing; no collection, no write; a
     collection failure is logged and the publish still answers published
-- [ ] 5.3 `mijnZaken` carries `wooPublicationUrl`, and the citizen contribution
+- [x] 5.3 `mijnZaken` carries `wooPublicationUrl`, and the citizen contribution
   declares the change rule `dossiq.wooRequest.published` on it (D-8).
   - unit: `PortalContributionProviderTest` asserts the rule for `citizen` and `client`
+- [x] 5.4 The assessment schema ships and publishing reads the case's informatieobjecten (D-9).
+  - unit: `WooPublishOnTheRealRegisterTest` takes its configuration from the merged register and the slug map, assesses an uploaded document and publishes it with its file
+- [x] 5.5 Every Woo write and seed row fits its schema by value (D-10).
+  - unit: `WooWritesMatchTheRealSchemasTest` (seed rows, decision, assessment, request case and case objects, publish and withdraw)
