@@ -78,6 +78,7 @@ interface WooPublicationObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WooPublicationService
  *
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Woo\WooCaseLedger
  */
 class WooPublicationServiceTest extends TestCase {
 
