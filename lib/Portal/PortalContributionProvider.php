@@ -90,6 +90,42 @@ class PortalContributionProvider {
 	private const REGISTER = 'dossiq';
 
 	/**
+	 * What the citizen inbox projects, and where it keeps what portaliq's
+	 * inbox shows.
+	 *
+	 * THE INBOX READS ITS OWN NAMES. portaliq's inbox shows `body`, sorts on
+	 * `receivedAt` and counts `read`; `portaalBericht` keeps them as
+	 * `content`, `sentAt` and `readByRecipientAt`. Without this map a
+	 * handler's letter arrived as a subject line, dated nowhere, sorted last
+	 * and never read (portaliq#702). Each name must also be in the
+	 * `fields` whitelist below: portaliq projects before it maps. The files a
+	 * handler attaches to a message are listed and downloadable for the
+	 * resident who received it (`filesDownload`).
+	 *
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 */
+	private const CITIZEN_INBOX = [
+		'fields' => [
+			'caseReference',
+			'senderType',
+			'senderName',
+			'subject',
+			'content',
+			'attachments',
+			'direction',
+			'sentAt',
+			'readByRecipientAt',
+		],
+		'messageFields' => [
+			'body' => 'content',
+			'receivedAt' => 'sentAt',
+			'readAt' => 'readByRecipientAt',
+			'attachments' => 'attachments',
+		],
+		'filesDownload' => true,
+	];
+
+	/**
 	 * The case fields a citizen may see.
 	 *
 	 * 🔴 THE ONE LIST, AND THE REASON IT IS A CONSTANT. The portal projects a
@@ -637,32 +673,7 @@ class PortalContributionProvider {
 				'label' => 'Berichten',
 				'listable' => true,
 				'minTrust' => 'low',
-				// THE INBOX READS ITS OWN NAMES. portaliq's inbox shows `body`,
-				// sorts on `receivedAt` and counts `read`; this schema keeps
-				// them as `content`, `sentAt` and `readByRecipientAt`. Without
-				// this map a handler's letter arrived as a subject line, dated
-				// nowhere, sorted last and never read (portaliq#702). Each name
-				// must also be in `fields`: portaliq projects before it maps.
-				'messageFields' => [
-					'body' => 'content',
-					'receivedAt' => 'sentAt',
-					'readAt' => 'readByRecipientAt',
-					'attachments' => 'attachments',
-				],
-				// The files a handler attaches to the message, listed and
-				// downloadable for the resident who received it.
-				'filesDownload' => true,
-				'fields' => [
-					'caseReference',
-					'senderType',
-					'senderName',
-					'subject',
-					'content',
-					'attachments',
-					'direction',
-					'sentAt',
-					'readByRecipientAt',
-				],
+				...self::CITIZEN_INBOX,
 			],
 			[
 				'id' => 'verzoeken',
