@@ -44,7 +44,8 @@ respecify any of it):
 - **The write record.** On a portal write under a mandate, portaliq records `actingFor` and
   `mandate` on the case's `portalWrites` (`CitizenWriteRecorder`).
 
-**What is missing in portaliq** (for the portaliq lane, not specified here): no screen lists a
+**What is missing in portaliq** (not specified here; proposed as the separate portaliq change
+`site-mandates-the-represented-manage`, which is NOT YET WRITTEN and is not part of portaliq#1110): no screen lists a
 party's authorised people with scope and end date; a company or a person cannot invite someone
 to act for them; there is no revoke in the portal; a grant always writes `reach: organisation`
 with no expiry. These are the "Wie mag zaken regelen voor uw bedrijf?" list, "Iemand machtigen"
@@ -91,10 +92,20 @@ and "Intrekken" of `DossiqBusiness.dc.html`, and "Machtiging stoppen" of `Dossiq
   `menu: false` on every page. The "for whom" switcher, the acting-for bar and the mandate list
   are portaliq's shell; dossiq declares no block for them.
 
+## Depends on a portaliq change that does not exist yet
+
+The mandate list with scope and end date, invite, revoke, expiry and the typed `onBehalfOf`
+are proposed as portaliq `site-mandates-the-represented-manage`. That change is NOT YET WRITTEN. portaliq#1110
+(`site-mijn-omgeving-components`, `site-multi-step-forms`, `site-nlds-widget-palette`) does not
+cover mandate management. Until it lands, the dossiq half here works with the mandates
+portaliq can already make (an access request granted by staff, REQ-IAR-003): no expiry, no
+portal revoke, untyped `onBehalfOf`.
+
 ## What this change does not do
 
 - It does not build the mandate list, invite, revoke, the switcher or the acting-for bar.
-  Portaliq owns `portalMandate` and its screens (list above, for the portaliq lane).
+  Portaliq owns `portalMandate` and its screens (list above, for `site-mandates-the-represented-manage`, not yet
+  written).
 - It does not connect to DigiD Machtigen or eHerkenning ketenmachtiging. A mandate comes from
   portaliq, whatever its source.
 - It does not let a mandate scope anything but the case list and the case page. Messages and
@@ -104,7 +115,8 @@ and "Intrekken" of `DossiqBusiness.dc.html`, and "Machtiging stoppen" of `Dossiq
 
 - **The typed party reference.** Portaliq stores a free-text `onBehalfOf`, "for example a KVK
   number". For `mandateField` to match, both apps must write the same form. This change
-  proposes `kvk:<number>` and `subject:<subjectRef>`; portaliq must agree (portaliq lane).
+  proposes `kvk:<number>` and `subject:<subjectRef>`; portaliq must agree in
+  `site-mandates-the-represented-manage` (not yet written).
 - **How a person-for-person mandate names the represented person.** Portaliq holds no BSN. The
   represented person's `subjectRef` is derived one-way from their login. A mandate made before
   they ever signed in cannot name it. This is portaliq's to solve; until then

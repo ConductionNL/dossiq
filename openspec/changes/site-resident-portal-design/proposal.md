@@ -41,7 +41,8 @@ Builds on two open, unmerged changes. `portal-case-page-withdraws` (dossiq#3247)
   the `portalSubject` of its case, stamped when it is asked. A new citizen collection
   `vragenAanU` serves the open requests, field-projected to `summary`, `missingItems`,
   `hersteltermijn`, `state` and `case`. The case projection gains `waitingOnApplicant` and
-  `waitingOn`, so a case card can say who must act.
+  `waitingOn`, and a new calculated `portalTurn` folds them into the one field portaliq's case
+  card reads (`turnField`), so the card can say who must act.
 - **New: the steps a case passes through.** A provider method `caseSteps(caseId)` returns the
   case type's statuses folded by public label, in order, each marked done, current or to do.
   The case collection declares it as `steps`, the way it declares `timeline` and `documents`.
@@ -50,7 +51,8 @@ Builds on two open, unmerged changes. `portal-case-page-withdraws` (dossiq#3247)
 - **Page declarations for the three screens.** The resident overview, the case page and the
   start points for the signed-out home, with the blocks portaliq's mijn-omgeving components
   render (design D4).
-- **One "Zaken" and one "Berichten".** Every dossiq resident page declares `menu: false`.
+- **One "Zaken" and one "Berichten".** Every dossiq resident page declares `menu: false`; the
+  overview declares `home: true`.
   The case page opens from portaliq's case list and from notices, the reply lives on the case
   page, and new requests start from the overview and the home page.
 - **Words from the mockups.** "Documenten" replaces "Stukken" as the documents label.
@@ -58,8 +60,8 @@ Builds on two open, unmerged changes. `portal-case-page-withdraws` (dossiq#3247)
 
 ## What this change does not do
 
-- It does not build any component, widget or page shell. Those are portaliq's, in the changes
-  the portaliq lane of this programme writes: `site-mijn-omgeving-components` (case card,
+- It does not build any component, widget or page shell. Those are portaliq's, in portaliq#1110:
+  `site-mijn-omgeving-components` (case card,
   process steps, action row, file item, contact timeline, side navigation, data badge) and
   `site-nlds-widget-palette` (the widgets an editor places on the signed-out home).
 - It does not change how a withdrawal works. The withdraw side action is portaliq's

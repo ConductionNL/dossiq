@@ -20,16 +20,23 @@ This is a new requirement: today no request reaches the portal.
 - **THEN** the request MUST NOT be returned
 
 ### Requirement: A case says who must act (REQ-SRPD-002)
-The citizen case projection MUST include `waitingOnApplicant` and `waitingOn`, and the
-`mijnZaken` collection MUST declare value labels for them, so a case card reads "U bent aan
-zet" when the case waits on the resident, "Wij wachten op informatie van een ander" when it
-waits on a third party, and "De gemeente is aan zet" otherwise. A closed case MUST show no such
-line. This is a new requirement.
+The case schema MUST carry `portalTurn`, a calculation that is `applicant` when
+`waitingOnApplicant` is true or `waitingOn` is `applicant`, `thirdParty` when `waitingOn` is
+`thirdParty`, `us` otherwise, and empty when the case has an `endDate`. The citizen case
+projection MUST include `portalTurn`, `waitingOnApplicant` and `waitingOn`. The `mijnZaken`
+collection MUST declare `turnField: 'portalTurn'`, `dueField: 'deadline'` and value labels on
+`portalTurn`, so a case card reads "U bent aan zet", "Wij wachten op informatie van een ander"
+or "De gemeente is aan zet". A closed case MUST show no such line. This is a new requirement.
 
 #### Scenario: The case waits on the resident
 - **GIVEN** a running case with an open aanvullingsverzoek
 - **WHEN** the resident's overview lists the case
 - **THEN** the case card MUST read "U bent aan zet"
+
+#### Scenario: The card reads one declared field
+- **GIVEN** the `mijnZaken` collection
+- **WHEN** portaliq normalises the manifest
+- **THEN** `turnField` MUST be `portalTurn` and `portalTurn` MUST be a projected field
 
 #### Scenario: The case waits on the organisation
 - **GIVEN** a running case in a status whose `waitingOn` is `us` and no open request
@@ -66,8 +73,11 @@ internal team name MUST never reach the portal. This is a new requirement.
 
 ### Requirement: The resident pages are declared, and none of them is a menu entry (REQ-SRPD-005)
 The citizen contribution MUST declare the pages `overzicht`, `mijnZaken`, `berichten` and
-`verzoeken` with the blocks of design D4. `mijnZaken` MUST remain the first page with a
-`collection`, `detail` or `citizenCase` block on the case collection. Every resident page MUST
+`verzoeken` with the blocks of design D4, using only block types and keys portaliq
+`site-mijn-omgeving-components` defines (`tasks`, `inbox`, `cases`, `steps`, `documents`,
+`timeline`, `collection`, `detail`, `action`, `cta`, `citizenCase`). `overzicht` MUST declare
+`home: true`. `mijnZaken` MUST be a record page on the case collection and MUST remain the
+first page with a `collection`, `detail` or `citizenCase` block on it. Every resident page MUST
 declare `menu: false`, so the site menu shows one "Zaken" and one "Berichten", both portaliq's
 own. The case page MUST hold, in this order, the open question for the case, the steps, the
 documents, "Wat er is gebeurd", and beside them the facts, "Bericht sturen" and the
@@ -79,14 +89,20 @@ withdrawal.
 - **THEN** "Zaken" and "Berichten" MUST each appear once
 - **AND** no dossiq page MUST appear as a menu entry
 
+#### Scenario: No placeholder block names
+- **GIVEN** the declared resident pages
+- **WHEN** portaliq normalises them
+- **THEN** no block MUST be dropped as an unknown type
+
 #### Scenario: A case opens on its page
 - **GIVEN** the resident's case 2026-0003 in portaliq's case list
 - **WHEN** they open it
 - **THEN** the page `mijnZaken` MUST open with the open question first, the steps, "Documenten", "Wat er is gebeurd", "In het kort" and "Verzoek intrekken"
 
 ### Requirement: Dossiq offers its start points to the signed-out home (REQ-SRPD-006)
-Each action a resident may start, `startWooVerzoek`, `createBezwaar` and `createKlacht`, MUST
-carry a one-sentence `summary` and the `audiences` it serves, so a site page can list them as
+Each action a resident may start without a dossier, `startWooVerzoekAlgemeen`,
+`createBezwaar` and `createKlacht`, MUST carry a one-sentence `summary` of at most 200
+characters and the `audiences` it serves, a subset of dossiq's audiences, so a site page can list them as
 "Wat wilt u regelen?" tiles. A visitor who is not signed in and picks one MUST be asked to
 sign in before the form opens.
 

@@ -4,24 +4,32 @@ Read at dossiq `development` `59217bc9a` and portaliq `development` `b150def5` o
 
 ## D1. The steps, as the action declares them
 
+The shape is portaliq's (`site-multi-step-forms` REQ-SMF-020, portaliq#1110):
+`steps: [{id, title, description?, fields[], review?}]`. A step is kept only when every field it
+names is one of the action's fields. The review step carries `review: true` and no fields.
+REQ-SMF-020 is worded for a "create action", while both Woo actions are endpoint actions; its
+own scenario names `startWooVerzoekAlgemeen`, so it is meant to cover them. The build confirms
+this against portaliq#1110 (tasks 0.1).
+
 ```php
 'steps' => [
   ['id' => 'vraag', 'title' => 'Uw vraag',
-   'hint' => 'Vertel ons waar uw vraag over gaat.',
+   'description' => 'Vertel ons waar uw vraag over gaat.',
    'fields' => ['onderwerp', 'omschrijving']],
   ['id' => 'periode', 'title' => 'Periode en documenten',
-   'hint' => 'Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.',
+   'description' => 'Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.',
    'fields' => ['periodeVan', 'periodeTot', 'documentSoorten', 'toelichting']],
   ['id' => 'gegevens', 'title' => 'Uw gegevens',
-   'hint' => 'Wij gebruiken deze gegevens alleen voor uw verzoek.',
+   'description' => 'Wij gebruiken deze gegevens alleen voor uw verzoek.',
    'fields' => ['verzoekerNaam', 'verzoekerEmail', 'verzoekerType']],
   ['id' => 'controleren', 'title' => 'Controleren en versturen', 'review' => true],
 ],
 ```
 
-Field configs, from the mockup:
+Field configs, from the mockup. The column "Mockup wants" is what `DossiqWoo.dc.html` shows;
+see "Required fields: an open decision" below for what the form can actually enforce.
 
-| Field | Label | Required in the form | Server |
+| Field | Label | Mockup wants | Server |
 | --- | --- | --- | --- |
 | `onderwerp` | Waar gaat uw verzoek over? | yes | required (unchanged) |
 | `omschrijving` | Welke informatie wilt u hebben? | yes | optional (unchanged) |
@@ -33,9 +41,28 @@ Field configs, from the mockup:
 | `verzoekerEmail` | Uw e-mailadres | yes, prefilled from the profile | optional; a valid address |
 | `verzoekerType` | U vraagt dit als | no | optional; burger, journalist or organisatie |
 
-The form may be stricter than the server. The server keeps its rules because pipelinq calls
-`start()` too, and an employee converting a phone call may not have every answer. The form's
-"required" is a presentation key the action already supports (`fieldConfigs.required`).
+### Required fields: an open decision
+
+The mockup makes `omschrijving`, `periodeVan`, `documentSoorten`, `verzoekerNaam` and
+`verzoekerEmail` required. The server keeps them optional, because pipelinq calls `start()` too
+and an employee converting a phone call may not have every answer.
+
+A form cannot be stricter than its server. Portaliq's `ActionConfigNormaliser` honours
+`fieldConfigs.required: true` only for fields in the schema's `required` set
+(`supplier-portal`, "Form data minimisation"), and `site-multi-step-forms` keeps that rule
+(its open decision "a form stricter than its server"). So this change does NOT assume
+form-only required fields work. It declares `required` only where the server requires the
+field (`onderwerp`), and every other field renders as "(niet verplicht)".
+
+Whether portaliq honours even `onderwerp` on an endpoint action, which names no schema, is to
+be confirmed against portaliq#1110 at build (tasks 0.1).
+
+Two ways to get the mockup's required fields, for Ruben (tasks 0.1):
+
+1. Dossiq's portal route requires them: `PortalWooRequestController` refuses a portal request
+   without them, while `start()` stays lenient for pipelinq. The action then declares the
+   route's own required set, which portaliq can honour.
+2. Ruben relaxes portaliq's rule for actions that declare their own server check.
 
 `documentSoorten` values and their labels: `besluiten` "Besluiten en vergunningen",
 `rapporten` "Rapporten en adviezen", `correspondentie` "E-mails en brieven", `alles` "Alles wat
@@ -59,7 +86,7 @@ proof is what `attachTo` buys.
 
 ## D3. Draft and resume
 
-`draft: {retentionDays: 30}` on both actions. Portaliq owns the store: per signed-in subject,
+`draft: {retentionDays: 30}` on both actions (portaliq allows 1 to 90, REQ-SMF-021). Portaliq owns the store: per signed-in subject,
 per action, the visible answers and the step reached, removed after the retention date or when
 the request is sent. The step form shows "Wij bewaren uw antwoorden 30 dagen. U kunt later
 verdergaan." from the declared number. Dossiq stores nothing until the request is sent, so a

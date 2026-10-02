@@ -32,9 +32,9 @@ Builds on `woo-request-from-a-portal-dossier` and keeps its one creation path,
 `WooRequestIntake::start()`, its route and its assertion check. Nothing here contradicts it.
 
 - **The action declares its steps.** `startWooVerzoek` gains a `steps` list: each step has an
-  id, a title, a hint and the fields it asks. The fourth step is a review of every answer with
-  a "wijzigen" link per step. Portaliq renders the steps (`site-multi-step-forms`, written by
-  the portaliq lane). Dossiq declares them; it renders nothing.
+  id, a title, a `description` and the fields it asks. The fourth step carries `review: true`:
+  a review of every answer with a "wijzigen" link per step. Portaliq renders the steps
+  (`site-multi-step-forms`, portaliq#1110). Dossiq declares them; it renders nothing.
 - **New fields, all optional on the server.** `documentSoorten` (one or more of besluiten,
   rapporten, correspondentie, alles), `toelichting`, and the requester details the Woo case
   type already declares as intake properties: `verzoekerNaam`, `verzoekerEmail`,
@@ -51,6 +51,13 @@ Builds on `woo-request-from-a-portal-dossier` and keeps its one creation path,
 - **The confirmation names the case.** The route's 201 answer gains `identifier` (the case
   number) and `deadline`, so the confirmation can say "Uw zaaknummer is 2026-0003. U krijgt
   uiterlijk 30 oktober antwoord." The action declares that text with placeholders.
+
+## Open decision: required fields
+
+The mockup marks five fields required that the server keeps optional. Portaliq honours
+`fieldConfigs.required` only for schema-required fields, so a form cannot be stricter than its
+server. This change declares `required` only where the server requires it and leaves the choice
+to Ruben (design D1, tasks 0.1).
 
 ## What this change does not do
 

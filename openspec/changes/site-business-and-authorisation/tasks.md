@@ -4,13 +4,14 @@ Tier: V1. Kind: code. Programme: portal-design (2026-10-02). Mockups:
 `DossiqBusiness.dc.html`, `DossiqPhone.dc.html`.
 
 Builds on `portal-case-list-declarations` (its open tasks 1.1, 3.1 and 3.2 land here or before)
-and `site-resident-portal-design` (the pages). Depends on portaliq for the mandate list, invite,
-revoke, the switcher and the acting-for bar (gap list in the proposal, for the portaliq lane).
+and `site-resident-portal-design` (the pages). Depends on portaliq `site-mandates-the-represented-manage` for the mandate list,
+invite, revoke, expiry and the typed `onBehalfOf`. That change is NOT YET WRITTEN and is not in
+portaliq#1110. The switcher and the acting-for bar already exist in portaliq.
 
 ## 0. Decisions
 
 - [ ] 0.1 Portaliq agrees the typed party form `kvk:<number>` / `subject:<subjectRef>` for
-      `onBehalfOf` (proposal, open decisions).
+      `onBehalfOf` in `site-mandates-the-represented-manage` (not yet written).
 - [ ] 0.2 Ruben: a mandate scope finer than case types ("bekijken, aanvullen, aanvragen") is
       a portaliq change; confirm it is wanted.
 

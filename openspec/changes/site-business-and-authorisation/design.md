@@ -10,7 +10,7 @@ Portaliq paths are on that commit.
 | "Ingelogd als", eHerkenning login | portaliq | `OidcClaimMapperService`, `portal-ways-in` |
 | "U regelt nu zaken voor Slagerij Van der Berg, KVK 12345678" bar | portaliq | `ActingForSwitcher`, REQ-PIOC-008 |
 | "Voor wie regelt u nu zaken?" (uzelf, het bedrijf, H. Bakker) | portaliq | `ActingForSwitcher`, `BranchSwitcher`, REQ-CMC-004 |
-| "Wie mag zaken regelen voor uw bedrijf?" list, "Iemand machtigen", "Intrekken", "Uitnodiging intrekken" | portaliq, NOT BUILT | `portalMandate`; gap listed in the proposal |
+| "Wie mag zaken regelen voor uw bedrijf?" list, "Iemand machtigen", "Intrekken", "Uitnodiging intrekken" | portaliq, NOT BUILT | `portalMandate`; proposed as portaliq `site-mandates-the-represented-manage`, not yet written |
 | "Uw machtiging": scope, valid until, given by, "Machtiging stoppen" | portaliq, partly | `portalMandate.label`, `expiresAt`, `grantedBy`, `grantedAt`; stop not built |
 | "Dit moet u nog doen", case cards, "Lopende zaken van uw bedrijf" | dossiq declares, portaliq renders | this change and `site-resident-portal-design` |
 | Which cases a company or a represented person sees | dossiq declares the party, portaliq filters | `portalParty`, `mandateField` |

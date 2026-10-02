@@ -5,8 +5,10 @@ The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`
 (`onderwerp`, `omschrijving`), "Periode en documenten" (`periodeVan`, `periodeTot`,
 `documentSoorten`, `toelichting`), "Uw gegevens" (`verzoekerNaam`, `verzoekerEmail`,
 `verzoekerType`) and "Controleren en versturen" as a review of every answer. Every whitelisted
-field MUST belong to exactly one step. The labels and the "(niet verplicht)" suffixes MUST be
-the ones of `DossiqWoo.dc.html`. This builds on REQ-PORTAL-020 and keeps its endpoint, method
+field MUST belong to exactly one step. Each step MUST use the keys `id`, `title`,
+`description` and `fields`; the review step MUST carry `review: true` and no fields. The
+labels MUST be the ones of `DossiqWoo.dc.html`. A field MUST be declared `required` only when
+the server requires it. This builds on REQ-PORTAL-020 and keeps its endpoint, method
 and assertion.
 
 #### Scenario: A resident moves through the steps
@@ -14,6 +16,11 @@ and assertion.
 - **WHEN** they start "Informatie opvragen (Woo-verzoek)"
 - **THEN** the form MUST show step 1 of 4, "Uw vraag", and only its two fields
 - **AND** step 4 MUST list every answer with a link to change the step it came from
+
+#### Scenario: No form-only required field
+- **GIVEN** the declared action
+- **WHEN** the provider test reads its `fieldConfigs`
+- **THEN** only `onderwerp` MUST be marked required
 
 #### Scenario: Every field has a step
 - **GIVEN** the declared action

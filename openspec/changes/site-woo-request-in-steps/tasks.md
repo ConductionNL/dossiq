@@ -2,8 +2,16 @@
 
 Tier: V1. Kind: code. Programme: portal-design (2026-10-02). Mockup: `DossiqWoo.dc.html`.
 Builds on `woo-request-from-a-portal-dossier`. Depends on portaliq `site-multi-step-forms`
-(written by the portaliq lane) for the step form, the draft store and the confirmation page;
+(portaliq#1110) for the step form, the draft store and the confirmation page;
 without it portaliq shows the action as one form, as today.
+
+## 0. Decision for Ruben
+
+- [ ] 0.1 Required fields (design D1): dossiq's portal route requires `omschrijving`,
+      `periodeVan`, `documentSoorten`, `verzoekerNaam` and `verzoekerEmail`, or portaliq relaxes
+      its rule for actions with their own server check. Until decided, only `onderwerp` is
+      declared required. Also confirm with portaliq#1110 that `required` is honoured on an
+      endpoint action at all.
 
 ## 1. Intake
 
@@ -20,7 +28,8 @@ without it portaliq shows the action as one form, as today.
 
 ## 2. Actions
 
-- [ ] 2.1 `steps`, `fieldConfigs`, `draft` and `confirmation` on `startWooVerzoek`
+- [ ] 2.1 `steps` (with `description`, and `review: true` on the last), `fieldConfigs`
+      (`required` on `onderwerp` only), `draft` and `confirmation` on `startWooVerzoek`
       (design D1, D3, D4).
 - [ ] 2.2 `startWooVerzoekAlgemeen` without `attachTo` (design D2), with the `summary` the home
       tile reads (`site-resident-portal-design` REQ-SRPD-006).

@@ -4,8 +4,9 @@ Tier: V1. Kind: code. Programme: portal-design (2026-10-02). Mockups:
 `DossiqHome.dc.html`, `DossiqOverview.dc.html`, `DossiqCase.dc.html`.
 
 Lands after dossiq#3245 and dossiq#3247. Depends on portaliq changes written by the portaliq
-lane: `site-mijn-omgeving-components` (block types, `menu: false`, `steps`) and
-`site-nlds-widget-palette` (the start points widget).
+lane in portaliq#1110: `site-mijn-omgeving-components` (blocks `tasks`, `inbox`, `cases`,
+`steps`, `documents`, `timeline`; page keys `menu`, `home`, `group`, `record`; `steps`,
+`dueField`, `turnField`) and `site-nlds-widget-palette` (`summary`, `audiences`, start tiles).
 
 ## 0. Decisions for Ruben
 
@@ -29,8 +30,10 @@ lane: `site-mijn-omgeving-components` (block types, `menu: false`, `steps`) and
 
 ## 2. Who acts, steps, team
 
-- [ ] 2.1 `waitingOnApplicant` and `waitingOn` in `CITIZEN_CASE_FIELDS` and the detail fields,
-      with value labels (design D2).
+- [ ] 2.1 `portalTurn` on the case schema; `portalTurn`, `waitingOnApplicant` and `waitingOn`
+      in `CITIZEN_CASE_FIELDS` and the detail fields; `turnField`, `dueField` and value labels
+      on `mijnZaken` (design D2).
+  - unit: one test per row of the D2 table
 - [ ] 2.2 `OCA\Dossiq\Portal\CaseSteps` and `caseSteps()` on the provider; `steps` on
       `mijnZaken` (design D3).
   - unit: the seeded Woo type folds to five steps; a withdrawn case stops at its step
@@ -40,9 +43,13 @@ lane: `site-mijn-omgeving-components` (block types, `menu: false`, `steps`) and
 
 ## 3. Pages and start points
 
-- [ ] 3.1 The four pages of design D4 with `menu: false`, the documents label "Documenten".
+- [ ] 3.1 The four pages of design D4 with `menu: false`, `home: true` on `overzicht`, the
+      record key on `mijnZaken`, the documents label "Documenten".
   - unit: `PortalCasePageTest` asserts the blocks, the order and that `mijnZaken` still opens a case
-- [ ] 3.2 `summary` and `audiences` on the three start actions (design D5).
+  - check against portaliq#1110's `PortalPageResolver`: no block dropped, and a case opened
+    through `navKeyFor` lands on the record page with that case selected
+- [ ] 3.2 `summary` and `audiences` on `startWooVerzoekAlgemeen`, `createBezwaar` and
+      `createKlacht` (design D5).
 
 ## 4. Validation
 

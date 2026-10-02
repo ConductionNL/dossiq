@@ -17,6 +17,7 @@ Read at dossiq `development` `59217bc9a`, with the open PRs dossiq#3245
 | "Wij hebben een vraag aan u" | `aanvullingsverzoek` exists; not served to the portal | NEW: `vragenAanU` |
 | "U bent aan zet" | `case.waitingOnApplicant`, `case.waitingOn`; not projected | NEW: projected |
 | "Stap 2 van 4" and the steps list | nothing | NEW: `caseSteps` |
+| "U bent aan zet" as one card field | nothing | NEW: `portalTurn` |
 | "Behandeld door Team Open overheid" | `case.assignedGroup` is a uuid | NEW: `assignedGroupPublicName` |
 | One "Zaken", one "Berichten" | three dossiq menu entries (renamed in #3245) | `menu: false` |
 
@@ -61,7 +62,12 @@ derived. The case card reads them:
 | `waitingOn` `thirdParty` | "Wij wachten op informatie van een ander" |
 | otherwise | "De gemeente is aan zet" |
 
-The words are dossiq's and live in the collection's `valueLabels` (portaliq
+Portaliq's case card reads one field for this (`turnField`, portaliq
+`site-mijn-omgeving-components` REQ-SMO-022), and the table above reads two. So the case
+schema gains `portalTurn`, a calculation over `endDate`, `waitingOnApplicant` and `waitingOn`
+with the values `applicant`, `thirdParty`, `us`, or empty for a closed case. `mijnZaken`
+projects it and declares `turnField: 'portalTurn'` and `dueField: 'deadline'`. The words are
+dossiq's and live in the collection's `valueLabels` on `portalTurn` (portaliq
 `contribution-value-labels`), so a portal administrator can reword them per site.
 
 ## D3. Steps
@@ -97,39 +103,47 @@ The card's "Stap 2 van 5" reads the same answer: the index of the current step a
 
 ## D4. Pages
 
-The block type names below are the ones this change asks `site-mijn-omgeving-components` to
-define. If that change names them differently, the names here follow it.
+Block types, page keys and collection keys are the ones portaliq `site-mijn-omgeving-components`
+defines (portaliq#1110): REQ-SMO-020 (page keys `group`, `menu`, `home`, `records`),
+REQ-SMO-021 (blocks `tasks`, `inbox`, `cases`, `steps`, `documents`, `timeline`; `limit` and
+`sort` on `collection`) and REQ-SMO-022 (`steps`, `dueField`, `turnField` on a cases
+collection).
 
-| Page id | Label | menu | Blocks, in order |
+| Page id | Label | Page keys | Blocks, in order |
 | --- | --- | --- | --- |
-| `overzicht` | Overzicht | portaliq's home slot | `actionList` on `vragenAanU` (open only), `caseCards` on `mijnZaken` (open only, limit 5, link "Alle zaken, ook afgeronde"), `messageList` on `berichten` (limit 3), `cta` × 3 (Woo-verzoek, bezwaar, klacht) |
-| `mijnZaken` | Uw zaak | false | `record` header from `mijnZaken` (`identifier`, `title`, status badge, deadline sentence), `actionList` on `vragenAanU` for this case, `processSteps` (`steps`), `fileList` (`documents`), `contactTimeline` (`timeline`), side: `detail` "In het kort" (`identifier`, `receivedAt`, `deadline`, `assignedGroupPublicName`), `cta` "Bericht sturen" (`replyToMessage`), `citizenCase` (withdraw) |
-| `berichten` | Berichten | false | `collection`, `detail`, `action` `replyToMessage` |
-| `verzoeken` | Mijn verzoeken | false | `action` `createKlacht`, `collection`, `detail` |
+| `overzicht` | Overzicht | `home: true`, `menu: false`, `group` | `tasks` on `vragenAanU` (`dueField: hersteltermijn`, `titleFields: [summary]`), `cases` on `mijnZaken` (`open: true`, `limit: 5`), `inbox` on `berichten` (`limit: 3`), `cta` × 3 (Woo-verzoek, bezwaar, klacht) |
+| `mijnZaken` | Uw zaak | `record: {collection: mijnZaken, titleFields: [title]}`, `menu: false`, `group` | `collection` on `vragenAanU` (`recordField: case`, open only), `steps`, `documents`, `timeline`, `detail` "In het kort" (`identifier`, `receivedAt`, `deadline`, `assignedGroupPublicName`), `cta` "Bericht sturen" (`replyToMessage`), `citizenCase` (withdraw) |
+| `berichten` | Berichten | `menu: false`, `group` | `collection`, `detail`, `action` `replyToMessage` |
+| `verzoeken` | Mijn verzoeken | `menu: false`, `group` | `action` `createKlacht`, `collection`, `detail` |
 
-`mijnZaken` stays the first page with a `collection`, `detail` or `citizenCase` block on the
-case collection, so portaliq's `navKeyFor` still opens a case there (#3247). Page ids stay the
-collection ids, so routes like `/mijn/dossiq/mijnZaken` do not move. The `group` of #3245
-stays on every page; it only matters when a page is in the menu.
+On the home, portaliq puts open portal tasks and the rows of every `tasks` block on a home page
+together under "Dit moet u nog doen", sorted by deadline, and renders the rest of the home page
+under it (portaliq design D4). The open question for one case uses a `collection` block with
+the existing record scoping key `recordField`, because the `tasks` block takes no record scope.
 
-`menu: false` is a new page key. Portaliq's `buildNav` puts every page in the menu today and
-no open portaliq change lets a provider opt out. This change asks
-`site-mijn-omgeving-components` to honour it. Until it does, the key is ignored and #3245's
-renamed entries show, which is today's state.
+`steps`, `documents` and `timeline` render only on a record page whose collection declares that
+provider (REQ-SMO-021), which is why `mijnZaken` becomes a record page on its own collection.
+It keeps its `detail` and `citizenCase` blocks, so it stays the first page with a `collection`,
+`detail` or `citizenCase` block on the case collection and portaliq's `navKeyFor` still opens a
+case there (#3247). The build confirms with the portaliq lane that a record page opened through
+`navKeyFor` selects the case (tasks 3.1). Page ids stay the collection ids, so routes like
+`/mijn/dossiq/mijnZaken` do not move. The `group` of #3245 stays on every page.
 
-The overview is the resident's landing page. Portaliq decides which contribution's overview is
-the home when several apps declare one; that is portaliq's (`dashboard-page`).
+`menu: false` keeps the route and leaves the menu (REQ-SMO-020). Before portaliq#1110 lands the
+key is ignored and #3245's renamed entries show, which is today's state.
 
 ## D5. The signed-out home
 
 The home in `DossiqHome.dc.html` is a site page an editor builds. Dossiq offers it the start
 points: each create or endpoint action a resident may start gains a `summary` (one sentence,
 from the mockup) and `audiences`. The widget palette (`site-nlds-widget-palette`) lists them in
-a "Wat wilt u regelen?" tile grid. A signed-out visitor who picks one signs in first.
+a "Wat wilt u regelen?" tile grid (REQ-SNW-020: `summary` 1 to 200 characters, `audiences` a
+subset of dossiq's audiences). The Woo tile is the action without a dossier
+(`site-woo-request-in-steps`). A signed-out visitor who picks one signs in first.
 
 | Action | Tile title | Summary |
 | --- | --- | --- |
-| `startWooVerzoek` | Informatie opvragen (Woo-verzoek) | Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo). |
+| `startWooVerzoekAlgemeen` | Informatie opvragen (Woo-verzoek) | Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo). |
 | `createBezwaar` | Bezwaar maken | Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar. |
 | `createKlacht` | Klacht indienen | Vertel ons wat er misging. |
 
