@@ -392,6 +392,7 @@ class PortalContributionProvider {
 	 * @return array<string, mixed> The supplier manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
 	private function supplierContribution(): array {
 		return [
@@ -444,6 +445,14 @@ class PortalContributionProvider {
 					'scopeField' => 'supplierRef',
 					'label' => 'Berichten',
 					'listable' => true,
+					// The portal inbox reads `receivedAt`; this schema keeps the
+					// date in `sentAt` and the files in `attachmentRefs`
+					// (portaliq#702). It has no read date, so a supplier's
+					// message stays unread in the portal.
+					'messageFields' => [
+						'receivedAt' => 'sentAt',
+						'attachments' => 'attachmentRefs',
+					],
 				],
 			],
 			'actions' => [],
@@ -561,6 +570,7 @@ class PortalContributionProvider {
 	 * @return array<int, array<string, mixed>> The collections.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
 	private function citizenCollections(): array {
 		return [
@@ -627,6 +637,21 @@ class PortalContributionProvider {
 				'label' => 'Berichten',
 				'listable' => true,
 				'minTrust' => 'low',
+				// THE INBOX READS ITS OWN NAMES. portaliq's inbox shows `body`,
+				// sorts on `receivedAt` and counts `read`; this schema keeps
+				// them as `content`, `sentAt` and `readByRecipientAt`. Without
+				// this map a handler's letter arrived as a subject line, dated
+				// nowhere, sorted last and never read (portaliq#702). Each name
+				// must also be in `fields`: portaliq projects before it maps.
+				'messageFields' => [
+					'body' => 'content',
+					'receivedAt' => 'sentAt',
+					'readAt' => 'readByRecipientAt',
+					'attachments' => 'attachments',
+				],
+				// The files a handler attaches to the message, listed and
+				// downloadable for the resident who received it.
+				'filesDownload' => true,
 				'fields' => [
 					'caseReference',
 					'senderType',
