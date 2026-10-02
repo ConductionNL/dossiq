@@ -44,6 +44,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
+ * @uses   \OCA\Dossiq\Portal\PortalPages
  */
 class PortalCaseDeclarationsTest extends TestCase {
 	/**

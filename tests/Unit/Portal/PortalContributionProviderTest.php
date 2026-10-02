@@ -34,6 +34,7 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
+ * @uses   \OCA\Dossiq\Portal\PortalPages
  */
 class PortalContributionProviderTest extends TestCase {
 	/**
@@ -220,7 +221,11 @@ class PortalContributionProviderTest extends TestCase {
 		$pages = $this->provider->getContribution(['audience' => 'citizen'])['pages'];
 
 		$this->assertSame(
-			[['type' => 'collection', 'collection' => 'mijnZaken'], ['type' => 'detail', 'collection' => 'mijnZaken']],
+			[
+				['type' => 'collection', 'collection' => 'mijnZaken'],
+				['type' => 'detail', 'collection' => 'mijnZaken'],
+				['type' => 'citizenCase', 'collection' => 'mijnZaken'],
+			],
 			$pages[0]['blocks']
 		);
 		$this->assertSame(['type' => 'action', 'action' => 'replyToMessage'], $pages[1]['blocks'][0]);
@@ -479,6 +484,56 @@ class PortalContributionProviderTest extends TestCase {
 					$props,
 					"projected field '{$field}' must exist on schema '{$schemaSlug}' ({$audience}/{$entry['id']})"
 				);
+			}
+		}
+	}
+
+	/**
+	 * portaliq#702: the inbox reads `body`, `receivedAt` and `read`, and a
+	 * handler's letter arrived as a subject line only. The citizen inbox names
+	 * its own fields and opts into its files.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 */
+	public function testTheInboxNamesItsMessageFields(): void {
+		$collections = $this->provider->getContribution(['audience' => 'citizen'])['collections'];
+		$berichten = array_column($collections, null, 'id')['berichten'];
+
+		$this->assertSame(
+			['body' => 'content', 'receivedAt' => 'sentAt', 'readAt' => 'readByRecipientAt', 'attachments' => 'attachments'],
+			$berichten['messageFields']
+		);
+		$this->assertTrue($berichten['filesDownload']);
+
+		$supplier = array_column($this->provider->getContribution(['audience' => 'supplier'])['collections'], null, 'id')['messages'];
+		$this->assertSame(['receivedAt' => 'sentAt', 'attachments' => 'attachmentRefs'], $supplier['messageFields']);
+	}
+
+	/**
+	 * Every inbox names its fields, each name is a property of its schema, and
+	 * a projected collection projects it: portaliq projects before it maps, so
+	 * a name left out of `fields` would arrive empty.
+	 *
+	 * @dataProvider audienceProvider
+	 *
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 */
+	public function testEveryMessageFieldIsProjectedAndOnItsSchema(string $audience): void {
+		$contribution = $this->provider->getContribution(['audience' => $audience]);
+		foreach (($contribution['collections'] ?? []) as $collection) {
+			if (($collection['kind'] ?? '') !== 'inbox') {
+				continue;
+			}
+
+			$this->assertNotEmpty($collection['messageFields'] ?? [], "{$audience}/{$collection['id']} names its message fields");
+			$props = $this->propertiesFor($collection['schema']);
+			foreach ($collection['messageFields'] as $key => $field) {
+				$this->assertArrayHasKey($field, $props, "{$audience}/{$collection['id']}: {$key} -> '{$field}' is on '{$collection['schema']}'");
+				if (isset($collection['fields']) === true) {
+					$this->assertContains($field, $collection['fields'], "{$audience}/{$collection['id']}: '{$field}' survives the projection");
+				}
 			}
 		}
 	}

@@ -90,6 +90,42 @@ class PortalContributionProvider {
 	private const REGISTER = 'dossiq';
 
 	/**
+	 * What the citizen inbox projects, and where it keeps what portaliq's
+	 * inbox shows.
+	 *
+	 * THE INBOX READS ITS OWN NAMES. portaliq's inbox shows `body`, sorts on
+	 * `receivedAt` and counts `read`; `portaalBericht` keeps them as
+	 * `content`, `sentAt` and `readByRecipientAt`. Without this map a
+	 * handler's letter arrived as a subject line, dated nowhere, sorted last
+	 * and never read (portaliq#702). Each name must also be in the
+	 * `fields` whitelist below: portaliq projects before it maps. The files a
+	 * handler attaches to a message are listed and downloadable for the
+	 * resident who received it (`filesDownload`).
+	 *
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 */
+	private const CITIZEN_INBOX = [
+		'fields' => [
+			'caseReference',
+			'senderType',
+			'senderName',
+			'subject',
+			'content',
+			'attachments',
+			'direction',
+			'sentAt',
+			'readByRecipientAt',
+		],
+		'messageFields' => [
+			'body' => 'content',
+			'receivedAt' => 'sentAt',
+			'readAt' => 'readByRecipientAt',
+			'attachments' => 'attachments',
+		],
+		'filesDownload' => true,
+	];
+
+	/**
 	 * The case fields a citizen may see.
 	 *
 	 * 🔴 THE ONE LIST, AND THE REASON IT IS A CONSTANT. The portal projects a
@@ -237,6 +273,13 @@ class PortalContributionProvider {
 	];
 
 	/**
+	 * Builds the declared pages (no dependencies, so `new` still works).
+	 *
+	 * @var PortalPages
+	 */
+	private readonly PortalPages $pages;
+
+	/**
 	 * Constructor.
 	 *
 	 * THE ONE DEPENDENCY, AND WHY IT IS OPTIONAL. Portaliq discovers this
@@ -261,6 +304,7 @@ class PortalContributionProvider {
 		private readonly ?PortalCaseDocuments $documents = null,
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 	) {
+		$this->pages = new PortalPages();
 	}//end __construct()
 
 	/**
@@ -434,6 +478,7 @@ class PortalContributionProvider {
 	 * @return array<string, mixed> The supplier manifest.
 	 *
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
 	private function supplierContribution(): array {
 		$contribution = [
@@ -486,12 +531,20 @@ class PortalContributionProvider {
 					'scopeField' => 'supplierRef',
 					'label' => 'Berichten',
 					'listable' => true,
+					// The portal inbox reads `receivedAt`; this schema keeps the
+					// date in `sentAt` and the files in `attachmentRefs`
+					// (portaliq#702). It has no read date, so a supplier's
+					// message stays unread in the portal.
+					'messageFields' => [
+						'receivedAt' => 'sentAt',
+						'attachments' => 'attachmentRefs',
+					],
 				],
 			],
 			'actions' => [],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
-		$contribution['pages'] = $this->pagesFor(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
+		$contribution['pages'] = $this->pages->forCollections(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
 
 		return $contribution;
 
@@ -573,7 +626,9 @@ class PortalContributionProvider {
 			'label' => self::CITIZEN_GROUP,
 			'collections' => $collections,
 			'actions' => $actions,
-			'pages' => $this->pagesFor(collections: $collections, actions: $actions, group: self::CITIZEN_GROUP, labels: self::CITIZEN_PAGE_LABELS),
+			'pages' => $this->pages->withCaseScreen(
+				pages: $this->pages->forCollections(collections: $collections, actions: $actions, group: self::CITIZEN_GROUP, labels: self::CITIZEN_PAGE_LABELS)
+			),
 			// A declared rule key, not a change rule: dossiq writes the
 			// message itself (WooDecisionNotice), so portaliq sends its
 			// e-mail. A change rule would add a generic "is bijgewerkt"
@@ -583,59 +638,13 @@ class PortalContributionProvider {
 	}//end citizenContribution()
 
 	/**
-	 * One page per listable collection, under one menu group.
-	 *
-	 * The pages portaliq would make when an app declares none (the create
-	 * action for the collection's schema, the list, the selected row), so the
-	 * screens stay as they were. They are declared because only a declared
-	 * page carries a `group` and a name of its own.
-	 *
-	 * @param array<int, array<string, mixed>> $collections The audience's collections.
-	 * @param array<int, array<string, mixed>> $actions     The audience's actions.
-	 * @param string                           $group       The menu heading.
-	 * @param array<string, string>            $labels      Page names that differ from the collection label, by collection id.
-	 *
-	 * @return array<int, array<string, mixed>> The pages.
-	 *
-	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
-	 */
-	private function pagesFor(array $collections, array $actions, string $group, array $labels=[]): array {
-		$pages = [];
-		foreach ($collections as $collection) {
-			if (($collection['listable'] ?? true) !== true) {
-				continue;
-			}
-
-			$id = (string)$collection['id'];
-			$blocks = [];
-			foreach ($actions as $action) {
-				if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === ($collection['schema'] ?? '')) {
-					$blocks[] = ['type' => 'action', 'action' => (string)$action['id']];
-					break;
-				}
-			}
-
-			$blocks[] = ['type' => 'collection', 'collection' => $id];
-			$blocks[] = ['type' => 'detail', 'collection' => $id];
-
-			$pages[] = [
-				'id' => $id,
-				'label' => ($labels[$id] ?? (string)($collection['label'] ?? $id)),
-				'group' => $group,
-				'blocks' => $blocks,
-			];
-		}
-
-		return $pages;
-	}//end pagesFor()
-
-
-	/**
 	 * The collections a citizen may list, and what each one is scoped by.
 	 *
 	 * @return array<int, array<string, mixed>> The collections.
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
+	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
 	 */
 	private function citizenCollections(): array {
 		return [
@@ -679,6 +688,10 @@ class PortalContributionProvider {
 				// `endDate` is set when a case ends and is already projected.
 				'kind' => 'cases',
 				'closedField' => 'endDate',
+				// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
+				// portal needs to tell statuses apart; the merged case list
+				// showed it as is. portaliq shows this field instead.
+				'statusLabelField' => StatusPublicLabels::CASE_LABEL_FIELD,
 				// Where the case type of a case lives, so a portal
 				// administrator can hide a case type the portal has no form
 				// for (portaliq operate-show-per-case-type).
@@ -702,17 +715,7 @@ class PortalContributionProvider {
 				'label' => 'Berichten',
 				'listable' => true,
 				'minTrust' => 'low',
-				'fields' => [
-					'caseReference',
-					'senderType',
-					'senderName',
-					'subject',
-					'content',
-					'attachments',
-					'direction',
-					'sentAt',
-					'readByRecipientAt',
-				],
+				...self::CITIZEN_INBOX,
 			],
 			[
 				'id' => 'verzoeken',
@@ -1020,7 +1023,7 @@ class PortalContributionProvider {
 			],
 			'notifications' => [],
 		];
-		$contribution['pages'] = $this->pagesFor(
+		$contribution['pages'] = $this->pages->forCollections(
 			collections: $contribution['collections'],
 			actions: $contribution['actions'],
 			group: self::INSPECTOR_GROUP

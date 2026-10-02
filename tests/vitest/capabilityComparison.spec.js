@@ -135,7 +135,9 @@ const FIRST_COMPARED_ON = '2026-09-07'
 // without re-reading it is the dishonesty this page exists to avoid. Every
 // move is listed in the data file's `_rerated`, which the guard below pins to
 // the ratings themselves so a note cannot outlive the score it explains.
-const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
+// 2.47 moved on 2026-10-02, a proposal row: dossiq declared the portal case
+// page a resident withdraws a Woo request from (dossiq#3247).
+const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23', '2.47']
 
 // Our column moved again on 2026-09-14, and for a different reason: the corpus
 // re-read our case-type configuration end to end and three ratings were too

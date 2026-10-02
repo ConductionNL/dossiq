@@ -8,7 +8,7 @@
 	},
 	"comparedOn": "2026-09-26",
 	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-09-28",
+	"reratedOn": "2026-10-02",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -658,6 +658,14 @@
 			"to": "no",
 			"cause": "corrected",
 			"reason": "portaliq lib/Controller/CitizenCaseController.php:304-331 withdraw() is implemented (appinfo/routes.php:287), but src/portal/lib/portalApi.js has no withdraw method and src/portal/components/CitizenCase.jsx has no withdraw button, so no applicant reaches it (portaliq matrix rows act-withdraw-case and sib-dossiq-2-47)."
+		},
+		{
+			"id": "2.47",
+			"on": "2026-10-02",
+			"from": "no",
+			"to": "yes",
+			"cause": "built",
+			"reason": "dossiq declares a mijnZaken portal page with a citizenCase block (lib/Portal/PortalContributionProvider.php citizenPages(), dossiq#3247). A live check on 2026-10-02 opened a resident's Woo request from Mijn zaken on /apps/portaliq/site, withdrew it through portaliq's case screen and found the target status, withdrawnAt, the reason and a portalWrites entry on the case."
 		},
 		{
 			"id": "Q1.16",
@@ -19704,8 +19712,8 @@
 			"name": "Applicant withdraws their own case from the portal",
 			"status": "pending",
 			"source": "dossiq#2314, published as 2.41",
-			"dossiq": "no",
-			"dossiqNote": "ComplaintService has a withdrawn status, set internally by a handler. Re-rated partial to no on 2026-09-26: portaliq lib/Controller/CitizenCaseController.php:304-331 withdraw() is implemented (appinfo/routes.php:287), but the React portal had no withdraw button, so no applicant reached it. That portal is retired (portaliq#1072, 2026-10-02) and residents use the Vue site at /apps/portaliq/site. Its case screen (src/site/components/e/CitizenCase.vue, withdrawCitizenCase in src/shared/portalApi.js) shows a withdraw button only when the case type declares portalWithdrawal. dossiq's Woo request case type declares one since dossiq#3229 (lib/Settings/register.d/81-woo-verzoek.json:104). The no stands until this row is read again (portaliq matrix rows act-withdraw-case and sib-dossiq-2-47).",
+			"dossiq": "yes",
+			"dossiqNote": "ComplaintService has a withdrawn status, set internally by a handler. Re-rated yes after a live check on 2026-10-02 (portaliq development e72ddfba, dossiq feat/woo-withdraw-page-on-site 54a2c4c1, dossiq#3247, a test instance): dossiq's PortalContributionProvider declares a mijnZaken page with a citizenCase block, so a resident (audience client) opening their Woo request (case type woo-verzoek, portalWithdrawal since dossiq#3229) from Mijn zaken on /apps/portaliq/site lands on the case screen (src/site/components/e/CitizenCase.vue) with a withdraw button. Withdrawing through the screen showed 'Uw aanvraag is ingetrokken.' and the withdrawn block; the case got the case type's target status, withdrawnAt, the reason and a portalWrites entry (portaliq lib/Controller/CitizenCaseController.php withdraw()). Holds once dossiq#3247 is merged. Open in portaliq: the case screen lists every case field unprojected, and Mijn zaken shows the status as a uuid (portaliq matrix rows act-withdraw-case and sib-dossiq-2-47).",
 			"name_nl": "Aanvrager trekt de eigen zaak in vanuit het portaal",
 			"opencase": "no",
 			"gzac": "no",
