@@ -22,6 +22,7 @@ namespace OCA\Dossiq\Tests\Unit\Woo;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
+use OCA\Dossiq\Woo\WooDecisionNotice;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\Security\ISecureRandom;
 use PHPUnit\Framework\TestCase;
@@ -177,4 +178,26 @@ class WooDossierReturnTest extends TestCase {
 		unset($this->store->rows['collection'][self::COLLECTION]);
 		self::assertFalse($this->return->append(case: $this->case(), publicationId: 'pub-new', title: 'x'));
 	}//end testAGoneDossierIsNotAFailure()
+	/**
+	 * The first publish tells the resident; a republish, or a return without a notice, tells nobody.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 */
+	public function testOnlyTheFirstPublishTellsTheResident(): void {
+		$notice = $this->createMock(WooDecisionNotice::class);
+		$notice->expects(self::once())->method('tell')->with($this->case(), 'case-1', 'pub-new')->willReturn(true);
+		$settings = $this->createMock(SettingsService::class);
+		$return = new WooDossierReturn(
+			settingsService: $settings,
+			random: $this->createMock(ISecureRandom::class),
+			logger: $this->createMock(LoggerInterface::class),
+			decisionNotice: $notice,
+		);
+
+		self::assertTrue($return->tellTheResident(case: $this->case(), caseId: 'case-1', publicationId: 'pub-new'));
+		self::assertFalse($return->tellTheResident(case: $this->case() + ['wooPublicationUrl' => 'https://gemeente.test/p'], caseId: 'case-1', publicationId: 'pub-new'));
+		self::assertFalse($this->return->tellTheResident(case: $this->case(), caseId: 'case-1', publicationId: 'pub-new'));
+	}//end testOnlyTheFirstPublishTellsTheResident()
 }//end class

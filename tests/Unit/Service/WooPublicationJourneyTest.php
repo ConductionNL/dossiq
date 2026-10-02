@@ -27,7 +27,6 @@ use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCA\Dossiq\Tests\Support\InMemoryRegister;
 use OCA\Dossiq\Woo\WooCaseLedger;
-use OCA\Dossiq\Woo\WooDecisionNotice;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use OCP\IURLGenerator;
@@ -41,7 +40,6 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\WooPublicationService
  * @covers \OCA\Dossiq\Woo\WooCaseLedger
  * @uses   \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
- * @uses   \OCA\Dossiq\Woo\WooDecisionNotice
  */
 class WooPublicationJourneyTest extends TestCase {
 
@@ -67,13 +65,6 @@ class WooPublicationJourneyTest extends TestCase {
 	 * @var WooDossierReturn&MockObject
 	 */
 	private WooDossierReturn&MockObject $return;
-
-	/**
-	 * The resident's decision notice.
-	 *
-	 * @var WooDecisionNotice&MockObject
-	 */
-	private WooDecisionNotice&MockObject $notice;
 
 	/**
 	 * The service under test.
@@ -126,7 +117,6 @@ class WooPublicationJourneyTest extends TestCase {
 
 		$this->client = $this->createMock(OpenCatalogiApiClient::class);
 		$this->return = $this->createMock(WooDossierReturn::class);
-		$this->notice = $this->createMock(WooDecisionNotice::class);
 
 		$this->service = new WooPublicationService(
 			$settings,
@@ -136,49 +126,26 @@ class WooPublicationJourneyTest extends TestCase {
 			$this->createMock(LoggerInterface::class),
 			$this->return,
 			new WooCaseLedger(settingsService: $settings, logger: $this->createMock(LoggerInterface::class), urlGenerator: $urls),
-			null,
-			$this->notice,
 		);
 	}//end setUp()
 
 	/**
-	 * The first publish tells the resident, with the case as it was and the publication.
+	 * A publish hands the case as it was, and the publication, to the resident's notice.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
 	 */
-	public function testTheFirstPublishTellsTheResident(): void {
+	public function testAPublishTellsTheResident(): void {
 		$this->client->method('createPublication')->willReturn(['id' => 'pub-1']);
-		$this->notice->expects(self::once())->method('tell')->with(
-			self::callback(fn (array $case): bool => ($case['title'] ?? '') === 'Parkeerbeleid centrum'),
+		$this->return->expects(self::once())->method('tellTheResident')->with(
+			self::callback(fn (array $case): bool => ($case['title'] ?? '') === 'Parkeerbeleid centrum' && isset($case['wooPublicationUrl']) === false),
 			self::CASE,
 			'pub-1',
 		)->willReturn(true);
 
 		$this->service->publish(self::CASE, 'dec-1');
-	}//end testTheFirstPublishTellsTheResident()
-
-	/**
-	 * A republish keeps the link the resident already has, so it tells nobody again.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
-	 */
-	public function testARepublishDoesNotTellTheResidentAgain(): void {
-		$this->store->seed(schema: 'case', uuid: self::CASE, row: [
-			'title' => 'Parkeerbeleid centrum',
-			'wooRequest' => ['collectionId' => 'col-1'],
-			'wooPublicationStatus' => 'published',
-			'wooPublicationUrl' => 'https://gemeente.test/index.php/apps/opencatalogi/publication/pub-1',
-		]);
-		$this->client->method('createPublication')->willReturn(['id' => 'pub-1']);
-		$this->client->method('updatePublication')->willReturn(['id' => 'pub-1']);
-		$this->notice->expects(self::never())->method('tell');
-
-		$this->service->publish(self::CASE, 'dec-1');
-	}//end testARepublishDoesNotTellTheResidentAgain()
+	}//end testAPublishTellsTheResident()
 
 	/**
 	 * Publishing without a decision id uses the case's Woo decision and writes the journey fields.

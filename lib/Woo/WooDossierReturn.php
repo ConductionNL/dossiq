@@ -15,6 +15,10 @@
  * dossier that cannot be read or written is logged and answered with false,
  * and never undoes a publish.
  *
+ * The decision also comes back to the resident who asked: on the first
+ * publish {@see self::tellTheResident()} has WooDecisionNotice write them a
+ * message that says the decision is published and links to it.
+ *
  * @category Woo
  * @package  OCA\Dossiq\Woo
  *
@@ -57,16 +61,41 @@ class WooDossierReturn {
 	/**
 	 * Constructor.
 	 *
-	 * @param SettingsService $settingsService Where OpenRegister and the collection schema are.
-	 * @param ISecureRandom   $random          Makes the item id.
-	 * @param LoggerInterface $logger          Logger.
+	 * @param SettingsService        $settingsService Where OpenRegister and the collection schema are.
+	 * @param ISecureRandom          $random          Makes the item id.
+	 * @param LoggerInterface        $logger          Logger.
+	 * @param WooDecisionNotice|null $decisionNotice  Tells the resident the decision is published.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ISecureRandom $random,
 		private readonly LoggerInterface $logger,
+		private readonly ?WooDecisionNotice $decisionNotice = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * Tell the resident the decision on their request is published, once.
+	 *
+	 * Only on the first publish: a republish keeps the link the resident
+	 * already has, and a withdrawal leaves it on the case, so a case that
+	 * already carries `wooPublicationUrl` tells nobody again.
+	 *
+	 * @param array<string, mixed> $case          The case, as it was before this publish.
+	 * @param string               $caseId        The case uuid.
+	 * @param string               $publicationId The publication uuid.
+	 *
+	 * @return bool Whether the resident was told.
+	 *
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 */
+	public function tellTheResident(array $case, string $caseId, string $publicationId): bool {
+		if ($this->decisionNotice === null || (string)($case['wooPublicationUrl'] ?? '') !== '') {
+			return false;
+		}
+
+		return $this->decisionNotice->tell(case: $case, caseId: $caseId, publicationId: $publicationId);
+	}//end tellTheResident()
 
 	/**
 	 * Append the publication to the case's source dossier.
