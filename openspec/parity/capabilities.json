@@ -8,7 +8,7 @@
 	},
 	"comparedOn": "2026-09-26",
 	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-09-28",
+	"reratedOn": "2026-10-02",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -658,6 +658,14 @@
 			"to": "no",
 			"cause": "corrected",
 			"reason": "portaliq lib/Controller/CitizenCaseController.php:304-331 withdraw() is implemented (appinfo/routes.php:287), but src/portal/lib/portalApi.js has no withdraw method and src/portal/components/CitizenCase.jsx has no withdraw button, so no applicant reaches it (portaliq matrix rows act-withdraw-case and sib-dossiq-2-47)."
+		},
+		{
+			"id": "2.47",
+			"on": "2026-10-02",
+			"from": "no",
+			"to": "yes",
+			"cause": "built",
+			"reason": "dossiq declares a mijnZaken portal page with a citizenCase block (lib/Portal/PortalContributionProvider.php citizenPages(), dossiq#3247). A live check on 2026-10-02 opened a resident's Woo request from Mijn zaken on /apps/portaliq/site, withdrew it through portaliq's case screen and found the target status, withdrawnAt, the reason and a portalWrites entry on the case."
 		},
 		{
 			"id": "Q1.16",
