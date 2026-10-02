@@ -7,11 +7,11 @@ without it portaliq shows the action as one form, as today.
 
 ## 0. Decision for Ruben
 
-- [ ] 0.1 Required fields (design D1): dossiq's portal route requires `omschrijving`,
-      `periodeVan`, `documentSoorten`, `verzoekerNaam` and `verzoekerEmail`, or portaliq relaxes
-      its rule for actions with their own server check. Until decided, only `onderwerp` is
-      declared required. Also confirm with portaliq#1110 that `required` is honoured on an
-      endpoint action at all.
+- [ ] 0.1 Required fields (design D1). Fact: portaliq does not honour `required` on an action
+      without a schema (REQ-SMF-023), so every Woo field reads "(niet verplicht)". Accept that,
+      or make `omschrijving`, `periodeVan`, `documentSoorten`, `verzoekerNaam` and
+      `verzoekerEmail` required on dossiq's portal route AND lift portaliq's rule for such a
+      route. Until decided, no field is declared required.
 
 ## 1. Intake
 
@@ -29,7 +29,7 @@ without it portaliq shows the action as one form, as today.
 ## 2. Actions
 
 - [ ] 2.1 `steps` (with `description`, and `review: true` on the last), `fieldConfigs`
-      (`required` on `onderwerp` only), `draft` and `confirmation` on `startWooVerzoek`
+      (no `required`), `draft` and `confirmation` on `startWooVerzoek`
       (design D1, D3, D4).
 - [ ] 2.2 `startWooVerzoekAlgemeen` without `attachTo` (design D2), with the `summary` the home
       tile reads (`site-resident-portal-design` REQ-SRPD-006).

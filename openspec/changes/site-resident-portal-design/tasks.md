@@ -24,7 +24,7 @@ lane in portaliq#1110: `site-mijn-omgeving-components` (blocks `tasks`, `inbox`,
   - unit: ask on a case with and without `portalSubject`
 - [ ] 1.2 The ask form tells the handler that the summary and the missing items go to the
       applicant.
-- [ ] 1.3 Collection `vragenAanU` (design D1).
+- [ ] 1.3 Collection `vragenAanU` (design D1), with `defaultFilters: {state: open}` (design D4).
   - unit: `PortalContributionProviderTest` asserts the scope and the projection; a test asserts
     every projected field exists on the schema
 
@@ -46,8 +46,12 @@ lane in portaliq#1110: `site-mijn-omgeving-components` (blocks `tasks`, `inbox`,
 - [ ] 3.1 The four pages of design D4 with `menu: false`, `home: true` on `overzicht`, the
       record key on `mijnZaken`, the documents label "Documenten".
   - unit: `PortalCasePageTest` asserts the blocks, the order and that `mijnZaken` still opens a case
-  - check against portaliq#1110's `PortalPageResolver`: no block dropped, and a case opened
-    through `navKeyFor` lands on the record page with that case selected
+  - check against portaliq#1110's `PortalPageResolver`: no block dropped
+  - ask portaliq: does the overview's `cases` block count as a list block under REQ-SMO-010
+    (it must not, or cases open on the overview), and does a `tasks` block honour
+    `defaultFilters`
+- [ ] 3.1a `recordField: 'caseId'` on `replyToMessage`, for the `withRecord` cta.
+  - unit: the provider test asserts the key and the cta
 - [ ] 3.2 `summary` and `audiences` on `startWooVerzoekAlgemeen`, `createBezwaar` and
       `createKlacht` (design D5).
 

@@ -7,9 +7,9 @@ Read at dossiq `development` `59217bc9a` and portaliq `development` `b150def5` o
 The shape is portaliq's (`site-multi-step-forms` REQ-SMF-020, portaliq#1110):
 `steps: [{id, title, description?, fields[], review?}]`. A step is kept only when every field it
 names is one of the action's fields. The review step carries `review: true` and no fields.
-REQ-SMF-020 is worded for a "create action", while both Woo actions are endpoint actions; its
-own scenario names `startWooVerzoekAlgemeen`, so it is meant to cover them. The build confirms
-this against portaliq#1110 (tasks 0.1).
+REQ-SMF-020 covers a create action and an endpoint action with `fields`, which both Woo
+actions are; its scenario "The Woo endpoint action runs in steps" names `startWooVerzoek`.
+REQ-SMF-021 covers the draft and REQ-SMF-022 the confirmation, for both kinds of action.
 
 ```php
 'steps' => [
@@ -47,22 +47,24 @@ The mockup makes `omschrijving`, `periodeVan`, `documentSoorten`, `verzoekerNaam
 `verzoekerEmail` required. The server keeps them optional, because pipelinq calls `start()` too
 and an employee converting a phone call may not have every answer.
 
-A form cannot be stricter than its server. Portaliq's `ActionConfigNormaliser` honours
-`fieldConfigs.required: true` only for fields in the schema's `required` set
-(`supplier-portal`, "Form data minimisation"), and `site-multi-step-forms` keeps that rule
-(its open decision "a form stricter than its server"). So this change does NOT assume
-form-only required fields work. It declares `required` only where the server requires the
-field (`onderwerp`), and every other field renders as "(niet verplicht)".
+The fact, from portaliq REQ-SMF-023: `required` is NOT honoured on an action without a
+schema. Both Woo actions name no schema, so portaliq drops every
+`fieldConfigs.<field>.required: true` on them and the site marks every field "(niet
+verplicht)", `onderwerp` included. Portaliq keeps its data-minimisation rule (`supplier-portal`,
+"Form data minimisation") and leaves lifting it for a route that checks its own input to Ruben.
 
-Whether portaliq honours even `onderwerp` on an endpoint action, which names no schema, is to
-be confirmed against portaliq#1110 at build (tasks 0.1).
+So this change declares no `required` at all. A `required` key here would be dropped and would
+read as a promise the form does not keep. The server still refuses a request without
+`onderwerp`; the resident then sees that refusal in the error summary after sending.
 
-Two ways to get the mockup's required fields, for Ruben (tasks 0.1):
+The choice for Ruben (tasks 0.1):
 
-1. Dossiq's portal route requires them: `PortalWooRequestController` refuses a portal request
-   without them, while `start()` stays lenient for pipelinq. The action then declares the
-   route's own required set, which portaliq can honour.
-2. Ruben relaxes portaliq's rule for actions that declare their own server check.
+1. Accept it: every field reads "(niet verplicht)" and the server checks only `onderwerp`.
+2. Make the five fields required on dossiq's portal route (`PortalWooRequestController`
+   refuses a portal request without them, `start()` stays lenient for pipelinq), and lift
+   portaliq's rule for an action whose route checks its own input, so the form can mark them.
+   Doing only the first half would make the form say "(niet verplicht)" about fields the
+   server then refuses.
 
 `documentSoorten` values and their labels: `besluiten` "Besluiten en vergunningen",
 `rapporten` "Rapporten en adviezen", `correspondentie` "E-mails en brieven", `alles` "Alles wat

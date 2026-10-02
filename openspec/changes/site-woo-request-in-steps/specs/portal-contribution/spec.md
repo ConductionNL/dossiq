@@ -7,8 +7,10 @@ The actions `startWooVerzoek` and `startWooVerzoekAlgemeen` MUST declare `steps`
 `verzoekerType`) and "Controleren en versturen" as a review of every answer. Every whitelisted
 field MUST belong to exactly one step. Each step MUST use the keys `id`, `title`,
 `description` and `fields`; the review step MUST carry `review: true` and no fields. The
-labels MUST be the ones of `DossiqWoo.dc.html`. A field MUST be declared `required` only when
-the server requires it. This builds on REQ-PORTAL-020 and keeps its endpoint, method
+labels MUST be the ones of `DossiqWoo.dc.html`. No field MUST be declared `required`: portaliq
+drops `required` on an action without a schema (portaliq REQ-SMF-023). The steps, draft and
+confirmation follow portaliq REQ-SMF-020 to REQ-SMF-022, which cover endpoint actions with
+`fields`. This builds on REQ-PORTAL-020 and keeps its endpoint, method
 and assertion.
 
 #### Scenario: A resident moves through the steps
@@ -20,7 +22,7 @@ and assertion.
 #### Scenario: No form-only required field
 - **GIVEN** the declared action
 - **WHEN** the provider test reads its `fieldConfigs`
-- **THEN** only `onderwerp` MUST be marked required
+- **THEN** no field MUST carry `required`
 
 #### Scenario: Every field has a step
 - **GIVEN** the declared action

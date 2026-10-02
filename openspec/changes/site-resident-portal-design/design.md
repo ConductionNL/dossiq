@@ -106,28 +106,55 @@ The card's "Stap 2 van 5" reads the same answer: the index of the current step a
 Block types, page keys and collection keys are the ones portaliq `site-mijn-omgeving-components`
 defines (portaliq#1110): REQ-SMO-020 (page keys `group`, `menu`, `home`, `records`),
 REQ-SMO-021 (blocks `tasks`, `inbox`, `cases`, `steps`, `documents`, `timeline`; `limit` and
-`sort` on `collection`) and REQ-SMO-022 (`steps`, `dueField`, `turnField` on a cases
-collection).
+`sort` on `collection`), REQ-SMO-022 (`steps`, `dueField`, `turnField` on a cases
+collection), REQ-SMO-024 (a `cta` names an `action`, a `page` or a `route`, and may take
+`withRecord: true`), REQ-SMO-025 (a `tasks` block takes `recordField`, `recordKey` and
+`lookups`) and REQ-SMO-010 (opening a record matches `record` and `records` pages).
 
 | Page id | Label | Page keys | Blocks, in order |
 | --- | --- | --- | --- |
 | `overzicht` | Overzicht | `home: true`, `menu: false`, `group` | `tasks` on `vragenAanU` (`dueField: hersteltermijn`, `titleFields: [summary]`), `cases` on `mijnZaken` (`open: true`, `limit: 5`), `inbox` on `berichten` (`limit: 3`), `cta` × 3 (Woo-verzoek, bezwaar, klacht) |
-| `mijnZaken` | Uw zaak | `record: {collection: mijnZaken, titleFields: [title]}`, `menu: false`, `group` | `collection` on `vragenAanU` (`recordField: case`, open only), `steps`, `documents`, `timeline`, `detail` "In het kort" (`identifier`, `receivedAt`, `deadline`, `assignedGroupPublicName`), `cta` "Bericht sturen" (`replyToMessage`), `citizenCase` (withdraw) |
+| `mijnZaken` | Uw zaak | `record: {collection: mijnZaken, titleFields: [title]}`, `menu: false`, `group` | `tasks` on `vragenAanU` (`recordField: case`, `dueField: hersteltermijn`, `titleFields: [summary]`), `steps`, `documents`, `timeline`, `detail` "In het kort" (`identifier`, `receivedAt`, `deadline`, `assignedGroupPublicName`), `cta` "Bericht sturen" (`action: replyToMessage`, `withRecord: true`), `citizenCase` (withdraw) |
 | `berichten` | Berichten | `menu: false`, `group` | `collection`, `detail`, `action` `replyToMessage` |
 | `verzoeken` | Mijn verzoeken | `menu: false`, `group` | `action` `createKlacht`, `collection`, `detail` |
 
 On the home, portaliq puts open portal tasks and the rows of every `tasks` block on a home page
 together under "Dit moet u nog doen", sorted by deadline, and renders the rest of the home page
-under it (portaliq design D4). The open question for one case uses a `collection` block with
-the existing record scoping key `recordField`, because the `tasks` block takes no record scope.
+under it (portaliq design D4). On the case page the same `tasks` block narrows to the open
+case with `recordField: case` (REQ-SMO-025), so the resident sees only the question on that
+case.
+
+Only open requests are tasks. `vragenAanU` declares `defaultFilters: {state: open}`. That key
+is presentation-only (portaliq "Manifest UI configuration is presentation-only"), which is
+enough here: every row is the resident's own, so showing an answered one is untidy, not a
+leak. Whether a `tasks` block honours `defaultFilters` is not in REQ-SMO-025; the build
+confirms it with portaliq (tasks 3.1). `excludeWhen` does not fit: it reads a lookup, and
+`state` is a field of the row itself.
+
+"Bericht sturen" is a `cta` on `replyToMessage` with `withRecord: true` (REQ-SMO-024). The
+action then opens with its `recordField` preset to the open case, so `replyToMessage` declares
+`recordField: 'caseId'`, the field its `crossRefs` already guards. The overview's three tiles
+stay `cta` blocks on actions. No dossiq tile needs `page` or `route`: "Alle zaken" is the
+`cases` block's own link.
 
 `steps`, `documents` and `timeline` render only on a record page whose collection declares that
 provider (REQ-SMO-021), which is why `mijnZaken` becomes a record page on its own collection.
-It keeps its `detail` and `citizenCase` blocks, so it stays the first page with a `collection`,
-`detail` or `citizenCase` block on the case collection and portaliq's `navKeyFor` still opens a
-case there (#3247). The build confirms with the portaliq lane that a record page opened through
-`navKeyFor` selects the case (tasks 3.1). Page ids stay the collection ids, so routes like
-`/mijn/dossiq/mijnZaken` do not move. The `group` of #3245 stays on every page.
+Opening a case from the case list, a case card, a message or a notice now finds this page
+through its `record` key and opens it with that case chosen (REQ-SMO-010). No block is kept
+for that any more.
+
+`detail` and `citizenCase` stay for what they show, not for navigation. `detail` is "In het
+kort", the four facts in the side column. `citizenCase` is portaliq's case screen: amend an
+answer, add a document in the portal window, and withdraw (`citizen-case-withdraw-screen`). No
+other block offers those writes.
+
+One risk remains. REQ-SMO-010 keeps precedence for "a page with a list block on the
+collection". The overview has a `cases` block on `mijnZaken`. If portaliq counts `cases` as a
+list block, a case would open on the overview instead of the case page. The build checks this
+(tasks 3.1); it is a question for portaliq, not a dossiq workaround.
+
+Page ids stay the collection ids, so routes like `/mijn/dossiq/mijnZaken` do not move. The
+`group` of #3245 stays on every page.
 
 `menu: false` keeps the route and leaves the menu (REQ-SMO-020). Before portaliq#1110 lands the
 key is ignored and #3245's renamed entries show, which is today's state.

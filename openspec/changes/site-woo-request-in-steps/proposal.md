@@ -54,10 +54,10 @@ Builds on `woo-request-from-a-portal-dossier` and keeps its one creation path,
 
 ## Open decision: required fields
 
-The mockup marks five fields required that the server keeps optional. Portaliq honours
-`fieldConfigs.required` only for schema-required fields, so a form cannot be stricter than its
-server. This change declares `required` only where the server requires it and leaves the choice
-to Ruben (design D1, tasks 0.1).
+The mockup marks five fields required that the server keeps optional. Portaliq does NOT honour
+`required` on an action without a schema (REQ-SMF-023): every field of both Woo actions reads
+"(niet verplicht)", `onderwerp` included. This change declares no `required` and leaves the
+choice to Ruben (design D1, tasks 0.1).
 
 ## What this change does not do
 

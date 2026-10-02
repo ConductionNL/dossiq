@@ -76,8 +76,10 @@ The citizen contribution MUST declare the pages `overzicht`, `mijnZaken`, `beric
 `verzoeken` with the blocks of design D4, using only block types and keys portaliq
 `site-mijn-omgeving-components` defines (`tasks`, `inbox`, `cases`, `steps`, `documents`,
 `timeline`, `collection`, `detail`, `action`, `cta`, `citizenCase`). `overzicht` MUST declare
-`home: true`. `mijnZaken` MUST be a record page on the case collection and MUST remain the
-first page with a `collection`, `detail` or `citizenCase` block on it. Every resident page MUST
+`home: true`. `mijnZaken` MUST be a record page on the case collection, so opening a case
+lands on it with that case chosen. Its open-question block MUST be a `tasks` block on
+`vragenAanU` with `recordField: case`. "Bericht sturen" MUST be a `cta` on `replyToMessage` with
+`withRecord: true`, and `replyToMessage` MUST declare `recordField: 'caseId'`. Every resident page MUST
 declare `menu: false`, so the site menu shows one "Zaken" and one "Berichten", both portaliq's
 own. The case page MUST hold, in this order, the open question for the case, the steps, the
 documents, "Wat er is gebeurd", and beside them the facts, "Bericht sturen" and the
@@ -93,6 +95,11 @@ withdrawal.
 - **GIVEN** the declared resident pages
 - **WHEN** portaliq normalises them
 - **THEN** no block MUST be dropped as an unknown type
+
+#### Scenario: Only this case's question
+- **GIVEN** a resident with open questions on cases 2026-0003 and 2026-0004
+- **WHEN** case 2026-0003 is open on the case page
+- **THEN** the tasks block MUST list only the question on 2026-0003
 
 #### Scenario: A case opens on its page
 - **GIVEN** the resident's case 2026-0003 in portaliq's case list
