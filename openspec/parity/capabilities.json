@@ -14156,7 +14156,7 @@
 				"zac": "zac@1.0.316 grep -il 'portaal|mijnoverheid|berichtenbox' over src/main/kotlin, src/main/java and src/main/app/src/app finds only a formio spec file; no outbound citizen messaging | round 3 drive: procest/zac/round3/rows/rows-4-6.md:58 \"no, the portal link is inbound only | Open Formulieren submissions arrive as productaanvragen:\"",
 				"openzaak": "openzaak@1.30.0 API backend with only the Django admin; no citizen UI or message resource under src/openzaak/components"
 			},
-			"note": "Noted 2026-09-26, rating unchanged: dossiq portaalBericht rows reach portaliq's merged inbox, but portaliq src/portal/components/InboxPage.jsx:86-148 never renders a dossiq portaalBericht's attachments, and the field contract differs: dossiq writes content, sentAt and readByRecipientAt where portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702). This is part of why the row stays partial."
+			"note": "Noted 2026-09-26, rating unchanged: dossiq portaalBericht rows reach portaliq's merged inbox, but portaliq src/portal/components/InboxPage.jsx:86-148 never renders a dossiq portaalBericht's attachments, and the field contract differs: dossiq writes content, sentAt and readByRecipientAt where portaliq's inbox reads body, receivedAt and read, so only the subject shows (portaliq#702). This is part of why the row stays partial. Since 2026-10-02 the React portal is retired (portaliq#1072); residents use /apps/portaliq/site, so the src/portal citation names retired code."
 		},
 		{
 			"id": "6.8",
