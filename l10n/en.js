@@ -5189,6 +5189,7 @@ OC.L10N.register(
         "Read": "Read",
         "read": "read",
         "Read as a message": "Read as a message",
+        "Read at": "Read at",
         "Read Confirmation On": "Read Confirmation On",
         "Read how we handle this kind of case": "Read how we handle this kind of case",
         "Read impact from the risk assessment": "Read impact from the risk assessment",
