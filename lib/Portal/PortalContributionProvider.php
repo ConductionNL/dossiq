@@ -484,14 +484,9 @@ class PortalContributionProvider {
 					'scopeField' => 'supplierRef',
 					'label' => 'Berichten',
 					'listable' => true,
-					// The portal inbox reads `receivedAt`; this schema keeps the
-					// date in `sentAt` and the files in `attachmentRefs`
-					// (portaliq#702). Its read date is `readByRecipientAt`, the
-					// same name as portaalBericht's: portaliq's mark-read writes
-					// the time there, so a message the supplier opened stops
-					// counting as unread. Without `readAt` mark-read wrote
-					// `read: true`, a field this schema does not have, and the
-					// message stayed unread forever.
+					// The inbox reads its own names (portaliq#702). Mark-read
+					// writes the time to `readAt`'s field; without it a
+					// supplier's message stayed unread forever.
 					'messageFields' => [
 						'receivedAt' => 'sentAt',
 						'readAt' => 'readByRecipientAt',
