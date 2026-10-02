@@ -330,6 +330,8 @@ class WooPublicationService {
 
 		$this->dossierReturn?->append(case: $case, publicationId: $publicationId, title: (string)$payload['title']);
 
+		$this->dossierReturn?->tellTheResident(case: $case, caseId: $caseId, publicationId: $publicationId);
+
 		$this->logger->info(
 			'WOO decision published to OpenCatalogi: ' . $publicationId . ' for case ' . $caseId,
 			['app' => Application::APP_ID],

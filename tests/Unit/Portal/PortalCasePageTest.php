@@ -30,6 +30,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
+ * @uses   \OCA\Dossiq\Portal\PortalPages
  */
 class PortalCasePageTest extends TestCase {
 	/**
@@ -57,7 +58,8 @@ class PortalCasePageTest extends TestCase {
 		$pages = $this->pagesById(audience: $audience);
 
 		$this->assertArrayHasKey('mijnZaken', $pages);
-		$this->assertSame('Mijn zaken', $pages['mijnZaken']['label']);
+		// Renamed so it does not repeat the site's own "Mijn zaken" (portal-pages-in-resident-groups).
+		$this->assertSame('Voortgang van uw zaken', $pages['mijnZaken']['label']);
 		$this->assertSame(
 			[
 				['type' => 'collection', 'collection' => 'mijnZaken'],
@@ -118,7 +120,7 @@ class PortalCasePageTest extends TestCase {
 		$pages = $this->pagesById(audience: $audience);
 
 		$this->assertSame(['mijnZaken', 'berichten', 'verzoeken'], array_keys($pages));
-		$this->assertSame('Berichten', $pages['berichten']['label']);
+		$this->assertSame('Een bericht beantwoorden', $pages['berichten']['label']);
 		$this->assertSame(
 			[
 				['type' => 'action', 'action' => 'replyToMessage'],
@@ -196,13 +198,16 @@ class PortalCasePageTest extends TestCase {
 	}
 
 	/**
-	 * Suppliers and inspectors keep the pages portaliq builds.
+	 * Suppliers and inspectors keep the blocks portaliq builds, declared only to carry a group, and no case screen.
 	 *
 	 * @return void
 	 */
-	public function testOtherAudiencesDeclareNoPages(): void {
+	public function testOtherAudiencesKeepPortaliqsBlocksAndNoCaseScreen(): void {
 		foreach (['supplier', 'inspector'] as $audience) {
-			$this->assertArrayNotHasKey('pages', $this->provider()->getContribution(['audience' => $audience]));
+			foreach ($this->provider()->getContribution(['audience' => $audience])['pages'] as $page) {
+				$this->assertNotSame('', $page['group']);
+				$this->assertNotContains('citizenCase', array_column($page['blocks'], 'type'), $page['id']);
+			}
 		}
 	}
 
