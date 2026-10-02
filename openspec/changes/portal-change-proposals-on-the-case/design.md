@@ -19,7 +19,9 @@ Read at dossiq `development` `c8ac7427e` and portaliq `development`
   schema and reads its `proposable` list.
 - portaliq `src/portal/components/PageView.jsx:336` renders the resident's
   propose form in the detail card when the collection's `rowActions` name a
-  `propose-change` action.
+  `propose-change` action. Since 2026-10-02 the React portal is retired
+  (portaliq#1072); residents use `/apps/portaliq/site`, so this citation names
+  retired code.
 - portaliq `lib/Contribution/CollectionConfigNormaliser.php:109`
   `resolveRowActions()` keeps only ids of `type: update` actions, so a
   `propose-change` id named in `rowActions` is dropped before it reaches the
