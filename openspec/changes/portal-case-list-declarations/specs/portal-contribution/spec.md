@@ -17,12 +17,20 @@ stay scoped by `portalSubject` for every audience.
 - **THEN** only the cases filed under its own subject MUST be returned
 
 ### Requirement: The case list says what is a case and when it is closed (REQ-PORTAL-010)
-`mijnZaken` MUST declare `kind: 'cases'` and `closedField: 'endDate'`.
+`mijnZaken` MUST declare `kind: 'cases'` and `closedField: 'isFinalStatus'`,
+and MUST project `isFinalStatus`. A case is closed once its status is final,
+whether staff ended it or the resident withdrew it; a withdrawal sets no end
+date, so `endDate` cannot be the marker.
 
 #### Scenario: An ended case is listed as closed
-- **GIVEN** a resident with one running case and one case with an end date
+- **GIVEN** a resident with one running case and one case on a final status
 - **WHEN** they open "My cases" in the portal
 - **THEN** the running case MUST be under Open and the ended case under Closed
+
+#### Scenario: A withdrawn case is listed as closed
+- **GIVEN** a resident who withdrew a Woo request in the portal, so it sits on the case type's withdrawal status without an end date
+- **WHEN** they open "My cases" in the portal
+- **THEN** the withdrawn request MUST be under Closed
 
 ### Requirement: A company's case carries the branch it was filed for (REQ-PORTAL-011)
 A case opened from a portal write MUST carry the branch number the portal

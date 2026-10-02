@@ -164,6 +164,9 @@ class PortalContributionProvider {
 		'startDate',
 		'endDate',
 		'deadline',
+		// WHETHER THE CASE HAS ENDED, as "Mijn zaken" reads it (`closedField`).
+		// A yes or no, calculated from the status type; nothing internal.
+		'isFinalStatus',
 		// WHEN THE CLOCK STARTS, not only when it ends. A case filed on a
 		// Sunday evening does not start counting on Sunday evening, and until
 		// these three were on this list nothing anywhere told the person who
@@ -685,6 +688,7 @@ class PortalContributionProvider {
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
+	 * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md#requirement-the-case-list-says-what-is-a-case-and-when-it-is-closed-req-portal-010
 	 */
 	private function citizenCollections(): array {
 		return [
@@ -724,10 +728,16 @@ class PortalContributionProvider {
 				],
 				// LISTED ON "MY CASES". Portaliq's merged case list keeps only
 				// collections of kind `cases` (PortalCaseListReader), and reads a
-				// row as closed when `closedField` is present and not empty.
-				// `endDate` is set when a case ends and is already projected.
+				// row as closed when `closedField` holds a value (false does not
+				// count). `isFinalStatus` is OpenRegister's calculation over the
+				// status type's `isFinal`, so it follows every way a case reaches
+				// a final status. `endDate` did not: a withdrawal from the portal
+				// lands on a final status without an end date, and a resident
+				// read three withdrawn Woo requests under "Lopend" (site-parity,
+				// 2026-10-02). It is on CITIZEN_CASE_FIELDS because portaliq
+				// drops a closed marker the collection does not project.
 				'kind' => 'cases',
-				'closedField' => 'endDate',
+				'closedField' => 'isFinalStatus',
 				// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
 				// portal needs to tell statuses apart; the merged case list
 				// showed it as is. portaliq shows this field instead.
