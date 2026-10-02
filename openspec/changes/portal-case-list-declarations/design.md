@@ -52,9 +52,17 @@ already serve it.
 
 ## D2. Listed on "My cases", open or closed
 
-`mijnZaken` declares `kind: 'cases'` and `closedField: 'endDate'`. `endDate`
-is already projected and is set when a case ends, so the closed marker needs
-no new field.
+`mijnZaken` declares `kind: 'cases'` and `closedField: 'isFinalStatus'`.
+`isFinalStatus` is OpenRegister's calculation over the status type's
+`isFinal`, so it is current after every status change, and it is added to
+the projected fields because portaliq drops a marker the row does not carry.
+
+The first version used `endDate`. That missed every case that reaches a final
+status without an end date: a withdrawal from the portal writes the status
+the case type names, `withdrawnAt` and the reason, and no end date. On
+2026-10-02 a resident read three withdrawn Woo requests under "Lopend (3)"
+with "Afgerond (0)". `withdrawnAt` would have fixed only withdrawals and lost
+cases staff ended, so the marker follows the status instead.
 
 ## D3. The branch a company filed under
 
