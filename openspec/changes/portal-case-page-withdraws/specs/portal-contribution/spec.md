@@ -14,3 +14,12 @@ The resident contribution SHALL declare `pages`. The page with id `mijnZaken` SH
 - **GIVEN** the resident contribution
 - **WHEN** portaliq resolves its pages
 - **THEN** `berichten` and `verzoeken` each have a page with their create action, table and detail, under their own collection id
+
+### Requirement: REQ-PORTAL-022: Mijn zaken MUST show the status in words
+
+The `mijnZaken` collection SHALL declare `statusLabelField: statusPublicLabel`, a field it projects, so portaliq's "Mijn zaken" list shows the status's public label instead of the statusType uuid in `status`.
+
+#### Scenario: A resident reads the status of their Woo request
+- **GIVEN** a resident's Woo request with status Ontvangen
+- **WHEN** the resident opens "Mijn zaken" on the portal site
+- **THEN** the row shows "Ontvangen", not a uuid

@@ -168,6 +168,34 @@ class PortalCasePageTest extends TestCase {
 	}
 
 	/**
+	 * "Mijn zaken" shows the status in words, from a field the case list projects.
+	 *
+	 * Portaliq drops a `statusLabelField` that names a field outside the
+	 * collection's `fields`, and then shows the uuid in `status` again.
+	 *
+	 * @dataProvider residentAudienceProvider
+	 *
+	 * @param string $audience The resident audience.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
+	 */
+	public function testMyCasesShowsTheStatusInWords(string $audience): void {
+		$cases = null;
+		foreach ($this->provider()->getContribution(['audience' => $audience])['collections'] as $collection) {
+			if ($collection['id'] === 'mijnZaken') {
+				$cases = $collection;
+			}
+		}
+
+		$this->assertNotNull($cases);
+		$this->assertSame('cases', $cases['kind']);
+		$this->assertSame('statusPublicLabel', $cases['statusLabelField']);
+		$this->assertContains($cases['statusLabelField'], $cases['fields']);
+	}
+
+	/**
 	 * Suppliers and inspectors keep the pages portaliq builds.
 	 *
 	 * @return void

@@ -684,6 +684,7 @@ class PortalContributionProvider {
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
 	 */
 	private function citizenCollections(): array {
 		return [
@@ -727,6 +728,10 @@ class PortalContributionProvider {
 				// `endDate` is set when a case ends and is already projected.
 				'kind' => 'cases',
 				'closedField' => 'endDate',
+				// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
+				// portal needs to tell statuses apart; the merged case list
+				// showed it as is. portaliq shows this field instead.
+				'statusLabelField' => StatusPublicLabels::CASE_LABEL_FIELD,
 				// Where the case type of a case lives, so a portal
 				// administrator can hide a case type the portal has no form
 				// for (portaliq operate-show-per-case-type).
