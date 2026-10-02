@@ -1020,7 +1020,11 @@ class PortalContributionProvider {
 			],
 			'notifications' => [],
 		];
-		$contribution['pages'] = $this->pagesFor(collections: $contribution['collections'], actions: $contribution['actions'], group: self::INSPECTOR_GROUP);
+		$contribution['pages'] = $this->pagesFor(
+			collections: $contribution['collections'],
+			actions: $contribution['actions'],
+			group: self::INSPECTOR_GROUP
+		);
 
 		return $contribution;
 
