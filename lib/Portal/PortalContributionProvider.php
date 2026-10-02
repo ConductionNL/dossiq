@@ -486,10 +486,15 @@ class PortalContributionProvider {
 					'listable' => true,
 					// The portal inbox reads `receivedAt`; this schema keeps the
 					// date in `sentAt` and the files in `attachmentRefs`
-					// (portaliq#702). It has no read date, so a supplier's
-					// message stays unread in the portal.
+					// (portaliq#702). Its read date is `readByRecipientAt`, the
+					// same name as portaalBericht's: portaliq's mark-read writes
+					// the time there, so a message the supplier opened stops
+					// counting as unread. Without `readAt` mark-read wrote
+					// `read: true`, a field this schema does not have, and the
+					// message stayed unread forever.
 					'messageFields' => [
 						'receivedAt' => 'sentAt',
+						'readAt' => 'readByRecipientAt',
 						'attachments' => 'attachmentRefs',
 					],
 				],

@@ -10812,6 +10812,13 @@
                         "format": "date-time",
                         "title": "Sent at",
                         "description": "Timestamp when this message was sent"
+                    },
+                    "readByRecipientAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "title": "Read at",
+                        "description": "When the recipient read the message (null until read).",
+                        "x-notes": "The one field set after the message is written. The supplier portal's mark-read writes it (portaliq ContributionController::markRead, through the `messages` collection's messageFields.readAt), so an unread message stops counting once opened. Same name as portaalBericht's read date. Nothing else writes it, and the message itself stays write-once."
                     }
                 }
             },

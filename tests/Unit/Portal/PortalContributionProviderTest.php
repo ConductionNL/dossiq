@@ -434,7 +434,7 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertTrue($berichten['filesDownload']);
 
 		$supplier = array_column($this->provider->getContribution(['audience' => 'supplier'])['collections'], null, 'id')['messages'];
-		$this->assertSame(['receivedAt' => 'sentAt', 'attachments' => 'attachmentRefs'], $supplier['messageFields']);
+		$this->assertSame(['receivedAt' => 'sentAt', 'readAt' => 'readByRecipientAt', 'attachments' => 'attachmentRefs'], $supplier['messageFields']);
 	}
 
 	/**
