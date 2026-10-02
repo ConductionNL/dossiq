@@ -566,13 +566,90 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
+		$collections = $this->citizenCollections();
+		$actions = $this->citizenActions();
+
 		return [
 			'label' => 'Dossiq',
-			'collections' => $this->citizenCollections(),
-			'actions' => $this->citizenActions(),
+			'collections' => $collections,
+			'actions' => $actions,
+			'pages' => $this->citizenPages(collections: $collections, actions: $actions),
 			'notifications' => $this->citizenNotifications(),
 		];
 	}//end citizenContribution()
+
+	/**
+	 * The resident's pages: one per listable collection, as portaliq would
+	 * build them, except that the case page carries the resident's own case.
+	 *
+	 * WHY DOSSIQ DECLARES PAGES AT ALL. Portaliq's case screen (status,
+	 * amend, documents, withdraw) mounts only through a `citizenCase` block,
+	 * and the pages portaliq builds when a contribution declares none carry a
+	 * plain `detail` block instead. A resident opened a Woo request from "Mijn
+	 * zaken", read its fields and found no way to withdraw it, although the
+	 * server would have accepted the withdrawal.
+	 *
+	 * Declaring pages switches portaliq's own pages off for the whole
+	 * contribution, so every other collection keeps the page portaliq gave it:
+	 * the first create action of its schema, the table, the selected row. Page
+	 * ids are the collection ids, so the site's routes stay the same, and "Mijn
+	 * zaken" opens a case on the one page that shows `mijnZaken`.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
+	 *
+	 * @return array<int, array<string, mixed>> The pages.
+	 *
+	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-021-a-resident-must-open-their-own-case-on-a-page-that-can-withdraw-it
+	 */
+	private function citizenPages(array $collections, array $actions): array {
+		$pages = [];
+		foreach ($collections as $collection) {
+			if (($collection['listable'] ?? true) !== true) {
+				continue;
+			}
+
+			$id = (string)$collection['id'];
+			$blocks = [];
+			$form = $this->firstCreateFor(schema: (string)$collection['schema'], actions: $actions);
+			if ($form !== null) {
+				$blocks[] = ['type' => 'action', 'action' => $form];
+			}
+
+			$blocks[] = ['type' => 'collection', 'collection' => $id];
+			$blocks[] = ['type' => 'detail', 'collection' => $id];
+			if ($id === 'mijnZaken') {
+				// What the detail card does not carry: the status in words,
+				// the answers the resident may still change, the documents
+				// and the withdrawal the case type declares.
+				$blocks[] = ['type' => 'citizenCase', 'collection' => $id];
+			}
+
+			$pages[] = ['id' => $id, 'label' => (string)($collection['label'] ?? $id), 'blocks' => $blocks];
+		}//end foreach
+
+		return $pages;
+	}//end citizenPages()
+
+	/**
+	 * The first create action for a schema, as portaliq picks it for its own pages.
+	 *
+	 * @param string                           $schema  The collection's schema.
+	 * @param array<int, array<string, mixed>> $actions The actions.
+	 *
+	 * @return string|null The action id, or null when the schema has none.
+	 *
+	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-021-a-resident-must-open-their-own-case-on-a-page-that-can-withdraw-it
+	 */
+	private function firstCreateFor(string $schema, array $actions): ?string {
+		foreach ($actions as $action) {
+			if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === $schema) {
+				return (string)$action['id'];
+			}
+		}
+
+		return null;
+	}//end firstCreateFor()
 
 	/**
 	 * What a resident is told about, as portaliq change rules (hydra woo-citizen-journey C3).
@@ -607,6 +684,7 @@ class PortalContributionProvider {
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
 	 */
 	private function citizenCollections(): array {
 		return [
@@ -650,6 +728,10 @@ class PortalContributionProvider {
 				// `endDate` is set when a case ends and is already projected.
 				'kind' => 'cases',
 				'closedField' => 'endDate',
+				// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
+				// portal needs to tell statuses apart; the merged case list
+				// showed it as is. portaliq shows this field instead.
+				'statusLabelField' => StatusPublicLabels::CASE_LABEL_FIELD,
 				// Where the case type of a case lives, so a portal
 				// administrator can hide a case type the portal has no form
 				// for (portaliq operate-show-per-case-type).
