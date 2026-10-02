@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\WooPublication\OpenCatalogiApiClient;
 use OCA\Dossiq\Service\WooPublication\WooCategoryMapper;
 use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCA\Dossiq\Woo\WooCaseLedger;
+use OCA\Dossiq\Woo\WooDecisionNotice;
 use OCA\Dossiq\Woo\WooDossierReturn;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -102,6 +103,7 @@ class WooPublicationService {
 	 * @param WooDossierReturn|null $dossierReturn Brings the decision back to its source dossier (C6).
 	 * @param WooCaseLedger|null $caseLedger Finds the case's Woo decision and writes the case's publication state.
 	 * @param WooCaseDocuments|null $caseDocuments Loads a case document with its file content.
+	 * @param WooDecisionNotice|null $decisionNotice Tells the resident the decision is published.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -112,6 +114,7 @@ class WooPublicationService {
 		private readonly ?WooDossierReturn $dossierReturn = null,
 		?WooCaseLedger $caseLedger = null,
 		private readonly ?WooCaseDocuments $caseDocuments = null,
+		private readonly ?WooDecisionNotice $decisionNotice = null,
 	) {
 		$this->caseLedger = ($caseLedger ?? new WooCaseLedger(settingsService: $settingsService, logger: $logger));
 	}//end __construct()
@@ -329,6 +332,12 @@ class WooPublicationService {
 		);
 
 		$this->dossierReturn?->append(case: $case, publicationId: $publicationId, title: (string)$payload['title']);
+
+		// Once, on the first publish: a republish keeps the link the resident
+		// already has, and a withdrawal leaves it on the case.
+		if ((string)($case['wooPublicationUrl'] ?? '') === '') {
+			$this->decisionNotice?->tell(case: $case, caseId: $caseId, publicationId: $publicationId);
+		}
 
 		$this->logger->info(
 			'WOO decision published to OpenCatalogi: ' . $publicationId . ' for case ' . $caseId,

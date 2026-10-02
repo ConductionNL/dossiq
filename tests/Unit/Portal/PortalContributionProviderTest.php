@@ -161,34 +161,103 @@ class PortalContributionProviderTest extends TestCase {
 	}
 
 	/**
-	 * The resident hears once when the decision on their Woo request is published.
+	 * The decision notice is dossiq's own message, so dossiq declares its key and no change rule.
 	 *
-	 * A portaliq change rule on a field the case list projects, so portaliq's
-	 * normaliser keeps it: inbox and email, no Berichtenbox.
+	 * A change rule on `wooPublicationUrl` made portaliq write its generic
+	 * "<case> is bijgewerkt" for the publish. dossiq now writes the message
+	 * (WooDecisionNotice) and only declares the key, so portaliq sends the
+	 * e-mail for it and writes nothing of its own.
 	 *
 	 * @dataProvider residentAudienceProvider
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
 	 */
-	public function testTheResidentIsToldWhenTheWooDecisionIsPublished(string $audience): void {
+	public function testTheWooDecisionNoticeIsADeclaredKeyNotAChangeRule(string $audience): void {
 		$contribution = $this->provider->getContribution(['audience' => $audience]);
 
-		$this->assertSame(
-			[[
-				'ruleKey' => 'dossiq.wooRequest.published',
-				'collection' => 'mijnZaken',
-				'on' => ['field' => 'wooPublicationUrl', 'operator' => 'changed'],
-				'titleField' => 'title',
-			]],
-			$contribution['notifications']
-		);
+		$this->assertSame(['dossiq.wooRequest.published'], $contribution['notifications']);
+	}//end testTheWooDecisionNoticeIsADeclaredKeyNotAChangeRule()
 
-		$cases = $contribution['collections'][0];
-		$this->assertContains('wooPublicationUrl', $cases['fields']);
-		$this->assertContains('title', $cases['fields']);
-	}//end testTheResidentIsToldWhenTheWooDecisionIsPublished()
+	/**
+	 * Every page names its menu group, and no page repeats the site's own case list or inbox.
+	 *
+	 * @dataProvider residentAudienceProvider
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+	 */
+	public function testTheResidentPagesShareOneGroupAndDoNotRepeatTheSiteSections(string $audience): void {
+		$contribution = $this->provider->getContribution(['audience' => $audience]);
+
+		$this->assertSame(['mijnZaken', 'berichten', 'verzoeken'], array_column($contribution['pages'], 'id'));
+		$this->assertSame(
+			['Voortgang van uw zaken', 'Een bericht beantwoorden', 'Mijn verzoeken'],
+			array_column($contribution['pages'], 'label')
+		);
+		foreach ($contribution['pages'] as $page) {
+			$this->assertSame('Mijn zaken en verzoeken', $page['group']);
+			$this->assertNotContains($page['label'], ['Mijn zaken', 'Berichten']);
+		}
+
+		$this->assertNotSame('Dossiq', $contribution['label']);
+	}//end testTheResidentPagesShareOneGroupAndDoNotRepeatTheSiteSections()
+
+	/**
+	 * A case still opens from the site's case list: a page shows `mijnZaken` with its detail.
+	 *
+	 * The site finds the page for a case by a `collection` or `detail` block on
+	 * that collection (portaliq src/shared/openRecord.js navKeyFor). Without it
+	 * a case title in "Mijn zaken" is plain text and a notice link opens nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+	 */
+	public function testACaseStillOpensOnItsPage(): void {
+		$pages = $this->provider->getContribution(['audience' => 'citizen'])['pages'];
+
+		$this->assertSame(
+			[['type' => 'collection', 'collection' => 'mijnZaken'], ['type' => 'detail', 'collection' => 'mijnZaken']],
+			$pages[0]['blocks']
+		);
+		$this->assertSame(['type' => 'action', 'action' => 'replyToMessage'], $pages[1]['blocks'][0]);
+		$this->assertSame(['type' => 'action', 'action' => 'createKlacht'], $pages[2]['blocks'][0]);
+	}//end testACaseStillOpensOnItsPage()
+
+	/**
+	 * Every audience's pages carry a group, and every block names something the manifest declares.
+	 *
+	 * Portaliq drops a block whose reference does not resolve, and a page
+	 * whose blocks all drop, so a typo here would lose a page in silence.
+	 *
+	 * @dataProvider audienceProvider
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
+	 */
+	public function testEveryPageHasAGroupAndResolvableBlocks(string $audience): void {
+		$contribution = $this->provider->getContribution(['audience' => $audience]);
+		$collections = array_column($contribution['collections'], 'id');
+		$actions = array_column($contribution['actions'], 'id');
+
+		$this->assertCount(count($collections), $contribution['pages']);
+		foreach ($contribution['pages'] as $page) {
+			$this->assertNotSame('', $page['group']);
+			$this->assertNotSame('', $page['label']);
+			foreach ($page['blocks'] as $block) {
+				if ($block['type'] === 'action') {
+					$this->assertContains($block['action'], $actions);
+					continue;
+				}
+
+				$this->assertContains($block['collection'], $collections);
+			}
+		}
+	}//end testEveryPageHasAGroupAndResolvableBlocks()
 
 	/**
 	 * The audiences a resident arrives as.

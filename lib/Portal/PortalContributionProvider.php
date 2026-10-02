@@ -195,6 +195,48 @@ class PortalContributionProvider {
 	public const RULE_WOO_REQUEST_PUBLISHED = 'dossiq.wooRequest.published';
 
 	/**
+	 * The menu heading a resident reads above dossiq's pages (portaliq's `group`).
+	 *
+	 * Pages of several apps with the same group share one heading in the
+	 * site's menu, so a resident sees what the pages are about, not which app
+	 * made them.
+	 *
+	 * @var string
+	 */
+	public const CITIZEN_GROUP = 'Mijn zaken en verzoeken';
+
+	/**
+	 * The menu heading a supplier reads above dossiq's pages.
+	 *
+	 * @var string
+	 */
+	public const SUPPLIER_GROUP = 'Opdrachten en facturen';
+
+	/**
+	 * The menu heading an inspector reads above dossiq's pages.
+	 *
+	 * @var string
+	 */
+	public const INSPECTOR_GROUP = 'Inspecties';
+
+	/**
+	 * The page names that differ from their collection's label.
+	 *
+	 * THE SITE ALREADY HAS "MIJN ZAKEN" AND "BERICHTEN". Its own case list
+	 * merges every app's cases and its own inbox merges every app's messages,
+	 * so dossiq's pages under those names read as the same item twice. The
+	 * pages stay: opening a case from the site's case list, or from the link
+	 * in a notice, needs a page that shows `mijnZaken`, and only the
+	 * `berichten` page offers the reply. They carry what they add instead.
+	 *
+	 * @var array<string, string>
+	 */
+	private const CITIZEN_PAGE_LABELS = [
+		'mijnZaken' => 'Voortgang van uw zaken',
+		'berichten' => 'Een bericht beantwoorden',
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * THE ONE DEPENDENCY, AND WHY IT IS OPTIONAL. Portaliq discovers this
@@ -394,8 +436,8 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 */
 	private function supplierContribution(): array {
-		return [
-			'label' => 'Dossiq',
+		$contribution = [
+			'label' => self::SUPPLIER_GROUP,
 			'collections' => [
 				[
 					'id' => 'tenders',
@@ -449,6 +491,9 @@ class PortalContributionProvider {
 			'actions' => [],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
+		$contribution['pages'] = $this->pagesFor(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
+
+		return $contribution;
 
 	}//end supplierContribution()
 
@@ -521,39 +566,69 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
+		$collections = $this->citizenCollections();
+		$actions = $this->citizenActions();
+
 		return [
-			'label' => 'Dossiq',
-			'collections' => $this->citizenCollections(),
-			'actions' => $this->citizenActions(),
-			'notifications' => $this->citizenNotifications(),
+			'label' => self::CITIZEN_GROUP,
+			'collections' => $collections,
+			'actions' => $actions,
+			'pages' => $this->pagesFor(collections: $collections, actions: $actions, group: self::CITIZEN_GROUP, labels: self::CITIZEN_PAGE_LABELS),
+			// A declared rule key, not a change rule: dossiq writes the
+			// message itself (WooDecisionNotice), so portaliq sends its
+			// e-mail. A change rule would add a generic "is bijgewerkt"
+			// notice for the same publish.
+			'notifications' => [self::RULE_WOO_REQUEST_PUBLISHED],
 		];
 	}//end citizenContribution()
 
 	/**
-	 * What a resident is told about, as portaliq change rules (hydra woo-citizen-journey C3).
+	 * One page per listable collection, under one menu group.
 	 *
-	 * `dossiq.wooRequest.published` fires when a case in `mijnZaken` gets its
-	 * `wooPublicationUrl`: once, on the first publish of its Woo decision. A
-	 * republish keeps the same link and a withdrawal leaves it, so neither
-	 * tells the resident twice. portaliq writes the inbox message and sends
-	 * the email and Berichtenbox copy by the resident's preferences; dossiq
-	 * writes no `portalMessage` of its own, because portaliq dispatches only
-	 * the messages it writes (woo-publish-decision-from-the-case D-8).
+	 * The pages portaliq would make when an app declares none (the create
+	 * action for the collection's schema, the list, the selected row), so the
+	 * screens stay as they were. They are declared because only a declared
+	 * page carries a `group` and a name of its own.
 	 *
-	 * @return array<int, array<string, mixed>>
+	 * @param array<int, array<string, mixed>> $collections The audience's collections.
+	 * @param array<int, array<string, mixed>> $actions     The audience's actions.
+	 * @param string                           $group       The menu heading.
+	 * @param array<string, string>            $labels      Page names that differ from the collection label, by collection id.
 	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
+	 * @return array<int, array<string, mixed>> The pages.
+	 *
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-every-dossiq-portal-page-names-its-menu-group
 	 */
-	private function citizenNotifications(): array {
-		return [
-			[
-				'ruleKey' => self::RULE_WOO_REQUEST_PUBLISHED,
-				'collection' => 'mijnZaken',
-				'on' => ['field' => 'wooPublicationUrl', 'operator' => 'changed'],
-				'titleField' => 'title',
-			],
-		];
-	}//end citizenNotifications()
+	private function pagesFor(array $collections, array $actions, string $group, array $labels=[]): array {
+		$pages = [];
+		foreach ($collections as $collection) {
+			if (($collection['listable'] ?? true) !== true) {
+				continue;
+			}
+
+			$id = (string)$collection['id'];
+			$blocks = [];
+			foreach ($actions as $action) {
+				if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === ($collection['schema'] ?? '')) {
+					$blocks[] = ['type' => 'action', 'action' => (string)$action['id']];
+					break;
+				}
+			}
+
+			$blocks[] = ['type' => 'collection', 'collection' => $id];
+			$blocks[] = ['type' => 'detail', 'collection' => $id];
+
+			$pages[] = [
+				'id' => $id,
+				'label' => ($labels[$id] ?? (string)($collection['label'] ?? $id)),
+				'group' => $group,
+				'blocks' => $blocks,
+			];
+		}
+
+		return $pages;
+	}//end pagesFor()
+
 
 	/**
 	 * The collections a citizen may list, and what each one is scoped by.
@@ -876,8 +951,8 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 */
 	private function inspectorContribution(): array {
-		return [
-			'label' => 'Dossiq',
+		$contribution = [
+			'label' => self::INSPECTOR_GROUP,
 			'collections' => [
 				[
 					'id' => 'inspectieRapporten',
@@ -945,6 +1020,9 @@ class PortalContributionProvider {
 			],
 			'notifications' => [],
 		];
+		$contribution['pages'] = $this->pagesFor(collections: $contribution['collections'], actions: $contribution['actions'], group: self::INSPECTOR_GROUP);
+
+		return $contribution;
 
 	}//end inspectorContribution()
 }//end class
