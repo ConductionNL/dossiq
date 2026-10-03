@@ -12,6 +12,7 @@ Tier: V1. Kind: code. Halves: portaliq `cases-my-cases-page`,
 
 - [x] 2.1 `kind: 'cases'` and `closedField: 'endDate'` on `mijnZaken` (design D2), with `caseTypeField` and `caseTypeSource` (design D5). Test: `tests/Unit/Portal/PortalCaseDeclarationsTest.php::testTheCaseCollectionIsACasesCollection`.
   - unit: the provider test asserts both keys and that `endDate` is projected
+- [x] 2.3 `closedField: 'isFinalStatus'` (projected) instead of `endDate`: a withdrawal from the portal lands on a final status with no end date, and three withdrawn Woo requests showed under "Lopend". Test: `tests/Unit/Portal/PortalCaseDeclarationsTest.php::testTheCaseCollectionIsACasesCollection`, `::testAWithdrawnWooRequestIsListedAsClosed`.
 - [ ] 2.2 Live check: portaliq's `GET /portal/api/my-cases` lists a dossiq case for a DigiD dev session, and an ended case lands under Closed (closes dossiq#3152's first half).
 
 ## 3. Branch

@@ -130,6 +130,24 @@ class WooPublicationJourneyTest extends TestCase {
 	}//end setUp()
 
 	/**
+	 * A publish hands the case as it was, and the publication, to the resident's notice.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-pages-in-resident-groups/specs/portal-contribution/spec.md#requirement-the-decision-notice-says-what-happened
+	 */
+	public function testAPublishTellsTheResident(): void {
+		$this->client->method('createPublication')->willReturn(['id' => 'pub-1']);
+		$this->return->expects(self::once())->method('tellTheResident')->with(
+			self::callback(fn (array $case): bool => ($case['title'] ?? '') === 'Parkeerbeleid centrum' && isset($case['wooPublicationUrl']) === false),
+			self::CASE,
+			'pub-1',
+		)->willReturn(true);
+
+		$this->service->publish(self::CASE, 'dec-1');
+	}//end testAPublishTellsTheResident()
+
+	/**
 	 * Publishing without a decision id uses the case's Woo decision and writes the journey fields.
 	 *
 	 * @return void

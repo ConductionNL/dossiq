@@ -13499,6 +13499,12 @@
             "format": "date-time",
             "title": "Sent At",
             "description": "Timestamp when this message was sent"
+          },
+          "readByRecipientAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Read at",
+            "description": "When the recipient read the message (null until read)."
           }
         }
       },

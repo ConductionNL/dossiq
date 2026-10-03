@@ -44,6 +44,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
+ * @uses   \OCA\Dossiq\Portal\PortalPages
  */
 class PortalCaseDeclarationsTest extends TestCase {
 	/**
@@ -94,8 +95,10 @@ class PortalCaseDeclarationsTest extends TestCase {
 	public function testTheCaseCollectionIsACasesCollection(): void {
 		$cases = $this->caseCollection();
 		$this->assertSame('cases', $cases['kind']);
-		$this->assertSame('endDate', $cases['closedField']);
-		$this->assertContains('endDate', $cases['fields'], 'portaliq reads the closed marker from the projected row');
+		$this->assertSame('isFinalStatus', $cases['closedField']);
+		$this->assertContains('isFinalStatus', $cases['fields'], 'portaliq reads the closed marker from the projected row');
+		$base = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/dossiq_register.json'), true);
+		$this->assertSame('boolean', $base['components']['schemas']['case']['properties']['isFinalStatus']['type']);
 		$this->assertSame('caseType', $cases['caseTypeField']);
 		$this->assertContains('caseType', $cases['fields']);
 		$this->assertSame(
@@ -103,6 +106,50 @@ class PortalCaseDeclarationsTest extends TestCase {
 			$cases['caseTypeSource']
 		);
 		$this->assertArrayHasKey('title', $this->properties['caseType']);
+	}
+
+	/**
+	 * A case withdrawn from the portal lands on a final status, so "My cases" files it under closed.
+	 *
+	 * The withdrawal writes the status the case type names and no end date,
+	 * so a marker on `endDate` left every withdrawn request under "Lopend".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md#requirement-the-case-list-says-what-is-a-case-and-when-it-is-closed-req-portal-010
+	 */
+	public function testAWithdrawnWooRequestIsListedAsClosed(): void {
+		$seed = json_decode(
+			(string)file_get_contents(__DIR__ . '/../../../lib/Settings/register.d/81-woo-verzoek.json'),
+			true
+		);
+		$objects = [];
+		foreach (($seed['components']['objects'] ?? []) as $object) {
+			$objects[(string)($object['id'] ?? '')] = $object;
+		}
+
+		$caseType = $objects['3c0f5a00-0000-4000-a000-00000000a001'];
+		$target = (string)$caseType['portalWithdrawal']['targetStatus'];
+		$this->assertTrue($objects[$target]['isFinal'], 'the status a withdrawal lands on is final');
+
+		$cases = $this->caseCollection();
+		$withdrawn = ['status' => $target, 'withdrawnAt' => '2026-10-02T20:00:24+00:00', 'endDate' => null, 'isFinalStatus' => true];
+		$running = ['status' => '3c0f5a00-0000-4000-a000-00000000b001', 'endDate' => null, 'isFinalStatus' => false];
+		$this->assertTrue($this->listedAsClosed(row: $withdrawn, field: (string)$cases['closedField']));
+		$this->assertFalse($this->listedAsClosed(row: $running, field: (string)$cases['closedField']));
+	}
+
+	/**
+	 * Portaliq's reading of a closed marker (CaseRowMarker::isClosed): any value but null, '', [] or false.
+	 *
+	 * @param array<string, mixed> $row   The case row.
+	 * @param string               $field The declared closed field.
+	 *
+	 * @return bool
+	 */
+	private function listedAsClosed(array $row, string $field): bool {
+		$value = ($row[$field] ?? null);
+		return $value !== null && $value !== '' && $value !== [] && $value !== false;
 	}
 
 	/**

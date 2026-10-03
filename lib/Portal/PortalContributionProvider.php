@@ -164,6 +164,9 @@ class PortalContributionProvider {
 		'startDate',
 		'endDate',
 		'deadline',
+		// WHETHER THE CASE HAS ENDED, as "Mijn zaken" reads it (`closedField`).
+		// A yes or no, calculated from the status type; nothing internal.
+		'isFinalStatus',
 		// WHEN THE CLOCK STARTS, not only when it ends. A case filed on a
 		// Sunday evening does not start counting on Sunday evening, and until
 		// these three were on this list nothing anywhere told the person who
@@ -231,6 +234,55 @@ class PortalContributionProvider {
 	public const RULE_WOO_REQUEST_PUBLISHED = 'dossiq.wooRequest.published';
 
 	/**
+	 * The menu heading a resident reads above dossiq's pages (portaliq's `group`).
+	 *
+	 * Pages of several apps with the same group share one heading in the
+	 * site's menu, so a resident sees what the pages are about, not which app
+	 * made them.
+	 *
+	 * @var string
+	 */
+	public const CITIZEN_GROUP = 'Mijn zaken en verzoeken';
+
+	/**
+	 * The menu heading a supplier reads above dossiq's pages.
+	 *
+	 * @var string
+	 */
+	public const SUPPLIER_GROUP = 'Opdrachten en facturen';
+
+	/**
+	 * The menu heading an inspector reads above dossiq's pages.
+	 *
+	 * @var string
+	 */
+	public const INSPECTOR_GROUP = 'Inspecties';
+
+	/**
+	 * The page names that differ from their collection's label.
+	 *
+	 * THE SITE ALREADY HAS "MIJN ZAKEN" AND "BERICHTEN". Its own case list
+	 * merges every app's cases and its own inbox merges every app's messages,
+	 * so dossiq's pages under those names read as the same item twice. The
+	 * pages stay: opening a case from the site's case list, or from the link
+	 * in a notice, needs a page that shows `mijnZaken`, and only the
+	 * `berichten` page offers the reply. They carry what they add instead.
+	 *
+	 * @var array<string, string>
+	 */
+	private const CITIZEN_PAGE_LABELS = [
+		'mijnZaken' => 'Voortgang van uw zaken',
+		'berichten' => 'Een bericht beantwoorden',
+	];
+
+	/**
+	 * Builds the declared pages (no dependencies, so `new` still works).
+	 *
+	 * @var PortalPages
+	 */
+	private readonly PortalPages $pages;
+
+	/**
 	 * Constructor.
 	 *
 	 * THE ONE DEPENDENCY, AND WHY IT IS OPTIONAL. Portaliq discovers this
@@ -255,6 +307,7 @@ class PortalContributionProvider {
 		private readonly ?PortalCaseDocuments $documents = null,
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
 	) {
+		$this->pages = new PortalPages();
 	}//end __construct()
 
 	/**
@@ -431,8 +484,8 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
 	private function supplierContribution(): array {
-		return [
-			'label' => 'Dossiq',
+		$contribution = [
+			'label' => self::SUPPLIER_GROUP,
 			'collections' => [
 				[
 					'id' => 'tenders',
@@ -481,12 +534,12 @@ class PortalContributionProvider {
 					'scopeField' => 'supplierRef',
 					'label' => 'Berichten',
 					'listable' => true,
-					// The portal inbox reads `receivedAt`; this schema keeps the
-					// date in `sentAt` and the files in `attachmentRefs`
-					// (portaliq#702). It has no read date, so a supplier's
-					// message stays unread in the portal.
+					// The inbox reads its own names (portaliq#702). Mark-read
+					// writes the time to `readAt`'s field; without it a
+					// supplier's message stayed unread forever.
 					'messageFields' => [
 						'receivedAt' => 'sentAt',
+						'readAt' => 'readByRecipientAt',
 						'attachments' => 'attachmentRefs',
 					],
 				],
@@ -494,6 +547,9 @@ class PortalContributionProvider {
 			'actions' => [],
 			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
 		];
+		$contribution['pages'] = $this->pages->forCollections(collections: $contribution['collections'], actions: [], group: self::SUPPLIER_GROUP);
+
+		return $contribution;
 
 	}//end supplierContribution()
 
@@ -566,39 +622,23 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
+		$collections = $this->citizenCollections();
+		$actions = $this->citizenActions();
+
 		return [
-			'label' => 'Dossiq',
-			'collections' => $this->citizenCollections(),
-			'actions' => $this->citizenActions(),
-			'notifications' => $this->citizenNotifications(),
+			'label' => self::CITIZEN_GROUP,
+			'collections' => $collections,
+			'actions' => $actions,
+			'pages' => $this->pages->withCaseScreen(
+				pages: $this->pages->forCollections(collections: $collections, actions: $actions, group: self::CITIZEN_GROUP, labels: self::CITIZEN_PAGE_LABELS)
+			),
+			// A declared rule key, not a change rule: dossiq writes the
+			// message itself (WooDecisionNotice), so portaliq sends its
+			// e-mail. A change rule would add a generic "is bijgewerkt"
+			// notice for the same publish.
+			'notifications' => [self::RULE_WOO_REQUEST_PUBLISHED],
 		];
 	}//end citizenContribution()
-
-	/**
-	 * What a resident is told about, as portaliq change rules (hydra woo-citizen-journey C3).
-	 *
-	 * `dossiq.wooRequest.published` fires when a case in `mijnZaken` gets its
-	 * `wooPublicationUrl`: once, on the first publish of its Woo decision. A
-	 * republish keeps the same link and a withdrawal leaves it, so neither
-	 * tells the resident twice. portaliq writes the inbox message and sends
-	 * the email and Berichtenbox copy by the resident's preferences; dossiq
-	 * writes no `portalMessage` of its own, because portaliq dispatches only
-	 * the messages it writes (woo-publish-decision-from-the-case D-8).
-	 *
-	 * @return array<int, array<string, mixed>>
-	 *
-	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-a-decision-comes-back-to-the-dossier-it-was-asked-from-req-wpi-008
-	 */
-	private function citizenNotifications(): array {
-		return [
-			[
-				'ruleKey' => self::RULE_WOO_REQUEST_PUBLISHED,
-				'collection' => 'mijnZaken',
-				'on' => ['field' => 'wooPublicationUrl', 'operator' => 'changed'],
-				'titleField' => 'title',
-			],
-		];
-	}//end citizenNotifications()
 
 	/**
 	 * The collections a citizen may list, and what each one is scoped by.
@@ -607,6 +647,8 @@ class PortalContributionProvider {
 	 *
 	 * @spec openspec/specs/portal-contribution/spec.md
 	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
+	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
+	 * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md#requirement-the-case-list-says-what-is-a-case-and-when-it-is-closed-req-portal-010
 	 */
 	private function citizenCollections(): array {
 		return [
@@ -646,10 +688,20 @@ class PortalContributionProvider {
 				],
 				// LISTED ON "MY CASES". Portaliq's merged case list keeps only
 				// collections of kind `cases` (PortalCaseListReader), and reads a
-				// row as closed when `closedField` is present and not empty.
-				// `endDate` is set when a case ends and is already projected.
+				// row as closed when `closedField` holds a value (false does not
+				// count). `isFinalStatus` is OpenRegister's calculation over the
+				// status type's `isFinal`, so it follows every way a case reaches
+				// a final status. `endDate` did not: a withdrawal from the portal
+				// lands on a final status without an end date, and a resident
+				// read three withdrawn Woo requests under "Lopend" (site-parity,
+				// 2026-10-02). It is on CITIZEN_CASE_FIELDS because portaliq
+				// drops a closed marker the collection does not project.
 				'kind' => 'cases',
-				'closedField' => 'endDate',
+				'closedField' => 'isFinalStatus',
+				// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
+				// portal needs to tell statuses apart; the merged case list
+				// showed it as is. portaliq shows this field instead.
+				'statusLabelField' => StatusPublicLabels::CASE_LABEL_FIELD,
 				// Where the case type of a case lives, so a portal
 				// administrator can hide a case type the portal has no form
 				// for (portaliq operate-show-per-case-type).
@@ -912,8 +964,8 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/archive/2026-09-09-move-portals-to-portaliq/tasks.md#T1
 	 */
 	private function inspectorContribution(): array {
-		return [
-			'label' => 'Dossiq',
+		$contribution = [
+			'label' => self::INSPECTOR_GROUP,
 			'collections' => [
 				[
 					'id' => 'inspectieRapporten',
@@ -981,6 +1033,13 @@ class PortalContributionProvider {
 			],
 			'notifications' => [],
 		];
+		$contribution['pages'] = $this->pages->forCollections(
+			collections: $contribution['collections'],
+			actions: $contribution['actions'],
+			group: self::INSPECTOR_GROUP
+		);
+
+		return $contribution;
 
 	}//end inspectorContribution()
 }//end class
