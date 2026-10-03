@@ -148,8 +148,6 @@ class CaseEmailMatchPreferences {
 	 *
 	 * @throws InvalidArgumentException When the account is not the user's.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) The stored preference is itself an on/off switch.
-	 *
 	 * @spec openspec/changes/email-case-matching/specs/email-case-matching/spec.md
 	 */
 	public function saveUserSettings(string $userId, bool $enabled, int $account): array {

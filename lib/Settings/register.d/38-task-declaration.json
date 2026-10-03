@@ -1,0 +1,110 @@
+{
+  "_note": "task-as-a-first-class-record. A case type could name a task and say nothing about it: not what has to be filled in, not who may pick it up, not how long it has, and not what finishing it does. THREE declarations land here. ONE, workflowTemplate.steps grows a `task` block, one per task, read by \\OCA\\Dossiq\\Service\\Task\\TaskDeclaration. The property is a JSON-encoded string, so its shape lives in this description and is enforced by \\OCA\\Dossiq\\Service\\Task\\TaskDeclarationValidator at publish rather than by the schema. TWO, caseType.alwaysAvailableActs is the second half of \"what may I do right now\": the acts allowed in every phase, beside the acts of the current one. It is NOT a phase that is always active, which is why it is its own list: a phase would appear in the phase strip, in the progress figure and in the term calculation, and all three would be wrong. THREE, case.taskAttachments is where a file uploaded inside a task form waits while that task is open. It lives on the CASE and not on the task because the task record is OpenRegister's and its `evidence` column is writable only through create, import and complete: there is no engine seam that adds a file to an OPEN task or takes one off again, which is the half this change hands to openregister. FOUR, caseDocument.sourceTask records which task produced a document, so a file uploaded in a task form is still traceable to the work it came from once it is evidence on the case. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "workflowTemplate": {
+        "properties": {
+          "steps": {
+            "description": "JSON-encoded array of WorkflowStep objects. Each step has: id (UUID), title, description, status (UUID ref to statusType), order (integer), assigneeRole (UUID ref to roleType, optional. Legacy, normalised on read to routingRule.single-role), routingRule (optional object {strategy: single-role|or-set|hierarchical|round-robin|least-loaded, roleType: UUID, roleTypes: [UUID], fallback: UUID}), isRequired (boolean), checklist (array of {id, label, description}), automaticActions (array of ActionRef). V1.1 additive: optional `config` sub-object = {sla:{value:int 1-10000, unit:hours|businessDays|calendarDays}, requiredFields:string[] (case-field property paths), autoActions:ActionRef[] fired before transition-level actions on step completion, escalationRule:{trigger:preBreach|slaBreached, offset:int, offsetUnit:hours|businessDays, notifyRole:UUID, escalateToRole:UUID, openIncident:boolean}. Requires sla present; preBreach offset must be <= sla.value}. Absent config preserves v1 behaviour. V1.2 additive: optional `task` sub-object = the one declaration block for the task this step creates. {enabled:boolean (default true; false means this case type does not run the task at all), leadTimeDays:int (the task's OWN due date, counted in working days from the day it is created, rather than the case deadline), candidateGroups:string[] and candidateUsers:string[] (who the task is offered to before it is assigned; the engine's claim verb is what turns one of them into its assignee), form:{kind:fields|external, schema, fields:[{field,required}], formId, requireChecklist} (written verbatim onto the engine task's metadata.form, which OpenRegister's task form resolver reads, so there is one form vocabulary and not two), effects:ActionRef[] (what completing the task does, run through ActionHandlerRegistry)}. It is ONE block per task and never several maps keyed by task name: publishing refuses a leadTimeDays, candidateGroups, candidateUsers or effects written beside the block instead of inside it, and refuses a form, group or effect handler that cannot be resolved, naming the task and what was missing.",
+            "title": "Steps"
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "alwaysAvailableActs": {
+            "type": "array",
+            "title": "Acts available in every phase",
+            "description": "The acts a handler may take on a case of this type whatever phase it is in, beside the acts of the current phase. Both halves are offered together and the always-available ones are marked as such, so \"what may I do right now\" is one list with two halves rather than two places to look. An act named here does not appear in the phase strip, does not count towards the progress figure and is given no phase term.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "title": "Id",
+                  "description": "The act's own identifier, stable across renames."
+                },
+                "label": {
+                  "type": "string",
+                  "title": "Label",
+                  "description": "What the handler reads on the button."
+                },
+                "description": {
+                  "type": "string",
+                  "title": "Description",
+                  "description": "What taking this act does."
+                },
+                "effect": {
+                  "type": "string",
+                  "title": "Effect",
+                  "description": "The action handler this act runs, from the same registry a task effect names."
+                },
+                "requiredRole": {
+                  "type": "string",
+                  "title": "Required role",
+                  "description": "The role a handler needs to take it. An act the handler's role forbids is shown and disabled with the reason, never hidden."
+                }
+              }
+            },
+            "visible": true
+          }
+        }
+      },
+      "caseDocument": {
+        "properties": {
+          "sourceTask": {
+            "type": "string",
+            "title": "Produced by task",
+            "description": "The task whose form this document was uploaded in, when it came from one. A file uploaded inside a task is held against that task while it is open and becomes a document on the case when the task completes; this is what keeps the trail back to the work that produced it.",
+            "visible": true
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "taskAttachments": {
+            "type": "array",
+            "title": "Files waiting on a task",
+            "description": "The files uploaded inside a task form that are still waiting on that task. A file here is work in progress, not yet a document on the case: completing the task turns it into a caseDocument recording the task it came from, and removing it while the task is open takes it off again. It carries no task state of its own, only which file waits on which task.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "task": {
+                  "type": "string",
+                  "title": "Task",
+                  "description": "The engine task the file waits on."
+                },
+                "file": {
+                  "type": "string",
+                  "title": "File",
+                  "description": "The file reference."
+                },
+                "title": {
+                  "type": "string",
+                  "title": "Title",
+                  "description": "What the file is called."
+                },
+                "link": {
+                  "type": "string",
+                  "title": "Link",
+                  "description": "Where the file can be opened."
+                },
+                "uploadedBy": {
+                  "type": "string",
+                  "title": "Uploaded by",
+                  "description": "Who put it there."
+                },
+                "uploadedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "title": "Uploaded at",
+                  "description": "When."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

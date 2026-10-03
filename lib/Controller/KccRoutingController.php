@@ -72,8 +72,6 @@ class KccRoutingController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	public function index(): JSONResponse {
@@ -103,8 +101,6 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
@@ -132,8 +128,6 @@ class KccRoutingController extends Controller {
 	 * @param string $id The rule id.
 	 *
 	 * @return JSONResponse
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
@@ -163,8 +157,6 @@ class KccRoutingController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
@@ -189,8 +181,6 @@ class KccRoutingController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/kcc-klantcontact-integratie/tasks.md#TASK-KCC-17
 	 */

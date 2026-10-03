@@ -3,9 +3,19 @@
  * SPDX-License-Identifier: EUPL-1.2
  *
  * Presentation logic for the capability comparison on the Features & roadmap
- * page. Pure functions over `src/data/capabilityComparison.json`, kept out of
+ * page. Pure functions over `openspec/parity/capabilities.json`, kept out of
  * the .vue file so the grouping and the tallies are unit-testable in the node
  * environment (vitest.config.js: component specs need jsdom, these do not).
+ *
+ * ROWS AND PROPOSALS ARE TWO LISTS, AND ONLY ONE OF THEM IS SCORED.
+ * `data.capabilities` holds the rows: every system has been read against each
+ * of them, which is what makes a tally over them mean something.
+ * `data.pending` holds the proposals: questions raised against one product and
+ * not yet read against the rest. Every function here that counts, tallies or
+ * compares reads `capabilities` and never `pending`, because a proposal has
+ * one rated column out of five and putting it in a total would move our score
+ * against cells nobody has filled. The page renders them, clearly marked, so a
+ * reader can see the questions we are about to be measured on.
  *
  * The tallies are DERIVED here rather than stored in the JSON on purpose. A
  * stored total is a second copy of the truth that goes stale the moment a row
@@ -83,24 +93,51 @@ export function tally(capabilities, systemKey) {
 }
 
 /**
+ * The proposals: questions raised against one product, not yet read against
+ * the rest.
+ *
+ * A separate list rather than a flag on the rows, because every counting
+ * function here would otherwise have to remember to exclude them, and the one
+ * that forgot would publish a score over cells nobody had filled. A reader of
+ * `data.capabilities` gets the scored list and cannot get this by accident.
+ *
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
+ * @return {Array<object>} The pending proposals, or an empty list.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
+ */
+export function pendingRows(data) {
+	return data?.pending ?? []
+}
+
+/**
  * Group the capabilities by area, resolving labels for the given locale and
  * tallying every system per area.
  *
  * Areas come out in the order the data file declares them, which is the
- * audit's own numbering (1 Intake through 13 Access and privacy). The row
+ * audit's own numbering (1 Intake through 17 Multi-organisation). The row
  * `id` a reader sees is that numbering, so re-sorting the areas here would
  * put "13.1" above "1.1" on a page whose first column is the number.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * `capabilities` are the scored rows and `pending` are the proposals filed
+ * under the same area. `tallies` counts the rows ONLY. An area can hold
+ * proposals and no rows, which is what areas 14 to 17 are today: four
+ * questions round 4 raised that had nowhere to go, each still waiting on
+ * every column but ours.
+ *
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @param {string} [locale] BCP 47 locale used to pick labels.
- * @return {Array<object>} One entry per area, each with its rows and tallies.
+ * @return {Array<object>} One entry per area, each with its rows, proposals and tallies.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
 export function groupByArea(data, locale = 'en') {
 	const systems = (data?.systems ?? []).map((s) => s.key)
 	const rows = data?.capabilities ?? []
+	const proposals = pendingRows(data)
 	return (data?.areas ?? []).map((area) => {
 		const capabilities = rows
+			.filter((row) => row.area === area.key)
+			.map((row) => ({ ...row, label: labelFor(row, locale) }))
+		const pending = proposals
 			.filter((row) => row.area === area.key)
 			.map((row) => ({ ...row, label: labelFor(row, locale) }))
 		const tallies = {}
@@ -111,6 +148,7 @@ export function groupByArea(data, locale = 'en') {
 			key: area.key,
 			label: labelFor(area, locale),
 			capabilities,
+			pending,
 			tallies,
 		}
 	})
@@ -119,7 +157,7 @@ export function groupByArea(data, locale = 'en') {
 /**
  * Tally every system over the whole comparison.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @return {Record<string, {yes: number, partial: number, no: number, unknown: number, total: number}>} Tally per system key.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
  */
@@ -179,7 +217,7 @@ export function formatComparedOn(iso, locale = 'en') {
  * three independent teams shipped something we did not, and a half-built
  * version of it does not refute that.
  *
- * @param {object} data Parsed `capabilityComparison.json`.
+ * @param {object} data Parsed `openspec/parity/capabilities.json`.
  * @return {Array<object>} Rows where every non-self system is `yes` and we are not.
  * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
  */

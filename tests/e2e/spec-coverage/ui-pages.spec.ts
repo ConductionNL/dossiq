@@ -18,6 +18,15 @@
  * these pages have no nav entry at all in this build ("Advice"),
  * and the ones that do sit inside COLLAPSED groups, so the click blocked on
  * actionability until the whole 60s test budget was gone.
+ *
+ * MUTATION POINTS, NOT YET RUN. The mutation runs were refused by the
+ * permission system on 2026-09-11. Both are client-side, in
+ * `src/manifest.json`:
+ *
+ *  - the `Dashboard` page's `title` becomes anything else. Expected red: `the
+ *    dashboard must render its level-2 heading`.
+ *  - the `Doorlooptijd` page's `title` becomes anything else. Expected red:
+ *    `the doorlooptijd page must render the "Processing time" heading`.
  */
 
 import { expect, test } from '@playwright/test'
@@ -30,32 +39,45 @@ import {
 
 test.describe('Dashboard page render', () => {
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-page-renders-heading-and-widget-grid
-	test('dashboard renders the manifest widget grid shell', async ({ page }) => {
+	test('dashboard renders its heading and the manifest widget grid', async ({
+		page,
+	}) => {
 		// navTo loads the app to read its sidebar, then the target: two page
 		// loads. See `journeyBudget`.
 		test.setTimeout(journeyBudget(2))
 		await navTo(page, 'Dashboard')
-		// The dashboard route mounts the nc-vue manifest widget grid into
-		// `.app-content`. The grid container renders independently of whether
-		// OpenRegister returns widget data: an unseeded register yields an EMPTY
-		// `<div class="cn-widget-grid">` (zero-height → not "visible"), a seeded
-		// one fills it with widget cards. So the data-independent contract is
-		// "the app content mounts and the grid container is attached". Earlier
-		// revisions asserted a specific `<h2>Dashboard</h2>` + named widget
-		// titles; the deployed build renders neither without seeded data.
 		await expect(page.locator('.app-content').first()).toBeVisible({
 			timeout: 15000,
 		})
+
+		// The heading the scenario names. An older revision of this test
+		// dropped it with a comment saying the build rendered none; measured
+		// again on 2026-09-11 the page exposes `h2 Dashboard`, so the clause
+		// is asserted rather than explained away. Without it, the assertions
+		// below pass on any page that mounts a widget grid.
+		await expect(
+			page.locator('.app-content').getByRole('heading', {
+				name: /^(Dashboard)$/i,
+				level: 2,
+			}),
+			'the dashboard must render its level-2 heading',
+		).toBeVisible({ timeout: 15000 })
+
 		// The deployed @conduction/nextcloud-vue renders the manifest dashboard
 		// grid as `.cn-dashboard-grid` (older builds used `.cn-widget-grid`);
 		// accept either so the assertion tracks the data-independent contract.
-		await expect(
-			page
-				.locator(
-					'.app-content .cn-dashboard-grid, .app-content .cn-widget-grid',
-				)
-				.first(),
-		).toBeAttached({ timeout: 15000 })
+		const grid = page
+			.locator('.app-content .cn-dashboard-grid, .app-content .cn-widget-grid')
+			.first()
+		await expect(grid).toBeAttached({ timeout: 15000 })
+		// And the grid carries tiles. An empty container was what this used to
+		// accept, which a dashboard whose widgets all failed to resolve also
+		// produces; the scenario asks for the configured tiles or their
+		// unavailable-placeholder shells.
+		expect(
+			await grid.locator(':scope > *').count(),
+			'the widget grid must hold the configured tiles, or their placeholder shells',
+		).toBeGreaterThan(0)
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
@@ -106,22 +128,23 @@ test.describe('Cases index page render', () => {
 
 test.describe('Doorlooptijd page render', () => {
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
-	test('doorlooptijd renders processing-time analytics heading', async ({
-		page,
-	}) => {
+	test('doorlooptijd renders its processing-time heading', async ({ page }) => {
 		// The "Processing time" leaf sits in the collapsed "Reports" group, so
 		// navigate by route. (The previous comment claimed the /index.php
 		// prefix resets the router to the Dashboard; measured on a CI runner
 		// 2026-08-04 it renders the view correctly.)
 		await navToRoute(page, '/doorlooptijd')
+		// page-topology-cleanup (A3) retitled the page, and the scenario said
+		// "Processing Time Analytics" until 2026-09-11 while every test
+		// asserted the new title. The spec now names the title the manifest
+		// carries, and this reads it in the MAIN CONTENT, where the scenario
+		// puts it.
 		await expect(
-			page.getByRole('heading', {
-				// page-topology-cleanup (A3): the heading is the dashboard
-				// page's title now. The old wording lives on as the subtitle,
-				// asserted separately below where this spec checks it.
+			page.locator('.app-content').getByRole('heading', {
 				name: 'Processing time',
 				level: 2,
 			}),
+			'the doorlooptijd page must render the "Processing time" heading',
 		).toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})

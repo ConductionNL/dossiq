@@ -42,12 +42,6 @@
  * - ztc-012: Publish validation — all relations must be published before publish
  * - ztc-013: Cross-catalogus — zaaktype must belong to the specified catalogus
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.TooManyMethods)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 

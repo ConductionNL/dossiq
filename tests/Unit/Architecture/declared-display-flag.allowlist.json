@@ -1,0 +1,5 @@
+{
+  "about": "Display flags a dossiq schema declares that nothing honours yet. An entry names the flag, the change that will honour it, and why it is not honoured here. An entry without a named change is not an entry: DeclaredDisplayFlagHasReaderTest fails on it. The list also fails in the OTHER direction, on an entry whose flag has since gained a reader, so the number can only go down deliberately.",
+  "measured": "2026-09-14",
+  "entries": []
+}

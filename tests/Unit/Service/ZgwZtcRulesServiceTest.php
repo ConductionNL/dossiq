@@ -32,6 +32,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
  * @uses \OCA\Dossiq\Service\DeadlineMonitoringSeedDataService
  * @uses \OCA\Dossiq\Service\ZgwRulesBase
+ * @uses   \OCA\Dossiq\Service\FieldValidator
  */
 class ZgwZtcRulesServiceTest extends TestCase {
 	private ZgwZtcRulesService $svc;

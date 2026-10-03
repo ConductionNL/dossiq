@@ -39,6 +39,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\EmailTemplateController;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\Email\SenderBlocklist;
 use OCA\Dossiq\Service\EmailTemplateService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\Http;
@@ -107,6 +109,20 @@ class EmailTemplateControllerContractTest extends TestCase {
 	private CaseAccessGuard $caseAccessGuard;
 
 	/**
+	 * The gateway that names the accounts intake can read.
+	 *
+	 * @var MailGatewayInterface|MockObject
+	 */
+	private MailGatewayInterface $mailGateway;
+
+	/**
+	 * Who may not open a case by mail.
+	 *
+	 * @var SenderBlocklist|MockObject
+	 */
+	private SenderBlocklist $blocklist;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var EmailTemplateController
@@ -128,6 +144,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+		$this->mailGateway = $this->createMock(MailGatewayInterface::class);
+		$this->blocklist = $this->createMock(SenderBlocklist::class);
 
 		$this->controller = new EmailTemplateController(
 			request: $this->request,
@@ -137,6 +155,8 @@ class EmailTemplateControllerContractTest extends TestCase {
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			caseAccessGuard: $this->caseAccessGuard,
+			mailGateway: $this->mailGateway,
+			blocklist: $this->blocklist,
 		);
 	}//end setUp()
 
@@ -341,25 +361,31 @@ class EmailTemplateControllerContractTest extends TestCase {
 	}//end testPrefillDraftAnswers409WhenTheDraftCannotBeRendered()
 
 	/**
-	 * saveSettings writes only the keys actually supplied, stores the shared
-	 * mailbox password with the `sensitive` flag, and leaves every absent key
-	 * alone. The sensitive flag is invisible in the response, so this is the
-	 * only place it can be pinned.
+	 * saveSettings() persists every key the request supplied, and there is no
+	 * longer a key among them that holds a credential.
+	 *
+	 * 🔴 THE PASSWORD IS NOT ACCEPTED, NOT EVEN MASKED. This test used to pin
+	 * the `sensitive` flag on `email_imap_password`, and its successor pins the
+	 * opposite: Nextcloud Mail holds the account now (design D-2), so a request
+	 * still posting a password writes nothing at all. A surface that quietly
+	 * accepted the old key would keep putting a credential in appconfig while
+	 * the repair step deletes it on every upgrade.
 	 *
 	 * @return void
 	 */
-	public function testSaveSettingsWritesSuppliedKeysAndFlagsThePasswordSensitive(): void {
+	public function testSaveSettingsWritesTheAccountAndRefusesAPassword(): void {
 		$this->signIn(uid: 'admin');
 		$this->withRequestParams(
 			[
-				'email_imap_host' => 'imap.gemeente.test',
+				'email_mail_account_id' => '7',
+				'email_imap_folder' => 'INBOX/Zaken',
 				'email_imap_password' => 'hunter2',
+				'email_imap_host' => 'imap.gemeente.test',
 			]
 		);
 
 		$written = [];
-		$this->appConfig->expects($this->exactly(2))
-			->method('setValueString')
+		$this->appConfig->method('setValueString')
 			->willReturnCallback(
 				static function (
 					string $app,
@@ -368,7 +394,7 @@ class EmailTemplateControllerContractTest extends TestCase {
 					bool $lazy = false,
 					bool $sensitive = false,
 				) use (&$written): bool {
-					$written[$key] = ['app' => $app, 'value' => $value, 'sensitive' => $sensitive];
+					$written[$key] = ['value' => $value, 'sensitive' => $sensitive];
 					return true;
 				}
 			);
@@ -376,58 +402,65 @@ class EmailTemplateControllerContractTest extends TestCase {
 		$response = $this->controller->saveSettings();
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['saved' => true], $response->getData());
-		$this->assertSame(
-			['app' => 'dossiq', 'value' => 'imap.gemeente.test', 'sensitive' => false],
-			$written['email_imap_host']
+		$this->assertSame('7', $written['email_mail_account_id']['value']);
+		$this->assertSame('INBOX/Zaken', $written['email_imap_folder']['value']);
+		$this->assertArrayNotHasKey(
+			'email_imap_password',
+			$written,
+			'dossiq stores no mailbox password, so the key must not be written'
 		);
-		$this->assertSame(
-			['app' => 'dossiq', 'value' => 'hunter2', 'sensitive' => true],
-			$written['email_imap_password'],
-			'the shared-mailbox password must be stored with the sensitive flag'
+		$this->assertArrayNotHasKey('email_imap_host', $written, 'nor the host it belonged to');
+		$this->assertFalse(
+			$written['email_mail_account_id']['sensitive'],
+			'an account id is not a secret'
 		);
-	}//end testSaveSettingsWritesSuppliedKeysAndFlagsThePasswordSensitive()
+	}//end testSaveSettingsWritesTheAccountAndRefusesAPassword()
 
 	/**
-	 * The masked placeholder `***` that getSettings() hands the UI means
-	 * "unchanged": posting it back must NOT overwrite the stored credential
-	 * with three asterisks while the other edited fields still land.
+	 * The block list is written through the class that reads it, so it is
+	 * stored normalised rather than as the administrator typed it.
+	 *
+	 * `SenderBlocklist::blocks()` compares entries against a normalised
+	 * address. A list written straight to appconfig keeps the capitals and the
+	 * spaces, matches nothing, and still shows the address as blocked on the
+	 * settings page, which is the worst of the three possible outcomes.
 	 *
 	 * @return void
 	 */
-	public function testSaveSettingsTreatsTheMaskedPasswordAsUnchanged(): void {
+	public function testTheBlockListIsWrittenThroughTheClassThatReadsIt(): void {
 		$this->signIn(uid: 'admin');
 		$this->withRequestParams(
-			[
-				'email_imap_password' => '***',
-				'email_imap_folder' => 'INBOX/Zaken',
-			]
+			['email_intake_blocklist' => 'Spammer@Voorbeeld.NL, @reclame.nl']
 		);
 
+		$replaced = [];
+		$this->blocklist->expects($this->once())
+			->method('replace')
+			->willReturnCallback(
+				static function (array $entries) use (&$replaced): void {
+					$replaced = $entries;
+				}
+			);
+
 		$written = [];
-		$this->appConfig->method('setValueString')->willReturnCallback(
-			static function (
-				string $app,
-				string $key,
-				string $value,
-				bool $lazy = false,
-				bool $sensitive = false,
-			) use (&$written): bool {
-				$written[$key] = $value;
-				return true;
-			}
-		);
+		$this->appConfig->method('setValueString')
+			->willReturnCallback(
+				static function (string $app, string $key, string $value) use (&$written): bool {
+					$written[$key] = $value;
+					return true;
+				}
+			);
 
 		$response = $this->controller->saveSettings();
 
 		$this->assertSame(['saved' => true], $response->getData());
+		$this->assertSame(['Spammer@Voorbeeld.NL', ' @reclame.nl'], $replaced);
 		$this->assertArrayNotHasKey(
-			'email_imap_password',
+			'email_intake_blocklist',
 			$written,
-			'posting the masked placeholder back must not overwrite the stored password'
+			'the raw value must not also be written straight to appconfig'
 		);
-		$this->assertSame(['email_imap_folder' => 'INBOX/Zaken'], $written);
-	}//end testSaveSettingsTreatsTheMaskedPasswordAsUnchanged()
+	}//end testTheBlockListIsWrittenThroughTheClassThatReadsIt()
 
 	/**
 	 * variables answers the backend's catalogue verbatim for the caseType on

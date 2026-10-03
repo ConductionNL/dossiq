@@ -147,8 +147,6 @@ class CallbackService {
 	 *
 	 * @return array<string, mixed> The updated callback record.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $succeeded is the attempt outcome.
-	 *
 	 * @spec openspec/specs/kcc-klantcontact-integratie/spec.md#requirement-callback-scheduling-and-sla-tracking
 	 */
 	public function applyAttempt(array $callback, bool $succeeded, ?DateTimeImmutable $now = null): array {

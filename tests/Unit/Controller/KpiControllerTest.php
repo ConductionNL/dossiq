@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\KpiController;
+use OCA\Dossiq\Service\Dashboard\DashboardWidgetScope;
 use OCA\Dossiq\Service\KpiAggregationService;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -62,6 +63,14 @@ class KpiControllerTest extends TestCase {
 	private KpiAggregationService $kpiAggregation;
 
 	/**
+	 * The mocked widget scope, which narrows the payload to what this reader's
+	 * widgets may show (widget-roles-declared REQ-WRD-02).
+	 *
+	 * @var DashboardWidgetScope
+	 */
+	private DashboardWidgetScope $widgetScope;
+
+	/**
 	 * The mocked cache factory.
 	 *
 	 * @var ICacheFactory|MockObject
@@ -98,6 +107,11 @@ class KpiControllerTest extends TestCase {
 		$this->request = $this->createMock(IRequest::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->kpiAggregation = $this->createMock(KpiAggregationService::class);
+		$this->widgetScope = $this->createMock(DashboardWidgetScope::class);
+		// The default double narrows nothing, so every existing assertion in
+		// this file keeps asserting what the aggregation computed rather than
+		// what the scope allowed. The narrowing has its own tests.
+		$this->widgetScope->method('narrowFor')->willReturnArgument(0);
 		$this->cache = $this->createMock(ICache::class);
 		$this->cacheFactory = $this->createMock(ICacheFactory::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
@@ -109,6 +123,7 @@ class KpiControllerTest extends TestCase {
 			$this->userSession,
 			$this->kpiAggregation,
 			$this->cacheFactory,
+			$this->widgetScope,
 			$this->logger,
 		);
 	}//end setUp()

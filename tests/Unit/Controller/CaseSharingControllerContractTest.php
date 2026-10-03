@@ -15,10 +15,11 @@
  *    with the session UID;
  *  - the partner branch demands a partnerId and reports an upstream failure as
  *    502, distinct from the 400 it uses for its own input validation;
- *  - revoking a token link requires BOTH that the caller may access the case
- *    AND that the token actually belongs to that case — dropping the second
- *    condition is a cross-case IDOR (a handler of case A revoking case B's
- *    link by id), which is exactly the defect this file is here to catch.
+ *  - revoking a partner share resolves the share's OWN case first and refuses
+ *    a caller with no access to it, because the request does not name one.
+ *
+ * Access links have their own controller and their own contract file,
+ * CaseSharingControllerAccessLinkTest, since case-sharing-mints-access-links.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -255,8 +256,12 @@ class CaseSharingControllerContractTest extends TestCase {
 		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
 		$this->caseSharingService->expects($this->once())
 			->method('createTokenShare')
-			->with('case-1', 'Volg uw zaak', 'alice', '2026-12-31')
-			->willReturn(['id' => 'share-1', 'url' => 'https://example.test/s/abc']);
+			->with('case-1', 'Volg uw zaak', 'alice', '2026-12-31', ['read', 'comment'], null, [], [])
+			->willReturn([
+				'share' => ['id' => 'share-1'],
+				'link' => ['id' => 7],
+				'url' => 'https://example.test/s/abc',
+			]);
 
 		$response = $this->controller->createShare();
 
@@ -273,103 +278,12 @@ class CaseSharingControllerContractTest extends TestCase {
 	public function testRevokeShareRefusesAnUnauthenticatedCallerWith401(): void {
 		$this->userSession->method('getUser')->willReturn(null);
 		$this->caseSharingService->expects($this->never())->method('revokeShare');
-		$this->caseSharingService->expects($this->never())->method('revokeTokenShare');
 
 		$response = $this->controller->revokeShare(shareId: 'share-1');
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 		$this->assertSame('Not authenticated', $response->getData()['error']);
 	}//end testRevokeShareRefusesAnUnauthenticatedCallerWith401()
-
-	/**
-	 * Revoking a token link refuses a caller with no access to the named case.
-	 *
-	 * @return void
-	 */
-	public function testRevokeTokenShareRefusesACallerNotAssignedToTheCaseWith403(): void {
-		$this->signIn(uid: 'mallory');
-		$this->withParams(['caseId' => 'case-1']);
-
-		$this->caseSharingService->method('canUserAccessCase')
-			->with('case-1', 'mallory')
-			->willReturn(false);
-		$this->caseSharingService->expects($this->never())->method('revokeTokenShare');
-
-		$response = $this->controller->revokeShare(shareId: 'share-1');
-
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertSame(
-			'Access denied: you are not assigned to this case',
-			$response->getData()['error']
-		);
-	}//end testRevokeTokenShareRefusesACallerNotAssignedToTheCaseWith403()
-
-	/**
-	 * Case access alone is NOT enough: the token must also belong to the case
-	 * the caller named. Without this second condition a handler of case A can
-	 * revoke case B's public link by quoting its id (ADR-005 rule 3 IDOR).
-	 *
-	 * @return void
-	 */
-	public function testRevokeTokenShareRefusesATokenBelongingToAnotherCase(): void {
-		$this->signIn(uid: 'alice');
-		$this->withParams(['caseId' => 'case-A']);
-
-		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->expects($this->once())
-			->method('tokenBelongsToCase')
-			->with('token-of-case-B', 'case-A')
-			->willReturn(false);
-		$this->caseSharingService->expects($this->never())->method('revokeTokenShare');
-
-		$response = $this->controller->revokeShare(shareId: 'token-of-case-B');
-
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertSame(
-			'Access denied: you are not assigned to this case',
-			$response->getData()['error']
-		);
-	}//end testRevokeTokenShareRefusesATokenBelongingToAnotherCase()
-
-	/**
-	 * A token revoke that the sharing leaf refuses is reported as 502 — the
-	 * client must not read a failed revoke as a successful one.
-	 *
-	 * @return void
-	 */
-	public function testRevokeTokenShareReportsALeafFailureAs502(): void {
-		$this->signIn();
-		$this->withParams(['caseId' => 'case-A']);
-		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->method('tokenBelongsToCase')->willReturn(true);
-		$this->caseSharingService->method('revokeTokenShare')->willReturn(false);
-
-		$response = $this->controller->revokeShare(shareId: 'share-1');
-
-		$this->assertSame(Http::STATUS_BAD_GATEWAY, $response->getStatus());
-		$this->assertSame('Could not revoke share link', $response->getData()['error']);
-	}//end testRevokeTokenShareReportsALeafFailureAs502()
-
-	/**
-	 * A fully authorized token revoke answers 200 with `success: true`.
-	 *
-	 * @return void
-	 */
-	public function testRevokeTokenShareReturns200WhenBothGuardsPass(): void {
-		$this->signIn();
-		$this->withParams(['caseId' => 'case-A']);
-		$this->caseSharingService->method('canUserAccessCase')->willReturn(true);
-		$this->caseSharingService->method('tokenBelongsToCase')->willReturn(true);
-		$this->caseSharingService->expects($this->once())
-			->method('revokeTokenShare')
-			->with('share-1')
-			->willReturn(true);
-
-		$response = $this->controller->revokeShare(shareId: 'share-1');
-
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame(['success' => true], $response->getData());
-	}//end testRevokeTokenShareReturns200WhenBothGuardsPass()
 
 	/**
 	 * The partner-share branch (no caseId in the request) resolves the share's

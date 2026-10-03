@@ -26,6 +26,8 @@ MUST remain pure utility functions with no network calls.
 
 #### Scenario: suggest call reaches openconnector instead of api.pdok.nl
 
+@e2e exclude no UI surface reaches the shim, so no browser journey can exercise it: `suggest()` is imported only by `src/components/map/AddressSearch.vue`, which is used only by `src/components/map/LocationPicker.vue`, which nothing in `src/` mounts. The bundle exports no global either, so a Playwright page cannot call the function. Verified instead by vitest `tests/vitest/pdokService.spec.js`, which calls the real `suggest()` and asserts both the openconnector URL and that no call reaches api.pdok.nl. Mutation checked 2026-09-11: pointing `suggest()` at api.pdok.nl reddens that test and only that test.
+
 - GIVEN the dossiq frontend is loaded and openconnector is installed
 - WHEN a dossiq component calls `suggest("Lauriergracht")`
 - THEN the shim SHALL send
@@ -61,6 +63,8 @@ this change.
 
 #### Scenario: All six functions are exported with unchanged signatures
 
+@e2e exclude The scenario's own GIVEN is "the shim file is loaded in a test environment", and a browser is not one: the webpack bundle exports no global, so no page can inspect the module's exports. `tests/vitest/pdokService.spec.js` imports and calls `suggest`, `lookup`, `free` and `reverse` directly, which is what present-and-callable means. An e2e citation here previously resolved onto a test about OpenRegister address fixtures, which is unrelated.
+
 - GIVEN the shim file is loaded in a test environment
 - WHEN each of the six exports is inspected
 - THEN all six SHALL be present and callable with their original signatures
@@ -88,6 +92,8 @@ breaking form submission:
 
 #### Scenario: 503 response resolves with null and surfaces message_key
 
+@e2e exclude The subject is the shim function's return value, and no page can call it: `suggest()` and `lookup()` are imported only by `src/components/map/AddressSearch.vue`, used only by `LocationPicker.vue`, which nothing in `src/` mounts, and the bundle exports no global. Covered by `tests/vitest/pdokService.spec.js:169`, which calls the real `lookup()` against a mocked 503, asserts it resolves `null`, and asserts `lastWarning` equals `{ messageKey: 'pdok.unavailable', status: 503 }`. The e2e citation that stood here fetched the mocked URL and asserted the mock's own status, which no product change could redden.
+
 - GIVEN openconnector returns HTTP 503 with
   `{"error": "pdok_unavailable", "message_key": "pdok.unavailable"}`
 - WHEN the shim receives the 503 response on any network-calling function
@@ -97,6 +103,8 @@ breaking form submission:
 - AND no uncaught exception SHALL reach the form component
 
 #### Scenario: openconnector absent surfaces warning without blocking form
+
+@e2e exclude Same unreachable shim as the 503 scenario above. Covered by `tests/vitest/pdokService.spec.js:194`, which calls the real `free()` against a mocked 404 and asserts the empty fallback and the non-blocking warning. The e2e citation that stood here was credited while asserting only that a mocked 404 came back as 404.
 
 - GIVEN openconnector is not installed and the endpoint returns HTTP 404
 - WHEN a dossiq component calls `suggest("Tilburg")`

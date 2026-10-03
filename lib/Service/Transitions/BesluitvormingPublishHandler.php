@@ -64,8 +64,6 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface {
 	 *
 	 * @return ActionResult
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-	 *
 	 * @spec openspec/specs/besluitvorming-workflow/spec.md
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {

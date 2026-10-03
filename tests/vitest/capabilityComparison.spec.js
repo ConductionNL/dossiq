@@ -4,14 +4,27 @@
  *
  * Guards the capability comparison shown on the Features & roadmap page.
  *
- * The data file is generated ONCE, offline, from a private audit repo, so CI
- * cannot regenerate it and diff the result. These assertions are the only
- * thing standing between a hand-edit and a page that quietly claims something
- * the audit never said.
+ * The data file is RE-ISSUED from the parity corpus in
+ * `ConductionNL/market-intelligence` by `scripts/sync-capability-comparison.mjs`.
+ * CI has no checkout of that repo, so it cannot re-run the script and diff the
+ * result. What it can do, and what the first test below does, is compare the
+ * data file's id set against `capabilityComparison.corpus-ids.json`, which the
+ * same script writes from the same source in the same run.
+ *
+ * That test exists because the rule it enforces was already written, already
+ * correct, and was broken anyway. On 2026-09-10 dossiq#2314 hand-added 104 rows
+ * here that no corpus artefact held, under ids the corpus used for other
+ * questions. 42 ids collided, five discovery lanes then cited 39 of them as
+ * existing rows, and eleven research candidates were withdrawn against rows
+ * that did not exist. Nothing failed, because nothing checked. The
+ * reconciliation is `procest/_round4/compare/dossiq-matrix-drift.md` in the
+ * corpus repo and the decision is D1.
  */
 
 import { describe, expect, it } from 'vitest'
-import data from '../../src/data/capabilityComparison.json'
+import data from '../../openspec/parity/capabilities.json'
+import { build } from '../../scripts/sync-capability-comparison.mjs'
+import corpusIds from '../../src/data/capabilityComparison.corpus-ids.json'
 import {
 	behindEveryRival,
 	formatComparedOn,
@@ -23,36 +36,81 @@ import {
 	tally,
 } from '../../src/utils/capabilityComparison.js'
 
-// The audit's own totals. Hard-coded on purpose: if a row is edited, one of
-// these fails and names the system whose score moved.
+// The corpus's own totals over the 225 ROWS. Hard-coded on purpose: if a row
+// is edited, one of these fails and names the system whose score moved.
+//
+// These count `capabilities` and nothing else. `pending` is a second list with
+// one rated column out of five, and folding it in would move every score
+// against cells nobody has filled.
 //
 // Round 3 added 19 rows on 2026-09-09. It read GLPI and Zammad, not the other
 // products in this table, so each of them carries `unknown` on all 19 and their
-// yes/partial/no counts did not move. Ours did, downward: 84/87/35 over 206
-// became 87/92/46 over 225. That is the round working, not the product
-// regressing. The rows are things the round 2 list never thought to ask.
+// yes/partial/no counts did not move. Ours did.
 //
 // Dimpact ZAC joined as a fifth column on 2026-09-10, from a round 3 reading
 // of infonl/dimpact-zaakafhandelcomponent taken on 2026-09-08. That reading
 // covered the 206 rows round 2 produced, so ZAC is `unknown` on the same 19
 // rows the other three are: it was never read against them either.
 //
-// Round 4 added 104 more on 2026-09-10, from 19 systems examined and three
-// installed and driven. It read Odoo, iTop, EspoCRM and sixteen others, NONE of
-// which is a column here, so all four rivals are `unknown` on all 104 and their
-// counts did not move again. Ours moved a long way down: 87/92/46 over 225
-// became 96/126/107 over 329. Our `no` count more than doubled in one round.
-// That is the instrument widening, and the number is meant to be uncomfortable:
-// a list that only asks questions we can answer measures nothing.
+// Our own column moved again on 2026-09-14, from the corpus's case-type depth
+// study: 2.3, 2.7 and 3.3 from `partial` to `yes` and 11.2 from `yes` to `no`.
+// 87/92/46 became 89/89/47. Every move is in `_rerated` with its evidence.
+//
+// The 104 rows this file carried between 2026-09-10 and 2026-09-14 are gone
+// from `capabilities` and are not a regression: they were never rows. They are
+// 98 of the 146 proposals in `pending`, under the ids the corpus issued them.
+//
+// Our column moved again on 2026-09-22, and by more than any reading before it.
+// Thirty-five rows: sixteen the build wave closed on 2026-09-20, sixteen the
+// 2026-09-19 gap scan found we already had, and three the corpus had corrected
+// while this file still carried the old value. 89/89/47 became 121/69/35. The
+// other four columns did not move, for the same reason they never do.
+//
+// And on 2026-09-25 by thirteen: rows rated no while the ledger recorded merged
+// build work, each re-read against its whole capability sentence and its
+// caller. Ten became yes and three partial, so 121/69/35 became 131/72/22.
+// Fourteen more such rows stayed no, because the code is there and nothing
+// reaches it.
+//
+// On 2026-09-26 cross-lane corrections moved three more of ours (2.21 and 3.19
+// partial to no, their callers missing in portaliq; 3.7 yes to partial, claim
+// and unclaim only), so 131/72/22 became 130/71/24. That landed without these
+// pins moving, and the wave-5 change re-pins it.
+//
+// And on 2026-09-26 every competitor column was re-read from its source code
+// at the version the column names, with a lab drive where the code could not
+// settle a cell, and Open Zaak 1.30.0 joined as a sixth column. That reading
+// rated the 19 round-3 rows too, so the rivals' `unknown` fell from 19 to the
+// ten OpenCase cells that rest on its closed enterprise package. Every moved
+// competitor cell is in `_competitorRerated`, and every cell's evidence names
+// the file and line it was read from.
+//
+// On 2026-09-28 the corpus re-rate in market-intelligence#191 moved thirteen of
+// ours: twelve to yes (2.4, 2.17, 2.22, 5.6, 5.12 and 12.17 shipped their
+// missing half; 4.5, 4.11, 4.16, 4.23, 12.7 and 12.21 are Nextcloud's) and 4.15
+// from no to partial. Before that, dossiq#3161 had read 12.23 as partial while
+// the corpus still says yes, which took this file to 129/72/24 without these
+// pins moving. With both, 129/72/24 became 141/61/23. The re-issue held 12.23
+// at partial, so the sync script's check against the corpus reports that one
+// row until the corpus reads it the same way.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 96, partial: 126, no: 107, unknown: 0 },
-	opencase: { yes: 62, partial: 46, no: 98, unknown: 123 },
-	gzac: { yes: 86, partial: 55, no: 65, unknown: 123 },
-	zaaksysteem: { yes: 136, partial: 40, no: 30, unknown: 123 },
-	zac: { yes: 69, partial: 61, no: 76, unknown: 123 },
+	dossiq: { yes: 141, partial: 61, no: 23, unknown: 0 },
+	opencase: { yes: 62, partial: 37, no: 116, unknown: 10 },
+	gzac: { yes: 66, partial: 68, no: 91, unknown: 0 },
+	zaaksysteem: { yes: 150, partial: 38, no: 37, unknown: 0 },
+	zac: { yes: 68, partial: 64, no: 93, unknown: 0 },
+	openzaak: { yes: 45, partial: 47, no: 133, unknown: 0 },
 }
 
-const ROW_COUNT = 329
+const ROW_COUNT = 225
+
+// The proposals. Not rows, not scored, not in any total on the page. 146 until
+// 2026-09-26, when 18 demand rows mined from tender requirements and competitor
+// changelogs joined them, each with its `origin` and `originUrl`.
+const PENDING_COUNT = 164
+
+// The proposals whose own column we have not filled either. See the test.
+const OURS_UNMEASURED = ['Q13.25']
 
 // Thirteen areas came from the audit. Round 4 added four more, because four of
 // its rows had nowhere to go: a case plan of arranged services, money on the
@@ -64,7 +122,12 @@ const AREA_COUNT = 17
 // The day the first four columns were read. Pinned, because the honest way to
 // add a fifth column read on another day is a second date, never a quiet nudge
 // of this one: moving it would relabel four readings that never happened again.
-const COMPARED_ON = '2026-09-07'
+//
+// It moved once, honestly: on 2026-09-26 every competitor column was read
+// again, from source, so all of them share the new date. The first reading's
+// date is kept below, because corrections are dated against it.
+const COMPARED_ON = '2026-09-26'
+const FIRST_COMPARED_ON = '2026-09-07'
 
 // Our own column moved on 2026-09-08: six rows the audit read as `no` on
 // 2026-09-07 had been built by the next day. 80/85/41 became 84/87/35, and the
@@ -72,7 +135,105 @@ const COMPARED_ON = '2026-09-07'
 // without re-reading it is the dishonesty this page exists to avoid. Every
 // move is listed in the data file's `_rerated`, which the guard below pins to
 // the ratings themselves so a note cannot outlive the score it explains.
-const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23']
+// 2.47 moved on 2026-10-02, a proposal row: dossiq declared the portal case
+// page a resident withdraws a Woo request from (dossiq#3247).
+const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23', '2.47']
+
+// Our column moved again on 2026-09-14, and for a different reason: the corpus
+// re-read our case-type configuration end to end and three ratings were too
+// harsh while one was too kind. `cause: 'corrected'` rather than `'built'`,
+// because nothing was shipped between the two readings. The first reading was
+// wrong, and a page about honesty has to be able to say which of the two it is.
+//
+// The 2026-09-22 re-rating adds thirty-five more, and 11.2 appears twice: it
+// went yes to no on 2026-09-14 when the export turned out to be a placeholder,
+// and no to yes on 2026-09-22 when the placeholder was replaced. A row can be
+// corrected more than once, so this list holds entries and not ids, and the
+// guard below reads each id's entries as a chain rather than as one value.
+const CORRECTED_IDS = [
+	'2.3',
+	'2.7',
+	'3.3',
+	'11.2',
+	// 2026-09-22, the closed rows: the build wave shipped them and the ledger
+	// recorded only the prose.
+	'3.4',
+	'3.13',
+	'5.4',
+	'6.5',
+	'6.6',
+	'6.10',
+	'6.14',
+	'9.2',
+	'10.1',
+	'11.2',
+	'11.9',
+	'11.13',
+	'11.26',
+	'12.9',
+	// 2026-09-22, the rows we already had: the note predated the work.
+	'1.1',
+	'1.3',
+	'1.5',
+	'2.1',
+	'2.5',
+	'2.12',
+	'2.15',
+	'2.19',
+	'3.10',
+	'4.2',
+	'4.22',
+	'5.1',
+	'5.2',
+	'6.4',
+	'6.12',
+	'11.21',
+	// 2026-09-22, the rows where the corpus was already right and this file was
+	// behind it, plus one absence feature nobody had re-read.
+	'7.7',
+	'9.10',
+	'11.22',
+	'13.11',
+	'13.17',
+	// 2026-09-25, rows the ledger recorded merged build work against while
+	// this file still read no. Each was checked for a caller, not for a PR.
+	'1.4',
+	'2.13',
+	'2.20',
+	'2.23',
+	'2.24',
+	'2.25',
+	'2.27',
+	'4.17',
+	'6.15',
+	'8.11',
+	'9.6',
+	'10.7',
+	'13.18',
+	// 2026-09-26, cross-lane corrections: three rows whose callers are missing
+	// or partial, and three proposals re-read against their whole question.
+	'2.21',
+	'3.7',
+	'3.19',
+	'Q1.16',
+	'2.47',
+	'13.38',
+	// 2026-09-28, market-intelligence#191: six rows whose missing half shipped,
+	// six the platform provides, and 4.15, which the trash bin raises to partial.
+	'2.4',
+	'2.17',
+	'2.22',
+	'5.6',
+	'5.12',
+	'12.17',
+	'4.5',
+	'4.11',
+	'4.16',
+	'4.23',
+	'12.7',
+	'12.21',
+	'4.15',
+]
 
 // Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad
 // 7.1.3 driven locally. They are logged in `_rerated` with `cause: 'added'`
@@ -99,123 +260,16 @@ const ROUND3_ADDED_IDS = [
 	'13.18',
 ]
 
-// Rows round 4 added on 2026-09-10, from 19 systems examined. Pinned the
-// same way, and listed per round rather than in one heap: `addedOn` differs
-// between them, and a single list would hide a row dated to the wrong round.
-const ROUND4_ADDED_IDS = [
-	'1.14',
-	'1.15',
-	'2.28',
-	'2.29',
-	'2.30',
-	'2.31',
-	'2.32',
-	'2.33',
-	'2.34',
-	'2.35',
-	'2.36',
-	'2.37',
-	'2.38',
-	'2.39',
-	'2.40',
-	'2.41',
-	'2.42',
-	'2.43',
-	'2.44',
-	'2.45',
-	'3.21',
-	'3.22',
-	'3.23',
-	'3.24',
-	'3.25',
-	'3.26',
-	'3.27',
-	'3.28',
-	'3.29',
-	'4.24',
-	'4.25',
-	'4.26',
-	'5.14',
-	'5.15',
-	'5.16',
-	'5.17',
-	'5.18',
-	'5.19',
-	'6.17',
-	'6.18',
-	'6.19',
-	'6.20',
-	'6.21',
-	'6.22',
-	'6.23',
-	'6.24',
-	'7.8',
-	'7.9',
-	'8.16',
-	'8.17',
-	'8.18',
-	'8.19',
-	'8.20',
-	'8.21',
-	'8.22',
-	'9.14',
-	'9.15',
-	'10.12',
-	'10.13',
-	'10.14',
-	'10.15',
-	'11.27',
-	'11.28',
-	'11.29',
-	'11.30',
-	'11.31',
-	'11.32',
-	'11.33',
-	'11.34',
-	'11.35',
-	'11.36',
-	'11.37',
-	'11.38',
-	'11.39',
-	'11.40',
-	'11.41',
-	'11.42',
-	'11.43',
-	'11.44',
-	'11.45',
-	'11.46',
-	'13.19',
-	'13.20',
-	'13.21',
-	'13.22',
-	'13.23',
-	'13.24',
-	'13.25',
-	'13.26',
-	'13.27',
-	'13.28',
-	'13.29',
-	'13.30',
-	'13.31',
-	'13.32',
-	'13.33',
-	'13.34',
-	'13.35',
-	'13.36',
-	'13.37',
-	'14.1',
-	'15.1',
-	'16.1',
-	'17.1',
-]
-
-const ADDED_IDS = [...ROUND3_ADDED_IDS, ...ROUND4_ADDED_IDS]
+// Round 4's 104 rows used to be pinned here too. They are not rows any more:
+// they were added to this file and to nothing else, and they are now 98 of the
+// 146 proposals in `pending`, which carry no `addedOn` because they were never
+// added to the scored list. The guards below therefore cover round 3's 19.
+const ADDED_IDS = [...ROUND3_ADDED_IDS]
 
 // The date each batch above was added, so the guard can check a row against
 // its OWN round instead of against whichever round happened to be last.
 const ADDED_ON = {
 	...Object.fromEntries(ROUND3_ADDED_IDS.map((id) => [id, '2026-09-09'])),
-	...Object.fromEntries(ROUND4_ADDED_IDS.map((id) => [id, '2026-09-10'])),
 }
 
 // The rows where every rival has the capability and we do not. Pinned
@@ -234,7 +288,22 @@ const ADDED_ON = {
 // only ever shorten this list, never lengthen it, because every row on it has
 // to be `yes` for every rival. So a fifth column cannot turn a boast into an
 // overclaim here. It can only retire a row we were right to admit.
-const BEHIND_EVERY_RIVAL = ['2.4', '4.16', '4.22', '9.1', '11.10', '12.7']
+//
+// 4.22, upload with drag and drop, left the list on 2026-09-22. It did not
+// shrink because a rival lost something: the case files leaf binds drop on its
+// root and PUTs over DAV, so the row was ours all along and the note describing
+// a retired tab was the only thing saying otherwise.
+//
+// On 2026-09-26 the source reading and Open Zaak as a sixth rival shortened it
+// to one row, which is the direction the paragraph above says a new column can
+// move it: 2.4, 4.16, 9.1 and 11.10 each have at least one rival that, read
+// from its code, does not have it in full.
+//
+// On 2026-09-28 the list emptied. 12.7, staff SSO, is Nextcloud's (user_saml
+// and user_oidc), and market-intelligence#191 rated it yes. It stays pinned
+// rather than asserted empty, so the next row that falls behind every rival
+// shows up here as a change to this line.
+const BEHIND_EVERY_RIVAL = []
 
 // Two labels are identical in English and Dutch because the Dutch IS the
 // English: `StUF (BG, ZKN, DCR)` is a Dutch standard's own name, and `Intake`
@@ -243,29 +312,146 @@ const BEHIND_EVERY_RIVAL = ['2.4', '4.16', '4.22', '9.1', '11.10', '12.7']
 const IDENTICAL_BY_DESIGN = new Set(['12.4'])
 
 describe('capabilityComparison data', () => {
-	it('carries the 329 rows, 17 areas and 5 columns the rounds produced', () => {
-		expect(data.capabilities).toHaveLength(ROW_COUNT)
-		expect(data.areas).toHaveLength(AREA_COUNT)
-		expect(data.systems).toHaveLength(5)
+	it('holds exactly the ids the corpus issued', () => {
+		// THE GUARD THIS FILE WAS MISSING ON 2026-09-10, and the reason 104
+		// rows the corpus had never issued reached a customer page. Both files
+		// are written by `scripts/sync-capability-comparison.mjs` in one run
+		// from one source, so a hand edit to either one alone fails here and
+		// names the ids that appeared or went missing.
+		//
+		// It compares the SET and the ORDER, because the corpus's order is the
+		// numbering a reader sees in the first column.
+		expect(data.capabilities.map((c) => c.id)).toEqual(corpusIds.rows)
+		expect(data.pending.map((c) => c.id)).toEqual(corpusIds.pending)
 	})
 
-	it('gives every declared area at least one row', () => {
-		// An area with no rows is a heading over nothing. Round 4 added four
-		// areas at once, and the way to get that wrong is to declare the area
-		// and file its row under the old one, which reads as a rendering bug.
-		const filled = new Set(data.capabilities.map((c) => c.area))
+	it('carries the 225 rows, 164 proposals, 17 areas and 6 columns', () => {
+		expect(data.capabilities).toHaveLength(ROW_COUNT)
+		expect(data.pending).toHaveLength(PENDING_COUNT)
+		expect(data.areas).toHaveLength(AREA_COUNT)
+		expect(data.systems).toHaveLength(6)
+	})
+
+	it('gives every declared area at least one row or one proposal', () => {
+		// An area with nothing in it is a heading over nothing. Areas 14 to 17
+		// hold proposals and no rows today, which is a real state and not a
+		// filing error: they are four questions round 4 raised that had
+		// nowhere to go, and no competitor has been read against any of them.
+		const filled = new Set([
+			...data.capabilities.map((c) => c.area),
+			...data.pending.map((c) => c.area),
+		])
 		const empty = data.areas.filter((a) => !filled.has(a.key))
 		expect(empty.map((a) => a.key)).toEqual([])
 	})
 
-	it('gives every row a unique id', () => {
-		const ids = data.capabilities.map((c) => c.id)
+	it('gives every row and every proposal a unique id', () => {
+		const ids = [
+			...data.capabilities.map((c) => c.id),
+			...data.pending.map((c) => c.id),
+		]
 		expect(new Set(ids).size).toBe(ids.length)
 	})
 
-	it('files every row under a declared area', () => {
+	it('marks every proposal pending, and backs every rival rating on it', () => {
+		// A proposal with a competitor rating used to be the failure this split
+		// existed to prevent: one product was read and the others were not. On
+		// 2026-09-26 the proposals were read against every competitor's source
+		// too, so a rating there is allowed, but only with the evidence for that
+		// cell beside it; a rating with none is still a guess published as a
+		// reading. Our own column is rated, because we can read our own code,
+		// and an `unknown` there would understate our score for free.
+		const rivals = data.systems.filter((s) => !s.isSelf).map((s) => s.key)
+		const bad = []
+		for (const row of data.pending) {
+			if (row.status !== 'pending') {
+				bad.push(`${row.id}/status=${row.status}`)
+			}
+			if (!RATING_COLUMNS.includes(row.dossiq)) {
+				bad.push(`${row.id}/dossiq=${row.dossiq}`)
+			}
+			if (!row.dossiqNote || row.dossiqNote.length < 21) {
+				bad.push(`${row.id}/no evidence`)
+			}
+			for (const key of rivals) {
+				if (![...RATINGS, 'unknown'].includes(row[key])) {
+					bad.push(`${row.id}/${key}=${row[key]}`)
+				} else if (
+					row[key] !== 'unknown'
+					&& !(row.evidence?.[key]?.length > 20)
+				) {
+					bad.push(`${row.id}/${key} rated with no evidence`)
+				}
+			}
+		}
+		expect(bad).toEqual([])
+	})
+
+	it('says where every mined proposal came from', () => {
+		const mined = data.pending.filter((p) => p.origin)
+		const bad = mined
+			.filter(
+				(p) =>
+					!['featureRequest', 'roadmap', 'changelog', 'tender'].includes(
+						p.origin,
+					) || !/^https?:\/\//.test(p.originUrl ?? ''),
+			)
+			.map((p) => p.id)
+		expect(mined).toHaveLength(18)
+		expect(bad).toEqual([])
+	})
+
+	it('pins the proposals we have not measured ourselves on', () => {
+		// One, and the corpus says why: Q13.25 asks whether a role can take a
+		// right away as well as grant one, and answering it needs the
+		// permission resolver read end to end rather than grepped. The batch
+		// that proposed it marked the cell unmeasured instead of guessing at
+		// our own product, which is the same rule the competitor columns
+		// follow. Pinned rather than asserted empty, so the list shrinking is
+		// visible and a second one cannot appear quietly.
+		const unmeasured = data.pending.filter((p) => !RATINGS.includes(p.dossiq))
+		expect(unmeasured.map((p) => p.id)).toEqual(OURS_UNMEASURED)
+		for (const row of unmeasured) {
+			expect(row.dossiqNote.toLowerCase(), row.id).toContain('unmeasured')
+		}
+	})
+
+	it('keeps a proposal out of every tally', () => {
+		// The whole point of the second list. `overallTallies` counts rows, so
+		// its total is the row count and never the sum of the two lists. This
+		// is the assertion that fails if somebody later merges `pending` into
+		// `capabilities` to simplify the template.
+		const totals = overallTallies(data)
+		for (const system of data.systems) {
+			expect(totals[system.key].total, system.key).toBe(ROW_COUNT)
+		}
+		const areas = groupByArea(data)
+		const rowsInAreas = areas.reduce((n, a) => n + a.capabilities.length, 0)
+		const pendingInAreas = areas.reduce((n, a) => n + a.pending.length, 0)
+		expect(rowsInAreas).toBe(ROW_COUNT)
+		expect(pendingInAreas).toBe(PENDING_COUNT)
+		for (const area of areas) {
+			expect(area.tallies.dossiq.total, area.key).toBe(
+				area.capabilities.length,
+			)
+		}
+	})
+
+	it('names the corpus it was re-issued from', () => {
+		// A copy that does not say where it came from is how the last one
+		// drifted: the old `_comment` cited a private repo that no longer
+		// resolves, and nobody could check the claim.
+		expect(data.corpus.repo).toBe('ConductionNL/market-intelligence')
+		expect(data.corpus.file).toBe('procest/_round4/tools/corpus-rows.json')
+		expect(data.corpus.rows).toBe(ROW_COUNT)
+		expect(data.corpus.pending).toBe(PENDING_COUNT)
+	})
+
+	it('files every row and every proposal under a declared area', () => {
 		const areas = new Set(data.areas.map((a) => a.key))
-		const orphans = data.capabilities.filter((c) => !areas.has(c.area))
+		const orphans = [...data.capabilities, ...data.pending].filter(
+			(c) => !areas.has(c.area),
+		)
 		expect(orphans.map((c) => c.id)).toEqual([])
 	})
 
@@ -289,26 +475,44 @@ describe('capabilityComparison data', () => {
 		expect(unrated.map((c) => c.id)).toEqual([])
 	})
 
-	it('marks an unrated competitor cell as a row a later round added', () => {
-		// The only honest reason a competitor cell is empty is that the row
-		// was added after that product was read. Any other `unknown` is a gap
-		// in the audit pretending to be a disclosure.
+	it('says on the cell why a competitor cell is unknown', () => {
+		// Until 2026-09-26 the only honest reason for an empty competitor cell
+		// was a row added after that product was read. Since the source
+		// reading, the remaining unknowns are cells the code could not settle
+		// (OpenCase's closed enterprise package), and each one says so on the
+		// cell. Any other `unknown` is a gap pretending to be a disclosure.
 		const rivals = data.systems.filter((s) => !s.isSelf).map((s) => s.key)
-		const wrong = data.capabilities.filter(
-			(c) => rivals.some((k) => c[k] === 'unknown') && !c.addedOn,
-		)
-		expect(wrong.map((c) => c.id)).toEqual([])
+		const silent = []
+		for (const row of data.capabilities) {
+			for (const key of rivals) {
+				if (
+					row[key] === 'unknown'
+					&& !row.evidence?.[key]?.startsWith('not checked')
+				) {
+					silent.push(`${row.id}/${key}`)
+				}
+			}
+		}
+		expect(silent).toEqual([])
 	})
 
-	it('leaves every rival unrated on a row added after they were read', () => {
-		// The mirror of the test above. A row added without re-reading the
-		// other products cannot carry a rating for any of them: a guess in a
-		// competitor's column is the error this page exists to avoid.
-		const rivals = data.systems.filter((s) => !s.isSelf).map((s) => s.key)
-		const guessed = data.capabilities.filter(
-			(c) => c.addedOn && rivals.some((k) => c[k] !== 'unknown'),
-		)
-		expect(guessed.map((c) => c.id)).toEqual([])
+	it('rates a row added later only from a reading dated after it', () => {
+		// The mirror of the test above. A rating on a row added after a product
+		// was read is a guess unless that product was read again since, so the
+		// column's own `readOn` has to be on or after the row's `addedOn`.
+		const rivals = data.systems.filter((s) => !s.isSelf)
+		const guessed = []
+		for (const row of data.capabilities.filter((c) => c.addedOn)) {
+			for (const system of rivals) {
+				if (
+					row[system.key] !== 'unknown'
+					&& !(system.readOn >= row.addedOn)
+				) {
+					guessed.push(`${row.id}/${system.key}`)
+				}
+			}
+		}
+		expect(guessed).toEqual([])
 	})
 
 	it('dates every added row on the round that added it', () => {
@@ -324,7 +528,7 @@ describe('capabilityComparison data', () => {
 		expect(data.rowsAddedOn).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 		for (const row of added) {
 			expect(row.addedOn, row.id).toBe(ADDED_ON[row.id])
-			expect(row.addedOn > data.comparedOn, row.id).toBe(true)
+			expect(row.addedOn > FIRST_COMPARED_ON, row.id).toBe(true)
 			expect(row.addedOn <= data.rowsAddedOn, row.id).toBe(true)
 		}
 		const latest = added
@@ -351,6 +555,11 @@ describe('capabilityComparison data', () => {
 	})
 
 	it('translates every capability and every area into Dutch', () => {
+		// Rows only. A proposal arrives from the corpus, which is written in
+		// English, and `labelFor` falls back to English when there is no Dutch
+		// rather than rendering a blank cell. Asserting Dutch on all 146 would
+		// force a translation of a question that may never become a row, and
+		// the honest place to translate one is the change that promotes it.
 		const missing = data.capabilities.filter(
 			(c) => !c.name_nl || c.name_nl.trim() === '',
 		)
@@ -372,19 +581,23 @@ describe('capabilityComparison data', () => {
 		expect(data.comparedOn).toBe(COMPARED_ON)
 	})
 
-	it('dates a column added later on its own day, and leaves comparedOn alone', () => {
-		// The page renders one sentence about when the systems were read. A
-		// column read on a different day cannot be folded into it, because
-		// moving `comparedOn` to cover the newcomer would make that sentence
-		// false for every column it already covered. So a late column carries
-		// its own `readOn`, and `comparedOn` is pinned above.
-		const late = data.systems.filter((s) => s.readOn)
-		expect(late.map((s) => s.key)).toEqual(['zac'])
-		for (const system of late) {
+	it('dates every competitor reading, and a column added later on its own day', () => {
+		// The page renders one sentence about when the systems were read. Since
+		// 2026-09-26 every competitor carries its own `readOn`, the day its
+		// source was read, and a column read on a later day than `comparedOn`
+		// is what the page marks as late. A column that joined after the first
+		// reading also says when it joined, which can only precede its reading.
+		const rivals = data.systems.filter((s) => !s.isSelf)
+		for (const system of rivals) {
 			expect(system.readOn, system.key).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-			expect(system.readOn > data.comparedOn, system.key).toBe(true)
+			expect(system.readOn >= data.comparedOn, system.key).toBe(true)
+			expect(system.readVersion, system.key).toBeTruthy()
+		}
+		const joined = data.systems.filter((s) => s.columnAddedOn)
+		expect(joined.map((s) => s.key)).toEqual(['zac', 'openzaak'])
+		for (const system of joined) {
 			expect(system.columnAddedOn, system.key).toMatch(/^\d{4}-\d{2}-\d{2}$/)
-			expect(system.columnAddedOn >= system.readOn, system.key).toBe(true)
+			expect(system.columnAddedOn <= system.readOn, system.key).toBe(true)
 			expect(system.isSelf, system.key).toBeUndefined()
 		}
 	})
@@ -410,14 +623,29 @@ describe('capabilityComparison data', () => {
 
 	it('explains every correction, and corrects only our own column', () => {
 		expect(data._rerated.map((r) => r.id).sort()).toEqual(
-			[...RERATED_IDS, ...ADDED_IDS].sort(),
+			[...RERATED_IDS, ...CORRECTED_IDS, ...ADDED_IDS].sort(),
 		)
 		for (const entry of data._rerated) {
 			expect(entry.from, entry.id).not.toBe(entry.to)
 			expect(RATINGS, entry.id).toContain(entry.to)
 			expect(entry.on, entry.id).toMatch(/^\d{4}-\d{2}-\d{2}$/)
 			expect(entry.reason.length, entry.id).toBeGreaterThan(20)
-			expect(['built', 'added'], entry.id).toContain(entry.cause)
+			expect(['built', 'added', 'corrected'], entry.id).toContain(entry.cause)
+		}
+	})
+
+	it('separates a correction from a capability we shipped', () => {
+		// `built` says the product changed between two readings. `corrected`
+		// says the first reading was wrong and nothing was shipped. They read
+		// the same on the page as "we moved our own rating", and they are not
+		// the same claim: one is a release note, the other is an erratum.
+		const corrected = data._rerated.filter((e) => e.cause === 'corrected')
+		expect(corrected.map((e) => e.id).sort()).toEqual([...CORRECTED_IDS].sort())
+		for (const entry of corrected) {
+			expect(RATINGS, entry.id).toContain(entry.from)
+			expect(entry.on > FIRST_COMPARED_ON, entry.id).toBe(true)
+			// The evidence, not a note saying there is evidence somewhere.
+			expect(entry.reason.length, entry.id).toBeGreaterThan(60)
 		}
 	})
 
@@ -440,11 +668,40 @@ describe('capabilityComparison data', () => {
 		// The failure this catches: a row is edited again later and the note
 		// beside it goes on describing the previous value. A note that
 		// disagrees with its own row is worse than no note.
-		const byId = new Map(data.capabilities.map((c) => [c.id, c]))
-		const drifted = data._rerated.filter(
-			(entry) => byId.get(entry.id)?.dossiq !== entry.to,
+		//
+		// Read as a CHAIN, because a row can move twice. 11.2 went yes to no
+		// and then no to yes, and comparing every entry to today's rating
+		// would call the first one drift. So each entry has to hand its `to`
+		// to the next entry's `from`, and the last `to` is the row's rating.
+		// That is stricter than the single comparison it replaces: it also
+		// catches a middle entry nobody would otherwise read again.
+		// Rows and proposals: our own column on a proposal can be corrected too.
+		const byId = new Map(
+			[...data.capabilities, ...data.pending].map((c) => [c.id, c]),
 		)
-		expect(drifted.map((entry) => entry.id)).toEqual([])
+		const chains = new Map()
+		for (const entry of data._rerated) {
+			chains.set(entry.id, [...(chains.get(entry.id) ?? []), entry])
+		}
+		const broken = []
+		for (const [id, entries] of chains) {
+			const ordered = [...entries].sort((a, b) =>
+				a.on < b.on ? -1 : a.on > b.on ? 1 : 0,
+			)
+			for (let i = 1; i < ordered.length; i++) {
+				if (ordered[i].from !== ordered[i - 1].to) {
+					broken.push(
+						`${id} ${ordered[i].on} follows ${ordered[i - 1].to}`,
+					)
+				}
+			}
+			if (byId.get(id)?.dossiq !== ordered.at(-1).to) {
+				broken.push(
+					`${id} ends ${ordered.at(-1).to}, row is ${byId.get(id)?.dossiq}`,
+				)
+			}
+		}
+		expect(broken).toEqual([])
 	})
 })
 
@@ -560,8 +817,14 @@ describe('groupByArea', () => {
 	it('tallies each area per system', () => {
 		const groups = groupByArea(data, 'en')
 		const intake = groups.find((g) => g.key === 'intake')
-		expect(intake.capabilities).toHaveLength(15)
-		expect(intake.tallies.dossiq.total).toBe(15)
+		// 13 rows and 9 proposals: Q1.14 to Q1.16 from round 4's batches, 1.17
+		// and 1.18, which dossiq published as 1.14 and 1.15 before the corpus
+		// renumbered them, and Q1.19 to Q1.22 from the 2026-09-26 tender
+		// requirements. The tally counts the rows only: a proposal belongs in
+		// no score.
+		expect(intake.capabilities).toHaveLength(13)
+		expect(intake.pending).toHaveLength(9)
+		expect(intake.tallies.dossiq.total).toBe(13)
 	})
 })
 
@@ -574,5 +837,167 @@ describe('formatComparedOn', () => {
 	it('returns the raw value when it is not a date', () => {
 		expect(formatComparedOn('not-a-date', 'en')).toBe('not-a-date')
 		expect(formatComparedOn('', 'en')).toBe('')
+	})
+})
+
+describe('the authored fields survive a corpus re-issue', () => {
+	// `provider`, `feature` and their confidence are authored by hand and are
+	// NOT in the parity corpus, so nothing can regenerate them. An earlier
+	// version of scripts/sync-capability-comparison.mjs rebuilt each row from
+	// the corpus alone, which dropped all 371 of them and the providers
+	// dictionary while still printing "re-issued 225 rows and 146 pending" and
+	// leaving a well formed file. These assertions are what notices.
+	const everyRow = [...data.capabilities, ...data.pending]
+
+	it('gives every capability a provider', () => {
+		const without = everyRow.filter((row) => !row.provider).map((row) => row.id)
+
+		expect(without, `rows with no provider: ${without.join(', ')}`).toEqual([])
+	})
+
+	it('records how each provider was derived', () => {
+		const without = everyRow
+			.filter((row) => row.provider && !row.providerHow)
+			.map((row) => row.id)
+
+		expect(
+			without,
+			`rows with a provider and no derivation: ${without.join(', ')}`,
+		).toEqual([])
+	})
+
+	it('keeps the providers dictionary that labels them', () => {
+		expect(Array.isArray(data.providers)).toBe(true)
+		expect(data.providers.length).toBeGreaterThan(0)
+
+		const declared = new Set(data.providers.map((entry) => entry.key))
+		const undeclared = [
+			...new Set(
+				everyRow
+					.map((row) => row.provider)
+					.filter((key) => !declared.has(key)),
+			),
+		]
+
+		expect(
+			undeclared,
+			`providers used but not declared: ${undeclared.join(', ')}`,
+		).toEqual([])
+	})
+
+	it('states a confidence wherever it states a feature', () => {
+		const without = everyRow
+			.filter((row) => row.feature && !row.featureConfidence)
+			.map((row) => row.id)
+
+		expect(
+			without,
+			`rows with a feature and no confidence: ${without.join(', ')}`,
+		).toEqual([])
+	})
+})
+
+describe('a re-issue keeps what the corpus does not hold', () => {
+	// The corpus carries ids, texts and ratings. Everything else on a row and
+	// on a system is authored here, and the sync script has already dropped
+	// authored fields once while printing success. This rebuilds a corpus from
+	// the file itself, re-issues it, and demands the file back unchanged, so a
+	// field the script forgets to carry fails here by name.
+	const areaName = new Map(data.areas.map((area) => [area.key, area.name]))
+	const columns = data.systems.map((system) => system.key)
+	const competitors = data.systems
+		.filter((system) => !system.isSelf)
+		.map((system) => system.key)
+	const corpus = {
+		areas: data.areas.map((area, index) => ({ n: index + 1, name: area.name })),
+		rows: data.capabilities.map((row) => ({
+			id: row.id,
+			area: areaName.get(row.area),
+			cap: row.name,
+			...Object.fromEntries(columns.map((column) => [column, row[column]])),
+		})),
+		pending: data.pending.map((row) => ({
+			id: row.id,
+			area: areaName.get(row.area),
+			cap: row.name,
+			source: row.source,
+			dossiq: row.dossiq,
+			dossiqNote: row.dossiqNote,
+			// A proposal's competitor cells come from the corpus since the
+			// 2026-09-26 source reading: `unread` where nobody read one.
+			...Object.fromEntries(
+				competitors.map((column) => [
+					column,
+					row[column] === 'unknown' && !row.evidence?.[column]
+						? 'unread'
+						: row[column],
+				]),
+			),
+			...(row.origin ? { origin: row.origin, originUrl: row.originUrl } : {}),
+		})),
+	}
+	const reissued = build(corpus, data, data.comparedOn).data
+
+	it('returns every rated row exactly as it went in', () => {
+		expect(reissued.capabilities).toEqual(data.capabilities)
+	})
+
+	it('returns every pending row exactly as it went in', () => {
+		expect(reissued.pending).toEqual(data.pending)
+	})
+
+	it('keeps each system its grade and its reason for an unknown', () => {
+		expect(reissued.systems).toEqual(data.systems)
+	})
+
+	it('still carries built and evidence on the rows that have them', () => {
+		const carried = (list) =>
+			list.filter((row) => row.built || row.evidence).length
+
+		expect(carried(data.capabilities)).toBeGreaterThan(0)
+		expect(carried(reissued.capabilities)).toBe(carried(data.capabilities))
+	})
+})
+
+describe('a closure is recorded in a field, not only in prose', () => {
+	// On 2026-09-20 sixteen rows were closed by merged PRs and every closing
+	// commit wrote only prose, so shipped capabilities read as gaps on a public
+	// page. The hydra parity-verify skill reports this as closed-in-prose-only;
+	// this is the same rule, held in this repo's own suite.
+	const CLOSURE = /\bclosed\b[^.]{0,60}?\bby\s+[a-z][a-z0-9-]*#\d+/i
+	const GRADES = ['driven', 'demo', 'trial', 'docs-only', 'not-read']
+
+	it('gives every row whose log says it was closed a built state', () => {
+		const byId = new Map(data.capabilities.map((row) => [row.id, row]))
+		const open = [
+			...new Set(
+				(data._rerated ?? [])
+					.filter((entry) => CLOSURE.test(entry.reason ?? ''))
+					.map((entry) => entry.id)
+					.filter(
+						(id) =>
+							!['built', 'decided-no'].includes(
+								byId.get(id)?.built?.state,
+							),
+					),
+			),
+		]
+
+		expect(open, `closed in prose only: ${open.join(', ')}`).toEqual([])
+	})
+
+	it('grades every competitor and says why its unknowns are unknown', () => {
+		const ungraded = data.systems
+			.filter((system) => !system.isSelf)
+			.filter(
+				(system) =>
+					!GRADES.includes(system.evidenceGrade) || !system.unknownReason,
+			)
+			.map((system) => system.key)
+
+		expect(
+			ungraded,
+			`systems without a grade or a reason: ${ungraded.join(', ')}`,
+		).toEqual([])
 	})
 })

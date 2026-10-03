@@ -78,6 +78,7 @@ interface WooPublicationObjectServiceStub {
  * @covers \OCA\Dossiq\Service\WooPublicationService
  *
  * @uses \OCA\Dossiq\Service\WooPublication\WooCategoryMapper
+ * @uses \OCA\Dossiq\Woo\WooCaseLedger
  */
 class WooPublicationServiceTest extends TestCase {
 
@@ -348,20 +349,16 @@ class WooPublicationServiceTest extends TestCase {
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			['documentRef' => 'doc-001', 'classification' => 'openbaar'],
 		]);
-		$objectService->expects($this->once())
+		// Two writes: the decision's write-back, then the case's publication
+		// state (woo-publish-decision-from-the-case D-2) through the PATCH
+		// seam's read-and-save fallback, since this double has no patchObject().
+		$saves = [];
+		$objectService->expects($this->exactly(2))
 			->method('saveObject')
-			->with(
-				$this->callback(function (array $object) {
-					return isset($object['wooPublication'])
-						&& $object['wooPublication']['publicationId'] === 'pub-001'
-						&& $object['wooPublication']['status'] === 'published';
-				}),
-				[],
-				'dossiq',
-				'decision',
-				'decision-001'
-			)
-			->willReturn(['id' => 'decision-001']);
+			->willReturnCallback(function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) use (&$saves) {
+				$saves[] = [$schema, $uuid, $object];
+				return ['id' => $uuid];
+			});
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
@@ -379,13 +376,17 @@ class WooPublicationServiceTest extends TestCase {
 		]);
 
 		$this->apiClient->method('createPublication')->willReturn(['id' => 'pub-001']);
-		$this->apiClient->method('attachDocument')->willReturn(['id' => 'ocdoc-001']);
 		$this->apiClient->expects($this->once())->method('attachFile');
 
 		$result = $this->service->publish('case-001', 'decision-001');
 
 		$this->assertTrue($result['available']);
 		$this->assertSame('pub-001', $result['publicationId']);
+		$this->assertSame(['decision', 'decision-001'], [$saves[0][0], $saves[0][1]]);
+		$this->assertSame('pub-001', $saves[0][2]['wooPublication']['publicationId']);
+		$this->assertSame('published', $saves[0][2]['wooPublication']['status']);
+		$this->assertSame(['case', 'case-001'], [$saves[1][0], $saves[1][1]]);
+		$this->assertSame('published', $saves[1][2]['wooPublicationStatus']);
 	}//end testPublishSucceedsWithSingleSaveWriteBack()
 
 	/**

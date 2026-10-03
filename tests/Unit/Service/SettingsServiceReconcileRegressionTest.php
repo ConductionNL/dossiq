@@ -55,6 +55,8 @@ interface ReconcileSchemaStub {
  *
  * @covers \OCA\Dossiq\Service\SettingsService
  *
+ * @uses \OCA\Dossiq\Service\Settings\ConfigurationImport
+ * @uses \OCA\Dossiq\Service\Settings\OpenRegisterBridge
  * @uses \OCA\Dossiq\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaKeyReconciler
  * @uses \OCA\Dossiq\Service\Settings\SchemaSlugResolver

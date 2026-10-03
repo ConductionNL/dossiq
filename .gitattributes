@@ -1,0 +1,27 @@
+# The l10n catalogues are key sets, not line sequences.
+#
+# Every branch that adds a translatable string writes to these four files, so a
+# line-based merge put every branch in conflict with every other one. They are
+# sorted now, which separates most additions, and what is left is merged key by
+# key by tools/merge-l10n.js: a key one side added is kept, a key one side
+# deleted is dropped, and only a key BOTH sides translated differently is a
+# conflict.
+#
+# `merge=l10n` names the driver; the command behind the name is LOCAL config,
+# because git refuses to run a command a repository ships. `npm install`
+# registers it, and docs/Technical/l10n-merge-driver.md has the one line for a
+# clone that already ran install. Without the registration git silently falls
+# back to its ordinary merge, which is what happened before this file existed,
+# so nothing breaks — it is just slower to resolve.
+#
+# `merge=union` would be wrong here and is deliberately not used: it
+# concatenates both hunks, which on JSON drops a comma or duplicates a closing
+# brace, and a catalogue that will not parse takes every string in the app down
+# to its raw key.
+l10n/en.json merge=l10n
+l10n/nl.json merge=l10n
+
+# The generated browser catalogues inherit their source's order, so they
+# conflicted on the same line. The driver reads the OC.L10N.register shape too.
+l10n/en.js merge=l10n
+l10n/nl.js merge=l10n

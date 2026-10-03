@@ -63,7 +63,7 @@ class MandaatValidationService {
 	 * @param string $caseId The mandaatbesluit case UUID/slug.
 	 * @param string $signingUserId The UID of the official signing the besluit.
 	 *
-	 * @return array<string, mixed> {valid: bool, requiresManualConfirmation: bool, message?: string, registerLink?: string}
+	 * @return array<string, mixed> carrying valid, requiresManualConfirmation and the optional message and registerLink.
 	 *
 	 * @spec openspec/specs/besluitvorming-workflow/spec.md
 	 */

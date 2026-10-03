@@ -122,6 +122,19 @@ dialog does today; a partial failure SHALL never read as success.
 - **AND** the case page SHALL show the extended term with that reason
 - **AND** the Deadline column SHALL be unchanged, because `case.deadline` is a read-only calculation off the case type's processing deadline
 
+#### Scenario: The index offers the five bulk actions
+@e2e tests/e2e/case-list-lenses.spec.ts
+
+- **GIVEN** one case selected on the Cases page
+- **WHEN** the selection strip renders
+- **THEN** it SHALL offer Reassign, Transition, Suspend, Resume and Extend term
+
+The requirement's first sentence already says the `Cases` page carries these
+five, and the four scenarios above each drive one of them. None of them says
+the gestures are reachable at all, so a build that dropped a handler from
+`bulkActions` would take its scenario down with it and leave the others
+green. This scenario exists to make the strip itself checkable.
+
 #### Scenario: A case the engine refuses is reported per case
 @e2e exclude The refusal needs a transition guard that fails for one case and passes for another, which is a seeded status-type guard; the per-case reporting is covered by the vitest unit test on bulkTransitionHelpers.summariseResults and the existing board e2e.
 

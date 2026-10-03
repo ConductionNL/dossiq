@@ -57,6 +57,7 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -64,8 +65,11 @@ use Psr\Log\LoggerInterface;
  * Wire-contract tests for TermijnController's four lifecycle actions.
  *
  * @covers \OCA\Dossiq\Controller\TermijnController
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class TermijnControllerContractTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	/**
 	 * The IRequest mock.
@@ -143,6 +147,7 @@ class TermijnControllerContractTest extends TestCase {
 			term: $this->term,
 			pause: $this->pause,
 			extension: $this->extension,
+			dates: $this->caseDates(),
 			caseTypeSlugs: $caseTypeSlugs,
 			userSession: $this->userSession,
 			logger: $this->logger,

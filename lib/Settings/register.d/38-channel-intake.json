@@ -1,0 +1,23 @@
+{
+  "_note": "an-intake-message-opens-a-case. Two properties on `mailIntakeEntry`, so the intake log can hold a message that did not arrive by mail. integriq's channel adapters (form submission, messaging, public space report, and Teams when it lands) hand a message over as IntakeMessageRoutedEvent, and dossiq's answer has to be visible to the intake worker who already reads this log, not only to whoever greps nextcloud.log. THE LOG IS ALSO THE IDEMPOTENCY LEDGER: a duplicate delivery is recognised by `channel` plus `channelMessageId`, which is the channel's OWN id for the message and survives a re-delivery, where integriq's `intake_message` uuid does not (its route() saves a fresh row per delivery). THE SCHEMA KEEPS ITS NAME, and that is a deliberate choice rather than an oversight: the surface, its role gate (IntakePolicy::mayRunIntake) and its three acts exist and are mail-named, and a second intake log under a better name would be two places a handler has to look. Renaming it is a change of its own, and it is not this one. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "mailIntakeEntry": {
+        "properties": {
+          "channel": {
+            "type": "string",
+            "title": "Channel",
+            "description": "The intake channel this message arrived on, as integriq's adapter names it: `form-submission`, `messaging`, `public-space-report`, `teams`. Empty on every entry the mailbox poller writes, which is how a reader tells the two apart without a second schema.",
+            "facetable": true
+          },
+          "channelMessageId": {
+            "type": "string",
+            "title": "Message id on the channel",
+            "description": "The channel's own id for this message (integriq's `externalId`). Together with `channel` it is what makes a second delivery the same message, so it is what the duplicate check reads. It is deliberately NOT integriq's intake_message uuid: that uuid is minted per delivery, so two deliveries of one message carry two of them and a check on it would open a second case while reporting success.",
+            "facetable": true
+          }
+        }
+      }
+    }
+  }
+}

@@ -128,3 +128,36 @@ under Shared attributes.
 - **GIVEN** an attribute Kenteken saved without a case type
 - **WHEN** you open the Properties tab of any case type
 - **THEN** Kenteken SHALL be listed under Shared attributes
+
+### Requirement: Who may read the attribute catalogue (REQ-PDM-03)
+
+Every signed-in user SHALL read the attribute catalogue. A caller with no
+session SHALL read nothing from it.
+
+The catalogue is a case type's field vocabulary, not a record about a person.
+Handlers read it in their own browser to build the filter bar over their case
+list, and a refusal there is answered with an empty filter set rather than an
+error. Scoping the read to administrators would therefore show every handler a
+case type that declares no fields, and show it silently.
+
+Writing the catalogue is an administrative act, and nothing enforces that yet.
+Scoping the write verbs needs a measurement first: the shipped seeders create
+these rows through the same permission-checked path with no session user, so a
+create rule that refuses an anonymous principal may also refuse
+`occ maintenance:repair`.
+
+**Feature tier**: MVP
+
+#### Scenario: A caller with no session reads nothing
+@e2e tests/e2e/attribute-catalogue-folders.spec.ts
+
+- **GIVEN** a request that carries no credentials
+- **WHEN** it asks for one `propertyDefinition` row
+- **THEN** OpenRegister SHALL refuse it
+
+#### Scenario: An ordinary handler reads the field vocabulary
+@e2e exclude The rig has no ordinary account whose case list carries a case type with attributes, and the e2e suites that build an unprivileged principal were found on 2026-09-19 to be running as the admin session. Asserting this with the admin would prove nothing about the principal the scenario names.
+
+- **GIVEN** a user who is in no administrative group
+- **WHEN** they open the case list of a case type that declares attributes
+- **THEN** the filter bar SHALL offer that case type's attributes

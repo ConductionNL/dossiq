@@ -3,7 +3,6 @@
 	<CnAppRoot
 		:aiCompanion="true"
 		:manifest="manifest"
-		:customComponents="customComponents"
 		:registry="registry"
 		:pageTypes="pageTypes"
 		:formatters="formatters"
@@ -93,16 +92,13 @@ export default {
 			required: true,
 		},
 
-		customComponents: {
-			type: Object,
-			default: () => ({}),
-		},
-
 		/**
 		 * V2 component registry — map of registry-key → `{ kind, component }`.
 		 * Forwarded verbatim to CnAppRoot, which validates kinds at mount time.
-		 * Replaces the string-keyed customComponents prop for v2 manifests.
-		 * Both props may coexist during transition (CnAppRoot warns once).
+		 * The only registry this app passes: the legacy string-keyed
+		 * `customComponents` prop is deprecated for v2 manifests, and every
+		 * entry that lived in it — pages, dashboard slots and the handlers a
+		 * manifest names by string — is a kinded entry in src/registry.js.
 		 */
 		registry: {
 			type: Object,

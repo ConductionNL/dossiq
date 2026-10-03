@@ -35,8 +35,6 @@ use Psr\Log\LoggerInterface;
  * Stores mapping configuration as JSON in IAppConfig under keys like
  * `zgw_mapping_zaak`, `zgw_mapping_zaaktype`, etc.
  *
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
- *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class ZgwMappingService {
@@ -48,20 +46,30 @@ class ZgwMappingService {
 	/**
 	 * All known ZGW resource keys.
 	 *
+	 * THIS LIST IS THE `zgw_mapping_<key>` INVENTORY, and it must name exactly
+	 * what `LoadDefaultZgwMappings::getDefaultMappings()` writes. Four entries
+	 * did not: `zaaktype`, `resultaat`, `rol` and `besluit` were left behind by
+	 * the Dutch-to-English vocabulary translation (#832), which renamed the
+	 * repair step's keys to `caseType`, `result`, `role` and `decision`.
+	 * `listMappings()` walks this list, so those four read back as null and the
+	 * admin settings screen offered an operator four mappings that no longer
+	 * exist while hiding four that do. ZgwResourceMapConsistencyTest holds the
+	 * two lists together.
+	 *
 	 * @var string[]
 	 */
 	private const RESOURCE_KEYS = [
 		'catalogus',
 		'zaak',
-		'zaaktype',
+		'caseType',
 		'status',
 		'statustype',
-		'resultaat',
+		'result',
 		'resultaattype',
-		'rol',
+		'role',
 		'roltype',
 		'eigenschap',
-		'besluit',
+		'decision',
 		'besluittype',
 		'informatieobjecttype',
 		'zaaktypeinformatieobjecttype',

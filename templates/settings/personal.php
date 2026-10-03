@@ -11,3 +11,5 @@ Util::addScript($appId, $appId . '-personal-settings');
 ?>
 <div id="dossiq-personal-settings"></div>
 <div id="dossiq-personal-email-matching"></div>
+<div id="dossiq-personal-work-digest"></div>
+<div id="dossiq-personal-notification-routing"></div>

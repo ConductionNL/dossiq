@@ -1,0 +1,17 @@
+{
+  "_note": "The Dutch body `case.caseDeclaredMajor` shipped without (#2859). The routing lane (#2868) swept the ROUTED rules for a Dutch body and reported this one rather than fixing it, because a rule with no `domain` belongs to the lane that wrote it. This fragment gives it its wording and nothing else: no `domain`, because which domain a calamiteit falls under is a routing decision and not this one. Without a body the responder gets a derived notice, which reads as the subject line twice.",
+  "components": {
+    "schemas": {
+      "case": {
+        "x-openregister-notifications": {
+          "caseDeclaredMajor": {
+            "message": {
+              "nl": "Deze zaak is opgeschaald naar calamiteit. Open de zaak en pak je rol op.",
+              "en": "This case has been declared major. Open it and take up your part."
+            }
+          }
+        }
+      }
+    }
+  }
+}

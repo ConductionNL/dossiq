@@ -64,6 +64,8 @@ class CaseCopyService {
 		'initiatorSourceId',
 		'initiatorDisplayName',
 		'confidentiality',
+		'impact',
+		'urgency',
 		'priority',
 		'intakeChannel',
 		'properties',
@@ -90,6 +92,12 @@ class CaseCopyService {
 		'publications',
 		'endDate',
 		'publishedAt',
+		'priorityOverride',
+		'priorityOverrideBy',
+		'priorityOverrideAt',
+		'priorityOverrideReason',
+		'priorityFloor',
+		'priorityRaisedBy',
 	];
 
 	/**

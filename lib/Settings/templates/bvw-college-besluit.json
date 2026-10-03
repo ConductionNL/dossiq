@@ -6,6 +6,7 @@
         "identifier": "bvw-college-besluit",
         "initialStatusName": "Voorstel opstellen",
         "title": "College-besluit",
+        "category": "Besluitvorming",
         "description": "Formeel besluit van het college van burgemeester en wethouders",
         "purpose": "Vaststellen van collegebesluiten conform het collegeprogramma",
         "trigger": "Beleidsvoorstel of wettelijke verplichting",

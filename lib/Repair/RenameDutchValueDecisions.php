@@ -34,8 +34,8 @@
  * - `stufMessage.status`. `StufMessageHandler` writes `verzonden` and
  *   `wacht_op_retry`, `StufAuditLog.vue` filters on the Dutch four, and the
  *   schema declares them. Only this map disagreed.
- * - `zaaksysteemMapping.synchronisationStatus`. `StufCaseMappingStore` and
- *   `ContactBetrokkeneMapper` write `in_sync` against the same Dutch enum.
+ * - `zaaksysteemMapping.synchronisationStatus`. `StufCaseMappingStore` writes
+ *   `in_sync` against the same Dutch enum.
  *
  * The damage is not theoretical: this map rewrites STORED rows by column on
  * every upgrade, so all 28 shipped cases and every caseType, document and

@@ -14,8 +14,6 @@ import {
 	buildTransitionPayload,
 	canConfirmTransition,
 	isClosingTransition,
-	lifecycleRefusalCode,
-	offeredLifecycleActions,
 	refusalMessage,
 	rowId,
 	toStages,
@@ -171,61 +169,6 @@ describe('buildTransitionPayload', () => {
 		).toEqual({
 			transitionId: 't2',
 		})
-	})
-})
-
-describe('offeredLifecycleActions', () => {
-	it('offers what the case state allows, in menu order', () => {
-		expect(
-			offeredLifecycleActions({
-				canSuspend: true,
-				canExtend: true,
-				canReopen: false,
-			}),
-		).toEqual(['suspend', 'extend'])
-	})
-
-	it('offers Resume instead of Suspend on a suspended case', () => {
-		expect(
-			offeredLifecycleActions({ canResume: true, canExtend: true }),
-		).toEqual(['resume', 'extend'])
-	})
-
-	it('offers nothing when the state could not be read', () => {
-		expect(offeredLifecycleActions(null)).toEqual([])
-	})
-})
-
-describe('lifecycleRefusalCode', () => {
-	it('refuses nothing when the case offers the gesture', () => {
-		expect(lifecycleRefusalCode('suspend', { canSuspend: true })).toBe('')
-		expect(lifecycleRefusalCode('reopen', { canReopen: true })).toBe('')
-	})
-
-	it('names why the case type forbids the gesture', () => {
-		expect(
-			lifecycleRefusalCode('suspend', { canSuspend: false, suspended: false }),
-		).toBe('suspension_not_allowed')
-		expect(lifecycleRefusalCode('extend', { canExtend: false })).toBe(
-			'extension_not_allowed',
-		)
-		expect(lifecycleRefusalCode('resume', { canResume: false })).toBe(
-			'not_suspended',
-		)
-		expect(lifecycleRefusalCode('reopen', { canReopen: false })).toBe(
-			'case_not_closed',
-		)
-	})
-
-	it('tells an already-suspended case apart from one that may not be suspended', () => {
-		expect(
-			lifecycleRefusalCode('suspend', { canSuspend: false, suspended: true }),
-		).toBe('already_suspended')
-	})
-
-	it('refuses nothing when the state could not be read', () => {
-		expect(lifecycleRefusalCode('suspend', null)).toBe('')
-		expect(lifecycleRefusalCode('suspend', undefined)).toBe('')
 	})
 })
 

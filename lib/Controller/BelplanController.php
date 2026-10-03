@@ -32,6 +32,8 @@ use OCA\Dossiq\Service\BelplanRoutingService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Settings\AdminSettings;
+use OCA\OpenRegister\Exception\CustomValidationException as OpenRegisterCustomValidationException;
+use OCA\OpenRegister\Exception\ValidationException as OpenRegisterValidationException;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -140,6 +142,17 @@ class BelplanController extends Controller {
 
 		try {
 			$created = $objectService->saveObject(object: $record, register: $register, schema: $schema);
+		} catch (OpenRegisterValidationException | OpenRegisterCustomValidationException $e) {
+			// The same shape InspectionChecklistController carried: a payload
+			// OpenRegister's schema refuses came back as a 500, so an admin who
+			// typed a bad routing step was told the server had broken. The
+			// exception's message already names the offending property, and
+			// this arm was returning a fixed sentence that named nothing, so
+			// there was no way to find out from the response either.
+			//
+			// Narrow on purpose; the Throwable arm below still answers 500 for
+			// a genuine fault.
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (Throwable $e) {
 			return new JSONResponse(['error' => 'Could not create belplan'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}

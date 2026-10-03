@@ -45,8 +45,11 @@ use OCA\Dossiq\Service\Transitions\TransitionAuthorizer;
 use OCA\Dossiq\Service\Transitions\TransitionSpecReader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * @covers \OCA\Dossiq\Service\StatusTransitionService
@@ -60,8 +63,12 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
+	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
+
 
 	/**
 	 * A BPMN-managed case (no `handlingModel`, an unused `casePlanState`
@@ -120,6 +127,14 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 			$logger,
 			new CaseResultWriter($settings, new CaseTypeResolver(new CaseTypeStore($settings)), new ArchivalNominationDeriver($settings, new ArchivalBaseDateResolver($settings), $logger)),
 			$this->createMock(StatusChecklist::class),
+			$this->undeclaredStatuses(),
+			$this->undeclaredTransitions(),
+			$this->offeredTransitions(
+				guards: $guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 
 		$result = $service->getAvailableTransitions(caseId: 'case-1');

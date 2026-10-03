@@ -1,53 +1,236 @@
+// SPDX-License-Identifier: EUPL-1.2
+// Copyright (C) 2026 Conduction B.V.
+
 /**
- * SPDX-FileCopyrightText: 2026 Conduction / Dossiq Contributors
- * SPDX-License-Identifier: EUPL-1.2
+ * What a board card may be moved to.
  *
- * Unit tests for the workflow-board keyboard "Move to…" target-column
- * resolution (kanban-board-keyboard-status-transition, REQ-KBD-01).
+ * THIS REPLACES `columnsExcludingCurrent`, and the replacement is the fix. That
+ * helper answered "every board column except this card's own", which is what
+ * the card's move menu listed. A board column exists per status NAME across
+ * every case type on the instance, so the menu offered a building permit the
+ * statuses of unrelated workflows — two hundred entries on a real register,
+ * nearly none of them reachable. The engine already answers the question per
+ * case and per role; `moveTargetsFromTransitions` maps that answer.
+ *
+ * @spec openspec/specs/status-transition-engine/spec.md#requirement-transition-execution
  */
 
 import { describe, expect, it } from 'vitest'
-import { columnsExcludingCurrent } from '../../src/utils/workflowBoardHelpers.js'
+import {
+	dropVerdict,
+	moveTargetsFromTransitions,
+} from '../../src/utils/workflowBoardHelpers.js'
 
-describe('columnsExcludingCurrent', () => {
-	const columns = [
-		{ id: 'status-1', name: 'Received' },
-		{ id: 'status-2', name: 'In handling' },
-		{ id: 'status-3', name: 'Besluitvorming' },
-	]
+const statusById = {
+	's-1': { name: 'Ontvangen' },
+	's-2': { name: 'In behandeling' },
+	's-3': { name: 'Afgehandeld' },
+}
 
-	it('excludes only the current status column', () => {
-		const result = columnsExcludingCurrent(columns, 'status-2')
-		expect(result).toEqual([
-			{ id: 'status-1', name: 'Received' },
-			{ id: 'status-3', name: 'Besluitvorming' },
+/**
+ * One entry of the engine's offer.
+ *
+ * @param {string} toStatus The target statusType id.
+ * @param {object} [extra] Guard fields, or an id of its own.
+ * @return {object} The transition.
+ */
+function offer(toStatus, extra = {}) {
+	return {
+		id: `t-${toStatus}`,
+		label: `to ${toStatus}`,
+		toStatus,
+		...extra,
+	}
+}
+
+describe('moveTargetsFromTransitions', () => {
+	it('names each target by its status, which is the column the move addresses', () => {
+		const targets = moveTargetsFromTransitions(
+			[offer('s-2'), offer('s-3')],
+			statusById,
+		)
+
+		expect(targets).toEqual([
+			{
+				id: 'In behandeling',
+				label: 'In behandeling',
+				statusId: 's-2',
+				disabled: false,
+				reason: '',
+			},
+			{
+				id: 'Afgehandeld',
+				label: 'Afgehandeld',
+				statusId: 's-3',
+				disabled: false,
+				reason: '',
+			},
 		])
 	})
 
-	it('returns all columns when the current status matches none of them', () => {
-		const result = columnsExcludingCurrent(columns, 'status-unknown')
-		expect(result).toHaveLength(3)
+	it('offers a final status too, which the column-derived menu never could', () => {
+		// The menu listed non-final columns only, so a case could not be closed
+		// from the board at all. The engine offers the move; the board takes it.
+		const targets = moveTargetsFromTransitions([offer('s-3')], statusById)
+		expect(targets.map((target) => target.id)).toEqual(['Afgehandeld'])
 	})
 
-	it('compares ids as strings so numeric/string mismatches still match', () => {
-		const numericColumns = [
-			{ id: 1, name: 'Received' },
-			{ id: 2, name: 'In handling' },
-		]
-		const result = columnsExcludingCurrent(numericColumns, '1')
-		expect(result).toEqual([{ id: 2, name: 'In handling' }])
-	})
-
-	it('returns an empty array for a non-array input', () => {
-		expect(columnsExcludingCurrent(null, 'status-1')).toEqual([])
-		expect(columnsExcludingCurrent(undefined, 'status-1')).toEqual([])
-	})
-
-	it('returns an empty array when there are no other columns', () => {
-		const result = columnsExcludingCurrent(
-			[{ id: 'status-1', name: 'Received' }],
-			'status-1',
+	it('lists a guard-blocked transition, disabled, carrying its reason', () => {
+		const targets = moveTargetsFromTransitions(
+			[
+				offer('s-2', {
+					guardsPassed: false,
+					failedGuards: [{ failureMessage: 'No decision recorded yet' }],
+				}),
+			],
+			statusById,
 		)
-		expect(result).toEqual([])
+
+		expect(targets[0].disabled).toBe(true)
+		expect(targets[0].reason).toBe('No decision recorded yet')
+	})
+
+	it('keeps a blocked transition selectable-looking only when a guard passed', () => {
+		const targets = moveTargetsFromTransitions(
+			[offer('s-2', { guardsPassed: true })],
+			statusById,
+		)
+		expect(targets[0].disabled).toBe(false)
+	})
+
+	it('keeps the FIRST of two transitions ending on the same status', () => {
+		// `findTransitionToStatus` posts the first match, so the entry shown has
+		// to be that one — otherwise the dialog describes one transition and
+		// the board runs another.
+		const targets = moveTargetsFromTransitions(
+			[
+				offer('s-2', { id: 'approve' }),
+				offer('s-2', { id: 'approve-with-conditions', guardsPassed: false }),
+			],
+			statusById,
+		)
+
+		expect(targets).toHaveLength(1)
+		expect(targets[0].disabled).toBe(false)
+	})
+
+	it('disables a target whose status the board cannot name', () => {
+		// Without a name there is no column to address, so the move handler
+		// would have nothing to resolve. Offered but unpickable beats a silent
+		// drop: the handler can see the engine offered something.
+		const targets = moveTargetsFromTransitions([offer('s-unknown')], statusById)
+
+		expect(targets[0].disabled).toBe(true)
+		expect(targets[0].label).toBe('to s-unknown')
+	})
+
+	it('skips an entry that names no target status', () => {
+		expect(
+			moveTargetsFromTransitions(
+				[{ id: 't-1', label: 'nowhere' }, offer('s-2')],
+				statusById,
+			).map((target) => target.statusId),
+		).toEqual(['s-2'])
+	})
+
+	it('survives a missing status map', () => {
+		const targets = moveTargetsFromTransitions([offer('s-2')], undefined)
+		expect(targets[0].disabled).toBe(true)
+	})
+
+	it.each([null, undefined, 'nope', 42])(
+		'returns an empty list for %s',
+		(input) => {
+			expect(moveTargetsFromTransitions(input, statusById)).toEqual([])
+		},
+	)
+
+	it('ignores non-object entries', () => {
+		expect(
+			moveTargetsFromTransitions([null, 'x', offer('s-2')], statusById),
+		).toHaveLength(1)
+	})
+})
+
+describe('dropVerdict', () => {
+	const MAP = {
+		'ct-1::Ontvangen': 'st-received',
+		'ct-1::In behandeling': 'st-progress',
+	}
+	const OFFERED = {
+		id: 't1',
+		toStatus: 'st-progress',
+		guardsPassed: true,
+		failedGuards: [],
+	}
+	/**
+	 * @param {object} overrides The drag fields to change.
+	 * @return {object} The verdict.
+	 */
+	function verdict(overrides = {}) {
+		return dropVerdict({
+			fromColumn: 'Ontvangen',
+			toColumn: 'In behandeling',
+			caseType: 'ct-1',
+			offered: [OFFERED],
+			statusIdByTypeAndName: MAP,
+			...overrides,
+		})
+	}
+
+	it('always lets the card come home', () => {
+		expect(verdict({ toColumn: 'Ontvangen', offered: null })).toEqual({
+			allowed: true,
+			blocked: false,
+			reason: '',
+		})
+	})
+
+	it("refuses a column the case's own workflow has no status for", () => {
+		// Known without the engine: the map is built when the board loads.
+		expect(verdict({ toColumn: 'Besluitvorming', offered: null })).toEqual({
+			allowed: false,
+			blocked: false,
+			reason: '',
+		})
+	})
+
+	it('is undecided while the offer is still on its way', () => {
+		expect(verdict({ offered: null }).allowed).toBeNull()
+	})
+
+	it('refuses a column the engine does not offer', () => {
+		expect(verdict({ offered: [] })).toEqual({
+			allowed: false,
+			blocked: false,
+			reason: '',
+		})
+	})
+
+	it("refuses a guarded column with the guard's own words", () => {
+		expect(
+			verdict({
+				offered: [
+					{
+						...OFFERED,
+						guardsPassed: false,
+						failedGuards: [
+							{
+								type: 'requiredDocument',
+								failureMessage: 'Upload the decision first.',
+							},
+						],
+					},
+				],
+			}),
+		).toEqual({
+			allowed: false,
+			blocked: true,
+			reason: 'Upload the decision first.',
+		})
+	})
+
+	it('allows an offered, unguarded column', () => {
+		expect(verdict()).toEqual({ allowed: true, blocked: false, reason: '' })
 	})
 })

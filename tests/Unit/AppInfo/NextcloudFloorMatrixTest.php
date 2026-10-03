@@ -51,7 +51,16 @@ class NextcloudFloorMatrixTest extends TestCase {
 	 * @return int The declared major version.
 	 */
 	private function declaredFloor(): int {
-		$xml = simplexml_load_file(__DIR__ . '/../../../appinfo/info.xml');
+		// Read the file ourselves rather than letting libxml do it. Nextcloud's
+		// `lib/base.php` nulls libxml's external entity loader, and that same
+		// resolver is what fetches the PRIMARY document, so under the Nextcloud
+		// bootstrap — which is every CI cell — `simplexml_load_file()` returns
+		// false for a perfectly valid file. `simplexml_load_string()` never
+		// reaches the loader.
+		$source = file_get_contents(__DIR__ . '/../../../appinfo/info.xml');
+		$this->assertNotFalse(condition: $source, message: 'appinfo/info.xml must be readable');
+
+		$xml = simplexml_load_string((string)$source);
 		$this->assertNotFalse($xml, 'appinfo/info.xml must parse as XML');
 
 		$nodes = $xml->xpath('//dependencies/nextcloud');

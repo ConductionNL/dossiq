@@ -42,8 +42,9 @@ class AuditTrailMapper {
 	 * @param array<string, mixed> $context Additional context data
 	 * @param string|null $actorId Explicit actor id, bypassing the session user
 	 * @param string|null $actorName Explicit actor display name, paired with $actorId
+	 * @param string|null $ipAddress Explicit client address, mirroring the real signature
 	 *
-	 * @return object A lightweight audit-trail-like object
+	 * @return AuditTrail The entry, in the shape the real mapper returns
 	 */
 	public function createAuditTrailEntry(
 		ObjectEntity $object,
@@ -51,13 +52,20 @@ class AuditTrailMapper {
 		array $context = [],
 		?string $actorId = null,
 		?string $actorName = null,
-	): object {
-		return (object)[
-			'objectUuid' => $object->getUuid(),
-			'action' => $action,
-			'changed' => $context,
-			'actorId' => $actorId,
-			'actorName' => $actorName,
-		];
+		?string $ipAddress = null,
+	): AuditTrail {
+		// The real mapper returns an AuditTrail entity. This used to hand back a
+		// bare stdClass, which is a shape the real class never produces, so
+		// anything a test asserted about the return value was green here and
+		// wrong live. StubApiDriftTest compares declared return types now, and
+		// that is the check that caught it.
+		$entry = new AuditTrail();
+		$entry->objectUuid = $object->getUuid();
+		$entry->action = $action;
+		$entry->changed = $context;
+		$entry->actorId = $actorId;
+		$entry->actorName = $actorName;
+
+		return $entry;
 	}//end createAuditTrailEntry()
 }//end class

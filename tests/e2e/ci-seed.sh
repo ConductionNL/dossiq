@@ -131,7 +131,12 @@ if [ "$IMPORT_CODE" = "200" ] && grep -q '"success":[[:space:]]*true' "$IMPORT_B
 	IMPORT_OK=1
 	echo "[ci-seed] dossiq settings#load reported success."
 else
-	echo "[ci-seed] dossiq settings#load did not report success; falling back to the OpenRegister importer."
+	echo "::warning::dossiq settings#load did not report success. Falling back to"
+	echo "::warning::the OpenRegister importer, which posts lib/Settings/dossiq_register.json"
+	echo "::warning::ALONE. It cannot merge lib/Settings/register.d/, so 88 schemas this app"
+	echo "::warning::declares will be absent and every spec that seeds one answers 404."
+	echo "::warning::The verification below is what decides; read settings#load's body above"
+	echo "::warning::for why the app's own loader refused."
 fi
 
 # ── 1b. Fallback: OpenRegister's generic configuration importer ──────────────
@@ -211,8 +216,20 @@ required = {
     # (isTerminalStatus, daysUntilDue) that only an object materialises; both
     # now ask the ENGINE the same two questions, through /api/flow-tasks, which
     # needs no schema at all.
+    #
+    # 🔴 THE LAST FOUR LIVE ONLY IN `lib/Settings/register.d/`, AND THAT IS WHY
+    # THEY ARE HERE. The fallback importer below posts the monolith alone, so a
+    # register seeded that way carries the first nine names and none of the 88
+    # a fragment declares. The suite then dies one spec at a time on
+    # `Schema not found: 'brpPerson'` / `'informatieobject'`, which reads like
+    # dossiq not shipping them. It ships all four. A gate that only names
+    # monolith schemas cannot tell a full import from a degraded one, so it
+    # names fragment schemas too and the degraded seed fails HERE, once, with
+    # the reason.
     'schemas': ['case', 'caseType', 'statusType', 'resultType', 'workflowTemplate',
-                'complaint', 'propertyDefinition', 'role', 'roleType', 'organisatieRol'],
+                'complaint', 'propertyDefinition', 'role', 'roleType',
+                'organisatieRol', 'brpPerson', 'informatieobject',
+                'mailIntakeEntry', 'contactmoment'],
 }[kind]
 with open(path) as fh:
     raw = fh.read()

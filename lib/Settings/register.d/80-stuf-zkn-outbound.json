@@ -230,7 +230,7 @@
                 "properties": {
                     "id": {
                         "type": "string",
-                        "title": "Message ID",
+                        "title": "Message id",
                         "description": "Stable identifier (e.g. stuf-msg-2026-05-21-08-44-12-a7c3).",
                         "maxLength": 128
                     },

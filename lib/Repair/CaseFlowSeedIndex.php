@@ -33,6 +33,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Repair;
 
 use OCA\Dossiq\Service\SettingsService;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -125,9 +126,11 @@ class CaseFlowSeedIndex {
 		}
 
 		try {
-			$found = $objectService->searchObjects($query);
+			// Unscoped: a repair run has no user to scope the read to.
+			$found = $objectService->searchObjects($query, _rbac: false, _multitenancy: false);
 		} catch (Throwable $e) {
-			return [];
+			// An unreadable store is not an empty one; the caller decides.
+			throw new RuntimeException('the store could not be read: ' . $e->getMessage(), 0, $e);
 		}
 
 		return $this->normalise(value: $found);

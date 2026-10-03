@@ -108,7 +108,7 @@ class ComplaintController extends Controller {
 			// Authorize: any authenticated user can create a complaint.
 			$complaint = $this->complaintService->createComplaint($data);
 			return new JSONResponse($complaint, Http::STATUS_CREATED);
-		} catch (\RuntimeException $e) {
+		} catch (\RuntimeException | \InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end create()
@@ -168,7 +168,7 @@ class ComplaintController extends Controller {
 			$data = $this->accessGuard->parseBody();
 			$result = $this->complaintService->updateComplaint($id, $data);
 			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
+		} catch (\RuntimeException | \InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end update()
@@ -202,7 +202,7 @@ class ComplaintController extends Controller {
 			$newStatus = $data['status'] ?? '';
 			$result = $this->complaintService->transitionStatus($id, $newStatus);
 			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
+		} catch (\RuntimeException | \InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end transition()
@@ -236,7 +236,7 @@ class ComplaintController extends Controller {
 			$justification = $data['justificatie'] ?? '';
 			$result = $this->complaintService->requestVerdaging($id, $justification);
 			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
+		} catch (\RuntimeException | \InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end verdaging()
@@ -275,7 +275,7 @@ class ComplaintController extends Controller {
 
 			$result = $this->complaintService->linkEscalatedCase($id, $caseId);
 			return new JSONResponse($result);
-		} catch (\RuntimeException $e) {
+		} catch (\RuntimeException | \InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end escalate()

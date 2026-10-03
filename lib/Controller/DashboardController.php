@@ -51,7 +51,11 @@ use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
 use OCP\IRequest;
+use OCP\Util;
 
 /**
  * Controller for the main Dossiq dashboard page plus the PWA assets.
@@ -61,6 +65,41 @@ use OCP\IRequest;
  * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
  */
 class DashboardController extends Controller {
+
+	/**
+	 * App-config key, and the initial-state key it is served under.
+	 *
+	 * ONE spelling, read by `src/services/casePlanSource.js` under the same
+	 * name. A flag whose two halves are spelled separately is a flag that is
+	 * on in one place and off in the other, and nothing says so.
+	 *
+	 * @var string
+	 */
+	/**
+	 * The load events that put Nextcloud's file surfaces on a page.
+	 *
+	 * The Viewer, and the Files app's additional scripts: on that event the
+	 * Files app and its plugins (files_sharing, text, versions) register their
+	 * file actions and their New menu entries, such as Request a file, into
+	 * the shared registries that `@nextcloud/files` reads, so the files
+	 * browser on a case page offers the same actions the Files app does. Not
+	 * the Files sidebar: the sidebar's `LoadSidebar` was here too, and
+	 * its scripts loaded, but on Nextcloud 34 the sidebar is a store bound to
+	 * the Files app's own router and node list (`OCA.Files._sidebar`, no
+	 * `OCA.Files.Sidebar.open`), so it cannot be opened from another app's
+	 * page. Loading six scripts for a surface that cannot open is not worth
+	 * the bytes; the files tab offers Show in Files for what the sidebar
+	 * would have shown.
+	 *
+	 * @var list<string> Class names, looked up at run time because neither app is a dependency.
+	 */
+	public const FILES_SURFACE_EVENTS = [
+		'OCA\\Viewer\\Event\\LoadViewer',
+		'OCA\\Files\\Event\\LoadAdditionalScriptsEvent',
+	];
+
+	public const PREFER_OPENREGISTER_CASE_PLAN = 'cmmn_prefer_openregister_case_plan';
+
 	/**
 	 * App-root-relative location of the bundled PWA assets.
 	 *
@@ -83,10 +122,14 @@ class DashboardController extends Controller {
 	 *
 	 * @param IRequest      $request      HTTP request.
 	 * @param IInitialState $initialState Page initial state, for the roadmap feature list.
+	 * @param IAppConfig    $appConfig    App configuration, for the case-plan read preference.
+	 * @param IEventDispatcher $eventDispatcher The dispatcher the Files and Viewer load events go through.
 	 */
 	public function __construct(
 		IRequest $request,
 		private readonly IInitialState $initialState,
+		private readonly IAppConfig $appConfig,
+		private readonly IEventDispatcher $eventDispatcher,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -135,10 +178,105 @@ class DashboardController extends Controller {
 	 * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
 	 */
 	protected function renderIndex(): TemplateResponse {
+		$this->loadFilesSurfaces();
 		$this->initialState->provideInitialState('features_roadmap_features', $this->roadmapFeatures());
+		$this->initialState->provideInitialState(
+			self::PREFER_OPENREGISTER_CASE_PLAN,
+			$this->prefersOpenRegisterCasePlan()
+		);
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
+
+	/**
+	 * Put Nextcloud's own Viewer on every dossiq page.
+	 *
+	 * The files tab on a case page opens a file in the Viewer, over the page,
+	 * the way the Files app does, rather than rebuilding a viewer. The Viewer
+	 * is a script its app adds to a page only when the page dispatches the
+	 * load event; a page that does not gets none, and the tab falls back to a
+	 * link into the Files app. The class is looked up by name because the
+	 * Viewer app is not a dependency: an instance without it renders the page
+	 * all the same. The
+	 * dispatcher is required, not optional: Nextcloud's container hands a
+	 * nullable parameter with a default its default, so an optional one was
+	 * null on every request and nothing loaded.
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) — Nextcloud Util API is static by design
+	 *
+	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 */
+	private function loadFilesSurfaces(): void {
+		// The Files app's own actions (download, delete, rename, favourite,
+		// move and copy, open in Files) are registered by its `init` script,
+		// which only the Files page loads. Every other app's actions arrive on
+		// the additional-scripts event below; this one has to be asked for.
+		// Guarded on the server's script pipeline: `Util::addScript` reaches
+		// into `OC\AppScriptDependency`, which a unit test process does not
+		// autoload, and the controller is rendered in those.
+		if (class_exists('OC\\AppScriptDependency') === true) {
+			Util::addScript('files', 'init');
+		}
+
+		foreach ($this->filesSurfaceEvents() as $eventClass) {
+			if (class_exists($eventClass) === false) {
+				continue;
+			}
+
+			$event = new $eventClass();
+			if ($event instanceof Event) {
+				$this->eventDispatcher->dispatchTyped($event);
+			}
+		}
+	}//end loadFilesSurfaces()
+
+	/**
+	 * The event classes to look up, as a run-time list.
+	 *
+	 * Read through a method rather than straight off the constant so the
+	 * lookup is a real one: phpstan folds the constant's literal strings,
+	 * finds neither class in this app's tree and calls `class_exists()` on
+	 * them impossible, while on an instance with the Files and Viewer apps
+	 * both exist. The declared type is what the analyser sees; the constant
+	 * stays the single place the names are written.
+	 *
+	 * @return list<string> Class names, present or not on this instance.
+	 *
+	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 */
+	private function filesSurfaceEvents(): array {
+		return self::FILES_SURFACE_EVENTS;
+	}//end filesSurfaceEvents()
+
+	/**
+	 * Whether the case-plan panel prefers OpenRegister's rows over the blob.
+	 *
+	 * Default yes, which is the point of the bridge. Setting it to `no` is the
+	 * R1 rollback of retire-cmmn-caseplanstate design.md section 4: the panel
+	 * goes back to reading dossiq's own CMMN engine for every case that still
+	 * carries a `casePlanState` blob, and `occ dossiq:cmmn:rollback-case-plans`
+	 * regenerates a blob for the cases that no longer have one.
+	 *
+	 * It is a read preference and NOT a kill switch for the projection. Plans
+	 * keep being created in OpenRegister at case start either way, because a
+	 * case that started with no plan anywhere cannot be given one later without
+	 * the migration this change has not shipped yet.
+	 *
+	 * @return boolean True when rows win over the blob.
+	 *
+	 * @spec openspec/changes/retire-cmmn-caseplanstate/specs/retire-cmmn-caseplanstate/spec.md#requirement-req-rcmn-001-case-semantics-are-consumed-from-openregister
+	 */
+	protected function prefersOpenRegisterCasePlan(): bool {
+		$value = $this->appConfig->getValueString(
+			Application::APP_ID,
+			self::PREFER_OPENREGISTER_CASE_PLAN,
+			'yes'
+		);
+
+		return in_array(strtolower(trim($value)), ['no', 'false', '0', 'off'], true) === false;
+	}//end prefersOpenRegisterCasePlan()
 
 	/**
 	 * The committed feature list, or an empty list when it cannot be read.

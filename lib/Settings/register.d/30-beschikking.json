@@ -39,7 +39,7 @@
           },
           "decisionType": {
             "type": "string",
-            "title": "Decision Type",
+            "title": "Decision type",
             "enum": [
               "toekenning",
               "rejection",
@@ -62,7 +62,7 @@
           },
           "templateVersion": {
             "type": "string",
-            "title": "Template Version",
+            "title": "Template version",
             "description": "The template version this decision was written from. Judge an objection against this version, not the template as it stands now.",
             "x-notes": "Resolved by TemplateEngineAdapterInterface::resolveVersion() at compose time and stored by BeschikkingService::compose(), which used to compute it and drop it. The filinq adapter reads it from filinq's TemplateVersionService chain, so the value is 'v<n>' for a versioned template and the template object's own OpenRegister version otherwise. Unrelated to draftVersion, which counts re-renders of this beschikking."
           },
@@ -74,7 +74,7 @@
           },
           "currentStatus": {
             "type": "string",
-            "title": "Current Status",
+            "title": "Current status",
             "enum": [
               "draft",
               "approved-mandate",
@@ -115,7 +115,7 @@
             "type": "string",
             "title": "Motivation",
             "description": "Reasoning underpinning the decision",
-            "x-translatable": false
+            "translatable": false
           },
           "legalRemediesClause": {
             "type": "string",
@@ -154,8 +154,8 @@
               "kind": { "type": "string", "title": "Decision Sort", "description": "Type of the decision, e.g. toekenning or afwijzing" },
               "subject": { "type": "string", "title": "Decision Subject", "description": "Subject of the decision" },
               "size": { "type": "string", "title": "Scope", "description": "Extent or scope of the decision, e.g. number of hours per week" },
-              "effectiveDate": { "type": "string", "title": "Start Date", "description": "Date from which the decision takes effect", "format": "date" },
-              "endDate": { "type": "string", "title": "End Date", "description": "Date on which the decision expires", "format": "date" }
+              "effectiveDate": { "type": "string", "title": "Start date", "description": "Date from which the decision takes effect", "format": "date" },
+              "endDate": { "type": "string", "title": "End date", "description": "Date on which the decision expires", "format": "date" }
             }
           },
           "mandateGranted": {
@@ -165,7 +165,7 @@
             "properties": {
               "mandateSchemeId": { "type": "string", "title": "Mandate Regulation ID", "description": "Reference to the mandaatRegeling in effect at the time of approval" },
               "mandateLevel": { "type": "string", "title": "Mandate Level", "description": "Authorization level used (e.g. consulent, afdelingsmanager)" },
-              "approvedBy": { "type": "string", "title": "Approved By", "description": "Nextcloud UID of the approver" },
+              "approvedBy": { "type": "string", "title": "Approved by", "description": "Nextcloud UID of the approver" },
               "approvedDate": { "type": "string", "title": "Approval Date", "description": "Timestamp at which the mandate approval was recorded", "format": "date-time" }
             }
           },
@@ -189,9 +189,9 @@
             "description": "Berichtenbox delivery record",
             "properties": {
               "notificationChannel": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
-              "sentOn": { "type": "string", "title": "Sent On", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
+              "sentOn": { "type": "string", "title": "Sent on", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
               "sentBy": { "type": "string", "title": "Sent By", "description": "Actor who sent the beschikking (user id or 'systeem')" },
-              "messageId": { "type": "string", "title": "Message ID", "description": "Berichtenbox message identifier" },
+              "messageId": { "type": "string", "title": "Message id", "description": "Berichtenbox message identifier" },
               "receiptConfirmationOn": { "type": "string", "title": "Receipt Confirmation On", "description": "Timestamp at which receipt was confirmed", "format": "date-time" },
               "readConfirmationOn": { "type": "string", "title": "Read Confirmation On", "description": "Timestamp at which the message was read by the recipient", "format": "date-time" }
             }
@@ -237,7 +237,7 @@
               "to": { "type": "string", "title": "To Status", "description": "Target status" },
               "moment": { "type": "string", "title": "Timestamp", "description": "Date and time of the state transition", "format": "date-time" },
               "actor": { "type": "string", "title": "Actor", "description": "Nextcloud UID or 'systeem'" },
-              "actorType": { "type": "string", "title": "Actor Type", "description": "Whether the actor is a employee or the system", "enum": ["employee", "systeem"] },
+              "actorType": { "type": "string", "title": "Actor type", "description": "Whether the actor is a employee or the system", "enum": ["employee", "systeem"] },
               "trigger": { "type": "string", "title": "Trigger", "description": "Whether the transition was initiated manually or automatically", "enum": ["manual", "automatic"] },
               "evidenceMaterial": {
                 "type": "object",
@@ -300,9 +300,9 @@
       "mandateArrangement": {
         "slug": "mandateArrangement",
         "icon": "AccountTieOutline",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Legislation",
-        "title": "Mandaatregeling",
+        "title": "Mandate regulation",
         "description": "Defines which approval levels (niveau) may sign which decision types up to which bedrag (Awb 10:3-10:12). Point-in-time: the regeling-id + version is captured on the beschikking at akkoord.",
         "type": "object",
         "required": [

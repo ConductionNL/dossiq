@@ -46,9 +46,6 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — aggregates the four
- * subsidy lifecycle services it dispatches to.
- *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
  */
 class SubsidieController extends Controller {
@@ -80,8 +77,6 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function index(): JSONResponse {
@@ -110,8 +105,6 @@ class SubsidieController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
@@ -148,8 +141,6 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function transition(string $id): JSONResponse {
@@ -176,8 +167,6 @@ class SubsidieController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
@@ -208,8 +197,6 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function publishBeschikking(string $decisionId): JSONResponse {
@@ -234,8 +221,6 @@ class SubsidieController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
@@ -271,8 +256,6 @@ class SubsidieController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
 	public function createTussenrapportage(string $uitvoeringId): JSONResponse {
@@ -300,8 +283,6 @@ class SubsidieController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
@@ -344,8 +325,6 @@ class SubsidieController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */

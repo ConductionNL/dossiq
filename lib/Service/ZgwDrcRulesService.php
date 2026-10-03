@@ -53,10 +53,6 @@
  *   Combination of identificatie + bronorganisatie must be unique.
  * @link https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.TooManyMethods)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
@@ -484,8 +480,6 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 * @param string $objectType The object type (zaak or besluit)
 	 *
 	 * @return array|null Validation error if relation doesn't exist, null if valid
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
 	 */
 	private function validateOioCrossRegister(string $ioUrl, string $objectUrl, string $objectType): ?array {
 		$ioUuid = $this->extractUuid(url: $ioUrl) ?? '';

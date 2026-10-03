@@ -35,6 +35,14 @@ use Psr\Log\LoggerInterface;
 /**
  * Unit tests for VergunningaanvraagCreatedListener.
  *
+ * TWO `class_exists(ObjectCreatedEvent::class)` SKIP GUARDS WERE REMOVED HERE,
+ * and please do not put them back. `tests/bootstrap.php` includes
+ * `tests/Stubs/Event/ObjectCreatedEventStub.php` whenever OpenRegister's real
+ * class is absent, so the name resolves in every process that runs this file:
+ * the real class when OpenRegister is installed, the stub when it is not. The
+ * guards could therefore never fire, and a skip that cannot fire reads exactly
+ * like a test that passed.
+ *
  * @covers \OCA\Dossiq\Listener\VergunningaanvraagCreatedListener
  */
 class VergunningaanvraagCreatedListenerTest extends TestCase {
@@ -113,10 +121,6 @@ class VergunningaanvraagCreatedListenerTest extends TestCase {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
 	 */
 	public function testHandleIgnoresNonMatchingSchema(): void {
-		if (class_exists(ObjectCreatedEvent::class) === false) {
-			$this->markTestSkipped('ObjectCreatedEvent class not available.');
-		}
-
 		// ObjectCreatedEvent::getObject() is type-hinted to return an
 		// ObjectEntity, so build a real entity (its jsonSerialize() exposes the
 		// schema under @self.schema and the id at top level) and wrap it in a
@@ -147,10 +151,6 @@ class VergunningaanvraagCreatedListenerTest extends TestCase {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
 	 */
 	public function testHandleCallsDsoCaseServiceOnMatch(): void {
-		if (class_exists(ObjectCreatedEvent::class) === false) {
-			$this->markTestSkipped('ObjectCreatedEvent class not available.');
-		}
-
 		$configuredSchemaId = 'vergunning-schema-123';
 		$objectId = 'aanvraag-object-uuid';
 

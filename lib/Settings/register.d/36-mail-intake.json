@@ -1,0 +1,188 @@
+{
+    "components": {
+        "registers": {
+        	"dossiq": {
+        		"schemas": [
+        			"mailIntakeEntry"
+        		]
+        	}
+        },
+        "schemas": {
+            "mailIntakeEntry": {
+                "slug": "mailIntakeEntry",
+                "version": "1.0.0",
+                "type": "object",
+                "title": "Mail intake entry",
+                "description": "One message the intake mailbox processed, with its original, its authentication results, the filter that decided and what became of it.",
+                "properties": {
+                    "mailMessageId": {
+                        "title": "Message id",
+                        "type": "string",
+                        "description": "The RFC 5322 Message-ID of the processed message"
+                    },
+                    "accountId": {
+                        "title": "Mail account",
+                        "type": "integer",
+                        "description": "The Nextcloud Mail account the message arrived on"
+                    },
+                    "mailbox": {
+                        "title": "Folder",
+                        "type": "string",
+                        "description": "The folder the message was read from"
+                    },
+                    "uid": {
+                        "title": "Message uid",
+                        "type": "integer",
+                        "description": "The message uid inside that folder"
+                    },
+                    "sender": {
+                        "title": "Sender",
+                        "type": "string",
+                        "description": "The sender address, which is what a handler searches the log by"
+                    },
+                    "recipient": {
+                        "title": "Recipient",
+                        "type": "string",
+                        "description": "The address the message was addressed to"
+                    },
+                    "subject": {
+                        "title": "Subject",
+                        "type": "string",
+                        "description": "The subject line"
+                    },
+                    "receivedAt": {
+                        "title": "Processed at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When intake processed the message"
+                    },
+                    "sentAt": {
+                        "title": "Sent at",
+                        "type": "string",
+                        "description": "When the sender says they sent it"
+                    },
+                    "decidingFilter": {
+                        "title": "Deciding filter",
+                        "type": "string",
+                        "description": "The named filter that decided, empty when the pipeline reached its accept default"
+                    },
+                    "filterOutcome": {
+                        "title": "Filter outcome",
+                        "type": "string",
+                        "enum": ["accept", "reject", "quarantine", "forward", "pass"],
+                        "description": "What the deciding filter answered"
+                    },
+                    "filterReason": {
+                        "title": "Filter reason",
+                        "type": "string",
+                        "description": "Why the filter decided as it did, in a sentence a handler can read"
+                    },
+                    "spfResult": {
+                        "title": "SPF result",
+                        "type": "string",
+                        "enum": ["pass", "fail", "none", "unavailable"],
+                        "description": "SPF as the receiving server reported it. Unavailable means no check was made and never means pass"
+                    },
+                    "dkimResult": {
+                        "title": "DKIM result",
+                        "type": "string",
+                        "enum": ["pass", "fail", "none", "unavailable"],
+                        "description": "DKIM as Nextcloud Mail verified it"
+                    },
+                    "dmarcResult": {
+                        "title": "DMARC result",
+                        "type": "string",
+                        "enum": ["pass", "fail", "none", "unavailable"],
+                        "description": "DMARC as the receiving server reported it. Unavailable means no check was made and never means pass"
+                    },
+                    "threadingResult": {
+                        "title": "Threading result",
+                        "type": "string",
+                        "enum": ["pass", "fail", "none", "unavailable"],
+                        "description": "Whether a referenced message id is one this account really holds. Fail means the reply claim is forged"
+                    },
+                    "outcome": {
+                        "title": "Outcome",
+                        "type": "string",
+                        "enum": ["case", "quarantined", "released", "inbox", "refused", "forwarded", "moved"],
+                        "description": "What became of the message. Every processed message has one and there is no seventh value meaning dropped"
+                    },
+                    "reason": {
+                        "title": "Reason",
+                        "type": "string",
+                        "description": "Why it became that"
+                    },
+                    "case": {
+                        "title": "Case",
+                        "type": "string",
+                        "description": "The case the message became or was linked to, empty when it became none"
+                    },
+                    "original": {
+                        "title": "Original",
+                        "type": "string",
+                        "description": "The raw source of the message, which is the answer to 'ik heb wel gemaild'"
+                    },
+                    "originalTruncated": {
+                        "title": "Original truncated",
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether the stored original was cut at the size cap"
+                    },
+                    "forwardedTo": {
+                        "title": "Forwarded to",
+                        "type": "string",
+                        "description": "The address a bounce sent the message on to, under Awb 2:3"
+                    },
+                    "forwardedBy": {
+                        "title": "Forwarded by",
+                        "type": "string",
+                        "description": "The user id of whoever bounced it"
+                    },
+                    "forwardedReason": {
+                        "title": "Forwarded reason",
+                        "type": "string",
+                        "description": "Why it was sent on"
+                    },
+                    "movedTo": {
+                        "title": "Moved to",
+                        "type": "string",
+                        "description": "The folder a move filed the message in"
+                    },
+                    "movedBy": {
+                        "title": "Moved by",
+                        "type": "string",
+                        "description": "The user id of whoever moved it"
+                    },
+                    "junkRule": {
+                        "title": "Junk rule",
+                        "type": "string",
+                        "description": "The rule that classified the message as junk, so an administrator can read why"
+                    },
+                    "releasedBy": {
+                        "title": "Released by",
+                        "type": "string",
+                        "description": "The user id of whoever released a quarantined message"
+                    },
+                    "releasedAt": {
+                        "title": "Released at",
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When the release happened"
+                    }
+                },
+                "required": ["outcome"]
+            },
+            "caseType": {
+                "properties": {
+                    "intakePolicy": {
+                        "title": "Intake policy",
+                        "type": "string",
+                        "enum": ["accept", "quarantine", "refuse"],
+                        "default": "quarantine",
+                        "description": "What a failing sender-authentication verdict means for this kind of case. A melding from an unauthenticated sender is normal. A bezwaar from one is a forgery risk. Quarantine is the default because it neither drops a message nor files a forged one."
+                    }
+                }
+            }
+        }
+    }
+}

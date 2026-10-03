@@ -252,12 +252,21 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 **Tier**: MVP
 
+AMENDED 2026-09-11, for the row's own fields. The list is the ENGINE's inbox
+(dossiq#2408, #2457), and its columns are Task, Subject, State, Priority, Due
+and Assignee. Two clauses below were written for the deleted `caseTask` schema
+and are corrected rather than left for a test to assert around: the case
+reference is the case TITLE, because the Subject column resolves
+`subject.title` for the object the task hangs off and no case identifier is
+rendered; and the due date is a relative label, "Due in {days} days", built by
+`taskDueLabel` in @conduction/nextcloud-vue.
+
 #### Scenario: View the global task list
 
 - GIVEN 23 tasks exist across 8 cases
 - WHEN the user navigates to the Tasks section (via Mijn werk → Alle taken)
 - THEN the system MUST display a paginated list of tasks
-- AND each task row MUST show: title, parent case reference (ID + title), status, assignee, due date, and priority
+- AND each task row MUST show: title, the case it hangs off (by title), state, assignee, due date, and priority
 
 #### Scenario: View tasks for a specific case
 

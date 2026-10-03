@@ -18,6 +18,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+const panels = require('./helpers/casePanels.js')
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -57,13 +58,19 @@ function iconIsRegistered(name) {
 }
 
 /**
- * One widget of the CaseDetail page.
+ * One widget of the CaseDetail page, wherever it lives.
+ *
+ * Through the shared helper rather than a `find` over `config.widgets`: a
+ * widget that moves INTO a tab becomes a section of a `case-sections` group
+ * and disappears from the top level, so a top-level lookup returns undefined
+ * and every assertion below reads as "the widget was deleted". `case-core`
+ * made that move when the Data tab gained the locations map.
  *
  * @param {string} id The widget id.
  * @return {object|undefined} The widget entry.
  */
 function widget(id) {
-	return caseDetail().config.widgets.find((entry) => entry.id === id)
+	return panels.caseWidget(id)
 }
 
 describe('CaseDetail: the case number', () => {
@@ -135,6 +142,14 @@ describe('CaseDetail: terms and archive', () => {
 		expect(terms.content.include).toEqual([
 			'statutoryTerm',
 			'legalBasis',
+			// fees-and-payments-on-the-case (#2930): what is owed, when that
+			// was last read from shillinq, and the contract it was read
+			// against. The three sit beside the older indication rather than
+			// replacing it, because the indication is what the case TYPE says
+			// and these are what the case itself owes.
+			'paymentState',
+			'paymentStateCheckedAt',
+			'contract',
 			'paymentIndication',
 			'lastPaymentDate',
 		])
@@ -157,34 +172,29 @@ describe('CaseDetail: terms and archive', () => {
 		expect(caseDetail().config.sidebar.showMetadata).toBe(true)
 	})
 
-	it('leaves both columns packed and ending on the same row', () => {
-		// ADR-062: the two columns end level. Dropping a five-row card without
-		// reclaiming its rows is the half of the change a manifest edit
-		// forgets, and it shows up two ways: a hole where the card was, or a
-		// short column beside a long one.
-		//
-		// The bottom edge alone does not catch the hole — a gap in the middle
-		// still ends where it ended. So walk each column: every widget has to
-		// start exactly where the one above it finished.
+	it('leaves no hole in the grid: every cell rests on a cell above it', () => {
+		// ADR-062: the grid is packed. Dropping a card without reclaiming its
+		// rows is the half of the change a manifest edit forgets, and it shows
+		// up as a hole where the card was. The bottom edge alone does not catch
+		// it, and the page is no longer two columns of equal height (the layout
+		// was laid out by hand in Buildiq edit mode and copied here), so the
+		// check is local: every cell that is not on row 0 starts exactly where
+		// some cell that shares a column with it ends.
 		const layout = caseDetail().config.layout
-		const column = (x) =>
-			layout
-				.filter((w) => w.gridX === x && w.gridWidth < 12)
-				.sort((a, b) => a.gridY - b.gridY)
-
-		const walk = (x) => {
-			let cursor = Math.min(...column(x).map((w) => w.gridY))
-			for (const w of column(x)) {
-				expect(
-					[w.widgetId, w.gridY],
-					`${w.widgetId} should start at row ${cursor}`,
-				).toEqual([w.widgetId, cursor])
-				cursor = w.gridY + w.gridHeight
-			}
-			return cursor
+		for (const cell of layout) {
+			if (cell.gridY === 0) continue
+			const rests = layout.some(
+				(above) =>
+					above !== cell
+					&& above.gridY + above.gridHeight === cell.gridY
+					&& above.gridX < cell.gridX + cell.gridWidth
+					&& cell.gridX < above.gridX + above.gridWidth,
+			)
+			expect(
+				rests,
+				`${cell.widgetId} at row ${cell.gridY} should rest on a cell above it`,
+			).toBe(true)
 		}
-
-		expect(walk(8)).toBe(walk(0))
 	})
 
 	it('keeps an empty row visible instead of hiding it', () => {
@@ -255,7 +265,14 @@ describe('the English demo seed', () => {
 		expect(demoCases.length).toBeGreaterThan(0)
 		for (const demo of demoCases) {
 			expect(demo.identifier, demo['@self'].slug).toMatch(/^\d{4}-\d{4}$/)
-			// The year half is the start year, as `year(startDate)` gives it.
+			// The year half is the START year here, and that is now a property
+			// of the SEED rather than of the mechanism. The retired
+			// `x-openregister-calculations` expression read `year(startDate)`;
+			// `x-openregister-generated` renders `{year}` from the creation
+			// moment and reads no property (case-number-and-favourites, D-2).
+			// A supplied number is kept and pushes the counter past it, so
+			// these rows are a floor for the register's own counter rather
+			// than something it will ever overwrite.
 			expect(demo.identifier.slice(0, 4)).toBe(demo.startDate.slice(0, 4))
 		}
 	})

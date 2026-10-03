@@ -79,7 +79,12 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	public const SLUG_MAP = [
 		'avgClassificatie' => 'gdprClassification',
 		'bezwaar' => 'objectionProceeding',
-		'catalogus' => 'catalog',
+		// NOT 'catalog'. opencatalogi owns that slug and slugs are global on a
+		// shared OpenRegister, so this rename would have minted a name another
+		// app answers to. 'zgwCatalogus' is the slug dossiq's own ZGW catalogue
+		// schema ships under, so an instance that still carries 'catalogus'
+		// lands on that one rather than acquiring a second catalogue.
+		'catalogus' => 'zgwCatalogus',
 		'dwangsomBerekening' => 'penaltyPaymentCalculation',
 		'ingebrekestelling' => 'noticeOfDefault',
 		'kanaal' => 'notificationChannel',

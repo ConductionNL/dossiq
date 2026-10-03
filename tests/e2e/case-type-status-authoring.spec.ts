@@ -528,6 +528,57 @@ test.describe('A status is authored on the page, and what was authored runs', ()
 		).toBe(authored.progress)
 	})
 
+	// @e2e case-types::the-author-sets-it-on-the-status-row
+	test('the two applicant fields are offered on the status row, and what is typed is stored', async ({
+		page,
+	}) => {
+		const admin = await openStatusesTab(page)
+		const editing = await startEditing(admin, 'Toetsing')
+
+		// THEN both fields are offered, under a heading that says whose words
+		// they are. By ACCESSIBLE NAME rather than by testid: a field a screen
+		// reader cannot name is not offered to everybody who authors a case
+		// type, and a testid would pass on one that is unlabelled.
+		const label = editing.getByRole('textbox', {
+			name: /^(Public label|Publiek label)$/,
+		})
+		const description = editing.getByRole('textbox', {
+			name: /^(Public description|Publieke omschrijving)$/,
+		})
+		await expect(
+			editing.getByRole('heading', {
+				name: /^(What the applicant sees|Wat de aanvrager ziet)$/,
+			}),
+		).toBeVisible()
+		await expect(label).toBeVisible()
+		await expect(description).toBeVisible()
+
+		// AND the label field offers the status name as its placeholder, which
+		// is how the author is shown the fallback without it being written to
+		// the row. A copied value would be indistinguishable from a chosen one
+		// on the next save.
+		await expect(label).toHaveAttribute('placeholder', `${RUN_PREFIX} Toetsing`)
+		await expect(label).toHaveValue('')
+
+		await label.fill('We beoordelen uw aanvraag')
+		await description.fill('U hoeft nu niets te doen.')
+		await save(editing, admin)
+
+		// What the page wrote. The form maps both directions, so a property
+		// missing from either would come back empty here.
+		const stored = await showObject(api, 'statusType', authored.review)
+		expect(String(stored.publicLabel)).toBe('We beoordelen uw aanvraag')
+		expect(String(stored.publicDescription)).toBe('U hoeft nu niets te doen.')
+
+		// AND reopening the row shows what was saved rather than a fresh form.
+		const reopened = await startEditing(admin, 'Toetsing')
+		await expect(
+			reopened.getByRole('textbox', {
+				name: /^(Public label|Publiek label)$/,
+			}),
+		).toHaveValue('We beoordelen uw aanvraag')
+	})
+
 	// @e2e case-types::a-status-asks-for-a-checklist
 	test('a required checklist item saved on a status becomes a task on the case', async ({
 		page,

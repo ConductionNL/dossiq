@@ -24,6 +24,7 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+ * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
  */
 
 declare(strict_types=1);
@@ -41,25 +42,40 @@ class DeadlineEscalationService {
 	/**
 	 * Default escalation matrix.
 	 *
-	 * Maps threshold-in-days → {recipients, priority, template}.
+	 * Maps threshold-in-days → {recipients, notificationUrgency, template}.
+	 *
+	 * 🔴 `notificationUrgency` WAS CALLED `priority`, AND WAS NOT ONE. These
+	 * four words — low, medium, high, critical — say how loudly a notification
+	 * should arrive, on a vocabulary that is not the case's. The case's
+	 * priority is low / normal / high / urgent and lives on the case, where a
+	 * list can sort by it and a person can override it. Two fields called
+	 * priority on two vocabularies is how a reader ends up assuming they agree,
+	 * so this one is named for what it is and the escalation reads the case's
+	 * priority for the other question.
 	 *
 	 * @var array<int, array<string, mixed>>
 	 */
 	private const DEFAULT_MATRIX = [
-		14 => ['recipients' => ['handler'],                        'priority' => 'low',      'template' => 'termijn-14d'],
-		7 => ['recipients' => ['handler', 'teamleader'],          'priority' => 'medium',   'template' => 'termijn-7d'],
-		2 => ['recipients' => ['handler', 'teamleader', 'manager'], 'priority' => 'high',     'template' => 'termijn-2d'],
-		0 => ['recipients' => ['handler', 'teamleader', 'manager'], 'priority' => 'critical', 'template' => 'termijn-overschreden'],
+		14 => ['recipients' => ['handler'],                        'notificationUrgency' => 'low',      'template' => 'termijn-14d'],
+		7 => ['recipients' => ['handler', 'teamleader'],          'notificationUrgency' => 'medium',   'template' => 'termijn-7d'],
+		2 => ['recipients' => ['handler', 'teamleader', 'manager'], 'notificationUrgency' => 'high',     'template' => 'termijn-2d'],
+		0 => ['recipients' => ['handler', 'teamleader', 'manager'], 'notificationUrgency' => 'critical', 'template' => 'termijn-overschreden'],
 	];
 
 	/**
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService TermijnService for instance lookup/update.
+	 * @param CasePriorityRaiseService $priorityRaiseService Applies the declared
+	 *                                                      term rule and reads
+	 *                                                      the case's priority.
 	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
+		private readonly CasePriorityRaiseService $priorityRaiseService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -115,6 +131,7 @@ class DeadlineEscalationService {
 	 * @return bool True if a notification was sent (i.e. not a duplicate).
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
 	 */
 	public function notifyThreshold(array $instance, int $threshold): bool {
 		$instanceId = (string)($instance['id'] ?? '');
@@ -132,13 +149,40 @@ class DeadlineEscalationService {
 			return false;
 		}
 
+		// The declared term rule runs BEFORE the payload is built, so the
+		// priority reported is the one the case carries after the raise rather
+		// than the one it carried a moment earlier. A threshold the
+		// declaration does not name raises nothing and this reads back
+		// unchanged.
+		//
+		// THIS IS WHERE A STORE FAILURE IS CONTAINED, and it is contained here
+		// rather than inside the raise service because this is the method that
+		// knows what the failure costs. A termijn notification is a statutory
+		// deadline warning: it goes out whether or not the case could be read.
+		// So a failed read leaves the priority unknown and says so, rather than
+		// reporting a case as `normal` when nobody actually asked it.
+		$caseId = (string)($instance['case'] ?? '');
+		$casePriority = '';
+		try {
+			$casePriority = $this->priorityRaiseService->raiseForThreshold(
+				caseId: $caseId,
+				threshold: $threshold
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Dossiq termijn escalation: the case priority was unreadable, notifying without it',
+				['case' => $caseId, 'threshold' => $threshold, 'error' => $e->getMessage()]
+			);
+		}
+
 		$payload = [
 			'threshold' => $threshold,
 			'template' => $config['template'],
-			'priority' => $config['priority'],
+			'notificationUrgency' => $config['notificationUrgency'],
+			'casePriority' => $casePriority,
 			'recipients' => $config['recipients'],
 			'instanceId' => $instanceId,
-			'caseId' => (string)($instance['case'] ?? ''),
+			'caseId' => $caseId,
 			'deadline' => (string)($instance['endDateCurrent'] ?? ''),
 		];
 
@@ -157,9 +201,14 @@ class DeadlineEscalationService {
 	/**
 	 * Get the full escalation matrix (for admin UI rendering).
 	 *
+	 * Each row's urgency reads `notificationUrgency`. It was `priority`, which
+	 * made an admin screen show two columns called priority on two different
+	 * vocabularies, neither of them the one a handler sorts the queue by.
+	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 * @spec openspec/changes/case-priority-impact-urgency/specs/case-priority/spec.md
 	 */
 	public function matrix(): array {
 		return self::DEFAULT_MATRIX;

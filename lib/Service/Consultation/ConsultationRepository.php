@@ -18,10 +18,6 @@
  * is unconfigured, while {@see deleteConsultation()} throws — a delete that
  * silently did nothing would read as success to its caller.
  *
- * {@see findBySecureToken()} additionally refuses terminal consultations
- * (afgesloten / ingetrokken): the token is a public, unauthenticated surface,
- * so a closed consultation must stop resolving rather than stay readable.
- *
  * @category Service
  * @package  OCA\Dossiq\Service\Consultation
  *
@@ -214,63 +210,6 @@ class ConsultationRepository {
 		return $overdue;
 	}//end getOverdueConsultations()
 
-	/**
-	 * Find a consultation by its secure token (for external body public access).
-	 *
-	 * Returns null when the token is invalid, the consultation is not found,
-	 * or the consultation is in a terminal status (afgesloten / ingetrokken).
-	 *
-	 * @param string $token The 64-character hex secure token
-	 *
-	 * @return array<string, mixed>|null Consultation data or null
-	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
-	 */
-	public function findBySecureToken(string $token): ?array {
-		if (strlen($token) < 32) {
-			return null;
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			return null;
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('consultation_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return null;
-		}
-
-		try {
-			$results = $this->searchObjectsAsArrays(
-				objectService: $objectService,
-				register: $register,
-				schema: $schema,
-				filters: ['secureToken' => $token, '_limit' => 1],
-			);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq: failed to find consultation by token: ' . $e->getMessage(),
-				['app' => Application::APP_ID],
-			);
-			return null;
-		}
-
-		if (empty($results) === true) {
-			return null;
-		}
-
-		$consultation = $results[0];
-		$status = $consultation['status'] ?? '';
-
-		if ($status === 'closed' || $status === 'withdrawn') {
-			return null;
-		}
-
-		return $consultation;
-	}//end findBySecureToken()
 
 	/**
 	 * Generate a unique consultation number in ADV-{year}-{seq} format.

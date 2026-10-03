@@ -23,9 +23,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Term\TermResolution;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -66,8 +66,20 @@ class ComplaintService {
 
 	/**
 	 * Awb chapter 9 acknowledgment deadline in working days.
+	 *
+	 * 🔴 THIS IS NOW THE FALLBACK, NOT THE RULE. The first-response term is
+	 * declared like any other term, on the case type, so an instance that
+	 * agreed a different norm can say so and a service manager can see whether
+	 * it was met. The constant stays as the value an instance that declares
+	 * nothing gets, which is what every complaint got before it was
+	 * declarable: five working days, the same dates as today.
 	 */
 	private const AWB_ACK_WORKING_DAYS = 5;
+
+	/**
+	 * The case type a complaint is, for resolving its first-response term.
+	 */
+	private const COMPLAINT_CASE_TYPE = 'klacht';
 
 	/**
 	 * Awb chapter 9 resolution deadline in calendar weeks.
@@ -86,13 +98,47 @@ class ComplaintService {
 	 * @param LoggerInterface $logger Logger
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
 	 *                                          arithmetic for the Awb deadlines
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param TermResolution|null $resolution The case type's own first-response
+	 *                                        term, which wins over the Awb
+	 *                                        default when one is declared.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly WorkingDayCalculator $workingDays,
+		private readonly CaseDateNormaliser $dates,
+		private readonly ?TermResolution $resolution = null,
 	) {
 	}//end __construct()
+
+	/**
+	 * How many working days the acknowledgement is promised within.
+	 *
+	 * The declaration wins when a case type carries a `firstResponse` term;
+	 * otherwise the Awb chapter 9 constant, which is the value every complaint
+	 * had before this was declarable. Behaviour parity is the point: an
+	 * instance that declares nothing keeps exactly the dates it has today.
+	 *
+	 * @return int The working days.
+	 *
+	 * @spec openspec/changes/term-configuration-beyond-the-case-type/specs/termijnbewaking-schemas/spec.md#requirement-a-case-type-declares-a-first-response-term-and-the-overrun-is-stored-req-tcf-01
+	 */
+	private function acknowledgementDays(): int {
+		$resolved = $this->resolution?->resolve(
+			caseType: self::COMPLAINT_CASE_TYPE,
+			context: [],
+			kind: TermKind::FIRST_RESPONSE
+		);
+
+		$declared = (int)($resolved['definition']['standardDurationDays'] ?? 0);
+
+		if ($declared > 0) {
+			return $declared;
+		}
+
+		return self::AWB_ACK_WORKING_DAYS;
+	}//end acknowledgementDays()
 
 	/**
 	 * Create a new complaint.
@@ -122,28 +168,38 @@ class ComplaintService {
 
 		$receiptDate = $data['receiptDate'];
 
-		// Generate klachtnummer.
-		$data['complaintNumber'] = $this->generateComplaintNumber();
+		// The klachtnummer is NOT set here. `complaintNumber` declares
+		// `x-openregister-generated` (sequence `complaint`, KL-{year}-{seq:4}),
+		// so OpenRegister issues it under a lock inside the create transaction
+		// and refuses any later change to it.
 		$data['status'] = 'received';
-		$data['priority'] = $data['priority'] ?? 'normal';
 		$data['postponementPossible'] = true;
 
-		// Compute Awb deadlines.
-		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(startDate: $receiptDate, days: self::AWB_ACK_WORKING_DAYS);
+		// Compute Awb deadlines. The acknowledgement is the complaint's
+		// first-response term, so it comes from the declaration when there is
+		// one and from the Awb constant when there is not.
+		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(
+			startDate: $receiptDate,
+			days: $this->acknowledgementDays()
+		);
 		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $receiptDate, weeks: self::AWB_RESOLUTION_WEEKS);
 
 		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
+		$saved = $complaint;
+		if (is_array($complaint) === false) {
+			$saved = array_merge($data, (array)$complaint->getObject(), ['id' => $complaint->getUuid()]);
+		}
+
+		// The number is read off the SAVED complaint, never off `$data`: `$data`
+		// never held one, and a log line that invented its own would name a
+		// number no complaint carries.
 		$this->logger->info(
-			'Complaint created: ' . $data['complaintNumber'],
+			'Complaint created: ' . (string)($saved['complaintNumber'] ?? 'number pending'),
 			['app' => Application::APP_ID],
 		);
 
-		if (is_array($complaint) === true) {
-			return $complaint;
-		}
-
-		return array_merge($data, ['id' => $complaint->getUuid()]);
+		return $saved;
 	}//end createComplaint()
 
 	/**
@@ -298,7 +354,8 @@ class ComplaintService {
 			throw new RuntimeException('Justificatie is required for verdaging per Awb chapter 9');
 		}
 
-		$currentDeadline = $complaint['afhandelDeadline'] ?? date('Y-m-d');
+		$currentDeadline = ($this->dates->toCalendarDateOrNull($complaint['afhandelDeadline'] ?? null)
+			?? $this->dates->todayAsCalendarDate());
 		$newDeadline = $this->addCalendarWeeks(startDate: $currentDeadline, weeks: self::AWB_VERDAGING_WEEKS);
 
 		$updateData = [
@@ -354,17 +411,16 @@ class ComplaintService {
 	public function getDeadlineAlerts(int $warningDays = 3): array {
 		$activeStatuses = ['received', 'receipt_confirmed', 'in_handling', 'hoorgesprek_planned', 'hoorgesprek_completed'];
 		$all = $this->listComplaints(filters: ['status' => $activeStatuses]);
-		$today = new DateTimeImmutable('today');
+		$today = $this->dates->today();
 		$overdue = [];
 		$warning = [];
 
 		foreach ($all as $complaint) {
-			$deadline = $complaint['afhandelDeadline'] ?? null;
-			if ($deadline === null) {
+			$deadlineDate = $this->dates->tryParse($complaint['afhandelDeadline'] ?? null);
+			if ($deadlineDate === null) {
 				continue;
 			}
 
-			$deadlineDate = new DateTimeImmutable($deadline);
 			$diff = (int)$today->diff($deadlineDate)->days;
 			$isPast = $today > $deadlineDate;
 
@@ -389,8 +445,8 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addWorkingDays(string $startDate, int $days): string {
-		$start = new DateTimeImmutable($startDate);
-		return $this->workingDays->addWorkingDays(start: $start, days: $days)->format('Y-m-d');
+		$start = $this->dates->parse($startDate, 'receiptDate');
+		return $this->dates->formatCalendarDate($this->workingDays->addWorkingDays(start: $start, days: $days));
 	}//end addWorkingDays()
 
 	/**
@@ -404,9 +460,8 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function addCalendarWeeks(string $startDate, int $weeks): string {
-		$date = new DateTimeImmutable($startDate);
-		$date = $date->modify('+' . $weeks . ' weeks');
-		return $date->format('Y-m-d');
+		$date = $this->dates->parse($startDate, 'receiptDate')->modify('+' . $weeks . ' weeks');
+		return $this->dates->formatCalendarDate($date);
 	}//end addCalendarWeeks()
 
 	/**
@@ -421,44 +476,6 @@ class ComplaintService {
 	public function isWorkingDay(\DateTimeImmutable $date): bool {
 		return $this->workingDays->isWorkingDay(date: $date);
 	}//end isWorkingDay()
-
-	/**
-	 * Generate the next sequential klachtnummer for the current year.
-	 *
-	 * @return string Klachtnummer in format KL-{year}-{sequence}
-	 *
-	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
-	 */
-	private function generateComplaintNumber(): string {
-		$year = date('Y');
-		$objectService = $this->settingsService->getObjectService();
-
-		if ($objectService === null) {
-			return 'KL-' . $year . '-' . str_pad((string)rand(1, 9999), 4, '0', STR_PAD_LEFT);
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('complaint_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			return 'KL-' . $year . '-0001';
-		}
-
-		// Count existing complaints this year.
-		$yearStart = $year . '-01-01';
-		$yearEnd = $year . '-12-31';
-
-		$existing = $this->searchObjectsAsArrays(
-			objectService: $objectService,
-			register: $register,
-			schema: $schema,
-			filters: ['ontvangstdatum>=' => $yearStart, 'ontvangstdatum<=' => $yearEnd, '_limit' => 10000]
-		);
-
-		$count = count($existing);
-
-		return 'KL-' . $year . '-' . str_pad((string)($count + 1), 4, '0', STR_PAD_LEFT);
-	}//end generateKlachtnummer()
 
 	/**
 	 * Validate that required fields are present and non-empty.

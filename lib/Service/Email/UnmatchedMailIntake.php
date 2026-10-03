@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Email;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AssigneeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -139,6 +140,21 @@ class UnmatchedMailIntake {
 			'assignee' => $this->assigneeFor(caseTypeId: $caseTypeId),
 		];
 
+		// 🔴 THE SENDER IS THE ONLY ADDRESS THIS CASE WILL EVER HAVE, so it is
+		// written as a field rather than left in the description. Awb 4:3a owes
+		// this sender a confirmation of receipt, and until this line the
+		// address existed only inside a prose sentence no code could read:
+		// `AcknowledgementService` would refuse every mail-filed case for
+		// having nowhere to send to. `initiatorSourceId` is the schema's own
+		// place for "the initiator's reference in its source", and for a
+		// message that arrived by mail that reference is the address it came
+		// from.
+		$sender = $this->senderAddress(message: $message);
+		if ($sender !== '') {
+			$payload['initiatorSourceId'] = $sender;
+			$payload['initiatorType'] = 'contact';
+		}
+
 		try {
 			$created = $objectService->saveObject(
 				object: $payload,
@@ -169,6 +185,33 @@ class UnmatchedMailIntake {
 
 		return $caseId;
 	}//end caseFor()
+
+	/**
+	 * The address this mail came from, when it is one.
+	 *
+	 * @param array<string, mixed> $message The normalised message row.
+	 *
+	 * @return string The lowercased address, or '' when the row names none.
+	 *
+	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
+	 */
+	private function senderAddress(array $message): string {
+		$from = trim((string)($message['from'] ?? ''));
+		if ($from === '') {
+			return '';
+		}
+
+		// A From header is often `Naam <adres@example.nl>`. Take the address.
+		if (preg_match('/<([^>]+)>/', $from, $matches) === 1) {
+			$from = trim($matches[1]);
+		}
+
+		if (filter_var($from, FILTER_VALIDATE_EMAIL) === false) {
+			return '';
+		}
+
+		return strtolower($from);
+	}//end senderAddress()
 
 	/**
 	 * The title the case takes from the mail.
@@ -245,8 +288,14 @@ class UnmatchedMailIntake {
 
 		$row = $this->normaliseObjectRow(row: $caseType);
 
+		// Through CaseTypeHandling, so the block an administrator filled in on
+		// the case type wins and `defaultAssignee` is the fallback for a type
+		// nobody has migrated. Reading the raw property here is how one of the
+		// three readers of this value kept answering the old one.
 		return $this->assignees->resolve(
-			primary: $this->assignees->referenceId(value: ($row['defaultAssignee'] ?? '')),
+			primary: $this->assignees->referenceId(
+				value: (new CaseTypeHandling())->defaultHandler(caseType: $row)
+			),
 			fallback: '',
 			case: []
 		);

@@ -71,9 +71,29 @@ const manifest = () => JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
  * compares the head count with the base and fires on any growth, with no
  * `_note` escape of the kind rule (b) offers. So this PR reds that gate by
  * exactly one finding, deliberately.
+ *
+ * Moved 12 -> 13 on 2026-09-14 by `CasesDeleted` (case-recycle-window 1.2),
+ * and this one had no choice either. A `type: "index"` page binds a register
+ * and a schema and fetches the objects endpoint, and that endpoint excludes
+ * soft-deleted rows BY DESIGN: the deleted cases live in OpenRegister's trash
+ * and answer on their own door. An index page pointed at the case schema
+ * would therefore render an empty list and look like a working lens over an
+ * empty trash, which is the exact failure the lens exists to prevent. The
+ * unit comes back the day CnIndexPage grows an `entitySource` that can name
+ * the trash, the same condition the two entries above are waiting on.
+ *
+ * Moved 13 -> 15 on 2026-09-16 by `one-personal-queue` (#2842), which adds
+ * PersonalQueue and EndOfDay. Both raise BOTH numbers, because neither has
+ * anything to do with the case-tasks retype this file measures: the delta
+ * between them is the one unit the retype spends, and that is what the
+ * assertion below reads. An index page can name one register and one schema;
+ * the personal queue spans cases, engine tasks, consultations, advice
+ * requests, mentions, covered work and calendar items, and the end-of-day
+ * screen reads OpenRegister's per-reader read state. No manifest key names
+ * either set.
  */
-const CUSTOM_PAGE_COUNT_BEFORE = 11
-const CUSTOM_PAGE_COUNT_AFTER = 12
+const CUSTOM_PAGE_COUNT_BEFORE = 14
+const CUSTOM_PAGE_COUNT_AFTER = 15
 
 /**
  * One page as the manifest declares it.

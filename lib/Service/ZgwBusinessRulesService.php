@@ -72,8 +72,6 @@ class ZgwBusinessRulesService {
 	 *
 	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
 	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList)
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag)    — ZGW scope flag from middleware
 	 *

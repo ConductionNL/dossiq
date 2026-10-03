@@ -553,7 +553,8 @@
 									"pm.test('409 Conflict (guard failed, NOT 500)', () => pm.response.to.have.status(409));",
 									"pm.test('not a 500', () => pm.expect(pm.response.code).to.not.eql(500));",
 									"const b = pm.response.json();",
-									"pm.test('static error message (no leaked exception text)', () => pm.expect(b.error).to.eql('Transition is not available'));",
+									"pm.test('names the rule in error (refusals-carry-a-status)', () => pm.expect(b.error).to.eql('transition-guard-failed'));",
+									"pm.test('static sentence, no leaked exception text', () => { pm.expect(b.message).to.eql('This move is blocked by a rule on the case.'); pm.expect(b.message).to.not.include('Exception'); });",
 									"pm.test('reports the failed guards', () => { pm.expect(b.failedGuards).to.be.an('array').that.is.not.empty; pm.expect(b.failedGuards[0]).to.have.property('passed', false); });"
 								],
 								"type": "text/javascript"

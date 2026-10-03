@@ -32,8 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Stuf;
 
-use DateTimeImmutable;
-use DateTimeZone;
+use OCA\Dossiq\Service\CaseDateNormaliser;
 
 /**
  * Stores and looks up case → zaak mappings.
@@ -47,11 +46,13 @@ class StufCaseMappingStore {
 	 * Constructor.
 	 *
 	 * @param StufRegisterAccess $register The register access helper.
+	 * @param CaseDateNormaliser $dates The one date write path, which owns the zone.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private StufRegisterAccess $register,
+		private CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -125,14 +126,11 @@ class StufCaseMappingStore {
 	}//end identity()
 
 	/**
-	 * The current synchronisation moment in Europe/Amsterdam, ISO-8601.
+	 * The current synchronisation moment in the administered zone, ISO-8601.
 	 *
 	 * @return string The timestamp.
 	 */
 	private function now(): string {
-		return (new DateTimeImmutable(
-			datetime: 'now',
-			timezone: new DateTimeZone(timezone: 'Europe/Amsterdam')
-		))->format(format: 'c');
+		return $this->dates->nowAsMoment();
 	}//end now()
 }//end class

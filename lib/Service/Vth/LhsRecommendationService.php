@@ -52,9 +52,6 @@ use RuntimeException;
  *
  * @spec openspec/changes/enforcement-lhs/tasks.md#T03
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates OpenRegister,
- *   user-session, settings bridge, and logger.
- *
  * @psalm-suppress UnusedClass
  */
 class LhsRecommendationService {

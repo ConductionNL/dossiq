@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\Conversation\TalkConversationBroker;
 use OCA\Dossiq\Service\HearingCalendarService;
 use OCA\Dossiq\Service\HearingService;
 use OCA\Dossiq\Service\SettingsService;
@@ -111,6 +112,11 @@ class HearingServiceTest extends TestCase {
 	private HearingCalendarService $calendarService;
 
 	/**
+	 * @var TalkConversationBroker|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private TalkConversationBroker $talkBroker;
+
+	/**
 	 * @var HearingService
 	 */
 	private HearingService $service;
@@ -124,11 +130,13 @@ class HearingServiceTest extends TestCase {
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->calendarService = $this->createMock(HearingCalendarService::class);
+		$this->talkBroker = $this->createMock(TalkConversationBroker::class);
 
 		$this->service = new HearingService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			calendarService: $this->calendarService,
+			talkBroker: $this->talkBroker,
 		);
 	}//end setUp()
 

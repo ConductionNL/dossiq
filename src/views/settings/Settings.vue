@@ -2,7 +2,7 @@
 	<CnSettingsSection
 		:name="t('dossiq', 'Configuration')"
 		:description="t('dossiq', 'Register and schema settings')"
-		docUrl="https://procest.conduction.nl/docs/intro"
+		docUrl="https://dossiq.conduction.nl/docs/intro"
 		:loading="loading">
 		<template #actions>
 			<NcButton type="primary" @click="save">

@@ -1,0 +1,89 @@
+{
+  "_note": "notifications-route-by-role-and-domain. Consumes openregister#3757 (notification-routing-per-group-and-scope). THREE declarations, none of which resolves a recipient in PHP. ONE, `case.authorization.roles` says which Nextcloud groups hold each role a notification rule may address. The dispatcher reads this map to turn `{kind: role, role: behandelaar}` into the people to tell, and it reads it at dispatch, so a colleague who joins the team tomorrow is reached by a rule written today. The same map is what a lifecycle transition reads, so the assignment changes in one place instead of in every rule that names the role. Every group named here is provisioned by \\OCA\\Dossiq\\Repair\\ProvisionAssignedGroups; a role assigned a group the server does not have records `recipient-unresolved` rather than delivering to nobody in silence, which is why the two lists are swept against each other by AuthorizationRolesAreProvisionedTest. TWO, each rule declares the `domain` it belongs to, which becomes the scope `domain:<name>`. A person may then pin one preference to `domain:zaken` and another to `domain:werkvoorraad`, and the dispatcher matches the rule's own domain. The domain is a literal on the rule, not a field read off the object: OpenRegister resolves no per-object domain, so dossiq declares one domain per rule and `caseType.notificationDomain` offers exactly those, never a free word that would pin a preference nothing ever matches. THREE, `caseType.notificationDomain` is the authoring surface for which domain a case type's notices fall under. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "case": {
+        "authorization": {
+          "roles": {
+            "behandelaar": [
+              "behandelaars"
+            ],
+            "coordinator": [
+              "coordinatoren"
+            ],
+            "zaakteam": [
+              "behandelaars",
+              "coordinatoren"
+            ]
+          }
+        },
+        "x-openregister-notifications": {
+          "caseAssigned": {
+            "domain": "zaken",
+            "recipients": [
+              {
+                "kind": "role",
+                "role": "coordinator"
+              }
+            ],
+            "message": {
+              "nl": "Deze zaak staat nu op jouw naam. Open de zaak om te zien wat er speelt.",
+              "en": "This case is now in your name. Open it to see where it stands."
+            }
+          },
+          "caseHandoffIntake": {
+            "domain": "zaken",
+            "recipients": [
+              {
+                "kind": "role",
+                "role": "zaakteam"
+              }
+            ],
+            "message": {
+              "nl": "Een andere organisatie draagt deze zaak aan jullie over. Controleer de gegevens en begin de behandeling.",
+              "en": "Another organisation handed this case to you. Check the details and start work on it."
+            }
+          }
+        }
+      },
+      "caseType": {
+        "properties": {
+          "notificationDomain": {
+            "type": "string",
+            "title": "Notification domain",
+            "description": "Which notification domain this case type's notices fall under. A person pins a notification preference to a domain, so the value offered here is exactly the set the shipped rules declare: a free word would store a preference the dispatcher never matches, which reads as a switch that does nothing. Leave it on Zaken unless this type's work is genuinely a different slice.",
+            "enum": [
+              "zaken",
+              "waarneming",
+              "werkvoorraad"
+            ],
+            "default": "zaken",
+            "facetable": true
+          }
+        }
+      },
+      "substitution": {
+        "x-openregister-notifications": {
+          "substitutionRegisteredForSubstitute": {
+            "domain": "waarneming",
+            "message": {
+              "nl": "Je neemt het werk van {{absentee}} waar. Hun zaken staan vanaf nu in je eigen werkvoorraad.",
+              "en": "You are standing in for {{absentee}}. Their cases are in your own queue from now on."
+            }
+          }
+        }
+      },
+      "workDigest": {
+        "x-openregister-notifications": {
+          "workDigestReady": {
+            "domain": "werkvoorraad",
+            "message": {
+              "nl": "Open je werkvoorraad om te zien wat er wacht en wat er over tijd is.",
+              "en": "Open your queue to see what is waiting and what has run late."
+            }
+          }
+        }
+      }
+    }
+  }
+}

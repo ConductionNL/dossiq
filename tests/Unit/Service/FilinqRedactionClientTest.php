@@ -554,4 +554,174 @@ class FilinqRedactionClientTest extends TestCase {
 		$this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
 	}//end testRedactRefusesWhenFilinqThrows()
 
+	/**
+	 * Point the container at a filinq whose anonymisation answers or throws as given.
+	 *
+	 * @param callable     $anonymize    What anonymizeDocument does: returns the result or throws.
+	 * @param array<mixed> $entities     What extraction detected.
+	 * @param object|null  $backendState OpenRegister's backend-state double, or null.
+	 *
+	 * @return void
+	 */
+	private function givenFilinqThat(callable $anonymize, array $entities, ?object $backendState = null): void {
+		$service = new class($anonymize, $entities) {
+
+			/**
+			 * Constructor.
+			 *
+			 * @param mixed        $anonymize What anonymizeDocument does.
+			 * @param array<mixed> $entities  What extraction detected.
+			 */
+			public function __construct(private $anonymize, private array $entities) {
+			}
+
+			/**
+			 * Filinq's entity extraction.
+			 *
+			 * @param int $fileId The Nextcloud file id.
+			 *
+			 * @return array<string, mixed> The extraction result.
+			 */
+			public function extractAndDetectEntities(int $fileId): array {
+				return ['entities' => $this->entities];
+			}
+
+			/**
+			 * Filinq's anonymisation, filinq fix/anonymisation-fails-closed 44d5fc0c signature.
+			 *
+			 * @param int               $fileId       The Nextcloud file id.
+			 * @param array<int, mixed> $entities     The entities to redact.
+			 * @param string            $outputFormat The output format.
+			 * @param array<int, mixed> $unredacted   Entities published unredacted.
+			 * @param array<int, mixed> $overrides    Acknowledged overrides.
+			 * @param string            $userId       The acting user.
+			 *
+			 * @return array<string, mixed> The anonymisation result.
+			 */
+			public function anonymizeDocument(
+				int $fileId,
+				array $entities,
+				string $outputFormat = 'pdf-only',
+				array $unredacted = [],
+				array $overrides = [],
+				string $userId = '',
+			): array {
+				return ($this->anonymize)();
+			}
+		};
+
+		$this->container->method('get')->willReturnCallback(
+			static function (string $id) use ($service, $backendState): object {
+				if ($id === self::FILINQ_ANONYMIZATION) {
+					return $service;
+				}
+
+				if ($id === self::OR_BACKEND_STATE && $backendState !== null) {
+					return $backendState;
+				}
+
+				throw new class('not registered') extends \Exception implements \Psr\Container\NotFoundExceptionInterface {
+				};
+			}
+		);
+	}//end givenFilinqThat()
+
+	/**
+	 * A run filinq refuses for want of a live detector is its own outcome (dossiq#3191).
+	 *
+	 * Filinq throws its real DetectionUnavailableException and writes no file.
+	 * That is not a document with nothing to remove and not a broken filinq:
+	 * the repair is to switch detection on. So it is reported, not thrown, with
+	 * filinq's reason and the backend it named.
+	 *
+	 * @return void
+	 */
+	public function testARunWithNoLiveDetectorIsReportedWithFilinqsReason(): void {
+		$this->givenFilinqThat(
+			static function (): array {
+				throw new \OCA\Filinq\Exception\DetectionUnavailableException(
+					\OCA\Filinq\Exception\DetectionUnavailableException::REASON_UNAVAILABLE,
+					'The entity detector presidio is unavailable.',
+					'presidio'
+				);
+			},
+			[]
+		);
+
+		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertSame('detection_unavailable', $outcome['status']);
+		$this->assertSame('detection_backend_unavailable', $outcome['detectionUnavailable']);
+		$this->assertSame('presidio', $outcome['detectionBackend']);
+		$this->assertNull($outcome['anonymizedFileId']);
+	}//end testARunWithNoLiveDetectorIsReportedWithFilinqsReason()
+
+	/**
+	 * A refusal that names no backend reports it as unknown.
+	 *
+	 * @return void
+	 */
+	public function testARefusalWithoutABackendReportsItAsUnknown(): void {
+		$this->givenFilinqThat(
+			static function (): array {
+				throw new \OCA\Filinq\Exception\DetectionUnavailableException(
+					\OCA\Filinq\Exception\DetectionUnavailableException::REASON_DISABLED,
+					'Entity detection is disabled.'
+				);
+			},
+			[['type' => 'PERSON']]
+		);
+
+		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertSame('detection_unavailable', $outcome['status']);
+		$this->assertSame('detection_disabled', $outcome['detectionUnavailable']);
+		$this->assertNull($outcome['detectionBackend']);
+	}//end testARefusalWithoutABackendReportsItAsUnknown()
+
+	/**
+	 * The backend that looked is read from filinq's result when it names one.
+	 *
+	 * Filinq now reports the detector its own gate found live for this run,
+	 * which is closer to the truth than a second read of OpenRegister's state.
+	 *
+	 * @return void
+	 */
+	public function testTheBackendThatLookedIsReadFromFilinqsResult(): void {
+		$this->givenFilinqThat(
+			static fn (): array => [
+				'anonymizedFileId' => 991,
+				'detection' => ['ran' => true, 'backend' => 'presidio', 'entitiesRedacted' => 2, 'outcome' => 'redacted'],
+			],
+			[['type' => 'PERSON'], ['type' => 'BSN']],
+			$this->backendStateDouble('regex')
+		);
+
+		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertSame('redacted', $outcome['status']);
+		$this->assertSame('presidio', $outcome['detectionBackend']);
+		$this->assertSame('redacted', $outcome['detectionOutcome']);
+	}//end testTheBackendThatLookedIsReadFromFilinqsResult()
+
+	/**
+	 * Filinq's `nothing_found` is not a redaction, whatever the entity list said.
+	 *
+	 * @return void
+	 */
+	public function testFilinqsNothingFoundIsNotCalledRedacted(): void {
+		$this->givenFilinqThat(
+			static fn (): array => [
+				'anonymizedFileId' => 991,
+				'detection' => ['ran' => true, 'backend' => 'presidio', 'entitiesRedacted' => 0, 'outcome' => 'nothing_found'],
+			],
+			[['type' => 'PERSON']]
+		);
+
+		$outcome = $this->client()->redact('case-1', ['id' => 'doc-1', 'fileId' => 55]);
+
+		$this->assertSame('no_entities_detected', $outcome['status']);
+		$this->assertSame('presidio', $outcome['detectionBackend']);
+	}//end testFilinqsNothingFoundIsNotCalledRedacted()
+
 }//end class

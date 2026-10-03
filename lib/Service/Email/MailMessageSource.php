@@ -108,6 +108,45 @@ class MailMessageSource {
 	}//end accountsOf()
 
 	/**
+	 * Every Mail account on the instance.
+	 *
+	 * Intake runs on a cron with no session, so the per-user listing above
+	 * answers nothing there. An administrator picks the tenant's declared intake
+	 * account from this list, which is why it is not scoped to the caller: the
+	 * functional mailbox is normally owned by a service account nobody logs in
+	 * as. The endpoint that serves it is admin-only for exactly that reason.
+	 *
+	 * @return array<int, array{id: int, name: string, email: string}> The accounts, by name.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	public function allAccounts(): array {
+		try {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('id', 'name', 'email')
+				->from('mail_accounts')
+				->orderBy('name', 'ASC');
+
+			$result = $qb->executeQuery();
+			$accounts = [];
+			while (($row = $result->fetch()) !== false) {
+				$accounts[] = [
+					'id' => (int) ($row['id'] ?? 0),
+					'name' => (string) ($row['name'] ?? ''),
+					'email' => (string) ($row['email'] ?? ''),
+				];
+			}
+
+			$result->closeCursor();
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: listing every Mail account failed: ' . $e->getMessage());
+			return [];
+		}//end try
+
+		return $accounts;
+	}//end allAccounts()
+
+	/**
 	 * Whether a Mail account belongs to a user.
 	 *
 	 * A lookup that fails answers no. There is no reading of an unreadable
@@ -218,4 +257,136 @@ class MailMessageSource {
 
 		return $messages;
 	}//end listMessagesSince()
+
+	/**
+	 * The user a Mail account belongs to.
+	 *
+	 * Intake runs on a cron with no session, and Nextcloud Mail scopes its
+	 * trusted-sender list per user, so the only identity intake can name is the
+	 * one that owns the mailbox it is reading.
+	 *
+	 * @param int $accountId The Mail account id.
+	 *
+	 * @return string The user id, or '' when the account cannot be read.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	public function ownerOf(int $accountId): string {
+		if ($accountId <= 0) {
+			return '';
+		}
+
+		try {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('user_id')
+				->from('mail_accounts')
+				->where($qb->expr()->eq('id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
+				->setMaxResults(1);
+
+			$result = $qb->executeQuery();
+			$row = $result->fetch();
+			$result->closeCursor();
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: reading the Mail account owner failed: ' . $e->getMessage());
+			return '';
+		}
+
+		if (is_array($row) === false) {
+			return '';
+		}
+
+		return (string) ($row['user_id'] ?? '');
+	}//end ownerOf()
+
+	/**
+	 * The folders one account holds.
+	 *
+	 * @param int $accountId The Mail account id.
+	 *
+	 * @return array<int, string> The folder names.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	public function mailboxesOf(int $accountId): array {
+		if ($accountId <= 0) {
+			return [];
+		}
+
+		try {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('name')
+				->from('mail_mailboxes')
+				->where($qb->expr()->eq('account_id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
+				->orderBy('name', 'ASC');
+
+			$result = $qb->executeQuery();
+			$names = [];
+			while (($row = $result->fetch()) !== false) {
+				$names[] = (string) ($row['name'] ?? '');
+			}
+
+			$result->closeCursor();
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: listing Mail folders failed: ' . $e->getMessage());
+			return [];
+		}//end try
+
+		return array_values(array_filter($names));
+	}//end mailboxesOf()
+
+	/**
+	 * The messages waiting in one folder of one account, oldest first.
+	 *
+	 * Only the fields intake cannot get from the raw source: its database id,
+	 * the IMAP uid the raw source is fetched BY, and the folder name. Sender,
+	 * subject and every threading header are read off the source itself, so this
+	 * query never touches the recipients table and cannot drift with its shape.
+	 *
+	 * @param int    $accountId The Mail account id.
+	 * @param string $mailbox   The folder name.
+	 * @param int    $sinceId   The last processed message id.
+	 * @param int    $limit     The most messages to return.
+	 *
+	 * @return array<int, array{id: int, uid: int, mailbox: string, messageId: string, subject: string, sentAt: string}>
+	 *         The messages.
+	 *
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 */
+	public function listMailboxMessagesSince(int $accountId, string $mailbox, int $sinceId, int $limit): array {
+		if ($accountId <= 0 || $mailbox === '' || $limit <= 0) {
+			return [];
+		}
+
+		try {
+			$qb = $this->db->getQueryBuilder();
+			$qb->select('m.id', 'm.uid', 'm.message_id', 'm.subject', 'm.sent_at', 'mb.name')
+				->from('mail_messages', 'm')
+				->join('m', 'mail_mailboxes', 'mb', $qb->expr()->eq('mb.id', 'm.mailbox_id'))
+				->where($qb->expr()->eq('mb.account_id', $qb->createNamedParameter($accountId, IQueryBuilder::PARAM_INT)))
+				->andWhere($qb->expr()->eq('mb.name', $qb->createNamedParameter($mailbox)))
+				->andWhere($qb->expr()->gt('m.id', $qb->createNamedParameter($sinceId, IQueryBuilder::PARAM_INT)))
+				->orderBy('m.id', 'ASC')
+				->setMaxResults($limit);
+
+			$result = $qb->executeQuery();
+			$messages = [];
+			while (($row = $result->fetch()) !== false) {
+				$messages[] = [
+					'id' => (int) ($row['id'] ?? 0),
+					'uid' => (int) ($row['uid'] ?? 0),
+					'mailbox' => (string) ($row['name'] ?? $mailbox),
+					'messageId' => (string) ($row['message_id'] ?? ''),
+					'subject' => (string) ($row['subject'] ?? ''),
+					'sentAt' => (string) ($row['sent_at'] ?? ''),
+				];
+			}
+
+			$result->closeCursor();
+		} catch (Throwable $e) {
+			$this->logger->warning('Dossiq: listing the intake folder failed: ' . $e->getMessage());
+			return [];
+		}//end try
+
+		return $messages;
+	}//end listMailboxMessagesSince()
 }//end class

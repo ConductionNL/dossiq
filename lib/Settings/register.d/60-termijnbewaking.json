@@ -16,9 +16,9 @@
       "deadlineDefinition": {
         "slug": "deadlineDefinition",
         "icon": "TimerOutline",
-        "version": "1.0.0",
+        "version": "1.3.0",
         "x-schema-org": "schema:DefinedTerm",
-        "title": "Termijn Definitie",
+        "title": "Term definition",
         "description": "Versioned deadline definition for a zaaktype under the AWB. Sets standard duration, allowed extensions, pause regime, and any custom dwangsom regime (e.g. Woo €15/day max €500).",
         "type": "object",
         "required": [
@@ -36,7 +36,7 @@
           },
           "legalBasis": {
             "type": "string",
-            "title": "Legal Basis",
+            "title": "Legal basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'Wabo 3.9')",
             "maxLength": 255
           },
@@ -51,6 +51,24 @@
             "title": "Standard Duration Weeks",
             "description": "Standard duration in weeks (alternative representation)",
             "minimum": 0
+          },
+          "countingMode": {
+            "type": "string",
+            "enum": [
+              "calendarDays",
+              "workingDays"
+            ],
+            "default": "calendarDays",
+            "title": "Counting mode",
+            "description": "Whether this term counts every day or only the days the organisation works. An Awb beslistermijn counts calendar days, which is why that is the default and why shipping this property moves no date anybody is already counting on. A service norm, an internal handling term and a KCC callback count working days, and until now they could not. The working days are the organisation calendar's, not a list dossiq keeps, and the armed timer carries the same mode so the badge and the engine count down to one date.",
+            "facetable": true
+          },
+          "rollToWorkingDay": {
+            "type": "boolean",
+            "title": "Roll to the next ordinary day",
+            "description": "Move an end date off a closed day. A term ending on a weekend or a public holiday moves to the next ordinary day. The organisation calendar decides which days are closed. Leave this on unless the Algemene termijnenwet (Awt) does not govern this term.",
+            "x-notes": "On by default because Awt art. 1 applies by law and not by configuration: the switch exists to turn the roll OFF for a term the Awt does not govern. The days it moves over are the organisation calendar's, not a list dossiq keeps. `TermEndRoll::rollEnabled()` has always read a definition carrying no flag as rolling, so the default matches the behaviour that predates the property.",
+            "default": true
           },
           "extensionCapacity": {
             "type": "integer",
@@ -93,17 +111,93 @@
               }
             }
           },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "statutory",
+              "planned",
+              "internal",
+              "phase",
+              "firstResponse"
+            ],
+            "default": "statutory",
+            "title": "Kind",
+            "description": "Which clock this definition sets. A first-response term is the promise every service desk makes, that you hear from us within so many days, and it is an ordinary term rather than a second mechanism. An absent value reads as statutory, because every definition written before the kinds existed is one.",
+            "facetable": true
+          },
+          "organisation": {
+            "type": "string",
+            "title": "Organisation",
+            "description": "The organisation this term is agreed with. A gemeenschappelijke regeling runs one case type for five municipalities that agreed different norms, and without this the case type has to be duplicated five times and drifts. Empty means the term is the case type's own.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "service": {
+            "type": "string",
+            "title": "Service",
+            "description": "The service this term belongs to, for a case type offered at more than one service level. Empty means it applies to every service.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "priority": {
+            "type": "string",
+            "title": "Priority",
+            "description": "The derived priority this term applies to, read from the case's own priority (REQ-PRI-02) and never from a second priority field. Empty means it applies at every priority.",
+            "facetable": true,
+            "maxLength": 255
+          },
+          "runsInStatuses": {
+            "type": "array",
+            "title": "Runs in statuses",
+            "description": "The statuses this clock runs in. In any other status the engine timer is suspended, and resuming moves the end date by what was banked, so a case sitting with an external adviser does not burn the same clock as one on a handler's desk. An empty list means the clock runs in every status, which is how every term behaved before this was declarable.",
+            "items": {
+              "type": "string"
+            }
+          },
+          "escalationLadder": {
+            "type": "array",
+            "title": "Escalation ladder",
+            "description": "The rungs this term escalates on, each either a number of days before the end or a share of the whole term. A share is resolved to a date when the timer is armed, so the engine ladder stays the ladder and dossiq adds no second escalation. A quarter of a six-week term and a quarter of a twenty-six-week term mean the same thing to a handler and different dates to the timer, which is the point.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string",
+                  "title": "Message",
+                  "description": "What the escalation says when this rung is reached."
+                },
+                "days": {
+                  "type": "integer",
+                  "title": "Days before the end",
+                  "minimum": 0,
+                  "description": "How many days before the end of the term this rung fires. Set this or a share, not both."
+                },
+                "share": {
+                  "type": "number",
+                  "title": "Share of the term elapsed",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "description": "How much of the term must have elapsed before this rung fires, as a fraction between 0 and 1. Resolved to a date when the timer is armed."
+                },
+                "priority": {
+                  "type": "string",
+                  "title": "Priority",
+                  "description": "The priority the case takes when this rung fires."
+                }
+              }
+            }
+          },
           "validFrom": {
             "type": "string",
             "format": "date",
-            "title": "Valid From",
+            "title": "Valid from",
             "description": "Definition takes effect on this date",
             "facetable": true
           },
           "validUntil": {
             "type": "string",
             "format": "date",
-            "title": "Valid Until",
+            "title": "Valid until",
             "description": "Definition stops applying on this date; null = current version"
           }
         }
@@ -111,14 +205,14 @@
       "deadlineInstance": {
         "slug": "deadlineInstance",
         "icon": "TimerSandFull",
-        "version": "1.0.0",
+        "version": "1.3.0",
         "x-schema-org": "schema:Action",
-        "title": "Termijn Instance",
+        "title": "Term instance",
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
         "type": "object",
+        "x-notes": "`deadlineDefinition` left the required list in 1.1.0. Four kinds of clock are instances of this schema now, and only the statutory one materialises from a TermijnDefinitie: a planned end, an internal target and a phase term are declared on the case type and the status type. Keeping the reference required would have forced a made-up definition id onto three of the four kinds, which is worse than an absent reference because a made-up id resolves to nothing while claiming to resolve.",
         "required": [
           "case",
-          "deadlineDefinition",
           "startDate",
           "endDateCalculated",
           "endDateCurrent",
@@ -131,6 +225,33 @@
             "description": "Reference to the dossiq case (case id)",
             "facetable": true
           },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "statutory",
+              "planned",
+              "internal",
+              "phase"
+            ],
+            "default": "statutory",
+            "title": "Kind of clock",
+            "description": "Which of the four clocks this is. The statutory term is the one the Awb sets and the citizen is told about. The planned end is the service norm your team steers on. The internal target is the teamleider's own number and never reaches a citizen. A phase term runs inside the case term for one phase. Each is warned on and reported separately, and none of them moves another.",
+            "facetable": true
+          },
+          "statusType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "statusType",
+            "title": "Phase",
+            "description": "The phase this clock belongs to. Filled in on a phase term and empty on the other three kinds.",
+            "facetable": true
+          },
+          "plannedStartDate": {
+            "type": "string",
+            "format": "date",
+            "title": "Planned start date",
+            "description": "The day work on this case is planned to start. A case carrying one shows it in the working list, so a handler can see what is coming as well as what is due."
+          },
           "deadlineDefinition": {
             "type": "string",
             "title": "Deadline Definition Reference",
@@ -139,7 +260,7 @@
           "startDate": {
             "type": "string",
             "format": "date-time",
-            "title": "Start Date",
+            "title": "Start date",
             "description": "When the deadline started running"
           },
           "endDateCalculated": {
@@ -218,15 +339,77 @@
             "format": "date",
             "title": "Completion Date",
             "description": "Date the term was completed by the beschikking"
+          },
+          "clockStoppedByStatus": {
+            "type": "boolean",
+            "default": false,
+            "title": "Clock stopped by status",
+            "description": "Whether this term's clock is currently stopped because the case sits in a status the term does not run in. Written only by the status clock, and read only by it: an opschorting under Awb 4:5 is a different suspension with a different reason, and resuming one must never resume the other.",
+            "facetable": true
+          },
+          "resolvedFrom": {
+            "type": "string",
+            "enum": [
+              "organisation",
+              "service",
+              "priority",
+              "caseType"
+            ],
+            "title": "Resolved from",
+            "description": "Which declaration produced this term. A term somebody disputes has to be explainable a year later, and the configuration will have changed by then, so the resolution is recorded rather than re-derived.",
+            "facetable": true
+          },
+          "resolutionSnapshot": {
+            "type": "object",
+            "title": "Resolution snapshot",
+            "description": "What the resolution was made from, copied at the moment it was made. The explanation of a term must not depend on the configuration as it stands now: that is the whole reason this is a copy and not a reference.",
+            "properties": {
+              "caseType": {
+                "type": "string",
+                "title": "Case type",
+                "description": "The case type the term was resolved for."
+              },
+              "organisation": {
+                "type": "string",
+                "title": "Organisation",
+                "description": "The organisation the term was resolved for."
+              },
+              "service": {
+                "type": "string",
+                "title": "Service",
+                "description": "The service the term was resolved for."
+              },
+              "priority": {
+                "type": "string",
+                "title": "Priority",
+                "description": "The priority the term was resolved for."
+              },
+              "durationDays": {
+                "type": "integer",
+                "title": "Duration in days",
+                "description": "How many days the resolved term runs for."
+              },
+              "deadlineDefinition": {
+                "type": "string",
+                "title": "Definition",
+                "description": "The definition that produced this term."
+              },
+              "resolvedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Resolved on",
+                "description": "The moment the term was resolved."
+              }
+            }
           }
         }
       },
       "termijnGebeurtenis": {
         "slug": "termijnGebeurtenis",
         "icon": "ScriptText",
-        "version": "1.0.0",
+        "version": "1.2.0",
         "x-schema-org": "schema:Event",
-        "title": "Termijn Gebeurtenis",
+        "title": "Term event",
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
         "type": "object",
         "required": [
@@ -254,11 +437,22 @@
               "penaltypayment-gestart",
               "pause-expired",
               "objection-submitted",
-              "objection-resolved"
+              "objection-resolved",
+              "information-requested",
+              "information-received",
+              "information-request-failed"
             ],
             "title": "Event Type",
             "description": "Event kind",
             "facetable": true
+          },
+          "items": {
+            "type": "array",
+            "title": "What was asked for",
+            "description": "The missing items named in a request to the applicant, or the ones that came back with the aanvulling. Asking and suspending the term are one act under Awb 4:5, so one record carries what was asked, when it was asked, and the suspension it caused.",
+            "items": {
+              "type": "string"
+            }
           },
           "moment": {
             "type": "string",
@@ -273,7 +467,7 @@
           },
           "basis": {
             "type": "string",
-            "title": "Legal Basis",
+            "title": "Legal basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'AWB 4:14 lid 1')"
           },
           "rationale": {
@@ -296,9 +490,9 @@
       "noticeOfDefault": {
         "slug": "noticeOfDefault",
         "icon": "EmailAlert",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "x-schema-org": "schema:Message",
-        "title": "Ingebrekestelling",
+        "title": "Notice of default",
         "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
         "type": "object",
         "required": [
@@ -316,7 +510,7 @@
           "receiptDate": {
             "type": "string",
             "format": "date",
-            "title": "Receipt Date",
+            "title": "Receipt date",
             "description": "Date the notice arrived"
           },
           "notificationChannel": {
@@ -378,7 +572,7 @@
           "startDate": {
             "type": "string",
             "format": "date",
-            "title": "Start Date",
+            "title": "Start date",
             "description": "First accrual day (= ontvangstDatum + 14d grace, unless regime overrides)"
           },
           "currentDag": {
@@ -482,7 +676,7 @@
           },
           "legalBasis": {
             "type": "string",
-            "title": "Legal Basis",
+            "title": "Legal basis",
             "description": "Legal basis (defaults to 'AWB 4:17')",
             "default": "AWB 4:17",
             "maxLength": 255

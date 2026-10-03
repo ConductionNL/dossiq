@@ -71,8 +71,6 @@ class SubsidieRegisterController extends Controller {
 	 * @PublicPage
 	 * @NoCSRFRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
 	 */
 	#[AnonRateLimit(limit: 20, period: 60)]

@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Where a widget of the case page lives, now that the strip holds six tabs.
+ * Where a widget of the case page lives, now that the strip is folded.
  *
  * Every spec that checks the case page used to find its widget with
  * `config.widgets.find((w) => w.id === …)`, because every panel was a tab and

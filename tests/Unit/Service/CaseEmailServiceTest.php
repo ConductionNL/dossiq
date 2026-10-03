@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
@@ -126,6 +127,7 @@ class CaseEmailServiceTest extends TestCase {
 			new CaseContactDirectory(),
 			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
 			new RecipientAllowlist($this->appConfig),
+			$this->createMock(CaseTimeline::class),
 		);
 
 	}//end setUp()
@@ -148,6 +150,7 @@ class CaseEmailServiceTest extends TestCase {
 		string $fromAddress,
 		string $allowlist,
 		array $caseRecord = ['identifier' => '2026-0001', 'title' => 'Dakkapel'],
+		?CaseTimeline $timeline = null,
 	): CaseEmailService {
 		$this->appConfig
 			->method('getValueString')
@@ -173,6 +176,7 @@ class CaseEmailServiceTest extends TestCase {
 			new CaseContactDirectory(),
 			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
 			new RecipientAllowlist($this->appConfig),
+			($timeline ?? $this->createMock(CaseTimeline::class)),
 		);
 	}//end serviceWithCase()
 
@@ -238,6 +242,87 @@ class CaseEmailServiceTest extends TestCase {
 
 		$this->assertSame('TEAM@partner.nl', $result['to']);
 	}//end testSendEmailAllowsRecipientOnConfiguredAllowlist()
+
+	/**
+	 * A sent mail puts a PUBLIC line on the case's timeline, carrying the
+	 * recipient, the subject and the id of the document it was recorded as.
+	 *
+	 * Public because the recipient already holds this message: withholding
+	 * its line from the timeline the portal reads would hide it only from the
+	 * person who has it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	public function testASentMailReachesTheTimelineAsAPublicEntry(): void {
+		$seen = [];
+		$timeline = $this->createMock(CaseTimeline::class);
+		$timeline->method('record')->willReturnCallback(
+			static function (
+				string $caseId,
+				string $kind,
+				string $message,
+				array $fields = [],
+				string $visibility = 'internal',
+				array $relatedCaseIds = [],
+			) use (&$seen): string {
+				$seen = compact('caseId', 'kind', 'fields', 'visibility');
+
+				return 'entry-1';
+			}
+		);
+
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '@gemeente.nl, team@partner.nl',
+			timeline: $timeline,
+		);
+
+		$this->mailer->method('createMessage')->willReturn($this->createMock(IMessage::class));
+
+		$service->sendEmail(
+			caseId: 'case-1',
+			to: 'team@partner.nl',
+			subject: 'Hallo',
+			body: 'Tekst',
+		);
+
+		$this->assertSame('case-1', $seen['caseId']);
+		$this->assertSame('mail-uitgaand', $seen['kind']);
+		$this->assertSame('public', $seen['visibility']);
+		$this->assertSame('team@partner.nl', $seen['fields']['recipient']);
+		$this->assertSame('Hallo', $seen['fields']['subject']);
+		$this->assertSame('msg-test', $seen['fields']['documentId']);
+	}//end testASentMailReachesTheTimelineAsAPublicEntry()
+
+	/**
+	 * A mail the allow-list refuses never reaches the timeline either: the
+	 * entry records a message that was SENT, and nothing was.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
+	 */
+	public function testARefusedMailWritesNoTimelineEntry(): void {
+		$timeline = $this->createMock(CaseTimeline::class);
+		$timeline->expects($this->never())->method('record');
+
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '@gemeente.nl',
+			timeline: $timeline,
+		);
+
+		$this->expectException(\RuntimeException::class);
+
+		$service->sendEmail(
+			caseId: 'case-1',
+			to: 'someone@elsewhere.example',
+			subject: 'Hallo',
+			body: 'Tekst',
+		);
+	}//end testARefusedMailWritesNoTimelineEntry()
 
 	/**
 	 * H4: an unconfigured allow-list defaults to the from-address's own domain.

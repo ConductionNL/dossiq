@@ -54,7 +54,14 @@ namespace OCA\Dossiq\Service\External\Bag;
  * a dormant adapter records the intent and returns a synthetic
  * LOOKUP_DEFERRED outcome without contacting Kadaster.
  *
- * Activation steps for a real Kadaster binding:
+ * THREE implementations, and two ways to stop being dormant.
+ *
+ * Free, no key, open data: set `integration.bag.source` to `pdok`.
+ * `BagRegistrar` then binds `PdokBagAdapter`, which speaks the PDOK BAG WFS
+ * mirror through `PdokBagService` and the PDOK Locatieserver. The tier stays
+ * `log`, so this is opt-in and a fresh install still calls nothing.
+ *
+ * Authoritative, paid, Kadaster:
  *  1. Request a free `acceptatie` (test) API key via
  *     `formulieren.kadaster.nl/aanvraag_bag_api_individuele_bevragingen_test_api_key`,
  *     or a production key for `live`.

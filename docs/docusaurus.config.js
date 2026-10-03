@@ -21,7 +21,7 @@ const BRAND_THEME = require.resolve('@conduction/docusaurus-preset/theme');
 const config = createConfig({
   title: 'Dossiq',
   tagline: 'Case management for Nextcloud',
-  url: 'https://procest.conduction.nl',
+  url: 'https://dossiq.conduction.nl',
   baseUrl: '/',
 
   organizationName: 'ConductionNL',

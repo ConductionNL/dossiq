@@ -44,8 +44,11 @@ use OCA\Dossiq\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesStatusDeclarations;
+use OCA\Dossiq\Tests\Support\MakesTransitionDeclarations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Dossiq\Service\Lifecycle\ProcessOwnedStatusRule;
 
 /**
  * The OpenRegister ObjectService shape CaseStatusStore reads through.
@@ -74,8 +77,12 @@ interface RouteSeamObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
+ * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
+	use MakesStatusDeclarations;
+	use MakesTransitionDeclarations;
+
 
 	/**
 	 * @var WorkflowTemplateLoader&MockObject
@@ -184,6 +191,14 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 			$logger,
 			new CaseResultWriter($this->settingsService, new CaseTypeResolver(new CaseTypeStore($this->settingsService)), new ArchivalNominationDeriver($this->settingsService, new ArchivalBaseDateResolver($this->settingsService), $logger)),
 			$this->statusChecklist,
+			$this->undeclaredStatuses(),
+			$this->undeclaredTransitions(),
+			$this->offeredTransitions(
+				guards: $this->guardRegistry,
+				reader: new TransitionSpecReader(),
+				statuses: $this->undeclaredStatuses(),
+			),
+			processOwnedStatus: $this->createMock(originalClassName: ProcessOwnedStatusRule::class),
 		);
 	}//end setUp()
 
@@ -352,8 +367,14 @@ class StatusTransitionServiceRouteSeamTest extends TestCase {
 		$this->service->getAvailableTransitions(caseId: 'case-1', userId: 'alice');
 
 		self::assertSame(
-			['statusChecklist'],
+			['statusChecklist', 'statusCapacity'],
 			array_map(static fn (array $guard): string => (string)$guard['type'], $seen)
 		);
+
+		// The capacity guard carries the TARGET, which is the one thing it
+		// cannot read off the case: the case still holds the status it is
+		// leaving. A guard entry appended without it passes everything,
+		// silently, which is the same green as a status that had room.
+		self::assertSame('st-behandeling', $seen[1]['toStatus']);
 	}//end testEveryTransitionIsCheckedAgainstTheStatusChecklist()
 }//end class

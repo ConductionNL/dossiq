@@ -88,11 +88,18 @@ class ManifestColumnBindingTest extends TestCase {
 
 			$declared = (array)(((array)($data['components'] ?? []))['schemas'] ?? []);
 			foreach ($declared as $slug => $schema) {
-				if (isset($schemas[(string)$slug]) === true) {
-					continue;
-				}
+				$slug = (string)$slug;
+				$properties = array_keys((array)(((array)$schema)['properties'] ?? []));
 
-				$schemas[(string)$slug] = array_keys((array)(((array)$schema)['properties'] ?? []));
+				// UNION, not first-file-wins. A fragment on a schema the base
+				// already declares adds properties to it, which is the whole
+				// point of `register.d/`; skipping the schema outright made
+				// every fragment-added property read as one the schema does
+				// not declare, and the failure named the manifest rather than
+				// this reader.
+				$schemas[$slug] = array_values(
+					array_unique(array_merge(($schemas[$slug] ?? []), $properties))
+				);
 			}
 		}
 

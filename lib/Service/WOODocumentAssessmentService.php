@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Woo\WooCaseDocuments;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -83,11 +84,13 @@ class WOODocumentAssessmentService {
 	 * @param SettingsService $settingsService Settings service
 	 * @param IUserSession $userSession Current user session
 	 * @param LoggerInterface $logger Logger
+	 * @param WooCaseDocuments|null $caseDocuments Where a case's documents are: its informatieobjecten.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly ?WooCaseDocuments $caseDocuments = null,
 	) {
 	}//end __construct()
 
@@ -289,6 +292,12 @@ class WOODocumentAssessmentService {
 	 * @return array<string, bool> Document identifiers as keys, empty when the schema is not configured
 	 */
 	private function collectCaseDocumentIds(object $objectService, mixed $register, mixed $docSchema, string $caseId): array {
+		// Where the case upload writes documents: informatieobjecten joined to
+		// the case (found by the e2e Woo journey, portaliq#1001).
+		if ($this->caseDocuments !== null) {
+			return array_fill_keys($this->caseDocuments->idsFor(caseId: $caseId), true);
+		}
+
 		if (empty($docSchema) === true) {
 			return [];
 		}

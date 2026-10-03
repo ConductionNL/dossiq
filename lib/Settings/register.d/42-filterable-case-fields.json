@@ -1,0 +1,17 @@
+{
+  "_note": "case-type-fields-filter-the-case-list, row 9.2. A handler working permits does not search for a word: they search for a permit whose declared construction cost is over a hundred thousand euro, or for the objections whose hearing date falls this month. Those values are not on the case, they are `caseProperty` rows pointing back at it, and until openregister shipped `query-related-schema-rows` (#3909, #3916, #3921, #3923) there was no query that could ask about them. `filterable` is the case type's own answer to WHICH of its fields are worth offering: a definition that declares nothing is not offered, so a case type gains no filter bar by accident and one with forty attributes does not offer forty. The declaration lives on the DEFINITION rather than on the Cases page, because the same answer has to serve the list, the API and the portal, and a page config gives each of them its own. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "propertyDefinition": {
+        "properties": {
+          "filterable": {
+            "type": "boolean",
+            "title": "Offer as a filter",
+            "description": "Whether the case list offers this field as a filter when a handler picks this case type. Leave it off for a field nobody searches on: the filter bar shows what a handler would narrow by, and a bar of forty fields is one nobody reads.",
+            "default": false
+          }
+        }
+      }
+    }
+  }
+}

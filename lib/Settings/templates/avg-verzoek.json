@@ -1,0 +1,177 @@
+{
+  "id": "avg-verzoek",
+  "title": "AVG-verzoek",
+  "description": "Zaaktype voor verzoeken van betrokkenen onder de AVG: inzage (art. 15), correctie (art. 16) en verwijdering (art. 17). De termijn van een maand staat op het zaaktype, met de verlenging van twee maanden die art. 12 lid 3 toestaat. Het wissen zelf doet OpenRegister; dit zaaktype voert de behandeling.",
+  "category": "privacy",
+  "version": "1.0.0",
+  "_note": "data-subject-requests-drive-the-platform. THE TERM IS THE CASE TYPE'S OWN, not a clock of its own: `processingDeadline: P1M` is what TermDeclarationReader already binds, and AVG art. 12 lid 3 is the extension rather than a second term. THE THREE CLOSING TRANSITIONS ARE PINNED TO THEIR REQUEST KIND with `fieldEquals` on purpose. Without that pin a handler on a verwijdering case could take `Inzage afronden` and close past the erasure guard, which is the whole guard gone and nothing on screen to say so. THE APPROVAL IS A NEGATIVE RULE ABOUT AN ACT: `notPerformedBy` names the preparing transition's LABEL, so the person who asked the platform for the preview cannot be the person who approves running it. Four eyes as a role would be wrong here, because the same privacy officer legitimately approves erasures they did not prepare.",
+  "caseType": {
+    "title": "AVG-verzoek",
+    "description": "Behandeling van een verzoek van een betrokkene onder de AVG.",
+    "purpose": "Het recht van een betrokkene op inzage, correctie of verwijdering binnen de wettelijke termijn beantwoorden.",
+    "trigger": "Een betrokkene dient een verzoek in over de gegevens die wij van hem verwerken.",
+    "subject": "Rechten van de betrokkene",
+    "processingDeadline": "P1M",
+    "confidentiality": "vertrouwelijk",
+    "isDraft": false,
+    "suspensionAllowed": true,
+    "extensionAllowed": true,
+    "extensionPeriod": "P2M",
+    "publicationRequired": false,
+    "internalOrExternal": "extern",
+    "handlerAction": "Beoordelen en beantwoorden van het AVG-verzoek",
+    "origin": "indienen",
+    "processesPersonalData": true,
+    "legalBasis": "legal_obligation"
+  },
+  "statusTypes": [
+    {
+      "name": "Ontvangen",
+      "description": "Het verzoek is binnen en geregistreerd. De termijn van een maand loopt.",
+      "order": 1,
+      "isFinal": false
+    },
+    {
+      "name": "Identiteit vastgesteld",
+      "description": "Wij weten wie het verzoek doet. Zonder deze stap beantwoorden wij niets.",
+      "order": 2,
+      "isFinal": false
+    },
+    {
+      "name": "In behandeling",
+      "description": "De behandelaar zoekt uit wat wij van deze persoon verwerken.",
+      "order": 3,
+      "isFinal": false
+    },
+    {
+      "name": "Ter goedkeuring",
+      "description": "De preview van het platform ligt klaar. Een tweede persoon keurt het wissen goed.",
+      "order": 4,
+      "isFinal": false
+    },
+    {
+      "name": "Uitvoering",
+      "description": "Het wissen is goedgekeurd en wordt door het platform uitgevoerd.",
+      "order": 5,
+      "isFinal": false
+    },
+    {
+      "name": "Afgerond",
+      "description": "Het verzoek is beantwoord en de betrokkene heeft antwoord gekregen.",
+      "order": 6,
+      "isFinal": true
+    },
+    {
+      "name": "Afgewezen",
+      "description": "Het verzoek is afgewezen. De grond staat op de zaak.",
+      "order": 7,
+      "isFinal": true
+    }
+  ],
+  "workflowTemplate": {
+    "title": "AVG-verzoek standaardworkflow",
+    "description": "Inzage, correctie en verwijdering langs één lijn, met een eigen afronding per recht.",
+    "version": 1,
+    "isActive": true,
+    "isDraft": false,
+    "transitions": [
+      {
+        "fromStatusName": "Ontvangen",
+        "toStatusName": "Identiteit vastgesteld",
+        "label": "Identiteit vastgesteld",
+        "explanation": "Stel eerst vast wie het verzoek doet. Antwoord geven aan de verkeerde persoon is zelf een datalek."
+      },
+      {
+        "fromStatusName": "Identiteit vastgesteld",
+        "toStatusName": "In behandeling",
+        "label": "In behandeling nemen",
+        "explanation": "Vraag het platform wat wij van deze persoon verwerken."
+      },
+      {
+        "fromStatusName": "Identiteit vastgesteld",
+        "toStatusName": "Afgewezen",
+        "label": "Verzoek afwijzen",
+        "explanation": "Wijs af met de grond erbij. De betrokkene mag weten waarom en waar hij terecht kan."
+      },
+      {
+        "fromStatusName": "In behandeling",
+        "toStatusName": "Ter goedkeuring",
+        "label": "Verwijdering voorbereiden",
+        "explanation": "De preview van het platform telt wat er zou verdwijnen en noemt wat beschermd is.",
+        "requiresSettled": [
+          {
+            "kind": "fieldEquals",
+            "field": "dataSubjectRequestType",
+            "value": "verwijdering",
+            "label": "een verwijderverzoek"
+          },
+          {
+            "kind": "fieldPresent",
+            "field": "erasurePreviewId",
+            "label": "de preview van het platform"
+          }
+        ]
+      },
+      {
+        "fromStatusName": "Ter goedkeuring",
+        "toStatusName": "Uitvoering",
+        "label": "Verwijdering goedkeuren",
+        "explanation": "Lees de beschermde onderdelen voordat u goedkeurt. Na het wissen is er niets meer te lezen.",
+        "notPerformedBy": {
+          "act": "Verwijdering voorbereiden",
+          "askInstead": "Vraag een collega die de preview niet heeft opgevraagd om goed te keuren."
+        }
+      },
+      {
+        "fromStatusName": "Uitvoering",
+        "toStatusName": "Afgerond",
+        "label": "Verwijdering afronden",
+        "explanation": "Rond pas af als het platform het wissen compleet noemt.",
+        "requiresSettled": [
+          {
+            "kind": "fieldEquals",
+            "field": "dataSubjectRequestType",
+            "value": "verwijdering",
+            "label": "een verwijderverzoek"
+          },
+          {
+            "kind": "erasureComplete"
+          }
+        ]
+      },
+      {
+        "fromStatusName": "In behandeling",
+        "toStatusName": "Afgerond",
+        "label": "Inzage afronden",
+        "explanation": "Het export van het platform is het antwoord. Geef de betrokkene de link zolang die geldig is.",
+        "requiresSettled": [
+          {
+            "kind": "fieldEquals",
+            "field": "dataSubjectRequestType",
+            "value": "inzage",
+            "label": "een inzageverzoek"
+          },
+          {
+            "kind": "fieldPresent",
+            "field": "subjectExportId",
+            "label": "het export van het platform"
+          }
+        ]
+      },
+      {
+        "fromStatusName": "In behandeling",
+        "toStatusName": "Afgerond",
+        "label": "Correctie afronden",
+        "explanation": "Leg vast wat u hebt gecorrigeerd en aan wie u dat hebt doorgegeven.",
+        "requiresSettled": [
+          {
+            "kind": "fieldEquals",
+            "field": "dataSubjectRequestType",
+            "value": "correctie",
+            "label": "een correctieverzoek"
+          }
+        ]
+      }
+    ]
+  }
+}

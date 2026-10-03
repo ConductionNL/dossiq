@@ -44,6 +44,8 @@ namespace OCA\Dossiq\Controller;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\ConfiguredRegistryService;
 use OCA\Dossiq\Settings\AdminSettings;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+use OCA\Dossiq\Service\Termijn\TermEndRoll;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -76,6 +78,8 @@ class TermijnDefinitieController extends Controller {
 	 * @param IRequest $request The request.
 	 * @param ConfiguredRegistryService $registry Generic configured-schema registry CRUD.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseDateNormaliser $dates The one date path, which knows the zone.
+	 * @param TermEndRoll $ends The Algemene termijnenwet roll, which knows whether a calendar answers.
 	 *
 	 * @spec openspec/specs/termijn-verification-admin/spec.md
 	 */
@@ -84,6 +88,8 @@ class TermijnDefinitieController extends Controller {
 		IRequest $request,
 		private readonly ConfiguredRegistryService $registry,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
+		private readonly TermEndRoll $ends,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -109,6 +115,34 @@ class TermijnDefinitieController extends Controller {
 			statusCode: Http::STATUS_OK
 		);
 	}//end index()
+
+	/**
+	 * What the terms on this instance are counted against.
+	 *
+	 * WHY THE ADMIN PAGE ASKS AT ALL. Two facts decide every statutory date
+	 * on this instance and neither of them is visible from the definitions
+	 * themselves: which zone a day is counted in, and whether an organisation
+	 * calendar is answering. A term whose roll was asked for and could not be
+	 * made looks exactly like a term that did not need one, so the page says
+	 * which of the two it is instead of leaving an administrator to infer it
+	 * from dates that are all plausible.
+	 *
+	 * @return JSONResponse The zone and whether the calendar answers.
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Dossiq\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/changes/terms-on-the-engine-calendar/specs/termijnbewaking-schemas/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function calendar(): JSONResponse {
+		return new JSONResponse(
+			data: [
+				'timezone' => $this->dates->timeZone()->getName(),
+				'rollAvailable' => $this->ends->calendarAnswers(),
+			],
+			statusCode: Http::STATUS_OK
+		);
+	}//end calendar()
 
 	/**
 	 * Create a TermijnDefinitie version.

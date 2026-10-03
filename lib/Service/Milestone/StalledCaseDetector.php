@@ -72,11 +72,13 @@ class StalledCaseDetector {
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
 	 * @param MilestoneRepository $repository Milestone definitions/records reader.
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday arithmetic.
+	 * @param MilestoneSchedule $schedule Projects the timeline, reading `dependsOn`.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly MilestoneRepository $repository,
 		private readonly WorkingDayCalculator $workingDays,
+		private readonly MilestoneSchedule $schedule,
 	) {
 	}//end __construct()
 
@@ -204,13 +206,13 @@ class StalledCaseDetector {
 			static fn (array $a, array $b): int => ((int)($a['order'] ?? 0) <=> (int)($b['order'] ?? 0))
 		);
 
-		$records = $this->repository->findRecords(caseId: $caseId);
-		$reachedBy = [];
-		foreach ($records as $record) {
-			if ((bool)($record['reached'] ?? true) === true) {
-				$reachedBy[(string)($record['milestoneDefinition'] ?? '')] = true;
-			}
-		}
+		[$reachedBy, $reachedOn] = $this->reached(caseId: $caseId);
+
+		$projected = $this->schedule->project(
+			definitions: $definitions,
+			caseStart: $startDate,
+			reached: $reachedOn
+		);
 
 		foreach ($definitions as $def) {
 			$defId = (string)($def['id'] ?? ($def['uuid'] ?? ''));
@@ -219,8 +221,14 @@ class StalledCaseDetector {
 			}
 
 			// First unreached milestone — this is what the case waits on.
-			$expectedDays = (int)($def['expectedDurationWorkingDays'] ?? 0);
-			$deadline = $this->addWorkingDays(start: $startDate, workingDays: $expectedDays);
+			// Its deadline comes from the SCHEDULE, which reads `dependsOn`,
+			// rather than from this milestone's own duration counted off the
+			// case start.
+			$identifier = (string)($def['identifier'] ?? '');
+			$deadline = ($projected[$identifier] ?? $this->addWorkingDays(
+				start: $startDate,
+				workingDays: (int)($def['expectedDurationWorkingDays'] ?? 0)
+			));
 			$daysOverdue = (int)$deadline->diff($today)->format('%r%a');
 
 			if ($daysOverdue > $thresholdDays) {
@@ -240,6 +248,48 @@ class StalledCaseDetector {
 		// All milestones reached -> case complete, not stalled.
 		return null;
 	}//end evaluateStall()
+
+	/**
+	 * Which milestones this case has reached, and on what dates.
+	 *
+	 * The DATE a milestone was reached is what everything downstream of it is
+	 * projected from (row 3.27). Without it the schedule would project every
+	 * dependent item from an estimate of a thing that has already happened,
+	 * which is the defect this detector is about. An unparseable timestamp
+	 * leaves the milestone projected rather than dated, which is the same
+	 * answer as not having reached it and is strictly the safer one.
+	 *
+	 * @param string $caseId The case.
+	 *
+	 * @return array{0: array<string, bool>, 1: array<string, DateTimeImmutable>} Reached by
+	 *         definition id, and reached on by milestone identifier.
+	 */
+	private function reached(string $caseId): array {
+		$reachedBy = [];
+		$reachedOn = [];
+
+		foreach ($this->repository->findRecords(caseId: $caseId) as $record) {
+			if ((bool)($record['reached'] ?? true) !== true) {
+				continue;
+			}
+
+			$reachedBy[(string)($record['milestoneDefinition'] ?? '')] = true;
+
+			$identifier = (string)($record['milestoneIdentifier'] ?? '');
+			$reachedAt = (string)($record['reachedAt'] ?? '');
+			if ($identifier === '' || $reachedAt === '') {
+				continue;
+			}
+
+			try {
+				$reachedOn[$identifier] = new DateTimeImmutable(substr($reachedAt, 0, 10));
+			} catch (\Throwable $e) {
+				continue;
+			}
+		}
+
+		return [$reachedBy, $reachedOn];
+	}//end reached()
 
 	/**
 	 * Parse a case's start date into a date-only immutable value.

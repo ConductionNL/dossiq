@@ -146,7 +146,10 @@ test.describe('The case Actions menu', () => {
 				caseType: caseTypeId,
 				description: `Seeded for the ${key} scenario.`,
 				confidentiality: 'openbaar',
-				priority: 'high',
+				// high + medium derives `high`. Seeding `priority` directly no
+				// longer works: it is derived on every save.
+				impact: 'high',
+				urgency: 'medium',
 				intakeChannel: 'website',
 				startDate: new Date().toISOString().slice(0, 10),
 				...extra,

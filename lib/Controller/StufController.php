@@ -104,8 +104,6 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	#[PublicPage]
@@ -132,8 +130,6 @@ class StufController extends Controller {
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 *
 	 * @contract exclude Deprecated path alias for cases(); behaviour covered by the cases() tests.
@@ -149,8 +145,6 @@ class StufController extends Controller {
 	 * Handle inbound StUF-BG SOAP messages for person operations.
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -172,8 +166,6 @@ class StufController extends Controller {
 	 * casesLegacyPath() is — see the note there.
 	 *
 	 * @return DataDisplayResponse SOAP XML response.
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 *

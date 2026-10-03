@@ -221,11 +221,23 @@ class TranscriptionService {
 			return $evidence;
 		}
 
+		// 🔴 THE UUID TRAVELS, OR EVERY TRANSITION IS A NEW RECORD. saveObject()
+		// creates when it is given no uuid, and this method is called on every
+		// step a memo takes: queued, running, done. Without it one memo became
+		// one row per transition, the inspection showed four pieces of evidence
+		// where an inspector recorded one, and the three stale rows each kept
+		// the status they were written with for ever.
+		$uuid = trim((string)($evidence['id'] ?? ''));
+		if ($uuid === '') {
+			$uuid = null;
+		}
+
 		try {
 			$objectService->saveObject(
 				object: $evidence,
 				register: $register,
 				schema: $schema,
+				uuid: $uuid,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

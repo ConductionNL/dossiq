@@ -73,8 +73,6 @@ class BesluitvormingController extends Controller {
 	 *
 	 * @return JSONResponse The activation result envelope.
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @deprecated Decision types (bvw-* templates) are now managed by decidesk
 	 *             (dossiq-delegate-contract-decision). Template activation is
 	 *             kept for historical read access until the sunset of the local

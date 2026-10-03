@@ -1,0 +1,81 @@
+{
+  "_note": "woo-publish-decision-from-the-case (found by the e2e Woo journey, portaliq#1001). The Woo document assessment wrote to `woo_assessment_schema`, and no shipped schema ever set that key, so every assessment answered 400. The slug is NOT `wooAssessment`: opencatalogi ships a schema with that slug, and slugs are global on a shared OpenRegister. The properties are exactly what WOODocumentAssessmentService and WOOAnonymisationAssistService write.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "wooDocumentAssessment"
+        ]
+      }
+    },
+    "schemas": {
+      "wooDocumentAssessment": {
+        "slug": "wooDocumentAssessment",
+        "icon": "FileEyeOutline",
+        "version": "1.0.0",
+        "title": "Woo document assessment",
+        "description": "Per document of a Woo request case: may it be disclosed, and on which grounds is it withheld.",
+        "type": "object",
+        "required": [
+          "caseRef",
+          "documentRef",
+          "classification"
+        ],
+        "properties": {
+          "caseRef": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Case",
+            "description": "The Woo request case the document belongs to.",
+            "facetable": true
+          },
+          "documentRef": {
+            "type": "string",
+            "title": "Document",
+            "description": "The informatieobject being assessed."
+          },
+          "classification": {
+            "type": "string",
+            "enum": [
+              "openbaar",
+              "deels_openbaar",
+              "niet_openbaar"
+            ],
+            "title": "Classification",
+            "description": "Whether the document is public, partly public or not public.",
+            "facetable": true
+          },
+          "weigeringsgronden": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Grounds for refusal",
+            "description": "The Woo articles (5.1 and 5.2) the document or its parts are withheld under."
+          },
+          "redactedDocumentRef": {
+            "type": "string",
+            "title": "Redacted document",
+            "description": "The redacted version of a partly public document, the only version that may be published."
+          },
+          "assessedBy": {
+            "type": "string",
+            "title": "Assessed by",
+            "description": "Who made the assessment."
+          },
+          "assessedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Assessed at",
+            "description": "When the assessment was made."
+          },
+          "redactionProposal": {
+            "type": "object",
+            "title": "Redaction proposal",
+            "description": "The proposed passages to redact, and the review of that proposal."
+          }
+        }
+      }
+    }
+  }
+}

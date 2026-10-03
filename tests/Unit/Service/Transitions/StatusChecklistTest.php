@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Transitions;
 
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
+use OCA\Dossiq\Service\Task\TaskDeclaration;
 use OCA\Dossiq\Service\Transitions\StatusChecklist;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use PHPUnit\Framework\TestCase;
@@ -68,6 +69,12 @@ class StatusChecklistTest extends TestCase {
 
 		$actions = $checklist->actionsFor(statusTypeId: 'st-1', case: ['id' => 'case-1'], actor: 'jan');
 
+		// EVERY ACTION CARRIES ITS TASK'S DECLARATION, and the one a case type
+		// has not configured carries the unconfigured default rather than no
+		// key at all. An absent key and a default one are not the same thing
+		// to the handler: absent means "this build predates the block", where
+		// the default means "the administrator configured nothing", and only
+		// the second is something a surface may state.
 		self::assertSame(
 			[
 				[
@@ -75,12 +82,14 @@ class StatusChecklistTest extends TestCase {
 					'title' => 'Check the objection is on time',
 					'workflowStepId' => 'st-1',
 					'assignee' => '{{ case.assignee }}',
+					'declaration' => TaskDeclaration::NONE,
 				],
 				[
 					'type' => 'createTask',
 					'title' => 'Confirm receipt to the objector',
 					'workflowStepId' => 'st-1',
 					'assignee' => '{{ case.assignee }}',
+					'declaration' => TaskDeclaration::NONE,
 				],
 			],
 			$actions

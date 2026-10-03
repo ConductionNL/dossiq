@@ -45,7 +45,7 @@
           "reachedAt":           {"type": "string", "title": "Reached At", "format": "date-time", "description": "Timestamp when the milestone was first reached."},
           "reachedBy":           {"type": "string", "title": "Reached By", "description": "User UID, n8n execution ID, or status record UUID, depending on trigger source."},
           "trigger":             {"type": "string", "title": "Trigger", "enum": ["manual", "workflow", "status_transition"], "default": "manual", "facetable": true, "description": "How the milestone was reached."},
-          "reversedAt":          {"type": "string", "title": "Reversed At", "format": "date-time", "description": "Timestamp when the milestone was reversed (null if never reversed)."},
+          "reversedAt":          {"type": "string", "title": "Reversed at", "format": "date-time", "description": "Timestamp when the milestone was reversed (null if never reversed)."},
           "reversalReason":      {"type": "string", "title": "Reversal Reason", "description": "Justification text provided by the user who reversed the milestone."}
         }
       }

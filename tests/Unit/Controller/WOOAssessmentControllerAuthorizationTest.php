@@ -48,6 +48,7 @@ use OCA\Dossiq\Service\WOODocumentAssessmentService;
 use OCA\Dossiq\Service\WooPublicationService;
 use OCP\AppFramework\OCS\OCSForbiddenException;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -183,6 +184,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase {
 			userSession: $this->userSession,
 			caseAccessGuard: $guard,
 			logger: $this->createMock(LoggerInterface::class),
+			l10n: $this->createMock(IL10N::class),
 		);
 	}//end controllerFor()
 

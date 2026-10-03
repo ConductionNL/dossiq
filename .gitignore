@@ -67,3 +67,4 @@ composer.phar
 # are gate FIXTURES, not artefacts, and must stay tracked.
 /*.log
 /changed.tsv
+pr-body.md

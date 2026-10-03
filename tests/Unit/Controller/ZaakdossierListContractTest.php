@@ -46,11 +46,14 @@ use OCP\IUser;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions;
+use OCA\Dossiq\Service\Zaakdossier\DocumentApprovalClearance;
 
 /**
  * Wire-contract tests for ZaakdossierController::listDossier().
  *
  * @covers \OCA\Dossiq\Controller\ZaakdossierController
+ * @uses \OCA\Dossiq\Service\Zaakdossier\BulkDocumentActions
  */
 class ZaakdossierListContractTest extends TestCase {
 
@@ -90,6 +93,13 @@ class ZaakdossierListContractTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * The approval-clearance mock (required to construct since #3004).
+	 *
+	 * @var DocumentApprovalClearance|MockObject
+	 */
+	private DocumentApprovalClearance $approvals;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var ZaakdossierController
@@ -110,6 +120,12 @@ class ZaakdossierListContractTest extends TestCase {
 		$this->uploadHandler = $this->createMock(DossierUploadHandler::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 
+		// The seventh collaborator arrived with the approval chain on a
+		// document (#3004). It is mocked rather than left out because every
+		// test in this file builds the controller in setUp(), so one missing
+		// argument reads as the whole contract being unreachable.
+		$this->approvals = $this->createMock(DocumentApprovalClearance::class);
+
 		$this->controller = new ZaakdossierController(
 			appName: 'dossiq',
 			request: $this->request,
@@ -117,6 +133,14 @@ class ZaakdossierListContractTest extends TestCase {
 			reader: $this->reader,
 			uploadHandler: $this->uploadHandler,
 			userSession: $this->userSession,
+			approvals: $this->approvals,
+			// A REAL bulk actions object over the SAME reader and dossier
+			// service the assertions read through. Only the wiring line moved
+			// when one act over many documents was split out.
+			bulk: new BulkDocumentActions(
+				reader: $this->reader,
+				fileService: $this->fileService,
+			),
 		);
 	}//end setUp()
 

@@ -73,10 +73,12 @@ class DwangsomCalculationService {
 	 *
 	 * @param SettingsService $settingsService Settings service.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -142,7 +144,7 @@ class DwangsomCalculationService {
 			return $row;
 		}
 
-		$settled = $this->settle(row: $row, now: ($now ?? new DateTimeImmutable()));
+		$settled = $this->settle(row: $row, now: ($now ?? $this->dates->now()));
 		if ($settled === null) {
 			return $row;
 		}
@@ -209,12 +211,15 @@ class DwangsomCalculationService {
 			return 0;
 		}
 
-		try {
-			$startDay = new DateTimeImmutable((new DateTimeImmutable($start))->format('Y-m-d'));
-			$today = new DateTimeImmutable($now->format('Y-m-d'));
-		} catch (\Throwable $e) {
+		// Day granularity, in the administered zone. Both sides used to be
+		// re-read through the process zone, so an accrual could gain or lose a
+		// day depending on which server ran the sweep.
+		$startDay = $this->dates->tryParse($this->dates->toCalendarDateOrNull($start));
+		if ($startDay === null) {
 			return 0;
 		}
+
+		$today = $this->dates->parse($this->dates->formatCalendarDate($now), 'now');
 
 		if ($today <= $startDay) {
 			return 0;

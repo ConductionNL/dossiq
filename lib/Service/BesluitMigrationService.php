@@ -161,6 +161,7 @@ class BesluitMigrationService {
 	 * @param ContainerInterface $container Loose lookup of OpenRegister services.
 	 * @param SettingsService $settingsService Supplies the ObjectService bridge.
 	 * @param LoggerInterface $logger Logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
@@ -168,6 +169,7 @@ class BesluitMigrationService {
 		private readonly ContainerInterface $container,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
 	) {
 	}//end __construct()
 
@@ -496,7 +498,7 @@ class BesluitMigrationService {
 
 			$target[$to] = $value;
 			if (in_array($to, self::WIDEN_TO_DATE_TIME, true) === true) {
-				$target[$to] = $this->asDateTime(value: $value);
+				$target[$to] = $this->widenToMoment(value: $value);
 			}
 		}
 
@@ -517,15 +519,15 @@ class BesluitMigrationService {
 	/**
 	 * Widen a `date` to a `date-time`, leaving anything else untouched.
 	 *
-	 * Midnight UTC, because the source carries a day and nothing finer. Guessing
-	 * a local time would invent precision the besluit never had, and OpenRegister
-	 * would accept it just as readily.
+	 * Midnight in the administered zone, because the source carries a day and
+	 * nothing finer. It used to be midnight UTC, which moved a besluit an hour
+	 * or two into the previous day for every Dutch reader.
 	 *
 	 * @param mixed $value The source value.
 	 *
 	 * @return mixed The widened value, or the input when it is not a bare date.
 	 */
-	private function asDateTime(mixed $value): mixed {
+	private function widenToMoment(mixed $value): mixed {
 		if (is_string($value) === false) {
 			return $value;
 		}
@@ -534,8 +536,8 @@ class BesluitMigrationService {
 			return $value;
 		}
 
-		return $value . 'T00:00:00+00:00';
-	}//end asDateTime()
+		return $this->dates->toMoment($value, 'besluitdatum');
+	}//end widenToMoment()
 
 	/**
 	 * Drop the local `decision_schema` key so the fallback takes over.

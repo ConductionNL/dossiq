@@ -1,0 +1,221 @@
+{
+  "_note": "aanvullingsverzoek-as-a-record (row 1.17, Awb 4:5 and 4:15). THE ACT ALREADY EXISTS AND IS NOT REBUILT HERE: `InformationRequestService::ask()` sends the letter and suspends the term as one act, and records what was asked as a `termijnGebeurtenis`. What did not exist is an OBJECT, and that is the whole of this change. A pause is what the clock does; a request is what a person did, and the two do not have the same lifetime: a request answered late still has to be readable years afterwards, and the timer it suspended is long gone (design D-1). So the request points at the pause rather than living inside it, and the question nobody could answer before, 'which of our cases are waiting on an applicant, and since when, and for what', is a query over these rows. WHAT IS MISSING IS A LIST, NOT A SENTENCE: `missingItems` names each thing asked for and each answer says which of them arrived, because a partially answered request is the ordinary case rather than the exception and one free-text field can report nothing (design D-2). The `pauseReason` that TYPES the request is the one `pause-reason-with-chasing` administers per case type; this fragment declares the field and deliberately declares no reason list of its own, because a second vocabulary is exactly what that change exists to prevent (design D-3). EXPIRY IS A STATE AND NEVER A DELETION: a request nobody answered is the evidence that the applicant was given the chance, and Awb 4:5 only permits refusing an application for incompleteness if the file shows what was asked (design D-4). The transitions are declared with `x-openregister-lifecycle` rather than written as a service state machine, per ADR-031. A fragment of its own rather than an edit to 60-termijnbewaking.json, per ADR-037, because the phase-terms and pause-reason lanes build against that file at the same time.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "aanvullingsverzoek"
+        ]
+      }
+    },
+    "schemas": {
+      "aanvullingsverzoek": {
+        "slug": "aanvullingsverzoek",
+        "icon": "FileQuestionOutline",
+        "version": "1.1.0",
+        "x-schema-org": "schema:Action",
+        "title": "Aanvullingsverzoek",
+        "description": "A request to an applicant to complete their submission, under Awb 4:5. It names the party asked, what is missing, who asked, when, and the date the hersteltermijn ends. It stays readable after it is answered, and after it expires unanswered.",
+        "type": "object",
+        "required": [
+          "case",
+          "requestedAt",
+          "hersteltermijn",
+          "state"
+        ],
+        "configuration": {
+          "objectNameField": "summary",
+          "objectDescriptionField": "rationale",
+          "x-openregister-lifecycle": {
+            "field": "state",
+            "initial": "open",
+            "final": [
+              "answered",
+              "expired",
+              "withdrawn"
+            ],
+            "transitions": {
+              "recordAnswer": {
+                "from": [
+                  "open"
+                ],
+                "to": "answered",
+                "description": "Record that everything asked for has arrived, and resume the term."
+              },
+              "expire": {
+                "from": [
+                  "open"
+                ],
+                "to": "expired",
+                "description": "The hersteltermijn passed without an answer. The request stays readable exactly as it was."
+              },
+              "withdraw": {
+                "from": [
+                  "open"
+                ],
+                "to": "withdrawn",
+                "description": "The request is withdrawn because it should not have been asked."
+              }
+            }
+          }
+        },
+        "properties": {
+          "case": {
+            "type": "string",
+            "title": "Case",
+            "description": "The case this request was sent on.",
+            "facetable": true
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "One line naming what this request is about, so a list of requests reads without opening each one.",
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "party": {
+            "type": "string",
+            "title": "Party asked",
+            "description": "Who was asked. The applicant on most cases, but a gemachtigde where one is on the case.",
+            "matchType": "fuzzy",
+            "inputControl": "text"
+          },
+          "recipient": {
+            "type": "string",
+            "title": "Sent to",
+            "description": "The address the request went to, as it stood on the day it was sent."
+          },
+          "pauseReason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "The administered pauseReason that types this request, from the rows pause-reason-with-chasing puts on the case type. It carries the legal basis and the chase schedule, so this record declares neither. Empty until that change lands, and never a second reason list here.",
+            "facetable": true
+          },
+          "rationale": {
+            "type": "string",
+            "title": "Why",
+            "description": "Why the case cannot be decided without this, in the handler's own words. A note beside the typed reason, never instead of it.",
+            "matchType": "fulltext",
+            "inputControl": "text"
+          },
+          "missingItems": {
+            "type": "array",
+            "title": "What is missing",
+            "description": "Each thing the applicant has to send, as its own row. A list rather than a sentence, because only a list lets the answer say WHICH of them arrived, and a partly answered request is the ordinary case.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item": {
+                  "type": "string",
+                  "title": "Item",
+                  "description": "What is being asked for, in words the applicant reads."
+                },
+                "received": {
+                  "type": "boolean",
+                  "default": false,
+                  "title": "Received",
+                  "description": "Whether this one has arrived. An answer marks each item, so a request can close on the last one rather than on somebody's impression."
+                },
+                "receivedAt": {
+                  "type": "string",
+                  "format": "date-time",
+                  "title": "Received at",
+                  "description": "When this item arrived."
+                },
+                "note": {
+                  "type": "string",
+                  "title": "Note",
+                  "description": "What the handler recorded about this item, for one that arrived incomplete or came with a question."
+                }
+              }
+            }
+          },
+          "requestedBy": {
+            "type": "string",
+            "title": "Asked by",
+            "description": "The handler who asked. Written from the session rather than offered as a field, so nobody signs somebody else's name to a statutory act."
+          },
+          "requestedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Asked at",
+            "description": "When the request went out. The moment the term was suspended from, so it is the record of the Awb 4:5 act."
+          },
+          "hersteltermijn": {
+            "type": "string",
+            "format": "date",
+            "title": "Answer by",
+            "description": "The day the applicant is held to. Landed on the administered calendar by the same path the term end uses, so it never falls on a day the Algemene termijnenwet moves.",
+            "facetable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "open",
+              "answered",
+              "expired",
+              "withdrawn"
+            ],
+            "default": "open",
+            "title": "State",
+            "description": "Where the request stands. A request that was never answered becomes expired and stays: it is the evidence that the applicant was given the chance, which Awb 4:5 requires before an application can be refused for incompleteness.",
+            "facetable": true,
+            "x-enum-labels": {
+              "open": "Open",
+              "answered": "Answered",
+              "expired": "Expired",
+              "withdrawn": "Withdrawn"
+            },
+            "x-enum-colours": {
+              "open": "orange",
+              "answered": "green",
+              "expired": "red",
+              "withdrawn": "grey"
+            }
+          },
+          "answeredAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Answered at",
+            "description": "When the handler recorded the answer as complete."
+          },
+          "answeredBy": {
+            "type": "string",
+            "title": "Answer recorded by",
+            "description": "Who recorded it."
+          },
+          "deadlineInstance": {
+            "type": "string",
+            "title": "Term",
+            "description": "The term instance this request suspended. A pointer, because the suspension is the engine's and this record does not keep a second clock (ADR-022)."
+          },
+          "pauseDays": {
+            "type": "integer",
+            "title": "Days given",
+            "description": "How many days the applicant was given, which is the same number the term was suspended by."
+          }
+        },
+        "searchable": true
+      },
+      "case": {
+        "properties": {
+          "waitingOnApplicant": {
+            "type": "boolean",
+            "default": false,
+            "readOnly": true,
+            "title": "Waiting on the applicant",
+            "description": "Whether an aanvullingsverzoek on this case is still open. A read convenience so the work list can filter and facet without reading every request of every case; the COUNT comes from the requests themselves, so the two cannot drift for long and the requests are the truth (design D-5). Written by the act that asks and by the answer that closes, never derived on an unrelated save: the requests are separate objects and a save that did not read them knows nothing about them. NOT the same fact as `isIncomplete`, which is about required fields a handler knowingly left empty at intake.",
+            "facetable": true
+          },
+          "waitingOnApplicantSince": {
+            "type": "string",
+            "format": "date-time",
+            "readOnly": true,
+            "title": "Waiting since",
+            "description": "When the open request was sent, so the work list can show how long this case has been waiting without opening the request. Cleared when the last open request closes."
+          }
+        }
+      }
+    }
+  }
+}

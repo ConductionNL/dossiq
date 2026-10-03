@@ -31,6 +31,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
+use OCA\Dossiq\Listener\TermStatusClockListener;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -58,6 +60,16 @@ class TermijnTimerRegistrar {
 		$context->registerEventListener(
 			event: FlowTimerFiredEvent::class,
 			listener: TermijnTimerFiredListener::class
+		);
+
+		// A term runs only in the statuses it declares, so the clock is
+		// reconciled with the case's status after every save that landed. It
+		// reconciles rather than reacting to a transition: the question is
+		// only ever whether the case is in a running status and whether the
+		// timer is stopped, which the saved case answers on its own.
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: TermStatusClockListener::class
 		);
 	}//end register()
 }//end class

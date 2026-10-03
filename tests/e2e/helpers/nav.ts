@@ -366,10 +366,26 @@ export function trackDossiqErrors(page: Page): string[] {
 	// a later one, by which time a SIBLING spec's teardown had removed both.
 	// Transient by construction, and invisible on one worker.
 	let dangling = 0
+	//
+	// TWO PATHS ANSWER 404 AS DATA. `/api/objects/` is the dangling reference
+	// described above. `/api/cases/` is OpenRegister's case layer, which
+	// dossiq began reading in #2551, and `CasePlanPanel.readOpenRegisterPlan()`
+	// catches its 404 on purpose: "a 404 is an answer: OpenRegister has no rows
+	// for this case, which is what a BPMN case, an undrained case and a
+	// caseType without a caseModel all look like". So every case without a plan
+	// logs a console 404 the app has already handled and rendered around. The
+	// allowlist did not learn that when the client shipped, and
+	// `case-actions-menu.spec.ts` failed on it the first time the suite ran
+	// again after decidiq#1300 revived it.
 	page.on('response', (r) => {
+		if (r.status() !== 404) {
+			return
+		}
+
+		const url = r.url()
 		if (
-			r.status() === 404
-			&& r.url().includes('/apps/openregister/api/objects/')
+			url.includes('/apps/openregister/api/objects/')
+			|| url.includes('/apps/openregister/api/cases/')
 		) {
 			dangling += 1
 		}
@@ -379,6 +395,26 @@ export function trackDossiqErrors(page: Page): string[] {
 		if (m.type() !== 'error') return
 		const text = m.text()
 		if (NON_DOSSIQ_NOISE.some((n) => text.includes(n))) return
+
+		// 🔴 URL NOISE IS FILTERED BEFORE THE PAIRING, NOT AFTER IT.
+		//
+		// The order is not cosmetic. `dangling` is a budget of 404s this app
+		// asked for and handled, and a message that some OTHER app produced
+		// must never be allowed to spend it. It used to be: a hermiq 404
+		// (`/apps/hermiq/` is listed as environment noise below, and no hermiq
+		// ships on this instance) reached the pairing first, decremented the
+		// counter, and returned. A genuine handled 404 arriving afterwards
+		// then found the budget at zero and was reported as an app error.
+		//
+		// Whether that happened on any given run depends on whether Chrome put
+		// a url on the message, so this is a latent misattribution rather than
+		// a proven cause of one. It is still the wrong order: a filter that
+		// runs after the step it should have prevented does not filter, it
+		// relabels. Same shape as the precondition-ordering defect in
+		// `case-types-tabs.spec.ts`.
+		const url = m.location()?.url ?? ''
+		if (url && NON_DOSSIQ_URL_NOISE.some((n) => url.includes(n))) return
+
 		if (dangling > 0 && text.includes('404 (Not Found)')) {
 			// Paired one for one, and only downwards, so a second 404 with
 			// nothing to answer for it still fails. The pairing relies on the
@@ -388,8 +424,6 @@ export function trackDossiqErrors(page: Page): string[] {
 			dangling -= 1
 			return
 		}
-		const url = m.location()?.url ?? ''
-		if (url && NON_DOSSIQ_URL_NOISE.some((n) => url.includes(n))) return
 		errors.push(text)
 	})
 	page.on('response', (r) => {

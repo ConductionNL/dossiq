@@ -201,6 +201,56 @@ class DeelzaakController extends Controller {
 	}//end validate()
 
 	/**
+	 * Create a sub-case as a derivation of its parent.
+	 *
+	 * Expects JSON body `{parentCaseUuid, childCaseTypeId, object}`.
+	 *
+	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()` on the parent,
+	 * for the same reason `validate()` carries one. It is load-bearing twice
+	 * here: without it this endpoint would hang an arbitrary case off an
+	 * arbitrary parent AND copy that parent's confidentiality and handler onto
+	 * it, which is a disclosure rather than an oracle.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function create(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		$parent = (string)$this->request->getParam('parentCaseUuid', '');
+		$child  = (string)$this->request->getParam('childCaseTypeId', '');
+		$object = $this->request->getParam('object', []);
+		if ($parent === '' || $child === '' || is_array($object) === false) {
+			return new JSONResponse(
+				['message' => 'parentCaseUuid, childCaseTypeId and object are required'],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $parent, user: $user) === false) {
+			return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
+		}
+
+		$result = $this->deelzaakService->createSubCase(
+			parentCaseUuid: $parent,
+			childCaseTypeId: $child,
+			childData: $object,
+		);
+
+		if ($result['ok'] === false) {
+			return new JSONResponse($result, Http::STATUS_CONFLICT);
+		}
+
+		return new JSONResponse($result, Http::STATUS_CREATED);
+	}//end create()
+
+	/**
 	 * Unlink every sub-case from the given parent.
 	 *
 	 * Used by the "delete parent with children" confirmation flow so the

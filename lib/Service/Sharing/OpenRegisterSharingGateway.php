@@ -89,38 +89,103 @@ class OpenRegisterSharingGateway {
 	}//end objectService()
 
 	/**
-	 * Resolve OpenRegister's CaseTokenService — the public "track your
-	 * case" token-link surface of the shares integration leaf (ADR-022).
+	 * Resolve OpenRegister's AccessLinkService, which mints the links a case
+	 * share is made of (openregister#3817).
 	 *
-	 * The leaf owns token generation (256-bit non-guessable handle),
-	 * expiry, revocation, and the RBAC-respecting public resolve path;
-	 * dossiq mints no share tokens of its own.
+	 * OpenRegister owns the anchor, the expiry, the password check, the
+	 * revoke and the single 404 that covers unknown, revoked, paused and
+	 * expired alike. Dossiq decides only which subject is published and what
+	 * its holder may do.
 	 *
-	 * @return object|null The OR CaseTokenService, or null when OR is
-	 *                     unavailable / pre-foundation build.
+	 * The method check is the version test: an OpenRegister that predates
+	 * #3817 has no such class, and one that has an older shape is refused
+	 * here rather than half-called later.
 	 *
-	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.2
+	 * @return object|null The OR AccessLinkService, or null when it is not there.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
 	 */
-	public function caseTokenService(): ?object {
+	public function accessLinkService(): ?object {
+		return $this->resolve(
+			className: 'OCA\OpenRegister\Service\Sharing\AccessLinkService',
+			methods: ['mint', 'revoke', 'setDisabled', 'resolve']
+		);
+	}//end accessLinkService()
+
+	/**
+	 * Resolve OpenRegister's AccessLinkReader, which decides what a holder
+	 * reads through a link.
+	 *
+	 * Dossiq uses it for one thing only: showing a handler what the outside
+	 * sees before they send the link.
+	 *
+	 * @return object|null The OR AccessLinkReader, or null when it is not there.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+	 */
+	public function accessLinkReader(): ?object {
+		return $this->resolve(
+			className: 'OCA\OpenRegister\Service\Sharing\AccessLinkReader',
+			methods: ['read']
+		);
+	}//end accessLinkReader()
+
+	/**
+	 * Resolve OpenRegister's NoteService, which holds the comments a link
+	 * holder writes.
+	 *
+	 * An advisory body answering a consultation writes a note as the link,
+	 * and this is how dossiq reads it back.
+	 *
+	 * @return object|null The OR NoteService, or null when it is not there.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-an-external-consultation-rides-the-links-comment-capability-req-cal-03
+	 */
+	public function noteService(): ?object {
+		return $this->resolve(
+			className: 'OCA\OpenRegister\Service\NoteService',
+			methods: ['getNotesForObject']
+		);
+	}//end noteService()
+
+	/**
+	 * Resolve one OpenRegister service, and refuse it unless it carries every
+	 * method the caller will invoke.
+	 *
+	 * @param string $className The fully qualified class name.
+	 * @param array<int, string> $methods The methods the caller will invoke.
+	 *
+	 * @return object|null The service, or null.
+	 *
+	 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+	 */
+	private function resolve(string $className, array $methods): ?object {
 		if ($this->appManager->isInstalled('openregister') === false) {
 			return null;
 		}
 
 		try {
-			$service = $this->container->get('OCA\OpenRegister\Service\CaseTokenService');
-			if (method_exists($service, 'mint') === false) {
-				return null;
-			}
-
-			return $service;
+			$service = $this->container->get($className);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
-				'CaseSharingService: OR CaseTokenService unavailable (shares leaf not present)',
-				['exception' => $e->getMessage()]
+				'CaseSharingService: OpenRegister service unavailable',
+				['class' => $className, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
-	}//end caseTokenService()
+
+		foreach ($methods as $method) {
+			if (method_exists($service, $method) === false) {
+				$this->logger->warning(
+					'CaseSharingService: OpenRegister service is an older shape than this code calls',
+					['class' => $className, 'missing' => $method]
+				);
+				return null;
+			}
+		}
+
+		return $service;
+	}//end resolve()
 
 	/**
 	 * Resolve OpenRegister's FederationShareService — the leaf that owns

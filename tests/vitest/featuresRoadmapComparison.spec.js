@@ -54,9 +54,32 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 			return h('div')
 		},
 	},
+	// The tab strip and its panels: a panel renders its body only while its
+	// tab is the active one, which is what the section switch below relies on.
+	CnTabs: {
+		name: 'CnTabs',
+		render() {
+			return h('div', { role: 'tablist' }, this.$slots.default?.())
+		},
+	},
+	CnTab: {
+		name: 'CnTab',
+		props: {
+			title: { type: String, default: '' },
+			active: { type: Boolean, default: false },
+			lazy: { type: Boolean, default: false },
+		},
+		render() {
+			return h(
+				'div',
+				{ role: 'tabpanel' },
+				this.active ? this.$slots.default?.() : [],
+			)
+		},
+	},
 }))
 
-const { default: data } = await import('../../src/data/capabilityComparison.json')
+const { default: data } = await import('../../openspec/parity/capabilities.json')
 const { default: FeaturesRoadmapView } =
 	await import('../../src/views/FeaturesRoadmapView.vue')
 
@@ -116,20 +139,29 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 
 	it('dates a column read on its own day, without moving the shared date', async () => {
 		const text = (await mountComparison()).text()
-		const late = data.systems.filter((system) => system.readOn)
-
-		expect(late.length).toBeGreaterThan(0)
-		// The shared sentence now counts the systems it actually covers, so a
-		// fifth column read a day later cannot make it claim the fifth.
-		expect(text).toContain(
-			`We read ${data.systems.length - late.length} of the ${data.systems.length} systems`,
+		// Late is a reading date other than `comparedOn`, the view's `isLate`.
+		// Since 2026-09-26 every competitor carries `readOn`, and a column read
+		// on the round's own day is on time.
+		const late = data.systems.filter(
+			(system) => system.readOn && system.readOn !== data.comparedOn,
 		)
-		expect(text).toContain('not on the date above')
+
+		// The shared sentence counts the systems it actually covers, so a
+		// column read on another day cannot make it claim that column.
+		if (late.length) {
+			expect(text).toContain(
+				`We read ${data.systems.length - late.length} of the ${data.systems.length} systems`,
+			)
+			expect(text).toContain('not on the date above')
+		} else {
+			expect(text).toContain(`We read all ${data.systems.length} systems`)
+			expect(text).not.toContain('not on the date above')
+		}
 	})
 
 	it('dates the reading in the reader-s own language', async () => {
 		const text = (await mountComparison()).text()
-		expect(text).toContain('September 7, 2026')
+		expect(text).toContain('September 26, 2026')
 	})
 
 	it('counts only ratings it moved as corrections, not rows it added', async () => {
@@ -163,23 +195,44 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 		// single round had ever added rows. A second round made it a lie about
 		// the first round's 19: they were asked a day earlier, and the page
 		// would have said otherwise while every test went on passing.
+		//
+		// This test used to require more than one addition date, and said in
+		// its own comment that a compaction collapsing them should be said out
+		// loud rather than passed over. That happened on 2026-09-14: round 4's
+		// 104 rows were never corpus rows and left the scored list for
+		// `pending`, so round 3's 19 are the only additions left and they
+		// share a date. The phrasing guard below is what the test is FOR, and
+		// it is kept; the precondition is not, because it would now fail on a
+		// file that is correct.
 		const text = (await mountComparison()).text()
 		const dates = data.capabilities
 			.filter((row) => row.addedOn)
 			.map((row) => row.addedOn)
 		const latest = [...dates].sort().at(-1)
-		const onLatest = dates.filter((date) => date === latest).length
 
-		// Only meaningful while more than one round has added rows. If a
-		// future compaction ever collapses them, this says so out loud rather
-		// than passing vacuously.
-		expect(new Set(dates).size).toBeGreaterThan(1)
-		expect(onLatest).toBeLessThan(dates.length)
+		expect(dates.length).toBeGreaterThan(0)
 
 		// The page names the most recent date and the total, and must not
 		// glue them together into a claim that they all landed that day.
 		expect(text).toContain('the most recent of them on')
 		expect(text).not.toContain(`On ${latest} we added ${dates.length}`)
+	})
+
+	it('says the proposals are proposed and counted in nothing', async () => {
+		// The one thing a reader must not do with `pending` is read it as a
+		// score. Four of its five columns are empty and the fifth is ours, so
+		// a proposal that renders like a row would publish our own rating as
+		// if three other teams had been measured beside it.
+		const text = (await mountComparison()).text()
+
+		expect(text).toContain(
+			`Another ${data.pending.length} capabilities are proposed and not yet rated`,
+		)
+		expect(text).toContain('they are in no total on this page')
+		// And the totals table still counts the rows, not the two lists.
+		expect(text).toContain(
+			`Totals over all ${data.capabilities.length} capabilities`,
+		)
 	})
 
 	it('shows Unknown as a column in the totals, not as a silent gap', async () => {
@@ -190,16 +243,18 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 
 		expect(headers).toContain('Unknown')
 
-		// Every competitor column is unrated on exactly the added rows, so
-		// each Unknown cell has to carry that number rather than a zero. That
-		// now includes the column added last: it was read before those rows
-		// existed, so it is as empty on them as the other three.
-		const added = data.capabilities.filter((row) => row.addedOn).length
+		// Each Unknown cell carries that column's own count of unknown rows
+		// rather than a zero. Since the 2026-09-26 source reading those are
+		// the cells the code could not settle, which is ten OpenCase cells
+		// behind its closed enterprise package and none elsewhere.
 		const rows = wrapper.findAll('.features-roadmap__table tbody tr')
 		for (const system of data.systems.filter((s) => !s.isSelf)) {
+			const unknown = data.capabilities.filter(
+				(c) => !['yes', 'partial', 'no'].includes(c[system.key]),
+			).length
 			const row = rows.find((r) => r.text().startsWith(system.name))
 			expect(row, system.key).toBeTruthy()
-			expect(row.findAll('td').at(3).text(), system.key).toBe(String(added))
+			expect(row.findAll('td').at(3).text(), system.key).toBe(String(unknown))
 		}
 	})
 })

@@ -24,6 +24,32 @@
 			@add="$emit('create')"
 			@refresh="fetchCaseTypes"
 			@rowClick="selectCaseType">
+			<!--
+				THE EMPTY LIST IS THE FIRST THING A NEW ADMIN SEES, AND IT SAID
+				"No items found".
+
+				That is `CnIndexPage`'s own default, and it tells an admin
+				looking at a blank Case Type Management section nothing about
+				what a case type is or that they are expected to make one.
+				admin-settings `#empty-case-type-list` asks for an empty state
+				message and for guidance towards the first case type, so the
+				page says both here rather than inheriting a generic line.
+			-->
+			<template #empty>
+				<NcEmptyContent
+					:name="t('dossiq', 'No case types configured yet')"
+					:description="
+						t(
+							'dossiq',
+							'Create your first case type to start handling cases.',
+						)
+					">
+					<template #icon>
+						<ShapeOutlineIcon :size="64" />
+					</template>
+				</NcEmptyContent>
+			</template>
+
 			<template #column-title="{ row }">
 				<span class="ct-title">
 					<StarIcon
@@ -99,9 +125,10 @@
 import { CnIndexPage } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import ContentDuplicateIcon from 'vue-material-design-icons/ContentDuplicate.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import ShapeOutlineIcon from 'vue-material-design-icons/ShapeOutline.vue'
 import StarIcon from 'vue-material-design-icons/Star.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { useSettingsStore } from '../../store/modules/settings.js'
@@ -111,9 +138,11 @@ export default {
 	name: 'CaseTypeList',
 	components: {
 		StarIcon,
+		ShapeOutlineIcon,
 		DeleteIcon,
 		ContentDuplicateIcon,
 		NcButton,
+		NcEmptyContent,
 		NcLoadingIcon,
 		CnIndexPage,
 	},

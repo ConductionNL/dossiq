@@ -21,6 +21,8 @@
  * @spec openspec/specs/case-dashboard-view/spec.md
  */
 
+import { stateFieldRefusal } from './statusFieldRules.js'
+
 /**
  * Read an object's id whichever shape OpenRegister handed it back in.
  *
@@ -152,86 +154,29 @@ export function buildTransitionPayload({ transitionId, comment, resultTypeId }) 
 }
 
 /**
- * The lifecycle actions the case's state allows, in menu order.
- *
- * The server decides; this only reads its answer. An unreadable state offers
- * nothing, which is the safe reading of "the case did not say".
- *
- * @param {object} state The `/lifecycle` response.
- * @return {Array<string>} The action ids to offer.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function offeredLifecycleActions(state) {
-	if (!state || typeof state !== 'object') {
-		return []
-	}
-	const offered = []
-	if (state.canSuspend === true) {
-		offered.push('suspend')
-	}
-	if (state.canResume === true) {
-		offered.push('resume')
-	}
-	if (state.canExtend === true) {
-		offered.push('extend')
-	}
-	if (state.canReopen === true) {
-		offered.push('reopen')
-	}
-	return offered
-}
-
-/**
- * Whether one lifecycle gesture is honest to offer on this case.
- *
- * The dialog asks before it posts. The reason is not politeness: the four
- * gestures sit in a menu that cannot read the case type — an `open-modal`
- * action's `visibleWhen` sees the case record, and `suspensionAllowed` lives
- * on the case TYPE — so the menu offers what the record alone can justify and
- * this is where the case type gets its say.
- *
- * A state that could not be read refuses nothing. The endpoint is the
- * authority on the gesture either way, and a dialog that blocks on its own
- * failed request would hide a gesture the case does allow.
- *
- * @param {string} action One of suspend, resume, extend, reopen.
- * @param {object|null} state The `/lifecycle` response, or null when unread.
- * @return {string} The refusal code, or the empty string when allowed.
- * @spec openspec/specs/status-transition-engine/spec.md
- */
-export function lifecycleRefusalCode(action, state) {
-	if (!state || typeof state !== 'object') {
-		return ''
-	}
-	if (offeredLifecycleActions(state).includes(String(action))) {
-		return ''
-	}
-	switch (String(action)) {
-		case 'suspend':
-			return state.suspended === true
-				? 'already_suspended'
-				: 'suspension_not_allowed'
-		case 'resume':
-			return 'not_suspended'
-		case 'extend':
-			return 'extension_not_allowed'
-		case 'reopen':
-			return 'case_not_closed'
-		default:
-			return ''
-	}
-}
-
-/**
  * Turn a server refusal into a sentence.
  *
- * @param {object} body The refusal body ({error, code, failedGuards}).
+ * @param {object} body The refusal body ({message, error, code, failedGuards, errors}).
  * @param {(key: string) => string} translate The bound t(), taking one string.
  * @return {string} What to show the handler.
  * @spec openspec/specs/status-transition-engine/spec.md
+ * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
  */
 export function refusalMessage(body, translate) {
 	const t = typeof translate === 'function' ? translate : (s) => s
+
+	// A state's field rules are the platform's refusal, and it arrives one
+	// level down under `errors` with the sentence beside the code. It is read
+	// FIRST because the outer `error` on that same body is the exception text,
+	// so reading the body the old way would show a handler the machinery
+	// instead of the field they have to go and fill in. Never re-translated:
+	// the sentence is either the one the administrator wrote on the rule, in
+	// their own language, or OpenRegister's own naming the field and the state.
+	const stateField = stateFieldRefusal(body)
+	if (stateField?.message) {
+		return stateField.message
+	}
+
 	const guards = Array.isArray(body?.failedGuards) ? body.failedGuards : []
 	if (guards.length > 0) {
 		// `failureMessage` is the key GuardRegistry::evaluateAll writes. Reading
@@ -271,8 +216,26 @@ export function refusalMessage(body, translate) {
 			return t('This case could not be found.')
 		case 'reason_required':
 			return t('Give a reason first.')
+		// The three approval refusals (REQ-DEC-01). The sentence naming the
+		// approval and the people it waits on rides on the blocked act itself,
+		// where there is room for it; these are what a handler sees when they
+		// posted the act anyway and the write path refused it.
+		case 'approval_outstanding':
+			return t('This act waits for an approval that is still open.')
+		case 'approval_rejected':
+			return t('The approval for this act was refused.')
+		case 'approval_unreadable':
+			return t(
+				'We could not reach the approval service, so this act stays closed.',
+			)
 		default:
-			return String(body?.error ?? t('The case could not be changed.'))
+			// `message` before `error`: since refusals-carry-a-status, `error`
+			// is a kebab-case rule slug meant for code, and `message` is the
+			// sentence the refusal authored. Reading `error` first would put
+			// "transition-from-status-mismatch" in front of a handler.
+			return String(
+				body?.message ?? body?.error ?? t('The case could not be changed.'),
+			)
 	}
 }
 

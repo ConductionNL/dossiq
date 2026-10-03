@@ -135,6 +135,27 @@ updates.
 - **WHEN** the mapper resolves the same contact again
 - **THEN** it MUST reuse the existing mapping rather than create a duplicate
 
+> **The case half is implemented; the contact half is not.**
+> `StufCaseMappingStore` writes and reuses `sourceEntity: 'case'` rows and runs on
+> the live outbound path. The contact half was `ContactBetrokkeneMapper`, which
+> nothing ever constructed, and it was retired on 2026-09-18 rather than left
+> dark. Two things have to be settled before it comes back:
+>
+> 1. **There is no outbound `npsLv01`.** `findOrCreateBetrokkene()` took a lookup
+>    callable performing a geefBetrokkene query, and the only Lv01 this app builds
+>    is `zakLv01` (geefZaakDetails). `StufController` *handles* an inbound
+>    `npsLv01`; nothing *sends* one. Without it, the mapper's own question — does
+>    this zaaksysteem already know this person — cannot be asked.
+> 2. **The betrokkene entries on the outbound path carry no dossiq contact id.**
+>    `StufMessageBuilder` embeds `<bg:inp.bsn>` inline per betrokkene, and the
+>    entries it iterates are built by `StufMessageParser` with `role` and `bsn`
+>    only. A mapping row keyed on an empty `sourceId` is worse than no row.
+>
+> When both are settled, generalise `StufCaseMappingStore`'s identity to take the
+> entity rather than reintroducing a second near-identical store: the retired
+> mapper duplicated `find()` and `persist()` line for line and differed in two
+> string literals.
+
 ### Requirement: Circuit breaker and retry
 
 The system SHALL isolate a failing endpoint behind a per-endpoint circuit

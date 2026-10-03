@@ -12,7 +12,10 @@
  * step wrote `besluitDocument` to storage, and the status step one hop later,
  * holding the older snapshot, full-saved it away again.
  *
- * So every case-saving handler gets the same test: seed a store, let "another
+ * The field, decision and document handlers that had the same test are gone:
+ * OpenRegister's object-write step and Filinq's field write PATCH the stored
+ * object, which is this property by construction. So every case-saving
+ * handler dossiq still has gets the same test: seed a store, let "another
  * writer" add a field the snapshot does not carry, run the handler with the
  * stale snapshot, and require BOTH the handler's own field and the other
  * writer's field on the stored case afterwards.
@@ -28,19 +31,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseFieldWriter;
-use OCA\Dossiq\Service\Dmn\DecisionTableService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Actions\MergeTemplateHandler;
-use OCA\Dossiq\Service\Transitions\EvaluateDecisionHandler;
-use OCA\Dossiq\Service\Transitions\SetFieldHandler;
 use OCA\Dossiq\Service\Transitions\SetStatusHandler;
 use OCA\Dossiq\Service\Transitions\StatusTypeLookup;
 use OCA\OpenRegister\Db\ObjectEntity;
-use OCA\OpenRegister\Service\Dmn\DecisionTableEvaluator;
-use OCP\IAppConfig;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 
 class FlowHandlerSnapshotClobberTest extends TestCase {
@@ -216,114 +211,4 @@ class FlowHandlerSnapshotClobberTest extends TestCase {
 		self::assertTrue($result->succeeded);
 		$this->assertNothingWasClobbered($store, ['status' => 'status-uuid-9']);
 	}//end testSetStatusPreservesAFieldWrittenAfterTheSnapshot()
-
-	public function testSetFieldPreservesAFieldWrittenAfterTheSnapshot(): void {
-		$store = $this->storeWith(array_merge(self::SNAPSHOT, self::LATER_WRITE));
-
-		$handler = new SetFieldHandler(
-			$this->settingsOver($store),
-			new CaseFieldWriter(),
-			new NullLogger()
-		);
-
-		$result = $handler->handle(
-			actionConfig: ['type' => 'setField', 'field' => 'result', 'value' => 'toegekend'],
-			case: self::SNAPSHOT,
-			transitionContext: []
-		);
-
-		self::assertTrue($result->succeeded);
-		$this->assertNothingWasClobbered($store, ['result' => 'toegekend']);
-	}//end testSetFieldPreservesAFieldWrittenAfterTheSnapshot()
-
-	public function testEvaluateDecisionPreservesAFieldWrittenAfterTheSnapshot(): void {
-		$store = $this->storeWith(array_merge(self::SNAPSHOT, self::LATER_WRITE));
-
-		$tableService = $this->createMock(DecisionTableService::class);
-		$tableService->method('findByKey')->willReturn(
-			[
-				'key' => 'closing-tier',
-				'hitPolicy' => 'UNIQUE',
-				'inputs' => [['name' => 'title', 'type' => 'string']],
-				'outputs' => [['name' => 'tier', 'type' => 'string']],
-				'rules' => [],
-			]
-		);
-
-		$engine = $this->createMock(DecisionTableEvaluator::class);
-		$engine->method('evaluate')->willReturn(
-			['outputs' => ['tier' => 'gold'], 'matchedRuleIds' => ['r1'], 'hitPolicy' => 'UNIQUE']
-		);
-
-		$handler = new EvaluateDecisionHandler(
-			tableService: $tableService,
-			engine: $engine,
-			settingsService: $this->settingsOver($store),
-			caseWriter: new CaseFieldWriter(),
-			logger: new NullLogger(),
-		);
-
-		$result = $handler->handle(
-			actionConfig: ['type' => 'evaluateDecision', 'decisionKey' => 'closing-tier'],
-			case: self::SNAPSHOT,
-			transitionContext: []
-		);
-
-		self::assertTrue($result->succeeded);
-		$this->assertNothingWasClobbered($store, ['tier' => 'gold']);
-	}//end testEvaluateDecisionPreservesAFieldWrittenAfterTheSnapshot()
-
-	public function testMergeTemplatePreservesAFieldWrittenAfterTheSnapshot(): void {
-		// Here the OTHER writer's field is the status: the mirror image of the
-		// live defect, same mechanism.
-		$later = ['status' => 'status-uuid-9'];
-		$store = $this->storeWith(array_merge(self::SNAPSHOT, $later));
-
-		$container = $this->createMock(ContainerInterface::class);
-		$container->method('get')
-			->with('OCA\OpenRegister\Service\ObjectService')
-			->willReturn($store);
-
-		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturnCallback(
-			static function (string $app, string $key, string $default): string {
-				unset($app, $default);
-
-				return ($key === 'register') ? 'dossiq' : 'case';
-			}
-		);
-
-		$handler = new MergeTemplateHandler(
-			container: $container,
-			appConfig: $appConfig,
-			caseWriter: new CaseFieldWriter(),
-			userSession: $this->createMock(IUserSession::class),
-			logger: new NullLogger(),
-		);
-
-		$result = $handler->handle(
-			actionConfig: [
-				'type' => 'mergeTemplate',
-				'template' => 'Besluit over {{case.title}}',
-				'targetField' => 'besluitDocument',
-			],
-			case: self::SNAPSHOT,
-			transitionContext: []
-		);
-
-		self::assertTrue($result->succeeded);
-
-		foreach ($later as $field => $value) {
-			self::assertSame(
-				$value,
-				($store->stored[$field] ?? null),
-				sprintf(
-					'The handler\'s save erased "%s", which another writer stored after the snapshot was taken.',
-					$field
-				)
-			);
-		}
-
-		self::assertSame('Besluit over Dakkapel Kerkstraat 14', ($store->stored['besluitDocument'] ?? null));
-	}//end testMergeTemplatePreservesAFieldWrittenAfterTheSnapshot()
 }//end class
