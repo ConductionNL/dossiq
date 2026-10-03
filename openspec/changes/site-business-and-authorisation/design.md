@@ -10,7 +10,7 @@ Portaliq paths are on that commit.
 | "Ingelogd als", eHerkenning login | portaliq | `OidcClaimMapperService`, `portal-ways-in` |
 | "U regelt nu zaken voor Slagerij Van der Berg, KVK 12345678" bar | portaliq | `ActingForSwitcher`, REQ-PIOC-008 |
 | "Voor wie regelt u nu zaken?" (uzelf, het bedrijf, H. Bakker) | portaliq | `ActingForSwitcher`, `BranchSwitcher`, REQ-CMC-004 |
-| "Wie mag zaken regelen voor uw bedrijf?" list, "Iemand machtigen", "Intrekken", "Uitnodiging intrekken" | portaliq, NOT BUILT | `portalMandate`; proposed as portaliq `site-mandates-the-represented-manage`, not yet written |
+| "Wie mag zaken regelen voor uw bedrijf?" list, "Iemand machtigen", "Intrekken", "Uitnodiging intrekken" | portaliq, specified, not yet built | `portalMandate` with `holder`; portaliq `site-mandates-the-represented-manage` |
 | "Uw machtiging": scope, valid until, given by, "Machtiging stoppen" | portaliq, partly | `portalMandate.label`, `expiresAt`, `grantedBy`, `grantedAt`; stop not built |
 | "Dit moet u nog doen", case cards, "Lopende zaken van uw bedrijf" | dossiq declares, portaliq renders | this change and `site-resident-portal-design` |
 | Which cases a company or a represented person sees | dossiq declares the party, portaliq filters | `portalParty`, `mandateField` |
@@ -43,14 +43,21 @@ Rejected: the procurement portal (`supplier-portal`) is a real audience with its
 | Who filed | `portalParty` |
 | --- | --- |
 | a `client` or `citizen` session for themselves | `subject:<subjectRef>` |
-| a `business` or `supplier` session | `kvk:<identityRef>` (the KVK number) |
-| any session acting under a mandate | the mandate's `onBehalfOf`, in the same typed form |
+| a `business` or `supplier` session with a KVK number on the session (portaliq T0) | `kvk:<the session's kvk>` |
+| a `business` or `supplier` session without one (before T0) | `subject:<subjectRef>`, so no company mandate reaches it |
+| any session acting under a mandate | the mandate's `onBehalfOf`, typed per portaliq REQ-SMR-001 |
 
 `mijnZaken` declares `mandateField: 'portalParty'`. Portaliq then lists, for a session with an
 active mandate, the cases whose `portalParty` equals the mandate's `onBehalfOf`, filtered by
-the mandate's `caseTypes` through the existing `caseTypeField`. A company session without a
-mandate still reads its own cases through `scopeField: portalSubject`; to see the whole
-company's cases it needs a company mandate, which is portaliq's to grant.
+the mandate's `caseTypes` through the existing `caseTypeField`. Mandates are held by the
+company (`holder: kvk:<n>`, portaliq REQ-SMR-005), so every employee signing in for that
+company acts under them. A company session without a mandate reads the cases its own person
+filed through `scopeField: portalSubject`; seeing every case of its own company needs portaliq
+to match `mandateField` against the session's own `kvk:` party too (proposal, "Depends on
+portaliq", ask 2).
+
+`identityRef` is not used: after portaliq T0 it is a per-person reference, and before T0 it is
+whatever the broker put in the claim. Only the session's `kvk` is a KVK number.
 
 Why a typed string rather than two fields: `mandateField` is one field. A company and a person
 can both be represented, so the field must hold either, and the prefix keeps a KVK number from

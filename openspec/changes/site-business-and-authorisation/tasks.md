@@ -4,14 +4,18 @@ Tier: V1. Kind: code. Programme: portal-design (2026-10-02). Mockups:
 `DossiqBusiness.dc.html`, `DossiqPhone.dc.html`.
 
 Builds on `portal-case-list-declarations` (its open tasks 1.1, 3.1 and 3.2 land here or before)
-and `site-resident-portal-design` (the pages). Depends on portaliq `site-mandates-the-represented-manage` for the mandate list,
-invite, revoke, expiry and the typed `onBehalfOf`. That change is NOT YET WRITTEN and is not in
-portaliq#1110. The switcher and the acting-for bar already exist in portaliq.
+and `site-resident-portal-design` (the pages). Depends on portaliq
+`site-mandates-the-represented-manage` (on portaliq `development`) for the mandate list,
+invite, revoke, expiry, typed parties and the company as holder, and on its task **T0** (the
+company's KVK number on an eHerkenning session) before 2.1 can write `kvk:` parties. The
+switcher and the acting-for bar already exist in portaliq.
 
 ## 0. Decisions
 
-- [ ] 0.1 Portaliq agrees the typed party form `kvk:<number>` / `subject:<subjectRef>` for
-      `onBehalfOf` in `site-mandates-the-represented-manage` (not yet written).
+- [x] 0.1a Typed party form agreed: portaliq REQ-SMR-001 (`kvk:` plus 8 digits, `subject:`).
+- [ ] 0.1 Portaliq takes up the two asks in the proposal: the session's party reaches dossiq on
+      a write (stamped `mandateField`, or a claim on the `X-Portal-Subject` assertion), and a
+      business session's "Zaken" matches its own `kvk:` party.
 - [ ] 0.2 Ruben: a mandate scope finer than case types ("bekijken, aanvullen, aanvragen") is
       a portaliq change; confirm it is wanted.
 

@@ -18,16 +18,23 @@ audience MUST keep its procurement collections. This is a new requirement.
 - **THEN** the tenders, contracts, invoices, performance and messages collections MUST still be served
 
 ### Requirement: A case names the party it belongs to (REQ-SBA-002)
-A case opened from a portal write MUST carry `portalParty`: `kvk:<number>` when the session is a
-`business` or `supplier` session, the mandate's `onBehalfOf` when the write ran under a
-mandate, and `subject:<subjectRef>` otherwise. It MUST NOT hold a BSN. `mijnZaken` MUST project
+A case opened from a portal write MUST carry `portalParty` in portaliq's typed form: the
+mandate's `onBehalfOf` when the write ran under a mandate, `kvk:<8 digits>` from the session's
+`kvk` when a `business` or `supplier` session carries one, and `subject:<subjectRef>`
+otherwise. It MUST NOT be derived from `identityRef` and MUST NOT hold a BSN. `mijnZaken` MUST project
 it and MUST declare `mandateField: 'portalParty'`. This is a new requirement.
 
 #### Scenario: A company's case is found through a company mandate
 - **GIVEN** a case filed by an employee of KVK 12345678 with `portalParty` `kvk:12345678`
-- **AND** Petra van der Berg holding an active mandate with `onBehalfOf` `kvk:12345678`
-- **WHEN** Petra acts for the company and opens "Zaken"
+- **AND** Administratiekantoor Kramer, KVK 87654321, holding an active mandate with `holder` `kvk:87654321` and `onBehalfOf` `kvk:12345678`
+- **WHEN** an employee of Kramer signs in with eHerkenning, acts for the slagerij and opens "Zaken"
 - **THEN** the case MUST be listed with the mandate's label
+
+#### Scenario: A business session without a KVK number
+- **GIVEN** an eHerkenning session that carries no `kvk` (before portaliq task T0)
+- **WHEN** it files a case
+- **THEN** the case MUST carry `portalParty` `subject:<that session's subjectRef>`
+- **AND** no company mandate MUST reach the case
 
 #### Scenario: A mandate limited to case types
 - **GIVEN** Administratiekantoor Kramer holding a mandate for KVK 12345678 with `caseTypes` the bezwaar types

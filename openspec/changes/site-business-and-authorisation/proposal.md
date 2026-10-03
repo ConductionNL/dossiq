@@ -44,12 +44,23 @@ respecify any of it):
 - **The write record.** On a portal write under a mandate, portaliq records `actingFor` and
   `mandate` on the case's `portalWrites` (`CitizenWriteRecorder`).
 
-**What is missing in portaliq** (not specified here; proposed as the separate portaliq change
-`site-mandates-the-represented-manage`, which is NOT YET WRITTEN and is not part of portaliq#1110): no screen lists a
-party's authorised people with scope and end date; a company or a person cannot invite someone
-to act for them; there is no revoke in the portal; a grant always writes `reach: organisation`
-with no expiry. These are the "Wie mag zaken regelen voor uw bedrijf?" list, "Iemand machtigen"
-and "Intrekken" of `DossiqBusiness.dc.html`, and "Machtiging stoppen" of `DossiqPhone.dc.html`.
+**What portaliq adds in its own change** (not specified here): portaliq
+`site-mandates-the-represented-manage`, on portaliq `development` since portaliq#1123. It gives
+the represented party the "Wie mag zaken regelen voor uw bedrijf?" list with scope and end
+date, "Iemand machtigen" by email invitation, "Intrekken" and "Uitnodiging intrekken" of
+`DossiqBusiness.dc.html`, and the holder's "Machtiging stoppen" of `DossiqPhone.dc.html`.
+Ruben decided on 3 October 2026, recorded there as D7 and REQ-SMR-001 to 006:
+
+- `onBehalfOf` and the new `holder` are typed: `kvk:` plus 8 digits, or `subject:` plus a
+  subject reference (REQ-SMR-001).
+- **A company holds the mandate it accepts** (`holder: kvk:<n>`), so every eHerkenning sign-in
+  for that KVK number carries it; a person holds their own (`subject:<subjectRef>`)
+  (REQ-SMR-005). Portaliq keeps its own mandate record; it does not use Open Cloud Mesh.
+- **A private person may authorise** someone, by email invitation, after signing in once with
+  DigiD; the represented party is then `subject:<their subjectRef>`.
+- **Known blocker, portaliq task T0:** an eHerkenning session does not yet reliably carry the
+  company's KVK number. Portaliq maps one identity claim; T0 adds `claimMap.kvk` beside a
+  per-person `identityRef` and carries it on the session as `kvk`.
 
 **What is missing in dossiq**, which this change adds:
 
@@ -76,12 +87,12 @@ and "Intrekken" of `DossiqBusiness.dc.html`, and "Machtiging stoppen" of `Dossiq
   `business` with portaliq's existing per-organisation `claimMap.audience`; no portaliq code
   changes for that. `supplier` keeps the procurement manifest and, as
   `portal-case-list-declarations` decided, the case collection.
-- **New: the party a case belongs to.** A case property `portalParty`, a typed reference:
-  `kvk:<number>` for a company case, `subject:<subjectRef>` for a person's own case. It is
-  written by every path that opens a case from a portal write, from the session that wrote it
-  (the KVK number of a `business` or `supplier` session, the subject of a `client` session, or
-  the represented party when the write ran under a mandate). `mijnZaken` declares
-  `mandateField: 'portalParty'`.
+- **New: the party a case belongs to.** A case property `portalParty`, in portaliq's typed
+  form (REQ-SMR-001): `kvk:<8 digits>` for a company case, `subject:<subjectRef>` for a
+  person's own case. It is written by every path that opens a case from a portal write, from
+  the session that wrote it: the session's `kvk` for a `business` or `supplier` session (after
+  portaliq T0), the subject of a `client` session, or the represented party when the write ran
+  under a mandate. `mijnZaken` declares `mandateField: 'portalParty'`.
 - **Builds on `portal-case-list-declarations`:** lands its open halves for the new audience
   too: `portalBranch` and `branchField` (REQ-PORTAL-011), and the case collection for
   `supplier` (REQ-PORTAL-009).
@@ -92,38 +103,42 @@ and "Intrekken" of `DossiqBusiness.dc.html`, and "Machtiging stoppen" of `Dossiq
   `menu: false` on every page. The "for whom" switcher, the acting-for bar and the mandate list
   are portaliq's shell; dossiq declares no block for them.
 
-## Depends on a portaliq change that does not exist yet
+## Depends on portaliq
 
-The mandate list with scope and end date, invite, revoke, expiry and the typed `onBehalfOf`
-are proposed as portaliq `site-mandates-the-represented-manage`. That change is NOT YET WRITTEN. portaliq#1110
-(`site-mijn-omgeving-components`, `site-multi-step-forms`, `site-nlds-widget-palette`) does not
-cover mandate management. Until it lands, the dossiq half here works with the mandates
-portaliq can already make (an access request granted by staff, REQ-IAR-003): no expiry, no
-portal revoke, untyped `onBehalfOf`.
+- `site-mandates-the-represented-manage` (portaliq `development`): typed parties, the company
+  as holder, invitations, revocation, expiry and the screens. Written; not yet built.
+- **Its task T0, the KVK number on an eHerkenning session.** Until T0 lands, a business session
+  has no reliable KVK number. Dossiq then writes `subject:<subjectRef>` for that session's
+  case, so no company mandate can reach it. That is the safe failure: the person who filed
+  still sees the case, and nobody else does.
+- **Two asks of portaliq that its mandate change does not yet state** (tasks 0.1):
+  1. A write or endpoint call made by a session hands dossiq the party: the session's `kvk`,
+     or the mandate's `onBehalfOf` when it acts under one. For a flat create portaliq stamps
+     it into `mandateField`, as it stamps `branchField`; for an endpoint action
+     (`startWooVerzoek`) the `X-Portal-Subject` assertion carries it.
+  2. A business session sees the cases of its own company, not only the ones its own person
+     filed: "Zaken" also matches `mandateField` against the session's own `kvk:` party.
 
 ## What this change does not do
 
 - It does not build the mandate list, invite, revoke, the switcher or the acting-for bar.
-  Portaliq owns `portalMandate` and its screens (list above, for `site-mandates-the-represented-manage`, not yet
-  written).
+  Portaliq owns `portalMandate` and its screens (`site-mandates-the-represented-manage`).
 - It does not connect to DigiD Machtigen or eHerkenning ketenmachtiging. A mandate comes from
   portaliq, whatever its source.
 - It does not let a mandate scope anything but the case list and the case page. Messages and
   questions stay scoped to the person, as today.
 
-## Open decisions
+## Decided, and still open
 
-- **The typed party reference.** Portaliq stores a free-text `onBehalfOf`, "for example a KVK
-  number". For `mandateField` to match, both apps must write the same form. This change
-  proposes `kvk:<number>` and `subject:<subjectRef>`; portaliq must agree in
-  `site-mandates-the-represented-manage` (not yet written).
-- **How a person-for-person mandate names the represented person.** Portaliq holds no BSN. The
-  represented person's `subjectRef` is derived one-way from their login. A mandate made before
-  they ever signed in cannot name it. This is portaliq's to solve; until then
-  `DossiqPhone.dc.html` works only for a represented person who has signed in once.
-- **Scope finer than case types.** "Mag alleen bezwaren indienen en volgen" fits
-  `portalMandate.caseTypes` (the bezwaar case types). "Zaken bekijken, aanvullen en nieuwe
-  aanvragen doen" is a list of acts, which `portalMandate` cannot express today.
+- **Decided (Ruben, 3 October 2026):** typed parties `kvk:` and `subject:`; a company holds
+  the mandate it accepts; a private person may authorise by invitation; portaliq keeps its own
+  mandate record. This change follows all four.
+- **Settled by the invitation route:** a person who never signed in cannot be named, so
+  portaliq never looks one up; the invitee accepts after their own sign-in, and the
+  represented person is the one who sent the invitation (`DossiqPhone.dc.html`).
+- **Still open:** a scope finer than case types. "Mag alleen bezwaren indienen en volgen" fits
+  `portalMandate.caseTypes`. "Zaken bekijken, aanvullen en nieuwe aanvragen doen" is a list of
+  acts, which `portalMandate` cannot express.
 
 ## Capabilities
 
