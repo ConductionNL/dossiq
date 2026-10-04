@@ -8785,7 +8785,15 @@ OC.L10N.register(
         "{who} changed them afterwards, on {date}.": "{who} changed them afterwards, on {date}.",
         "{who} set these rights.": "{who} set these rights.",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
-        "{years} years": "{years} years"
+        "{years} years": "{years} years",
+        "Portal subject": "Portal subject",
+        "Whose portal account may read this request. It is copied from the case when the request is written, and it is the only field the portal reads it by, so a request on a case without one stays invisible. Nobody fills this in by hand.": "Whose portal account may read this request. It is copied from the case when the request is written, and it is the only field the portal reads it by, so a request on a case without one stays invisible. Nobody fills this in by hand.",
+        "Public name": "Public name",
+        "What a resident may be told this team is called, for example Team Vergunningen. Leave it empty and the resident is told no team at all, which is better than a name they cannot place. The team's own name stays internal, because it may name a person or a code.": "What a resident may be told this team is called, for example Team Vergunningen. Leave it empty and the resident is told no team at all, which is better than a name they cannot place. The team's own name stays internal, because it may name a person or a code.",
+        "Team the resident reads": "Team the resident reads",
+        "The handling team's public name, kept on the case so the portal can show it. It is empty while the team has no public name, and it never falls back to the team's internal name. It is calculated, so after you rename a team run occ openregister:rematerialise-calculations.": "The handling team's public name, kept on the case so the portal can show it. It is empty while the team has no public name, and it never falls back to the team's internal name. It is calculated, so after you rename a team run occ openregister:rematerialise-calculations.",
+        "Who is at turn": "Who is at turn",
+        "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here.": "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here."
     },
     "nplurals=2; plural=(n != 1);"
 )

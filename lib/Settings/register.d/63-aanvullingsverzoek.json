@@ -69,7 +69,7 @@
           "portalSubject": {
             "type": "string",
             "title": "Portal subject",
-            "description": "Whose portal account may read this request, copied from the case when the request is written. The ONE field the portal scopes a read by, so a request on a case without a portal subject reaches nobody and stays invisible. Not shown at the desk: it is a scoping key, not a fact a handler fills in.",
+            "description": "Whose portal account may read this request. It is copied from the case when the request is written, and it is the only field the portal reads it by, so a request on a case without one stays invisible. Nobody fills this in by hand.",
             "visible": false,
             "facetable": true
           },

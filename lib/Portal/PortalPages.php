@@ -108,16 +108,6 @@ class PortalPages {
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-four-pages-req-srpd-005
 	 */
 	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
-		$has = static function (array $rows, string $id): bool {
-			foreach ($rows as $row) {
-				if ((string)($row['id'] ?? '') === $id) {
-					return true;
-				}
-			}
-
-			return false;
-		};
-
 		$pages = [];
 		$pages[] = [
 			'id' => 'overzicht',
@@ -128,7 +118,7 @@ class PortalPages {
 			// renders the rest below it.
 			'home' => true,
 			'menu' => false,
-			'blocks' => $this->residentOverviewBlocks(asks: $has($collections, 'vragenAanU')),
+			'blocks' => $this->residentOverviewBlocks(collections: $collections),
 		];
 
 		$pages[] = [
@@ -141,14 +131,11 @@ class PortalPages {
 			// provider, and portaliq finds this page by its `record` key
 			// whenever a case is opened from a list, a card or a notice.
 			'record' => ['collection' => 'mijnZaken', 'titleFields' => ['title']],
-			'blocks' => $this->residentCaseBlocks(
-				asks: $has($collections, 'vragenAanU'),
-				replies: $has($actions, 'replyToMessage')
-			),
+			'blocks' => $this->residentCaseBlocks(collections: $collections, actions: $actions),
 		];
 
 		foreach (['berichten', 'verzoeken'] as $id) {
-			if ($has($collections, $id) === false) {
+			if ($this->declares(rows: $collections, id: $id) === false) {
 				continue;
 			}
 
@@ -178,17 +165,15 @@ class PortalPages {
 	 * The overview's blocks: what the resident still has to do, their running
 	 * cases, the newest messages, and the two things they can start.
 	 *
-	 * @param bool $asks Whether the organisation's questions are offered.
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) One declared collection, present or not.
-	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
-	private function residentOverviewBlocks(bool $asks): array {
+	private function residentOverviewBlocks(array $collections): array {
 		$blocks = [];
-		if ($asks === true) {
+		if ($this->declares(rows: $collections, id: 'vragenAanU') === true) {
 			$blocks[] = [
 				'type' => 'tasks',
 				'collection' => 'vragenAanU',
@@ -210,18 +195,16 @@ class PortalPages {
 	 * on THIS case, where it stands, its documents, what happened, the facts,
 	 * a way to write, and the case screen.
 	 *
-	 * @param bool $asks    Whether the organisation's questions are offered.
-	 * @param bool $replies Whether the reply action is offered.
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
 	 *
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) Two declared entries, present or not.
-	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
-	private function residentCaseBlocks(bool $asks, bool $replies): array {
+	private function residentCaseBlocks(array $collections, array $actions): array {
 		$blocks = [];
-		if ($asks === true) {
+		if ($this->declares(rows: $collections, id: 'vragenAanU') === true) {
 			$blocks[] = [
 				'type' => 'tasks',
 				'collection' => 'vragenAanU',
@@ -236,7 +219,7 @@ class PortalPages {
 		$blocks[] = ['type' => 'documents', 'collection' => 'mijnZaken'];
 		$blocks[] = ['type' => 'timeline', 'collection' => 'mijnZaken'];
 		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken'];
-		if ($replies === true) {
+		if ($this->declares(rows: $actions, id: 'replyToMessage') === true) {
 			$blocks[] = [
 				'type' => 'cta',
 				'action' => 'replyToMessage',
@@ -250,6 +233,24 @@ class PortalPages {
 
 		return $blocks;
 	}//end residentCaseBlocks()
+
+	/**
+	 * Whether a declared row with this id is there.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The collections or actions.
+	 * @param string                           $id   The id to look for.
+	 *
+	 * @return bool True when it is declared.
+	 */
+	private function declares(array $rows, string $id): bool {
+		foreach ($rows as $row) {
+			if ((string)($row['id'] ?? '') === $id) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end declares()
 
 	/**
 	 * The schema one collection reads, or '' when it is not there.

@@ -91,7 +91,6 @@ class CaseSteps {
 				step: $step,
 				state: $this->stateOf(index: $index, current: $current),
 				entered: $entered,
-				isCurrent: ($index === $current),
 				case: $case
 			);
 		}//end foreach
@@ -130,24 +129,21 @@ class CaseSteps {
 	 * description and date when there are any.
 	 *
 	 * @param array{label: string, description: string, ids: array<int, string>} $step The folded step.
-	 * @param string                                                             $state     Its state.
-	 * @param array<string, string>                                              $entered   The dates per status id.
-	 * @param bool                                                               $isCurrent Whether the case is on it.
-	 * @param array<string, mixed>                                               $case      The case row.
+	 * @param string                                                             $state   Its state.
+	 * @param array<string, string>                                              $entered The dates per status id.
+	 * @param array<string, mixed>                                               $case    The case row.
 	 *
 	 * @return array<string, string> The step.
 	 *
-	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) One step is current; the rest are not.
-	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
 	 */
-	private function entry(array $step, string $state, array $entered, bool $isCurrent, array $case): array {
+	private function entry(array $step, string $state, array $entered, array $case): array {
 		$entry = ['label' => $step['label'], 'state' => $state];
 		if ($step['description'] !== '') {
 			$entry['description'] = $step['description'];
 		}
 
-		$date = $this->dateOf(step: $step, entered: $entered, isCurrent: $isCurrent, case: $case);
+		$date = $this->dateOf(step: $step, entered: $entered, state: $state, case: $case);
 		if ($date !== '') {
 			$entry['date'] = $date;
 		}
@@ -285,19 +281,19 @@ class CaseSteps {
 	 *
 	 * @param array{label: string, description: string, ids: array<int, string>} $step The step.
 	 * @param array<string, string> $entered The date per status id.
-	 * @param bool $isCurrent Whether this is the current step.
+	 * @param string $state The step's state.
 	 * @param array<string, mixed> $case The case row.
 	 *
 	 * @return string The date, or ''.
 	 */
-	private function dateOf(array $step, array $entered, bool $isCurrent, array $case): string {
+	private function dateOf(array $step, array $entered, string $state, array $case): string {
 		foreach ($step['ids'] as $id) {
 			if (($entered[$id] ?? '') !== '') {
 				return $entered[$id];
 			}
 		}
 
-		if ($isCurrent === true) {
+		if ($state === self::CURRENT) {
 			return $this->asDate(moment: (string)($case['currentStatusEnteredAt'] ?? ''));
 		}
 

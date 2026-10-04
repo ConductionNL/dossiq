@@ -2630,15 +2630,15 @@
                         "type": "string",
                         "readOnly": true,
                         "visible": false,
-                        "title": "Who is at turn, for the resident",
-                        "description": "Who the resident is told is at turn: applicant when an aanvullingsverzoek is open or the status waits on them, thirdParty when the status waits on somebody else, us otherwise, and empty on a closed case. Computed declaratively over endDate, waitingOnApplicant and waitingOn, because portaliq's case card reads ONE field for this (site-mijn-omgeving-components REQ-SMO-022) while the three facts live in three places. The words a resident reads are not here: they are the collection's valueLabels, so a portal administrator can reword them per site."
+                        "title": "Who is at turn",
+                        "description": "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here."
                     },
                     "assignedGroupPublicName": {
                         "type": "string",
                         "readOnly": true,
                         "visible": false,
-                        "title": "Team, as the resident reads it",
-                        "description": "The handling team's public name, from the linked organisatieRol's publicName. It lives on the case for the reason statusPublicLabel does: the portal projects the case to a field whitelist and cannot follow the assignedGroup reference. Empty when the team declares no public name, and it never falls back to the internal name: that one is written for a colleague. Materialised, so after renaming a team run occ openregister:rematerialise-calculations."
+                        "title": "Team the resident reads",
+                        "description": "The handling team's public name, kept on the case so the portal can show it. It is empty while the team has no public name, and it never falls back to the team's internal name. It is calculated, so after you rename a team run occ openregister:rematerialise-calculations."
                     },
                     "isFinalStatus": {
                         "type": "boolean",

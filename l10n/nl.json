@@ -8796,6 +8796,14 @@
         "{who} changed them afterwards, on {date}.": "{who} heeft ze daarna gewijzigd, op {date}.",
         "{who} set these rights.": "{who} heeft deze rechten ingesteld.",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
-        "{years} years": "{years} jaar"
+        "{years} years": "{years} jaar",
+        "Portal subject": "Portaalonderwerp",
+        "Whose portal account may read this request. It is copied from the case when the request is written, and it is the only field the portal reads it by, so a request on a case without one stays invisible. Nobody fills this in by hand.": "Welk portaalaccount dit verzoek mag lezen. Het wordt bij het schrijven van de zaak overgenomen en het portaal leest het verzoek alleen hierop, dus een verzoek op een zaak zonder dit veld blijft onzichtbaar. Niemand vult dit met de hand in.",
+        "Public name": "Publieke naam",
+        "What a resident may be told this team is called, for example Team Vergunningen. Leave it empty and the resident is told no team at all, which is better than a name they cannot place. The team's own name stays internal, because it may name a person or a code.": "Hoe dit team naar inwoners heet, bijvoorbeeld Team Vergunningen. Laat u het leeg, dan ziet de inwoner geen team, en dat is beter dan een naam waar zij niets mee kunnen. De eigen naam van het team blijft intern, omdat die een persoon of een code kan noemen.",
+        "Team the resident reads": "Team dat de inwoner leest",
+        "The handling team's public name, kept on the case so the portal can show it. It is empty while the team has no public name, and it never falls back to the team's internal name. It is calculated, so after you rename a team run occ openregister:rematerialise-calculations.": "De publieke naam van het behandelende team, op de zaak bewaard zodat het portaal die kan tonen. Het veld is leeg zolang het team geen publieke naam heeft en valt nooit terug op de interne naam. Het wordt berekend, dus voer na het hernoemen van een team occ openregister:rematerialise-calculations uit.",
+        "Who is at turn": "Wie aan zet is",
+        "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here.": "Wie de inwoner te zien krijgt als degene die aan zet is: applicant zolang wij op de inwoner wachten, thirdParty zolang wij op iemand anders wachten, us in de andere gevallen, en leeg zodra de zaak is afgerond. Het wordt berekend uit de einddatum en waar de status op wacht. De woorden die de inwoner leest stelt u per portaal in, niet hier."
     }
 }
