@@ -381,7 +381,7 @@ class PortalContributionProvider {
 	 *
 	 * @return array<int, array<string, string>> The steps, or [] when they cannot be read.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	public function caseSteps(string $caseId): array {
 		if ($this->steps === null) {
