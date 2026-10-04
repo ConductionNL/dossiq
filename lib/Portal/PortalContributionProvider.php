@@ -687,10 +687,7 @@ class PortalContributionProvider {
 				// `status` stay in the projection because the portal tells
 				// cases and statuses apart by them; they are simply not shown.
 				'columns' => self::CITIZEN_CASE_COLUMNS,
-				'detail' => [
-					'layout' => 'card',
-					'fields' => self::CITIZEN_CASE_DETAIL_FIELDS,
-				],
+				'detail' => ['layout' => 'card', 'fields' => self::CITIZEN_CASE_DETAIL_FIELDS],
 				'fieldConfigs' => self::CITIZEN_CASE_DETAIL_LABELS,
 				// The case detail carries what has happened on it. The
 				// contract names the method rather than embedding the
