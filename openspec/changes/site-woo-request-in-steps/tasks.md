@@ -7,17 +7,24 @@ without it portaliq shows the action as one form, as today.
 
 ## 0. Decision for Ruben
 
-- [ ] 0.1 Required fields (design D1). **The fact has changed since this was written.** Ruben
-      decided on 3 October that an action may name its own required fields, and portaliq
-      shipped it: `requiredFields` on the action is honoured whether or not the action writes a
-      schema (REQ-SMF-023/024, portaliq#1139). So the half that needed portaliq is done, and
-      what is left is only dossiq's own: `onderwerp` is declared required here, because it is
-      the one field `WooRequestForm` already refuses a request without. Whether
+- [x] 0.1 Required fields (design D1). **Answered: `onderwerp` is required, the other five stay
+      optional.** A form that marks a field required while nothing refuses it is a form that
+      lies, and `WooRequestForm` refuses a request without `onderwerp` and nothing else. So the
+      honest state is the one this change ships.
+  - **What it would take to change it**, in this order: dossiq's own portal route refuses
       `omschrijving`, `periodeVan`, `documentSoorten`, `verzoekerNaam` and `verzoekerEmail`
-      should join it means refusing them on dossiq's portal route while `start()` stays lenient
-      for pipelinq's conversion. Declaring them required without that refusal would have the
-      form promise a check nothing makes, so this change does neither and leaves the decision.
-      `required` on a field config is still never declared: portaliq drops it in silence.
+      (in `PortalWooRequestController`, or in a portal-only branch of the form), while
+      `WooRequestIntake::start()` stays lenient, because pipelinq converts a phone call where
+      not every question was asked; then those five join `requiredFields` on both actions. The
+      portaliq half needs nothing: an action's `requiredFields` is honoured whether or not it
+      writes a schema (REQ-SMF-023/024, portaliq#1139, Ruben 3 October).
+  - `required` on a field config is never declared, whatever is decided: portaliq drops it in
+      silence, and `PortalContributionProviderTest` fails if any action adds one.
+  - The record of what changed under this decision: Ruben
+      decided on 3 October that an action may name its own required fields, and portaliq
+      shipped it, so the premise that no field could be marked at all is gone. The design's
+      D1 note ("portaliq does not honour `required` on an action without a schema") is the
+      state before that, and the table's "Server" column is still what the server checks.
 
 ## 1. Intake
 
