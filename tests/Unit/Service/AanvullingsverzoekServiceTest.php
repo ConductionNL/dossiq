@@ -96,6 +96,77 @@ class AanvullingsverzoekServiceTest extends TestCase {
 	}//end service()
 
 	/**
+	 * The same service, told what the case's portal subject is.
+	 *
+	 * @param string $subject The case's portal subject, or '' for none.
+	 *
+	 * @return AanvullingsverzoekService&MockObject The service.
+	 */
+	private function serviceForSubject(string $subject): AanvullingsverzoekService {
+		$service = $this->getMockBuilder(className: AanvullingsverzoekService::class)
+			->setConstructorArgs(
+				[
+					'act' => $this->act,
+					'settingsService' => $this->settings,
+					'logger' => new NullLogger(),
+				]
+			)
+			->onlyMethods(['openFor', 'write', 'markCaseWaiting', 'portalSubjectOf'])
+			->getMock();
+
+		$service->method('openFor')->willReturn(null);
+		$service->method('write')->willReturnArgument(0);
+		$service->method('portalSubjectOf')->willReturn($subject);
+
+		return $service;
+	}//end serviceForSubject()
+
+	/**
+	 * The request names who may read it in the portal, copied from the case.
+	 *
+	 * @return void
+	 */
+	public function testTheRequestNamesWhoMayReadItInThePortal(): void {
+		$this->act->expects($this->once())->method('ask')->willReturn($this->sent());
+
+		$request = $this->serviceForSubject(subject: 'person:bsn-hash-1')->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertSame(expected: 'person:bsn-hash-1', actual: $request['portalSubject']);
+	}//end testTheRequestNamesWhoMayReadItInThePortal()
+
+	/**
+	 * 🔴 A case with no portal subject writes none, so the request reaches
+	 * nobody rather than everybody: the portal scopes this collection by that
+	 * one field, and an empty value there would match no row at all, while a
+	 * wrong one would match somebody else's.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithoutAPortalSubjectWritesNone(): void {
+		$this->act->expects($this->once())->method('ask')->willReturn($this->sent());
+
+		$request = $this->serviceForSubject(subject: '')->ask(
+			caseId: 'case-1',
+			items: ['Bankafschrift'],
+			recipient: 'aanvrager@example.org',
+			durationDays: 14,
+			userId: 'handler1',
+			pauseReason: 'reason-awb-45',
+			rationale: 'Zonder bankafschrift kan de aanvraag niet worden beoordeeld',
+		);
+
+		self::assertArrayNotHasKey('portalSubject', $request);
+	}//end testACaseWithoutAPortalSubjectWritesNone()
+
+	/**
 	 * What the act answers for a send that worked.
 	 *
 	 * @return array<string, mixed> The outcome.

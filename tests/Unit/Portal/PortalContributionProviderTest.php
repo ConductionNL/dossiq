@@ -35,6 +35,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
+ * @uses   \OCA\Dossiq\Portal\CitizenManifest
  */
 class PortalContributionProviderTest extends TestCase {
 	/**
@@ -81,6 +82,237 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertNotEmpty($this->schemas, 'the register must declare schemas');
 	}
 
+	/**
+	 * What the organisation still needs from the resident: the collection,
+	 * its scope, and what it does and does not project
+	 * (site-resident-portal-design D1).
+	 *
+	 * @return void
+	 */
+	public function testTheQuestionsToTheResidentAreScopedAndMinimal(): void {
+		$collection = $this->citizenCollection(id: 'vragenAanU');
+
+		$this->assertSame('aanvullingsverzoek', $collection['schema']);
+		$this->assertSame('portalSubject', $collection['scopeField']);
+		$this->assertSame('Wat wij nog van u nodig hebben', $collection['label']);
+		$this->assertSame(
+			['case', 'summary', 'missingItems', 'hersteltermijn', 'state', 'requestedAt'],
+			$collection['fields']
+		);
+		// Written for a colleague, so never handed to the applicant.
+		foreach (['rationale', 'party', 'recipient', 'requestedBy', 'pauseReason', 'deadlineInstance', 'pauseDays'] as $internal) {
+			$this->assertNotContains($internal, $collection['fields'], $internal);
+		}
+
+		$this->assertSame(['state' => 'open'], $collection['defaultFilters']);
+
+		// EVERY PROJECTED FIELD EXISTS ON THE SCHEMA. A field that does not
+		// is projected as nothing at all, which reads exactly like a field
+		// the organisation chose not to show.
+		foreach ($collection['fields'] as $field) {
+			$this->assertArrayHasKey(
+				$field,
+				$this->schemas['aanvullingsverzoek']['properties'],
+				$field . ' must exist on aanvullingsverzoek'
+			);
+		}
+	}//end testTheQuestionsToTheResidentAreScopedAndMinimal()
+
+	/**
+	 * Who is at turn, by when, and where the case stands: one field each for
+	 * the card, the words beside them, and the steps provider
+	 * (site-resident-portal-design D2 and D3).
+	 *
+	 * @return void
+	 */
+	public function testTheCaseCardSaysWhoIsAtTurnAndWhereTheCaseStands(): void {
+		$cases = $this->citizenCollection(id: 'mijnZaken');
+
+		$this->assertSame('portalTurn', $cases['turnField']);
+		$this->assertSame('deadline', $cases['dueField']);
+		$this->assertSame(
+			[
+				'applicant' => 'U bent aan zet',
+				'thirdParty' => 'Wij wachten op informatie van een ander',
+				'us' => 'De gemeente is aan zet',
+			],
+			$cases['valueLabels']['portalTurn'],
+			'the words are dossiq\'s, so a portal administrator can reword them'
+		);
+		$this->assertSame(
+			['label' => 'Waar staat uw aanvraag?', 'provider' => 'caseSteps'],
+			$cases['steps']
+		);
+
+		// The card reads one field; the two facts behind it travel with it.
+		foreach (['portalTurn', 'waitingOnApplicant', 'waitingOn', 'assignedGroupPublicName'] as $field) {
+			$this->assertContains($field, $cases['fields'], $field);
+			$this->assertArrayHasKey($field, $this->schemas['case']['properties'], $field . ' must exist on case');
+		}
+
+		$this->assertContains('assignedGroupPublicName', $cases['detail']['fields']);
+		$this->assertArrayHasKey('publicName', $this->schemas['organisatieRol']['properties']);
+	}//end testTheCaseCardSaysWhoIsAtTurnAndWhereTheCaseStands()
+
+	/**
+	 * The steps provider answers through the provider's own method, and
+	 * answers nothing rather than throwing when it is not wired.
+	 *
+	 * @return void
+	 */
+	public function testTheStepsProviderIsReachableFromTheContribution(): void {
+		$this->assertTrue(method_exists($this->provider, 'caseSteps'));
+		$this->assertSame([], $this->provider->caseSteps('a-case'));
+	}//end testTheStepsProviderIsReachableFromTheContribution()
+
+	/**
+	 * "Bericht sturen" on a case page presets the open case into the one
+	 * field the action's own cross-reference guard checks
+	 * (site-mijn-omgeving-components REQ-SMO-024).
+	 *
+	 * @return void
+	 */
+	public function testTheReplyActionNamesTheFieldARecordLandsIn(): void {
+		$reply = $this->citizenAction(id: 'replyToMessage');
+
+		$this->assertSame('caseId', $reply['recordField']);
+		$this->assertContains('caseId', $reply['fields']);
+		$this->assertArrayHasKey('caseId', $reply['crossRefs']);
+
+		$page = $this->citizenPage(id: 'mijnZaken');
+		$cta = null;
+		foreach ($page['blocks'] as $block) {
+			if (($block['type'] ?? '') === 'cta') {
+				$cta = $block;
+			}
+		}
+
+		$this->assertSame(
+			['type' => 'cta', 'action' => 'replyToMessage', 'label' => 'Bericht sturen', 'withRecord' => true],
+			$cta
+		);
+	}//end testTheReplyActionNamesTheFieldARecordLandsIn()
+
+	/**
+	 * The start points a home page lists say in one sentence what they are
+	 * for, and to whom they are offered (site-resident-portal-design D5).
+	 *
+	 * @return void
+	 */
+	public function testTheStartPointsCarryTheirOwnSentence(): void {
+		foreach (['createBezwaar' => 'Bezwaar maken', 'createKlacht' => 'Klacht indienen'] as $id => $label) {
+			$action = $this->citizenAction(id: $id);
+			$this->assertSame($label, $action['label']);
+			$this->assertNotSame('', trim($action['summary']));
+			$this->assertLessThanOrEqual(200, mb_strlen($action['summary']), $id . ': a tile reads one sentence');
+			$this->assertSame(['citizen', 'client'], $action['audiences']);
+			// A service promise dossiq cannot know is true for an instance
+			// stays off the tile; an editor may add it on the page.
+			$this->assertStringNotContainsStringIgnoringCase('werkdagen', $action['summary']);
+		}
+	}//end testTheStartPointsCarryTheirOwnSentence()
+
+	/**
+	 * 🔴 A REQUIRED FIELD IS DECLARED WHERE PORTALIQ READS ONE. Portaliq takes
+	 * a required marker from the written schema's own `required` list and from
+	 * an action's `requiredFields` (REQ-SMF-023/024). `required` on a field
+	 * config is dropped in silence, so the Woo form read "(niet verplicht)"
+	 * on the one question it cannot do without. Measured by running this
+	 * manifest through portaliq's own resolvers: the key was the only one of
+	 * ours they threw away.
+	 *
+	 * @return void
+	 */
+	public function testARequiredFieldIsDeclaredWherePortaliqReadsOne(): void {
+		$woo = $this->citizenAction(id: 'startWooVerzoek');
+
+		$this->assertSame(['onderwerp'], $woo['requiredFields']);
+		$this->assertContains('onderwerp', $woo['fields'], 'a required field must be one the action sends');
+
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['actions'] as $action) {
+			foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
+				$this->assertArrayNotHasKey(
+					'required',
+					(array)$config,
+					($action['id'] ?? '?') . '.' . $field . ': portaliq drops a required field config; use requiredFields'
+				);
+			}
+		}
+	}//end testARequiredFieldIsDeclaredWherePortaliqReadsOne()
+
+	/**
+	 * The case page's question block is scoped to the case on screen, so a
+	 * resident with questions on two cases reads only this one's.
+	 *
+	 * @return void
+	 */
+	public function testTheCasePageAsksOnlyAboutTheCaseOnScreen(): void {
+		$pages = $this->provider->getContribution(['audience' => 'citizen'])['pages'];
+		$case = null;
+		foreach ($pages as $page) {
+			if (($page['id'] ?? '') === 'mijnZaken') {
+				$case = $page;
+			}
+		}
+
+		$this->assertNotNull($case, 'the case page must be declared');
+		$tasks = $case['blocks'][0];
+		$this->assertSame('tasks', $tasks['type']);
+		$this->assertSame('vragenAanU', $tasks['collection']);
+		$this->assertSame('case', $tasks['recordField'], 'the open record is matched on the request\'s case');
+	}//end testTheCasePageAsksOnlyAboutTheCaseOnScreen()
+
+	/**
+	 * One citizen collection by its id.
+	 *
+	 * @param string $id The collection id.
+	 *
+	 * @return array<string, mixed> The collection.
+	 */
+	private function citizenCollection(string $id): array {
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['collections'] as $collection) {
+			if (($collection['id'] ?? '') === $id) {
+				return $collection;
+			}
+		}
+
+		$this->fail('the citizen contribution must declare the collection ' . $id);
+	}//end citizenCollection()
+
+	/**
+	 * One citizen action by its id.
+	 *
+	 * @param string $id The action id.
+	 *
+	 * @return array<string, mixed> The action.
+	 */
+	private function citizenAction(string $id): array {
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['actions'] as $action) {
+			if (($action['id'] ?? '') === $id) {
+				return $action;
+			}
+		}
+
+		$this->fail('the citizen contribution must declare the action ' . $id);
+	}//end citizenAction()
+
+	/**
+	 * One citizen page by its id.
+	 *
+	 * @param string $id The page id.
+	 *
+	 * @return array<string, mixed> The page.
+	 */
+	private function citizenPage(string $id): array {
+		foreach ($this->provider->getContribution(['audience' => 'citizen'])['pages'] as $page) {
+			if (($page['id'] ?? '') === $id) {
+				return $page;
+			}
+		}
+
+		$this->fail('the citizen contribution must declare the page ' . $id);
+	}//end citizenPage()
+
 	public function testAdvertisesFourAudiences(): void {
 		$this->assertSame(['supplier', 'citizen', 'client', 'inspector'], $this->provider->getAudiences());
 	}
@@ -117,7 +349,10 @@ class PortalContributionProviderTest extends TestCase {
 		$contribution = $this->provider->getContribution(['audience' => 'citizen']);
 		$this->assertIsArray($contribution);
 		$ids = array_column($contribution['collections'], 'id');
-		$this->assertSame(['mijnZaken', 'berichten', 'verzoeken'], $ids);
+		// `vragenAanU` is what the organisation still needs from the resident
+		// (site-resident-portal-design D1), between their cases and their
+		// messages.
+		$this->assertSame(['mijnZaken', 'vragenAanU', 'berichten', 'verzoeken'], $ids);
 
 		// Three creates and the one update a resident makes on their own
 		// case (dossiq#3152). The two creates that name a case were deferred until Portaliq
@@ -193,14 +428,21 @@ class PortalContributionProviderTest extends TestCase {
 	public function testTheResidentPagesShareOneGroupAndDoNotRepeatTheSiteSections(string $audience): void {
 		$contribution = $this->provider->getContribution(['audience' => $audience]);
 
-		$this->assertSame(['mijnZaken', 'berichten', 'verzoeken'], array_column($contribution['pages'], 'id'));
+		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken'], array_column($contribution['pages'], 'id'));
 		$this->assertSame(
-			['Voortgang van uw zaken', 'Een bericht beantwoorden', 'Mijn verzoeken'],
+			['Overzicht', 'Uw zaak', 'Berichten', 'Mijn verzoeken'],
 			array_column($contribution['pages'], 'label')
 		);
 		foreach ($contribution['pages'] as $page) {
 			$this->assertSame('Mijn zaken en verzoeken', $page['group']);
-			$this->assertNotContains($page['label'], ['Mijn zaken', 'Berichten']);
+			// WHY THE RENAME IS GONE. These pages were renamed because they
+			// stood in the portal's menu beside the site's own sections
+			// (portal-pages-in-resident-groups). They declare `menu: false`
+			// now, so they keep their route and leave the menu
+			// (site-resident-portal-design D4, portaliq REQ-SMO-020): there
+			// is nothing left to collide with, and a page a resident opens
+			// may say what it is.
+			$this->assertFalse($page['menu']);
 		}
 
 		$this->assertNotSame('Dossiq', $contribution['label']);
@@ -220,16 +462,18 @@ class PortalContributionProviderTest extends TestCase {
 	public function testACaseStillOpensOnItsPage(): void {
 		$pages = $this->provider->getContribution(['audience' => 'citizen'])['pages'];
 
+		// The overview opens with what the resident still has to do, and the
+		// case page is the one a case opens on: it is a record page on
+		// mijnZaken and it still carries the case screen.
+		$this->assertSame('overzicht', $pages[0]['id']);
+		$this->assertSame('tasks', $pages[0]['blocks'][0]['type']);
 		$this->assertSame(
-			[
-				['type' => 'collection', 'collection' => 'mijnZaken'],
-				['type' => 'detail', 'collection' => 'mijnZaken'],
-				['type' => 'citizenCase', 'collection' => 'mijnZaken'],
-			],
-			$pages[0]['blocks']
+			['collection' => 'mijnZaken', 'titleFields' => ['title']],
+			$pages[1]['record']
 		);
-		$this->assertSame(['type' => 'action', 'action' => 'replyToMessage'], $pages[1]['blocks'][0]);
-		$this->assertSame(['type' => 'action', 'action' => 'createKlacht'], $pages[2]['blocks'][0]);
+		$this->assertContains('citizenCase', array_column($pages[1]['blocks'], 'type'));
+		$this->assertSame(['type' => 'action', 'action' => 'replyToMessage'], $pages[2]['blocks'][0]);
+		$this->assertSame(['type' => 'action', 'action' => 'createKlacht'], $pages[3]['blocks'][0]);
 	}//end testACaseStillOpensOnItsPage()
 
 	/**
@@ -249,12 +493,14 @@ class PortalContributionProviderTest extends TestCase {
 		$collections = array_column($contribution['collections'], 'id');
 		$actions = array_column($contribution['actions'], 'id');
 
-		$this->assertCount(count($collections), $contribution['pages']);
+		$this->assertNotSame([], $contribution['pages']);
 		foreach ($contribution['pages'] as $page) {
 			$this->assertNotSame('', $page['group']);
 			$this->assertNotSame('', $page['label']);
 			foreach ($page['blocks'] as $block) {
-				if ($block['type'] === 'action') {
+				// A cta names an action here; portaliq also allows a page or
+				// a route (REQ-SMO-024), which no dossiq tile needs.
+				if ($block['type'] === 'action' || $block['type'] === 'cta') {
 					$this->assertContains($block['action'], $actions);
 					continue;
 				}
