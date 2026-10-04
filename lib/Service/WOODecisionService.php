@@ -128,7 +128,9 @@ class WOODecisionService {
 				'case' => $caseId,
 				'decisionType' => self::DECISION_TYPE_ID,
 				'decisionDate' => date('Y-m-d'),
-				'description' => 'WOO besluit voor zaak ' . $caseId,
+				'description' => self::publicationSummary(
+					caseTitle: $this->readCaseTitle(objectService: $objectService, register: $register, caseId: $caseId),
+				),
 				'wooSummary' => $summary,
 				'weigeringsgronden' => $weigeringsgronden,
 				'assessmentCount' => count($assessments),
@@ -154,6 +156,72 @@ class WOODecisionService {
 			'assessmentCount' => count($assessments),
 		];
 	}//end assembleDecision()
+
+	/**
+	 * The line a resident reads under the title of the published decision.
+	 *
+	 * OpenCatalogi shows a publication's `summary` under its title on the
+	 * public site and in search results, and the publication takes it from the
+	 * decision's `description` (WooPublicationService::buildPayload()). It
+	 * used to read "WOO besluit voor zaak <uuid>", so a resident read a code.
+	 * It names the request by the case's title instead, and never prints an id.
+	 *
+	 * @param string $caseTitle The case's title, or '' when it has none.
+	 *
+	 * @return string The summary.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public static function publicationSummary(string $caseTitle): string {
+		$title = trim($caseTitle);
+		if ($title === '') {
+			return 'Besluit op een Woo-verzoek';
+		}
+
+		return 'Besluit op het Woo-verzoek "' . $title . '"';
+	}//end publicationSummary()
+
+	/**
+	 * The title of the case, or '' when it cannot be read.
+	 *
+	 * A case that cannot be read costs the summary its title, not the decision.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register The dossiq register.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return string The title.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function readCaseTitle(object $objectService, string $register, string $caseId): string {
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if ($caseSchema === '') {
+			return '';
+		}
+
+		try {
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				id: $caseId,
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'WOODecisionService: the case title could not be read for the decision summary',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+			);
+			return '';
+		}
+
+		$title = $case['title'] ?? '';
+		if (is_string($title) === false) {
+			return '';
+		}
+
+		return $title;
+	}//end readCaseTitle()
 
 	/**
 	 * The case can now be published: it reads `wooPublicationStatus: ready`
