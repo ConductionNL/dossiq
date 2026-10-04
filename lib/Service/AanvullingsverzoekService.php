@@ -174,6 +174,16 @@ class AanvullingsverzoekService {
 			'pauseDays' => max(1, $durationDays),
 		];
 
+		// WHOSE PORTAL ACCOUNT MAY READ THIS. Copied from the case, because
+		// the portal scopes a read by one field on the row it reads and cannot
+		// follow `case` to find it (site-resident-portal-design D1). A case
+		// without a portal subject leaves this empty, and the request then
+		// reaches nobody rather than everybody.
+		$portalSubject = $this->portalSubjectOf(caseId: $caseId);
+		if ($portalSubject !== '') {
+			$request['portalSubject'] = $portalSubject;
+		}
+
 		$written = $this->write(request: $request);
 		$this->markCaseWaiting(caseId: $caseId, since: $now->format('c'));
 
@@ -184,6 +194,52 @@ class AanvullingsverzoekService {
 
 		return $written;
 	}//end ask()
+
+	/**
+	 * The case's portal subject, or '' when it has none or cannot be read.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return string The portal subject.
+	 *
+	 * Protected rather than private so a test can hand the case's subject in
+	 * without an OpenRegister, the way `write()` and `markCaseWaiting()` are
+	 * already seams in this class.
+	 *
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-what-the-organisation-still-needs-from-them-req-srpd-001
+	 */
+	protected function portalSubjectOf(string $caseId): string {
+		try {
+			// 🔑 THE REGISTER LOOKUP IS INSIDE THE TRY, and it has to be:
+			// `openRegister()` REFUSES (aanvullingsverzoek_no_register) when
+			// the instance has none configured, so reading the subject outside
+			// this block turned a working ask() into a refusal — the existing
+			// tests of ask() caught exactly that.
+			[$objectService, $register] = $this->openRegister();
+			$schema = (string)$this->settingsService->getConfigValue('case_schema');
+			if ($schema === '') {
+				return '';
+			}
+
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $schema,
+				id: $caseId
+			);
+		} catch (Throwable $e) {
+			// A request that cannot name its reader is still a request. It is
+			// written without one and stays invisible in the portal, which is
+			// the safe half of the choice.
+			$this->logger->warning(
+				'Dossiq: the case portal subject could not be read, so the request is not shown in the portal',
+				['app' => Application::APP_ID, 'case' => $caseId, 'error' => $e->getMessage()]
+			);
+			return '';
+		}
+
+		return trim((string)(($case ?? [])['portalSubject'] ?? ''));
+	}//end portalSubjectOf()
 
 	/**
 	 * The open request on a case, or null when nothing is outstanding.

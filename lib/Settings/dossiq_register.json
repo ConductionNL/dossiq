@@ -1555,7 +1555,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.34.0",
+                "version": "1.35.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1878,6 +1878,68 @@
                             "description": "The organisation's explanation of the outcome for the applicant, from the linked result record's publicExplanation. Empty when none was written, and it never falls back to the result's description: that one is written for a colleague, the way statusPublicDescription never falls back to a status type's internal description. Materialised and rematerialised like resultPublicLabel.",
                             "expression": {
                                 "prop": "@ref.result.publicExplanation"
+                            }
+                        },
+                        "portalTurn": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "Who the resident is told is at turn. Empty once the case has an end date, because a closed case waits on nobody; then applicant when an aanvullingsverzoek is open (waitingOnApplicant) or the status says so; then thirdParty from the status; else us. One field, because portaliq's case card reads one (turnField).",
+                            "expression": {
+                                "if": [
+                                    {
+                                        "ne": [
+                                            {
+                                                "coalesce": [
+                                                    {
+                                                        "prop": "endDate"
+                                                    },
+                                                    ""
+                                                ]
+                                            },
+                                            ""
+                                        ]
+                                    },
+                                    "",
+                                    {
+                                        "if": [
+                                            {
+                                                "eq": [
+                                                    {
+                                                        "coalesce": [
+                                                            {
+                                                                "prop": "waitingOnApplicant"
+                                                            },
+                                                            false
+                                                        ]
+                                                    },
+                                                    true
+                                                ]
+                                            },
+                                            "applicant",
+                                            {
+                                                "coalesce": [
+                                                    {
+                                                        "prop": "waitingOn"
+                                                    },
+                                                    "us"
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "assignedGroupPublicName": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "The handling team's public name, copied onto the case so the portal's detail block reads it without following a reference. Empty when the team declares none; the internal name is never used, because it is written for a colleague.",
+                            "expression": {
+                                "coalesce": [
+                                    {
+                                        "prop": "@ref.assignedGroup.publicName"
+                                    },
+                                    ""
+                                ]
                             }
                         },
                         "waitingOn": {
@@ -2563,6 +2625,20 @@
                         "title": "Status",
                         "facetable": true,
                         "order": 4
+                    },
+                    "portalTurn": {
+                        "type": "string",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Who is at turn, for the resident",
+                        "description": "Who the resident is told is at turn: applicant when an aanvullingsverzoek is open or the status waits on them, thirdParty when the status waits on somebody else, us otherwise, and empty on a closed case. Computed declaratively over endDate, waitingOnApplicant and waitingOn, because portaliq's case card reads ONE field for this (site-mijn-omgeving-components REQ-SMO-022) while the three facts live in three places. The words a resident reads are not here: they are the collection's valueLabels, so a portal administrator can reword them per site."
+                    },
+                    "assignedGroupPublicName": {
+                        "type": "string",
+                        "readOnly": true,
+                        "visible": false,
+                        "title": "Team, as the resident reads it",
+                        "description": "The handling team's public name, from the linked organisatieRol's publicName. It lives on the case for the reason statusPublicLabel does: the portal projects the case to a field whitelist and cannot follow the assignedGroup reference. Empty when the team declares no public name, and it never falls back to the internal name: that one is written for a colleague. Materialised, so after renaming a team run occ openregister:rematerialise-calculations."
                     },
                     "isFinalStatus": {
                         "type": "boolean",

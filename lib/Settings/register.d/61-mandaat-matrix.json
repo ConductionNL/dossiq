@@ -75,7 +75,7 @@
       "organisatieRol": {
         "slug": "organisatieRol",
         "icon": "AccountGroup",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
         "type": "object",
@@ -90,7 +90,8 @@
           "parentRoleId":     {"type": "string", "title": "Parent Role ID", "description": "Hierarchical parent OrganisatieRol id"},
           "department":        {"type": "string", "title": "Department", "description": "Department to which this role belongs.", "facetable": true, "maxLength": 255},
           "team":            {"type": "string", "title": "Team", "description": "Team to which this role belongs.", "maxLength": 255},
-          "mandateLevel":    {"type": "integer", "title": "Mandate Level", "description": "Numeric tier: used for next-higher resolution"}
+          "mandateLevel":    {"type": "integer", "title": "Mandate Level", "description": "Numeric tier: used for next-higher resolution"},
+          "publicName":      {"type": "string", "title": "Public name", "description": "What a resident may be told this team is called, for example Team Vergunningen. The internal name stays internal: it is written for a colleague and may name a person or a code. Empty means the resident is told no team at all, which is better than a name they cannot place. The case copies this onto assignedGroupPublicName so the portal can project it.", "inputControl": "text"}
         }
       },
       "medewerkerRolToewijzing": {
