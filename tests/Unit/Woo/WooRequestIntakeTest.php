@@ -36,6 +36,14 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
  * @covers \OCA\Dossiq\Woo\WooRequestForm
+ *
+ * The two readers the intake builds for itself: what the case type asks about
+ * the requester, and what the write answered. They are used here, not covered:
+ * their own rules are asserted through this path because that is the only
+ * caller either has.
+ *
+ * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
+ * @uses   \OCA\Dossiq\Woo\WooWrittenCase
  */
 class WooRequestIntakeTest extends TestCase {
 
