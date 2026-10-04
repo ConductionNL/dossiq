@@ -87,6 +87,41 @@ class CaseStepsTest extends TestCase {
 	}//end testTheSeededWooTypeFoldsToFiveSteps()
 
 	/**
+	 * The status types as OpenRegister's `searchObjects()` hands them over on
+	 * :8080: `name`, `publicLabel` and `publicDescription` are translatable, so
+	 * each arrives as a language map. Before the fix every label and
+	 * description cast to the literal "Array", all eight folded into one step,
+	 * and the resident read "Array" twice.
+	 *
+	 * @return void
+	 */
+	public function testLanguageMapsReadAsTheirDutchTextAndStillFold(): void {
+		$stored = array_map(
+			static function (array $row): array {
+				foreach (['name', 'publicLabel', 'publicDescription'] as $key) {
+					if (isset($row[$key]) === true) {
+						$row[$key] = ['nl' => $row[$key]];
+					}
+				}
+
+				return $row;
+			},
+			$this->wooStatuses()
+		);
+
+		$steps = (new CaseSteps())->forCase(case: ['status' => 's1'], statusTypes: $stored);
+
+		$this->assertSame(
+			['Ontvangen', 'In behandeling', 'Besluit', 'Besluit genomen', 'Afgehandeld'],
+			array_column($steps, 'label')
+		);
+		$this->assertSame(CaseSteps::CURRENT, $steps[0]['state']);
+		$this->assertSame('Wij hebben uw verzoek binnen.', $steps[0]['description']);
+		$this->assertNotContains('Array', array_column($steps, 'label'));
+		$this->assertNotContains('Array', array_column($steps, 'description'));
+	}//end testLanguageMapsReadAsTheirDutchTextAndStillFold()
+
+	/**
 	 * A withdrawn case marks the step it stopped at and promises nothing
 	 * after it.
 	 *
