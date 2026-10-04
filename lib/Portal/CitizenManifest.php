@@ -356,6 +356,7 @@ class CitizenManifest {
 				'layout' => 'card',
 				'fields' => PortalContributionProvider::CITIZEN_CASE_DETAIL_FIELDS,
 			],
+			'fieldConfigs' => PortalContributionProvider::CITIZEN_CASE_DETAIL_LABELS,
 			// The case detail carries what has happened on it. The
 			// contract names the method rather than embedding the
 			// entries, because the manifest is built once per subject

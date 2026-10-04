@@ -187,6 +187,7 @@ class WOODecisionServiceTest extends TestCase {
 			['register', '', 'dossiq'],
 			['decision_schema', '', 'decision'],
 			['woo_assessment_schema', '', 'wooAssessment'],
+			['case_schema', '', ''],
 		]);
 
 		$user = $this->createMock(\OCP\IUser::class);
@@ -211,11 +212,89 @@ class WOODecisionServiceTest extends TestCase {
 	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
 	 */
 	public function testAnAssembledDecisionMakesTheCaseReady(): void {
+		$store = $this->assembleForCases(
+			cases: [
+				'case-a' => ['title' => 'A'],
+				'case-b' => ['title' => 'B', 'wooPublicationStatus' => 'published'],
+			],
+		);
+
+		$this->assertSame('ready', $store->row(schema: 'case', uuid: 'case-a')['wooPublicationStatus']);
+		$this->assertSame('A', $store->row(schema: 'case', uuid: 'case-a')['title']);
+		$this->assertSame('published', $store->row(schema: 'case', uuid: 'case-b')['wooPublicationStatus']);
+	}//end testAnAssembledDecisionMakesTheCaseReady()
+
+	/**
+	 * The decision's summary names the request by the case's title, never by its uuid.
+	 *
+	 * The publication shows it under its title on the public site and in
+	 * search results.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testTheDecisionSummaryNamesTheRequestByItsTitle(): void {
+		$this->assertSame(
+			expected: 'Besluit op het Woo-verzoek "Raadsstukken over de nieuwe brug"',
+			actual: WOODecisionService::publicationSummary(caseTitle: 'Raadsstukken over de nieuwe brug'),
+		);
+	}//end testTheDecisionSummaryNamesTheRequestByItsTitle()
+
+	/**
+	 * A case without a title still gives a readable summary.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testTheDecisionSummaryWithoutATitleStaysReadable(): void {
+		$this->assertSame(expected: 'Besluit op een Woo-verzoek', actual: WOODecisionService::publicationSummary(caseTitle: ''));
+		$this->assertSame(expected: 'Besluit op een Woo-verzoek', actual: WOODecisionService::publicationSummary(caseTitle: '   '));
+	}//end testTheDecisionSummaryWithoutATitleStaysReadable()
+
+	/**
+	 * The assembled decision is written with the summary built from the case, and no uuid.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public function testTheAssembledDecisionCarriesTheReadableSummary(): void {
+		$store = $this->assembleForCases(
+			cases: [
+				'case-with-title' => ['title' => 'Raadsstukken over de nieuwe brug'],
+				'case-without-title' => ['title' => ''],
+			],
+		);
+
+		$byCase = [];
+		foreach ($store->all(schema: 'decision') as $decision) {
+			$byCase[$decision['case']] = $decision['description'];
+		}
+
+		$this->assertSame(expected: 'Besluit op het Woo-verzoek "Raadsstukken over de nieuwe brug"', actual: $byCase['case-with-title']);
+		$this->assertSame(expected: 'Besluit op een Woo-verzoek', actual: $byCase['case-without-title']);
+		foreach ($byCase as $caseId => $description) {
+			$this->assertStringNotContainsString(needle: (string)$caseId, haystack: $description);
+		}
+	}//end testTheAssembledDecisionCarriesTheReadableSummary()
+
+	/**
+	 * Assemble a decision for each seeded case against an in-memory register.
+	 *
+	 * @param array<string, array<string, mixed>> $cases The case rows by uuid.
+	 *
+	 * @return \OCA\Dossiq\Tests\Support\InMemoryRegister The register after assembly.
+	 */
+	private function assembleForCases(array $cases): \OCA\Dossiq\Tests\Support\InMemoryRegister {
 		$this->assessmentService->method('getOutstanding')->willReturn(['count' => 0, 'documents' => []]);
 
 		$store = new \OCA\Dossiq\Tests\Support\InMemoryRegister();
-		// OpenRegister answers a save with an entity that has a uuid, which the
-		// decision assembly reads; the in-memory store answers an array.
+		foreach ($cases as $uuid => $row) {
+			$store->seed(schema: 'case', uuid: $uuid, row: $row);
+		}
+
 		$objects = new class($store) {
 			/**
 			 * @param \OCA\Dossiq\Tests\Support\InMemoryRegister $store The rows.
@@ -277,8 +356,6 @@ class WOODecisionServiceTest extends TestCase {
 				};
 			}
 		};
-		$store->seed(schema: 'case', uuid: 'case-a', row: ['title' => 'A']);
-		$store->seed(schema: 'case', uuid: 'case-b', row: ['title' => 'B', 'wooPublicationStatus' => 'published']);
 
 		$this->settingsService->method('getObjectService')->willReturn($objects);
 		$this->settingsService->method('getConfigValue')->willReturnMap([
@@ -288,12 +365,11 @@ class WOODecisionServiceTest extends TestCase {
 			['case_schema', '', 'case'],
 		]);
 
-		$this->service->assembleDecision('case-a');
-		$this->service->assembleDecision('case-b');
+		foreach (array_keys($cases) as $caseId) {
+			$this->service->assembleDecision((string)$caseId);
+		}
 
-		$this->assertSame('ready', $store->row(schema: 'case', uuid: 'case-a')['wooPublicationStatus']);
-		$this->assertSame('A', $store->row(schema: 'case', uuid: 'case-a')['title']);
-		$this->assertSame('published', $store->row(schema: 'case', uuid: 'case-b')['wooPublicationStatus']);
-	}//end testAnAssembledDecisionMakesTheCaseReady()
+		return $store;
+	}//end assembleForCases()
 
 }//end class

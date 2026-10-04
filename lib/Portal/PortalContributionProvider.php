@@ -240,6 +240,27 @@ class PortalContributionProvider {
 	];
 
 	/**
+	 * The resident's labels for the detail fields that are not a column.
+	 *
+	 * Portaliq labels a detail field by the column that shows it, then by the
+	 * collection's `fieldConfigs.<field>.label`, and only then by the field's
+	 * key as words. So a resident read "Status public description" and "End
+	 * date" next to "Zaaknummer" and "Uitkomst". The labels live here, in
+	 * portaliq's `fieldConfigs` shape, rather than on the schema's property
+	 * titles, which the case screens of a colleague read too.
+	 *
+	 * @var array<string, array<string, string>>
+	 */
+	public const CITIZEN_CASE_DETAIL_LABELS = [
+		'assignedGroupPublicName' => ['label' => 'Behandeld door'],
+		StatusPublicLabels::CASE_DESCRIPTION_FIELD => ['label' => 'Toelichting op de status'],
+		'resultPublicDescription' => ['label' => 'Toelichting op de uitkomst'],
+		'endDate' => ['label' => 'Einddatum'],
+		'receivedAt' => ['label' => 'Ontvangen op'],
+		'wooPublicationUrl' => ['label' => 'Gepubliceerd besluit'],
+	];
+
+	/**
 	 * The rule key a resident is told by when the decision on their Woo request is published.
 	 *
 	 * @var string

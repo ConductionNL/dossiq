@@ -898,6 +898,40 @@ class PortalContributionProviderTest extends TestCase {
 	}
 
 	/**
+	 * Every field on the case detail reads under a Dutch label, never under its key as words.
+	 *
+	 * Portaliq labels a detail field by its column, then by the collection's
+	 * `fieldConfigs.<field>.label`, then by the key as words, which is how a
+	 * resident read "Status public description" and "End date".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	public function testEveryCaseDetailFieldHasADutchLabel(): void {
+		$cases = $this->mijnZaken();
+
+		$labels = [];
+		foreach ($cases['fieldConfigs'] as $field => $config) {
+			$this->assertContains(needle: $field, haystack: $cases['fields'], message: $field . ' has a label but is not projected');
+			$labels[$field] = $config['label'];
+		}
+
+		foreach ($cases['columns'] as $column) {
+			$labels[$column['field']] = $column['label'];
+		}
+
+		foreach ($cases['detail']['fields'] as $field) {
+			$this->assertArrayHasKey(key: $field, array: $labels, message: $field . ' would read under its key as words');
+			$this->assertNotSame(expected: '', actual: trim($labels[$field]), message: $field . ' has an empty label');
+		}
+
+		$this->assertSame(expected: 'Toelichting op de status', actual: $labels['statusPublicDescription']);
+		$this->assertSame(expected: 'Toelichting op de uitkomst', actual: $labels['resultPublicDescription']);
+		$this->assertSame(expected: 'Einddatum', actual: $labels['endDate']);
+	}
+
+	/**
 	 * The two result fields are calculated the way the status label is.
 	 *
 	 * Read from the raw register, because the calculation is what fills them:
