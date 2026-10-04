@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.43-unstable.20260928072109</version>
+    <version>0.4.43-unstable.20261004131534</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -583,6 +583,11 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  (RetiredNodeMap). Post-migration only: a fresh install has
                  no stored flow to rewrite. -->
             <step>OCA\Dossiq\Repair\RewriteRetiredFlowNodes</step>
+            <!-- Rewrites the old "WOO besluit voor zaak <uuid>" summary on Woo
+                 decisions and their publications to the wording new decisions
+                 carry (#3259). Only exact matches, idempotent, non-fatal.
+                 Post-migration only: a fresh install has no old decisions. -->
+            <step>OCA\Dossiq\Repair\RewriteWooPublicationSummaries</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
@@ -694,6 +699,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               FoldCasePropertiesOntoCase        backfill over existing cases
               BackfillInformatieobjectMetadata  backfill over existing documents
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
+              RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet

@@ -208,7 +208,7 @@ class CaseSteps {
 
 			$steps[] = [
 				'label'       => $label,
-				'description' => trim((string)($row['publicDescription'] ?? '')),
+				'description' => StatusPublicLabels::publicDescriptionOf(statusType: $row),
 				'ids'         => [$this->idOf(row: $row)],
 			];
 		}//end foreach

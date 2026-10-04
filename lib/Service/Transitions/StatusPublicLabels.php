@@ -89,12 +89,12 @@ final class StatusPublicLabels {
 	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
 	 */
 	public static function publicLabelOf(array $statusType): string {
-		$label = trim((string)($statusType['publicLabel'] ?? ''));
+		$label = self::textOf(value: ($statusType['publicLabel'] ?? null));
 		if ($label !== '') {
 			return $label;
 		}
 
-		return trim((string)($statusType['name'] ?? ''));
+		return self::textOf(value: ($statusType['name'] ?? null));
 	}//end publicLabelOf()
 
 	/**
@@ -111,8 +111,51 @@ final class StatusPublicLabels {
 	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
 	 */
 	public static function publicDescriptionOf(array $statusType): string {
-		return trim((string)($statusType['publicDescription'] ?? ''));
+		return self::textOf(value: ($statusType['publicDescription'] ?? null));
 	}//end publicDescriptionOf()
+
+	/**
+	 * One translatable value as the text a reader sees.
+	 *
+	 * 🔴 `name`, `publicLabel` and `publicDescription` are declared
+	 * `translatable` on the statusType schema, so OpenRegister STORES them as a
+	 * language map (`{"nl": "Ontvangen"}`). Its API resolves the map to one
+	 * string, but a row read through `ObjectService::searchObjects()` arrives
+	 * unrendered, map and all. A `(string)` cast of that map is the literal
+	 * "Array", which is how every step on a resident's case read "Array" and
+	 * then folded into one, because eight labels of "Array" are equal.
+	 *
+	 * Dutch first, the language these labels are written in, then the first
+	 * non-empty text in the map.
+	 *
+	 * @param mixed $value A string, a language map, or anything else.
+	 *
+	 * @return string The text, trimmed, or '' when there is none.
+	 *
+	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 */
+	public static function textOf(mixed $value): string {
+		if (is_string($value) === true) {
+			return trim($value);
+		}
+
+		if (is_array($value) === false) {
+			return '';
+		}
+
+		$candidates = $value;
+		if (array_key_exists('nl', $value) === true) {
+			$candidates = (['nl' => $value['nl']] + $value);
+		}
+
+		foreach ($candidates as $text) {
+			if (is_string($text) === true && trim($text) !== '') {
+				return trim($text);
+			}
+		}
+
+		return '';
+	}//end textOf()
 
 	/**
 	 * The label a projected case already carries, if it carries one.
