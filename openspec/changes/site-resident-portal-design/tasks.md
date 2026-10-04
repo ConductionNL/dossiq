@@ -13,9 +13,14 @@ lane in portaliq#1110: `site-mijn-omgeving-components` (blocks `tasks`, `inbox`,
 - [ ] 0.1 Should every `aanvullingsverzoek` also become a portaliq portal task, so it counts
       under "Taken"? This change shows it through `vragenAanU` instead (proposal, not in
       this change).
-- [ ] 0.2 The seeded Woo type has five public steps; the mockup draws four ("Afgerond" for
-      "Besluit genomen" and "Afgehandeld"). Change the case type's public labels, or accept
-      five.
+- [x] 0.2 The seeded Woo type has five public steps; the mockup draws four ("Afgerond" for
+      "Besluit genomen" and "Afgehandeld"). **Ruben, 4 October: show the five the case type
+      declares and do not relabel the case type.** The mockup's four were a simplification.
+      Nothing changes in the code: `CaseSteps` already folds the type's own statuses, and
+      `CaseStepsTest::testTheSeededWooTypeFoldsToFiveSteps` asserts the five. These are the
+      STATUS steps a resident reads on their case; the Woo FORM's four steps (your question,
+      period and documents, your details, check and send) are a different thing and are
+      unaffected.
 
 ## 1. The question to the resident
 

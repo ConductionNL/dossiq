@@ -35,6 +35,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
+ * @uses   \OCA\Dossiq\Portal\CitizenManifest
  */
 class PortalContributionProviderTest extends TestCase {
 	/**

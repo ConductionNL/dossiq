@@ -95,8 +95,9 @@ the current step and stops; later steps are not shown as to do.
 The seeded Woo type folds eight internal statuses into five public steps: Ontvangen, In
 behandeling (four statuses), Besluit, Besluit genomen, Afgehandeld. The mockup draws four
 (Ontvangen, In behandeling, Besluit, Afgerond). The steps come from the case type, never from
-the page: if Ruben wants four, the case type's public labels change (tasks 0.2), not this
-code.
+the page. Ruben decided on 4 October to show the five the type declares and to leave its
+public labels alone, so the mockup's four stay a simplification of the drawing and no code or
+label moves (tasks 0.2).
 
 The collection declares `'steps' => ['label' => 'Waar staat uw aanvraag?', 'provider' => 'caseSteps']`.
 The card's "Stap 2 van 5" reads the same answer: the index of the current step and the count.
