@@ -50,6 +50,45 @@
                 "type": "string",
                 "title": "Source dossier",
                 "description": "The opencatalogi collection the request was started from, if any."
+              },
+              "documentSoorten": {
+                "type": "array",
+                "title": "Kinds of document",
+                "description": "Which kinds of document the resident is looking for. Each value is one of besluiten, rapporten, correspondentie or alles.",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "besluiten",
+                    "rapporten",
+                    "correspondentie",
+                    "alles"
+                  ]
+                }
+              },
+              "toelichting": {
+                "type": "string",
+                "title": "Further explanation",
+                "description": "Anything else the resident wanted to tell us about the request."
+              },
+              "verzoekerNaam": {
+                "type": "string",
+                "title": "Requester name",
+                "description": "The name the resident gave when they sent the request. It is kept as given, so a later change to their profile does not rewrite the file."
+              },
+              "verzoekerEmail": {
+                "type": "string",
+                "title": "Requester e-mail address",
+                "description": "The address the resident gave when they sent the request, for the answer to this request."
+              },
+              "verzoekerType": {
+                "type": "string",
+                "enum": [
+                  "burger",
+                  "journalist",
+                  "organisatie"
+                ],
+                "title": "Requester kind",
+                "description": "Who the resident says they are asking as: burger, journalist or organisatie. It is what they chose, not a judgement we make."
               }
             }
           }

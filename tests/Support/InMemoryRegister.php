@@ -118,13 +118,21 @@ class InMemoryRegister {
 	 * Only equality filters, which is all the handover path uses, plus the
 	 * `_limit` key it passes and this store ignores.
 	 *
-	 * @param string               $register Ignored.
-	 * @param string               $schema   The schema slug.
-	 * @param array<string, mixed> $filters  Equality filters.
+	 * @param string               $register       Ignored.
+	 * @param string               $schema         The schema slug.
+	 * @param array<string, mixed> $filters        Equality filters.
+	 * @param bool                 $_rbac          Ignored: this store is not scoped.
+	 * @param bool                 $_multitenancy  Ignored: this store is not scoped.
 	 *
 	 * @return array<int, array<string, mixed>> The matching rows.
 	 */
-	public function searchObjectsBySlug(string $register, string $schema, array $filters = []): array {
+	public function searchObjectsBySlug(
+		string $register,
+		string $schema,
+		array $filters = [],
+		bool $_rbac = true,
+		bool $_multitenancy = true,
+	): array {
 		$matches = [];
 		foreach (($this->rows[$schema] ?? []) as $row) {
 			if ($this->matches(row: $row, filters: $filters) === true) {
@@ -187,6 +195,8 @@ class InMemoryRegister {
 	 *
 	 * @param array<string, mixed> $row     The row.
 	 * @param array<string, mixed> $filters The filters.
+	 * @param bool $_rbac Ignored: this store is not scoped.
+	 * @param bool $_multitenancy Ignored: this store is not scoped.
 	 *
 	 * @return bool True when it matches.
 	 */

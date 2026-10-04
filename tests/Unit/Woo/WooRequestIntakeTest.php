@@ -36,6 +36,14 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Woo\WooRequestIntake
  * @covers \OCA\Dossiq\Woo\WooRequestRefused
  * @covers \OCA\Dossiq\Woo\WooRequestForm
+ *
+ * The two readers the intake builds for itself: what the case type asks about
+ * the requester, and what the write answered. They are used here, not covered:
+ * their own rules are asserted through this path because that is the only
+ * caller either has.
+ *
+ * @uses   \OCA\Dossiq\Woo\WooRequesterProperties
+ * @uses   \OCA\Dossiq\Woo\WooWrittenCase
  */
 class WooRequestIntakeTest extends TestCase {
 
@@ -74,6 +82,16 @@ class WooRequestIntakeTest extends TestCase {
 			uuid: WooRequestIntake::CASE_TYPE_ID,
 			row: ['title' => 'Woo-verzoek', 'identifier' => 'woo-verzoek', 'initialStatus' => 'status-ontvangst']
 		);
+		// The three requester questions the Woo type asks, as
+		// register.d/81-woo-verzoek.json declares them.
+		foreach (['verzoekerNaam', 'verzoekerEmail', 'verzoekerType'] as $index => $name) {
+			$this->store->seed(
+				schema: 'propertyDefinition',
+				uuid: 'definition-' . ($index + 1),
+				row: ['caseType' => WooRequestIntake::CASE_TYPE_ID, 'name' => $name, 'propertyType' => 'string']
+			);
+		}
+
 		$this->store->seed(schema: 'publication', uuid: self::PUB_A, row: ['title' => 'Raadsbesluit parkeren 2025']);
 		$this->store->seed(schema: 'publication', uuid: self::PUB_B, row: ['title' => 'Nota parkeren']);
 		$this->store->seed(
@@ -111,6 +129,7 @@ class WooRequestIntakeTest extends TestCase {
 				'case_schema' => 'case',
 				'case_type_schema' => 'caseType',
 				'case_object_schema' => 'caseObject',
+				'property_definition_schema' => 'propertyDefinition',
 			][$key] ?? $default
 		);
 		$settings->method('getWooPublicationConfigValue')->willReturnCallback(
@@ -257,6 +276,134 @@ class WooRequestIntakeTest extends TestCase {
 		);
 		self::assertSame('https://gemeente.test/index.php/apps/dossiq/cases/' . $result['caseId'], $result['caseUrl']);
 	}//end testARequestOpensAWooCaseForTheResident()
+
+	/**
+	 * The new answers are kept on the request, and the requester details also
+	 * answer the case type's own questions.
+	 *
+	 * @return void
+	 */
+	public function testTheRequestKeepsTheDocumentKindsAndTheRequester(): void {
+		$result = $this->intake->start(
+			$this->request(
+				[
+					'documentSoorten' => ['besluiten', 'correspondentie'],
+					'toelichting' => 'Het gaat om de Lindelaan.',
+					'verzoekerNaam' => 'Sanne de Vries',
+					'verzoekerEmail' => 'sanne@example.org',
+					'verzoekerType' => 'journalist',
+				]
+			)
+		);
+
+		$case = $this->store->row(schema: 'case', uuid: $result['caseId']);
+		self::assertSame(['besluiten', 'correspondentie'], $case['wooRequest']['documentSoorten']);
+		self::assertSame('Het gaat om de Lindelaan.', $case['wooRequest']['toelichting']);
+		self::assertSame('Sanne de Vries', $case['wooRequest']['verzoekerNaam']);
+		self::assertSame('sanne@example.org', $case['wooRequest']['verzoekerEmail']);
+		self::assertSame('journalist', $case['wooRequest']['verzoekerType']);
+
+		// And on the case's own properties, where a handler reads them beside
+		// the question the type asked.
+		self::assertSame(
+			[
+				['propertyDefinition' => 'definition-1', 'name' => 'verzoekerNaam', 'value' => 'Sanne de Vries'],
+				['propertyDefinition' => 'definition-2', 'name' => 'verzoekerEmail', 'value' => 'sanne@example.org'],
+				['propertyDefinition' => 'definition-3', 'name' => 'verzoekerType', 'value' => 'journalist'],
+			],
+			$case['properties']
+		);
+	}//end testTheRequestKeepsTheDocumentKindsAndTheRequester()
+
+	/**
+	 * 🔴 An answer outside its list is refused and nothing is written: a
+	 * value the schema's enum would reject must not reach a write that then
+	 * fails halfway, and a kind nobody declared is not a kind.
+	 *
+	 * @return void
+	 */
+	public function testAnAnswerOutsideItsListIsRefusedAndWritesNothing(): void {
+		$refusals = [
+			['documentSoorten' => ['geheim']],
+			['verzoekerType' => 'ambtenaar'],
+			['verzoekerEmail' => 'geen adres'],
+		];
+
+		foreach ($refusals as $overrides) {
+			$before = count($this->store->all(schema: 'case'));
+			try {
+				$this->intake->start($this->request($overrides));
+				self::fail('a refused answer must not open a case: ' . (string)json_encode($overrides));
+			} catch (WooRequestRefused $refused) {
+				self::assertSame(WooRequestRefused::INVALID, $refused->getReason());
+			}
+
+			self::assertCount($before, $this->store->all(schema: 'case'), 'nothing was written');
+		}
+	}//end testAnAnswerOutsideItsListIsRefusedAndWritesNothing()
+
+	/**
+	 * A conversion with only the subject still opens its case, and carries no
+	 * empty answers: pipelinq converts a phone call where not every question
+	 * was asked.
+	 *
+	 * @return void
+	 */
+	public function testAConversionWithoutTheNewAnswersCarriesNone(): void {
+		$result = $this->intake->start(
+			$this->request(['collectionId' => '', 'origin' => 'pipelinq', 'originReference' => 'ticket-9'])
+		);
+
+		$case = $this->store->row(schema: 'case', uuid: $result['caseId']);
+		foreach (['documentSoorten', 'toelichting', 'verzoekerNaam', 'verzoekerEmail', 'verzoekerType'] as $key) {
+			self::assertArrayNotHasKey($key, $case['wooRequest'], $key . ' was not asked, so it is not written');
+		}
+
+		self::assertArrayNotHasKey('properties', $case, 'and the case answers none of the type\'s questions');
+	}//end testAConversionWithoutTheNewAnswersCarriesNone()
+
+	/**
+	 * The answer names the case number and the date, and leaves the date out
+	 * when the case has none yet.
+	 *
+	 * @return void
+	 */
+	public function testTheAnswerNamesTheCaseNumberAndTheDeadline(): void {
+		$plain = $this->intake->start($this->request());
+		self::assertArrayNotHasKey(
+			'deadline',
+			$plain,
+			'a case written without a deadline answers no empty one'
+		);
+
+		// The same write, on a store that stamps a number and a deadline the
+		// way OpenRegister's calculations do.
+		$stamping = new class extends InMemoryRegister {
+			public function saveObject(
+				array $object,
+				int|string $register = '',
+				int|string $schema = '',
+				?string $uuid = null,
+				bool $_rbac = true,
+				bool $_multitenancy = true,
+			): array {
+				$saved = parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid);
+				if ((string)$schema !== 'case') {
+					return $saved;
+				}
+
+				$saved['identifier'] = '2026-0003';
+				$saved['deadline'] = '2026-10-30';
+				return $saved;
+			}
+		};
+		$stamping->rows = $this->store->rows;
+
+		$answer = $this->intakeOn(store: $stamping)->start($this->request());
+
+		self::assertSame('2026-0003', $answer['identifier']);
+		self::assertSame('2026-10-30', $answer['deadline']);
+	}//end testTheAnswerNamesTheCaseNumberAndTheDeadline()
 
 	/**
 	 * One case object per dossier item, pointing at the public publication.
