@@ -69,7 +69,22 @@ class PortalWooRequestController extends Controller {
 	/**
 	 * The form fields the action forwards.
 	 */
-	private const FIELDS = ['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'];
+	private const FIELDS = [
+		'collectionId',
+		'onderwerp',
+		'omschrijving',
+		'periodeVan',
+		'periodeTot',
+		// The answers of steps 2 and 3 (site-woo-request-in-steps). A field
+		// that is not on this list never reaches the intake, whatever the
+		// browser sends, which is why the new ones have to be named here as
+		// well as in the action.
+		'documentSoorten',
+		'toelichting',
+		'verzoekerNaam',
+		'verzoekerEmail',
+		'verzoekerType',
+	];
 
 	/**
 	 * The status each refusal answers with.

@@ -8804,6 +8804,15 @@
         "Team the resident reads": "Team dat de inwoner leest",
         "The handling team's public name, kept on the case so the portal can show it. It is empty while the team has no public name, and it never falls back to the team's internal name. It is calculated, so after you rename a team run occ openregister:rematerialise-calculations.": "De publieke naam van het behandelende team, op de zaak bewaard zodat het portaal die kan tonen. Het veld is leeg zolang het team geen publieke naam heeft en valt nooit terug op de interne naam. Het wordt berekend, dus voer na het hernoemen van een team occ openregister:rematerialise-calculations uit.",
         "Who is at turn": "Wie aan zet is",
-        "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here.": "Wie de inwoner te zien krijgt als degene die aan zet is: applicant zolang wij op de inwoner wachten, thirdParty zolang wij op iemand anders wachten, us in de andere gevallen, en leeg zodra de zaak is afgerond. Het wordt berekend uit de einddatum en waar de status op wacht. De woorden die de inwoner leest stelt u per portaal in, niet hier."
+        "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here.": "Wie de inwoner te zien krijgt als degene die aan zet is: applicant zolang wij op de inwoner wachten, thirdParty zolang wij op iemand anders wachten, us in de andere gevallen, en leeg zodra de zaak is afgerond. Het wordt berekend uit de einddatum en waar de status op wacht. De woorden die de inwoner leest stelt u per portaal in, niet hier.",
+        "Kinds of document": "Soorten documenten",
+        "Which kinds of document the resident is looking for. Each value is one of besluiten, rapporten, correspondentie or alles.": "Welke soorten documenten de inwoner zoekt. Elke waarde is besluiten, rapporten, correspondentie of alles.",
+        "Further explanation": "Toelichting",
+        "Anything else the resident wanted to tell us about the request.": "Wat de inwoner verder nog over het verzoek wilde vertellen.",
+        "The name the resident gave when they sent the request. It is kept as given, so a later change to their profile does not rewrite the file.": "De naam die de inwoner gaf toen zij het verzoek verstuurden. Die blijft staan zoals hij gegeven is, zodat een latere wijziging in hun profiel het dossier niet herschrijft.",
+        "Requester e-mail address": "E-mailadres van de verzoeker",
+        "The address the resident gave when they sent the request, for the answer to this request.": "Het adres dat de inwoner gaf toen zij het verzoek verstuurden, voor het antwoord op dit verzoek.",
+        "Requester kind": "Soort verzoeker",
+        "Who the resident says they are asking as: burger, journalist or organisatie. It is what they chose, not a judgement we make.": "Als wie de inwoner zegt dit te vragen: burger, journalist of organisatie. Het is wat zij zelf kozen, niet ons oordeel."
     }
 }

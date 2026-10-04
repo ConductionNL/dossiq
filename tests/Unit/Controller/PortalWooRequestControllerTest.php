@@ -100,6 +100,11 @@ class PortalWooRequestControllerTest extends TestCase {
 				'omschrijving' => 'Alle stukken',
 				'periodeVan' => '2025-01-01',
 				'periodeTot' => '2025-12-31',
+				'documentSoorten' => null,
+				'toelichting' => null,
+				'verzoekerNaam' => null,
+				'verzoekerEmail' => null,
+				'verzoekerType' => null,
 				'origin' => 'portal',
 				'originReference' => null,
 			]
@@ -110,6 +115,54 @@ class PortalWooRequestControllerTest extends TestCase {
 		self::assertSame(201, $response->getStatus());
 		self::assertSame(['caseId' => 'case-1', 'caseUrl' => 'https://x/case-1'], $response->getData());
 	}//end testAValidForwardOpensTheCaseForTheAssertedResident()
+
+	/**
+	 * 🔴 The answers of steps 2 and 3 reach the intake, and the case number
+	 * and date it answers reach the browser.
+	 *
+	 * A field that is not on the controller's own whitelist is dropped
+	 * whatever the form sends, so a step could ask a question that never
+	 * arrives, and nothing would say so (site-woo-request-in-steps REQ-SWS-010).
+	 *
+	 * @return void
+	 */
+	public function testTheNewAnswersReachTheIntakeAndTheCaseNumberComesBack(): void {
+		$controller = $this->controller(
+			PortalAssertionVerifierTest::mint(),
+			[
+				'onderwerp' => 'Parkeerbeleid',
+				'documentSoorten' => ['besluiten', 'correspondentie'],
+				'toelichting' => 'Het gaat om de Lindelaan.',
+				'verzoekerNaam' => 'Sanne de Vries',
+				'verzoekerEmail' => 'sanne@example.org',
+				'verzoekerType' => 'journalist',
+			]
+		);
+		$this->intake->expects(self::once())->method('start')->with(
+			self::callback(
+				static function (array $request): bool {
+					return $request['documentSoorten'] === ['besluiten', 'correspondentie']
+						&& $request['toelichting'] === 'Het gaat om de Lindelaan.'
+						&& $request['verzoekerNaam'] === 'Sanne de Vries'
+						&& $request['verzoekerEmail'] === 'sanne@example.org'
+						&& $request['verzoekerType'] === 'journalist';
+				}
+			)
+		)->willReturn(
+			[
+				'caseId' => 'case-1',
+				'caseUrl' => 'https://x/case-1',
+				'identifier' => '2026-0003',
+				'deadline' => '2026-10-30',
+			]
+		);
+
+		$response = $controller->start();
+
+		self::assertSame(201, $response->getStatus());
+		self::assertSame('2026-0003', $response->getData()['identifier']);
+		self::assertSame('2026-10-30', $response->getData()['deadline']);
+	}//end testTheNewAnswersReachTheIntakeAndTheCaseNumberComesBack()
 
 	/**
 	 * No assertion, no request.

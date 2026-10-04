@@ -101,7 +101,7 @@ class WooRequestIntake {
 	 * @param array<string, mixed> $request `{subjectRef, collectionId?, onderwerp, omschrijving,
 	 *                                      periodeVan, periodeTot, origin, originReference}`.
 	 *
-	 * @return array{caseId: string, caseUrl: string}
+	 * @return array{caseId: string, caseUrl: string, identifier?: string, deadline?: string}
 	 *
 	 * @throws WooRequestRefused When the request is unusable, the dossier is not the resident's,
 	 *                           or the register or case type is missing.
@@ -126,23 +126,30 @@ class WooRequestIntake {
 		}
 
 		$caseType = $this->caseType(objectService: $objectService, register: $register);
-		$caseId = $this->writeCase(
+		$saved = $this->writeCase(
 			objectService: $objectService,
 			register: $register,
 			caseType: $caseType,
 			subjectRef: $subjectRef,
 			wooRequest: $wooRequest,
 		);
+		$caseId = $saved['id'];
 
 		if ($collection !== null) {
 			$this->writeCaseObjects(objectService: $objectService, register: $register, caseId: $caseId, collection: $collection);
 			$this->recordSource(objectService: $objectService, collection: $collection, caseId: $caseId);
 		}
 
+		// THE CASE NUMBER AND THE DATE, READ BACK FROM WHAT WAS WRITTEN, so
+		// the confirmation names the case the resident can look up and not a
+		// number this method made up (site-woo-request-in-steps D4). A case
+		// whose `deadline` is not computed yet leaves the key out rather than
+		// answering an empty value, and the confirmation then drops that
+		// sentence instead of promising a date of ''.
 		return [
 			'caseId' => $caseId,
 			'caseUrl' => $this->urlGenerator->getAbsoluteURL('/index.php/apps/dossiq/cases/' . $caseId),
-		];
+		] + $saved['answer'];
 	}//end start()
 
 	/**
@@ -241,11 +248,11 @@ class WooRequestIntake {
 	 * @param string                $subjectRef    The resident.
 	 * @param array<string, string> $wooRequest    The request as the case keeps it.
 	 *
-	 * @return string The case uuid.
+	 * @return array{id: string, answer: array<string, string>} The case uuid, and the number and date it carries.
 	 *
 	 * @throws WooRequestRefused UNAVAILABLE when the write fails.
 	 */
-	private function writeCase(object $objectService, string $register, array $caseType, string $subjectRef, array $wooRequest): string {
+	private function writeCase(object $objectService, string $register, array $caseType, string $subjectRef, array $wooRequest): array {
 		$case = [
 			'title' => $wooRequest['onderwerp'],
 			'description' => $wooRequest['omschrijving'],
@@ -257,6 +264,26 @@ class WooRequestIntake {
 			'intakeChannel' => self::INTAKE_CHANNEL[$wooRequest['origin']],
 			'wooRequest' => $wooRequest,
 		];
+
+		// THE REQUESTER DETAILS ALSO ANSWER THE CASE TYPE'S OWN QUESTIONS.
+		// The Woo type declares verzoekerNaam, verzoekerEmail and
+		// verzoekerType as property definitions, which is where a handler
+		// reads them on the case screen; `wooRequest` is where the request as
+		// sent is kept. Both, because they answer different questions: what
+		// this case knows about its requester, and what the resident filled in
+		// at the time (site-woo-request-in-steps REQ-SWS-010).
+		$properties = (new WooRequesterProperties(
+			settingsService: $this->settingsService,
+			logger: $this->logger
+		))->forCaseType(
+			objectService: $objectService,
+			register: $register,
+			caseTypeId: self::CASE_TYPE_ID,
+			wooRequest: $wooRequest
+		);
+		if ($properties !== []) {
+			$case['properties'] = $properties;
+		}
 
 		$initial = trim((string)($caseType['initialStatus'] ?? ''));
 		if ($initial !== '') {
@@ -279,12 +306,12 @@ class WooRequestIntake {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The case could not be written.');
 		}
 
-		$caseId = $this->idOf(saved: $saved);
-		if ($caseId === '') {
+		$written = (new WooWrittenCase())->read(saved: $saved);
+		if ($written['id'] === '') {
 			throw new WooRequestRefused(WooRequestRefused::UNAVAILABLE, 'The case was written without an id.');
 		}
 
-		return $caseId;
+		return $written;
 	}//end writeCase()
 
 	/**
@@ -463,22 +490,4 @@ class WooRequestIntake {
 		return null;
 	}//end findUnscoped()
 
-	/**
-	 * The uuid of whatever saveObject() answered.
-	 *
-	 * @param mixed $saved An ObjectEntity or an array.
-	 *
-	 * @return string
-	 */
-	private function idOf(mixed $saved): string {
-		if (is_object($saved) === true && method_exists($saved, 'getUuid') === true) {
-			return (string)$saved->getUuid();
-		}
-
-		if (is_array($saved) === true) {
-			return (string)($saved['@self']['id'] ?? $saved['id'] ?? $saved['uuid'] ?? '');
-		}
-
-		return '';
-	}//end idOf()
 }//end class

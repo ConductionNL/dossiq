@@ -8804,6 +8804,15 @@
         "Team the resident reads": "Team the resident reads",
         "The handling team's public name, kept on the case so the portal can show it. It is empty while the team has no public name, and it never falls back to the team's internal name. It is calculated, so after you rename a team run occ openregister:rematerialise-calculations.": "The handling team's public name, kept on the case so the portal can show it. It is empty while the team has no public name, and it never falls back to the team's internal name. It is calculated, so after you rename a team run occ openregister:rematerialise-calculations.",
         "Who is at turn": "Who is at turn",
-        "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here.": "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here."
+        "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here.": "Who the resident is told is at turn: applicant while we wait on them, thirdParty while we wait on somebody else, us otherwise, and empty once the case is closed. It is calculated from the end date and what the status waits on. The words the resident reads are set per portal, not here.",
+        "Kinds of document": "Kinds of document",
+        "Which kinds of document the resident is looking for. Each value is one of besluiten, rapporten, correspondentie or alles.": "Which kinds of document the resident is looking for. Each value is one of besluiten, rapporten, correspondentie or alles.",
+        "Further explanation": "Further explanation",
+        "Anything else the resident wanted to tell us about the request.": "Anything else the resident wanted to tell us about the request.",
+        "The name the resident gave when they sent the request. It is kept as given, so a later change to their profile does not rewrite the file.": "The name the resident gave when they sent the request. It is kept as given, so a later change to their profile does not rewrite the file.",
+        "Requester e-mail address": "Requester e-mail address",
+        "The address the resident gave when they sent the request, for the answer to this request.": "The address the resident gave when they sent the request, for the answer to this request.",
+        "Requester kind": "Requester kind",
+        "Who the resident says they are asking as: burger, journalist or organisatie. It is what they chose, not a judgement we make.": "Who the resident says they are asking as: burger, journalist or organisatie. It is what they chose, not a judgement we make."
     }
 }

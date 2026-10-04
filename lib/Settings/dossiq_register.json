@@ -1555,7 +1555,7 @@
                     }
                 },
                 "icon": "FolderAccountOutline",
-                "version": "1.35.0",
+                "version": "1.36.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {

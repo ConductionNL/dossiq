@@ -262,6 +262,109 @@ class PortalContributionProviderTest extends TestCase {
 	}//end testTheCasePageAsksOnlyAboutTheCaseOnScreen()
 
 	/**
+	 * 🔴 The Woo request runs in four steps, and every field it asks sits in
+	 * exactly one of them.
+	 *
+	 * Portaliq keeps a step only when every field it names is one of the
+	 * action's own and no earlier step holds it, so a field left out of every
+	 * step would simply never be asked, and a field in two steps would drop
+	 * the second one. Neither failure says anything at the time.
+	 *
+	 * @return void
+	 */
+	public function testEveryWooFieldSitsInExactlyOneStep(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			$this->assertSame(
+				['vraag', 'periode', 'gegevens', 'controleren'],
+				array_column($action['steps'], 'id'),
+				$id . ': the four steps of the design'
+			);
+			$this->assertSame(
+				['Uw vraag', 'Periode en documenten', 'Uw gegevens', 'Controleren en versturen'],
+				array_column($action['steps'], 'title')
+			);
+
+			$placed = [];
+			foreach ($action['steps'] as $step) {
+				foreach (($step['fields'] ?? []) as $field) {
+					$this->assertContains($field, $action['fields'], $id . ': a step may only ask a field the action sends');
+					$this->assertNotContains($field, $placed, $id . ': ' . $field . ' sits in two steps');
+					$placed[] = $field;
+				}
+			}
+
+			$review = end($action['steps']);
+			$this->assertTrue($review['review'], $id . ': the last step reviews the answers');
+			$this->assertArrayNotHasKey('fields', $review, 'a review asks nothing of its own');
+
+			// EVERY field, `collectionId` included: portaliq gathers whatever
+			// no step names into a loose step with no title, so a field left
+			// out does not go missing, it appears as a step of its own.
+			$asked = $action['fields'];
+			sort($asked);
+			sort($placed);
+			$this->assertSame($asked, $placed, $id . ': every field it asks has a step');
+		}
+	}//end testEveryWooFieldSitsInExactlyOneStep()
+
+	/**
+	 * Saving halfway and the confirmation are declared, on both doors.
+	 *
+	 * @return void
+	 */
+	public function testTheWooRequestSavesHalfwayAndNamesTheCaseWhenItIsIn(): void {
+		foreach (['startWooVerzoek', 'startWooVerzoekAlgemeen'] as $id) {
+			$action = $this->citizenAction(id: $id);
+
+			$this->assertSame(['retentionDays' => 30], $action['draft'], $id . ': within portaliq\'s 1 to 90 days');
+			$this->assertSame('Wij hebben uw Woo-verzoek ontvangen', $action['confirmation']['title']);
+			$this->assertStringContainsString('{identifier}', $action['confirmation']['body']);
+			$this->assertStringContainsString('{deadline}', $action['confirmation']['body']);
+			$this->assertNotSame('', trim($action['confirmation']['next']));
+		}
+	}//end testTheWooRequestSavesHalfwayAndNamesTheCaseWhenItIsIn()
+
+	/**
+	 * Two doors, one route: only the dossier variant is attached to a
+	 * dossier, and the other carries the sentence the home tile reads.
+	 *
+	 * @return void
+	 */
+	public function testTheWooRequestHasADoorWithoutADossier(): void {
+		$dossier = $this->citizenAction(id: 'startWooVerzoek');
+		$open = $this->citizenAction(id: 'startWooVerzoekAlgemeen');
+
+		$this->assertSame($dossier['endpoint'], $open['endpoint'], 'one route');
+		$this->assertSame(
+			array_column($dossier['steps'], 'title'),
+			array_column($open['steps'], 'title'),
+			'the same questions, in the same order'
+		);
+		$this->assertSame(
+			['onderwerp', 'omschrijving'],
+			$open['steps'][0]['fields'],
+			'without a dossier the first step asks only the question'
+		);
+		$this->assertSame(
+			['collectionId', 'onderwerp', 'omschrijving'],
+			$dossier['steps'][0]['fields'],
+			'the dossier rides hidden in the first step, so portaliq makes no titleless step for it'
+		);
+		$this->assertArrayNotHasKey('attachTo', $open, 'it is offered anywhere a resident is signed in');
+		$this->assertArrayNotHasKey('rowField', $open);
+		$this->assertArrayNotHasKey('collectionId', array_flip($open['fields']));
+		$this->assertSame(['app' => 'opencatalogi', 'schema' => 'collection'], $dossier['attachTo'], 'unchanged');
+		$this->assertSame('collectionId', $dossier['rowField'], 'unchanged');
+
+		$this->assertSame('Informatie opvragen (Woo-verzoek)', $open['label']);
+		$this->assertLessThanOrEqual(200, mb_strlen($open['summary']));
+		$this->assertSame(['citizen', 'client'], $open['audiences']);
+		$this->assertStringNotContainsStringIgnoringCase('werkdagen', $open['summary']);
+	}//end testTheWooRequestHasADoorWithoutADossier()
+
+	/**
 	 * One citizen collection by its id.
 	 *
 	 * @param string $id The collection id.
@@ -358,7 +461,10 @@ class PortalContributionProviderTest extends TestCase {
 		// could check a reference against the sender's own scope; they are
 		// asserted to carry that check below, not merely to exist.
 		$actionIds = array_column($contribution['actions'], 'id');
-		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage', 'amendCase', 'startWooVerzoek'], $actionIds);
+		$this->assertSame(
+			['createKlacht', 'createBezwaar', 'replyToMessage', 'amendCase', 'startWooVerzoek', 'startWooVerzoekAlgemeen'],
+			$actionIds
+		);
 	}
 
 	/**
@@ -385,7 +491,22 @@ class PortalContributionProviderTest extends TestCase {
 		$action = $actions['startWooVerzoek'];
 		$this->assertSame('/index.php/apps/dossiq/api/portal/woo-verzoek', $action['endpoint']);
 		$this->assertSame('POST', $action['method']);
-		$this->assertSame(['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'], $action['fields']);
+		$this->assertSame(
+			[
+				'collectionId',
+				'onderwerp',
+				'omschrijving',
+				'periodeVan',
+				'periodeTot',
+				'documentSoorten',
+				'toelichting',
+				'verzoekerNaam',
+				'verzoekerEmail',
+				'verzoekerType',
+			],
+			$action['fields'],
+			'the dossier variant asks what the steps ask, with the dossier it was started from'
+		);
 		$this->assertSame('Start een Woo-verzoek', $action['label']);
 		$this->assertSame(['app' => 'opencatalogi', 'schema' => 'collection'], $action['attachTo']);
 		$this->assertSame('collectionId', $action['rowField']);

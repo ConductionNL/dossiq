@@ -44,6 +44,121 @@ use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
  */
 class CitizenManifest {
 	/**
+	 * What a Woo request asks, in the order the steps ask it. `collectionId`
+	 * is not here: only the dossier variant carries it, and it is hidden.
+	 */
+	private const WOO_FIELDS = [
+		'onderwerp',
+		'omschrijving',
+		'periodeVan',
+		'periodeTot',
+		'documentSoorten',
+		'toelichting',
+		'verzoekerNaam',
+		'verzoekerEmail',
+		'verzoekerType',
+	];
+
+	/**
+	 * The words of each field, from the mockup (DossiqWoo.dc.html).
+	 *
+	 * NO `required` HERE, on purpose. Portaliq takes a required marker from a
+	 * written schema's own `required` list or from the action's
+	 * `requiredFields`, and drops `required` on a field config in silence
+	 * (REQ-SMF-023/024). A `required` written here would read as a promise the
+	 * form does not keep. Only `onderwerp` is required, because it is the only
+	 * one dossiq's own route refuses a request without; whether the other five
+	 * should be refused there too is decision 0.1 of this change.
+	 */
+	private const WOO_FIELD_CONFIGS = [
+		'onderwerp' => ['label' => 'Waar gaat uw verzoek over?'],
+		'omschrijving' => ['label' => 'Welke informatie wilt u hebben?', 'size' => 'large'],
+		'periodeVan' => ['label' => 'Vanaf welke datum zoekt u informatie?'],
+		'periodeTot' => ['label' => 'Tot en met welke datum?'],
+		// The answer cards, not a dropdown: `widget: choices` with the options
+		// in `optionsProviders` below. Portaliq reads the options from there
+		// and nowhere else, so a `choices` list written inline here is dropped
+		// in silence (measured through its own resolvers).
+		'documentSoorten' => ['label' => 'Welke documenten zoekt u?', 'widget' => 'choices'],
+		'toelichting' => ['label' => 'Wilt u nog iets toelichten?', 'size' => 'large'],
+		'verzoekerNaam' => ['label' => 'Uw naam'],
+		'verzoekerEmail' => ['label' => 'Uw e-mailadres'],
+		'verzoekerType' => ['label' => 'U vraagt dit als', 'widget' => 'choices'],
+	];
+
+	/**
+	 * Where the two multiple-choice fields get their options. The values are
+	 * the ones `WooRequestForm` accepts and the case keeps; the labels are
+	 * what the resident reads.
+	 */
+	private const WOO_OPTIONS = [
+		'documentSoorten' => [
+			'type' => 'static',
+			'options' => [
+				['value' => 'besluiten', 'label' => 'Besluiten en vergunningen'],
+				['value' => 'rapporten', 'label' => 'Rapporten en adviezen'],
+				['value' => 'correspondentie', 'label' => 'E-mails en brieven'],
+				['value' => 'alles', 'label' => 'Alles wat de gemeente hierover heeft'],
+			],
+		],
+		'verzoekerType' => [
+			'type' => 'static',
+			'options' => [
+				['value' => 'burger', 'label' => 'Inwoner'],
+				['value' => 'journalist', 'label' => 'Journalist'],
+				['value' => 'organisatie', 'label' => 'Organisatie'],
+			],
+		],
+	];
+
+	/**
+	 * The four steps of the request (site-woo-request-in-steps D1). Every
+	 * field of `WOO_FIELDS` sits in exactly one of them, which is what
+	 * portaliq requires to keep a step at all, and the last one reviews the
+	 * answers instead of asking for more.
+	 */
+	private const WOO_STEPS = [
+		[
+			'id' => 'vraag',
+			'title' => 'Uw vraag',
+			'description' => 'Vertel ons waar uw vraag over gaat.',
+			'fields' => ['onderwerp', 'omschrijving'],
+		],
+		[
+			'id' => 'periode',
+			'title' => 'Periode en documenten',
+			'description' => 'Hoe preciezer uw vraag, hoe sneller u antwoord krijgt.',
+			'fields' => ['periodeVan', 'periodeTot', 'documentSoorten', 'toelichting'],
+		],
+		[
+			'id' => 'gegevens',
+			'title' => 'Uw gegevens',
+			'description' => 'Wij gebruiken deze gegevens alleen voor uw verzoek.',
+			'fields' => ['verzoekerNaam', 'verzoekerEmail', 'verzoekerType'],
+		],
+		['id' => 'controleren', 'title' => 'Controleren en versturen', 'review' => true],
+	];
+
+	/**
+	 * Save and come back: portaliq keeps the answers per signed-in resident
+	 * for this many days and says so in the form. Dossiq stores nothing until
+	 * the request is sent, so a draft never becomes a case, never starts a
+	 * term and never reaches a handler's queue.
+	 */
+	private const WOO_DRAFT = ['retentionDays' => 30];
+
+	/**
+	 * What the resident reads once the request is in. `{identifier}` and
+	 * `{deadline}` come from the answer the route gives, and a sentence whose
+	 * placeholder has no value is left out, so a case whose deadline is not
+	 * computed yet promises no date.
+	 */
+	private const WOO_CONFIRMATION = [
+		'title' => 'Wij hebben uw Woo-verzoek ontvangen',
+		'body' => 'Uw zaaknummer is {identifier}. U krijgt uiterlijk {deadline} antwoord.',
+		'next' => 'U vindt uw verzoek onder Zaken. U krijgt ook een ontvangstbevestiging in uw berichten.',
+	];
+	/**
 	 * The collections a citizen may list, and what each one is scoped by.
 	 *
 	 * @return array<int, array<string, mixed>> The collections.
@@ -224,6 +339,11 @@ class CitizenManifest {
 			],
 			$this->amendCaseAction(),
 			$this->startWooVerzoekAction(),
+			// THE SAME REQUEST WITHOUT A DOSSIER: what the home tile and the
+			// overview start (site-woo-request-in-steps D2). Same route, same
+			// steps, no `attachTo`, so portaliq offers it anywhere a resident
+			// is signed in rather than only on a dossier page.
+			$this->startWooVerzoekAlgemeenAction(),
 		];
 	}//end actions()
 
@@ -249,6 +369,14 @@ class CitizenManifest {
 	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
 	 */
 	private function startWooVerzoekAction(): array {
+		// THE DOSSIER GOES IN THE FIRST STEP, hidden. Portaliq gathers every
+		// whitelisted field that no step names into a loose step of its own
+		// ("more", with no title), so leaving `collectionId` out gave the
+		// dossier variant a titleless fourth step holding one invisible field.
+		// Measured through portaliq's own resolvers.
+		$steps = self::WOO_STEPS;
+		$steps[0]['fields'] = array_merge(['collectionId'], $steps[0]['fields']);
+
 		return [
 			'id' => 'startWooVerzoek',
 			'label' => 'Start een Woo-verzoek',
@@ -261,7 +389,7 @@ class CitizenManifest {
 			'attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection'],
 			'rowField' => 'collectionId',
 			'minTrust' => 'low',
-			'fields' => ['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'],
+			'fields' => array_merge(['collectionId'], self::WOO_FIELDS),
 			// WHICH FIELDS THE FORM REFUSES TO SEND EMPTY. Declared here, not
 			// as `required` on the field: portaliq reads a required marker
 			// only from the written schema's own `required` list and from an
@@ -270,17 +398,58 @@ class CitizenManifest {
 			// nothing else could mark it. A `fieldConfigs.*.required` is
 			// dropped in silence, which is how the marker was lost before.
 			'requiredFields' => ['onderwerp'],
-			'fieldConfigs' => [
-				'collectionId' => ['visible' => false],
-				'onderwerp' => ['label' => 'Waar gaat uw verzoek over?'],
-				'omschrijving' => ['label' => 'Welke informatie wilt u hebben?', 'size' => 'large'],
-				'periodeVan' => ['label' => 'Periode vanaf'],
-				'periodeTot' => ['label' => 'Periode tot en met'],
-			],
+			'fieldConfigs' => (['collectionId' => ['visible' => false]] + self::WOO_FIELD_CONFIGS),
+			'optionsProviders' => self::WOO_OPTIONS,
+			'steps' => $steps,
+			'draft' => self::WOO_DRAFT,
+			'confirmation' => self::WOO_CONFIRMATION,
 			'submitLabel' => 'Verzoek versturen',
+			// Still here for a portal that renders no confirmation page: it
+			// reads this one line instead (portaliq REQ-SMF-022).
 			'successMessage' => 'Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken.',
 		];
 	}//end startWooVerzoekAction()
+
+	/**
+	 * The same Woo request, started without a dossier
+	 * (site-woo-request-in-steps D2).
+	 *
+	 * It posts to the same route, declares the same steps and is the action
+	 * the home tile names. It carries no `attachTo` and no `collectionId`:
+	 * `WooRequestIntake::start()` already opens a case without case objects
+	 * when no dossier is given (REQ-WRI-002). The dossier variant keeps its
+	 * `attachTo`, because on a dossier page that is what proves the dossier is
+	 * the resident's before anything is forwarded.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/site-woo-request-in-steps/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-without-a-dossier-req-sws-002
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-dossiq-offers-its-start-points-to-the-signed-out-home-req-srpd-006
+	 */
+	private function startWooVerzoekAlgemeenAction(): array {
+		return [
+			'id' => 'startWooVerzoekAlgemeen',
+			'label' => 'Informatie opvragen (Woo-verzoek)',
+			// The sentence the home tile reads. The mockup's "binnen vijf
+			// werkdagen belt een medewerker u" is a service promise dossiq
+			// cannot know holds for an instance, so an editor adds that on the
+			// page instead.
+			'summary' => 'Vraag documenten van de gemeente op. Dit kan dankzij de Wet open overheid (Woo).',
+			'audiences' => ['citizen', 'client'],
+			'endpoint' => '/index.php/apps/dossiq/api/portal/woo-verzoek',
+			'method' => 'POST',
+			'minTrust' => 'low',
+			'fields' => self::WOO_FIELDS,
+			'requiredFields' => ['onderwerp'],
+			'fieldConfigs' => self::WOO_FIELD_CONFIGS,
+			'optionsProviders' => self::WOO_OPTIONS,
+			'steps' => self::WOO_STEPS,
+			'draft' => self::WOO_DRAFT,
+			'confirmation' => self::WOO_CONFIRMATION,
+			'submitLabel' => 'Verzoek versturen',
+			'successMessage' => 'Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken.',
+		];
+	}//end startWooVerzoekAlgemeenAction()
 	/**
 	 * The one update a resident may make on their own case.
 	 *
