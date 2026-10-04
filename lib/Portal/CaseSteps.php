@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
+ * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 /**
  * Folds a case type's statuses into the public steps of one case.
  *
- * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
+ * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
  */
 class CaseSteps {
 	/**
@@ -67,7 +67,7 @@ class CaseSteps {
 	 *
 	 * @return array<int, array<string, string>> The steps, in order.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	public function forCase(array $case, array $statusTypes): array {
 		$folded = $this->fold(statusTypes: $this->ordered(statusTypes: $statusTypes));
@@ -106,7 +106,7 @@ class CaseSteps {
 	 *
 	 * @return string One of `done`, `current` or `todo`.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	private function stateOf(int $index, ?int $current): string {
 		if ($current === null) {
@@ -135,7 +135,7 @@ class CaseSteps {
 	 *
 	 * @return array<string, string> The step.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	private function entry(array $step, string $state, array $entered, array $case): array {
 		$entry = ['label' => $step['label'], 'state' => $state];
@@ -190,7 +190,7 @@ class CaseSteps {
 	 * that the portal, the status page and this folding cannot come to
 	 * disagree about what a status is called in public.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-where-their-case-stands-req-srpd-003
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
 	 */
 	private function fold(array $statusTypes): array {
 		$steps = [];

@@ -105,7 +105,7 @@ class PortalPages {
 	 *
 	 * @return array<int, array<string, mixed>> The pages.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-four-pages-req-srpd-005
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
 	 */
 	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
 		$pages = [];

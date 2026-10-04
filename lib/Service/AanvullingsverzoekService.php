@@ -206,7 +206,7 @@ class AanvullingsverzoekService {
 	 * without an OpenRegister, the way `write()` and `markCaseWaiting()` are
 	 * already seams in this class.
 	 *
-	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-reads-what-the-organisation-still-needs-from-them-req-srpd-001
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-sees-what-the-organisation-still-needs-from-them-req-srpd-001
 	 */
 	protected function portalSubjectOf(string $caseId): string {
 		try {
