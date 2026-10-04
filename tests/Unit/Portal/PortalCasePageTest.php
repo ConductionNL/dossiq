@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Dossiq\Portal\PortalContributionProvider
  * @uses   \OCA\Dossiq\Portal\PortalPages
+ * @uses   \OCA\Dossiq\Portal\CitizenManifest
  */
 class PortalCasePageTest extends TestCase {
 	/**
@@ -59,15 +60,30 @@ class PortalCasePageTest extends TestCase {
 
 		$this->assertArrayHasKey('mijnZaken', $pages);
 		// Renamed so it does not repeat the site's own "Mijn zaken" (portal-pages-in-resident-groups).
-		$this->assertSame('Voortgang van uw zaken', $pages['mijnZaken']['label']);
+		// The case page of the design (site-resident-portal-design D4): the
+		// question on this case first, then where it stands, its documents,
+		// what happened, the four facts, a way to write and the case screen.
+		$this->assertSame('Uw zaak', $pages['mijnZaken']['label']);
 		$this->assertSame(
 			[
-				['type' => 'collection', 'collection' => 'mijnZaken'],
-				['type' => 'detail', 'collection' => 'mijnZaken'],
-				['type' => 'citizenCase', 'collection' => 'mijnZaken'],
+				'tasks',
+				'steps',
+				'documents',
+				'timeline',
+				'detail',
+				'cta',
+				'citizenCase',
 			],
-			$pages['mijnZaken']['blocks']
+			array_column($pages['mijnZaken']['blocks'], 'type')
 		);
+		// It is a record page on its own collection, which is how portaliq
+		// finds it when a case is opened from a list, a card or a notice, and
+		// what lets steps, documents and timeline render at all.
+		$this->assertSame(
+			['collection' => 'mijnZaken', 'titleFields' => ['title']],
+			$pages['mijnZaken']['record']
+		);
+		$this->assertFalse($pages['mijnZaken']['menu']);
 	}
 
 	/**
@@ -119,8 +135,8 @@ class PortalCasePageTest extends TestCase {
 	public function testEveryCollectionKeepsThePagePortaliqGaveIt(string $audience): void {
 		$pages = $this->pagesById(audience: $audience);
 
-		$this->assertSame(['mijnZaken', 'berichten', 'verzoeken'], array_keys($pages));
-		$this->assertSame('Een bericht beantwoorden', $pages['berichten']['label']);
+		$this->assertSame(['overzicht', 'mijnZaken', 'berichten', 'verzoeken'], array_keys($pages));
+		$this->assertSame('Berichten', $pages['berichten']['label']);
 		$this->assertSame(
 			[
 				['type' => 'action', 'action' => 'replyToMessage'],
@@ -130,6 +146,7 @@ class PortalCasePageTest extends TestCase {
 			$pages['berichten']['blocks']
 		);
 		$this->assertSame('Mijn verzoeken', $pages['verzoeken']['label']);
+		$this->assertTrue($pages['overzicht']['home'], 'the resident lands on the overview');
 		$this->assertSame(
 			[
 				['type' => 'action', 'action' => 'createKlacht'],
@@ -159,7 +176,9 @@ class PortalCasePageTest extends TestCase {
 
 		foreach ($contribution['pages'] as $page) {
 			foreach ($page['blocks'] as $block) {
-				if ($block['type'] === 'action') {
+				// A cta names an action, a page or a route; the ones here all
+				// name an action (site-resident-portal-design D4).
+				if ($block['type'] === 'action' || $block['type'] === 'cta') {
 					$this->assertContains($block['action'], $actionIds);
 					continue;
 				}

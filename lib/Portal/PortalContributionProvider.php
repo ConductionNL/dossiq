@@ -87,7 +87,9 @@ class PortalContributionProvider {
 	// the procest -> dossiq rename. The `claims.procest.*` claim names in the
 	// docblock above are frozen for a different reason — they are a contract
 	// the portal reads, so renaming them here would not rename them there.
-	private const REGISTER = 'dossiq';
+	// Public because {@see CitizenManifest} declares the collections and
+	// actions of this register and must name the same one.
+	public const REGISTER = 'dossiq';
 
 	/**
 	 * What the citizen inbox projects, and where it keeps what portaliq's
@@ -104,7 +106,7 @@ class PortalContributionProvider {
 	 *
 	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
 	 */
-	private const CITIZEN_INBOX = [
+	public const CITIZEN_INBOX = [
 		'fields' => [
 			'caseReference',
 			'senderType',
@@ -164,6 +166,16 @@ class PortalContributionProvider {
 		'startDate',
 		'endDate',
 		'deadline',
+		// WHO IS AT TURN, as the resident is told it. `portalTurn` is the one
+		// field portaliq's case card reads (`turnField`); the two facts it is
+		// calculated from travel with it, so a page can say the same thing
+		// without a second read (site-resident-portal-design D2).
+		'portalTurn',
+		'waitingOnApplicant',
+		'waitingOn',
+		// THE TEAM, in words a resident can place. The internal name stays
+		// internal; a team without a public name shows no team at all.
+		'assignedGroupPublicName',
 		// WHETHER THE CASE HAS ENDED, as "Mijn zaken" reads it (`closedField`).
 		// A yes or no, calculated from the status type; nothing internal.
 		'isFinalStatus',
@@ -212,6 +224,7 @@ class PortalContributionProvider {
 	 */
 	public const CITIZEN_CASE_DETAIL_FIELDS = [
 		'identifier',
+		'assignedGroupPublicName',
 		'title',
 		StatusPublicLabels::CASE_LABEL_FIELD,
 		StatusPublicLabels::CASE_DESCRIPTION_FIELD,
@@ -239,6 +252,7 @@ class PortalContributionProvider {
 	 * @var array<string, array<string, string>>
 	 */
 	public const CITIZEN_CASE_DETAIL_LABELS = [
+		'assignedGroupPublicName' => ['label' => 'Behandeld door'],
 		StatusPublicLabels::CASE_DESCRIPTION_FIELD => ['label' => 'Toelichting op de status'],
 		'resultPublicDescription' => ['label' => 'Toelichting op de uitkomst'],
 		'endDate' => ['label' => 'Einddatum'],
@@ -291,8 +305,10 @@ class PortalContributionProvider {
 	 * @var array<string, string>
 	 */
 	private const CITIZEN_PAGE_LABELS = [
-		'mijnZaken' => 'Voortgang van uw zaken',
-		'berichten' => 'Een bericht beantwoorden',
+		'overzicht' => 'Overzicht',
+		'mijnZaken' => 'Uw zaak',
+		'berichten' => 'Berichten',
+		'verzoeken' => 'Mijn verzoeken',
 	];
 
 	/**
@@ -321,11 +337,13 @@ class PortalContributionProvider {
 	 * @param CaseTimeline|null              $timeline   The one reader of the public feed, or null.
 	 * @param PortalCaseDocuments|null       $documents  The documents a resident may see on a case, or null.
 	 * @param PortalMessageBoxRecipient|null $messageBox Who a portal letter goes to in the message box, or null.
+	 * @param PortalCaseSteps|null           $steps      Where a case stands in its type's public steps, or null.
 	 */
 	public function __construct(
 		private readonly ?CaseTimeline $timeline = null,
 		private readonly ?PortalCaseDocuments $documents = null,
 		private readonly ?PortalMessageBoxRecipient $messageBox = null,
+		private readonly ?PortalCaseSteps $steps = null,
 	) {
 		$this->pages = new PortalPages();
 	}//end __construct()
@@ -373,6 +391,26 @@ class PortalContributionProvider {
 
 		return $this->documents->forCase(caseId: $caseId);
 	}//end caseDocuments()
+
+	/**
+	 * Where the case stands, in the public steps of its own case type
+	 * (site-resident-portal-design D3). Named on the collection rather than
+	 * embedded in it, for the reason the timeline is: the manifest is built
+	 * once per subject and the steps are read once per case.
+	 *
+	 * @param string $caseId The case the resident opened.
+	 *
+	 * @return array<int, array<string, string>> The steps, or [] when they cannot be read.
+	 *
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-a-case-hands-the-portal-its-steps-req-srpd-003
+	 */
+	public function caseSteps(string $caseId): array {
+		if ($this->steps === null) {
+			return [];
+		}
+
+		return $this->steps->forCase(caseId: $caseId);
+	}//end caseSteps()
 
 	/**
 	 * The public entries on one case, as the portal's case timeline.
@@ -642,15 +680,25 @@ class PortalContributionProvider {
 	 * @spec openspec/changes/duplicate-warning-at-intake/specs/friendly-case-create-form/spec.md
 	 */
 	private function citizenContribution(): array {
-		$collections = $this->citizenCollections();
-		$actions = $this->citizenActions();
+		$manifest = new CitizenManifest();
+		$collections = $manifest->collections();
+		$actions = $manifest->actions();
 
 		return [
 			'label' => self::CITIZEN_GROUP,
 			'collections' => $collections,
 			'actions' => $actions,
-			'pages' => $this->pages->withCaseScreen(
-				pages: $this->pages->forCollections(collections: $collections, actions: $actions, group: self::CITIZEN_GROUP, labels: self::CITIZEN_PAGE_LABELS)
+			// THE FOUR PAGES OF THE DESIGN, not one page per collection: an
+			// overview that opens with what the resident still has to do, a
+			// case page that shows where the case stands, and the two pages
+			// that stay as they were (site-resident-portal-design D4). The
+			// case screen is a block of the case page here, so there is no
+			// second pass that adds it.
+			'pages' => $this->pages->forResident(
+				collections: $collections,
+				actions: $actions,
+				group: self::CITIZEN_GROUP,
+				labels: self::CITIZEN_PAGE_LABELS
 			),
 			// A declared rule key, not a change rule: dossiq writes the
 			// message itself (WooDecisionNotice), so portaliq sends its
@@ -659,296 +707,6 @@ class PortalContributionProvider {
 			'notifications' => [self::RULE_WOO_REQUEST_PUBLISHED],
 		];
 	}//end citizenContribution()
-
-	/**
-	 * The collections a citizen may list, and what each one is scoped by.
-	 *
-	 * @return array<int, array<string, mixed>> The collections.
-	 *
-	 * @spec openspec/specs/portal-contribution/spec.md
-	 * @spec openspec/changes/portal-messages-name-their-inbox-fields/specs/portal-contribution/spec.md#requirement-req-portal-005-an-inbox-collection-must-name-the-fields-that-carry-its-message
-	 * @spec openspec/changes/portal-case-page-withdraws/specs/portal-contribution/spec.md#requirement-req-portal-022-mijn-zaken-must-show-the-status-in-words
-	 * @spec openspec/changes/portal-case-list-declarations/specs/portal-contribution/spec.md#requirement-the-case-list-says-what-is-a-case-and-when-it-is-closed-req-portal-010
-	 */
-	private function citizenCollections(): array {
-		return [
-			[
-				'id' => 'mijnZaken',
-				'register' => self::REGISTER,
-				'schema' => 'case',
-				'scopeField' => 'portalSubject',
-				'label' => 'Mijn zaken',
-				'listable' => true,
-				'minTrust' => 'low',
-				'fields' => self::CITIZEN_CASE_FIELDS,
-				// WHAT THE RESIDENT READS, labelled and typed. Without these
-				// portaliq falls back to every projected field as plain text
-				// under its key, uuids included (dossiq#3143). `caseType` and
-				// `status` stay in the projection because the portal tells
-				// cases and statuses apart by them; they are simply not shown.
-				'columns' => self::CITIZEN_CASE_COLUMNS,
-				'detail' => ['layout' => 'card', 'fields' => self::CITIZEN_CASE_DETAIL_FIELDS],
-				'fieldConfigs' => self::CITIZEN_CASE_DETAIL_LABELS,
-				// The case detail carries what has happened on it. The
-				// contract names the method rather than embedding the
-				// entries, because the manifest is built once per subject
-				// and a timeline is read once per case.
-				'timeline' => [
-					'label' => 'Wat er is gebeurd',
-					'provider' => 'caseTimeline',
-				],
-				// The documents the organisation publishes on the case, the
-				// decision first. The method answers per case, and dossiq
-				// decides what a resident may see (dossiq#3205).
-				'documents' => [
-					'label' => 'Stukken',
-					'provider' => 'caseDocuments',
-				],
-				// LISTED ON "MY CASES". Portaliq's merged case list keeps only
-				// collections of kind `cases` (PortalCaseListReader), and reads a
-				// row as closed when `closedField` holds a value (false does not
-				// count). `isFinalStatus` is OpenRegister's calculation over the
-				// status type's `isFinal`, so it follows every way a case reaches
-				// a final status. `endDate` did not: a withdrawal from the portal
-				// lands on a final status without an end date, and a resident
-				// read three withdrawn Woo requests under "Lopend" (site-parity,
-				// 2026-10-02). It is on CITIZEN_CASE_FIELDS because portaliq
-				// drops a closed marker the collection does not project.
-				'kind' => 'cases',
-				'closedField' => 'isFinalStatus',
-				// THE STATUS IN WORDS ON "MIJN ZAKEN". `status` is a uuid the
-				// portal needs to tell statuses apart; the merged case list
-				// showed it as is. portaliq shows this field instead.
-				'statusLabelField' => StatusPublicLabels::CASE_LABEL_FIELD,
-				// Where the case type of a case lives, so a portal
-				// administrator can hide a case type the portal has no form
-				// for (portaliq operate-show-per-case-type).
-				'caseTypeField' => 'caseType',
-				'caseTypeSource' => [
-					'register' => self::REGISTER,
-					'schema' => 'caseType',
-					'labelField' => 'title',
-				],
-			],
-			[
-				'id' => 'berichten',
-				'kind' => 'inbox',
-				// A letter from the organisation to the applicant also goes to
-				// their government message box. Portaliq holds no BSN, so it
-				// asks this method for the recipient per message (dossiq#3192).
-				'messageBox' => ['recipientProvider' => 'messageBoxRecipient'],
-				'register' => self::REGISTER,
-				'schema' => 'portaalBericht',
-				'scopeField' => 'recipientRef',
-				'label' => 'Berichten',
-				'listable' => true,
-				'minTrust' => 'low',
-				...self::CITIZEN_INBOX,
-			],
-			[
-				'id' => 'verzoeken',
-				'register' => self::REGISTER,
-				'schema' => 'portaalVerzoek',
-				'scopeField' => 'submitterRef',
-				'label' => 'Mijn verzoeken',
-				'listable' => true,
-				'minTrust' => 'low',
-				'fields' => [
-					'kind',
-					'category',
-					'subject',
-					'rationale',
-					'reference',
-					'status',
-					'submittedAt',
-					'deadline',
-					'withinTerm',
-				],
-			],
-		];
-	}//end citizenCollections()
-
-	/**
-	 * The things a citizen may start from the portal.
-	 *
-	 * @return array<int, array<string, mixed>> The actions.
-	 *
-	 * @spec openspec/specs/portal-contribution/spec.md
-	 */
-	private function citizenActions(): array {
-		return [
-			[
-				'id' => 'createKlacht',
-				'type' => 'create',
-				'label' => 'Een klacht indienen',
-				'register' => self::REGISTER,
-				'schema' => 'portaalVerzoek',
-				'scopeField' => 'submitterRef',
-				'minTrust' => 'low',
-				'fields' => [
-					'category',
-					'subject',
-					'rationale',
-					'attachments',
-				],
-				// Stamped server-side, like the bezwaar's. Left to the
-				// sender, the portal sent 'klacht', which the schema's enum
-				// refuses, so every complaint answered 502 write_failed.
-				'defaults' => ['kind' => 'klachtschrift'],
-			],
-			[
-				'id' => 'createBezwaar',
-				'type' => 'create',
-				'label' => 'Bezwaar maken',
-				'register' => self::REGISTER,
-				'schema' => 'portaalVerzoek',
-				'scopeField' => 'submitterRef',
-				'minTrust' => 'low',
-				'fields' => [
-					'subject',
-					'rationale',
-					'attachments',
-					'againstCaseId',
-				],
-				// The kind is not the citizen's to choose. A bezwaar and a
-				// klacht run different statutory clocks, and a form that
-				// let the sender pick would let one arrive dressed as the
-				// other.
-				'defaults' => ['kind' => 'bezwaarschrift'],
-				'crossRefs' => [
-					'againstCaseId' => [
-						'register' => self::REGISTER,
-						'schema' => 'case',
-						'scopeField' => 'portalSubject',
-						'required' => true,
-					],
-				],
-			],
-			[
-				'id' => 'replyToMessage',
-				'type' => 'create',
-				'label' => 'Antwoorden',
-				'register' => self::REGISTER,
-				'schema' => 'portaalBericht',
-				// The citizen is the SENDER of a reply, so the reply is
-				// scoped by who sent it. The inbox above is scoped by who
-				// received it, which is the same person seen from the
-				// other end.
-				'scopeField' => 'senderRef',
-				'minTrust' => 'low',
-				'fields' => [
-					'subject',
-					'content',
-					'attachments',
-					'caseId',
-				],
-				'defaults' => [
-					'direction' => 'citizen_to_handler',
-					'senderType' => 'burger',
-				],
-				'crossRefs' => [
-					'caseId' => [
-						'register' => self::REGISTER,
-						'schema' => 'case',
-						'scopeField' => 'portalSubject',
-						'required' => true,
-					],
-				],
-			],
-			$this->amendCaseAction(),
-			$this->startWooVerzoekAction(),
-		];
-	}//end citizenActions()
-
-	/**
-	 * A resident starts a Woo request from their dossier (hydra woo-citizen-journey C5).
-	 *
-	 * AN ENDPOINT ACTION, NOT A FLAT CREATE. The request writes a case, one
-	 * case object per dossier item and a link back on the dossier, which
-	 * portaliq's writer cannot do in one object. portaliq forwards the form to
-	 * dossiq with a signed `X-Portal-Subject` assertion; dossiq takes the
-	 * resident from that assertion, checks the dossier is theirs and calls
-	 * {@see \OCA\Dossiq\Woo\WooRequestIntake}, the one path pipelinq's
-	 * conversion uses too. No `type`, `register` or `schema`, the vocabulary of
-	 * the fleet's reference endpoint action, so the flat writer never takes it
-	 * for one of its own creates.
-	 *
-	 * `fields` is the whitelist portaliq rebuilds the body from. `subjectRef`
-	 * and `origin` are not on it: the first comes from the assertion, the
-	 * second is always `portal` here.
-	 *
-	 * @return array<string, mixed> The action.
-	 *
-	 * @spec openspec/changes/woo-request-from-a-portal-dossier/specs/portal-contribution/spec.md#requirement-a-resident-starts-a-woo-request-from-the-portal-req-portal-020
-	 */
-	private function startWooVerzoekAction(): array {
-		return [
-			'id' => 'startWooVerzoek',
-			'label' => 'Start een Woo-verzoek',
-			'endpoint' => '/index.php/apps/dossiq/api/portal/woo-verzoek',
-			'method' => 'POST',
-			// ON THE DOSSIER PAGE (hydra woo-citizen-journey C7): portaliq shows
-			// the action on opencatalogi's collection detail, proves the dossier
-			// is the resident's through opencatalogi's own scope and forwards it
-			// with `collectionId` set. WooRequestIntake checks ownership again.
-			'attachTo' => ['app' => 'opencatalogi', 'schema' => 'collection'],
-			'rowField' => 'collectionId',
-			'minTrust' => 'low',
-			'fields' => ['collectionId', 'onderwerp', 'omschrijving', 'periodeVan', 'periodeTot'],
-			'fieldConfigs' => [
-				'collectionId' => ['visible' => false],
-				'onderwerp' => ['label' => 'Waar gaat uw verzoek over?', 'required' => true],
-				'omschrijving' => ['label' => 'Welke informatie wilt u hebben?', 'size' => 'large'],
-				'periodeVan' => ['label' => 'Periode vanaf'],
-				'periodeTot' => ['label' => 'Periode tot en met'],
-			],
-			'submitLabel' => 'Verzoek versturen',
-			'successMessage' => 'Uw Woo-verzoek is ontvangen. U vindt het onder Mijn zaken.',
-		];
-	}//end startWooVerzoekAction()
-
-	/**
-	 * The one update a resident may make on their own case.
-	 *
-	 * Portaliq's case screen (read the case with its documents, amend an
-	 * answer, add a document, withdraw) runs only under a `type: update`
-	 * action on the case's register and schema that carries `citizenWrite`;
-	 * without one every dossiq case answered 403 `portal-writes-not-declared`
-	 * (dossiq#3152). Portaliq takes the FIRST such action, so there is exactly
-	 * one.
-	 *
-	 * `fields` IS THE CEILING. Whatever a case type opens in `portalWritable`,
-	 * portaliq narrows it to this list. `description` is the resident's own
-	 * account of what they asked; nothing a handler decides (status, result,
-	 * deadlines, assignee) is on it. A withdrawal writes the status, but the
-	 * status it lands on comes from the case type's `portalWithdrawal`, never
-	 * from the request.
-	 *
-	 * `citizenWrite` names where the case type lives; portaliq reads the
-	 * windows there and records each write in `portalWrites` on the case (its
-	 * default `recordField`).
-	 *
-	 * @return array<string, mixed> The action.
-	 *
-	 * @spec openspec/changes/portal-citizen-writes-on-the-case/tasks.md#1.1
-	 */
-	private function amendCaseAction(): array {
-		return [
-			'id' => 'amendCase',
-			'type' => 'update',
-			'label' => 'Uw zaak aanpassen',
-			'register' => self::REGISTER,
-			'schema' => 'case',
-			'scopeField' => 'portalSubject',
-			'minTrust' => 'low',
-			'fields' => ['description'],
-			'citizenWrite' => [
-				'typeField' => 'caseType',
-				'typeRegister' => self::REGISTER,
-				'typeSchema' => 'caseType',
-			],
-		];
-	}//end amendCaseAction()
 
 	/**
 	 * Manifest for the `inspector` audience (an EXTERNAL field inspector).

@@ -98,6 +98,13 @@ const SILENT = [
 	'tweedeToets',
 	'voorbereiding',
 	'wooRequest',
+	// Read-only calculations the PORTAL projects, not fields a desk list
+	// filters on: who the resident is told is at turn, and the handling team's
+	// public name (site-resident-portal-design D2, D4). Both are
+	// `visible: false` and are written by the register's own expressions, so
+	// there is no input to control.
+	'portalTurn',
+	'assignedGroupPublicName',
 ]
 
 /**

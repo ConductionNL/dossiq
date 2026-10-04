@@ -83,6 +83,194 @@ class PortalPages {
 	}//end forCollections()
 
 	/**
+	 * The four pages a resident reads (site-resident-portal-design D4), in
+	 * place of one page per collection.
+	 *
+	 * WHY THESE ARE WRITTEN OUT. `forCollections()` gives every listable
+	 * collection the same three blocks, which is the right default for a
+	 * supplier's four lists. A resident reads something else: an overview
+	 * that opens with what they still have to do, a case page that shows
+	 * where the case stands, and two pages that stay as they were. Each page
+	 * carries `menu: false`, so the route keeps working while the portal's
+	 * own menu names them (portaliq REQ-SMO-020), and the group of #3245.
+	 *
+	 * Every key here is one portaliq's resolvers accept today. Portaliq drops
+	 * an unknown key in silence, so a key invented here would read as
+	 * declared for ever and do nothing.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 * @param array<int, array<string, mixed>> $actions The citizen actions.
+	 * @param string $group The group every page sits in.
+	 * @param array<string, string> $labels The label per page id.
+	 *
+	 * @return array<int, array<string, mixed>> The pages.
+	 *
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 */
+	public function forResident(array $collections, array $actions, string $group, array $labels = []): array {
+		$pages = [];
+		$pages[] = [
+			'id' => 'overzicht',
+			'label' => ($labels['overzicht'] ?? 'Overzicht'),
+			'group' => $group,
+			// The page a resident lands on. Portaliq gathers the rows of every
+			// `tasks` block on a home page under "Dit moet u nog doen" and
+			// renders the rest below it.
+			'home' => true,
+			'menu' => false,
+			'blocks' => $this->residentOverviewBlocks(collections: $collections),
+		];
+
+		$pages[] = [
+			'id' => 'mijnZaken',
+			'label' => ($labels['mijnZaken'] ?? 'Uw zaak'),
+			'group' => $group,
+			'menu' => false,
+			// THE PAGE A CASE OPENS ON. `steps`, `documents` and `timeline`
+			// render only on a record page whose collection names that
+			// provider, and portaliq finds this page by its `record` key
+			// whenever a case is opened from a list, a card or a notice.
+			'record' => ['collection' => 'mijnZaken', 'titleFields' => ['title']],
+			'blocks' => $this->residentCaseBlocks(collections: $collections, actions: $actions),
+		];
+
+		foreach (['berichten', 'verzoeken'] as $id) {
+			if ($this->declares(rows: $collections, id: $id) === false) {
+				continue;
+			}
+
+			$page = [
+				'id' => $id,
+				'label' => ($labels[$id] ?? $id),
+				'group' => $group,
+				'menu' => false,
+				'blocks' => [],
+			];
+			foreach ($actions as $action) {
+				if (($action['type'] ?? '') === 'create' && ($action['schema'] ?? '') === $this->schemaOf(collections: $collections, id: $id)) {
+					$page['blocks'][] = ['type' => 'action', 'action' => (string)$action['id']];
+					break;
+				}
+			}
+
+			$page['blocks'][] = ['type' => 'collection', 'collection' => $id];
+			$page['blocks'][] = ['type' => 'detail', 'collection' => $id];
+			$pages[] = $page;
+		}//end foreach
+
+		return $pages;
+	}//end forResident()
+
+	/**
+	 * The overview's blocks: what the resident still has to do, their running
+	 * cases, the newest messages, and the two things they can start.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 *
+	 * @return array<int, array<string, mixed>> The blocks, in order.
+	 *
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 */
+	private function residentOverviewBlocks(array $collections): array {
+		$blocks = [];
+		if ($this->declares(rows: $collections, id: 'vragenAanU') === true) {
+			$blocks[] = [
+				'type' => 'tasks',
+				'collection' => 'vragenAanU',
+				'dueField' => 'hersteltermijn',
+				'titleFields' => ['summary'],
+			];
+		}
+
+		$blocks[] = ['type' => 'cases', 'collection' => 'mijnZaken', 'open' => true, 'limit' => 5];
+		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3];
+		$blocks[] = ['type' => 'cta', 'action' => 'createBezwaar', 'label' => 'Bezwaar maken'];
+		$blocks[] = ['type' => 'cta', 'action' => 'createKlacht', 'label' => 'Klacht indienen'];
+
+		return $blocks;
+	}//end residentOverviewBlocks()
+
+	/**
+	 * The case page's blocks, in the order the design reads them: the question
+	 * on THIS case, where it stands, its documents, what happened, the facts,
+	 * a way to write, and the case screen.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The citizen collections.
+	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
+	 *
+	 * @return array<int, array<string, mixed>> The blocks, in order.
+	 *
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 */
+	private function residentCaseBlocks(array $collections, array $actions): array {
+		$blocks = [];
+		if ($this->declares(rows: $collections, id: 'vragenAanU') === true) {
+			$blocks[] = [
+				'type' => 'tasks',
+				'collection' => 'vragenAanU',
+				// Only the question on THIS case.
+				'recordField' => 'case',
+				'dueField' => 'hersteltermijn',
+				'titleFields' => ['summary'],
+			];
+		}
+
+		$blocks[] = ['type' => 'steps', 'collection' => 'mijnZaken'];
+		$blocks[] = ['type' => 'documents', 'collection' => 'mijnZaken'];
+		$blocks[] = ['type' => 'timeline', 'collection' => 'mijnZaken'];
+		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken'];
+		if ($this->declares(rows: $actions, id: 'replyToMessage') === true) {
+			$blocks[] = [
+				'type' => 'cta',
+				'action' => 'replyToMessage',
+				'label' => 'Bericht sturen',
+				// The open case lands in the action's recordField.
+				'withRecord' => true,
+			];
+		}
+
+		$blocks[] = ['type' => 'citizenCase', 'collection' => 'mijnZaken'];
+
+		return $blocks;
+	}//end residentCaseBlocks()
+
+	/**
+	 * Whether a declared row with this id is there.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The collections or actions.
+	 * @param string                           $id   The id to look for.
+	 *
+	 * @return bool True when it is declared.
+	 */
+	private function declares(array $rows, string $id): bool {
+		foreach ($rows as $row) {
+			if ((string)($row['id'] ?? '') === $id) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end declares()
+
+	/**
+	 * The schema one collection reads, or '' when it is not there.
+	 *
+	 * @param array<int, array<string, mixed>> $collections The collections.
+	 * @param string $id The collection id.
+	 *
+	 * @return string The schema.
+	 */
+	private function schemaOf(array $collections, string $id): string {
+		foreach ($collections as $collection) {
+			if ((string)($collection['id'] ?? '') === $id) {
+				return (string)($collection['schema'] ?? '');
+			}
+		}
+
+		return '';
+	}//end schemaOf()
+
+	/**
 	 * The case page also mounts portaliq's case screen (development #3247).
 	 *
 	 * Portaliq's case screen (status, amend, documents, withdraw) mounts only
