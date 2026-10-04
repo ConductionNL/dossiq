@@ -82,6 +82,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'FoldCasePropertiesOntoCase' => 'backfill over existing cases',
 		'BackfillInformatieobjectMetadata' => 'backfill over existing documents',
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
+		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
 		// INHERITED from the family-plan lane, which shipped this step with no
 		// entry on either side. Named here rather than left red: it rewrites
