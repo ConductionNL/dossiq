@@ -359,6 +359,52 @@ describe('a page overlay', () => {
 		expect(page.config.list).toHaveLength(3)
 	})
 
+	it('names a list item by id, then key, then label, and a bare string by itself', () => {
+		const page = {
+			id: 'P',
+			config: {
+				columns: ['number', { key: 'status', label: 'Status' }],
+				lenses: [{ label: 'All' }, { label: 'Mine' }, { label: 'Closed' }],
+			},
+		}
+		const out = applyPageOverlay(page, {
+			id: 'P',
+			configPatch: {
+				columns: { number: null, status: { widget: 'badge' } },
+				lenses: { Mine: { showCount: true } },
+			},
+			configAppend: { lenses: [{ label: 'Woo' }] },
+			configOrder: { lenses: ['Mine', 'Woo', 'No such lens'] },
+		})
+		expect(out.config.columns).toEqual([
+			{ key: 'status', label: 'Status', widget: 'badge' },
+		])
+		// Order runs last, so it can lead with an appended item. A name that
+		// matches nothing is ignored, and the rest keep their order.
+		expect(out.config.lenses).toEqual([
+			{ label: 'Mine', showCount: true },
+			{ label: 'Woo' },
+			{ label: 'All' },
+			{ label: 'Closed' },
+		])
+	})
+
+	it('adds slots to the page and leaves a page without the key as it was', () => {
+		const page = { id: 'P', slots: { a: 'A' }, config: {} }
+		expect(applyPageOverlay(page, { id: 'P', slots: { b: 'B' } }).slots).toEqual(
+			{
+				a: 'A',
+				b: 'B',
+			},
+		)
+		expect(
+			Object.hasOwn(
+				applyPageOverlay({ id: 'Q', config: {} }, { id: 'Q' }),
+				'slots',
+			),
+		).toBe(false)
+	})
+
 	it('is skipped and reported when it names a page the manifest does not have', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
 		const out = build({

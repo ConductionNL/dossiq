@@ -86,12 +86,18 @@
 
 <script>
 import { NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { cardDueSeverity } from '../../utils/cardDueSeverity.js'
 import { getDaysRemaining } from '../../utils/caseHelpers.js'
 
 export default {
 	name: 'CaseCard',
 	components: {
 		NcCheckboxRadioSwitch,
+	},
+
+	inject: {
+		/** The built manifest, for the board page's own `config.dueRule`. */
+		cnManifest: { default: null },
 	},
 
 	props: {
@@ -111,6 +117,24 @@ export default {
 
 	emits: ['click', 'contextMenu', 'requestMove', 'toggle-select'],
 	computed: {
+		/**
+		 * The board's due rule, declared on the `WorkflowBoard` page.
+		 *
+		 * The simple structure declares one that counts today as late. The
+		 * full structure declares none, and the card keeps its own rule.
+		 *
+		 * @return {object|null}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		dueRule() {
+			const pages = this.cnManifest?.pages
+			const board = Array.isArray(pages)
+				? pages.find((page) => page.id === 'WorkflowBoard')
+				: null
+			return board?.config?.dueRule ?? null
+		},
+
 		/**
 		 * What the card announces, including how to move it.
 		 *
@@ -145,15 +169,15 @@ export default {
 		},
 
 		/**
-		 * Deadline severity: overdue (<0), warning (<=3), or ok.
+		 * Deadline severity: overdue, warning or ok, by the board's due rule.
+		 * Without a rule: overdue after the deadline, a warning within three days.
 		 *
 		 * @return {string|null}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		deadlineSeverity() {
-			if (this.daysRemaining === null) return null
-			if (this.daysRemaining < 0) return 'overdue'
-			if (this.daysRemaining <= 3) return 'warning'
-			return 'ok'
+			return cardDueSeverity(this.daysRemaining, this.dueRule)
 		},
 
 		/**
