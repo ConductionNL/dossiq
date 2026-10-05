@@ -24,6 +24,7 @@ Before dossiq sends a case mail to a citizen, it MUST ask integriq through `Outb
 - **WHEN** a handler sends a `case-update` mail
 - **THEN** no mail is sent
 - **AND** the answer is 409 with `error: authority-unavailable`
+- **AND** dossiq logs a warning naming the case and the category
 - @e2e exclude needs an instance without integriq, covered by PHPUnit
 
 ### Requirement: A handler can send a besluit that is always delivered (REQ-COO-002)

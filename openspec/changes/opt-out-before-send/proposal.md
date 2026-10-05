@@ -1,6 +1,6 @@
 # Ask integriq before you message a citizen about a case
 
-Part of the hydra change `opt-out-before-send` (ConductionNL/hydra#739). That change holds the fleet contract, the sender table and the open decisions. integriq's side is ConductionNL/integriq#2530. This is dossiq's share.
+Part of the hydra change `opt-out-before-send` (ConductionNL/hydra#739). That change holds the fleet contract, the sender table and Ruben's decisions of 2026-10-05. integriq's side is ConductionNL/integriq#2530. This is dossiq's share.
 
 ## Why
 
