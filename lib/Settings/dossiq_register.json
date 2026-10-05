@@ -11078,7 +11078,7 @@
                             "besluit",
                             "statutory"
                         ],
-                        "description": "What a mail from this template is (opt-out-before-send). A case-update respects the recipient's opt-out and carries an unsubscribe link; a besluit or statutory mail is always sent, without one. Empty means case-update.",
+                        "description": "A case update respects the recipient's opt-out and carries an unsubscribe link. A besluit or statutory mail is always sent, without one.",
                         "title": "Message category"
                     },
                     "version": {

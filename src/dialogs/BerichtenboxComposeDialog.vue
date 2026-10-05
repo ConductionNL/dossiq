@@ -55,6 +55,20 @@
 					trackBy="code" />
 			</div>
 
+			<div class="form-group">
+				<NcCheckboxRadioSwitch
+					:modelValue="form.isBesluit"
+					type="checkbox"
+					@update:modelValue="(v) => (form.isBesluit = v)">
+					{{
+						t(
+							'dossiq',
+							'This is a besluit (always sent, no unsubscribe link)',
+						)
+					}}
+				</NcCheckboxRadioSwitch>
+			</div>
+
 			<div class="compose-dialog__actions">
 				<NcButton variant="primary" :disabled="sending" @click="send">
 					{{ sending ? t('dossiq', 'Sending…') : t('dossiq', 'Send') }}
@@ -64,9 +78,11 @@
 				</NcButton>
 			</div>
 
-			<NcNoteCard v-if="sendError" type="error">
-				{{ sendError }}
-			</NcNoteCard>
+			<div v-if="sendError" role="alert">
+				<NcNoteCard type="error">
+					{{ sendError }}
+				</NcNoteCard>
+			</div>
 		</div>
 	</NcDialog>
 </template>
@@ -77,6 +93,7 @@ import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcDialog,
 	NcNoteCard,
 	NcSelect,
@@ -104,7 +121,15 @@ import { sendMessage } from '../services/berichtenboxApi.js'
  */
 export default {
 	name: 'BerichtenboxComposeDialog',
-	components: { NcDialog, NcButton, NcTextField, NcSelect, NcNoteCard },
+	components: {
+		NcDialog,
+		NcButton,
+		NcCheckboxRadioSwitch,
+		NcTextField,
+		NcSelect,
+		NcNoteCard,
+	},
+
 	props: {
 		/**
 		 * The case this letter is about.
@@ -132,7 +157,14 @@ export default {
 	emits: ['close', 'sent'],
 	data() {
 		return {
-			form: { bsn: this.bsn, subject: '', body: '', berichtTypeCode: null },
+			form: {
+				bsn: this.bsn,
+				subject: '',
+				body: '',
+				berichtTypeCode: null,
+				isBesluit: false,
+			},
+
 			typeCodes: [
 				{ code: 'decision', label: t('dossiq', 'Decision (Besluit)') },
 				{ code: 'status', label: t('dossiq', 'Status update') },
@@ -228,6 +260,29 @@ export default {
 			}
 		},
 
+		/**
+		 * The sentence a handler reads for an opt-out refusal, or null.
+		 *
+		 * @param {string|undefined} code integriq's refusal code.
+		 * @return {string|null} The sentence.
+		 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+		 */
+		refusalText(code) {
+			if (code === 'opted-out') {
+				return t(
+					'dossiq',
+					'This person asked not to receive updates about this case. Nothing was sent.',
+				)
+			}
+			if (code === 'authority-unavailable') {
+				return t(
+					'dossiq',
+					'integriq is not available, so dossiq cannot check whether this person may be messaged. Nothing was sent.',
+				)
+			}
+			return null
+		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		validate() {
 			this.errors = {}
@@ -258,6 +313,9 @@ export default {
 					subject: this.form.subject,
 					body: this.form.body,
 					berichtTypeCode: this.form.berichtTypeCode?.code || '',
+					// The category decides, not the channel: a besluit is always
+					// delivered, a case update respects the citizen's opt-out.
+					category: this.form.isBesluit ? 'besluit' : 'case-update',
 				})
 
 				// 🔴 A 200 IS NOT A DELIVERY. The endpoint answers 400 with the
@@ -268,7 +326,8 @@ export default {
 				// whole failure this change is about, one layer up.
 				if (answer?.success === false || answer?.message?.refused === true) {
 					this.sendError =
-						answer?.error
+						this.refusalText(answer?.code || answer?.message?.code)
+						|| answer?.error
 						|| answer?.message?.error
 						|| t(
 							'dossiq',
@@ -283,7 +342,9 @@ export default {
 				// failed" tells a handler nothing they can act on; "no
 				// PKIoverheid certificate is configured" tells them who to ask.
 				this.sendError =
-					e.response?.data?.error || t('dossiq', 'Failed to send message')
+					this.refusalText(e.response?.data?.code)
+					|| e.response?.data?.error
+					|| t('dossiq', 'Failed to send message')
 			} finally {
 				this.sending = false
 			}
