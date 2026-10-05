@@ -29,6 +29,7 @@ use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\SettingsService;
@@ -160,9 +161,7 @@ class CaseEmailServiceTest extends TestCase {
 			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
 			new RecipientAllowlist($this->appConfig),
 			$this->createMock(CaseTimeline::class),
-			$this->gate(),
-			$this->l10n(),
-			new UnsubscribeHeaders(new NullLogger()),
+			new CaseMailOptOut($this->gate(), $this->l10n(), new UnsubscribeHeaders(new NullLogger())),
 		);
 
 	}//end setUp()
@@ -220,9 +219,7 @@ class CaseEmailServiceTest extends TestCase {
 			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
 			new RecipientAllowlist($this->appConfig),
 			($timeline ?? $this->createMock(CaseTimeline::class)),
-			$this->gate(),
-			$this->l10n(),
-			new UnsubscribeHeaders(new NullLogger()),
+			new CaseMailOptOut($this->gate(), $this->l10n(), new UnsubscribeHeaders(new NullLogger())),
 		);
 	}//end serviceWithCase()
 

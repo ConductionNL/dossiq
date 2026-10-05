@@ -46,13 +46,19 @@ class RecipientOptedOutException extends RuntimeException {
 		private readonly string $reasonCode,
 		string $reason = '',
 	) {
-		parent::__construct($reason !== '' ? $reason : 'The recipient may not be sent this message. Nothing was sent.');
+		if ($reason === '') {
+			$reason = 'The recipient may not be sent this message. Nothing was sent.';
+		}
+
+		parent::__construct(message: $reason);
 	}//end __construct()
 
 	/**
 	 * The decision code.
 	 *
 	 * @return string The code.
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function getReasonCode(): string {
 		return $this->reasonCode;

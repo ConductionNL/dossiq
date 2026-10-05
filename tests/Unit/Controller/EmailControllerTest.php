@@ -34,6 +34,7 @@ use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\OptOutGate;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
@@ -110,9 +111,11 @@ class EmailControllerTest extends TestCase {
 			new CaseEmailAttachmentResolver($this->createMock(IRootFolder::class), $this->createMock(IUserSession::class), new NullLogger()),
 			new RecipientAllowlist($appConfig),
 			$this->createMock(CaseTimeline::class),
-			new OptOutGate($this->dispatcher, $appConfig, new NullLogger(), $this->gateRelative),
-			$l10n,
-			new UnsubscribeHeaders(new NullLogger()),
+			new CaseMailOptOut(
+				new OptOutGate($this->dispatcher, $appConfig, new NullLogger(), $this->gateRelative),
+				$l10n,
+				new UnsubscribeHeaders(new NullLogger())
+			),
 		);
 
 		$session = $this->createMock(IUserSession::class);

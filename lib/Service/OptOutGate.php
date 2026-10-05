@@ -210,9 +210,14 @@ class OptOutGate {
 	 * @return array{send:bool,code:string,reason:string,unsubscribe:array<string,mixed>|null} The decision.
 	 */
 	private function unavailable(string $category, string $caseRef, string $why): array {
-		$exempt = self::isExempt(category: $category);
+		$exempt  = self::isExempt(category: $category);
+		$outcome = 'not sent';
+		if ($exempt === true) {
+			$outcome = 'sent, the category is exempt';
+		}
+
 		$this->logger->warning(
-			'Dossiq: integriq could not say whether this person may be messaged; ' . ($exempt === true ? 'sent, the category is exempt' : 'not sent'),
+			'Dossiq: integriq could not say whether this person may be messaged; ' . $outcome,
 			[
 				'app' => Application::APP_ID,
 				'caseRef' => $caseRef,

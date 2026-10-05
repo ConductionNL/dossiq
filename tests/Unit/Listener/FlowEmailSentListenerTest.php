@@ -20,7 +20,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\FlowEmailSentListener;
 use OCA\Dossiq\Service\CaseEmailService;
-use OCA\Dossiq\Service\OptOutGate;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
@@ -31,7 +31,6 @@ use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCA\OpenRegister\Event\FlowEmailSentEvent;
 use OCP\IAppConfig;
-use OCP\IL10N;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\Mail\IMailer;
@@ -108,8 +107,7 @@ class FlowEmailSentListenerTest extends TestCase {
 			$this->createMock(CaseEmailAttachmentResolver::class),
 			$this->createMock(RecipientAllowlist::class),
 			$timeline,
-			$this->createMock(OptOutGate::class),
-			$this->createMock(IL10N::class)
+			$this->createMock(CaseMailOptOut::class)
 		);
 
 		$user = $this->createMock(IUser::class);

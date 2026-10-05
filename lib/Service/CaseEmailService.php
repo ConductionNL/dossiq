@@ -34,12 +34,11 @@ use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
-use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
 use OCP\IAppConfig;
-use OCP\IL10N;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
@@ -102,6 +101,7 @@ class CaseEmailService {
 	 * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
 	 * @param RecipientAllowlist $allowlist Outbound recipient policy
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
+	 * @param CaseMailOptOut $optOut Asks integriq first and places its unsubscribe link
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -112,9 +112,7 @@ class CaseEmailService {
 		private readonly CaseEmailAttachmentResolver $attachmentResolver,
 		private readonly RecipientAllowlist $allowlist,
 		private readonly CaseTimeline $timeline,
-		private readonly OptOutGate $optOutGate,
-		private readonly IL10N $l10n,
-		private readonly ?UnsubscribeHeaders $unsubscribeHeaders = null,
+		private readonly CaseMailOptOut $optOut,
 	) {
 	}//end __construct()
 
@@ -181,7 +179,7 @@ class CaseEmailService {
 
 		// Ask integriq after the allow-list and before anything is built or
 		// sent (opt-out-before-send). A refusal leaves no mail and no record.
-		$decision = $this->optOutGate->ask(recipient: $to, category: $category, caseRef: $caseId);
+		$decision = $this->optOut->decide(recipient: $to, category: $category, caseId: $caseId);
 		if ($decision['send'] === false) {
 			$this->logger->info(
 				'Case mail not sent: integriq said this person may not be sent it',
@@ -196,13 +194,7 @@ class CaseEmailService {
 		$message->setFrom([$fromAddress => $fromName]);
 		$message->setTo([$to]);
 		$message->setSubject($subject);
-		$message->setHtmlBody($this->htmlWithLink(body: $body, unsubscribe: $unsubscribe));
-		$message->setPlainBody($this->plainWithLink(body: strip_tags($body), unsubscribe: $unsubscribe));
-		if ($unsubscribe !== null && $this->unsubscribeHeaders !== null) {
-			// Best effort (RFC 8058): OpenRegister's one helper sets the
-			// headers when the mailer exposes them; the body link stays.
-			$this->unsubscribeHeaders->apply($message, $unsubscribe);
-		}
+		$this->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe);
 
 		// H5: Resolve attachments via IUserFolder to restrict file access to the
 		// calling user's own files and prevent path traversal outside their folder.
@@ -470,71 +462,6 @@ class CaseEmailService {
 
 		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
 	}//end sendFromTemplate()
-
-	/**
-	 * The HTML body with integriq's unsubscribe line, when there is one.
-	 *
-	 * @param string                   $body        The body as written.
-	 * @param array<string,mixed>|null $unsubscribe integriq's link material, or null.
-	 *
-	 * @return string The body to send.
-	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
-	 */
-	private function htmlWithLink(string $body, ?array $unsubscribe): string {
-		$url = $this->linkOf(unsubscribe: $unsubscribe);
-		if ($url === null) {
-			return $body;
-		}
-
-		$link = '<a href="' . htmlspecialchars($url, ENT_QUOTES) . '">'
-			. htmlspecialchars($this->l10n->t('Unsubscribe'), ENT_QUOTES) . '</a>';
-
-		return $body . "\n<p>" . htmlspecialchars($this->l10n->t('No longer want updates about this case?'), ENT_QUOTES)
-			. ' ' . $link . '</p>';
-	}//end htmlWithLink()
-
-	/**
-	 * The plain body with integriq's unsubscribe line, when there is one.
-	 *
-	 * @param string                   $body        The body as text.
-	 * @param array<string,mixed>|null $unsubscribe integriq's link material, or null.
-	 *
-	 * @return string The body to send.
-	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
-	 */
-	private function plainWithLink(string $body, ?array $unsubscribe): string {
-		$url = $this->linkOf(unsubscribe: $unsubscribe);
-		if ($url === null) {
-			return $body;
-		}
-
-		return $body . "\n\n" . $this->l10n->t('No longer want updates about this case?') . ' '
-			. $this->l10n->t('Unsubscribe') . ': ' . $url;
-	}//end plainWithLink()
-
-	/**
-	 * The link out of integriq's material, when it is a usable http(s) url.
-	 *
-	 * dossiq mints no token of its own; it only places integriq's.
-	 *
-	 * @param array<string,mixed>|null $unsubscribe The material.
-	 *
-	 * @return string|null The url.
-	 */
-	private function linkOf(?array $unsubscribe): ?string {
-		if ($unsubscribe === null) {
-			return null;
-		}
-
-		$url = trim((string)($unsubscribe['url'] ?? ''));
-		if ($url === '' || preg_match('#^https?://[^\s<>"]+$#i', $url) !== 1) {
-			return null;
-		}
-
-		return $url;
-	}//end linkOf()
 
 	/**
 	 * Resolve template variables in a string, HTML-escaping every value.
