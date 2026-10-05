@@ -538,7 +538,7 @@ class CitizenManifest {
 			// decision first. The method answers per case, and dossiq
 			// decides what a resident may see (dossiq#3205).
 			'documents' => [
-				'label' => 'Stukken',
+				'label' => 'Documenten',
 				'provider' => 'caseDocuments',
 			],
 			// WHERE THE CASE STANDS, in the public steps of its own case

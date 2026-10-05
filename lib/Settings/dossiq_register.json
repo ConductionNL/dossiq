@@ -11905,7 +11905,9 @@
                 "order": 1,
                 "isFinal": false,
                 "role": "intake",
-                "colour": "blue"
+                "colour": "blue",
+                "publicLabel": "Ontvangen",
+                "publicDescription": "Uw aanvraag is binnen. Wij sturen u een ontvangstbevestiging."
             },
             {
                 "@self": {
@@ -11919,7 +11921,9 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange"
+                "colour": "orange",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij toetsen uw aanvraag aan de regels."
             },
             {
                 "@self": {
@@ -11933,7 +11937,9 @@
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
-                "colour": "purple"
+                "colour": "purple",
+                "publicLabel": "Besluit",
+                "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
             {
                 "@self": {
@@ -11948,7 +11954,9 @@
                 "isFinal": true,
                 "role": "closed",
                 "colour": "green",
-                "hiddenInLists": true
+                "hiddenInLists": true,
+                "publicLabel": "Afgehandeld",
+                "publicDescription": "Uw aanvraag is afgehandeld."
             },
             {
                 "@self": {
@@ -11962,7 +11970,9 @@
                 "order": 1,
                 "isFinal": false,
                 "role": "intake",
-                "colour": "blue"
+                "colour": "blue",
+                "publicLabel": "Ontvangen",
+                "publicDescription": "Uw aanvraag is binnen. Wij sturen u een ontvangstbevestiging."
             },
             {
                 "@self": {
@@ -11976,7 +11986,9 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange"
+                "colour": "orange",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij toetsen uw aanvraag aan de subsidieregels."
             },
             {
                 "@self": {
@@ -11990,7 +12002,9 @@
                 "order": 3,
                 "isFinal": false,
                 "role": "review",
-                "colour": "purple"
+                "colour": "purple",
+                "publicLabel": "Besluit",
+                "publicDescription": "Wij nemen een besluit op uw aanvraag."
             },
             {
                 "@self": {
@@ -12005,7 +12019,9 @@
                 "isFinal": true,
                 "role": "closed",
                 "colour": "green",
-                "hiddenInLists": true
+                "hiddenInLists": true,
+                "publicLabel": "Afgehandeld",
+                "publicDescription": "Uw aanvraag is afgehandeld."
             },
             {
                 "@self": {
@@ -12019,7 +12035,9 @@
                 "order": 1,
                 "isFinal": false,
                 "role": "intake",
-                "colour": "blue"
+                "colour": "blue",
+                "publicLabel": "Ontvangen",
+                "publicDescription": "Uw klacht is binnen. Wij sturen u een ontvangstbevestiging."
             },
             {
                 "@self": {
@@ -12033,7 +12051,9 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange"
+                "colour": "orange",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij onderzoeken uw klacht en vragen u om uw kant van het verhaal."
             },
             {
                 "@self": {
@@ -12048,7 +12068,9 @@
                 "isFinal": true,
                 "role": "closed",
                 "colour": "green",
-                "hiddenInLists": true
+                "hiddenInLists": true,
+                "publicLabel": "Afgehandeld",
+                "publicDescription": "Uw klacht is afgehandeld. U heeft ons antwoord ontvangen."
             },
             {
                 "@self": {
@@ -12062,7 +12084,9 @@
                 "order": 1,
                 "isFinal": false,
                 "role": "intake",
-                "colour": "blue"
+                "colour": "blue",
+                "publicLabel": "Ontvangen",
+                "publicDescription": "Uw melding is binnen. Wij sturen die naar de juiste dienst."
             },
             {
                 "@self": {
@@ -12076,7 +12100,9 @@
                 "order": 2,
                 "isFinal": false,
                 "role": "in-progress",
-                "colour": "orange"
+                "colour": "orange",
+                "publicLabel": "In behandeling",
+                "publicDescription": "Wij werken aan uw melding."
             },
             {
                 "@self": {
@@ -12091,7 +12117,9 @@
                 "isFinal": true,
                 "role": "closed",
                 "colour": "green",
-                "hiddenInLists": true
+                "hiddenInLists": true,
+                "publicLabel": "Afgehandeld",
+                "publicDescription": "Uw melding is afgehandeld."
             },
             {
                 "@self": {

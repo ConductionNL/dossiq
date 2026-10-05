@@ -203,7 +203,7 @@ class PortalCaseDocumentsTest extends TestCase {
 		$provider = new PortalContributionProvider(documents: $this->service());
 		$cases = $provider->getContribution(['audience' => 'client'])['collections'][0];
 		$this->assertSame('mijnZaken', $cases['id']);
-		$this->assertSame(['label' => 'Stukken', 'provider' => 'caseDocuments'], $cases['documents']);
+		$this->assertSame(['label' => 'Documenten', 'provider' => 'caseDocuments'], $cases['documents']);
 		$this->assertTrue(method_exists($provider, 'caseDocuments'));
 		$this->assertSame(['doc-letter', 'doc-decision', 'doc-archived'], array_column($provider->caseDocuments(self::CASE_ID), 'id'));
 		$this->assertSame([], (new PortalContributionProvider())->caseDocuments(self::CASE_ID));
