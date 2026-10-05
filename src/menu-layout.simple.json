@@ -468,7 +468,7 @@
 		},
 		{
 			"id": "Dashboard",
-			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, thirteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); recent activity (dossiq has no per-person activity feed); and the My work / My team switch. `simple-my-tasks` is the My work page's own widget, so the page gains its slot. ONE STORY ABOUT DEADLINES (live check, 5 October 2026: a count of 58 stood over an empty week). The count is now Due this week, with the filter of the list's own Due this week view plus `assignee`, so the tile, the view and the strip agree. What is already late is the First today card: it counts every open case of yours whose deadline has passed or ends today, and links to exactly those. LABELS ARE SHORT because a tile cuts its label at about twenty characters.",
+			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, thirteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); recent activity (dossiq has no per-person activity feed); and the My work / My team switch. `simple-my-tasks` is the My work page's own widget, so the page gains its slot. ONE STORY ABOUT DEADLINES (live check, 5 October 2026: a count of 58 stood over an empty week). The count is now Due this week, with the filter of the list's own Due this week view plus `assignee`, so the tile, the view and the strip agree. What is already late is the First today card: it counts every open case of yours whose deadline has passed or ends today, and links to exactly those. LABELS ARE SHORT because a tile cuts its label at about twenty characters. THE CARD'S COUNT FILTER IS WRITTEN FLAT (`deadline[lt]`), NOT NESTED. The library's count source builds its address with `buildQueryString` (nextcloud-vue src/utils/headers.js, the `typeof value === 'object'` branch), which writes a nested operator as JSON, and OpenRegister answers that with a 500. The tiles and the week strip flatten a nested operator themselves, so they may nest. My tasks is five columns wide, because its Days left column was cut off at four.",
 			"config": {
 				"layout": [
 					{
@@ -535,16 +535,16 @@
 						"widgetId": "simple-week",
 						"gridX": 0,
 						"gridY": 6,
-						"gridWidth": 8,
+						"gridWidth": 7,
 						"gridHeight": 4,
 						"showTitle": true
 					},
 					{
 						"id": "s8",
 						"widgetId": "simple-my-tasks",
-						"gridX": 8,
+						"gridX": 7,
 						"gridY": 6,
-						"gridWidth": 4,
+						"gridWidth": 5,
 						"gridHeight": 7,
 						"showTitle": true
 					},
@@ -553,7 +553,7 @@
 						"widgetId": "simple-per-step",
 						"gridX": 0,
 						"gridY": 10,
-						"gridWidth": 8,
+						"gridWidth": 7,
 						"gridHeight": 3,
 						"showTitle": true
 					},
@@ -686,9 +686,7 @@
 										"isFinalStatus": false,
 										"statusHiddenInLists": false,
 										"isDraft": false,
-										"deadline": {
-											"lt": "@today+1d"
-										}
+										"deadline[lt]": "@today+1d"
 									}
 								},
 								"op": "gt",

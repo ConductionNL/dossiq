@@ -366,7 +366,7 @@ describe('the dashboard', () => {
 		expect(card.visibleWhen.value).toBe(0)
 		// Everything past its deadline, today included, and the link opens
 		// exactly the cases the card counted.
-		expect(card.visibleWhen.source.filter.deadline).toEqual({ lt: '@today+1d' })
+		expect(card.visibleWhen.source.filter['deadline[lt]']).toBe('@today+1d')
 		expect(card.actions[0].route.query['deadline[lt]']).toBe('@today+1d')
 		expect(card.actions.length).toBeLessThanOrEqual(2)
 		const pageIds = new Set(builtSimple.pages.map((item) => item.id))
