@@ -26,10 +26,12 @@
  *           route from the manifest and takes the order written here. An entry
  *           the manifest does not know is added as written.
  *   pages   Overlays on built pages, by id. `config` replaces the named
- *           config keys, `configAppend` appends items to a list in the config,
- *           and `configPatch` changes items of a list by their `id` (a `null`
- *           takes the item out). An overlay never adds a page and never
- *           removes one.
+ *           config keys, `configPatch` changes items of a list by name (a
+ *           `null` takes the item out), `configAppend` appends items, and
+ *           `configOrder` moves the named items to the front. They apply in
+ *           that order. A name is the item's `id`, else its `key`, else its
+ *           `label`. `slots` adds entries to the page's slot map. An overlay never
+ *           adds a page and never removes one.
  *
  * Nothing here deletes anything. The pages, the routes and the fragments are
  * the same in both profiles, which is what keeps every deep link working.
@@ -76,8 +78,8 @@ export function resolveStructureProfile(raw) {
  * Apply one page overlay to one built page, without touching the original.
  *
  * @param {object} page The built page.
- * @param {object} overlay `{ id, config?, configPatch?, configAppend? }`.
- *   The order is fixed: replace keys, patch items by id, then append.
+ * @param {object} overlay `{ id, config?, configPatch?, configAppend?, configOrder? }`.
+ *   The order is fixed: replace keys, patch items by name, append, then order.
  * @return {object} A new page object.
  *
  * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
@@ -86,13 +88,16 @@ export function applyPageOverlay(page, overlay) {
 	const config = { ...(page.config || {}), ...(overlay.config || {}) }
 	const patch = overlay.configPatch || {}
 	for (const key of Object.keys(patch)) {
-		const byId = patch[key] || {}
+		const byName = patch[key] || {}
 		const current = Array.isArray(config[key]) ? config[key] : []
 		config[key] = current
-			.filter((item) => byId[item?.id] !== null)
-			.map((item) =>
-				byId[item?.id] === undefined ? item : { ...item, ...byId[item.id] },
-			)
+			.filter((item) => byName[overlayItemName(item)] !== null)
+			.map((item) => {
+				const change = byName[overlayItemName(item)]
+				return change === undefined || typeof item !== 'object'
+					? item
+					: { ...item, ...change }
+			})
 	}
 	const append = overlay.configAppend || {}
 	for (const key of Object.keys(append)) {
@@ -100,7 +105,44 @@ export function applyPageOverlay(page, overlay) {
 		const extra = Array.isArray(append[key]) ? append[key] : []
 		config[key] = [...current, ...extra]
 	}
+	const order = overlay.configOrder || {}
+	for (const key of Object.keys(order)) {
+		const current = Array.isArray(config[key]) ? config[key] : []
+		const first = Array.isArray(order[key]) ? order[key] : []
+		const lead = first
+			.map((name) => current.find((item) => overlayItemName(item) === name))
+			.filter((item) => item !== undefined)
+		config[key] = [...lead, ...current.filter((item) => !lead.includes(item))]
+	}
+	if (overlay.slots && typeof overlay.slots === 'object') {
+		// A `custom` widget resolves through the page's own top-level `slots`
+		// map, so a page that gains one needs its slot beside it.
+		return {
+			...page,
+			config,
+			slots: { ...(page.slots || {}), ...overlay.slots },
+		}
+	}
 	return { ...page, config }
+}
+
+/**
+ * The name an overlay addresses a list item by.
+ *
+ * Header actions and widgets carry an `id`, columns a `key`, quick filters
+ * only a `label`, and a column may be a bare string. The first of those that
+ * exists is the name.
+ *
+ * @param {unknown} item A list item from a page config.
+ * @return {string|undefined} Its name, or undefined when it has none.
+ *
+ * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-025
+ */
+export function overlayItemName(item) {
+	if (typeof item === 'string') {
+		return item
+	}
+	return item?.id ?? item?.key ?? item?.label
 }
 
 /**

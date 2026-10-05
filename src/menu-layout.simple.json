@@ -142,20 +142,6 @@
 			}
 		},
 		{
-			"id": "Dashboard",
-			"configAppend": {
-				"headerActions": [
-					{
-						"id": "open-end-of-day",
-						"type": "open-page",
-						"label": "Close out your day",
-						"icon": "ClipboardCheckOutline",
-						"target": "EndOfDay"
-					}
-				]
-			}
-		},
-		{
 			"id": "CaseDetail",
 			"_note": "The case page in the simple structure (openspec/changes/simple-case-page). The full structure has no overlay, so its page is today's page. STAGE: `statusRole` is the role of the status the case sits in (statusType.role), materialised on the case. A status without a role leaves it empty: no what-now card, no stage button, and Lifecycle stays the first entry of the More menu, as it is today. THREE STEPS OF THE DESIGN HAVE NO ACTION OF THEIR OWN IN DOSSIQ and are not invented here: recording a decision (decidiq owns it), publishing as a step (Publish exists, and hangs on wooPublicationStatus, not on a role) and closing as one act (it is a choice inside the Lifecycle dialog). All three open the Lifecycle dialog under the label Next step. THE PILL ABOVE THE TITLE IS THE CASE NUMBER, in the `typePill` place: the case holds its case type as a uuid and no name, so there is no type to show there, and the number is what a handler looks for first. NO COUNTS ON TABS: the case carries no count of its documents, messages or tasks. THE SIX SIDEBAR TABS STAY IN THE SIDEBAR: they are sidebar components, and the tab strip holds widgets. `case-rebind` IS IN THE CASE GROUP AND NOT ADMIN ONLY: who may change a case's type is decided by its own permission endpoint (`mayRebind`), in both structures. The simple structure regroups actions. It does not change who may do what. The same rule keeps `case-version-move` and `cross-domain-lookup` in the Case group: the design lists both as admin actions, but today any handler may use them, and `adminOnly` would take them away. Only the two inspect actions are admin only, and both were already gated on the admin probe. EVERY STAGE WITH A CARD HAS A BUTTON THAT CANNOT HIDE. The intake stage first pointed at Claim, and Claim hides once the case has a handler: a case in intake with a handler showed a finished checklist and no button (live check, 5 October 2026). The library's fallback for a hidden stage action is the page's `primaryAction`, which is a link and cannot open a dialog, so the stage itself names Next step, which opens the Lifecycle dialog and has no condition. Claim stays in the Case group. Waiting for information keeps Remind, whose only condition is that the case is not archived. THREE TILES LEFT THE GRID: beside the side column the grid is narrow and drew number, type and deadline as three full-width cards. The number is the pill, the deadline is the first card of the side column, and the type is in the Overview tab. Hours booked takes the full row.",
 			"config": {
@@ -477,6 +463,592 @@
 						"gridX": 0,
 						"gridWidth": 12
 					}
+				}
+			}
+		},
+		{
+			"id": "Dashboard",
+			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, eighteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); recent activity (dossiq has no per-person activity feed); and the My work / My team switch. `simple-my-tasks` is the My work page's own widget, so the page gains its slot. ONE STORY ABOUT DEADLINES (live check, 5 October 2026: a count of 58 stood over an empty week). The count is now Due this week, with the filter of the list's own Due this week view plus `assignee`, so the tile, the view and the strip agree. What is already late is the First today card: it counts every open case of yours whose deadline has passed or ends today, and links to exactly those. LABELS ARE SHORT because a tile cuts its label at about twenty characters. THE CARD'S COUNT FILTER IS WRITTEN FLAT (`deadline[lt]`), NOT NESTED. The library's count source builds its address with `buildQueryString` (nextcloud-vue src/utils/headers.js, the `typeof value === 'object'` branch), which writes a nested operator as JSON, and OpenRegister answers that with a 500. The tiles and the week strip flatten a nested operator themselves, so they may nest. THE CARD CARRIES `text` AS WELL AS `title`, with the same words. The dashboard page gives up the grid cell of any banner whose `content.text` is empty (nextcloud-vue CnDashboardPage.vue, isCollapsedWidget), and it does not look at `title`, so an attention card with only a title never rendered. The card shows the title and does not repeat the text. THE WEEK, THE STEPS AND MY TASKS EACH TAKE THE FULL WIDTH: side by side at 1440 px the Friday column and the Days left column were cut off.",
+			"config": {
+				"layout": [
+					{
+						"id": "s1",
+						"widgetId": "simple-greeting",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					{
+						"id": "s2",
+						"widgetId": "simple-first-today",
+						"gridX": 0,
+						"gridY": 2,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false,
+						"sizeToContent": true
+					},
+					{
+						"id": "s3",
+						"widgetId": "simple-my-open",
+						"gridX": 0,
+						"gridY": 4,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "s4",
+						"widgetId": "simple-due-soon",
+						"gridX": 3,
+						"gridY": 4,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "s5",
+						"widgetId": "simple-waiting",
+						"gridX": 6,
+						"gridY": 4,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "s6",
+						"widgetId": "simple-closed-month",
+						"gridX": 9,
+						"gridY": 4,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "s7",
+						"widgetId": "simple-week",
+						"gridX": 0,
+						"gridY": 6,
+						"gridWidth": 12,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "s8",
+						"widgetId": "simple-my-tasks",
+						"gridX": 0,
+						"gridY": 13,
+						"gridWidth": 12,
+						"gridHeight": 5,
+						"showTitle": true
+					},
+					{
+						"id": "s9",
+						"widgetId": "simple-per-step",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 12,
+						"gridHeight": 3,
+						"showTitle": true
+					},
+					{
+						"id": "1",
+						"widgetId": "kpi-open-cases",
+						"gridX": 0,
+						"gridY": 18,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "2",
+						"widgetId": "kpi-overdue",
+						"gridX": 3,
+						"gridY": 18,
+						"gridWidth": 3,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "3",
+						"widgetId": "kpi-completed",
+						"gridX": 6,
+						"gridY": 18,
+						"gridWidth": 2,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "4",
+						"widgetId": "kpi-my-tasks",
+						"gridX": 8,
+						"gridY": 18,
+						"gridWidth": 2,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					},
+					{
+						"id": "5",
+						"widgetId": "cases-by-status",
+						"gridX": 0,
+						"gridY": 20,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "6",
+						"widgetId": "cases-by-type",
+						"gridX": 6,
+						"gridY": 20,
+						"gridWidth": 6,
+						"gridHeight": 4,
+						"showTitle": false
+					},
+					{
+						"id": "10",
+						"widgetId": "stalled-cases",
+						"gridX": 0,
+						"gridY": 24,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "14",
+						"widgetId": "favourite-cases",
+						"gridX": 4,
+						"gridY": 24,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "15",
+						"widgetId": "recent-cases",
+						"gridX": 8,
+						"gridY": 24,
+						"gridWidth": 4,
+						"gridHeight": 4,
+						"showTitle": true
+					},
+					{
+						"id": "13",
+						"widgetId": "kpi-sla-compliance",
+						"gridX": 10,
+						"gridY": 18,
+						"gridWidth": 2,
+						"gridHeight": 2,
+						"showTitle": false,
+						"dateChip": false
+					}
+				],
+				"description": "Your work today, then the team"
+			},
+			"configAppend": {
+				"widgets": [
+					{
+						"id": "simple-greeting",
+						"type": "header",
+						"title": "Greeting",
+						"content": {
+							"greeting": true,
+							"showDate": true,
+							"plain": true
+						}
+					},
+					{
+						"id": "simple-first-today",
+						"type": "banner",
+						"title": "First today",
+						"content": {
+							"layout": "attention",
+							"variant": "error",
+							"kicker": "First today",
+							"title": "Cases past their deadline",
+							"reason": "{value} of your cases are past their deadline or end today.",
+							"visibleWhen": {
+								"source": {
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"assignee": "@me",
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"deadline[lt]": "@today+1d"
+									}
+								},
+								"op": "gt",
+								"value": 0
+							},
+							"actions": [
+								{
+									"label": "Open these cases",
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"deadline[lt]": "@today+1d"
+										}
+									}
+								},
+								{
+									"label": "Open the board",
+									"route": "WorkflowBoard"
+								}
+							],
+							"text": "Cases past their deadline"
+						}
+					},
+					{
+						"id": "simple-my-open",
+						"type": "stat",
+						"title": "My open cases",
+						"content": {
+							"label": "My open cases",
+							"icon": "FolderOutline",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"metric": "count",
+								"filter": {
+									"assignee": "@me",
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
+								}
+							},
+							"route": {
+								"name": "Cases",
+								"query": {
+									"assignee": "@me",
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false"
+								}
+							}
+						}
+					},
+					{
+						"id": "simple-due-soon",
+						"type": "stat",
+						"title": "Due this week",
+						"content": {
+							"label": "Due this week",
+							"icon": "ClockAlertOutline",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"metric": "count",
+								"filter": {
+									"assignee": "@me",
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false,
+									"deadline": {
+										"gte": "@today",
+										"lt": "@today+7d"
+									}
+								}
+							},
+							"route": {
+								"name": "Cases",
+								"query": {
+									"assignee": "@me",
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
+									"deadline[gte]": "@today",
+									"deadline[lt]": "@today+7d"
+								}
+							},
+							"variant": "warning"
+						}
+					},
+					{
+						"id": "simple-waiting",
+						"type": "stat",
+						"title": "Awaiting applicant",
+						"content": {
+							"label": "Awaiting applicant",
+							"icon": "AccountOutline",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"metric": "count",
+								"filter": {
+									"assignee": "@me",
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false,
+									"waitingOnApplicant": true
+								}
+							},
+							"route": {
+								"name": "Cases",
+								"query": {
+									"assignee": "@me",
+									"isFinalStatus": "false",
+									"statusHiddenInLists": "false",
+									"isDraft": "false",
+									"waitingOnApplicant": "true"
+								}
+							}
+						}
+					},
+					{
+						"id": "simple-closed-month",
+						"type": "stat",
+						"title": "Closed this month",
+						"content": {
+							"label": "Closed this month",
+							"icon": "CheckCircleOutline",
+							"format": {
+								"style": "decimal",
+								"decimals": 0
+							},
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"metric": "count",
+								"filter": {
+									"assignee": "@me",
+									"isFinalStatus": true,
+									"endDate": {
+										"gte": "@monthStart"
+									}
+								}
+							},
+							"route": {
+								"name": "Cases",
+								"query": {
+									"assignee": "@me",
+									"isFinalStatus": "true",
+									"endDate[gte]": "@monthStart"
+								}
+							},
+							"variant": "success"
+						}
+					},
+					{
+						"id": "simple-week",
+						"type": "week-strip",
+						"title": "Deadlines this week",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"assignee": "@me",
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
+								}
+							},
+							"dateField": "deadline",
+							"titleField": "title",
+							"metaFields": [
+								"identifier"
+							],
+							"itemRoute": "CaseDetail",
+							"lateWhen": {
+								"op": "lte",
+								"value": 0
+							},
+							"emptyText": "No deadlines"
+						}
+					},
+					{
+						"id": "simple-per-step",
+						"type": "stacked-bar",
+						"title": "My cases per step",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"groupBy": "statusRole",
+								"filter": {
+									"assignee": "@me",
+									"isFinalStatus": false,
+									"statusHiddenInLists": false,
+									"isDraft": false
+								}
+							},
+							"order": [
+								"intake",
+								"pending-info",
+								"in-progress",
+								"review"
+							],
+							"labels": {
+								"intake": "Received",
+								"pending-info": "Waiting for information",
+								"in-progress": "In handling",
+								"review": "Decision"
+							},
+							"emptyText": "You have no open cases"
+						}
+					},
+					{
+						"id": "simple-my-tasks",
+						"type": "custom",
+						"title": "My tasks",
+						"content": {
+							"limit": 10,
+							"rowRoute": "TaskDetail",
+							"viewAllRoute": {
+								"name": "Tasks"
+							},
+							"viewAllLabel": "View all",
+							"emptyText": "You have no open tasks"
+						}
+					}
+				],
+				"headerActions": [
+					{
+						"id": "open-end-of-day",
+						"type": "open-page",
+						"label": "Close out your day",
+						"icon": "ClipboardCheckOutline",
+						"target": "EndOfDay"
+					}
+				]
+			},
+			"slots": {
+				"widget-simple-my-tasks": "MyWorkWidget"
+			}
+		},
+		{
+			"id": "Cases",
+			"_note": "The cases list in the simple structure (openspec/changes/simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day it ends (`lte 0`), the same rule the board uses.",
+			"config": {
+				"quickFilterMaxVisible": 5,
+				"columns": [
+					"identifier",
+					"title",
+					{
+						"key": "caseType",
+						"label": "Case type",
+						"formatter": "caseTypeName"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName",
+						"widget": "statusBadge"
+					},
+					{
+						"key": "assignee",
+						"label": "Handler",
+						"widget": "avatar",
+						"widgetProps": {
+							"user": true
+						}
+					},
+					{
+						"key": "deadline",
+						"label": "Deadline",
+						"widget": "date",
+						"widgetProps": {
+							"variantWhen": [
+								{
+									"op": "lte",
+									"value": 0,
+									"variant": "error"
+								},
+								{
+									"op": "lte",
+									"value": 5,
+									"variant": "warning"
+								}
+							]
+						}
+					}
+				]
+			},
+			"configPatch": {
+				"quickFilters": {
+					"All": {
+						"showCount": true
+					},
+					"Mine": {
+						"showCount": true
+					},
+					"Due this week": {
+						"showCount": true
+					},
+					"Waiting on the applicant": {
+						"showCount": true
+					}
+				}
+			},
+			"configAppend": {
+				"quickFilters": [
+					{
+						"label": "Woo requests",
+						"filter": {
+							"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+							"statusHiddenInLists": false,
+							"isDraft": false
+						},
+						"showCount": true
+					}
+				]
+			},
+			"configOrder": {
+				"quickFilters": [
+					"All",
+					"Mine",
+					"Due this week",
+					"Waiting on the applicant",
+					"Woo requests"
+				]
+			}
+		},
+		{
+			"id": "WorkflowBoard",
+			"_note": "The board is dossiq's own component, not the library's board, so the library's `dueRule` does not reach it by itself. CaseCard reads this rule and decides with it. Today counts as late here (`lte 0`). Without a rule, which is the full structure, a card is late only after its deadline.",
+			"config": {
+				"dueRule": {
+					"field": "deadline",
+					"variantWhen": [
+						{
+							"op": "lte",
+							"value": 0,
+							"variant": "error"
+						},
+						{
+							"op": "lte",
+							"value": 3,
+							"variant": "warning"
+						}
+					]
 				}
 			}
 		}
