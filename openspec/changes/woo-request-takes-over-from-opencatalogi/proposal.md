@@ -10,13 +10,13 @@ keeps rows 7.1 to 7.6 and 10.8 yes while the Woo request moves from opencatalogi
 
 | row | text | our rating today | what this change must keep |
 | --- | --- | --- | --- |
-| 7.1 | A Woo request can be registered | yes | registered in dossiq, through every channel opencatalogi took |
-| 7.2 | The request gets a reference the requester can quote | yes | the dossiq case number, and the old `WOO-` reference still finds the case |
-| 7.3 | The decision term starts when the request is received (statutory) | yes | the term counts from the moment the requester sent it, not from delivery |
-| 7.4 | The term is four weeks (statutory) | yes | P28D, rolled under the Awt |
-| 7.5 | The term can be extended once by two weeks, with reasons (statutory) | yes | one P14D extension, a second refused |
-| 7.6 | The term is suspended while the requester is asked to complete the request (statutory) | yes | suspended only by a request that went out |
-| 10.8 | Terms are tracked and reported: met, missed, running, suspended (statutory) | yes | the same four counts from dossiq's report |
+| 7.1 | A citizen submits a request through a form | yes | a portal form lands in dossiq as a Woo case |
+| 7.2 | The request gets a reference the citizen can quote back | yes | the dossiq case number, and the old `WOO-` reference still finds the case |
+| 7.3 | The statutory term is computed and shown (statutory) | yes | P28D from the moment the requester sent it, answered as `dueAt` |
+| 7.4 | The term extends once, and the statutory maximum is enforced (statutory) | yes | one P14D extension, a second refused |
+| 7.5 | The term pauses while the organisation waits for clarification (statutory) | yes | suspended only by a request that went out, resumed on the answer |
+| 7.6 | Working days and Dutch public holidays decide the term (statutory) | yes | the Awt roll on the engine calendar |
+| 10.8 | The clock start is told to the requester at intake | yes | the intake answer and the acknowledgement name the start and the due date |
 
 Implements Ruben's decisions **D1** (dossiq owns the Woo request, its intake and its statutory
 term) and **D12** (Woo requests require dossiq, with no fallback). This is step 1 of the plan's

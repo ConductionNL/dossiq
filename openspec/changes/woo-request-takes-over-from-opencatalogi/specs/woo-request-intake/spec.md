@@ -60,6 +60,11 @@ OpenRegister, the dossiq register, the case type or the term engine is missing, 
 - **WHEN** the delivery calls `receiveWooRequest()` with `receivedAt` 2026-11-27T23:50:00+01:00
 - **THEN** the case `startDate` SHALL be 2026-11-27 and `dueAt` SHALL be 2026-12-28
 
+#### Scenario: The requester is told when the clock started
+- **GIVEN** a request received through `receiveWooRequest()` with `outcome` `armed`
+- **WHEN** the acknowledgement of receipt is sent to the requester
+- **THEN** its text SHALL name the receipt date 2026-11-27 and the due date 2026-12-28, the same `dueAt` the intake answered
+
 #### Scenario: A case without a running term is not reported as armed
 - **GIVEN** a term engine that refuses to arm the timer
 - **WHEN** `receive()` writes the case

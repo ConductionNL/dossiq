@@ -49,6 +49,10 @@ are where local stubs lie).
   - **fails today**: `tests/Unit/Woo/WooRequestIntakeReceiveTest.php`
     `testTheTermCountsFromWhenTheRequesterSentIt` (sent 2026-11-27, delivered 2026-11-30, expects
     `dueAt` 2026-12-28), `testARefusedTimerIsNotArmed`, `testNoTermEngineWritesNoCase`.
+  - Row 10.8: `tests/Unit/Service/AcknowledgementDutyTest.php`
+    `testTheAcknowledgementNamesTheStartAndTheDueDate`, on the rendered template text of a case
+    written by `receive()`. It may pass already if `intake-says-when-the-term-starts` finished it;
+    say which in the PR body.
 
 ## 3. Parity on opencatalogi's fixtures
 

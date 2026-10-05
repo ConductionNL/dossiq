@@ -9,7 +9,7 @@ Woo capability programme, round 1, wave 2. Row 7.13.
 
 | row | text | our rating today |
 | --- | --- | --- |
-| 7.13 | An objection against a Woo decision is handled in the product, with its own term and outcome | partial (build) |
+| 7.13 | An objection against the decision is handled in the product | partial (build) |
 
 Implements Ruben's decisions D1 (dossiq owns the Woo request, so the work between intake and
 publication has to be doable in dossiq) and D13 (7.13 was re-mapped to this change because
