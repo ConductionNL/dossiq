@@ -46,8 +46,8 @@ reads it from the built manifest through `cardDueSeverity()`.
 | 2 | First today | shown when an open case of mine is past its deadline or ends today; counts them and links to them |
 | 4 | four counts | my open cases; due this week (the list view's own filter); awaiting applicant; closed this month |
 | 6 | Deadlines this week | my open cases by `deadline` |
-| 6 | My tasks | the My work page's own task widget |
+| 13 | My tasks | the My work page's own task widget |
 | 10 | My cases per step | my open cases grouped by `statusRole` |
-| 13 and on | everything the dashboard held | unchanged, 13 rows down |
+| 13 and on | everything the dashboard held | unchanged, 18 rows down |
 
 Every count is a filter on fields the case carries. "Mine" is `assignee: @me`.

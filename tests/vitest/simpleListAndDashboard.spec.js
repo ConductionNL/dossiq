@@ -241,7 +241,7 @@ describe('the dashboard', () => {
 
 	it('puts the design first: greeting, first today, four counts, the week, the steps, my tasks', () => {
 		const top = simple.config.layout
-			.filter((entry) => entry.gridY < 13)
+			.filter((entry) => entry.gridY < 18)
 			.sort((a, b) => a.gridY - b.gridY || a.gridX - b.gridX)
 			.map((entry) => entry.widgetId)
 		expect(top).toEqual([
@@ -252,9 +252,17 @@ describe('the dashboard', () => {
 			'simple-waiting',
 			'simple-closed-month',
 			'simple-week',
-			'simple-my-tasks',
 			'simple-per-step',
+			'simple-my-tasks',
 		])
+		// Each of the three takes the full width: side by side at 1440 px the
+		// Friday column and the Days left column were cut off.
+		for (const id of ['simple-week', 'simple-per-step', 'simple-my-tasks']) {
+			expect(
+				simple.config.layout.find((entry) => entry.widgetId === id)
+					.gridWidth,
+			).toBe(12)
+		}
 		expect(widget('simple-greeting').content).toEqual({
 			greeting: true,
 			showDate: true,
@@ -262,13 +270,13 @@ describe('the dashboard', () => {
 		})
 	})
 
-	it('keeps everything the dashboard held, thirteen rows down and otherwise as it was', () => {
+	it('keeps everything the dashboard held, eighteen rows down and otherwise as it was', () => {
 		for (const was of before.config.widgets) {
 			expect(widget(was.id), was.id).toEqual(was)
 		}
 		for (const was of before.config.layout) {
 			const now = simple.config.layout.find((entry) => entry.id === was.id)
-			expect(now, was.widgetId).toEqual({ ...was, gridY: was.gridY + 13 })
+			expect(now, was.widgetId).toEqual({ ...was, gridY: was.gridY + 18 })
 		}
 		expect(simple.config.layout).toHaveLength(before.config.layout.length + 9)
 	})

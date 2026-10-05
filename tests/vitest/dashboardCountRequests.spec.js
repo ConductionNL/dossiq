@@ -23,9 +23,13 @@
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
 import { buildQueryString } from '@conduction/nextcloud-vue/src/utils/headers.js'
 import { resolveFilterTokens } from '@conduction/nextcloud-vue/src/utils/resolveFilterTokens.js'
+import {
+	compareVisibleWhen,
+	readVisibleWhenValue,
+} from '@conduction/nextcloud-vue/src/utils/visibleWhen.js'
 import fs from 'fs'
 import path from 'path'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
 
 const ROOT = path.resolve(__dirname, '../..')
@@ -149,5 +153,70 @@ describe('what the simple dashboard asks OpenRegister', () => {
 			'isFinalStatus',
 			'statusHiddenInLists',
 		])
+	})
+})
+
+describe('whether the First today card shows', () => {
+	afterEach(() => {
+		vi.unstubAllGlobals()
+	})
+
+	/**
+	 * Evaluate the card's condition the way CnDashboardPage does: the
+	 * library's `readVisibleWhenValue` and `compareVisibleWhen`, against
+	 * OpenRegister's real list answer for a `_limit=1` read.
+	 *
+	 * @param {number} total The total OpenRegister reports.
+	 * @return {Promise<{met: boolean, value: unknown, url: string}>} The verdict, the value and the address asked.
+	 */
+	async function verdict(total) {
+		const asked = []
+		vi.stubGlobal('fetch', async (url) => {
+			asked.push(String(url))
+			return {
+				ok: true,
+				status: 200,
+				json: async () => ({
+					results: total > 0 ? [{ id: 'one' }] : [],
+					total,
+					page: 1,
+					pages: total,
+					limit: 1,
+				}),
+			}
+		})
+		const cond = widget('simple-first-today').content.visibleWhen
+		const value = await readVisibleWhenValue(cond)
+		return {
+			met: compareVisibleWhen(value, cond.op || 'eq', cond.value),
+			value,
+			url: asked[0],
+		}
+	}
+
+	it('is met on the total, not on the one row a _limit=1 read returns', async () => {
+		const many = await verdict(58)
+		expect(many.value).toBe(58)
+		expect(many.met).toBe(true)
+		expect(decodeURIComponent(many.url)).toContain('deadline[lt]=')
+		expect(decodeURIComponent(many.url)).toContain('_limit=1')
+
+		const none = await verdict(0)
+		expect(none.value).toBe(0)
+		expect(none.met).toBe(false)
+	})
+
+	it('carries a text, because the dashboard gives up the cell of a banner without one', () => {
+		// CnDashboardPage.isCollapsedWidget: `isBannerDef(def) && text === ''`
+		// collapses the cell BEFORE the condition is looked at, and `text` is
+		// `content.text`, never `content.title`. A met condition is not enough.
+		const card = widget('simple-first-today')
+		expect(card.type).toBe('banner')
+		expect(card.content.text).toBeTruthy()
+		expect(card.content.text).toBe(card.content.title)
+		// The count the card names is the value the condition read.
+		expect(card.content.reason).toContain('{value}')
+		// And the page reads the condition from where it is declared.
+		expect(card.visibleWhen ?? card.content.visibleWhen).toBeTruthy()
 	})
 })
