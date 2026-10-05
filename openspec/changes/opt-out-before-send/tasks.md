@@ -4,9 +4,9 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 
 ## 1. The gate
 
-- [ ] 1.1 Deduplication check: confirm no opt-out or consent reader exists in dossiq for citizen mail (`git grep -n -i "opt.out\|unsubscribe\|consent" lib/Service/CaseEmailService.php lib/Service/Berichtenbox*`). The `dossiq-sociaal-domein-avg-consent` spec is about processing consent, not messaging; confirm it does not overlap.
+- [x] 1.1 Deduplication check: confirm no opt-out or consent reader exists in dossiq for citizen mail (`git grep -n -i "opt.out\|unsubscribe\|consent" lib/Service/CaseEmailService.php lib/Service/Berichtenbox*`). The `dossiq-sociaal-domein-avg-consent` spec is about processing consent, not messaging; confirm it does not overlap.
   - acceptance: the PR body lists the hits and the conclusion.
-- [ ] 1.2 `OptOutGate` with `FleetAppId` resolution, the fail mode and the config switch.
+- [x] 1.2 `OptOutGate` with `FleetAppId` resolution, the fail mode and the config switch.
   - spec_ref: `specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001`
   - files: `lib/Service/OptOutGate.php`, `tests/Unit/Service/OptOutGateTest.php`
   - acceptance: absent class, unhandled event and a throwing listener refuse `case-update` and pass `besluit`. The test constructs a real event class stub with the integriq shape and a real dispatcher.
@@ -14,15 +14,15 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 
 ## 2. Case mail
 
-- [ ] 2.1 `sendEmail()` and `sendFromTemplate()` ask after the allow-list and before the send. `RecipientOptedOutException`.
+- [x] 2.1 `sendEmail()` and `sendFromTemplate()` ask after the allow-list and before the send. `RecipientOptedOutException`.
   - files: `lib/Service/CaseEmailService.php`, `lib/Exception/RecipientOptedOutException.php`, `tests/Unit/Service/CaseEmailServiceTest.php`
   - acceptance: an opted-out recipient gets no mail and no sent record. Red before.
   - test: `vendor/bin/phpunit --no-coverage --filter CaseEmailServiceTest`
-- [ ] 2.2 `EmailController` answers 409 with the code, and 400 on a category other than `case-update` or `besluit`.
+- [x] 2.2 `EmailController` answers 409 with the code, and 400 on a category other than `case-update` or `besluit`.
   - spec_ref: `#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002`
   - files: `lib/Controller/EmailController.php`, its test
   - test: `vendor/bin/phpunit --no-coverage --filter EmailControllerTest`
-- [ ] 2.3 The link line in the body and the headers.
+- [x] 2.3 The link line in the body and the headers.
   - spec_ref: `#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003`
   - files: `lib/Service/CaseEmailService.php`
   - acceptance: headers are set through OpenRegister's `UnsubscribeHeaders`, injected, not copied.
@@ -34,7 +34,7 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 
 ## 3. Digital post
 
-- [ ] 3.1 `category` from `BerichtenboxController` through `BerichtenboxService` and the adapter interface into the event.
+- [x] 3.1 `category` from `BerichtenboxController` through `BerichtenboxService` and the adapter interface into the event.
   - spec_ref: `#requirement-digital-post-carries-a-category-to-integriq-req-coo-004`
   - files: `lib/Controller/BerichtenboxController.php`, `lib/Service/BerichtenboxService.php`, `lib/Service/BerichtenboxAdapter/*`
   - acceptance: an integriq without the ninth argument still accepts the call (integriq's change makes it optional).
