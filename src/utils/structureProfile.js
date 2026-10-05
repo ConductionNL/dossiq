@@ -35,6 +35,8 @@
  * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md
  */
 
+import logger from '../logger.js'
+
 /** The profile a fresh instance gets. */
 export const STRUCTURE_SIMPLE = 'simple'
 
@@ -143,10 +145,9 @@ export function buildProfiledManifest(buildManifest, base, fragments, profileFil
 	for (const overlay of overlays) {
 		const at = pages.findIndex((page) => page.id === overlay?.id)
 		if (at === -1) {
-			// eslint-disable-next-line no-console
-			console.warn(
-				'[structureProfile] page overlay names a page the manifest does not have; skipped.',
-				overlay?.id,
+			logger.warn(
+				'structureProfile: page overlay names a page the manifest does not have; skipped.',
+				{ page: overlay?.id },
 			)
 			continue
 		}
