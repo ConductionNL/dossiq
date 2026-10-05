@@ -13,7 +13,7 @@ A citizen who clicked an integriq unsubscribe link still gets both.
 
 ## What changes
 
-- **Case mail asks first.** One ask through integriq's `OutboundSendDecisionRequestedEvent`, resolved with `FleetAppId::resolveClass()` as the digital post adapter already does (`IntegriqAdapter.php:127-134`). An opted-out recipient gets no mail and the handler sees why.
+- **Case mail asks first.** One ask through integriq's `OutboundSendDecisionRequestedEvent`, resolved with `FleetAppId::resolveClass()` as the digital post adapter already does (`IntegriqAdapter.php:127-135`). An opted-out recipient gets no mail and the handler sees why.
 - **Digital post passes a category.** dossiq does no check of its own here. integriq checks inside its digital post listener, which is the one choke point. dossiq passes `case-update` or `besluit` on the event, and already reads a refusal (`IntegriqAdapter.php:245-246`).
 - **Every case mail carries the link** unless it is exempt.
 - **The handler can mark a mail as a besluit.** The default is `case-update`. A template can carry its own category.
