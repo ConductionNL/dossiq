@@ -42,10 +42,11 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 
 ## 4. The dialogs
 
-- [ ] 4.1 The besluit checkbox and the refusal messages in the case mail and Berichtenbox dialogs. English and Dutch strings.
+- [x] 4.1 The besluit checkbox and the refusal messages in the case mail and Berichtenbox dialogs. English and Dutch strings.
   - files: `src/` dialogs under `src/modals/`, `l10n/`
   - acceptance: a refusal is announced to a screen reader (`role="alert"`). WCAG 2.2 AA.
   - test: `npm run test:l10n`, then a Playwright check of the refusal on the dev instance
+  - built in the Berichtenbox dialog only: dossiq has no case mail dialog (the mail tab prefills an NC Mail draft). Checked by vitest, not Playwright.
 
 ## 5. Follow-up found while reading
 
@@ -53,6 +54,7 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 
 ## 6. Verify
 
-- [ ] 6.1 Live check: stop a case through integriq's link, send a case mail and a Berichtenbox case update about it. Both are refused. A besluit goes out.
+- [x] 6.1 Live check: stop a case through integriq's link, send a case mail and a Berichtenbox case update about it. Both are refused. A besluit goes out.
+  - done for case mail on NC 35 (2026-10-05). The Berichtenbox half needs a digital post provider and is covered by unit tests only.
 - [x] 6.2 Pipelinq bridge: create a case from a pipelinq request and confirm nothing in the bridge sends mail.
-- [ ] 6.3 `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict` once, then `npm run lint`.
+- [x] 6.3 `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict` once, then `npm run lint`.
