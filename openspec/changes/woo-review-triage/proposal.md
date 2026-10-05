@@ -1,0 +1,84 @@
+---
+kind: code
+depends_on: [woo-request-corpus-collection]
+---
+
+# Proposal: woo-review-triage
+
+Woo capability programme, round 1, wave 3. Rows 19.7, 19.8, 19.9, 19.10, 19.11 and 19.17.
+
+| row | text | our rating today |
+| --- | --- | --- |
+| 19.7 | Each document in a request's collection is marked in scope or out of scope, and the marking is reported | no |
+| 19.8 | A rule marks documents in or out of scope without a reviewer opening each one, and the rule is visible | no |
+| 19.9 | The corpus is cut into batches, and each batch is assigned to a named reviewer | no |
+| 19.10 | Review depth is set per document type, every page or a sample, and the product records which applied | no |
+| 19.11 | The product will not produce the publishable set until every page of every document has been seen | partial (production) |
+| 19.17 | A request is a container with its own authorisation, separate from every other request in the same organisation | partial (production) |
+
+Implements Ruben's decision D1. Before D1 these rows were planned on opencatalogi, and the gap texts
+still name opencatalogi's model (`#wooAssessment`, its `batch` parent, `publishBatch`). This change
+translates them onto dossiq's: the Woo case is the container, `wooDocumentAssessment` is the
+disclosure verdict, and the publishable set is what `WooPublicationService::publish()` selects.
+
+## Why
+
+What dossiq has, read on `development` at 55bbc761:
+
+- One record per document, `wooDocumentAssessment`, which is the disclosure verdict
+  (`openbaar`, `deels_openbaar`, `niet_openbaar`). Whether a document is about the request at all
+  is not recorded apart from that verdict, so an irrelevant document either gets a verdict or sits
+  outstanding forever.
+- No rules, no batches, no assignment, no review depth, no record of pages seen.
+- `allDocumentsAssessed()` gates the decision on every document having a verdict. That is why 19.11
+  is partial: a verdict can be set through the API on a document nobody opened.
+- `wooDocumentAssessment` declares no authorisation and no parent. Anyone with access to dossiq's
+  register reads every request's assessments. That is why 19.17 is partial.
+
+## What changes
+
+1. **Relevance apart from the verdict** (19.7): a `wooDocumentReview` per collected document holds
+   `relevance` (`unmarked`, `in-scope`, `out-of-scope`), who or which rule set it, the batch, the
+   review depth that applied, and the pages seen. Only in-scope documents need a verdict. The case
+   summary reports both counts.
+2. **Rules** (19.8): `wooTriageRule` objects on the case, with metadata conditions (custodian,
+   source system, mime type, date range, sender domain) and text conditions (contains, does not
+   contain), an effect (in or out) and an order. Applying them marks unmarked documents and records
+   the deciding rule. A reviewer can overturn a rule's marking, and the overturn is recorded. The
+   rules are listed on the case.
+3. **Batches** (19.9): `wooReviewBatch` cuts the in-scope documents into named batches, each assigned
+   to a named reviewer through a dossiq task, visible before any verdict.
+4. **Review depth** (19.10): the request configuration declares per document type `every-page` or
+   `sample` with a size. A batch applies it, and each review records which depth applied and which
+   pages the sample drew.
+5. **Every page seen** (19.11): the review viewer records the pages a reviewer saw. A verdict on a
+   document whose required pages are not all seen is refused, and the decision and the publish
+   refuse while any in-scope document has unseen required pages.
+6. **The request is an authorisation container** (19.17): every Woo child record names its case as
+   its hierarchy parent, so a grant on one Woo case answers for its records, and the blanket register
+   read on them is removed.
+
+## What does not change
+
+- The disclosure verdict and its validation.
+- The redaction flow.
+
+## Dependencies
+
+- Planned, dossiq, wave 2: `woo-request-corpus-collection` (custodian and system on each document,
+  the request configuration this change adds keys to).
+- Open, openregister, outside the plan: `rbac-inherits-to-children` (the platform reading
+  `x-openregister-hierarchy`). dossiq's case schema already declares the edge and notes it is inert
+  until OpenRegister reads it. Without it, 19.17 is enforced on dossiq's own routes by
+  `CaseAccessGuard` and the OpenRegister API is closed to non-administrators for these schemas; see
+  REQ-WRT-006.
+- Followed by: `woo-review-recall-and-stopping` (wave 4).
+
+**App absent.** The review viewer is dossiq's own document view on the Woo case. When filinq's review
+workbench is installed and the reviewer opens a document there, the workbench reports pages seen
+through the same route; without filinq nothing changes.
+
+## Wave and done
+
+Wave 3. Done means merged on `development` with CI green. The six rows then read `yes` (build), and
+`production` only once a dossiq store release carries them.
