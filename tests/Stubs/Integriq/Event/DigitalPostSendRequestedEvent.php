@@ -1,23 +1,19 @@
 <?php
 
 /**
- * Integriq DigitalPostSendRequestedEvent test stub.
+ * Integriq DigitalPostSendRequested Event.
  *
- * Mirrors integriq's ADR-041 digital post command contract verbatim
- * (constructor parameter names AND order, and every getter and setter) so
- * IntegriqAdapter can be unit-tested without the integriq app installed. The
- * real class ships in integriq (`lib/Event/DigitalPostSendRequestedEvent.php`,
- * change `berichtenbox-digital-post-adapter`, PR 2062), read at `development`
- * on 2026-09-18; this stub is loaded by tests/bootstrap.php only when the real
- * class is absent.
+ * TEST STUB: a verbatim copy of the real class at integriq development
+ * b20053418 (opt-out-before-send, integriq#2533). Loaded by tests/bootstrap.php
+ * only when integriq is absent. Re-copy it when integriq changes the contract.
  *
- * The result slot is the whole contract: it carries either the tracked message
- * id or a structured refusal, never both, and is never left empty on a handled
- * event. A stub that let a handled event answer nothing would make the
- * adapter's "no tracked message is a refusal" branch untestable, which is the
- * branch that keeps a letter that went nowhere from reading as delivered.
+ * The ADR-041 cross-app command contract for digital post: a sibling
+ * Conduction app composes the letter and dispatches this typed event;
+ * integriq owns how it travels. The consumer MUST guard the dispatch with
+ * class_exists() and treat an unhandled event as a refused send, never as a
+ * delivered one.
  *
- * @category Tests
+ * @category Event
  * @package  OCA\Integriq\Event
  *
  * @author    Conduction Development Team <info@conduction.nl>
@@ -39,7 +35,14 @@ use OCP\EventDispatcher\Event;
 /**
  * Typed cross-app command: "send this letter on my behalf".
  *
- * @SuppressWarnings(PHPMD.ExcessiveParameterList) the contract is a flat envelope.
+ * The result slot carries either the tracked message id or a structured
+ * refusal. It never carries both, and it is never left empty on a handled
+ * event: a consumer that reads neither knows the request was not handled.
+ *
+ * @spec openspec/changes/berichtenbox-digital-post-adapter/specs/digital-post-adapter/spec.md#requirement-a-send-is-a-typed-command-with-a-tracked-message-req-dpa-002
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the ADR-041 event contract is a flat
+ * readonly envelope the consumer stubs mirror verbatim.
  */
 class DigitalPostSendRequestedEvent extends Event {
 	/**
@@ -74,6 +77,11 @@ class DigitalPostSendRequestedEvent extends Event {
 	 * @param array<int,array<string,mixed>> $attachments Attachment references.
 	 * @param string $requestedBy The acting user or system id.
 	 * @param string $correlationId Caller-generated id, echoed on the concluded event.
+	 * @param string $category What kind of letter this is (opt-out-before-send): `besluit` and the
+	 *                         other exempt categories are always sent, `case-update` and `service`
+	 *                         respect opt-outs. Default `service`, so a caller that names none is
+	 *                         treated as an ordinary message, never as exempt.
+	 * @param string $caseRef The case the letter is about, so a case opt-out can match.
 	 */
 	public function __construct(
 		private readonly string $sourceApp,
@@ -84,9 +92,33 @@ class DigitalPostSendRequestedEvent extends Event {
 		private readonly array $attachments = [],
 		private readonly string $requestedBy = '',
 		private readonly string $correlationId = '',
+		private readonly string $category = 'service',
+		private readonly string $caseRef = '',
 	) {
 		parent::__construct();
 	}//end __construct()
+
+	/**
+	 * What kind of letter this is.
+	 *
+	 * @return string The category.
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/outbound-opt-out-authority/spec.md#requirement-the-exempt-categories-are-a-fixed-floor-req-ooa-004
+	 */
+	public function getCategory(): string {
+		return $this->category;
+	}//end getCategory()
+
+	/**
+	 * The case the letter is about, or empty.
+	 *
+	 * @return string The case ref.
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/outbound-opt-out-authority/spec.md#requirement-every-integriq-sender-asks-the-opt-out-list-before-it-sends-req-ooa-001
+	 */
+	public function getCaseRef(): string {
+		return $this->caseRef;
+	}//end getCaseRef()
 
 	/**
 	 * The requesting app id.
