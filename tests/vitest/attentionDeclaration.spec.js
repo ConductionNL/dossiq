@@ -54,11 +54,15 @@ const OPERATORS = ['gt', 'gte', 'lt', 'lte', 'eq', 'neq']
 // with `@` fails the count (REQ-ATT-003).
 const TOKEN = /^@(me|now|today([+-]\d+d)?|monthStart|quarterStart|yearStart)$/
 
-const isScalar = (value) =>
-	['string', 'number', 'boolean'].includes(typeof value)
-const isFlat = (value) =>
-	isScalar(value)
-	|| (Array.isArray(value) && value.length > 0 && value.every(isScalar))
+function isScalar(value) {
+	return ['string', 'number', 'boolean'].includes(typeof value)
+}
+function isFlat(value) {
+	return (
+		isScalar(value)
+		|| (Array.isArray(value) && value.length > 0 && value.every(isScalar))
+	)
+}
 
 describe('appinfo/attention.json follows the attention feed contract', () => {
 	it('is version 1 with a list of at most ten items, each id once', () => {
@@ -105,9 +109,7 @@ describe('appinfo/attention.json follows the attention feed contract', () => {
 
 	it('keeps every link inside the app', () => {
 		for (const entry of declaration.items) {
-			expect(entry.action.path, entry.id).toMatch(
-				/^(\/[A-Za-z0-9._~-]+)+\/?$/,
-			)
+			expect(entry.action.path, entry.id).toMatch(/^(\/[A-Za-z0-9._~-]+)+\/?$/)
 			expect(entry.action.path, entry.id).not.toContain('..')
 		}
 	})
@@ -150,7 +152,7 @@ describe('the declared item is the dashboard\'s own "First today" card', () => {
 		}
 	})
 
-	it('opens the list the card\'s button opens, with the filter the card links with', () => {
+	it("opens the list the card's button opens, with the filter the card links with", () => {
 		const route = card.actions[0].route
 		const target = builtSimple.pages.find((page) => page.id === route.name)
 		expect(target, route.name).toBeTruthy()
