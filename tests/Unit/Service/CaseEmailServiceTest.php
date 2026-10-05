@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\CaseEmailService;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
@@ -31,13 +32,20 @@ use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\OptOutGate;
+use OCA\Dossiq\Tests\Support\FakeIntegriqOptOuts;
+use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
+use OCA\Dossiq\Tests\Support\RecordingMessage;
+use OCA\OpenRegister\Service\Notification\UnsubscribeHeaders;
 use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
+use OCP\IL10N;
 use OCP\IUserSession;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Security-focused unit tests for CaseEmailService.
@@ -103,11 +111,35 @@ class CaseEmailServiceTest extends TestCase {
 	private CaseEmailService $service;
 
 	/**
+	 * The dispatcher the opt-out question travels through.
+	 *
+	 * @var InMemoryEventDispatcher
+	 */
+	private InMemoryEventDispatcher $dispatcher;
+
+	/**
+	 * integriq's opt-out list, answering on that dispatcher.
+	 *
+	 * @var FakeIntegriqOptOuts
+	 */
+	private FakeIntegriqOptOuts $optOuts;
+
+	/**
+	 * How many sent-mail records were written.
+	 *
+	 * @var int
+	 */
+	private int $sentRecords = 0;
+
+	/**
 	 * Set up test fixtures.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
+		$this->dispatcher = new InMemoryEventDispatcher();
+		$this->optOuts = FakeIntegriqOptOuts::on($this->dispatcher);
+		$this->sentRecords = 0;
 		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->mailer = $this->createMock(IMailer::class);
 		$this->appConfig = $this->createMock(IAppConfig::class);
@@ -128,6 +160,9 @@ class CaseEmailServiceTest extends TestCase {
 			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
 			new RecipientAllowlist($this->appConfig),
 			$this->createMock(CaseTimeline::class),
+			$this->gate(),
+			$this->l10n(),
+			new UnsubscribeHeaders(new NullLogger()),
 		);
 
 	}//end setUp()
@@ -151,6 +186,7 @@ class CaseEmailServiceTest extends TestCase {
 		string $allowlist,
 		array $caseRecord = ['identifier' => '2026-0001', 'title' => 'Dakkapel'],
 		?CaseTimeline $timeline = null,
+		?array $template = null,
 	): CaseEmailService {
 		$this->appConfig
 			->method('getValueString')
@@ -166,7 +202,14 @@ class CaseEmailServiceTest extends TestCase {
 
 		$repository = $this->createMock(CaseEmailRepository::class);
 		$repository->method('loadCaseRecord')->willReturn($caseRecord);
-		$repository->method('recordSentEmail')->willReturn('msg-test');
+		$repository->method('recordSentEmail')->willReturnCallback(
+			function () {
+				$this->sentRecords++;
+				return 'msg-test';
+			}
+		);
+		$repository->method('findTemplate')->willReturn($template);
+		$repository->method('loadCaseVariables')->willReturn([]);
 
 		return new CaseEmailService(
 			$this->mailer,
@@ -177,6 +220,9 @@ class CaseEmailServiceTest extends TestCase {
 			new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
 			new RecipientAllowlist($this->appConfig),
 			($timeline ?? $this->createMock(CaseTimeline::class)),
+			$this->gate(),
+			$this->l10n(),
+			new UnsubscribeHeaders(new NullLogger()),
 		);
 	}//end serviceWithCase()
 
@@ -569,4 +615,177 @@ class CaseEmailServiceTest extends TestCase {
 		$this->assertStringContainsString('Henk', $result);
 
 	}//end testResolveVariablesLeavesUnresolvedUnchanged()
+
+	/**
+	 * The opt-out gate, asking through the test dispatcher with the check on.
+	 *
+	 * @return OptOutGate The gate.
+	 */
+	private function gate(): OptOutGate {
+		$gateConfig = $this->createMock(IAppConfig::class);
+		$gateConfig->method('getValueString')->willReturnArgument(2);
+
+		return new OptOutGate($this->dispatcher, $gateConfig, new NullLogger());
+	}//end gate()
+
+	/**
+	 * A translator that formats like Nextcloud's: vsprintf on the source text.
+	 *
+	 * @return IL10N The translator.
+	 */
+	private function l10n(): IL10N {
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnCallback(
+			static fn (string $text, $parameters = []): string => vsprintf($text, (array)$parameters)
+		);
+
+		return $l10n;
+	}//end l10n()
+
+	/**
+	 * A mailer that hands out one recording message.
+	 *
+	 * @return RecordingMessage The message the service will build.
+	 */
+	private function recordingMessage(): RecordingMessage {
+		$message = new RecordingMessage();
+		$this->mailer->method('createMessage')->willReturn($message);
+
+		return $message;
+	}//end recordingMessage()
+
+	/**
+	 * A recipient who stopped this case gets no mail and no sent record (REQ-COO-001).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 */
+	public function testARecipientWhoStoppedThisCaseGetsNoMailAndNoSentRecord(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->optOuts->optOut('burger@example.nl', 'case-1');
+		$this->recordingMessage();
+		$this->mailer->expects($this->never())->method('send');
+
+		try {
+			$service->sendEmail(caseId: 'case-1', to: 'burger@example.nl', subject: 'Uw zaak', body: '<p>Tekst</p>');
+			$this->fail('An opted-out recipient must not be mailed.');
+		} catch (RecipientOptedOutException $e) {
+			$this->assertSame('opted-out', $e->getReasonCode());
+		}
+
+		$this->assertSame(0, $this->sentRecords);
+		$this->assertSame('case-1', $this->optOuts->log[0]['caseRef']);
+		$this->assertSame('case-update', $this->optOuts->log[0]['category']);
+	}//end testARecipientWhoStoppedThisCaseGetsNoMailAndNoSentRecord()
+
+	/**
+	 * A case-update carries integriq's link in the body and the headers (REQ-COO-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-every-non-exempt-case-mail-carries-the-unsubscribe-link-req-coo-003
+	 */
+	public function testACaseUpdateCarriesTheLinkInTheBodyAndTheHeaders(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->optOuts->optOut('burger@example.nl', 'case-1');
+		$message = $this->recordingMessage();
+		$this->mailer->expects($this->once())->method('send');
+
+		$service->sendEmail(caseId: 'case-2', to: 'burger@example.nl', subject: 'Uw zaak', body: '<p>Tekst</p>');
+
+		$url = 'https://nc.example/index.php/apps/integriq/unsubscribe/tok-' . md5('burger@example.nl|case-2');
+		$this->assertStringContainsString('href="' . $url . '"', $message->htmlBody);
+		$this->assertStringContainsString($url, $message->plainBody);
+		$this->assertSame('<' . $url . '>', ($message->headers['List-Unsubscribe'] ?? null));
+		$this->assertSame('List-Unsubscribe=One-Click', ($message->headers['List-Unsubscribe-Post'] ?? null));
+		$this->assertSame(1, $this->sentRecords);
+	}//end testACaseUpdateCarriesTheLinkInTheBodyAndTheHeaders()
+
+	/**
+	 * A besluit reaches an instance-wide opt-out, without a link or header (REQ-COO-002).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
+	 */
+	public function testABesluitReachesAnOptedOutRecipientWithoutALink(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->optOuts->optOut('burger@example.nl');
+		$message = $this->recordingMessage();
+		$this->mailer->expects($this->once())->method('send');
+
+		$service->sendEmail(
+			caseId: 'case-1',
+			to: 'burger@example.nl',
+			subject: 'Besluit',
+			body: '<p>Besluit</p>',
+			category: 'besluit',
+		);
+
+		$this->assertSame('<p>Besluit</p>', $message->htmlBody);
+		$this->assertSame([], $message->headers);
+		$this->assertTrue($this->optOuts->log[0]['overridden']);
+	}//end testABesluitReachesAnOptedOutRecipientWithoutALink()
+
+	/**
+	 * An unknown category is refused before anything is asked or sent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
+	 */
+	public function testAnUnknownCategoryIsRefused(): void {
+		$service = $this->serviceWithCase(fromAddress: 'zaken@gemeente.nl', allowlist: '*');
+		$this->recordingMessage();
+		$this->mailer->expects($this->never())->method('send');
+
+		$this->expectException(\InvalidArgumentException::class);
+
+		$service->sendEmail(caseId: 'case-1', to: 'burger@example.nl', subject: 'S', body: 'B', category: 'marketing');
+	}//end testAnUnknownCategoryIsRefused()
+
+	/**
+	 * A template's messageCategory decides; a besluit template reaches an opt-out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-a-handler-can-send-a-besluit-that-is-always-delivered-req-coo-002
+	 */
+	public function testATemplateMarkedBesluitIsSentToAnOptedOutRecipient(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '*',
+			template: ['subjectPattern' => 'Besluit', 'body' => 'Uw besluit', 'messageCategory' => 'besluit'],
+		);
+		$this->optOuts->optOut('burger@example.nl');
+		$this->recordingMessage();
+		$this->mailer->expects($this->once())->method('send');
+
+		$service->sendFromTemplate(caseId: 'case-1', templateId: 'tpl-1', to: 'burger@example.nl');
+
+		$this->assertSame('besluit', $this->optOuts->log[0]['category']);
+	}//end testATemplateMarkedBesluitIsSentToAnOptedOutRecipient()
+
+	/**
+	 * A template without a category is a case-update and respects the opt-out.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 */
+	public function testATemplateWithoutACategoryRespectsTheOptOut(): void {
+		$service = $this->serviceWithCase(
+			fromAddress: 'zaken@gemeente.nl',
+			allowlist: '*',
+			template: ['subjectPattern' => 'Stand', 'body' => 'Uw zaak loopt', 'messageCategory' => 'nonsense'],
+		);
+		$this->optOuts->optOut('burger@example.nl');
+		$this->recordingMessage();
+		$this->mailer->expects($this->never())->method('send');
+
+		$this->expectException(RecipientOptedOutException::class);
+
+		$service->sendFromTemplate(caseId: 'case-1', templateId: 'tpl-1', to: 'burger@example.nl');
+	}//end testATemplateWithoutACategoryRespectsTheOptOut()
 }//end class
