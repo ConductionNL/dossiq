@@ -342,21 +342,49 @@ describe('the dashboard', () => {
 		expect(widget('simple-week').content.itemRoute).toBe('CaseDetail')
 	})
 
-	it('shows First today only when a deadline of mine ends today, and links to pages that exist', () => {
+	it('tells one story about deadlines: the tile is the list view, the card is what is late', () => {
+		// Live check, 5 October 2026: the tile said 58 over an empty week,
+		// because it counted overdue cases and the strip only this week.
+		const lens = original('Cases').config.quickFilters.find(
+			(item) => item.label === 'Due this week',
+		).filter
+		const tile = widget('simple-due-soon').content
+		expect(tile.label).toBe('Due this week')
+		expect(tile.source.filter).toEqual({
+			assignee: '@me',
+			isFinalStatus: lens.isFinalStatus,
+			statusHiddenInLists: lens.statusHiddenInLists,
+			isDraft: lens.isDraft,
+			deadline: { gte: lens['deadline[gte]'], lt: lens['deadline[lt]'] },
+		})
+		expect(tile.route.query['deadline[gte]']).toBe('@today')
+		expect(tile.route.query['deadline[lt]']).toBe('@today+7d')
+
 		const card = widget('simple-first-today').content
 		expect(card.layout).toBe('attention')
 		expect(card.visibleWhen.op).toBe('gt')
 		expect(card.visibleWhen.value).toBe(0)
-		expect(card.visibleWhen.source.filter.deadline).toEqual({
-			gte: '@today',
-			lt: '@today+1d',
-		})
+		// Everything past its deadline, today included, and the link opens
+		// exactly the cases the card counted.
+		expect(card.visibleWhen.source.filter.deadline).toEqual({ lt: '@today+1d' })
+		expect(card.actions[0].route.query['deadline[lt]']).toBe('@today+1d')
 		expect(card.actions.length).toBeLessThanOrEqual(2)
 		const pageIds = new Set(builtSimple.pages.map((item) => item.id))
 		for (const action of card.actions) {
 			const name =
 				typeof action.route === 'string' ? action.route : action.route.name
 			expect(pageIds.has(name), name).toBe(true)
+		}
+	})
+
+	it('keeps the tile labels short enough to read', () => {
+		for (const id of [
+			'simple-my-open',
+			'simple-due-soon',
+			'simple-waiting',
+			'simple-closed-month',
+		]) {
+			expect(widget(id).content.label.length, id).toBeLessThanOrEqual(18)
 		}
 	})
 

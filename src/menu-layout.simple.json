@@ -468,7 +468,7 @@
 		},
 		{
 			"id": "Dashboard",
-			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, thirteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); recent activity (dossiq has no per-person activity feed); and the My work / My team switch. `simple-my-tasks` is the My work page's own widget, so the page gains its slot.",
+			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, thirteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); recent activity (dossiq has no per-person activity feed); and the My work / My team switch. `simple-my-tasks` is the My work page's own widget, so the page gains its slot. ONE STORY ABOUT DEADLINES (live check, 5 October 2026: a count of 58 stood over an empty week). The count is now Due this week, with the filter of the list's own Due this week view plus `assignee`, so the tile, the view and the strip agree. What is already late is the First today card: it counts every open case of yours whose deadline has passed or ends today, and links to exactly those. LABELS ARE SHORT because a tile cuts its label at about twenty characters.",
 			"config": {
 				"layout": [
 					{
@@ -675,8 +675,8 @@
 							"layout": "attention",
 							"variant": "error",
 							"kicker": "First today",
-							"title": "A deadline ends today",
-							"reason": "{value} of your cases reach their deadline today.",
+							"title": "Cases past their deadline",
+							"reason": "{value} of your cases are past their deadline or end today.",
 							"visibleWhen": {
 								"source": {
 									"register": "dossiq",
@@ -687,7 +687,6 @@
 										"statusHiddenInLists": false,
 										"isDraft": false,
 										"deadline": {
-											"gte": "@today",
 											"lt": "@today+1d"
 										}
 									}
@@ -705,7 +704,6 @@
 											"isFinalStatus": "false",
 											"statusHiddenInLists": "false",
 											"isDraft": "false",
-											"deadline[gte]": "@today",
 											"deadline[lt]": "@today+1d"
 										}
 									}
@@ -753,9 +751,9 @@
 					{
 						"id": "simple-due-soon",
 						"type": "stat",
-						"title": "Deadline within 5 days",
+						"title": "Due this week",
 						"content": {
-							"label": "Deadline within 5 days",
+							"label": "Due this week",
 							"icon": "ClockAlertOutline",
 							"format": {
 								"style": "decimal",
@@ -771,7 +769,8 @@
 									"statusHiddenInLists": false,
 									"isDraft": false,
 									"deadline": {
-										"lte": "@today+5d"
+										"gte": "@today",
+										"lt": "@today+7d"
 									}
 								}
 							},
@@ -782,7 +781,8 @@
 									"isFinalStatus": "false",
 									"statusHiddenInLists": "false",
 									"isDraft": "false",
-									"deadline[lte]": "@today+5d"
+									"deadline[gte]": "@today",
+									"deadline[lt]": "@today+7d"
 								}
 							},
 							"variant": "warning"
@@ -791,9 +791,9 @@
 					{
 						"id": "simple-waiting",
 						"type": "stat",
-						"title": "Waiting on the applicant",
+						"title": "Awaiting applicant",
 						"content": {
-							"label": "Waiting on the applicant",
+							"label": "Awaiting applicant",
 							"icon": "AccountOutline",
 							"format": {
 								"style": "decimal",

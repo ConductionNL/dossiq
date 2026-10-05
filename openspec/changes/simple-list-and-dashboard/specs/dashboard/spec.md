@@ -16,7 +16,7 @@ MUST keep the dashboard unchanged.
 
 #### Scenario: A handler without a deadline today
 @e2e exclude Same reason; the card's condition is asserted in simpleListAndDashboard.spec.js.
-- **GIVEN** the simple structure and a handler with no deadline today
+- **GIVEN** the simple structure and a handler with no case past its deadline or ending today
 - **WHEN** they open the dashboard
 - **THEN** the card "First today" MUST NOT be shown
 

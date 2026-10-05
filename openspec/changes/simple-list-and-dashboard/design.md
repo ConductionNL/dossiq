@@ -43,8 +43,8 @@ reads it from the built manifest through `cardDueSeverity()`.
 | row | widget | data |
 | --- | --- | --- |
 | 0 | greeting | the signed-in person, today's date |
-| 2 | First today | shown when at least one open case of mine has its deadline today |
-| 4 | four counts | my open cases; deadline within 5 days; waiting on the applicant; closed this month |
+| 2 | First today | shown when an open case of mine is past its deadline or ends today; counts them and links to them |
+| 4 | four counts | my open cases; due this week (the list view's own filter); awaiting applicant; closed this month |
 | 6 | Deadlines this week | my open cases by `deadline` |
 | 6 | My tasks | the My work page's own task widget |
 | 10 | My cases per step | my open cases grouped by `statusRole` |
