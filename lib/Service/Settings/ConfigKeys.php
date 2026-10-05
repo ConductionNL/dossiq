@@ -368,5 +368,8 @@ class ConfigKeys {
 		'case_type_group_schema',
 		'field_inspection_schema',
 		'field_evidence_schema',
+		// Which structure the app shows: `simple` (the default) or `full`
+		// (simple-structure-profile). Read through MenuStructure::normalise().
+		'menu_structure',
 	];
 }//end class

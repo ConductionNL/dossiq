@@ -856,8 +856,8 @@ describe('Archive and Restore on the case page', () => {
 
 	it('hides the seven write actions on an archived case and keeps the lifecycle menu', () => {
 		// REQ-CM-43. The marker is read off the case object the page already
-		// holds, so the gate costs no round trip, and `eq null` is exact: an
-		// absent marker is null and a present one is an object.
+		// holds, so the gate costs no round trip. The operator is `empty`,
+		// because OpenRegister leaves the key off until a case is archived.
 		const gated = caseDetail()
 			.config.headerActions.filter(
 				(action) => action.visibleWhen?.field === '@self.archived',
@@ -878,8 +878,7 @@ describe('Archive and Restore on the case page', () => {
 		for (const id of gated) {
 			expect(headerAction(id).visibleWhen).toEqual({
 				field: '@self.archived',
-				op: 'eq',
-				value: null,
+				op: 'empty',
 			})
 		}
 		// Restore lives inside the Lifecycle menu, so gating that entry would

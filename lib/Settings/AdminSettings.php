@@ -26,6 +26,7 @@ namespace OCA\Dossiq\Settings;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Prerequisites;
+use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -88,6 +89,12 @@ class AdminSettings implements IDelegatedSettings {
 		$this->initialState->provideInitialState(
 			'mandaatSettings',
 			$this->mandateSettings()
+		);
+		// The structure tab reads what is stored now, already normalised, so a
+		// mistyped stored value shows as the simple structure it behaves as.
+		$this->initialState->provideInitialState(
+			MenuStructure::KEY,
+			(new MenuStructure())->normalise(stored: $this->settingsService->getConfigValue(MenuStructure::KEY, ''))
 		);
 
 		return new TemplateResponse(
