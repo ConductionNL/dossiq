@@ -29,7 +29,7 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 - [ ] 2.4 `messageCategory` on `emailTemplate`, additive, no `format`.
   - files: `lib/Settings/dossiq_register.json`
   - acceptance: the register imports on a clean instance with no `PARTIAL IMPORT` in the log. Test with OpenRegister that the schema validates.
-  - test: `docker exec nextcloud php occ dossiq:register:import` (or the repair step) and `grep "PARTIAL IMPORT" data/nextcloud.log`
+  - test: `occ maintenance:repair` on the dev instance, then `grep "PARTIAL IMPORT" data/nextcloud.log` finds nothing new
 
 ## 3. Digital post
 
