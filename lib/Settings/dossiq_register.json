@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.14"
+        "version": "0.20.15"
     },
     "x-openregister": {
         "type": "application",
@@ -1955,6 +1955,14 @@
                                 ]
                             }
                         },
+                        "statusRole": {
+                            "type": "string",
+                            "materialise": true,
+                            "description": "What the status this case sits in MEANS in a process (statusType.role): intake, pending-info, in-progress, review, closed or stranded. Materialised for the reason waitingOn is: a cross-object @ref lookup resolves only in OpenRegister's save-time listener, and the case page reads the stage off the case it already holds. NOT coalesced, on purpose. A status that declares no role leaves this empty, and the case page then shows no what-now card and keeps the Lifecycle button, which is the honest answer for a case type nobody has annotated. After editing a statusType's role, run occ openregister:rematerialise-calculations.",
+                            "expression": {
+                                "prop": "@ref.statusType.role"
+                            }
+                        },
                         "daysUntilDeadline": {
                             "type": "integer",
                             "materialise": false,
@@ -2710,6 +2718,14 @@
                         "default": "us",
                         "description": "Who this case waits on, taken from the status it sits in (statusType.waitingOn). Computed declaratively by OpenRegister so a queue counts by it server-side rather than by reading four hundred rows into PHP. A status that declares nothing reads as ours to move, which is what makes the count safe on a case type nobody has annotated. After editing a statusType's waitingOn, run occ openregister:rematerialise-calculations.",
                         "title": "Waiting on",
+                        "facetable": true,
+                        "visible": false
+                    },
+                    "statusRole": {
+                        "type": "string",
+                        "readOnly": true,
+                        "description": "What the current status means in the process. Taken from the status type. Empty when the status type declares no role.",
+                        "title": "Status role",
                         "facetable": true,
                         "visible": false
                     },

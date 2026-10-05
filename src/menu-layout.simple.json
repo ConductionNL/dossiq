@@ -154,6 +154,306 @@
 					}
 				]
 			}
+		},
+		{
+			"id": "CaseDetail",
+			"_note": "The case page in the simple structure (openspec/changes/simple-case-page). The full structure has no overlay, so its page is today's page. STAGE: `statusRole` is the role of the status the case sits in (statusType.role), materialised on the case. A status without a role leaves it empty: no what-now card, no stage button, and Lifecycle stays the first entry of the More menu, as it is today. THREE STEPS OF THE DESIGN HAVE NO ACTION OF THEIR OWN IN DOSSIQ and are not invented here: recording a decision (decidiq owns it), publishing as a step (Publish exists, and hangs on wooPublicationStatus, not on a role) and closing as one act (it is a choice inside the Lifecycle dialog). All three open the Lifecycle dialog under the label Next step. NO TYPE PILL: the case holds its case type as a uuid and no name. NO COUNTS ON TABS: the case carries no count of its documents, messages or tasks. THE SIX SIDEBAR TABS STAY IN THE SIDEBAR: they are sidebar components, and the tab strip holds widgets.",
+			"config": {
+				"stageField": "statusRole",
+				"primaryActionByStage": {
+					"intake": "case-claim",
+					"pending-info": "case-remind",
+					"in-progress": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					},
+					"review": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					}
+				},
+				"quickActions": [
+					"send-digital-post",
+					"generate-document",
+					"log-contact"
+				],
+				"actionsMenu": {
+					"showRefresh": false,
+					"showHelpLinks": false,
+					"label": "More"
+				},
+				"statusPill": {
+					"field": "statusPublicLabel"
+				},
+				"nextStep": {
+					"stages": {
+						"intake": {
+							"title": "What now? Take the case on",
+							"after": "Then: handling",
+							"checklist": [
+								{
+									"label": "Choose a handler",
+									"doneField": "assignee"
+								},
+								{
+									"label": "Complete the case details",
+									"doneWhen": {
+										"field": "isIncomplete",
+										"op": "neq",
+										"value": true
+									}
+								}
+							]
+						},
+						"pending-info": {
+							"title": "What now? Wait for the applicant",
+							"after": "Then: handling",
+							"checklist": [
+								{
+									"label": "The applicant has answered",
+									"doneWhen": {
+										"field": "waitingOnApplicant",
+										"op": "neq",
+										"value": true
+									}
+								}
+							]
+						},
+						"in-progress": {
+							"title": "What now? Handle the case",
+							"after": "Then: the decision",
+							"checklist": [
+								{
+									"label": "Choose a handler",
+									"doneField": "assignee"
+								},
+								{
+									"label": "Complete the case details",
+									"doneWhen": {
+										"field": "isIncomplete",
+										"op": "neq",
+										"value": true
+									}
+								},
+								{
+									"label": "The applicant has answered",
+									"doneWhen": {
+										"field": "waitingOnApplicant",
+										"op": "neq",
+										"value": true
+									}
+								}
+							]
+						},
+						"review": {
+							"title": "What now? Decide",
+							"after": "Then: close the case",
+							"checklist": [
+								{
+									"label": "Write the decision document",
+									"doneField": "besluitDocument"
+								},
+								{
+									"label": "Record the decision",
+									"doneField": "decisions"
+								}
+							]
+						},
+						"closed": {
+							"title": "What now? Close out",
+							"checklist": [
+								{
+									"label": "Record the result",
+									"doneField": "result"
+								},
+								{
+									"label": "Archive the case",
+									"doneField": "@self.archived"
+								}
+							]
+						}
+					}
+				},
+				"sideColumn": [
+					{
+						"id": "side-requester",
+						"type": "data",
+						"title": "Requester",
+						"content": {
+							"title": "Requester",
+							"columns": 1,
+							"include": [
+								"initiatorDisplayName",
+								"initiatorType",
+								"intakeChannel"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
+					},
+					{
+						"id": "side-handling",
+						"type": "data",
+						"title": "Handling",
+						"content": {
+							"title": "Handling",
+							"columns": 1,
+							"include": [
+								"assignee",
+								"assignedGroupPublicName",
+								"startDate",
+								"deadline"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
+					}
+				]
+			},
+			"configPatch": {
+				"headerActions": {
+					"case-claim": {
+						"group": "Case"
+					},
+					"case-release": {
+						"group": "Case"
+					},
+					"case-hand-over": {
+						"group": "Case"
+					},
+					"add-party": {
+						"group": "Case"
+					},
+					"link-object": {
+						"group": "Case"
+					},
+					"case-acknowledgement-met": {
+						"group": "Case"
+					},
+					"plan-follow-up": {
+						"group": "Case"
+					},
+					"case-remind": {
+						"group": "Case"
+					},
+					"start-flow": {
+						"group": "Case"
+					},
+					"case-split": {
+						"group": "Case"
+					},
+					"case-merge": {
+						"group": "Case"
+					},
+					"copy-case": {
+						"group": "Case"
+					},
+					"woo-publish": {
+						"group": "Publication"
+					},
+					"woo-withdraw": {
+						"group": "Publication"
+					},
+					"woo-publication-open": {
+						"group": "Publication"
+					},
+					"export-dossier": {
+						"group": "Dossier"
+					},
+					"case-rebind": {
+						"adminOnly": true
+					},
+					"case-version-move": {
+						"adminOnly": true
+					},
+					"cross-domain-lookup": {
+						"adminOnly": true
+					},
+					"case-inspect-raw": {
+						"adminOnly": true
+					},
+					"case-inspect-runs": {
+						"adminOnly": true
+					}
+				},
+				"widgets": {
+					"case-panels": {
+						"content": {
+							"ariaLabel": "Case details",
+							"maxVisibleTabs": 5,
+							"moreLabel": "More",
+							"tabs": [
+								{
+									"widgetId": "case-data-panel",
+									"label": "Overview"
+								},
+								{
+									"widgetId": "case-files",
+									"label": "Documents"
+								},
+								{
+									"widgetId": "case-communication-panel",
+									"label": "Contact"
+								},
+								{
+									"widgetId": "case-work-panel",
+									"label": "Tasks"
+								},
+								{
+									"widgetId": "case-timeline-panel",
+									"label": "History"
+								},
+								{
+									"widgetId": "case-notes-panel",
+									"label": "Notes",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-people-panel",
+									"label": "People",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-email-panel",
+									"label": "Email",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-decisions-panel",
+									"label": "Decisions",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-related-panel",
+									"label": "Related",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-custody-panel",
+									"label": "Custody",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-archival-panel",
+									"label": "Archiving",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-knowledge-panel",
+									"label": "Knowledge",
+									"overflow": true
+								}
+							]
+						}
+					}
+				}
+			}
 		}
 	]
 }
