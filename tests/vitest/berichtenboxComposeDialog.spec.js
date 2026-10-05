@@ -68,6 +68,7 @@ function control(name) {
 
 vi.mock('@nextcloud/vue', () => ({
 	NcButton: control('NcButton'),
+	NcCheckboxRadioSwitch: control('NcCheckboxRadioSwitch'),
 	NcDialog: control('NcDialog'),
 	NcNoteCard: control('NcNoteCard'),
 	NcSelect: control('NcSelect'),
@@ -226,5 +227,60 @@ describe('BerichtenboxComposeDialog', () => {
 
 		expect(mockPost).not.toHaveBeenCalled()
 		expect(wrapper.vm.errors.body).toBeTruthy()
+	})
+})
+
+describe('the category decides, and a refusal says why (opt-out-before-send)', () => {
+	it('sends a case update unless the handler marks a besluit', async () => {
+		mockPost.mockResolvedValue({
+			data: { success: true, message: { id: 'm-1' } },
+		})
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		expect(mockPost.mock.calls[0][1].category).toBe('case-update')
+
+		wrapper.vm.form.isBesluit = true
+		await wrapper.vm.send()
+		expect(mockPost.mock.calls[1][1].category).toBe('besluit')
+	})
+
+	it('announces an opted-out refusal in an alert and stays open', async () => {
+		mockPost.mockRejectedValue({
+			response: {
+				data: {
+					success: false,
+					code: 'opted-out',
+					error: 'integriq refused',
+				},
+			},
+		})
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		const alert = wrapper.find('[role="alert"]')
+		expect(alert.exists()).toBe(true)
+		expect(alert.text()).toContain(
+			'This person asked not to receive updates about this case. Nothing was sent.',
+		)
+		expect(wrapper.emitted('sent')).toBeUndefined()
+	})
+
+	it('names integriq when it could not answer', async () => {
+		mockPost.mockRejectedValue({
+			response: {
+				data: { success: false, code: 'authority-unavailable', error: 'x' },
+			},
+		})
+		const wrapper = open()
+
+		await wrapper.vm.send()
+		await flushPromises()
+
+		expect(wrapper.find('[role="alert"]').text()).toContain(
+			'integriq is not available',
+		)
 	})
 })

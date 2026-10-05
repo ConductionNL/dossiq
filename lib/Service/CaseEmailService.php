@@ -28,10 +28,13 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\Timeline\TimelineKinds;
@@ -78,6 +81,16 @@ class CaseEmailService {
 	private const ESCAPE_NONE = 'none';
 
 	/**
+	 * The categories a case mail can carry. A handler picks the first two;
+	 * a template may also declare `statutory`.
+	 */
+	private const CATEGORIES = [
+		OptOutGate::CATEGORY_CASE_UPDATE,
+		OptOutGate::CATEGORY_BESLUIT,
+		OptOutGate::CATEGORY_STATUTORY,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IMailer $mailer Nextcloud mailer
@@ -88,6 +101,7 @@ class CaseEmailService {
 	 * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
 	 * @param RecipientAllowlist $allowlist Outbound recipient policy
 	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
+	 * @param CaseMailOptOut $optOut Asks integriq first and places its unsubscribe link
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -98,6 +112,7 @@ class CaseEmailService {
 		private readonly CaseEmailAttachmentResolver $attachmentResolver,
 		private readonly RecipientAllowlist $allowlist,
 		private readonly CaseTimeline $timeline,
+		private readonly CaseMailOptOut $optOut,
 	) {
 	}//end __construct()
 
@@ -109,12 +124,16 @@ class CaseEmailService {
 	 * @param string $subject Email subject
 	 * @param string $body Email body (HTML or plain text)
 	 * @param array<string> $attachments File paths to attach
+	 * @param string $category What the mail is: `case-update` (default), `besluit` or `statutory`
 	 *
 	 * @return array<string, mixed> Send result with message ID
 	 *
 	 * @throws \RuntimeException If sending fails
+	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
+	 * @throws InvalidArgumentException If the category is not one a case mail can carry
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function sendEmail(
 		string $caseId,
@@ -122,7 +141,12 @@ class CaseEmailService {
 		string $subject,
 		string $body,
 		array $attachments = [],
+		string $category = OptOutGate::CATEGORY_CASE_UPDATE,
 	): array {
+		if (in_array($category, self::CATEGORIES, true) === false) {
+			throw new InvalidArgumentException('invalid-category');
+		}
+
 		// H6 / C4: Fail loudly if from-address is not configured — never fall back to
 		// the reserved example.nl domain which would cause bounces and expose config errors.
 		$fromAddress = $this->resolveFromAddress();
@@ -153,12 +177,24 @@ class CaseEmailService {
 			fromAddress: $fromAddress,
 		);
 
+		// Ask integriq after the allow-list and before anything is built or
+		// sent (opt-out-before-send). A refusal leaves no mail and no record.
+		$decision = $this->optOut->decide(recipient: $to, category: $category, caseId: $caseId);
+		if ($decision['send'] === false) {
+			$this->logger->info(
+				'Case mail not sent: integriq said this person may not be sent it',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'category' => $category, 'code' => $decision['code']]
+			);
+			throw new RecipientOptedOutException(reasonCode: $decision['code'], reason: $decision['reason']);
+		}
+
+		$unsubscribe = $decision['unsubscribe'];
+
 		$message = $this->mailer->createMessage();
 		$message->setFrom([$fromAddress => $fromName]);
 		$message->setTo([$to]);
 		$message->setSubject($subject);
-		$message->setHtmlBody($body);
-		$message->setPlainBody(strip_tags($body));
+		$this->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe);
 
 		// H5: Resolve attachments via IUserFolder to restrict file access to the
 		// calling user's own files and prevent path traversal outside their folder.
@@ -416,7 +452,15 @@ class CaseEmailService {
 		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
 		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
 
-		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
+		// The template says what it is; anything it does not say, or says
+		// wrongly, is a case-update and respects the opt-out. Never exempt
+		// by accident.
+		$category = (string)($template['messageCategory'] ?? '');
+		if (in_array($category, self::CATEGORIES, true) === false) {
+			$category = OptOutGate::CATEGORY_CASE_UPDATE;
+		}
+
+		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
 	}//end sendFromTemplate()
 
 	/**

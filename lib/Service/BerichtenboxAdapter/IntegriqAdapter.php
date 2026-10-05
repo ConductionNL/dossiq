@@ -112,10 +112,13 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	 * @param string      $body       The letter's plain text body.
 	 * @param string      $typeCode   The bericht type code.
 	 * @param string|null $attachment Attachment content, base64.
+	 * @param string      $category   What the letter is; integriq decides on it, not on the channel.
+	 * @param string      $caseRef    The case, so a case opt-out can match.
 	 *
 	 * @return array<string, mixed> Either a tracked send, or a refusal with its reason.
 	 *
 	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 	 */
 	public function sendMessage(
 		string $bsn,
@@ -123,6 +126,8 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 		string $body,
 		string $typeCode,
 		?string $attachment = null,
+		string $category = 'case-update',
+		string $caseRef = '',
 	): array {
 		if (FleetAppId::isEnabledForUser(appManager: $this->appManager, canonical: 'integriq') === false) {
 			return $this->refusal(
@@ -168,6 +173,11 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 				$this->attachmentsOf(attachment: $attachment),
 				$this->requestedBy(),
 				bin2hex(random_bytes(8)),
+				// Ninth and tenth (integriq b20053418). An older integriq
+				// declares eight, and PHP drops extra positional arguments to
+				// a userland constructor, so the call still lands there.
+				$category,
+				$caseRef,
 			);
 
 			$this->dispatcher->dispatchTyped($event);

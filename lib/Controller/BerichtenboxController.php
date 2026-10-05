@@ -39,6 +39,11 @@ use OCP\IUserSession;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class BerichtenboxController extends Controller {
+
+	/**
+	 * The categories a handler may send by digital post (opt-out-before-send).
+	 */
+	private const CATEGORIES = ['case-update', 'besluit', 'statutory'];
 	/**
 	 * Constructor.
 	 *
@@ -77,6 +82,7 @@ class BerichtenboxController extends Controller {
 		$body = $this->request->getParam('body', '');
 		$typeCode = $this->request->getParam('berichtTypeCode', '');
 		$attachmentFileId = $this->request->getParam('attachmentFileId');
+		$category = (string)$this->request->getParam('category', 'case-update');
 
 		if (empty($caseId) === true) {
 			return new JSONResponse(['success' => false, 'error' => 'caseId is required'], 400);
@@ -92,17 +98,32 @@ class BerichtenboxController extends Controller {
 			);
 		}
 
+		// The category decides, not the channel: a besluit by Berichtenbox is
+		// always delivered, a case update respects the citizen's opt-out.
+		if (in_array($category, self::CATEGORIES, true) === false) {
+			return new JSONResponse(
+				['success' => false, 'code' => 'invalid-category', 'error' => 'Unknown message category.'],
+				Http::STATUS_BAD_REQUEST
+			);
+		}
+
 		$result = $this->berichtenboxService->sendMessage(
 			$caseId,
 			$bsn,
 			$subject,
 			$body,
 			$typeCode,
-			$attachmentFileId
+			$attachmentFileId,
+			$category
 		);
 
 		if (isset($result['error']) === true) {
-			return new JSONResponse(['success' => false, 'error' => $result['error']], 400);
+			$answer = ['success' => false, 'error' => $result['error']];
+			if (isset($result['code']) === true) {
+				$answer['code'] = $result['code'];
+			}
+
+			return new JSONResponse($answer, 400);
 		}
 
 		return new JSONResponse(['success' => true, 'message' => $result]);

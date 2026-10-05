@@ -20,6 +20,7 @@ namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\FlowEmailSentListener;
 use OCA\Dossiq\Service\CaseEmailService;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
@@ -105,7 +106,8 @@ class FlowEmailSentListenerTest extends TestCase {
 			$this->createMock(CaseContactDirectory::class),
 			$this->createMock(CaseEmailAttachmentResolver::class),
 			$this->createMock(RecipientAllowlist::class),
-			$timeline
+			$timeline,
+			$this->createMock(CaseMailOptOut::class)
 		);
 
 		$user = $this->createMock(IUser::class);

@@ -11036,7 +11036,7 @@
             "emailTemplate": {
                 "slug": "emailTemplate",
                 "icon": "EmailOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-equivalent": "schema:DigitalDocument",
                 "title": "Email template",
                 "description": "Per-zaaktype email template with placeholder variables; version-bumped on edit (case-email-integration spec).",
@@ -11070,6 +11070,16 @@
                         "type": "string",
                         "description": "Body text, may contain {{placeholders}}",
                         "title": "Body"
+                    },
+                    "messageCategory": {
+                        "type": "string",
+                        "enum": [
+                            "case-update",
+                            "besluit",
+                            "statutory"
+                        ],
+                        "description": "A case update respects the recipient's opt-out and carries an unsubscribe link. A besluit or statutory mail is always sent, without one.",
+                        "title": "Message category"
                     },
                     "version": {
                         "type": "integer",
