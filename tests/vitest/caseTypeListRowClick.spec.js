@@ -145,14 +145,29 @@ describe('CaseTypeList row click', () => {
 
 	it('relies on a rule the library still has: selectable without rowClickToView only selects', () => {
 		const source = readFileSync(CN_INDEX_PAGE_SOURCE, 'utf8')
+		// nextcloud-vue 2.60.0 moved the rule out of `onRowClick` into
+		// `routeClickedRow`, shared with the middle click, and reads it through
+		// `rowClickOpens`. Both halves are pinned: without `rowClickToView`
+		// nothing opens, and a click that does not open selects and stops.
+		const opens = source.slice(
+			source.indexOf('rowClickOpens() {'),
+			source.indexOf(
+				'if (this.isNamedSource',
+				source.indexOf('rowClickOpens() {'),
+			),
+		)
 		const handler = source.slice(
-			source.indexOf('onRowClick(row) {'),
-			source.indexOf("this.$emit('row-click', row)"),
+			source.indexOf('routeClickedRow(row, event) {'),
+			source.indexOf('// A named source knows where its rows live.'),
 		)
 
-		expect(handler, 'CnIndexPage.onRowClick should still exist').not.toBe('')
+		expect(opens, 'CnIndexPage.rowClickOpens should still exist').not.toBe('')
+		expect(opens).toMatch(/if \(!this\.rowClickToView\) \{\s*return false\s*\}/)
+		expect(handler, 'CnIndexPage.routeClickedRow should still exist').not.toBe(
+			'',
+		)
 		expect(handler).toMatch(
-			/if \(this\.selectable && !this\.rowClickToView\) \{\s*this\.onSelect\([^\n]*\)\s*return\s*\}/,
+			/if \(this\.selectable && !this\.rowClickOpens\) \{[\s\S]*this\.onSelect\([^\n]*\)[\s\S]*return false\s*\}/,
 		)
 	})
 

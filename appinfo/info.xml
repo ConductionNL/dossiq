@@ -588,6 +588,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
                  carry (#3259). Only exact matches, idempotent, non-fatal.
                  Post-migration only: a fresh install has no old decisions. -->
             <step>OCA\Dossiq\Repair\RewriteWooPublicationSummaries</step>
+            <!-- simple-case-page: existing cases get `statusRole`, the role of
+                 the status they sit in. OpenRegister computes it on save, so a
+                 case saved before the field existed has none. Writes one field
+                 in system context, only where the status type declares a role
+                 and the case differs. Idempotent, counted, non-fatal.
+                 Post-migration only: a fresh install has no cases. -->
+            <step>OCA\Dossiq\Repair\BackfillCaseStatusRole</step>
             <!--
                 LAST, AND A REPORT RATHER THAN AN ACTION. See the identical
                 entry in the <install> block below for why it cannot adopt.
@@ -701,6 +708,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
               BackfillAdviceRequestObjection    backfill over existing bacAdviceRequests
               RewriteWooPublicationSummaries    rewrites existing Woo decisions and publications
               BackfillCaseCustody               opens the first holding of existing cases; a fresh install has none
+              BackfillCaseStatusRole            fills statusRole on existing cases; a fresh install has none
               MoveDocumentsIntoCaseFolders      moves existing document files into their case folders
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
               RepairDemoDataSchemaFork          retires a fork only an already-enabled app could have made

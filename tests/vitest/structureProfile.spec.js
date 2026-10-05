@@ -293,7 +293,7 @@ describe('the simple profile', () => {
 		// Each link names a page that exists and an icon the app registers.
 		const pageIds = new Set(built.pages.map((page) => page.id))
 		for (const overlay of simpleFile.pages) {
-			for (const action of overlay.configAppend.headerActions) {
+			for (const action of overlay.configAppend?.headerActions ?? []) {
 				expect(pageIds.has(action.target), action.id).toBe(true)
 				expect(iconsSource).toContain(`\n\t${action.icon},\n`)
 			}
@@ -330,6 +330,33 @@ describe('a page overlay', () => {
 			title: 'P',
 			config: { a: 1, list: [{ id: 'x' }] },
 		})
+	})
+
+	it('patches list items by id, takes out the ones set to null, and patches before it appends', () => {
+		const page = {
+			id: 'P',
+			config: {
+				list: [
+					{ id: 'x', a: 1 },
+					{ id: 'y', a: 1 },
+					{ id: 'z', a: 1 },
+				],
+			},
+		}
+		const out = applyPageOverlay(page, {
+			id: 'P',
+			configPatch: {
+				list: { x: { a: 2, b: 3 }, y: null, appended: { a: 9 } },
+			},
+			configAppend: { list: [{ id: 'appended', a: 1 }] },
+		})
+		// `appended` is not patched: it joins after the patch step.
+		expect(out.config.list).toEqual([
+			{ id: 'x', a: 2, b: 3 },
+			{ id: 'z', a: 1 },
+			{ id: 'appended', a: 1 },
+		])
+		expect(page.config.list).toHaveLength(3)
 	})
 
 	it('is skipped and reported when it names a page the manifest does not have', () => {

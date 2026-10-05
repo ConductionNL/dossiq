@@ -41,6 +41,10 @@
             "matchType": "exact",
             "inputControl": "select"
           },
+          "statusRole": {
+            "matchType": "exact",
+            "inputControl": "select"
+          },
           "currentStatusEnteredAt": {
             "matchType": "range",
             "inputControl": "date-range"

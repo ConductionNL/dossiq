@@ -26,8 +26,10 @@
  *           route from the manifest and takes the order written here. An entry
  *           the manifest does not know is added as written.
  *   pages   Overlays on built pages, by id. `config` replaces the named
- *           config keys, `configAppend` appends items to a list in the config.
- *           An overlay never adds a page and never removes one.
+ *           config keys, `configAppend` appends items to a list in the config,
+ *           and `configPatch` changes items of a list by their `id` (a `null`
+ *           takes the item out). An overlay never adds a page and never
+ *           removes one.
  *
  * Nothing here deletes anything. The pages, the routes and the fragments are
  * the same in both profiles, which is what keeps every deep link working.
@@ -74,13 +76,24 @@ export function resolveStructureProfile(raw) {
  * Apply one page overlay to one built page, without touching the original.
  *
  * @param {object} page The built page.
- * @param {object} overlay `{ id, config?, configAppend? }`.
+ * @param {object} overlay `{ id, config?, configPatch?, configAppend? }`.
+ *   The order is fixed: replace keys, patch items by id, then append.
  * @return {object} A new page object.
  *
  * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 export function applyPageOverlay(page, overlay) {
 	const config = { ...(page.config || {}), ...(overlay.config || {}) }
+	const patch = overlay.configPatch || {}
+	for (const key of Object.keys(patch)) {
+		const byId = patch[key] || {}
+		const current = Array.isArray(config[key]) ? config[key] : []
+		config[key] = current
+			.filter((item) => byId[item?.id] !== null)
+			.map((item) =>
+				byId[item?.id] === undefined ? item : { ...item, ...byId[item.id] },
+			)
+	}
 	const append = overlay.configAppend || {}
 	for (const key of Object.keys(append)) {
 		const current = Array.isArray(config[key]) ? config[key] : []
