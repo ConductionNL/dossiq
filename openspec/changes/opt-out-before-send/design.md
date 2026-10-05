@@ -31,7 +31,7 @@ dossiq does not ask integriq separately here. integriq's digital post listener i
 
 - `BerichtenboxController` reads a new optional `category` parameter next to `berichtTypeCode` (`lib/Controller/BerichtenboxController.php:78`). Default `case-update`. Accepted: `case-update`, `besluit`, `statutory`.
 - `BerichtenboxService::sendMessage()` (`lib/Service/BerichtenboxService.php:81`) and the adapter interface pass it on.
-- `IntegriqAdapter::sendMessage()` builds `DigitalPostSendRequestedEvent` positionally with eight arguments today (`IntegriqAdapter.php:161-170`). integriq adds `category` as an optional ninth constructor argument, so the current call keeps working and the new one passes it.
+- `IntegriqAdapter::sendMessage()` builds `DigitalPostSendRequestedEvent` positionally with eight arguments today (`IntegriqAdapter.php:162-171`). integriq adds `category` as an optional ninth constructor argument, so the current call keeps working and the new one passes it.
 - A refusal is already read and returned through `getRefusal()` (`:245-246`). The refusal code `opted-out` reaches the UI the same way `unknown_source` does now.
 
 ## 4. What the handler sees
