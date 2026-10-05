@@ -154,6 +154,34 @@ describe('the stage', () => {
 		}
 	})
 
+	it('gives every stage that shows a card a button that cannot hide', () => {
+		// Live check, 5 October 2026: intake pointed at Claim, Claim hides once
+		// the case has a handler, and the card showed two done items and no
+		// button. A stage button may only carry a condition a working case
+		// always passes.
+		for (const stage of Object.keys(simple.nextStep.stages)) {
+			const entry = stageEntry(simple.primaryActionByStage, stage)
+			expect(entry, `${stage} shows a card and no button`).toBeTruthy()
+			if (typeof entry === 'object') {
+				expect(entry.visibleWhen, stage).toBeUndefined()
+				expect(entry.target, stage).toBe('CaseLifecycleMenuDialog')
+				continue
+			}
+			const action = original.headerActions.find((item) => item.id === entry)
+			expect(action.visibleWhen, `${stage} -> ${entry}`).toEqual({
+				field: '@self.archived',
+				op: 'empty',
+			})
+		}
+		// Claim is not a stage button any more, and is still in the menu.
+		expect(JSON.stringify(simple.primaryActionByStage)).not.toContain(
+			'case-claim',
+		)
+		expect(
+			simple.headerActions.find((item) => item.id === 'case-claim').group,
+		).toBe('Case')
+	})
+
 	it('degrades on a case whose status has no role: no card, no stage button', () => {
 		for (const record of [
 			{ id: 'a', assignee: 'jan' },
@@ -339,27 +367,57 @@ describe('the tabs', () => {
 		const others = (config) =>
 			config.widgets.filter((widget) => widget.id !== 'case-panels')
 		expect(others(simple)).toEqual(others(original))
-		expect(simple.layout).toEqual(original.layout)
 		expect(simple.sidebar).toEqual(original.sidebar)
+	})
+
+	it('takes the three tiles out of the grid and keeps every other card where it was', () => {
+		// Beside the side column the grid is narrow, and number, type and
+		// deadline drew as three full-width cards under each other.
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5']
+		expect(simple.layout.map((entry) => entry.id)).toEqual(
+			original.layout
+				.map((entry) => entry.id)
+				.filter((id) => !gone.includes(id)),
+		)
+		for (const entry of simple.layout) {
+			const was = original.layout.find((item) => item.id === entry.id)
+			if (entry.id === '6') {
+				// Hours booked had the last quarter of the tile row. It takes the row.
+				expect(entry).toEqual({ ...was, gridX: 0, gridWidth: 12 })
+				continue
+			}
+			expect(entry, entry.id).toEqual(was)
+		}
+		// None of the three is lost: the number is the pill above the title,
+		// the deadline is the first card of the side column, and neither
+		// widget is still placed in the grid, so nothing renders twice.
+		expect(simple.typePill).toEqual({ field: 'identifier' })
+		expect(simple.sideColumn[0]).toBe('case-tile-deadline')
+		const placed = simple.layout.map((entry) => entry.widgetId)
+		expect(placed).not.toContain('case-tile-deadline')
+		expect(
+			simple.widgets.some((widget) => widget.id === 'case-tile-deadline'),
+		).toBe(true)
 	})
 })
 
 describe('the header and the side column', () => {
-	it('reads the status pill and the cards from fields the case carries', () => {
+	it('reads the pills and the cards from fields the case carries', () => {
 		expect(onTheCase(simple.statusPill.field)).toBe(true)
-		// No type pill: the case holds its type as a uuid, and no name.
-		expect(simple.typePill).toBeUndefined()
-		expect(simple.sideColumn.map((card) => card.title)).toEqual([
-			'Requester',
-			'Handling',
-		])
-		for (const card of simple.sideColumn) {
+		expect(onTheCase(simple.typePill.field)).toBe(true)
+		const cards = simple.sideColumn.filter((card) => typeof card === 'object')
+		expect(cards.map((card) => card.title)).toEqual(['Requester', 'Handling'])
+		const shown = []
+		for (const card of cards) {
 			expect(card.type).toBe('data')
 			expect(card.content.editable).toBe(false)
 			for (const field of card.content.include) {
 				expect(onTheCase(field), `${card.title}: ${field}`).toBe(true)
+				shown.push(field)
 			}
 		}
+		// The deadline has its own card, so no data card repeats it.
+		expect(shown).not.toContain('deadline')
 	})
 })
 

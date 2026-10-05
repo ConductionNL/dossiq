@@ -21,14 +21,20 @@ not "in handling", it is unknown, and the page says so by showing nothing extra.
 
 | role | button | what it is today |
 | --- | --- | --- |
-| `intake` | Claim | header action `case-claim` |
+| `intake` | Next step | opens `CaseLifecycleMenuDialog` |
 | `pending-info` | Remind | header action `case-remind` |
 | `in-progress` | Next step | opens `CaseLifecycleMenuDialog` |
 | `review` | Next step | opens `CaseLifecycleMenuDialog` |
-| `closed`, `stranded`, none | no stage button | Lifecycle is first in More |
+| `closed` | Next step | opens `CaseLifecycleMenuDialog` |
+| `stranded`, none | no stage button, no card | Lifecycle is first in More |
 
-When Claim is hidden by its own condition (the case has a handler), the library
-shows no stage button and Lifecycle stays in the menu.
+A stage that shows a card always has a button, and that button cannot hide.
+Intake first pointed at Claim. Claim hides once the case has a handler, and a
+case in intake with a handler then showed a finished checklist and no button.
+The library's fallback for a hidden stage action is the page's `primaryAction`,
+which is a link and cannot open a dialog. So intake names Next step itself, and
+Claim stays in the Case group. Remind's only condition is that the case is not
+archived.
 
 ## D-3 Checklists
 
@@ -60,6 +66,30 @@ the admin probe. The design also lists change type or version, move to another
 version and known in another domain as admin actions. Today a handler may use
 them (the first through its own permission endpoint), so they stay in the Case
 group with the gates they have.
+
+## D-4a The header and the grid
+
+Beside the side column the page grid is narrow, and the three tiles (number,
+type, deadline) drew as three full-width cards. In the simple structure they
+leave the grid:
+
+- the case number is the pill above the title, beside the status pill;
+- the deadline countdown is the first card of the side column;
+- the case type is in the Overview tab;
+- Hours booked takes the full row.
+
+## D-4b Existing cases
+
+OpenRegister computes `statusRole` when a case is saved. A case saved before
+the field existed has none. `BackfillCaseStatusRole` is a post-migration repair
+step that writes the role on those cases, in system context. It writes one
+field, only where the status type declares a role and the case differs. It is
+idempotent, it counts what it did, and a case that refuses is logged and
+counted. It changes no status, so nothing is sent to an applicant.
+
+OpenRegister's own `occ openregister:rematerialise-calculations` failed for
+every case on 5 October 2026 ("User 'Anonymous' does not have permission to
+'update'"). That defect is OpenRegister's and is reported there.
 
 ## D-5 The overlay
 

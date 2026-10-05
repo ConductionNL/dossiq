@@ -157,11 +157,17 @@
 		},
 		{
 			"id": "CaseDetail",
-			"_note": "The case page in the simple structure (openspec/changes/simple-case-page). The full structure has no overlay, so its page is today's page. STAGE: `statusRole` is the role of the status the case sits in (statusType.role), materialised on the case. A status without a role leaves it empty: no what-now card, no stage button, and Lifecycle stays the first entry of the More menu, as it is today. THREE STEPS OF THE DESIGN HAVE NO ACTION OF THEIR OWN IN DOSSIQ and are not invented here: recording a decision (decidiq owns it), publishing as a step (Publish exists, and hangs on wooPublicationStatus, not on a role) and closing as one act (it is a choice inside the Lifecycle dialog). All three open the Lifecycle dialog under the label Next step. NO TYPE PILL: the case holds its case type as a uuid and no name. NO COUNTS ON TABS: the case carries no count of its documents, messages or tasks. THE SIX SIDEBAR TABS STAY IN THE SIDEBAR: they are sidebar components, and the tab strip holds widgets. `case-rebind` IS IN THE CASE GROUP AND NOT ADMIN ONLY: who may change a case's type is decided by its own permission endpoint (`mayRebind`), in both structures. The simple structure regroups actions. It does not change who may do what. The same rule keeps `case-version-move` and `cross-domain-lookup` in the Case group: the design lists both as admin actions, but today any handler may use them, and `adminOnly` would take them away. Only the two inspect actions are admin only, and both were already gated on the admin probe.",
+			"_note": "The case page in the simple structure (openspec/changes/simple-case-page). The full structure has no overlay, so its page is today's page. STAGE: `statusRole` is the role of the status the case sits in (statusType.role), materialised on the case. A status without a role leaves it empty: no what-now card, no stage button, and Lifecycle stays the first entry of the More menu, as it is today. THREE STEPS OF THE DESIGN HAVE NO ACTION OF THEIR OWN IN DOSSIQ and are not invented here: recording a decision (decidiq owns it), publishing as a step (Publish exists, and hangs on wooPublicationStatus, not on a role) and closing as one act (it is a choice inside the Lifecycle dialog). All three open the Lifecycle dialog under the label Next step. THE PILL ABOVE THE TITLE IS THE CASE NUMBER, in the `typePill` place: the case holds its case type as a uuid and no name, so there is no type to show there, and the number is what a handler looks for first. NO COUNTS ON TABS: the case carries no count of its documents, messages or tasks. THE SIX SIDEBAR TABS STAY IN THE SIDEBAR: they are sidebar components, and the tab strip holds widgets. `case-rebind` IS IN THE CASE GROUP AND NOT ADMIN ONLY: who may change a case's type is decided by its own permission endpoint (`mayRebind`), in both structures. The simple structure regroups actions. It does not change who may do what. The same rule keeps `case-version-move` and `cross-domain-lookup` in the Case group: the design lists both as admin actions, but today any handler may use them, and `adminOnly` would take them away. Only the two inspect actions are admin only, and both were already gated on the admin probe. EVERY STAGE WITH A CARD HAS A BUTTON THAT CANNOT HIDE. The intake stage first pointed at Claim, and Claim hides once the case has a handler: a case in intake with a handler showed a finished checklist and no button (live check, 5 October 2026). The library's fallback for a hidden stage action is the page's `primaryAction`, which is a link and cannot open a dialog, so the stage itself names Next step, which opens the Lifecycle dialog and has no condition. Claim stays in the Case group. Waiting for information keeps Remind, whose only condition is that the case is not archived. THREE TILES LEFT THE GRID: beside the side column the grid is narrow and drew number, type and deadline as three full-width cards. The number is the pill, the deadline is the first card of the side column, and the type is in the Overview tab. Hours booked takes the full row.",
 			"config": {
 				"stageField": "statusRole",
 				"primaryActionByStage": {
-					"intake": "case-claim",
+					"intake": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					},
 					"pending-info": "case-remind",
 					"in-progress": {
 						"type": "open-modal",
@@ -171,6 +177,13 @@
 						"id": "stage-next-step"
 					},
 					"review": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					},
+					"closed": {
 						"type": "open-modal",
 						"target": "CaseLifecycleMenuDialog",
 						"label": "Next step",
@@ -281,6 +294,7 @@
 					}
 				},
 				"sideColumn": [
+					"case-tile-deadline",
 					{
 						"id": "side-requester",
 						"type": "data",
@@ -307,14 +321,16 @@
 							"include": [
 								"assignee",
 								"assignedGroupPublicName",
-								"startDate",
-								"deadline"
+								"startDate"
 							],
 							"hideEmpty": true,
 							"editable": false
 						}
 					}
-				]
+				],
+				"typePill": {
+					"field": "identifier"
+				}
 			},
 			"configPatch": {
 				"headerActions": {
@@ -451,6 +467,15 @@
 								}
 							]
 						}
+					}
+				},
+				"layout": {
+					"kpi-1": null,
+					"kpi-2": null,
+					"kpi-5": null,
+					"6": {
+						"gridX": 0,
+						"gridWidth": 12
 					}
 				}
 			}
