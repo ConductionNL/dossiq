@@ -396,4 +396,61 @@ class BerichtenboxControllerContractTest extends TestCase {
 		$this->assertTrue($response->getData()['success']);
 		$this->assertTrue($response->getData()['message']['read']);
 	}//end testPollReturnsTheReadStatusForAnAuthorizedCaller()
+
+	/**
+	 * A category outside case-update, besluit and statutory is a 400, unsent.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testSendRejectsAnUnknownCategoryWith400(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-1', 'bsn' => '123456782', 'category' => 'marketing']);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->berichtenboxService->expects($this->never())->method('sendMessage');
+
+		$response = $this->controller->send();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('invalid-category', $response->getData()['code']);
+	}//end testSendRejectsAnUnknownCategoryWith400()
+
+	/**
+	 * The handler's category goes to the service; none means case-update.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testSendPassesTheCategoryOn(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-1', 'bsn' => '123456782', 'category' => 'besluit']);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->berichtenboxService->expects($this->once())->method('sendMessage')
+			->with('case-1', '123456782', '', '', '', null, 'besluit')
+			->willReturn(['id' => 'msg-1', 'status' => 'sent']);
+
+		$this->assertSame(Http::STATUS_OK, $this->controller->send()->getStatus());
+	}//end testSendPassesTheCategoryOn()
+
+	/**
+	 * A refusal answers with integriq's code next to the reason.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testARefusalCarriesItsCode(): void {
+		$this->signIn();
+		$this->withParams(['caseId' => 'case-1', 'bsn' => '123456782']);
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->berichtenboxService->method('sendMessage')
+			->willReturn(['refused' => true, 'code' => 'opted-out', 'error' => 'Nothing was sent.']);
+
+		$response = $this->controller->send();
+
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame('opted-out', $response->getData()['code']);
+	}//end testARefusalCarriesItsCode()
 }//end class

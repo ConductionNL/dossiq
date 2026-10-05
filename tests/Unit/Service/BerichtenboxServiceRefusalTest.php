@@ -255,4 +255,36 @@ class BerichtenboxServiceRefusalTest extends TestCase {
 		$this->assertStringContainsString('Integriq is not installed.', $this->recorded['message']);
 		$this->assertSame('refused', $this->recorded['fields']['status']);
 	}//end testARefusalWritesAnInternalEntryNamingTheReason()
+
+	/**
+	 * The service hands the category and the case to the adapter (REQ-COO-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testTheCategoryAndTheCaseReachTheAdapter(): void {
+		$this->adapter->expects($this->once())->method('sendMessage')
+			->with('123456782', 'Besluit', 'De tekst', 'BESLUIT', null, 'besluit', 'case-1')
+			->willReturn(['messageId' => 'dp-1', 'status' => 'sent']);
+
+		$this->service()->sendMessage('case-1', '123456782', 'Besluit', 'De tekst', 'BESLUIT', null, 'besluit');
+	}//end testTheCategoryAndTheCaseReachTheAdapter()
+
+	/**
+	 * A refusal's code reaches the caller, so the handler can be told why.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testARefusalCodeReachesTheCaller(): void {
+		$this->adapter->method('sendMessage')->willReturn(
+			['status' => 'refused', 'refused' => true, 'code' => 'opted-out', 'error' => 'Nothing was sent.']
+		);
+
+		$result = $this->service()->sendMessage('case-1', '123456782', 'Stand', 'De tekst', 'INFO');
+
+		$this->assertSame('opted-out', $result['code']);
+	}//end testARefusalCodeReachesTheCaller()
 }//end class

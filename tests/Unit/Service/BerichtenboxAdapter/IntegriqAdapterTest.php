@@ -316,4 +316,66 @@ class IntegriqAdapterTest extends TestCase {
 		$this->assertTrue($status['unknown']);
 		$this->assertNull($status['readAt']);
 	}//end testTheReadStatusIsAnsweredAsUnknownRatherThanRead()
+
+	/**
+	 * The letter carries its category and its case to integriq (REQ-COO-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testTheCategoryAndTheCaseReachIntegriq(): void {
+		$this->answerWith(
+			static function (Event $event): void {
+				$event->setHandled(true);
+				$event->setMessageId('dp-1');
+			}
+		);
+
+		$this->adapter()->sendMessage('123456782', 'Besluit', 'De tekst', 'BESLUIT', null, 'besluit', 'case-1');
+
+		$this->assertSame('besluit', $this->dispatched->getCategory());
+		$this->assertSame('case-1', $this->dispatched->getCaseRef());
+	}//end testTheCategoryAndTheCaseReachIntegriq()
+
+	/**
+	 * Without a category a letter is a case update, never exempt by default.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testALetterWithoutACategoryIsACaseUpdate(): void {
+		$this->answerWith(
+			static function (Event $event): void {
+				$event->setHandled(true);
+				$event->setMessageId('dp-1');
+			}
+		);
+
+		$this->adapter()->sendMessage('123456782', 'Stand', 'De tekst', 'INFO');
+
+		$this->assertSame('case-update', $this->dispatched->getCategory());
+	}//end testALetterWithoutACategoryIsACaseUpdate()
+
+	/**
+	 * integriq's opted-out refusal comes back with its code (REQ-COO-004).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
+	 */
+	public function testAnOptedOutRefusalKeepsItsCode(): void {
+		$this->answerWith(
+			static function (Event $event): void {
+				$event->setHandled(true);
+				$event->setRefusal('The citizen asked not to receive updates about this case. Nothing was sent.', 'opted-out');
+			}
+		);
+
+		$result = $this->adapter()->sendMessage('123456782', 'Stand', 'De tekst', 'INFO', null, 'case-update', 'case-1');
+
+		$this->assertTrue($result['refused']);
+		$this->assertSame('opted-out', $result['code']);
+	}//end testAnOptedOutRefusalKeepsItsCode()
 }//end class
