@@ -43,8 +43,9 @@ unchanged.
 @e2e exclude Asserted in simpleCasePage.spec.js with the library's grouping function.
 - **GIVEN** the simple structure and a handler who is not an administrator
 - **WHEN** they open More on a case
-- **THEN** Change type or version, Move to another version, Known in another
-  domain, Inspect raw data and Inspect flow runs MUST NOT be listed
+- **THEN** Inspect raw data and Inspect flow runs MUST NOT be listed
+- **AND** Change type or version MUST be listed when the permission endpoint
+  answers `mayRebind`, exactly as in the full structure
 
 #### Scenario: The full structure
 @e2e exclude An equality between the built page and the manifest, asserted in simpleCasePage.spec.js.

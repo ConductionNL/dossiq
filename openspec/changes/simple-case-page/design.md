@@ -47,16 +47,19 @@ shows no stage button and Lifecycle stays in the menu.
 
 - Quick (3): `send-digital-post`, `generate-document`, `log-contact`.
 - Top of More (1): `case-lifecycle-menu`.
-- Case (12): claim, release, hand over, add party, link object, record receipt
-  confirmed, plan follow-up, remind, start, split, merge, copy.
+- Case (15): claim, release, hand over, add party, link object, record receipt
+  confirmed, plan follow-up, remind, start, split, merge, copy, change type or
+  version, move to another version, known in another domain.
 - Publication (3): publish, withdraw, view the publication.
 - Dossier (1): export dossier.
-- Admin only (5): change type or version, move to another version, known in
-  another domain, inspect raw data, inspect flow runs.
+- Admin only (2): inspect raw data, inspect flow runs.
 
-`adminOnly` hides a control. Each endpoint keeps its own check.
-`case-rebind` was shown to anyone its permission endpoint allows. In the simple
-structure only an administrator sees it.
+The simple structure regroups actions. It does not change who may use one.
+`adminOnly` is set only on the two inspect actions, which were already gated on
+the admin probe. The design also lists change type or version, move to another
+version and known in another domain as admin actions. Today a handler may use
+them (the first through its own permission endpoint), so they stay in the Case
+group with the gates they have.
 
 ## D-5 The overlay
 

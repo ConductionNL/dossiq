@@ -52,7 +52,9 @@ Named here and not invented:
   the page grid. Moving it means redrawing the grid, which needs a browser.
 - **The six sidebar tabs under History and More.** They are sidebar components.
   The tab strip holds widgets.
-- **Twelve entries at most in More.** The Case group alone holds twelve.
+- **Twelve entries at most in More.** The Case group alone holds fifteen.
+- **Five admin actions.** Only the two inspect actions are admin only. The
+  other three are open to handlers today, and regrouping must not change that.
 - **Email and Notes inside Contact.** They are widgets of their own and sit
   under More.
 

@@ -232,10 +232,41 @@ describe('the actions', () => {
 		expect(placed).toHaveLength(25)
 		expect(count('quick')).toBe(3)
 		expect(count('top')).toBe(1)
-		expect(count('Case')).toBe(12)
+		expect(count('Case')).toBe(15)
 		expect(count('Publication')).toBe(3)
 		expect(count('Dossier')).toBe(1)
-		expect(count('admin')).toBe(5)
+		expect(count('admin')).toBe(2)
+	})
+
+	it('regroups actions and never changes who may use one', () => {
+		// Every gate the manifest declares survives the overlay untouched.
+		for (const action of original.headerActions) {
+			const shown = simple.headerActions.find((item) => item.id === action.id)
+			expect(shown.visibleWhen, action.id).toEqual(action.visibleWhen)
+		}
+		// Changing a case's type follows its own permission endpoint, in both
+		// structures. `adminOnly` would have narrowed it to administrators.
+		const rebind = simple.headerActions.find(
+			(action) => action.id === 'case-rebind',
+		)
+		expect(rebind.visibleWhen).toEqual({
+			endpoint: '/apps/dossiq/api/rebind/permission',
+			field: 'mayRebind',
+			op: 'eq',
+			value: true,
+		})
+		expect(rebind.adminOnly).toBeUndefined()
+		expect(rebind.group).toBe('Case')
+		// The only admin-only actions are the two that were already gated on
+		// the admin probe, so `adminOnly` takes nothing from anyone.
+		const narrowed = simple.headerActions
+			.filter((action) => action.adminOnly)
+			.map((action) => action.id)
+		expect(narrowed).toEqual(['case-inspect-raw', 'case-inspect-runs'])
+		for (const id of narrowed) {
+			const action = original.headerActions.find((item) => item.id === id)
+			expect(action.visibleWhen.field, id).toBe('isAdmin')
+		}
 	})
 
 	it('keeps three quick actions: message, document, contact', () => {
