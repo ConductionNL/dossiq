@@ -26,7 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\CaseEmailService;
+use OCA\Dossiq\Service\OptOutGate;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -39,6 +41,11 @@ use OCP\IUserSession;
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class EmailController extends Controller {
+
+	/**
+	 * The categories a handler may pick in the case mail dialog.
+	 */
+	private const HANDLER_CATEGORIES = [OptOutGate::CATEGORY_CASE_UPDATE, OptOutGate::CATEGORY_BESLUIT];
 	/**
 	 * Constructor.
 	 *
@@ -75,14 +82,24 @@ class EmailController extends Controller {
 		try {
 			$data = $this->readJsonBody();
 
+			// A handler sends a case update or a besluit, nothing else.
+			// statutory is for templates; marketing never comes from here.
+			$category = (string)($data['category'] ?? OptOutGate::CATEGORY_CASE_UPDATE);
+			if (in_array($category, self::HANDLER_CATEGORIES, true) === false) {
+				return new JSONResponse(['error' => 'invalid-category'], Http::STATUS_BAD_REQUEST);
+			}
+
 			$result = $this->emailService->sendEmail(
 				$caseId,
 				$data['to'] ?? '',
 				$data['subject'] ?? '',
 				$data['body'] ?? '',
 				$data['attachments'] ?? [],
+				$category,
 			);
 			return new JSONResponse($result);
+		} catch (RecipientOptedOutException $e) {
+			return $this->refused(exception: $e);
 		} catch (\RuntimeException $e) {
 			// M4: Never expose internal error details (SMTP host/credentials) to callers.
 			// 'email_send_failed' is the sentinel thrown by CaseEmailService when the
@@ -120,6 +137,8 @@ class EmailController extends Controller {
 				$data['to'] ?? '',
 			);
 			return new JSONResponse($result);
+		} catch (RecipientOptedOutException $e) {
+			return $this->refused(exception: $e);
 		} catch (\RuntimeException $e) {
 			// M4: Surface generic error for transport failures.
 			if ($e->getMessage() === 'email_send_failed') {
@@ -195,6 +214,22 @@ class EmailController extends Controller {
 		$templates = $this->emailService->getTemplatesForCaseType($caseTypeId);
 		return new JSONResponse(['results' => $templates]);
 	}//end templates()
+
+	/**
+	 * The answer to a mail integriq said may not go out: 409 with the code.
+	 *
+	 * @param RecipientOptedOutException $exception The refusal.
+	 *
+	 * @return JSONResponse The 409.
+	 *
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
+	 */
+	private function refused(RecipientOptedOutException $exception): JSONResponse {
+		return new JSONResponse(
+			['error' => $exception->getReasonCode(), 'message' => $exception->getMessage(), 'sent' => false],
+			Http::STATUS_CONFLICT
+		);
+	}//end refused()
 
 	/**
 	 * Read and decode the JSON request body.
