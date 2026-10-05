@@ -139,16 +139,35 @@ describe('the declared item is the dashboard\'s own "First today" card', () => {
 		}
 	})
 
-	it('counts in a register and schema the app ships, on fields the case carries', () => {
-		const register = readJson('lib', 'Settings', 'dossiq_register.json')
-		expect(register.components.registers[item.source.register].slug).toBe(
+	it('counts in a register and schema the app ships, on fields the schema carries', () => {
+		const dir = path.join(ROOT, 'lib', 'Settings', 'register.d')
+		const files = [
+			readJson('lib', 'Settings', 'dossiq_register.json'),
+			...fs
+				.readdirSync(dir)
+				.filter((name) => name.endsWith('.json'))
+				.sort()
+				.map((name) => readJson('lib', 'Settings', 'register.d', name)),
+		]
+		const registers = Object.values(files[0].components.registers)
+		expect(registers.map((register) => register.slug)).toContain(
 			item.source.register,
 		)
-		const schema = register.components.schemas[item.source.schema]
-		expect(schema.slug).toBe(item.source.schema)
+		// The schema is the main register plus what the fragments add to it.
+		const properties = {}
+		let found = false
+		for (const file of files) {
+			for (const schema of Object.values(file.components?.schemas ?? {})) {
+				if (schema?.slug === item.source.schema) {
+					found = true
+					Object.assign(properties, schema.properties ?? {})
+				}
+			}
+		}
+		expect(found, item.source.schema).toBe(true)
 		for (const key of Object.keys(item.source.filter)) {
 			const field = key.replace(/\[.*$/, '')
-			expect(schema.properties[field], field).toBeTruthy()
+			expect(properties[field], field).toBeTruthy()
 		}
 	})
 
