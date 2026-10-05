@@ -27,7 +27,7 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
   - files: `lib/Service/CaseEmailService.php`
   - acceptance: headers are set through OpenRegister's `UnsubscribeHeaders`, injected, not copied.
   - test: `vendor/bin/phpunit --no-coverage --filter CaseEmailServiceTest`
-- [ ] 2.4 `messageCategory` on `emailTemplate`, additive, no `format`.
+- [x] 2.4 `messageCategory` on `emailTemplate`, additive, no `format`.
   - files: `lib/Settings/dossiq_register.json`
   - acceptance: the register imports on a clean instance with no `PARTIAL IMPORT` in the log. Test with OpenRegister that the schema validates.
   - test: `occ maintenance:repair` on the dev instance, then `grep "PARTIAL IMPORT" data/nextcloud.log` finds nothing new
@@ -54,5 +54,5 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 ## 6. Verify
 
 - [ ] 6.1 Live check: stop a case through integriq's link, send a case mail and a Berichtenbox case update about it. Both are refused. A besluit goes out.
-- [ ] 6.2 Pipelinq bridge: create a case from a pipelinq request and confirm nothing in the bridge sends mail.
+- [x] 6.2 Pipelinq bridge: create a case from a pipelinq request and confirm nothing in the bridge sends mail.
 - [ ] 6.3 `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict` once, then `npm run lint`.
