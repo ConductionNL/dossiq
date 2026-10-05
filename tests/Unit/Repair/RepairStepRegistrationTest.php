@@ -84,6 +84,7 @@ class RepairStepRegistrationTest extends TestCase {
 		'BackfillAdviceRequestObjection' => 'backfill over existing bacAdviceRequests',
 		'RewriteWooPublicationSummaries' => 'rewrites existing Woo decisions and publications; a fresh install has none',
 		'BackfillCaseCustody' => 'opens the first holding of existing cases; a fresh install has none to date',
+		'BackfillCaseStatusRole' => 'fills statusRole on existing cases; a fresh install has none',
 		// INHERITED from the family-plan lane, which shipped this step with no
 		// entry on either side. Named here rather than left red: it rewrites
 		// the goal and trajectory text of EXISTING gezinsplan rows, and a

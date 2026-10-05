@@ -16,6 +16,26 @@ computed by OpenRegister. A status type without a role MUST leave it empty.
 - **WHEN** the case is saved
 - **THEN** `statusRole` MUST be empty
 
+### Requirement: Existing cases get the role of their status (REQ-CM-77)
+A repair step MUST write `statusRole` on every existing case whose status type
+declares a role and whose `statusRole` differs from it. It MUST write in system
+context, MUST write nothing else, MUST be safe to run again, and MUST NOT fail
+the upgrade when one case refuses.
+
+#### Scenario: An instance with cases from before the field
+@e2e exclude A repair step, asserted in BackfillCaseStatusRoleTest against a store fake; the coordinator runs it on a live instance.
+- **GIVEN** a case saved before `statusRole` existed, in a status whose role is `intake`
+- **WHEN** the repair step runs
+- **THEN** the case MUST carry `statusRole` `intake`
+- **AND** a second run MUST write nothing
+
+#### Scenario: One case refuses
+@e2e exclude Asserted in BackfillCaseStatusRoleTest.
+- **GIVEN** two cases to fill, one of which the store refuses
+- **WHEN** the repair step runs
+- **THEN** the other case MUST be filled
+- **AND** the output MUST count one filled and one failed
+
 ### Requirement: The simple case page puts its actions on four levels (REQ-CM-75)
 In the simple structure the case page MUST show one next-step button that
 follows `statusRole`, three quick actions, and a More menu grouped as Case,
@@ -31,6 +51,12 @@ unchanged.
 - **THEN** the page MUST show the card "What now? Handle the case" with its checklist
 - **AND** the button Next step MUST open the Lifecycle dialog
 - **AND** Send digital post, Generate document and Log contact MUST be visible buttons
+
+#### Scenario: A case in intake that already has a handler
+@e2e exclude Found on the live check of 5 October 2026 and asserted in simpleCasePage.spec.js: every stage with a card has a button without a condition a working case can fail.
+- **GIVEN** the simple structure and a case in a status with role `intake` that has a handler
+- **WHEN** the handler opens the case
+- **THEN** the what-now card MUST show the button Next step
 
 #### Scenario: A case whose status has no role
 @e2e exclude Asserted in simpleCasePage.spec.js with the library's stage resolver.

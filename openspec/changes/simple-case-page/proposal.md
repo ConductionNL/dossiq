@@ -22,8 +22,8 @@ page as it is.
 1. **The stage is on the case.** A new computed field `statusRole` holds the
    role of the status the case sits in (`statusType.role`). OpenRegister
    materialises it, the way it does `waitingOn`.
-2. **The next step follows the stage.** Intake: Claim. Waiting for information:
-   Remind. Handling and review: Next step, which opens the Lifecycle dialog.
+2. **The next step follows the stage.** Waiting for information: Remind. Every
+   other stage: Next step, which opens the Lifecycle dialog.
 3. **A what-now card per stage**, with a checklist read from fields on the case.
 4. **Three quick actions:** Send digital post, Generate document, Log contact.
 5. **The More menu is grouped:** Case, Publication, Dossier, and an admin group
@@ -46,10 +46,11 @@ Named here and not invented:
 - **Close the case** as one act. It is a choice inside the Lifecycle dialog.
 - **Receipt confirmed** in a checklist. The case has no field for it. The
   acknowledgement is asked through its own endpoint.
-- **A type pill.** The case holds its case type as a uuid and no name.
+- **A type pill.** The case holds its case type as a uuid and no name. The
+  pill in that place shows the case number.
 - **Counts on tabs.** The case carries no count of documents, messages or tasks.
-- **Deadline and linked records in the side column.** The deadline tile sits in
-  the page grid. Moving it means redrawing the grid, which needs a browser.
+- **Linked records in the side column.** The deadline is there. The linked
+  records stay in the Related tab.
 - **The six sidebar tabs under History and More.** They are sidebar components.
   The tab strip holds widgets.
 - **Twelve entries at most in More.** The Case group alone holds fifteen.
@@ -61,8 +62,9 @@ Named here and not invented:
 ## Impact
 
 - The register version moves to 0.20.15, so the import runs on an existing
-  instance. After it, `occ openregister:rematerialise-calculations` fills
-  `statusRole` on the cases that exist.
+  instance. The repair step `BackfillCaseStatusRole` then fills `statusRole` on
+  the cases that exist. It runs with the next app upgrade, or with
+  `occ maintenance:repair`.
 - A case whose status type has no role shows no card and no stage button. The
   Lifecycle entry stays first in the More menu. 90 of 125 status types on the
   dev instance have no role today.
