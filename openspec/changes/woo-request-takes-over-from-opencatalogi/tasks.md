@@ -103,21 +103,27 @@ are where local stubs lie).
 
 ## 5. Drafting through filinq
 
-- [ ] 5.1 Read filinq's `woo-request-workflow` change on filinq `development` at the moment you
-  build. It names the template service dossiq calls. Write that name, its arguments and its
-  return keys in this change's `design.md` (create it) before writing the adapter. If filinq has
-  not merged that service, stop this task, finish the rest, and say so in the PR body (REQ-WTO-005).
+- [ ] 5.1 Read filinq's `woo-request-workflow` change on filinq `development` at the moment you build
+  (on 2026-10-05 it was on filinq's spec branch `spec/woo-capability-build-specs`, PR #1341, issue
+  #1343). It names the contract: `DocumentGenerationRequestedEvent` with `templateSlug`
+  `woo-besluit` or `woo-inventarislijst` and `data.wooDecision`. Copy the `wooDecision` shape from its
+  spec into this change's `design.md` (create it). If filinq has not merged it, build the adapter
+  against that contract, keep 5.2's contract test, and say in the PR body that drafting is proven only
+  on dossiq's side until filinq lands (REQ-WTO-005).
 - [ ] 5.2 Add `lib/Woo/WooDecisionDrafts.php` with `draft(string $caseId): array` per REQ-WTO-005 and
-  REQ-WTO-006. Resolve filinq through `FleetAppId::getService()`. Call it from
+  REQ-WTO-006, dispatching the event through `IEventDispatcher` the way
+  `lib/Service/Beschikking/FilinqTemplateEngineAdapter.php` already does. Call it from
   `WOODecisionService::assembleDecision()` and return its answer under `draft` (REQ-WTO-005,
   REQ-WTO-006).
   - **fails today**: `tests/Unit/Service/WOODecisionServiceTest.php`
-    `testTheDecisionCarriesTheDraftStatus`, `testWithoutFilinqNoPlaceholderIsFiled`.
+    `testTheDecisionCarriesTheDraftStatus`, `testAnUnhandledEventIsFilinqMissingAndFilesNothing`,
+    `testFilinqsErrorIsTheReason`.
   - Through the caller: `tests/Unit/Controller/WOOAssessmentControllerTest.php`
     `testCreateDecisionAnswersTheDraftStatus`.
-  - Contract: `tests/Unit/Woo/WooDecisionDraftsContractTest.php` asserts the filinq method name,
-    arguments and return keys written in `design.md` as literals. filinq's own change must test
-    its side with the same literals; name that test in the PR body.
+  - Contract: `tests/Unit/Woo/WooDecisionDraftsContractTest.php` asserts the request keys
+    (`templateSlug`, `data.wooDecision`, `object`, `format`) and the result keys it reads, as literals
+    copied from filinq's spec with its source line. filinq's change tests the same contract on its
+    side; name that test in the PR body.
 
 ## 6. End to end and live
 

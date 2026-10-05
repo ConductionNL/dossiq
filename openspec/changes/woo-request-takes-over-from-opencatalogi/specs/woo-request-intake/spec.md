@@ -176,22 +176,29 @@ request as failed, never as migrated.
 ### Requirement: The decision and inventory are drafted from the organisation's templates (REQ-WTO-005)
 
 When the handler creates the Woo decision (POST `/api/cases/{id}/woo/decision`), dossiq SHALL ask
-filinq's template service for a besluit draft and an inventory draft through one adapter,
+filinq for a besluit draft and an inventory draft through one adapter,
 `OCA\Dossiq\Woo\WooDecisionDrafts::draft(string $caseId): array`, which answers
-`{status: 'drafted'|'not-drafted', besluitFileId?: int, inventoryFileId?: int, templateVersion?: string, reasonCode?: string, reason?: string}`.
+`{status: 'drafted'|'not-drafted', besluitFileId?: int, inventoryFileId?: int, template?: string, reasonCode?: string, reason?: string}`.
+The adapter SHALL use the contract filinq's `woo-request-workflow` amendment names: it dispatches
+`new \OCA\Filinq\Event\DocumentGenerationRequestedEvent(request: [...], requestingApp: 'dossiq')`
+once with `templateSlug` `woo-besluit` and once with `woo-inventarislijst`, each with
+`data` `['wooDecision' => ...]` in the shape filinq's spec declares, `object` the case reference and
+`format` `pdf`, and then reads `isHandled()`, `getResult()` (`fileId`, `path`, `name`, `mime`,
+`size`, `format`, `template`, `object`, `metadata`, `requestingApp`, `warnings`) or `getError()`.
 The drafts SHALL be filed as documents on the case. The decision record SHALL be written either
 way, and SHALL carry the draft status.
 
 #### Scenario: filinq drafts the besluit
 - **GIVEN** filinq installed with an organisation-edited Woo besluit template
 - **WHEN** the handler creates the decision on a fully assessed Woo case
-- **THEN** a besluit document and an inventory document SHALL be on the case, and the response SHALL say `drafted` with the template version
+- **THEN** a besluit document and an inventory document SHALL be on the case, and the response SHALL say `drafted` with the template filinq used
 
 ### Requirement: Without filinq the decision says no draft was made (REQ-WTO-006)
 
-When filinq is not installed, or its template service is missing or refuses, `draft()` SHALL
-answer `not-drafted` with reason code `filinq-missing`, `template-missing` or `filinq-refused`,
-and SHALL NOT file a placeholder document. The decision response and the case page SHALL say that
+When the event comes back neither handled nor refused (filinq absent), `draft()` SHALL answer
+`not-drafted` with reason code `filinq-missing`. When `getError()` answers, it SHALL answer
+`not-drafted` with `filinq-refused` and filinq's error as the reason. It SHALL NOT file a placeholder
+document. The decision response and the case page SHALL say that
 no draft was generated and why.
 
 #### Scenario: No filinq, no fake letter
