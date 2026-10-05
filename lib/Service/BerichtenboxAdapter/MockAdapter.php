@@ -53,8 +53,12 @@ class MockAdapter implements BerichtenboxAdapterInterface {
 	 * @param string $body Plain text body.
 	 * @param string $typeCode Bericht type code.
 	 * @param string|null $attachment Optional attachment content (base64).
+	 * @param string $category What the letter is; the mock keeps no opt-out list.
+	 * @param string $caseRef The case the letter is about.
 	 *
 	 * @return array<string, string> Mock send result with a generated messageId.
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) the mock simulates a send and has no opt-out list to read.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
@@ -64,6 +68,8 @@ class MockAdapter implements BerichtenboxAdapterInterface {
 		string $body,
 		string $typeCode,
 		?string $attachment = null,
+		string $category = 'case-update',
+		string $caseRef = '',
 	): array {
 		$messageId = 'mock-' . bin2hex(random_bytes(8));
 

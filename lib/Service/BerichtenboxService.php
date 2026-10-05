@@ -73,10 +73,12 @@ class BerichtenboxService {
 	 * @param string $body Plain text message body.
 	 * @param string $typeCode Bericht type code.
 	 * @param string|null $attachmentFileId Optional Nextcloud file ID of the attachment.
+	 * @param string $category What the letter is: `case-update` (default), `besluit` or `statutory`.
 	 *
 	 * @return array<string, mixed> The stored message record or an error payload.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 	 */
 	public function sendMessage(
 		string $caseId,
@@ -85,6 +87,7 @@ class BerichtenboxService {
 		string $body,
 		string $typeCode,
 		?string $attachmentFileId = null,
+		string $category = 'case-update',
 	): array {
 		// Validate inputs.
 		$errors = $this->validateMessage(bsn: $bsn, subject: $subject, body: $body);
@@ -110,7 +113,10 @@ class BerichtenboxService {
 		// refuses rather than simulating; the mock is still selectable by
 		// naming it in `berichtenbox_adapter`, and it is no longer what an
 		// instance that configured nothing silently gets.
-		$result = $this->adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent);
+		// The category travels to integriq, which decides on it (the category
+		// decides, not the channel; hydra decision 4). dossiq does not ask a
+		// second time here: integriq's digital post listener is the one check.
+		$result = $this->adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent, $category, $caseId);
 
 		// 🔴 A REFUSAL IS NOT A DELIVERY, AND THE DIFFERENCE IS THE WHOLE
 		// CHANGE. A refused send gets a message record too, because a handler
@@ -152,6 +158,7 @@ class BerichtenboxService {
 			// reading a status string it would have to know the vocabulary of.
 			$stored['refused'] = true;
 			$stored['error'] = (string)($result['error'] ?? '');
+			$stored['code'] = (string)($result['code'] ?? 'refused');
 		}
 
 		return $stored;

@@ -35,10 +35,13 @@ interface BerichtenboxAdapterInterface {
 	 * @param string $body Plain text message body
 	 * @param string $typeCode Bericht type code
 	 * @param string|null $attachment PDF attachment content (base64)
+	 * @param string $category What the letter is: `case-update`, `besluit` or `statutory` (opt-out-before-send)
+	 * @param string $caseRef The case the letter is about, so a case opt-out can match
 	 *
 	 * @return array Result with messageId, status
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 	 */
 	public function sendMessage(
 		string $bsn,
@@ -46,6 +49,8 @@ interface BerichtenboxAdapterInterface {
 		string $body,
 		string $typeCode,
 		?string $attachment = null,
+		string $category = 'case-update',
+		string $caseRef = '',
 	): array;
 
 	/**

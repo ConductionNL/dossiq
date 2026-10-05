@@ -64,6 +64,8 @@ class RealBerichtenboxAdapter implements BerichtenboxAdapterInterface {
 	 * @param string $body Plain text body.
 	 * @param string $typeCode Bericht type code.
 	 * @param string|null $attachment Optional attachment.
+	 * @param string $category The letter's category.
+	 * @param string $caseRef The case.
 	 *
 	 * @return array<string, string> The send result.
 	 */
@@ -73,6 +75,8 @@ class RealBerichtenboxAdapter implements BerichtenboxAdapterInterface {
 		string $body,
 		string $typeCode,
 		?string $attachment = null,
+		string $category = 'case-update',
+		string $caseRef = '',
 	): array {
 		return ['messageId' => 'real-1', 'status' => 'sent'];
 	}//end sendMessage()
