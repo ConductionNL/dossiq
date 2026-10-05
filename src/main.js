@@ -10,6 +10,7 @@ import {
 	registerBuiltinDashboardWidgets,
 	registerIcons,
 	registerIntegration,
+	registerBuiltinIntegrations,
 	registerTranslations,
 	useAppManifest,
 } from '@conduction/nextcloud-vue'
@@ -135,6 +136,8 @@ function tryLoadTranslations() {
 //
 // @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
 const sharedIntegrationRegistry = getSharedRegistry()
+// ooo-live THROWAWAY: OpenRegister's JS is not built here, so register the lib built-ins (files tab) from this bundle.
+registerBuiltinIntegrations(sharedIntegrationRegistry)
 if (sharedIntegrationRegistry.has('field-inspection')) {
 	sharedIntegrationRegistry.unregister('field-inspection')
 }
