@@ -39,7 +39,7 @@ use OCP\EventDispatcher\Event;
  * refusal. It never carries both, and it is never left empty on a handled
  * event: a consumer that reads neither knows the request was not handled.
  *
- * @spec openspec/changes/berichtenbox-digital-post-adapter/specs/digital-post-adapter/spec.md#requirement-a-send-is-a-typed-command-with-a-tracked-message-req-dpa-002
+ * @spec exclude verbatim copy of the owning app's class; the original tag points into that app's repo
  *
  * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- the ADR-041 event contract is a flat
  * readonly envelope the consumer stubs mirror verbatim.
@@ -103,7 +103,7 @@ class DigitalPostSendRequestedEvent extends Event {
 	 *
 	 * @return string The category.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/outbound-opt-out-authority/spec.md#requirement-the-exempt-categories-are-a-fixed-floor-req-ooa-004
+	 * @spec exclude verbatim copy of the owning app's class; the original tag points into that app's repo
 	 */
 	public function getCategory(): string {
 		return $this->category;
@@ -114,7 +114,7 @@ class DigitalPostSendRequestedEvent extends Event {
 	 *
 	 * @return string The case ref.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/outbound-opt-out-authority/spec.md#requirement-every-integriq-sender-asks-the-opt-out-list-before-it-sends-req-ooa-001
+	 * @spec exclude verbatim copy of the owning app's class; the original tag points into that app's repo
 	 */
 	public function getCaseRef(): string {
 		return $this->caseRef;

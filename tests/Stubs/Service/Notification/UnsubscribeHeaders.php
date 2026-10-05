@@ -30,7 +30,7 @@
  *
  * @link https://OpenRegister.app
  *
- * @spec openspec/changes/opt-out-before-send/specs/external-recipient-opt-out/spec.md#requirement-openregister-owns-one-shared-list-unsubscribe-helper-req-ero-005
+ * @spec exclude verbatim copy of the owning app's class; the original tag points into that app's repo
  */
 
 declare(strict_types=1);
@@ -79,7 +79,7 @@ class UnsubscribeHeaders {
 	 *
 	 * @return bool True when both headers are set.
 	 *
-	 * @spec openspec/changes/opt-out-before-send/specs/external-recipient-opt-out/spec.md#requirement-openregister-owns-one-shared-list-unsubscribe-helper-req-ero-005
+	 * @spec exclude verbatim copy of the owning app's class; the original tag points into that app's repo
 	 */
 	public function apply(IMessage $message, array $unsubscribe): bool {
 		$url = $this->oneClickUrl(unsubscribe: $unsubscribe);

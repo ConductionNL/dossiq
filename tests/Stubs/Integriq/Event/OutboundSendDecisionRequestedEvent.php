@@ -27,7 +27,7 @@
  *
  * @link https://www.integriq.nl
  *
- * @spec openspec/changes/opt-out-before-send/specs/outbound-opt-out-authority/spec.md#requirement-sibling-apps-ask-through-a-public-decision-event-req-ooa-002
+ * @spec exclude verbatim copy of the owning app's class; the original tag points into that app's repo
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\EventDispatcher\Event;
  * readonly envelope the consumer stubs mirror verbatim.
  * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- requiresConsent is a contract field.
  *
- * @spec openspec/changes/opt-out-before-send/specs/outbound-opt-out-authority/spec.md#requirement-sibling-apps-ask-through-a-public-decision-event-req-ooa-002
+ * @spec exclude verbatim copy of the owning app's class; the original tag points into that app's repo
  */
 class OutboundSendDecisionRequestedEvent extends Event {
 
