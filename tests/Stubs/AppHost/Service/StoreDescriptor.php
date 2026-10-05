@@ -47,6 +47,8 @@ final class StoreDescriptor {
 			'version' => 'version',
 		],
 		public readonly array $types = [],
+		public readonly array $publishFields = [],
+		public readonly array $publishGroups = [],
 	) {
 	}//end __construct()
 }//end class

@@ -51,6 +51,7 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\FlowTimerFiredEvent', false) === f
             private readonly array $recipients,
             private readonly ?string $priority,
             private readonly ?string $message,
+            private readonly ?string $consequence = null,
         ) {
             parent::__construct();
         }//end __construct()
