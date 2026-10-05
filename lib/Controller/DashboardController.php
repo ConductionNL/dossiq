@@ -41,6 +41,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Settings\MenuStructure;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -184,6 +185,7 @@ class DashboardController extends Controller {
 			self::PREFER_OPENREGISTER_CASE_PLAN,
 			$this->prefersOpenRegisterCasePlan()
 		);
+		$this->initialState->provideInitialState(MenuStructure::KEY, $this->menuStructure());
 
 		return new TemplateResponse($this->appName, 'index');
 	}//end renderIndex()
@@ -277,6 +279,25 @@ class DashboardController extends Controller {
 
 		return in_array(strtolower(trim($value)), ['no', 'false', '0', 'off'], true) === false;
 	}//end prefersOpenRegisterCasePlan()
+
+	/**
+	 * Which structure this instance shows: `simple` or `full`.
+	 *
+	 * The frontend picks its layout file from this before it builds a single
+	 * route, so it travels as initial state and not over HTTP: a menu that
+	 * arrives after the first render makes the navigation rebuild in front of
+	 * the reader. The default is asked for as an empty string and decided in
+	 * one place, {@see MenuStructure::normalise()}.
+	 *
+	 * @return string `simple` or `full`.
+	 *
+	 * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-007
+	 */
+	protected function menuStructure(): string {
+		return (new MenuStructure())->normalise(
+			stored: $this->appConfig->getValueString(Application::APP_ID, MenuStructure::KEY, '')
+		);
+	}//end menuStructure()
 
 	/**
 	 * The committed feature list, or an empty list when it cannot be read.

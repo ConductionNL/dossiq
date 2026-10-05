@@ -329,6 +329,22 @@ if ! php occ dossiq:workflows:migrate-to-flows --user="${USER_NAME}"; then
 fi
 echo "[ci-seed] workflow definitions projected onto flows (disabled)."
 
+# ── 2b-bis. The suite runs against the FULL structure ───────────────────────
+# dossiq ships two structures from one manifest (simple-structure-profile).
+# `simple` is the default: nine menu entries. Most specs here were written
+# against the full menu and reach pages through it (the My work group, the
+# footer, the settings entries), so the CI instance is put on `full`, the same
+# switch an administrator has. `simple-structure-menu.spec.ts` turns the
+# setting to `simple` for its own run and puts back what it found.
+#
+# Only here, never in global-setup: this script runs on a throwaway CI
+# instance, and global-setup also runs against a shared instance people use.
+if ! php occ config:app:set dossiq menu_structure --value=full; then
+	echo "::error::could not set dossiq menu_structure=full. The suite would run against the simple menu and every spec that walks the full navigation would fail naming a missing entry rather than this step."
+	exit 1
+fi
+echo "[ci-seed] menu_structure=full (the suite's baseline; the simple menu has its own spec)."
+
 # ── 2c. A user who is NOT an admin ───────────────────────────────────────────
 # `integrations-page.spec.ts` asserts that the Integrations entry and its rows
 # are invisible to an ordinary user. Asserted from the admin session that is

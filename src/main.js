@@ -15,6 +15,7 @@ import {
 } from '@conduction/nextcloud-vue'
 // @vue/compat REMOVED (ADR-066 task 6.1): lib + dossiq source are compat-
 // construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
+import { loadState } from '@nextcloud/initial-state'
 import {
 	loadTranslations,
 	translatePlural as n,
@@ -28,7 +29,8 @@ import { registerCaseSections } from './components/case/registerCaseSections.js'
 import appIcons from './icons.js'
 import logger from './logger.js'
 import bundledManifest from './manifest.json'
-import menuLayout from './menu-layout.json'
+import menuLayoutFull from './menu-layout.json'
+import menuLayoutSimple from './menu-layout.simple.json'
 import pinia from './pinia.js'
 import registry from './registry.js'
 import { installCaseLiveUpdates } from './services/caseLiveUpdates.js'
@@ -39,6 +41,12 @@ import { useObjectStore } from './store/modules/object.js'
 import { permissionGuard, routesFromManifest } from './utils/manifestRoutes.js'
 import { currentPermissions } from './utils/permissions.js'
 import { routerBase } from './utils/routerBase.js'
+import {
+	buildProfiledManifest,
+	resolveStructureProfile,
+	STRUCTURE_FULL,
+	STRUCTURE_SETTING,
+} from './utils/structureProfile.js'
 
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
@@ -179,8 +187,19 @@ const fragments = fragmentCtx
 // a merge that fails validation is discarded whole, and an admin-gated link
 // that disappears when some unrelated part of the delta is malformed is the
 // kind of failure nobody reports because it looks like "not allowed".
+//
+// THE STRUCTURE PROFILE picks the layout file. The page controller provides
+// `menu_structure` as initial state: `simple` (the default) or `full` (the
+// navigation and pages as they were). Both are built from the same manifest
+// and the same fragments, so every page stays routable in either. See
+// `utils/structureProfile.js` for what a profile file may hold.
+const structureProfile = resolveStructureProfile(
+	loadState('dossiq', STRUCTURE_SETTING, ''),
+)
+const menuLayout =
+	structureProfile === STRUCTURE_FULL ? menuLayoutFull : menuLayoutSimple
 const builtManifest = markRaw({
-	...buildManifest(bundledManifest, fragments, menuLayout),
+	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout),
 	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
 })
 

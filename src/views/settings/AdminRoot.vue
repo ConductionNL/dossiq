@@ -16,6 +16,15 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-menu-structure"
+			:name="t('dossiq', 'Menu structure')"
+			:description="
+				t('dossiq', 'Choose how much the menu shows. Simple is the default.')
+			">
+			<MenuStructureTab />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-prerequisites"
 			:name="t('dossiq', 'Prerequisites')"
 			:description="
@@ -280,6 +289,7 @@ import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import MenuStructureTab from './tabs/MenuStructureTab.vue'
 import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
 import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
@@ -306,6 +316,7 @@ export default {
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,
 		MandaatMatrixSettingsTab,
+		MenuStructureTab,
 		ConsultationSettingsTab,
 		StoreSettingsTab,
 		FinancialIntegrationTab,

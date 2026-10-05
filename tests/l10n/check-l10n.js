@@ -278,6 +278,19 @@ if (fs.existsSync(fragmentDir)) {
 		}
 	}
 }
+// The structure profiles are read too (simple-structure-profile). A profile
+// file next to the manifest (`src/menu-layout*.json`) may add menu entries and
+// append page actions, and their labels reach the same translate function. Its
+// `_meta` block is skipped by the underscore rule above, and the layout keys
+// hold ids, which are not text fields.
+const profileDir = path.join(ROOT, 'src')
+if (fs.existsSync(profileDir)) {
+	for (const name of fs.readdirSync(profileDir).sort()) {
+		if (/^menu-layout(\.[a-z0-9-]+)?\.json$/.test(name)) {
+			manifestFiles.push(path.join(profileDir, name))
+		}
+	}
+}
 for (const file of manifestFiles) {
 	let parsed
 	try {
