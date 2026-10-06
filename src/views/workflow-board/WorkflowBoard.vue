@@ -393,6 +393,8 @@ export default {
 
 		/**
 		 * @return {Array<object>} The columns to draw.
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		visibleColumns() {
 			return this.narrowedBoard.columns
@@ -400,6 +402,8 @@ export default {
 
 		/**
 		 * @return {{[key: string]: Array<object>}} The cases to draw, per column.
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		visibleCasesByStatus() {
 			return this.narrowedBoard.casesByStatus
