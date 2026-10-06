@@ -43,11 +43,7 @@
 		"CaseObjectsMenu",
 		"MailIntakeLogMenu"
 	],
-	"integrationsSection": [
-		"AvgRegisterLink",
-		"AiOversightLink",
-		"DataModelLink"
-	],
+	"integrationsSection": ["AvgRegisterLink", "AiOversightLink", "DataModelLink"],
 	"menu": [
 		{
 			"id": "StartCaption",
@@ -61,12 +57,33 @@
 		},
 		{
 			"id": "WorkGroup",
-			"order": 12
+			"order": 12,
+			"count": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"assignee": "@me",
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false
+				}
+			}
 		},
 		{
 			"id": "Queue",
 			"label": "Team queue",
-			"order": 14
+			"order": 14,
+			"count": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"assignee": "IS NULL",
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false,
+					"isTemplate": false
+				}
+			}
 		},
 		{
 			"id": "CasesCaption",
@@ -110,8 +127,71 @@
 		{
 			"id": "OrganisationsMenu",
 			"order": 44
+		},
+		{
+			"id": "Documentation",
+			"label": "Help and explanation",
+			"icon": "HelpCircleOutline"
 		}
 	],
+	"nav": {
+		"brand": {
+			"name": "dossiq",
+			"caption": "@theming.name",
+			"logo": "@theming.emblem|@theming.logo"
+		},
+		"primaryAction": {
+			"label": "New case",
+			"icon": "Plus",
+			"action": {
+				"id": "nav-new-case",
+				"label": "New case",
+				"icon": "Plus",
+				"type": "open-form",
+				"size": "large",
+				"columns": 2,
+				"includeFields": [
+					"caseType",
+					"title",
+					"requester",
+					"description",
+					"assignee",
+					"impact",
+					"urgency",
+					"confidentiality",
+					"intakeChannel",
+					"startDate",
+					"plannedEndDate"
+				],
+				"fieldOverrides": {
+					"description": {
+						"widget": "textarea"
+					},
+					"requester": {
+						"widget": "InitiatorPicker",
+						"label": "Requester"
+					}
+				},
+				"register": "dossiq",
+				"schema": "case",
+				"createOverride": "caseCreateWithDuplicateCheck",
+				"onSuccessRoute": "CaseDetail",
+				"successMessage": "Case created.",
+				"props": {
+					"assignee": "@me",
+					"confidentiality": "vertrouwelijk"
+				}
+			}
+		},
+		"card": {
+			"title": "Close out your day",
+			"text": "See what is still open today and get it ready for tomorrow.",
+			"link": {
+				"label": "To the day close",
+				"route": "EndOfDay"
+			}
+		}
+	},
 	"pages": [
 		{
 			"id": "MyWorkHome",
@@ -316,6 +396,11 @@
 				],
 				"typePill": {
 					"field": "identifier"
+				},
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "All cases",
+					"route": "Cases"
 				}
 			},
 			"configPatch": {
@@ -385,6 +470,31 @@
 					}
 				},
 				"widgets": {
+					"case-stages": {
+						"content": {
+							"currentField": "status",
+							"orientation": "horizontal",
+							"size": "small",
+							"ariaLabel": "Case progress",
+							"stagesSource": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"filter": {
+									"caseType": "@object.caseType"
+								},
+								"orderBy": "order",
+								"labelField": "name",
+								"descriptionField": "description",
+								"finalField": "isFinal",
+								"limit": 50
+							},
+							"transition": {
+								"kind": "lifecycle"
+							},
+							"unreachableReason": "Not possible from the current status",
+							"variant": "bars"
+						}
+					},
 					"case-panels": {
 						"content": {
 							"ariaLabel": "Case details",
@@ -451,7 +561,8 @@
 									"label": "Knowledge",
 									"overflow": true
 								}
-							]
+							],
+							"variant": "segmented"
 						}
 					}
 				},
@@ -459,9 +570,18 @@
 					"kpi-1": null,
 					"kpi-2": null,
 					"kpi-5": null,
-					"6": {
+					"3": {
 						"gridX": 0,
-						"gridWidth": 12
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					"6": {
+						"gridX": 9,
+						"gridY": 4,
+						"gridWidth": 3,
+						"gridHeight": 2
 					}
 				}
 			}
@@ -535,26 +655,55 @@
 						"widgetId": "simple-week",
 						"gridX": 0,
 						"gridY": 6,
-						"gridWidth": 12,
+						"gridWidth": 8,
 						"gridHeight": 4,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "All deadlines",
+							"route": "Cases",
+							"query": {
+								"assignee": "@me",
+								"isFinalStatus": "false",
+								"statusHiddenInLists": "false",
+								"isDraft": "false",
+								"deadline[gte]": "@today",
+								"deadline[lt]": "@today+7d"
+							}
+						}
 					},
 					{
 						"id": "s8",
 						"widgetId": "simple-my-tasks",
-						"gridX": 0,
-						"gridY": 13,
-						"gridWidth": 12,
-						"gridHeight": 5,
-						"showTitle": true
+						"gridX": 8,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 12,
+						"showTitle": true,
+						"headerLink": {
+							"label": "All tasks",
+							"route": "Tasks"
+						}
 					},
 					{
 						"id": "s9",
 						"widgetId": "simple-per-step",
 						"gridX": 0,
 						"gridY": 10,
-						"gridWidth": 12,
+						"gridWidth": 8,
 						"gridHeight": 3,
+						"showTitle": true,
+						"headerLink": {
+							"label": "To the board",
+							"route": "WorkflowBoard"
+						}
+					},
+					{
+						"id": "s10",
+						"widgetId": "simple-continue",
+						"gridX": 0,
+						"gridY": 13,
+						"gridWidth": 8,
+						"gridHeight": 5,
 						"showTitle": true
 					},
 					{
@@ -653,7 +802,8 @@
 						"dateChip": false
 					}
 				],
-				"description": "Your work today, then the team"
+				"description": "Your work today, then the team",
+				"showHeader": false
 			},
 			"configAppend": {
 				"widgets": [
@@ -708,10 +858,50 @@
 								},
 								{
 									"label": "Open the board",
-									"route": "WorkflowBoard"
+									"route": "WorkflowBoard",
+									"primary": true
 								}
 							],
 							"text": "Cases past their deadline"
+						}
+					},
+					{
+						"id": "simple-continue",
+						"type": "object-table",
+						"title": "Continue working",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_recent": true
+								},
+								"limit": 3
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong",
+									"secondary": "identifier"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"formatter": "statusTypeName",
+									"widget": "statusBadge"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"_recent": "true"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "Cases you open show up here"
 						}
 					},
 					{
@@ -720,7 +910,6 @@
 						"title": "My open cases",
 						"content": {
 							"label": "My open cases",
-							"icon": "FolderOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -753,7 +942,6 @@
 						"title": "Due this week",
 						"content": {
 							"label": "Due this week",
-							"icon": "ClockAlertOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -793,7 +981,6 @@
 						"title": "Awaiting applicant",
 						"content": {
 							"label": "Awaiting applicant",
-							"icon": "AccountOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -828,7 +1015,6 @@
 						"title": "Closed this month",
 						"content": {
 							"label": "Closed this month",
-							"icon": "CheckCircleOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -873,9 +1059,7 @@
 							},
 							"dateField": "deadline",
 							"titleField": "title",
-							"metaFields": [
-								"identifier"
-							],
+							"metaFields": ["identifier"],
 							"itemRoute": "CaseDetail",
 							"lateWhen": {
 								"op": "lte",
@@ -949,6 +1133,7 @@
 			"_note": "The cases list in the simple structure (openspec/changes/simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day it ends (`lte 0`), the same rule the board uses.",
 			"config": {
 				"quickFilterMaxVisible": 5,
+				"folderSidebar": null,
 				"columns": [
 					"identifier",
 					"title",

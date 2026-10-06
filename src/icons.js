@@ -147,6 +147,7 @@ import HandBackRightOutline from 'vue-material-design-icons/HandBackRightOutline
 import HandHeartOutline from 'vue-material-design-icons/HandHeartOutline.vue'
 import HandshakeOutline from 'vue-material-design-icons/HandshakeOutline.vue'
 import Headset from 'vue-material-design-icons/Headset.vue'
+import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import History from 'vue-material-design-icons/History.vue'
 import HumanMaleChild from 'vue-material-design-icons/HumanMaleChild.vue'
 import HumanWheelchair from 'vue-material-design-icons/HumanWheelchair.vue'
@@ -362,6 +363,7 @@ export default {
 	HandHeartOutline,
 	HandshakeOutline,
 	Headset,
+	HelpCircleOutline,
 	History,
 	HumanMaleChild,
 	HumanWheelchair,

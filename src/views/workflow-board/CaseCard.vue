@@ -2,11 +2,17 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <!--
 	Workflow-board case card — a single Kanban card. Shows the case identifier,
-	truncated title, case-type chip, assignee and a deadline indicator. Emits
-	`click` (open detail), `contextMenu` (caseId, event) on right-click,
+	the deadline, the title, the case-type chip, the requester and the handler.
+	Emits `click` (open detail), `contextMenu` (caseId, event) on right-click,
 	`requestMove` (caseId) on the M key, and `toggle-select` (caseId) from its
 	selection checkbox, used by the column-scoped bulk-selection UI
 	(case-bulk-status-transition).
+
+	THE SHAPE IS THE DESIGN'S (DqWerkbord): the number and the deadline on one
+	muted line, the title in bold under it, and the requester on the left of
+	the last line with the handler's picture on the right. The case-type chip
+	stays beside the number because the merged board draws every type in one
+	column; narrowed to one type it is simply repeated.
 
 	Dragging is Sortable's, set up by BoardColumn's list: the card only carries
 	its id in `data-case-id` for the column to read off the dragged element,
@@ -66,14 +72,6 @@
 			<span v-if="caseTypeName" class="case-card__type">{{
 				caseTypeName
 			}}</span>
-		</div>
-		<p class="case-card__title">
-			{{ caseItem.title || '—' }}
-		</p>
-		<div class="case-card__footer">
-			<span class="case-card__assignee">
-				{{ caseItem.assignee || t('dossiq', 'Unassigned') }}
-			</span>
 			<span
 				v-if="deadlineLabel"
 				class="case-card__deadline"
@@ -81,17 +79,38 @@
 				{{ deadlineLabel }}
 			</span>
 		</div>
+		<!-- Not a paragraph: the NL Design paragraph sheet sets a paragraph's
+			weight, and the title is bold (DqWerkbord). -->
+		<div class="case-card__title">
+			{{ caseItem.title || '—' }}
+		</div>
+		<div class="case-card__footer">
+			<span class="case-card__requester">
+				{{ requesterLabel }}
+			</span>
+			<NcAvatar
+				v-if="caseItem.assignee"
+				class="case-card__assignee"
+				:user="caseItem.assignee"
+				:size="26"
+				:disableMenu="true"
+				:disableTooltip="false" />
+			<span v-else class="case-card__assignee case-card__assignee--none">
+				{{ t('dossiq', 'Unassigned') }}
+			</span>
+		</div>
 	</div>
 </template>
 
 <script>
-import { NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { NcAvatar, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { cardDueSeverity } from '../../utils/cardDueSeverity.js'
 import { getDaysRemaining } from '../../utils/caseHelpers.js'
 
 export default {
 	name: 'CaseCard',
 	components: {
+		NcAvatar,
 		NcCheckboxRadioSwitch,
 	},
 
@@ -101,7 +120,7 @@ export default {
 	},
 
 	props: {
-		/** The case object: { id, identifier, title, caseType, assignee, deadline }. */
+		/** The case object: { id, identifier, title, caseType, assignee, deadline, initiatorDisplayName }. */
 		caseItem: { type: Object, required: true },
 		/** Resolved case-type display name (parent resolves from the type map). */
 		caseTypeName: { type: String, default: '' },
@@ -156,6 +175,23 @@ export default {
 					title: this.caseItem.title || '',
 				},
 			)
+		},
+
+		/**
+		 * Who asked for the case, as the case carries it (the materialised
+		 * `initiatorDisplayName`), or the handler's id when the case names no
+		 * requester, so the line is never empty.
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		requesterLabel() {
+			const requester = this.caseItem.initiatorDisplayName
+			if (typeof requester === 'string' && requester.trim() !== '') {
+				return requester
+			}
+			return this.caseItem.assignee || this.t('dossiq', 'Unassigned')
 		},
 
 		/**
@@ -216,8 +252,8 @@ export default {
 	background: var(--color-main-background);
 	border: 1px solid var(--color-border);
 	border-left: 3px solid var(--color-border);
-	border-radius: var(--border-radius);
-	padding: 10px 12px;
+	border-radius: var(--border-radius-large, var(--border-radius));
+	padding: 12px 14px;
 	margin-bottom: 8px;
 	cursor: grab;
 	/* A button, and Sortable's pointer drag would otherwise select its text. */
@@ -263,17 +299,17 @@ export default {
 
 .case-card__header {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
 	gap: 8px;
-	margin-bottom: 4px;
+	margin-bottom: 6px;
 	/* Space for the absolutely-positioned .case-card__select checkbox. */
-	padding-left: 26px;
+	padding-inline-start: 26px;
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
 }
 
 .case-card__identifier {
-	font-weight: bold;
-	font-size: 12px;
+	white-space: nowrap;
 }
 
 .case-card__type {
@@ -285,12 +321,22 @@ export default {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 50%;
+	min-width: 0;
+}
+
+.case-card__deadline {
+	margin-inline-start: auto;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
 }
 
 .case-card__title {
-	font-size: 13px;
-	margin: 0 0 6px;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--color-main-text);
+	margin: 0 0 8px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	display: -webkit-box;
@@ -303,24 +349,30 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	gap: 8px;
+	min-height: 26px;
 }
 
-.case-card__assignee {
-	font-size: 12px;
+.case-card__requester {
+	font-size: 13px;
 	color: var(--color-text-maxcontrast);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.case-card__deadline {
+.case-card__assignee {
+	flex: none;
+}
+
+.case-card__assignee--none {
 	font-size: 12px;
-	font-weight: 600;
+	color: var(--color-text-maxcontrast);
 	white-space: nowrap;
 }
 
 .case-card__deadline--overdue {
 	color: var(--color-error);
+	font-weight: 700;
 }
 
 .case-card__deadline--warning {

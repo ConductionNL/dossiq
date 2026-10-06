@@ -32,6 +32,7 @@ import { saveMenuStructure } from '../../src/services/menuStructureSetting.js'
 import {
 	applyPageOverlay,
 	buildProfiledManifest,
+	overlayItemName,
 	resolveStructureProfile,
 	STRUCTURE_FULL,
 	STRUCTURE_SETTING,
@@ -196,10 +197,128 @@ describe('the simple profile', () => {
 		expect(seed).toContain(`"${woo.query.caseType}"`)
 		expect(seed).toMatch(/"slug":\s*"woo-verzoek"/)
 
-		// And the list reads that key from the address: its folder sidebar
-		// filters on `caseType`, which is what a `?caseType=` link selects.
+		// And the list reads that key from the address: the library merges the
+		// query into the fetch (useSelfFetchList.resolveQueryFilters), with or
+		// without a pane. The full profile's folder pane filters on the same
+		// key; the simple profile has no pane (the design has none) and the
+		// case type stays a column of the list.
+		const fullCases = build(fullFile).pages.find((page) => page.id === 'Cases')
+		expect(fullCases.config.folderSidebar.filterField).toBe('caseType')
 		const cases = built.pages.find((page) => page.id === 'Cases')
-		expect(cases.config.folderSidebar.filterField).toBe('caseType')
+		expect(cases.config.folderSidebar).toBeUndefined()
+		expect(
+			cases.config.columns.some(
+				(column) => overlayItemName(column) === 'caseType',
+			),
+		).toBe(true)
+	})
+
+	it('shows the instance as the brand of the navigation, without naming one', () => {
+		// The profile asks the instance's theming for the name and the logo;
+		// the app only puts its own name there.
+		expect(simpleFile.nav.brand).toEqual({
+			name: 'dossiq',
+			caption: '@theming.name',
+			logo: '@theming.emblem|@theming.logo',
+		})
+		// The set's emblem (thematiq `nldesign.logos.emblem`, the shield on
+		// DqZijbalk) wins; the wordmark stands in when a set ships none.
+		const withEmblem = buildProfiledManifest(
+			buildManifest,
+			manifest(),
+			fragments,
+			simpleFile,
+			{
+				theming: {
+					name: 'Gemeente Voorbeeld',
+					logo: '/core/img/logo.svg',
+					emblem: '/apps/thematiq/img/logos/x-emblem.svg',
+				},
+			},
+		)
+		expect(withEmblem.nav.brand.logo).toBe(
+			'/apps/thematiq/img/logos/x-emblem.svg',
+		)
+		const theming = { name: 'Gemeente Voorbeeld', logo: '/core/img/logo.svg' }
+		const withTheming = buildProfiledManifest(
+			buildManifest,
+			manifest(),
+			fragments,
+			simpleFile,
+			{ theming },
+		)
+		expect(withTheming.nav.brand).toEqual({
+			name: 'dossiq',
+			caption: 'Gemeente Voorbeeld',
+			logo: '/core/img/logo.svg',
+		})
+		// An instance that answers nothing gets no caption and no logo: the
+		// profile invents no municipality.
+		expect(built.nav.brand).toEqual({ name: 'dossiq', caption: '', logo: '' })
+		// The full profile declares no brand and gets none.
+		expect(build(fullFile).nav).toBeUndefined()
+		// main.js hands the theming capabilities over.
+		expect(mainSource).toContain(
+			"import { getCapabilities } from '@nextcloud/capabilities'",
+		)
+		expect(mainSource).toContain('theming: navTheming(getCapabilities())')
+		expect(mainSource).toContain('capabilities?.nldesign?.logos?.emblem')
+	})
+
+	it('draws the sidebar of the design: New case, two counts, the day close card and help', () => {
+		// DqZijbalk: a solid "Nieuwe zaak" button under the brand, a count
+		// beside My work and the team queue, a "Dag afsluiten" card above the
+		// footer and "Hulp en uitleg" in the footer. All are nextcloud-vue
+		// 2.64.0 opt-ins; the full profile declares none of them.
+		const manifestNewCase = manifest()
+			.pages.find((page) => page.id === 'MyWorkHome')
+			.config.headerActions.find((action) => action.id === 'new-case')
+		// The schema wants the action's own id and label as well.
+		expect(built.nav.primaryAction).toEqual({
+			label: 'New case',
+			icon: 'Plus',
+			action: { ...manifestNewCase, id: 'nav-new-case' },
+		})
+		expect(built.nav.card.link.route).toBe('EndOfDay')
+		expect(built.pages.some((page) => page.id === 'EndOfDay')).toBe(true)
+
+		// The counts use the filters of the pages they open, so the number
+		// beside an entry is the number of rows behind it.
+		const entry = (entryId) => flat(built.menu).find((item) => item.id === entryId)
+		const queuePage = built.pages.find((page) => page.id === 'Queue')
+		expect(entry('Queue').count).toEqual({
+			register: 'dossiq',
+			schema: 'case',
+			filter: queuePage.config.filter,
+		})
+		expect(entry('WorkGroup').count).toEqual({
+			register: 'dossiq',
+			schema: 'case',
+			filter: {
+				assignee: '@me',
+				isFinalStatus: false,
+				statusHiddenInLists: false,
+				isDraft: false,
+			},
+		})
+
+		// Help is the documentation link already in the footer, renamed, so
+		// the footer does not list the same page twice.
+		expect(entry('Documentation')).toMatchObject({
+			label: 'Help and explanation',
+			icon: 'HelpCircleOutline',
+			href: 'https://dossiq.conduction.nl',
+			section: 'footer',
+		})
+		expect(built.nav.help).toBeUndefined()
+		expect(iconsSource).toContain('\n\tHelpCircleOutline,\n')
+
+		const full = build(fullFile)
+		expect(full.nav).toBeUndefined()
+		expect(flat(full.menu).filter((item) => item.count !== undefined)).toEqual([])
+		expect(
+			flat(full.menu).find((item) => item.id === 'Documentation').label,
+		).toBe('Documentation')
 	})
 
 	it('moves the recycle bin, the object register and the mail intake log to settings', () => {
@@ -332,6 +451,17 @@ describe('a page overlay', () => {
 		})
 	})
 
+	it('takes a config key out when the overlay sets it to null', () => {
+		// A pane the page opts into by declaring it (the cases list's folder
+		// pane) has no "off" value in the schema; null in the overlay leaves
+		// the key out of the built page and the original alone.
+		const page = { id: 'P', config: { pane: { source: 'register' }, keep: 1 } }
+		const out = applyPageOverlay(page, { id: 'P', config: { pane: null } })
+		expect(out.config).toEqual({ keep: 1 })
+		expect('pane' in out.config).toBe(false)
+		expect(page.config.pane).toEqual({ source: 'register' })
+	})
+
 	it('patches list items by id, takes out the ones set to null, and patches before it appends', () => {
 		const page = {
 			id: 'P',
@@ -446,7 +576,7 @@ describe('the structure setting', () => {
 			'structureProfile === STRUCTURE_FULL ? menuLayoutFull : menuLayoutSimple',
 		)
 		expect(mainSource).toContain(
-			'buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout)',
+			'buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {',
 		)
 	})
 

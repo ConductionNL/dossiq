@@ -46,6 +46,7 @@ vi.mock('@nextcloud/dialogs', () => ({ showError, showWarning }))
 // collect. Listing them beats a Proxy: a new import shows up as a named
 // failure rather than a silently working stub.
 vi.mock('@nextcloud/vue', () => ({
+	NcAvatar: { name: 'NcAvatar', render: () => h('span') },
 	NcButton: { name: 'NcButton', render: () => h('button') },
 	NcLoadingIcon: { name: 'NcLoadingIcon', render: () => h('span') },
 	// The help affordance beside the subtitle. Renders its trigger and its

@@ -21,6 +21,10 @@
 	the cell re-renders in colour once the collection lands rather than
 	fetching once per row.
 
+	THE BADGE IS A TINT WITH DARK TEXT (statusBadgeStyle), not the full hue
+	with white on it: that is how the workplace boards draw a status, and it
+	keeps AA on every hue, which white on orange did not.
+
 	Colour is never the only signal: the badge always carries the status NAME
 	as text, so a reader who cannot separate two hues loses nothing
 	(WCAG 2.2 SC 1.4.1).
@@ -39,10 +43,7 @@
 
 <script>
 import { useObjectStore } from '../../store/modules/object.js'
-import {
-	normaliseStatusColour,
-	statusColourStyle,
-} from '../../utils/statusColour.js'
+import { normaliseStatusColour, statusBadgeStyle } from '../../utils/statusColour.js'
 
 export default {
 	name: 'StatusBadgeCell',
@@ -105,14 +106,14 @@ export default {
 		},
 
 		/**
-		 * The badge's inline colours.
+		 * The badge's inline colours: the hue's soft tint with its dark text.
 		 *
 		 * @return {object} A style object.
 		 *
 		 * @spec openspec/specs/case-types/spec.md
 		 */
 		style() {
-			return statusColourStyle(this.colour)
+			return statusBadgeStyle(this.colour)
 		},
 
 		/**

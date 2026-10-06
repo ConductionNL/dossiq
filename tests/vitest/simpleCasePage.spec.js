@@ -25,6 +25,7 @@ import {
 	stageEntry,
 	stageOf,
 } from '@conduction/nextcloud-vue/src/utils/detailActionModel.js'
+import { schemaRefSlug } from '@conduction/nextcloud-vue/src/utils/schemaRefSlug.js'
 import { spawnSync } from 'child_process'
 import fs from 'fs'
 import os from 'os'
@@ -363,11 +364,94 @@ describe('the tabs', () => {
 		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
 	})
 
-	it('leaves every other widget of the page as it was', () => {
+	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
+		const find = (config, id) =>
+			config.widgets.find((widget) => widget.id === id)
+		// The design draws the case's progress as a bar across the header
+		// card. The widget keeps everything but its orientation.
+		expect(find(simple, 'case-stages')).toEqual({
+			...find(original, 'case-stages'),
+			content: {
+				...find(original, 'case-stages').content,
+				orientation: 'horizontal',
+				variant: 'bars',
+				stagesEndpoint: undefined,
+				stagesSource: {
+					register: 'dossiq',
+					schema: 'statusType',
+					filter: { caseType: '@object.caseType' },
+					orderBy: 'order',
+					labelField: 'name',
+					descriptionField: 'description',
+					finalField: 'isFinal',
+					limit: 50,
+				},
+			},
+		})
+		// The blueprint endpoint the full page reads lists only the statuses a
+		// case type embeds (one, "Afgehandeld", on the seeded Woo type, seen
+		// live 6 October 2026); the statusType collection, which the board
+		// reads, holds all of them. The simple page reads that collection.
+		expect('stagesEndpoint' in find(simple, 'case-stages').content).toBe(false)
+
 		const others = (config) =>
-			config.widgets.filter((widget) => widget.id !== 'case-panels')
+			config.widgets.filter(
+				(widget) =>
+					widget.id !== 'case-panels' && widget.id !== 'case-stages',
+			)
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
+	})
+
+	it('reads the stages from a schema the register has, as the library sends it', () => {
+		// The library runs every schema name through `schemaRefSlug` before it
+		// builds the request. Up to 2.63.0 that kebab-cased a slug as well:
+		// `statusType` went out as `/objects/dossiq/status-type` and answered
+		// 404 on :8080 (6 October 2026), so the widget said "Could not load the
+		// stages". nextcloud-vue 2.64.0 (#1337) passes a camelCase slug through
+		// unchanged. This asks the library's own rule, so a name it would
+		// rewrite cannot pass, whichever version is installed.
+		const source = simple.widgets.find((widget) => widget.id === 'case-stages').content.stagesSource
+		const sent = schemaRefSlug(source.schema)
+		expect(sent).toBe(source.schema)
+		const slugs = Object.entries(register.components.schemas).map(
+			([key, schema]) => String(schema.slug || key),
+		)
+		const named = slugs.find((slug) => slug.toLowerCase() === sent.toLowerCase())
+		expect(named).toBe('statusType')
+		expect(Object.keys(register.components.registers)).toContain(source.register)
+
+		// Every field the source reads is a field the schema carries.
+		const fields = Object.keys(register.components.schemas[named].properties)
+		for (const field of [
+			...Object.keys(source.filter),
+			source.orderBy,
+			source.labelField,
+			source.descriptionField,
+			source.finalField,
+		]) {
+			expect(fields).toContain(field)
+		}
+	})
+
+	it('draws the progress as bars and the tabs as a segmented control, with a way back to the list', () => {
+		// DqZaak draws one bar per step with the label under it, the tab strip
+		// as a segmented control, and "All cases / <number>" above the card
+		// instead of a CASE eyebrow. All three are nextcloud-vue 2.64.0 opt-ins,
+		// so the full profile keeps drawing what it drew.
+		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
+		expect(find(simple, 'case-stages').content.variant).toBe('bars')
+		expect(find(original, 'case-stages').content.variant).toBeUndefined()
+		expect(find(simple, 'case-panels').content.variant).toBe('segmented')
+		expect(find(original, 'case-panels').content.variant).toBeUndefined()
+		expect(simple.showTypeEyebrow).toBe(false)
+		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases' })
+		expect(original.showTypeEyebrow).toBeUndefined()
+		expect(original.breadcrumb).toBeUndefined()
+		expect(casePage(simpleFile).route).toBeDefined()
+		expect(
+			build(simpleFile).pages.some((page) => page.id === simple.breadcrumb.route),
+		).toBe(true)
 	})
 
 	it('takes the three tiles out of the grid and keeps every other card where it was', () => {
@@ -381,12 +465,44 @@ describe('the tabs', () => {
 		)
 		for (const entry of simple.layout) {
 			const was = original.layout.find((item) => item.id === entry.id)
+			if (entry.id === '3') {
+				// The stages take the tile row, full width, above the tabs: the
+				// design draws the progress bar first (DqZaak).
+				expect(entry).toEqual({
+					...was,
+					gridX: 0,
+					gridY: 0,
+					gridWidth: 12,
+					gridHeight: 2,
+					showTitle: false,
+				})
+				continue
+			}
 			if (entry.id === '6') {
-				// Hours booked had the last quarter of the tile row. It takes the row.
-				expect(entry).toEqual({ ...was, gridX: 0, gridWidth: 12 })
+				// Hours booked moves to where the stages were, beside the tabs.
+				expect(entry).toEqual({
+					...was,
+					gridX: 9,
+					gridY: 4,
+					gridWidth: 3,
+					gridHeight: 2,
+				})
 				continue
 			}
 			expect(entry, entry.id).toEqual(was)
+		}
+		// No two cards share a cell.
+		const cells = new Set()
+		for (const entry of simple.layout) {
+			for (let x = entry.gridX; x < entry.gridX + entry.gridWidth; x++) {
+				for (let y = entry.gridY; y < entry.gridY + entry.gridHeight; y++) {
+					expect(
+						cells.has(`${x}:${y}`),
+						`${entry.widgetId} at ${x}:${y}`,
+					).toBe(false)
+					cells.add(`${x}:${y}`)
+				}
+			}
 		}
 		// None of the three is lost: the number is the pill above the title,
 		// the deadline is the first card of the side column, and neither

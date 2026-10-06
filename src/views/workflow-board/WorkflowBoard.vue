@@ -35,7 +35,7 @@
 		:class="{ 'workflow-board--dragging': drag !== null }">
 		<div class="workflow-board__header">
 			<div>
-				<h2>{{ t('dossiq', 'Workflow Board') }}</h2>
+				<h2 class="workflow-board__title">{{ boardTitle }}</h2>
 				<p class="workflow-board__subtitle">
 					{{
 						t(
@@ -88,11 +88,30 @@
 					</NcPopover>
 				</p>
 			</div>
-			<NcButton
-				variant="tertiary"
-				@click="$router.push({ name: 'Dashboard' })">
-				{{ t('dossiq', 'Dashboard') }}
-			</NcButton>
+			<div class="workflow-board__header-actions">
+				<!-- The design (DqWerkbord) draws one case type at a time: its
+					statuses as the columns, its cases on them. Empty, the board
+					is the merged one it always was. -->
+				<label class="workflow-board__case-type">
+					<span class="workflow-board__case-type-label">{{
+						t('dossiq', 'Case type')
+					}}</span>
+					<NcSelect
+						v-model="caseTypeFilter"
+						:ariaLabelCombobox="t('dossiq', 'Case type')"
+						:options="caseTypeOptions"
+						:placeholder="t('dossiq', 'All case types')"
+						:clearable="true"
+						label="label"
+						class="workflow-board__case-type-select"
+						data-testid="workflow-board-case-type" />
+				</label>
+				<NcButton
+					variant="tertiary"
+					@click="$router.push({ name: 'Dashboard' })">
+					{{ t('dossiq', 'Dashboard') }}
+				</NcButton>
+			</div>
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" class="workflow-board__loading" />
@@ -146,17 +165,17 @@
 				role="region"
 				:aria-label="t('dossiq', 'Workflow board columns')">
 				<BoardColumn
-					v-for="col in columns"
+					v-for="col in visibleColumns"
 					:key="col.id"
 					:statusType="col"
-					:cases="casesByStatus[col.id] || []"
+					:cases="visibleCasesByStatus[col.id] || []"
 					:caseTypeMap="caseTypeMap"
 					:loading="false"
 					:selectedCaseIds="selection.caseIds.map((id) => String(id))"
 					:selectionColumnId="selection.columnId"
 					:dropState="dropStateFor(col.id)"
 					:canDrop="canDropInto"
-					@update:cases="(list) => (casesByStatus[col.id] = list)"
+					@update:cases="(list) => onColumnCases(col.id, list)"
 					@cardDropped="onCardDropped"
 					@clickCase="goToCase"
 					@contextMenu="onCardContextMenu"
@@ -197,7 +216,7 @@ import { CnContextMenu, useContextMenu } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { showError, showWarning } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
-import { NcButton, NcLoadingIcon, NcPopover } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcPopover, NcSelect } from '@nextcloud/vue'
 import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
 import HelpCircleOutline from 'vue-material-design-icons/HelpCircleOutline.vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
@@ -205,6 +224,7 @@ import MoveCaseDialog from '../../dialogs/MoveCaseDialog.vue'
 import BoardColumn from './BoardColumn.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
+import { mergeColumnBack, narrowBoard } from '../../utils/boardCaseTypeFilter.js'
 import {
 	clearSelection,
 	emptySelection,
@@ -238,6 +258,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		NcPopover,
+		NcSelect,
 	},
 
 	/**
@@ -269,6 +290,13 @@ export default {
 			columns: [],
 			/** Map of column name → array of open cases whose status has that name. */
 			casesByStatus: {},
+			/**
+			 * The case type the board is narrowed to (`{ id, label }` from
+			 * `caseTypeOptions`), or null for the merged board. Starts from
+			 * `?caseType=` in the address, the key the Woo requests menu entry
+			 * and the cases list already carry.
+			 */
+			caseTypeFilter: null,
 			/** Map of caseType id → display name. */
 			caseTypeMap: {},
 			/** Map of statusType id → the statusType object. */
@@ -316,6 +344,71 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * The case types a handler can narrow the board to, by name.
+		 *
+		 * @return {Array<{id: string, label: string}>}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		caseTypeOptions() {
+			return Object.entries(this.caseTypeMap)
+				.map(([id, label]) => ({ id, label: label || id }))
+				.sort((a, b) => a.label.localeCompare(b.label))
+		},
+
+		/**
+		 * The title: the board of one case type when narrowed, as the design
+		 * names it ("Werkbord Woo-verzoeken"), else the board.
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		boardTitle() {
+			return this.caseTypeFilter?.label
+				? this.t('dossiq', '{type} board', {
+						type: this.caseTypeFilter.label,
+					})
+				: this.t('dossiq', 'Workflow Board')
+		},
+
+		/**
+		 * The merged board narrowed to the chosen case type: its non-final
+		 * statuses as columns, its cases on them. Drag, drop and move keep
+		 * reading the merged `columns` and `casesByStatus` underneath.
+		 *
+		 * @return {{columns: Array<object>, casesByStatus: {[key: string]: Array<object>}}}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		narrowedBoard() {
+			return narrowBoard({
+				columns: this.columns,
+				casesByStatus: this.casesByStatus,
+				statusTypes: Object.values(this.statusById),
+				caseType: this.caseTypeFilter?.id ?? '',
+			})
+		},
+
+		/**
+		 * @return {Array<object>} The columns to draw.
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		visibleColumns() {
+			return this.narrowedBoard.columns
+		},
+
+		/**
+		 * @return {{[key: string]: Array<object>}} The cases to draw, per column.
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		visibleCasesByStatus() {
+			return this.narrowedBoard.casesByStatus
+		},
+
 		/**
 		 * The object store the board reads its cases and status types from.
 		 *
@@ -371,7 +464,14 @@ export default {
 		},
 	},
 
-	// @spec exclude Boot-order guard (register OR object types before fetch); no spec scenario.
+	/**
+	 * Register the OR object types, load the board, then read the case type
+	 * the address names.
+	 *
+	 * @return {Promise<void>}
+	 *
+	 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+	 */
 	async mounted() {
 		// Register the OR object types before fetching — this page may mount
 		// (via direct navigation) before the app-boot initializeStores() has
@@ -379,6 +479,14 @@ export default {
 		await initializeStores()
 		await this.fetchData()
 		this.syncLiveSubscription()
+		// `?caseType=<id>` narrows the board from the start, the same key the
+		// cases list reads from its address. An id no case type has is ignored.
+		const fromAddress = this.$route?.query?.caseType
+		if (typeof fromAddress === 'string' && fromAddress !== '') {
+			this.caseTypeFilter =
+				this.caseTypeOptions.find((option) => option.id === fromAddress)
+				?? null
+		}
 	},
 
 	/**
@@ -1162,6 +1270,25 @@ export default {
 		},
 
 		/**
+		 * A column's list came back from the drawn board (a reorder or a
+		 * drop). Narrowed, the list holds one case type: the other types'
+		 * cases in that column must stay.
+		 *
+		 * @param {string} columnId The column (status name).
+		 * @param {Array<object>} list The column's list as drawn.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		onColumnCases(columnId, list) {
+			this.casesByStatus[columnId] = mergeColumnBack(
+				this.casesByStatus[columnId] || [],
+				list,
+				this.caseTypeFilter?.id ?? '',
+			)
+		},
+
+		/**
 		 * Toggle a case's bulk-selection membership, scoped to its column.
 		 * Selecting in a different column than the current selection resets
 		 * the selection to only the newly selected case.
@@ -1237,13 +1364,20 @@ export default {
 	display: flex;
 	flex: 0 0 auto;
 	justify-content: space-between;
-	align-items: flex-start;
+	align-items: flex-end;
 	margin-bottom: 16px;
 	gap: 16px;
+	/* Nextcloud's navigation toggle sits over the top-left corner of the
+	   content. The library's page headers clear it with 56px; the board
+	   pads 16px itself, so the header adds the other 40. */
+	padding-inline-start: 40px;
 }
 
-.workflow-board__header h2 {
+.workflow-board__title {
 	margin: 0;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 1.2;
 }
 
 .workflow-board__subtitle {
@@ -1253,7 +1387,25 @@ export default {
 	gap: 0 8px;
 	margin: 4px 0 0;
 	color: var(--color-text-maxcontrast);
-	font-size: 13px;
+	font-size: 15px;
+}
+
+.workflow-board__header-actions {
+	display: flex;
+	align-items: flex-end;
+	gap: 8px;
+	flex: 0 0 auto;
+}
+
+.workflow-board__case-type {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+}
+
+.workflow-board__case-type-select {
+	min-width: 240px;
 }
 
 .workflow-board__help {
