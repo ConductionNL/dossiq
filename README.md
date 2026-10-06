@@ -257,6 +257,30 @@ Full documentation is available at **[conduction.nl](https://conduction.nl)**
 | [Architecture](docs/Technical/architecture.md) | Technical architecture and design decisions |
 | [Development](docs/Technical/development-guide.md) | Developer setup and contribution guide |
 
+<!-- discovery:start -->
+## Standards & federation
+
+| Standard | Role | Access |
+|---|---|---|
+| [ZGW Zaken API (ZRC)](https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/) | Provides | Token, no login |
+| [ZGW Documenten API (DRC)](https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/) | Provides | Token, no login |
+| [ZGW Catalogi API (ZTC)](https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/) | Provides | Token, no login |
+| [ZGW Besluiten API (BRC)](https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/) | Provides | Token, no login |
+| [ZGW Notificaties API (NRC)](https://vng-realisatie.github.io/gemma-zaken/standaard/notificaties/) | Provides | Token, no login |
+| [ZGW Autorisaties API (AC)](https://vng-realisatie.github.io/gemma-zaken/standaard/autorisaties/) | Provides | Token, no login |
+| [OpenAPI documents of the ZGW APIs](https://spec.openapis.org/oas/v3.0.3) 3.0 | Provides | Public |
+| StUF-ZKN (SOAP) case messages | Provides | Token, no login |
+| StUF-ZKN vrijBericht to an external zaaksysteem | Uses | — |
+| StUF-BG (SOAP) person messages | Provides | Token, no login |
+| [Haal Centraal BRP Personen bevragen](https://brp-api.github.io/Haal-Centraal-BRP-bevragen/) | Uses | — |
+| [BAG API Individuele Bevragingen](https://lvbag.github.io/BAG-API/) 2 | Uses | — |
+| Haal Centraal BRK Bevragen 2 | Uses | — |
+| [Haal Centraal WOZ Bevragen](https://kadaster.github.io/WOZ-bevragen/) | Uses | — |
+| [KvK Handelsregister API](https://developers.kvk.nl/) | Uses | — |
+
+Other servers can read this list without logging in, from the Nextcloud capabilities endpoint (published by OpenRegister). Details, federation and admin switches: [docs/standards-and-federation.md](docs/standards-and-federation.md).
+<!-- discovery:end -->
+
 ## Standards & Compliance
 
 - **Data standard:** CMMN 1.1 (OMG Case Management specification)

@@ -7662,5 +7662,126 @@
 			"urlTemplate": "/apps/dossiq/organisations/{uuid}",
 			"displayName": "Organisation"
 		}
-	]
+	],
+	"discovery": {
+		"public": true,
+		"standards": [
+			{
+				"id": "zgw-zaken",
+				"name": "ZGW Zaken API (ZRC)",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/zgw/zaken/v1",
+				"specUrl": "https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/"
+			},
+			{
+				"id": "zgw-documenten",
+				"name": "ZGW Documenten API (DRC)",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/zgw/documenten/v1",
+				"specUrl": "https://vng-realisatie.github.io/gemma-zaken/standaard/documenten/"
+			},
+			{
+				"id": "zgw-catalogi",
+				"name": "ZGW Catalogi API (ZTC)",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/zgw/catalogi/v1",
+				"specUrl": "https://vng-realisatie.github.io/gemma-zaken/standaard/catalogi/"
+			},
+			{
+				"id": "zgw-besluiten",
+				"name": "ZGW Besluiten API (BRC)",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/zgw/besluiten/v1",
+				"specUrl": "https://vng-realisatie.github.io/gemma-zaken/standaard/besluiten/"
+			},
+			{
+				"id": "zgw-notificaties",
+				"name": "ZGW Notificaties API (NRC)",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/zgw/notificaties/v1",
+				"specUrl": "https://vng-realisatie.github.io/gemma-zaken/standaard/notificaties/"
+			},
+			{
+				"id": "zgw-autorisaties",
+				"name": "ZGW Autorisaties API (AC)",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/zgw/autorisaties/v1",
+				"specUrl": "https://vng-realisatie.github.io/gemma-zaken/standaard/autorisaties/"
+			},
+			{
+				"id": "openapi",
+				"name": "OpenAPI documents of the ZGW APIs",
+				"version": "3.0",
+				"role": "provides",
+				"access": "public",
+				"endpoint": "/apps/dossiq/api/zgw/openapi",
+				"specUrl": "https://spec.openapis.org/oas/v3.0.3"
+			},
+			{
+				"id": "stuf-zkn",
+				"name": "StUF-ZKN (SOAP) case messages",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/stuf/cases"
+			},
+			{
+				"id": "stuf-zkn",
+				"name": "StUF-ZKN vrijBericht to an external zaaksysteem",
+				"role": "consumes",
+				"access": "authenticated"
+			},
+			{
+				"id": "stuf-bg",
+				"name": "StUF-BG (SOAP) person messages",
+				"role": "provides",
+				"access": "token",
+				"endpoint": "/apps/dossiq/api/stuf/persons"
+			},
+			{
+				"id": "haal-centraal-brp",
+				"name": "Haal Centraal BRP Personen bevragen",
+				"role": "consumes",
+				"access": "authenticated",
+				"specUrl": "https://brp-api.github.io/Haal-Centraal-BRP-bevragen/"
+			},
+			{
+				"id": "bag",
+				"name": "BAG API Individuele Bevragingen",
+				"version": "2",
+				"role": "consumes",
+				"access": "authenticated",
+				"specUrl": "https://lvbag.github.io/BAG-API/"
+			},
+			{
+				"id": "haal-centraal-brk",
+				"name": "Haal Centraal BRK Bevragen",
+				"version": "2",
+				"role": "consumes",
+				"access": "authenticated"
+			},
+			{
+				"id": "haal-centraal-woz",
+				"name": "Haal Centraal WOZ Bevragen",
+				"role": "consumes",
+				"access": "authenticated",
+				"specUrl": "https://kadaster.github.io/WOZ-bevragen/"
+			},
+			{
+				"id": "kvk",
+				"name": "KvK Handelsregister API",
+				"role": "consumes",
+				"access": "authenticated",
+				"specUrl": "https://developers.kvk.nl/"
+			}
+		],
+		"links": {
+			"openapi": "/apps/dossiq/api/zgw/openapi"
+		}
+	}
 }
