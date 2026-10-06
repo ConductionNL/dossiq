@@ -314,10 +314,10 @@ test.describe('New case dialog', () => {
 
 		await dialog.getByRole('button', { name: 'Create' }).click()
 
-		// The case exists, and so does the answer, as a caseProperty row that
-		// points at both the case and the definition. An unsplit payload would
-		// have posted the answer to `case`, where OpenRegister drops an
-		// undeclared key with a 200 and no error anywhere.
+		// The case exists, and so does the answer, as an entry in the case's
+		// own `properties` array that names the definition. A dynamic key would
+		// have been posted beside the case's declared properties, where
+		// OpenRegister drops an undeclared key with a 200 and no error anywhere.
 		await expect(async () => {
 			const cases = await listObjects(api, 'case', { _limit: '200' })
 			const created = cases.find((c) => String(c.title ?? '') === title)

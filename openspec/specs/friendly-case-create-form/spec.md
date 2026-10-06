@@ -36,7 +36,7 @@ A property that carries an `order`, or that a manifest `include`/`columns` list 
 
 ### Requirement: REQ-FCF-003 A Case Type Brings Its Own Questions
 
-`case.caseType` SHALL declare `x-openregister-extends-form`, naming `propertyDefinition` as the definitions schema filtered by the chosen case type, and `caseProperty` as the values schema keyed `case` / `propertyDefinition` / `value`.
+`case.caseType` SHALL declare `x-openregister-extends-form`, naming `propertyDefinition` as the definitions schema filtered by the chosen case type, and storing the values in `mode: array` on the case's own `properties` array (`arrayKey: properties`), each entry keyed `propertyDefinition` / `name` / `value`.
 
 When a case type is chosen, the form SHALL render one field per property definition of that type, each with the widget its declared `propertyType` implies and its `defaultValue` seeded. A definition name that is identifier-shaped SHALL be rendered in sentence case, keeping acronyms whole; a name containing a space SHALL be shown exactly as it was typed. Changing the case type SHALL drop the previous type's answers. Answers SHALL be written into the case's own `properties` array, in the same write that creates the case, each entry naming the definition it answers, that definition's name and the value. An answer SHALL NOT be written as a dynamic key beside the case's declared properties, where OpenRegister drops an undeclared key with a 200 and no error anywhere.
 
