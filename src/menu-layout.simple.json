@@ -112,6 +112,13 @@
 			"order": 44
 		}
 	],
+	"nav": {
+		"brand": {
+			"name": "dossiq",
+			"caption": "@theming.name",
+			"logo": "@theming.logo"
+		}
+	},
 	"pages": [
 		{
 			"id": "MyWorkHome",
@@ -385,6 +392,26 @@
 					}
 				},
 				"widgets": {
+					"case-stages": {
+						"content": {
+							"currentField": "status",
+							"orientation": "horizontal",
+							"size": "small",
+							"ariaLabel": "Case progress",
+							"stagesEndpoint": {
+								"url": "/apps/dossiq/api/case-types/@object.caseType/blueprint",
+								"path": "statusTypes",
+								"labelField": "name",
+								"descriptionField": "description",
+								"orderField": "order",
+								"finalField": "isFinal"
+							},
+							"transition": {
+								"kind": "lifecycle"
+							},
+							"unreachableReason": "Not possible from the current status"
+						}
+					},
 					"case-panels": {
 						"content": {
 							"ariaLabel": "Case details",
@@ -459,9 +486,18 @@
 					"kpi-1": null,
 					"kpi-2": null,
 					"kpi-5": null,
-					"6": {
+					"3": {
 						"gridX": 0,
-						"gridWidth": 12
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
+					},
+					"6": {
+						"gridX": 9,
+						"gridY": 4,
+						"gridWidth": 3,
+						"gridHeight": 2
 					}
 				}
 			}
@@ -535,17 +571,17 @@
 						"widgetId": "simple-week",
 						"gridX": 0,
 						"gridY": 6,
-						"gridWidth": 12,
+						"gridWidth": 8,
 						"gridHeight": 4,
 						"showTitle": true
 					},
 					{
 						"id": "s8",
 						"widgetId": "simple-my-tasks",
-						"gridX": 0,
-						"gridY": 13,
-						"gridWidth": 12,
-						"gridHeight": 5,
+						"gridX": 8,
+						"gridY": 6,
+						"gridWidth": 4,
+						"gridHeight": 12,
 						"showTitle": true
 					},
 					{
@@ -553,8 +589,17 @@
 						"widgetId": "simple-per-step",
 						"gridX": 0,
 						"gridY": 10,
-						"gridWidth": 12,
+						"gridWidth": 8,
 						"gridHeight": 3,
+						"showTitle": true
+					},
+					{
+						"id": "s10",
+						"widgetId": "simple-continue",
+						"gridX": 0,
+						"gridY": 13,
+						"gridWidth": 8,
+						"gridHeight": 5,
 						"showTitle": true
 					},
 					{
@@ -708,10 +753,53 @@
 								},
 								{
 									"label": "Open the board",
-									"route": "WorkflowBoard"
+									"route": "WorkflowBoard",
+									"primary": true
 								}
 							],
 							"text": "Cases past their deadline"
+						}
+					},
+					{
+						"id": "simple-continue",
+						"type": "object-table",
+						"title": "Continue working",
+						"content": {
+							"source": {
+								"register": "dossiq",
+								"schema": "case",
+								"filter": {
+									"_recent": true
+								},
+								"limit": 3
+							},
+							"columns": [
+								{
+									"key": "title",
+									"cellClass": "cn-cell--strong"
+								},
+								{
+									"key": "identifier",
+									"cellClass": "cn-cell--muted"
+								},
+								{
+									"key": "status",
+									"label": "Status",
+									"formatter": "statusTypeName",
+									"widget": "statusBadge"
+								}
+							],
+							"rowRoute": "CaseDetail",
+							"viewAllRoute": {
+								"name": "Cases",
+								"query": {
+									"_recent": "true"
+								}
+							},
+							"viewAllLabel": "View all",
+							"hideHeader": true,
+							"borderless": true,
+							"emptyText": "Cases you open show up here"
 						}
 					},
 					{
@@ -949,6 +1037,7 @@
 			"_note": "The cases list in the simple structure (openspec/changes/simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day it ends (`lte 0`), the same rule the board uses.",
 			"config": {
 				"quickFilterMaxVisible": 5,
+				"folderSidebar": null,
 				"columns": [
 					"identifier",
 					"title",

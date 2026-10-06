@@ -34,6 +34,7 @@ const { showError, showWarning, saveObject, fetchCollection } = vi.hoisted(() =>
 vi.mock('@nextcloud/dialogs', () => ({ showError, showWarning }))
 
 vi.mock('@nextcloud/vue', () => ({
+	NcAvatar: { name: 'NcAvatar', render: () => h('span') },
 	NcButton: { name: 'NcButton', render: () => h('button') },
 	NcLoadingIcon: { name: 'NcLoadingIcon', render: () => h('span') },
 	NcPopover: {

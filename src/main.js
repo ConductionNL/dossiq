@@ -15,6 +15,7 @@ import {
 } from '@conduction/nextcloud-vue'
 // @vue/compat REMOVED (ADR-066 task 6.1): lib + dossiq source are compat-
 // construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
+import { getCapabilities } from '@nextcloud/capabilities'
 import { loadState } from '@nextcloud/initial-state'
 import {
 	loadTranslations,
@@ -198,8 +199,13 @@ const structureProfile = resolveStructureProfile(
 )
 const menuLayout =
 	structureProfile === STRUCTURE_FULL ? menuLayoutFull : menuLayoutSimple
+// The simple profile's brand block names the instance through its theming
+// capabilities (`@theming.name`, `@theming.logo`), so the navigation shows the
+// municipality the instance belongs to without the app naming one.
 const builtManifest = markRaw({
-	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout),
+	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {
+		theming: getCapabilities()?.theming ?? null,
+	}),
 	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
 })
 

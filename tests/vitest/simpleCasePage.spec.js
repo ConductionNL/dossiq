@@ -363,9 +363,23 @@ describe('the tabs', () => {
 		expect(widgetIds(strip)).toEqual(widgetIds(tabsOf(original)))
 	})
 
-	it('leaves every other widget of the page as it was', () => {
+	it('turns the stages horizontal and leaves every other widget of the page as it was', () => {
+		const find = (config, id) =>
+			config.widgets.find((widget) => widget.id === id)
+		// The design draws the case's progress as a bar across the header
+		// card. The widget keeps everything but its orientation.
+		expect(find(simple, 'case-stages')).toEqual({
+			...find(original, 'case-stages'),
+			content: {
+				...find(original, 'case-stages').content,
+				orientation: 'horizontal',
+			},
+		})
 		const others = (config) =>
-			config.widgets.filter((widget) => widget.id !== 'case-panels')
+			config.widgets.filter(
+				(widget) =>
+					widget.id !== 'case-panels' && widget.id !== 'case-stages',
+			)
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})
@@ -381,12 +395,44 @@ describe('the tabs', () => {
 		)
 		for (const entry of simple.layout) {
 			const was = original.layout.find((item) => item.id === entry.id)
+			if (entry.id === '3') {
+				// The stages take the tile row, full width, above the tabs: the
+				// design draws the progress bar first (DqZaak).
+				expect(entry).toEqual({
+					...was,
+					gridX: 0,
+					gridY: 0,
+					gridWidth: 12,
+					gridHeight: 2,
+					showTitle: false,
+				})
+				continue
+			}
 			if (entry.id === '6') {
-				// Hours booked had the last quarter of the tile row. It takes the row.
-				expect(entry).toEqual({ ...was, gridX: 0, gridWidth: 12 })
+				// Hours booked moves to where the stages were, beside the tabs.
+				expect(entry).toEqual({
+					...was,
+					gridX: 9,
+					gridY: 4,
+					gridWidth: 3,
+					gridHeight: 2,
+				})
 				continue
 			}
 			expect(entry, entry.id).toEqual(was)
+		}
+		// No two cards share a cell.
+		const cells = new Set()
+		for (const entry of simple.layout) {
+			for (let x = entry.gridX; x < entry.gridX + entry.gridWidth; x++) {
+				for (let y = entry.gridY; y < entry.gridY + entry.gridHeight; y++) {
+					expect(
+						cells.has(`${x}:${y}`),
+						`${entry.widgetId} at ${x}:${y}`,
+					).toBe(false)
+					cells.add(`${x}:${y}`)
+				}
+			}
 		}
 		// None of the three is lost: the number is the pill above the title,
 		// the deadline is the first card of the side column, and neither

@@ -186,9 +186,27 @@ describe('the cases list', () => {
 		])
 	})
 
+	it('drops the case type pane the design has none of, and keeps the case type a column', () => {
+		// The full list opens with a folder pane of case types on the left.
+		// The design draws the list without it: the case type is a column, a
+		// view (Woo requests) and the `?caseType=` the menu entry carries,
+		// which the library merges into the fetch with or without a pane.
+		expect(before.folderSidebar.filterField).toBe('caseType')
+		expect(simple.folderSidebar).toBeUndefined()
+		expect(page(builtFull, 'Cases').config.folderSidebar).toEqual(
+			before.folderSidebar,
+		)
+		expect(simple.columns.some((column) => column.key === 'caseType')).toBe(true)
+	})
+
 	it('touches nothing else on the list', () => {
-		const rest = ({ quickFilters, quickFilterMaxVisible, columns, ...others }) =>
-			others
+		const rest = ({
+			quickFilters,
+			quickFilterMaxVisible,
+			columns,
+			folderSidebar,
+			...others
+		}) => others
 		expect(rest(simple)).toEqual(rest(before))
 	})
 })
@@ -239,7 +257,7 @@ describe('the dashboard', () => {
 	const before = original('Dashboard')
 	const widget = (id) => simple.config.widgets.find((item) => item.id === id)
 
-	it('puts the design first: greeting, first today, four counts, the week, the steps, my tasks', () => {
+	it('puts the design first: greeting, first today, four counts, then two columns', () => {
 		const top = simple.config.layout
 			.filter((entry) => entry.gridY < 18)
 			.sort((a, b) => a.gridY - b.gridY || a.gridX - b.gridX)
@@ -252,17 +270,27 @@ describe('the dashboard', () => {
 			'simple-waiting',
 			'simple-closed-month',
 			'simple-week',
-			'simple-per-step',
 			'simple-my-tasks',
+			'simple-per-step',
+			'simple-continue',
 		])
-		// Each of the three takes the full width: side by side at 1440 px the
-		// Friday column and the Days left column were cut off.
-		for (const id of ['simple-week', 'simple-per-step', 'simple-my-tasks']) {
-			expect(
-				simple.config.layout.find((entry) => entry.widgetId === id)
-					.gridWidth,
-			).toBe(12)
+		// The design (DqDashboard) draws two columns under the counts: the
+		// week, the steps and "continue working" take two thirds on the left,
+		// my tasks the right third beside all three.
+		const entry = (id) =>
+			simple.config.layout.find((item) => item.widgetId === id)
+		for (const id of ['simple-week', 'simple-per-step', 'simple-continue']) {
+			expect(entry(id).gridX, id).toBe(0)
+			expect(entry(id).gridWidth, id).toBe(8)
 		}
+		expect(entry('simple-my-tasks')).toMatchObject({
+			gridX: 8,
+			gridY: 6,
+			gridWidth: 4,
+		})
+		expect(
+			entry('simple-my-tasks').gridY + entry('simple-my-tasks').gridHeight,
+		).toBe(entry('simple-continue').gridY + entry('simple-continue').gridHeight)
 		expect(widget('simple-greeting').content).toEqual({
 			greeting: true,
 			showDate: true,
@@ -278,7 +306,32 @@ describe('the dashboard', () => {
 			const now = simple.config.layout.find((entry) => entry.id === was.id)
 			expect(now, was.widgetId).toEqual({ ...was, gridY: was.gridY + 18 })
 		}
-		expect(simple.config.layout).toHaveLength(before.config.layout.length + 9)
+		expect(simple.config.layout).toHaveLength(before.config.layout.length + 10)
+	})
+
+	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {
+		// "Verder werken" on the design: the cases this reader opened last.
+		// OpenRegister's `_recent` lens carries its own order, so the widget
+		// declares none, exactly like the full dashboard's Recently opened.
+		const recent = widget('recent-cases')
+		const mine = widget('simple-continue')
+		expect(mine.type).toBe('object-table')
+		expect(mine.content.source).toEqual({ ...recent.content.source, limit: 3 })
+		expect(mine.content.rowRoute).toBe('CaseDetail')
+		expect(mine.content.viewAllRoute).toEqual(recent.content.viewAllRoute)
+		expect(mine.content.columns.map((column) => column.key)).toEqual([
+			'title',
+			'identifier',
+			'status',
+		])
+	})
+
+	it('makes "Open the board" the primary action of First today, as the design draws it', () => {
+		const actions = widget('simple-first-today').content.actions
+		expect(actions.map((action) => action.primary === true)).toEqual([
+			false,
+			true,
+		])
 	})
 
 	it('places every widget it adds, on a grid where no two cards overlap', () => {

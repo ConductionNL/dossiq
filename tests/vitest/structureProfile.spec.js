@@ -32,6 +32,7 @@ import { saveMenuStructure } from '../../src/services/menuStructureSetting.js'
 import {
 	applyPageOverlay,
 	buildProfiledManifest,
+	overlayItemName,
 	resolveStructureProfile,
 	STRUCTURE_FULL,
 	STRUCTURE_SETTING,
@@ -196,10 +197,53 @@ describe('the simple profile', () => {
 		expect(seed).toContain(`"${woo.query.caseType}"`)
 		expect(seed).toMatch(/"slug":\s*"woo-verzoek"/)
 
-		// And the list reads that key from the address: its folder sidebar
-		// filters on `caseType`, which is what a `?caseType=` link selects.
+		// And the list reads that key from the address: the library merges the
+		// query into the fetch (useSelfFetchList.resolveQueryFilters), with or
+		// without a pane. The full profile's folder pane filters on the same
+		// key; the simple profile has no pane (the design has none) and the
+		// case type stays a column of the list.
+		const fullCases = build(fullFile).pages.find((page) => page.id === 'Cases')
+		expect(fullCases.config.folderSidebar.filterField).toBe('caseType')
 		const cases = built.pages.find((page) => page.id === 'Cases')
-		expect(cases.config.folderSidebar.filterField).toBe('caseType')
+		expect(cases.config.folderSidebar).toBeUndefined()
+		expect(
+			cases.config.columns.some(
+				(column) => overlayItemName(column) === 'caseType',
+			),
+		).toBe(true)
+	})
+
+	it('shows the instance as the brand of the navigation, without naming one', () => {
+		// The profile asks the instance's theming for the name and the logo;
+		// the app only puts its own name there.
+		expect(simpleFile.nav.brand).toEqual({
+			name: 'dossiq',
+			caption: '@theming.name',
+			logo: '@theming.logo',
+		})
+		const theming = { name: 'Gemeente Voorbeeld', logo: '/core/img/logo.svg' }
+		const withTheming = buildProfiledManifest(
+			buildManifest,
+			manifest(),
+			fragments,
+			simpleFile,
+			{ theming },
+		)
+		expect(withTheming.nav.brand).toEqual({
+			name: 'dossiq',
+			caption: 'Gemeente Voorbeeld',
+			logo: '/core/img/logo.svg',
+		})
+		// An instance that answers nothing gets no caption and no logo: the
+		// profile invents no municipality.
+		expect(built.nav.brand).toEqual({ name: 'dossiq', caption: '', logo: '' })
+		// The full profile declares no brand and gets none.
+		expect(build(fullFile).nav).toBeUndefined()
+		// main.js hands the theming capabilities over.
+		expect(mainSource).toContain(
+			"import { getCapabilities } from '@nextcloud/capabilities'",
+		)
+		expect(mainSource).toContain('theming: getCapabilities()?.theming ?? null')
 	})
 
 	it('moves the recycle bin, the object register and the mail intake log to settings', () => {
@@ -332,6 +376,17 @@ describe('a page overlay', () => {
 		})
 	})
 
+	it('takes a config key out when the overlay sets it to null', () => {
+		// A pane the page opts into by declaring it (the cases list's folder
+		// pane) has no "off" value in the schema; null in the overlay leaves
+		// the key out of the built page and the original alone.
+		const page = { id: 'P', config: { pane: { source: 'register' }, keep: 1 } }
+		const out = applyPageOverlay(page, { id: 'P', config: { pane: null } })
+		expect(out.config).toEqual({ keep: 1 })
+		expect('pane' in out.config).toBe(false)
+		expect(page.config.pane).toEqual({ source: 'register' })
+	})
+
 	it('patches list items by id, takes out the ones set to null, and patches before it appends', () => {
 		const page = {
 			id: 'P',
@@ -446,7 +501,7 @@ describe('the structure setting', () => {
 			'structureProfile === STRUCTURE_FULL ? menuLayoutFull : menuLayoutSimple',
 		)
 		expect(mainSource).toContain(
-			'buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout)',
+			'buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {',
 		)
 	})
 

@@ -43,6 +43,7 @@ const { showError, showWarning, fetchCollection } = vi.hoisted(() => ({
 vi.mock('@nextcloud/dialogs', () => ({ showError, showWarning }))
 
 vi.mock('@nextcloud/vue', () => ({
+	NcAvatar: { name: 'NcAvatar', render: () => h('span') },
 	NcButton: {
 		name: 'NcButton',
 		props: { disabled: { type: Boolean, default: false } },
@@ -193,10 +194,15 @@ const card = (wrapper) => wrapper.find('.case-card')
  * @return {Array<{label: string, selectable: string}>} The options, in order.
  */
 function options(wrapper) {
-	return wrapper.findAll('[data-option]').map((node) => ({
-		label: node.attributes('data-option'),
-		selectable: node.attributes('data-selectable'),
-	}))
+	// The board's own case-type select renders through the same stub; only
+	// the dialog's options are the offer.
+	return wrapper
+		.findAll('[data-option]')
+		.filter((node) => !node.element.closest('.workflow-board__case-type'))
+		.map((node) => ({
+			label: node.attributes('data-option'),
+			selectable: node.attributes('data-selectable'),
+		}))
 }
 
 beforeEach(() => {
