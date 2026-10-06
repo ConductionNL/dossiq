@@ -1,7 +1,6 @@
 # Tasks: woo-review-reports
 
-Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 **Do not start before** `woo-request-corpus-collection` is merged on `development`. A test marked
 **fails today** must be run on `origin/development` first and seen red.
@@ -75,7 +74,7 @@ Wave 3. Rows 16.10 and 16.11. Decisions D1 and D9. Kind: code. Build rules:
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 16.10 and 16.11 then read `yes` (build) as opt-in features, and
   `production` only with a store release.

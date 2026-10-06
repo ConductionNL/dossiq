@@ -16,6 +16,16 @@ Implements Ruben's decisions D1 (dossiq owns the Woo request, so its review repo
 and **D9** (policy choices an organisation makes: build opt-in per organisation, off by default, and
 name who may read 16.10).
 
+## Summary
+
+dossiq reports review throughput per reviewer and per day, and the collection by sender, recipient and mail domain, opt-in per organisation.
+
+- Rows: 16.10 and 16.11.
+- Wave 3.
+- Dependencies: `dossiq/woo-request-corpus-collection` (https://github.com/ConductionNL/dossiq/issues/3292), `openregister/adhoc-aggregation-suite` (no issue; https://github.com/ConductionNL/openregister/tree/development/openspec/changes/adhoc-aggregation-suite).
+- Decisions: D1 (dossiq owns the Woo request) and D9 (policy choices are opt-in per organisation, off by default, and name who may read 16.10).
+- Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 A per-reviewer, per-day count is a per-person productivity figure. It may need works council
