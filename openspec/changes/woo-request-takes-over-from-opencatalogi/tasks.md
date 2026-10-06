@@ -1,7 +1,7 @@
 # Tasks: woo-request-takes-over-from-opencatalogi
 
 Wave 2. Supporting: keeps 7.1 to 7.6 and 10.8 yes (statutory: Woo art. 4.4, Awb 4:15, Awt art. 1).
-Decisions D1 and D12. Kind: code. Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Decisions D1 and D12. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 **Do not start before** `woo-requester-notices-really-go-out` and
 `woo-term-is-computed-and-reported-right` are merged on `development`. Check with
@@ -125,6 +125,25 @@ are where local stubs lie).
     copied from filinq's spec with its source line. filinq's change tests the same contract on its
     side; name that test in the PR body.
 
+- [ ] 5.3 The `wooDecision` dossiq sends has the shape filinq's template service checks (REQ-WTO-005,
+  row 7.9's dossiq half). filinq's `woo-request-workflow` REQ-DDWRW-010 reads `data.wooDecision` with
+  `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind` (`disclose`,
+  `partially-disclose`, `withhold` or `not-held`), `organisation`, and `documents`, a list of
+  `{inventoryNumber, title, date, assessment, groundCodes, remark}` with `assessment` one of
+  `disclose`, `partially-disclose`, `withhold`. It refuses a missing key, a `partially-disclose` or
+  `withhold` document without a ground code, and a duplicate inventory number. Build the shape in one
+  place (`WooDecisionDrafts::wooDecision(string $caseId): array`), mapping dossiq's assessment
+  `classification` `openbaar` to `disclose`, `deels_openbaar` to `partially-disclose` and
+  `niet_openbaar` to `withhold`, and `weigeringsgronden` to `groundCodes`.
+  - **fails today** (the class does not exist): `tests/Unit/Woo/WooDecisionShapeTest.php`
+    `testEveryKeyFilinqRequiresIsPresent`, `testDossiqClassificationsMapToFilinqAssessments`,
+    `testAWithheldDocumentCarriesItsGroundCodes`, `testInventoryNumbersAreUniqueAndStable`, built from
+    a fixture case with one document of each classification. Copy the key list as literals from
+    filinq's spec with its source line, so a rename on either side fails this test.
+  - Through the caller: `WOODecisionServiceTest::testTheDraftRequestCarriesTheWooDecisionShape`
+    captures the dispatched `DocumentGenerationRequestedEvent` and runs the same assertions on its
+    `data.wooDecision`.
+
 ## 6. End to end and live
 
 - [ ] 6.1 `tests/e2e/woo-takeover.spec.ts` also: call the portal form path through portaliq's
@@ -145,7 +164,7 @@ are where local stubs lie).
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires (read `package.json`).
   Then hydra's `scripts/run-hydra-gates.sh --base origin/development`, and count the gates that ran.
-- [ ] 7.4 Project coverage of the added statements as LANE-RULES-BUILD says, and say it is projected.
+- [ ] 7.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 7.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on
   any commit. Done means merged on `development` with CI green. The supported rows stay yes; they
   read `production` for dossiq only with a store release. In the PR body, name the two wave 3

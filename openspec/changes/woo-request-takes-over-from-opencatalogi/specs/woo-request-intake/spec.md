@@ -193,6 +193,11 @@ way, and SHALL carry the draft status.
 - **WHEN** the handler creates the decision on a fully assessed Woo case
 - **THEN** a besluit document and an inventory document SHALL be on the case, and the response SHALL say `drafted` with the template filinq used
 
+#### Scenario: The wooDecision has the shape filinq checks
+- **GIVEN** a Woo case with one `openbaar`, one `deels_openbaar` and one `niet_openbaar` assessment, the last two with weigeringsgronden
+- **WHEN** dossiq builds the `wooDecision` for the draft request
+- **THEN** it SHALL carry `reference`, `subject`, `receivedAt`, `decisionDate`, `decisionKind`, `organisation` and three `documents` with unique `inventoryNumber`s, assessments `disclose`, `partially-disclose` and `withhold`, and non-empty `groundCodes` on the last two
+
 ### Requirement: Without filinq the decision says no draft was made (REQ-WTO-006)
 
 When the event comes back neither handled nor refused (filinq absent), `draft()` SHALL answer

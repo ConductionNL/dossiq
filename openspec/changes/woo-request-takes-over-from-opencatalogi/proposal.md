@@ -25,6 +25,17 @@ parity against opencatalogi's own fixtures, and ships an idempotent import of ev
 opencatalogi `wooRequest`. Steps 2 and 3, `opencatalogi/woo-request-intake-hands-over-to-dossiq` and
 `portaliq/woo-intake-delivers-to-dossiq`, call what this change ships.
 
+## Summary
+
+dossiq accepts opencatalogi's Woo request shape, proves term parity against opencatalogi's fixtures, imports every stored opencatalogi request once, and drafts the decision through filinq's template service.
+
+- Rows: supporting, keeps 7.1, 7.2, 7.3, 7.4, 7.5, 7.6 and 10.8 yes (7.3 to 7.6 statutory: Woo art. 4.4, Awb art. 4:15, Algemene termijnenwet art. 1). Carries dossiq's half of 7.9.
+- Wave 2.
+- Dependencies: `dossiq/woo-requester-notices-really-go-out` (https://github.com/ConductionNL/dossiq/issues/3286), `dossiq/woo-term-is-computed-and-reported-right` (https://github.com/ConductionNL/dossiq/issues/3287), `dossiq/intake-says-when-the-term-starts` (https://github.com/ConductionNL/dossiq/issues/2688), `dossiq/woo-request-from-a-portal-dossier` (no issue; https://github.com/ConductionNL/dossiq/tree/development/openspec/changes/woo-request-from-a-portal-dossier), `filinq/woo-request-workflow` (https://github.com/ConductionNL/filinq/issues/1343).
+- Called by: `opencatalogi/woo-request-intake-hands-over-to-dossiq` (https://github.com/ConductionNL/opencatalogi/issues/1781) and `portaliq/woo-intake-delivers-to-dossiq` (https://github.com/ConductionNL/portaliq/issues/1223).
+- Decisions: D1 (dossiq owns the Woo request, its intake and its term) and D12 (Woo requests require dossiq, no fallback).
+- Build rules: openspec/woo-build-rules.md
+
 ## The law
 
 - **Woo art. 4.1 lid 1** and **Awb art. 4:1**: a Woo request is an application, received on the day
