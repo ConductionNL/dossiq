@@ -80,7 +80,7 @@ class PortalCasePageTest extends TestCase {
 		// finds it when a case is opened from a list, a card or a notice, and
 		// what lets steps, documents and timeline render at all.
 		$this->assertSame(
-			['collection' => 'mijnZaken', 'titleFields' => ['title']],
+			['collection' => 'mijnZaken', 'titleFields' => ['title'], 'heading' => 'record', 'under' => 'cases'],
 			$pages['mijnZaken']['record']
 		);
 		$this->assertFalse($pages['mijnZaken']['menu']);

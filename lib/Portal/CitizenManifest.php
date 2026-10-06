@@ -557,7 +557,10 @@ class CitizenManifest {
 			'dueField' => 'deadline',
 			'valueLabels' => [
 				'portalTurn' => [
-					'applicant' => 'U bent aan zet',
+					// The Mijn Zuiddrecht boards' words on the case tag, which the
+					// `yourTurn` key of the overview's cases block draws in the
+					// warning tone (portaliq#1253).
+					'applicant' => 'Wacht op u',
 					'thirdParty' => 'Wij wachten op informatie van een ander',
 					'us' => 'De gemeente is aan zet',
 				],
