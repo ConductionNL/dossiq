@@ -66,7 +66,7 @@ final class Prerequisites {
 	 *
 	 * @var string
 	 */
-	public const NEXTCLOUD_MAX = '34';
+	public const NEXTCLOUD_MAX = '35';
 
 	/**
 	 * The PHP extensions dossiq calls. Each one is also a `ext-*` line in
