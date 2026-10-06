@@ -21,6 +21,16 @@ still name opencatalogi's model (`#wooAssessment`, its `batch` parent, `publishB
 translates them onto dossiq's: the Woo case is the container, `wooDocumentAssessment` is the
 disclosure verdict, and the publishable set is what `WooPublicationService::publish()` selects.
 
+## Summary
+
+The corpus of a Woo case is marked in or out of scope by hand or by a visible rule, cut into batches assigned to named reviewers, reviewed at a recorded depth, and kept behind its own authorisation; nothing is published until every page was seen.
+
+- Rows: 19.7, 19.8, 19.9, 19.10, 19.11 and 19.17.
+- Wave 3.
+- Dependencies: `dossiq/woo-request-corpus-collection` (https://github.com/ConductionNL/dossiq/issues/3292), `openregister/rbac-inherits-to-children` (no issue; https://github.com/ConductionNL/openregister/tree/development/openspec/changes/rbac-inherits-to-children). Followed by `dossiq/woo-review-recall-and-stopping` (https://github.com/ConductionNL/dossiq/issues/3295).
+- Decisions: D1 (the review of a Woo request is dossiq's).
+- Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 What dossiq has, read on `development` at 55bbc761:
