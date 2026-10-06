@@ -781,14 +781,13 @@ The case type edit page MUST be organized into tabs for managing the type and it
 
 #### Scenario CT-15b: General tab content
 
-@e2e exclude Three of the fields this scenario enumerates cannot be honestly
-asserted today, and one of them is a defect rather than a gap. `serviceTarget`
-IS rendered by `GeneralTab.vue` and DOES take input, but it is declared in no
-schema, so OpenRegister discards it on save while the page reports success:
-measured 2026-09-12, a write of `serviceTarget: "P14D"` came back absent from a
-fresh read while `suspensionAllowed` on the same write survived. See #2592. A
-test asserting the field renders would pass and would certify data loss, which
-is worse than no test. `suspensionAllowed` is in the schema but `GeneralTab`
+@e2e exclude Two of the fields this scenario enumerates cannot be honestly
+asserted today. `serviceTarget` used to be a third: `GeneralTab.vue` rendered
+it, but no schema declared it, so OpenRegister discarded it on save while the
+page reported success (measured 2026-09-12, #2592). It is declared on
+`caseType` now (`register.d/39-case-type-general-fields.json`), and a test that
+asserts it must read it back fresh, never off the create response, which echoes
+an undeclared key it did not store. `suspensionAllowed` is in the schema but `GeneralTab`
 renders no control for it, and `isDraft` (the published/draft status this
 scenario names) has no control on this tab either. The exclusion is protective,
 not stale: the rendered control a later reader will see is exactly the problem.

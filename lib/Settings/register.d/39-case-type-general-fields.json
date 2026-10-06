@@ -1,0 +1,26 @@
+{
+  "_note": "#2592. The case type General tab renders and saves serviceTarget, initiatorAction and publicationText, and the case-types spec lists all three (servicenorm_behandeling, handeling_initiator, publicatietekst), but no schema declared them. OpenRegister's magic mapper is a whitelist by omission, so each write was answered 200, echoed back in the create response, and stored nowhere: a fresh read came back without the value. Declared here as plain optional strings, the way the General tab sends them. Not required, because every case type that exists today lacks them. A fragment rather than an edit to dossiq_register.json, per ADR-037.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "serviceTarget": {
+            "type": "string",
+            "title": "Service target",
+            "description": "ISO 8601 duration the organisation aims to finish a case of this type within (e.g. P42D), stored separately from the statutory processing deadline. ZTC servicenorm_behandeling."
+          },
+          "initiatorAction": {
+            "type": "string",
+            "title": "Initiator action",
+            "description": "What the initiator does to start a case of this type. ZTC handeling_initiator."
+          },
+          "publicationText": {
+            "type": "string",
+            "title": "Publication text",
+            "description": "The text published about a case of this type when publication is required. ZTC publicatietekst."
+          }
+        }
+      }
+    }
+  }
+}
