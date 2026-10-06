@@ -132,7 +132,7 @@ class PortalContributionProviderTest extends TestCase {
 		$this->assertSame('deadline', $cases['dueField']);
 		$this->assertSame(
 			[
-				'applicant' => 'U bent aan zet',
+				'applicant' => 'Wacht op u',
 				'thirdParty' => 'Wij wachten op informatie van een ander',
 				'us' => 'De gemeente is aan zet',
 			],
@@ -599,13 +599,61 @@ class PortalContributionProviderTest extends TestCase {
 		);
 		$this->assertSame(['cases', 'inbox'], [$pages[0]['blocks'][2]['type'], $pages[0]['blocks'][3]['type']]);
 		$this->assertSame(
-			['collection' => 'mijnZaken', 'titleFields' => ['title']],
+			['collection' => 'mijnZaken', 'titleFields' => ['title'], 'heading' => 'record', 'under' => 'cases'],
 			$pages[1]['record']
 		);
 		$this->assertContains('citizenCase', array_column($pages[1]['blocks'], 'type'));
 		$this->assertSame(['type' => 'action', 'action' => 'replyToMessage'], $pages[2]['blocks'][0]);
 		$this->assertSame(['type' => 'action', 'action' => 'createKlacht'], $pages[3]['blocks'][0]);
 	}//end testACaseStillOpensOnItsPage()
+
+
+	/**
+	 * The resident pages declare the Mijn Zuiddrecht board keys, each in the
+	 * one form portaliq's BoardKeys and SchoolBlockKeys keep (portaliq#1253,
+	 * read from fb7a5203). Portaliq drops a key that does not fit in silence,
+	 * so a misspelt value would read as declared and draw nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 */
+	public function testTheResidentPagesDeclareTheBoardKeys(): void {
+		$pages = $this->provider->getContribution(['audience' => 'citizen'])['pages'];
+		$byType = static function (array $page, string $type): array {
+			foreach ($page['blocks'] as $block) {
+				if ($block['type'] === $type) {
+					return $block;
+				}
+			}
+
+			return [];
+		};
+
+		$tasks = $byType($pages[0], 'tasks');
+		$this->assertSame('highlight', $tasks['display']);
+		$this->assertContains($tasks['tone'], ['warning', 'info']);
+		$this->assertTrue($tasks['dueInLine']);
+		$this->assertSame('Document toevoegen', $tasks['buttonLabel']);
+
+		$cases = $byType($pages[0], 'cases');
+		$this->assertSame('compact', $cases['display']);
+		$this->assertTrue($cases['showAll']);
+		// The turn value must be one the case card has words for.
+		$turnWords = $this->citizenCollection(id: 'mijnZaken')['valueLabels']['portalTurn'];
+		$this->assertSame(['applicant'], $cases['yourTurn']);
+		$this->assertSame('Wacht op u', $turnWords['applicant']);
+
+		$this->assertSame('list', $byType($pages[0], 'inbox')['display']);
+
+		$documents = $byType($pages[1], 'documents');
+		$this->assertSame(['Stukken', true], [$documents['label'], $documents['upload']]);
+		$detail = $byType($pages[1], 'detail');
+		$this->assertSame(['Gegevens', false], [$detail['label'], $detail['timeline']]);
+		$this->assertSame('actions', $byType($pages[1], 'citizenCase')['display']);
+		$this->assertSame('record', $pages[1]['record']['heading']);
+		$this->assertSame('cases', $pages[1]['record']['under']);
+	}//end testTheResidentPagesDeclareTheBoardKeys()
 
 	/**
 	 * Every audience's pages carry a group, and every block names something the manifest declares.

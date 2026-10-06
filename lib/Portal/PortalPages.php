@@ -130,7 +130,9 @@ class PortalPages {
 			// render only on a record page whose collection names that
 			// provider, and portaliq finds this page by its `record` key
 			// whenever a case is opened from a list, a card or a notice.
-			'record' => ['collection' => 'mijnZaken', 'titleFields' => ['title']],
+			// The case's own title is the page heading, and the way back
+			// passes through Mijn zaken, as on the board (portaliq#1253).
+			'record' => ['collection' => 'mijnZaken', 'titleFields' => ['title'], 'heading' => 'record', 'under' => 'cases'],
 			'blocks' => $this->residentCaseBlocks(collections: $collections, actions: $actions),
 		];
 
@@ -191,11 +193,33 @@ class PortalPages {
 				'dueField' => 'hersteltermijn',
 				'titleFields' => ['summary'],
 				'label' => 'Wat u nog moet doen',
+				// THE BOARD'S CARD (portaliq#1253 board keys): one highlighted
+				// question in the warning tone, the due day in its sub line
+				// and the button that answers it. Portaliq drops a key it does
+				// not know, so these are the names in its BoardKeys and
+				// SchoolBlockKeys, read from fb7a5203.
+				'display' => 'highlight',
+				'tone' => 'warning',
+				'dueInLine' => true,
+				'buttonLabel' => 'Document toevoegen',
 			];
 		}
 
-		$blocks[] = ['type' => 'cases', 'collection' => 'mijnZaken', 'open' => true, 'limit' => 5, 'label' => 'Lopende zaken'];
-		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten'];
+		// The board draws the running cases compact, with "Alle zaken" beside
+		// the heading, and tags a case the resident must act on with the
+		// turn's words in the warning tone.
+		$blocks[] = [
+			'type' => 'cases',
+			'collection' => 'mijnZaken',
+			'open' => true,
+			'limit' => 5,
+			'label' => 'Lopende zaken',
+			'display' => 'compact',
+			'showAll' => true,
+			'yourTurn' => ['applicant'],
+		];
+		// The messages as a plain list: a title and the day, no badge.
+		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten', 'display' => 'list'];
 		$blocks[] = ['type' => 'cta', 'action' => 'createBezwaar', 'label' => 'Bezwaar maken'];
 		$blocks[] = ['type' => 'cta', 'action' => 'createKlacht', 'label' => 'Klacht indienen'];
 
@@ -228,9 +252,11 @@ class PortalPages {
 		}
 
 		$blocks[] = ['type' => 'steps', 'collection' => 'mijnZaken'];
-		$blocks[] = ['type' => 'documents', 'collection' => 'mijnZaken'];
+		// "Stukken" with the add button beside it, and "Gegevens" over the
+		// facts without a second history under them (portaliq#1253).
+		$blocks[] = ['type' => 'documents', 'collection' => 'mijnZaken', 'label' => 'Stukken', 'upload' => true];
 		$blocks[] = ['type' => 'timeline', 'collection' => 'mijnZaken'];
-		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken'];
+		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken', 'label' => 'Gegevens', 'timeline' => false];
 		if ($this->declares(rows: $actions, id: 'replyToMessage') === true) {
 			$blocks[] = [
 				'type' => 'cta',
@@ -241,7 +267,9 @@ class PortalPages {
 			];
 		}
 
-		$blocks[] = ['type' => 'citizenCase', 'collection' => 'mijnZaken'];
+		// The case screen as the board's notice: the closed-window sentence,
+		// no second status block and no second documents list.
+		$blocks[] = ['type' => 'citizenCase', 'collection' => 'mijnZaken', 'display' => 'actions'];
 
 		return $blocks;
 	}//end residentCaseBlocks()
