@@ -15,6 +15,8 @@
  *
  * @spec openspec/specs/case-types/spec.md
  */
+import fs from 'fs'
+import path from 'path'
 import { describe, expect, it } from 'vitest'
 import {
 	DEFAULT_STATUS_COLOUR,
@@ -23,9 +25,12 @@ import {
 	mergeColumnColour,
 	normaliseStatusColour,
 	STATUS_COLOURS,
+	statusBadgeStyle,
 	statusColourStyle,
 	statusColourToken,
 } from '../../src/utils/statusColour.js'
+
+const ROOT = path.resolve(__dirname, '../..')
 
 describe('the palette', () => {
 	it('carries the twelve names the schema enumerates', () => {
@@ -136,6 +141,63 @@ describe('statusColourStyle', () => {
 				/^var\(--nl-color-/,
 			)
 		}
+	})
+})
+
+describe('statusBadgeStyle', () => {
+	it('draws a full hue as its own tint with the darkened hue as text', () => {
+		const style = statusBadgeStyle('blue')
+		expect(style.backgroundColor).toBe(statusColourToken('blue-light'))
+		expect(style.color).toBe(
+			`color-mix(in srgb, ${statusColourToken('blue')} 65%, var(--color-main-text, #1b1c1d))`,
+		)
+	})
+
+	it('leaves a light tint as it was: the tint with the main text', () => {
+		expect(statusBadgeStyle('green-light')).toEqual(
+			statusColourStyle('green-light'),
+		)
+	})
+
+	it('reaches AA on every hue, computed on the fallback ramps', () => {
+		// The 65% mix of the hue with the ink, over the hue's light tint.
+		const hex = (value) => value.match(/#[0-9a-f]{6}/i)[0]
+		const channel = (h, i) => parseInt(h.slice(1 + 2 * i, 3 + 2 * i), 16) / 255
+		const luminance = (h) =>
+			[0.2126, 0.7152, 0.0722].reduce((sum, weight, i) => {
+				const c = channel(h, i)
+				return (
+					sum
+					+ weight
+						* (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
+				)
+			}, 0)
+		const mix = (a, b, share) =>
+			'#'
+			+ [0, 1, 2]
+				.map((i) =>
+					Math.round(
+						(channel(a, i) * share + channel(b, i) * (1 - share)) * 255,
+					)
+						.toString(16)
+						.padStart(2, '0'),
+				)
+				.join('')
+		for (const hue of ['blue', 'green', 'orange', 'red', 'purple', 'grey']) {
+			const text = mix(hex(statusColourToken(hue)), '#1b1c1d', 0.65)
+			const tint = hex(statusColourToken(`${hue}-light`))
+			const [hi, lo] = [luminance(text), luminance(tint)].sort((a, b) => b - a)
+			expect((hi + 0.05) / (lo + 0.05), hue).toBeGreaterThanOrEqual(4.5)
+		}
+	})
+
+	it('is what the status cell draws, while the settings swatches keep the hue', () => {
+		const cell = fs.readFileSync(
+			path.join(ROOT, 'src/components/cells/StatusBadgeCell.vue'),
+			'utf8',
+		)
+		expect(cell).toContain('statusBadgeStyle(this.colour)')
+		expect(cell).not.toContain('statusColourStyle(')
 	})
 })
 
