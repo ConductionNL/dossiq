@@ -1,7 +1,6 @@
 # Tasks: woo-refusal-grounds-list
 
-Wave 1. Rows 12.29 and 13.28. Kind: mixed (seed plus code). Decisions D3 and D12. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 1. Rows 12.29 and 13.28. Kind: mixed (seed plus code). Decisions D3 and D12. Build rules: `openspec/woo-build-rules.md`.
 
 ## 1. Settle the list against the law (BLOCKS EVERY OTHER TASK)
 
@@ -90,7 +89,7 @@ Wave 1. Rows 12.29 and 13.28. Kind: mixed (seed plus code). Decisions D3 and D12
   `npm run lint`, `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg that `code-quality.yml` requires. Then run hydra's
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates that ran.
-- [ ] 7.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 7.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 7.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means
   merged on `development` with CI green. Rows 12.29 and 13.28 then read `yes` (build), and
   `production` only with a store release.

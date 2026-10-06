@@ -19,6 +19,16 @@ requests require dossiq, but the grounds keep a read-only fallback for redaction
 differs from the plan's original recommendation, which put the list in OpenRegister's concept
 register. Ruben chose dossiq.
 
+## Summary
+
+dossiq holds the one controlled list of Woo refusal grounds, administrator-maintained, nestable and with every change recorded, and opencatalogi and filinq read it.
+
+- Rows: 12.29 and 13.28.
+- Wave 1.
+- Dependencies: none. Followed by `filinq/grondslagen-read-from-dossiq` (https://github.com/ConductionNL/filinq/issues/1346) and `opencatalogi/woo-value-lists-on-the-concept-register` (https://github.com/ConductionNL/opencatalogi/issues/1780).
+- Decisions: D3 (one list of grounds, in dossiq) and D12 (Woo requests require dossiq; the grounds keep a read-only fallback for redaction only).
+- Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 There are four lists of Woo art. 5 grounds in the fleet today, and they disagree:
