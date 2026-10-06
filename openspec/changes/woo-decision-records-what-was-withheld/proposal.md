@@ -38,8 +38,9 @@ carries no trace of what was withheld.
    of the case: `{position: int, grounds: list<string>}`. `position` is the document's inventory
    number as `WooDecisionDrafts::wooDecision()` numbers it, so the public list agrees with the
    decision's inventory. `grounds` are the assessment's `weigeringsgronden` codes.
-2. No `title`. opencatalogi accepts a title only when the assessment marks the title as public, and
-   `wooDocumentAssessment` has no such mark, so dossiq never sends one.
+2. No `title`. `wooDocumentAssessment` has no field that marks a title as public, and opencatalogi's
+   `record()` stores no title on this path at all (REQ-WDW-002 as reconciled on 2026-10-06), so
+   dossiq never sends one.
 3. Nothing else. No file, file id, hash, document reference or text. One builder,
    `OCA\Dossiq\Woo\WithheldEntries::build(string $caseId): array`, produces the entries, and a test
    pins its keys.
@@ -60,7 +61,8 @@ carries no trace of what was withheld.
 ## Cross-app contract
 
 Method `OCA\OpenCatalogi\Service\Woo\WithheldDocuments::record(string $publicationId, array
-$entries, string $source): array`, entries `{position: int, grounds: list<string>, title?: string}`,
+$entries, string $source): array`, entries exactly `{position: int, grounds: list<string>}` on both
+sides (opencatalogi ignores and does not store any other key, `title` included),
 answer `{recorded: int, refused: list<{position: int, code: string, reason: string}>}` with reasons
 `unknown-ground`, `grounds-unavailable` and `no-publication`. opencatalogi tests its side in
 `WithheldDocumentsRecordTest::testTheContractKeysMatchBothSides`; dossiq tests the call shape here.
