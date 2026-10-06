@@ -76,6 +76,10 @@
             "{count} case moved without all of its automatic actions. Its status record shows which.",
             "{count} cases moved without all of their automatic actions. Their status records show which."
         ],
+        "_{count} competitor cell on these rows still reads Unknown, because that reading could not reach it, and a guessed rating is worse than an empty cell._::_{count} competitor cells on these rows still read Unknown, because that reading could not reach them, and a guessed rating is worse than an empty cell._": [
+            "{count} competitor cell on these rows still reads Unknown, because that reading could not reach it, and a guessed rating is worse than an empty cell.",
+            "{count} competitor cells on these rows still read Unknown, because that reading could not reach them, and a guessed rating is worse than an empty cell."
+        ],
         "_{count} working day in this status_::_{count} working days in this status_": [
             "{count} working day in this status",
             "{count} working days in this status"
@@ -531,6 +535,7 @@
         "Anonymize": "Anonymize",
         "Anonymize When Sharing": "Anonymize When Sharing",
         "Another organisation has requested to transfer custody of a case to your organisation. Review the request with your case handler before accepting.": "Another organisation has requested to transfer custody of a case to your organisation. Review the request with your case handler before accepting.",
+        "Another {count} capabilities are proposed and not yet on the scored list. We read our own code and the other {others} systems against each of them, but they are in no total on this page until they join the scored list.": "Another {count} capabilities are proposed and not yet on the scored list. We read our own code and the other {others} systems against each of them, but they are in no total on this page until they join the scored list.",
         "Another {count} capabilities are proposed and not yet rated. We read our own code for each of them. We have not read the other {others} systems against them, so they are in no total on this page. A proposal becomes a row when every system has been read against it.": "Another {count} capabilities are proposed and not yet rated. We read our own code for each of them. We have not read the other {others} systems against them, so they are in no total on this page. A proposal becomes a row when every system has been read against it.",
         "Answer": "Answer",
         "Answer by": "Answer by",
@@ -3522,6 +3527,7 @@
         "Lat": "Lat",
         "Late": "Late",
         "Late Filing Notice": "Late Filing Notice",
+        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one, and read the other {others} products against them in a later reading.": "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one, and read the other {others} products against them in a later reading.",
         "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.",
         "Latest response date": "Latest response date",
         "Latest response date is required.": "Latest response date is required.",
@@ -8779,6 +8785,7 @@
         "Zoom": "Zoom",
         "{assessed}/{total} documents assessed": "{assessed}/{total} documents assessed",
         "{count} / {max} characters": "{count} / {max} characters",
+        "{count} capabilities proposed for {area}. We rated ourselves and read the other {others} systems against these too. Only our rating is shown, and they are in no total here.": "{count} capabilities proposed for {area}. We rated ourselves and read the other {others} systems against these too. Only our rating is shown, and they are in no total here.",
         "{count} capabilities proposed for {area}. We rated ourselves. The other {others} systems have not been read against these, so they are in no total here.": "{count} capabilities proposed for {area}. We rated ourselves. The other {others} systems have not been read against these, so they are in no total here.",
         "{count} case moved without all of its automatic actions. Its status record shows which.": "{count} case moved without all of its automatic actions. Its status record shows which.",
         "{count} cases excluded, no SLA target": "{count} cases excluded, no SLA target",
@@ -8787,6 +8794,8 @@
         "{count} cases on this page are selected.": "{count} cases on this page are selected.",
         "{count} changed": "{count} changed",
         "{count} checklist item(s) not completed: {items}": "{count} checklist item(s) not completed: {items}",
+        "{count} competitor cell on these rows still reads Unknown, because that reading could not reach it, and a guessed rating is worse than an empty cell.": "{count} competitor cell on these rows still reads Unknown, because that reading could not reach it, and a guessed rating is worse than an empty cell.",
+        "{count} competitor cells on these rows still read Unknown, because that reading could not reach them, and a guessed rating is worse than an empty cell.": "{count} competitor cells on these rows still read Unknown, because that reading could not reach them, and a guessed rating is worse than an empty cell.",
         "{count} deelzaken": "{count} deelzaken",
         "{count} document(s) selected": "{count} document(s) selected",
         "{count} failed": "{count} failed",

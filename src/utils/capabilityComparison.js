@@ -110,6 +110,34 @@ export function pendingRows(data) {
 }
 
 /**
+ * Count the competitor cells on the given rows that nobody has read yet.
+ *
+ * A cell is unread when it is `unknown` or missing. The page copy about added
+ * rows and proposals says whether the rivals were read against them, and that
+ * sentence has to follow the data: a reading round can fill every cell
+ * without anyone touching the copy, which is how the page went on saying the
+ * rivals were unread after they had been read.
+ *
+ * @param {Array<object>} rows Capability rows or proposals.
+ * @param {Array<object>} systems The `systems` entries; our own is skipped.
+ * @return {{unread: number, total: number}} Unread cells and all rival cells.
+ * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
+ */
+export function unreadRivalCells(rows, systems) {
+	const rivals = (systems ?? []).filter((s) => !s.isSelf)
+	let unread = 0
+	for (const row of rows ?? []) {
+		for (const system of rivals) {
+			const rating = row[system.key]
+			if (rating === undefined || rating === null || rating === 'unknown') {
+				unread++
+			}
+		}
+	}
+	return { unread, total: (rows ?? []).length * rivals.length }
+}
+
+/**
  * Group the capabilities by area, resolving labels for the given locale and
  * tallying every system per area.
  *

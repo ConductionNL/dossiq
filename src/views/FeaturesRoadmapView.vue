@@ -332,7 +332,7 @@
 
 <script>
 import { CnFeaturesAndRoadmapPage, CnTab, CnTabs } from '@conduction/nextcloud-vue'
-import { getLanguage, translate as t } from '@nextcloud/l10n'
+import { getLanguage, translatePlural as n, translate as t } from '@nextcloud/l10n'
 import { NcNoteCard } from '@nextcloud/vue'
 import comparison from '../../openspec/parity/capabilities.json'
 import {
@@ -341,6 +341,7 @@ import {
 	overallTallies,
 	pendingRows,
 	RATING_COLUMNS,
+	unreadRivalCells,
 } from '../utils/capabilityComparison.js'
 
 /**
@@ -449,6 +450,11 @@ export default {
 		 * empty columns, which is the misreading the whole split exists to
 		 * prevent.
 		 *
+		 * Which sentence depends on the data. While any competitor cell on a
+		 * proposal is still unread, the page says the rivals were not read;
+		 * once every cell is filled it says they were, and that the proposals
+		 * still count in nothing.
+		 *
 		 * @return {string} The sentence, empty when nothing is pending.
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-comparison-must-state-its-own-limits
 		 */
@@ -456,6 +462,16 @@ export default {
 			const pending = pendingRows(comparison)
 			if (pending.length === 0) {
 				return ''
+			}
+			if (unreadRivalCells(pending, comparison.systems).unread === 0) {
+				return t(
+					'dossiq',
+					'Another {count} capabilities are proposed and not yet on the scored list. We read our own code and the other {others} systems against each of them, but they are in no total on this page until they join the scored list.',
+					{
+						count: pending.length,
+						others: comparison.systems.length - 1,
+					},
+				)
 			}
 			return t(
 				'dossiq',
@@ -619,14 +635,37 @@ export default {
 				.map((row) => row.addedOn)
 				.sort()
 				.at(-1)
-			return t(
+			const params = {
+				count: added.length,
+				others: comparison.systems.length - 1,
+				date: formatComparedOn(latest, this.locale),
+			}
+			// The rivals were read against these rows after they were added
+			// (each column's `readOn`), so the sentence says so, and names the
+			// cells that a reading could still not fill. Only when no rival
+			// cell on them has been read does it say the columns are unread.
+			const { unread, total } = unreadRivalCells(added, comparison.systems)
+			if (unread === total) {
+				return t(
+					'dossiq',
+					'Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.',
+					params,
+				)
+			}
+			const read = t(
 				'dossiq',
-				'Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.',
-				{
-					count: added.length,
-					others: comparison.systems.length - 1,
-					date: formatComparedOn(latest, this.locale),
-				},
+				'Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one, and read the other {others} products against them in a later reading.',
+				params,
+			)
+			if (unread === 0) {
+				return read
+			}
+			return read + ' ' + n(
+				'dossiq',
+				'{count} competitor cell on these rows still reads Unknown, because that reading could not reach it, and a guessed rating is worse than an empty cell.',
+				'{count} competitor cells on these rows still read Unknown, because that reading could not reach them, and a guessed rating is worse than an empty cell.',
+				unread,
+				{ count: unread },
 			)
 		},
 
@@ -805,16 +844,27 @@ export default {
 		/**
 		 * Table caption for one area's proposals.
 		 *
-		 * It names the one column that is filled and says the others are not.
-		 * The table shows our rating and no rival column at all, so without
-		 * this sentence a reader has no way to tell a proposal apart from a
-		 * row we scored alone.
+		 * It names the one column the table shows and says whether the others
+		 * were read. The table shows our rating and no rival column at all, so
+		 * without this sentence a reader has no way to tell a proposal apart
+		 * from a row we scored alone.
 		 *
 		 * @param {object} area Grouped area from `groupByArea`.
 		 * @return {string} Translated caption.
 		 * @spec openspec/specs/features-roadmap/spec.md#requirement-the-page-must-present-the-capability-comparison-by-area
 		 */
 		pendingCaption(area) {
+			if (unreadRivalCells(area.pending, comparison.systems).unread === 0) {
+				return t(
+					'dossiq',
+					'{count} capabilities proposed for {area}. We rated ourselves and read the other {others} systems against these too. Only our rating is shown, and they are in no total here.',
+					{
+						count: area.pending.length,
+						area: area.label,
+						others: this.systems.length - 1,
+					},
+				)
+			}
 			return t(
 				'dossiq',
 				'{count} capabilities proposed for {area}. We rated ourselves. The other {others} systems have not been read against these, so they are in no total here.',

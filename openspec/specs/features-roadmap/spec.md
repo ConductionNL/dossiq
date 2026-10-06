@@ -142,8 +142,8 @@ The comparison section SHALL state, before any score:
 - **GIVEN** a round has added capability rows since the rated systems were read
 - **WHEN** a reader opens the comparison
 - **THEN** the panel MUST say how many rows were added and when
-- **AND** it MUST say that every competitor column is unrated on those rows
-- **AND** those rows MUST show `unknown` for every competitor, never a guess
+- **AND** it MUST say whether the competitor columns were read against those rows, following the data: unrated while every competitor cell on them is `unknown`, read once a later reading filled them, naming how many cells still read `unknown`
+- **AND** a competitor rating on those rows MUST come from a reading of that product dated on or after the row's `addedOn`, never a guess
 
 #### Scenario: More than one round has added rows
 
@@ -193,10 +193,12 @@ per-system totals the audit published.
 Two further assertions guard the `unknown` rating, because it is the one value
 that can be written for the wrong reason. Our own column SHALL never be
 `unknown`: we can read our own code, so an empty cell there is an unfinished
-row that understates our score for free. And a row carrying a competitor
-`unknown` SHALL carry `addedOn`, while a row carrying `addedOn` SHALL be
-`unknown` for every competitor, the column added last included: it was read
-before those rows existed, so it is as empty on them as the rest. That pins the value to its only honest cause.
+row that understates our score for free. And a competitor rating on a row
+carrying `addedOn` SHALL come from a reading of that product dated on or after
+the row's `addedOn` (the system's `readOn`); until such a reading, the cell
+SHALL be `unknown`. A later reading can still leave a cell `unknown`, for a
+part of a product that could not be read (a closed enterprise package, for
+one), and its evidence SHALL then say why.
 
 Every caveat SHALL additionally be asserted against the rendered component, not
 only end to end. Each one is a plain paragraph inside a note card, and deleting
@@ -209,9 +211,9 @@ instead of quietly removing only the caveat.
 
 #### Scenario: A guessed competitor rating fails
 
-- **GIVEN** a row added after the rated systems were read
-- **WHEN** somebody fills a competitor cell on it with a rating
-- **THEN** the unit suite MUST fail and name the row
+- **GIVEN** a row added after a rated system was last read
+- **WHEN** somebody fills that system's cell on it with a rating
+- **THEN** the unit suite MUST fail and name the row and the system
 
 #### Scenario: An edited row changes a total and fails
 

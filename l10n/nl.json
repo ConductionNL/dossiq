@@ -76,6 +76,10 @@
             "{count} zaak is verplaatst, maar niet al haar automatische acties zijn uitgevoerd. De statusregistratie laat zien welke.",
             "{count} zaken zijn verplaatst, maar niet al hun automatische acties zijn uitgevoerd. De statusregistraties laten zien welke."
         ],
+        "_{count} competitor cell on these rows still reads Unknown, because that reading could not reach it, and a guessed rating is worse than an empty cell._::_{count} competitor cells on these rows still read Unknown, because that reading could not reach them, and a guessed rating is worse than an empty cell._": [
+            "{count} cel van een concurrent op deze rijen staat nog op Onbekend, omdat die leesronde haar niet kon bereiken, en een gegokt oordeel is erger dan een lege cel.",
+            "{count} cellen van concurrenten op deze rijen staan nog op Onbekend, omdat die leesronde ze niet kon bereiken, en een gegokt oordeel is erger dan een lege cel."
+        ],
         "_{count} working day in this status_::_{count} working days in this status_": [
             "{count} werkdag in deze status",
             "{count} werkdagen in deze status"
@@ -531,6 +535,7 @@
         "Anonymize": "Anonimiseren",
         "Anonymize When Sharing": "Anonimiseren bij delen",
         "Another organisation has requested to transfer custody of a case to your organisation. Review the request with your case handler before accepting.": "Een andere organisatie heeft verzocht om de zaak over te dragen aan uw organisatie. Bespreek het verzoek met uw zaakbehandelaar voordat u accepteert.",
+        "Another {count} capabilities are proposed and not yet on the scored list. We read our own code and the other {others} systems against each of them, but they are in no total on this page until they join the scored list.": "Nog eens {count} capaciteiten zijn voorgesteld en staan nog niet op de beoordeelde lijst. Voor elk ervan hebben we onze eigen code en de andere {others} systemen gelezen, maar ze tellen op deze pagina in geen enkel totaal mee totdat ze op de beoordeelde lijst staan.",
         "Another {count} capabilities are proposed and not yet rated. We read our own code for each of them. We have not read the other {others} systems against them, so they are in no total on this page. A proposal becomes a row when every system has been read against it.": "Nog eens {count} capaciteiten zijn voorgesteld en nog niet beoordeeld. Voor elk ervan hebben we onze eigen code gelezen. We hebben de andere {others} systemen er niet tegen gelezen, dus ze tellen op deze pagina in geen enkel totaal mee. Een voorstel wordt een rij zodra elk systeem ertegen is gelezen.",
         "Answer": "Antwoord",
         "Answer by": "Reageren voor",
@@ -3522,6 +3527,7 @@
         "Lat": "Breedtegraad",
         "Late": "Te laat",
         "Late Filing Notice": "Bericht over te laat indienen",
+        "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one, and read the other {others} products against them in a later reading.": "Latere leesrondes stelden vragen die de eerste ronde niet had bedacht. In totaal hebben we {count} functies aan de lijst toegevoegd, de laatste daarvan op {date}. Onszelf hebben we op elk van die rijen beoordeeld, en de andere {others} producten hebben we er in een latere leesronde tegen gelezen.",
         "Later rounds of reading asked questions the first round had not thought of. In all we added {count} capabilities to the list, the most recent of them on {date}. We rated ourselves on every one. The other {others} columns read Unknown, because we did not read those products against these rows, and a guessed rating is worse than an empty cell.": "Latere leesrondes stelden vragen die de eerste ronde niet had bedacht. In totaal hebben we {count} functies aan de lijst toegevoegd, de laatste daarvan op {date}. Onszelf hebben we op elk van die rijen beoordeeld. De andere {others} kolommen staan op Onbekend, want die producten hebben we niet tegen deze rijen gelezen, en een gegokt oordeel is erger dan een lege cel.",
         "Latest response date": "Uiterlijke reactiedatum",
         "Latest response date is required.": "Uiterlijke reactiedatum is verplicht.",
@@ -8779,6 +8785,7 @@
         "Zoom": "Zoomen",
         "{assessed}/{total} documents assessed": "{assessed}/{total} documenten beoordeeld",
         "{count} / {max} characters": "{count} / {max} tekens",
+        "{count} capabilities proposed for {area}. We rated ourselves and read the other {others} systems against these too. Only our rating is shown, and they are in no total here.": "{count} capaciteiten voorgesteld voor {area}. We hebben onszelf beoordeeld en de andere {others} systemen er ook tegen gelezen. Alleen ons oordeel staat hier, en ze tellen hier in geen enkel totaal mee.",
         "{count} capabilities proposed for {area}. We rated ourselves. The other {others} systems have not been read against these, so they are in no total here.": "{count} capaciteiten voorgesteld voor {area}. We hebben onszelf beoordeeld. De andere {others} systemen zijn hier niet tegen gelezen, dus ze tellen hier in geen enkel totaal mee.",
         "{count} case moved without all of its automatic actions. Its status record shows which.": "{count} zaak is verplaatst, maar niet al haar automatische acties zijn uitgevoerd. De statusregistratie laat zien welke.",
         "{count} cases excluded, no SLA target": "{count} zaken uitgesloten, geen SLA-doel",
@@ -8787,6 +8794,8 @@
         "{count} cases on this page are selected.": "{count} zaken op deze pagina zijn geselecteerd.",
         "{count} changed": "{count} gewijzigd",
         "{count} checklist item(s) not completed: {items}": "{count} checklistitem(s) niet afgerond: {items}",
+        "{count} competitor cell on these rows still reads Unknown, because that reading could not reach it, and a guessed rating is worse than an empty cell.": "{count} cel van een concurrent op deze rijen staat nog op Onbekend, omdat die leesronde haar niet kon bereiken, en een gegokt oordeel is erger dan een lege cel.",
+        "{count} competitor cells on these rows still read Unknown, because that reading could not reach them, and a guessed rating is worse than an empty cell.": "{count} cellen van concurrenten op deze rijen staan nog op Onbekend, omdat die leesronde ze niet kon bereiken, en een gegokt oordeel is erger dan een lege cel.",
         "{count} deelzaken": "{count} deelzaken",
         "{count} document(s) selected": "{count} document(en) geselecteerd",
         "{count} failed": "{count} mislukt",

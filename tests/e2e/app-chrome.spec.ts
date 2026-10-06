@@ -49,7 +49,7 @@ const RIVALS: string[] = COMPARISON.systems
 	.filter((system: any) => !system.isSelf)
 	.map((system: any) => system.key)
 
-/** The rows a later reading round added, which no competitor was read against. */
+/** The rows a later reading round added; competitors are rated on them only from a later reading. */
 const ADDED_ROWS: any[] = COMPARISON.capabilities.filter((row: any) => row.addedOn)
 
 /**
@@ -267,12 +267,12 @@ test.describe('app chrome (ADR-114)', () => {
 	//     addedRowsText(): `date: formatComparedOn(comparison.comparedOn, ...)`
 	//       -> "the panel must say when the most recent rows were added"
 	//     addedRowsText(): `others: comparison.systems.length - 2`
-	//       -> "the panel must say every competitor column is unrated on the added rows"
-	//     openspec/parity/capabilities.json row 2.23: `"opencase": "yes"`
-	//       -> "an added row must read Unknown for every competitor, never a guess"
+	//       -> "the panel must say whether the competitor columns were read on the added rows"
+	//     openspec/parity/capabilities.json systems opencase: `"readOn": "2026-09-01"`
+	//       -> "an added row must rate a competitor only from a reading dated after it"
 	//   the-panel-names-the-proposals
 	//     pendingText(): `count: pending.length + 1`
-	//       -> "the panel must say how many capabilities are proposed and not yet rated"
+	//       -> "the panel must say how many capabilities are proposed"
 	test('FeaturesRoadmapView compares dossiq and states the comparison limits', async ({
 		page,
 	}) => {
@@ -384,12 +384,22 @@ test.describe('app chrome (ADR-114)', () => {
 			comparison,
 			'the panel must say when the most recent rows were added',
 		).toContainText(`the most recent of them on ${latestAdditionText}`)
-		// AND it says every competitor column is unrated on those rows.
+		// AND it says whether the competitor columns were read on those rows.
+		// The sentence follows the data (dossiq#3139): unread while every rival
+		// cell on them is Unknown, read once a later reading filled them.
+		const unreadAdded = ADDED_ROWS.flatMap((row) =>
+			RIVALS.filter((key) => (row[key] ?? 'unknown') === 'unknown'),
+		).length
 		await expect(
 			comparison,
-			'the panel must say every competitor column is unrated on the added rows',
-		).toContainText(`The other ${RIVALS.length} columns read Unknown`)
-		// AND those rows show Unknown for every competitor, never a guess. Read
+			'the panel must say whether the competitor columns were read on the added rows',
+		).toContainText(
+			unreadAdded === ADDED_ROWS.length * RIVALS.length
+				? `The other ${RIVALS.length} columns read Unknown`
+				: `read the other ${RIVALS.length} products against them`,
+		)
+		// AND those rows show a rival rating only from a reading dated on or
+		// after the row was added, never a guess. Read
 		// off the rendered cells: the rows are in the DOM while their area is
 		// collapsed, so one pass covers all of them without opening seventeen
 		// disclosures.
@@ -428,18 +438,26 @@ test.describe('app chrome (ADR-114)', () => {
 			cells.map((row) => row.id).sort(),
 			'every added row must be on the page',
 		).toEqual([...addedIds].sort())
+		const readOn: Record<string, string | undefined> = Object.fromEntries(
+			COMPARISON.systems.map((system: any) => [system.key, system.readOn]),
+		)
+		const addedOn: Record<string, string> = Object.fromEntries(
+			ADDED_ROWS.map((row) => [String(row.id), row.addedOn]),
+		)
 		const guessed = cells
 			.filter(
 				(row) =>
 					row.chips.length !== RIVALS.length
 					|| row.chips.some(
-						(chip) => !chip.includes('features-roadmap__chip--unknown'),
+						(chip, i) =>
+							!chip.includes('features-roadmap__chip--unknown')
+							&& !((readOn[RIVALS[i]] ?? '') >= addedOn[row.id]),
 					),
 			)
 			.map((row) => row.id)
 		expect(
 			guessed,
-			'an added row must read Unknown for every competitor, never a guess',
+			'an added row must rate a competitor only from a reading dated after it',
 		).toEqual([])
 
 		// AND the proposals are named as proposals, and kept out of every
@@ -449,10 +467,8 @@ test.describe('app chrome (ADR-114)', () => {
 		// three other teams had been measured beside it.
 		await expect(
 			comparison,
-			'the panel must say how many capabilities are proposed and not yet rated',
-		).toContainText(
-			`Another ${PENDING.length} capabilities are proposed and not yet rated`,
-		)
+			'the panel must say how many capabilities are proposed',
+		).toContainText(`Another ${PENDING.length} capabilities are proposed`)
 		await expect(
 			comparison,
 			'the panel must say the proposals are in no total',

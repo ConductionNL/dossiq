@@ -80,6 +80,7 @@ vi.mock('@conduction/nextcloud-vue', () => ({
 }))
 
 const { default: data } = await import('../../openspec/parity/capabilities.json')
+const { unreadRivalCells } = await import('../../src/utils/capabilityComparison.js')
 const { default: FeaturesRoadmapView } =
 	await import('../../src/views/FeaturesRoadmapView.vue')
 
@@ -181,12 +182,24 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 		)
 	})
 
-	it('says which rows a later round added, and that rivals are unrated', async () => {
+	it('says which rows a later round added, and whether the rivals were read on them', async () => {
 		const text = (await mountComparison()).text()
-		const added = data.capabilities.filter((row) => row.addedOn).length
+		const added = data.capabilities.filter((row) => row.addedOn)
+		const { unread, total } = unreadRivalCells(added, data.systems)
 
-		expect(text).toContain(`we added ${added} capabilities`)
-		expect(text).toContain('a guessed rating is worse than an empty cell')
+		expect(text).toContain(`we added ${added.length} capabilities`)
+		// The sentence follows the data (dossiq#3139). Once a reading round
+		// filled the rival cells, the page must stop saying it did not read
+		// those products, and name only the cells still Unknown.
+		if (unread === total) {
+			expect(text).toContain('columns read Unknown')
+		} else {
+			expect(text).not.toContain('we did not read those products against these rows')
+			expect(text).toContain('read the other')
+		}
+		if (unread > 0) {
+			expect(text).toContain('a guessed rating is worse than an empty cell')
+		}
 	})
 
 	it('does not date every added row to the most recent round', async () => {
@@ -226,9 +239,17 @@ describe('FeaturesRoadmapView comparison caveats', () => {
 		const text = (await mountComparison()).text()
 
 		expect(text).toContain(
-			`Another ${data.pending.length} capabilities are proposed and not yet rated`,
+			`Another ${data.pending.length} capabilities are proposed`,
 		)
 		expect(text).toContain('they are in no total on this page')
+		// Whether the rivals were read against them follows the data, so a
+		// reading round cannot leave the page claiming they were not (#3139).
+		if (unreadRivalCells(data.pending, data.systems).unread === 0) {
+			expect(text).not.toContain('We have not read the other')
+			expect(text).not.toContain('have not been read against these')
+		} else {
+			expect(text).toContain('We have not read the other')
+		}
 		// And the totals table still counts the rows, not the two lists.
 		expect(text).toContain(
 			`Totals over all ${data.capabilities.length} capabilities`,

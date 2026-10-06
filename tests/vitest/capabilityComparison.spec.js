@@ -34,6 +34,7 @@ import {
 	RATING_COLUMNS,
 	RATINGS,
 	tally,
+	unreadRivalCells,
 } from '../../src/utils/capabilityComparison.js'
 
 // The corpus's own totals over the 225 ROWS. Hard-coded on purpose: if a row
@@ -999,5 +1000,26 @@ describe('a closure is recorded in a field, not only in prose', () => {
 			ungraded,
 			`systems without a grade or a reason: ${ungraded.join(', ')}`,
 		).toEqual([])
+	})
+})
+
+describe('unreadRivalCells', () => {
+	const systems = [{ key: 'us', isSelf: true }, { key: 'a' }, { key: 'b' }]
+
+	it('counts unknown and missing rival cells, never our own', () => {
+		const rows = [
+			{ us: 'unknown', a: 'yes', b: 'unknown' },
+			{ us: 'yes', a: 'no' },
+		]
+		expect(unreadRivalCells(rows, systems)).toEqual({ unread: 2, total: 4 })
+	})
+
+	it('reports nothing unread when every rival cell is rated', () => {
+		const rows = [{ us: 'yes', a: 'partial', b: 'no' }]
+		expect(unreadRivalCells(rows, systems)).toEqual({ unread: 0, total: 2 })
+	})
+
+	it('treats an empty list as fully read', () => {
+		expect(unreadRivalCells([], systems)).toEqual({ unread: 0, total: 0 })
 	})
 })
