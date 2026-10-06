@@ -83,8 +83,7 @@ class NotificatieService {
 	 */
 	private function loadOpenRegisterServices(): void {
 		try {
-			$container = \OC::$server;
-			$this->objectService = $container->get(
+			$this->objectService = \OCP\Server::get(
 				'OCA\OpenRegister\Service\ObjectService'
 			);
 		} catch (\Throwable $e) {

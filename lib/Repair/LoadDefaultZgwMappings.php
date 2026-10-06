@@ -1630,8 +1630,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function createDefaultApplicaties(IOutput $output): void {
 		try {
-			$container = \OC::$server;
-			$consumerMapper = $container->get('OCA\OpenRegister\Db\ConsumerMapper');
+			$consumerMapper = \OCP\Server::get('OCA\OpenRegister\Db\ConsumerMapper');
 		} catch (\Throwable $e) {
 			$output->info('OpenRegister ConsumerMapper not available. Skipping default applicaties.');
 			return;
@@ -1747,8 +1746,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		}
 
 		try {
-			$container = \OC::$server;
-			$objectService = $container->get(
+			$objectService = \OCP\Server::get(
 				'OCA\OpenRegister\Service\ObjectService'
 			);
 		} catch (\Throwable $e) {

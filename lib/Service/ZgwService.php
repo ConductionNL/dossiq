@@ -192,10 +192,8 @@ class ZgwService {
 		private readonly ZgwJwtValidator $jwtValidator,
 		private readonly LoggerInterface $logger,
 	) {
-		$container = \OC::$server;
-
 		try {
-			$this->mappingService = $container->get(
+			$this->mappingService = \OCP\Server::get(
 				'OCA\OpenRegister\Service\MappingService'
 			);
 		} catch (\Throwable $e) {
@@ -206,7 +204,7 @@ class ZgwService {
 		}
 
 		try {
-			$this->objectService = $container->get(
+			$this->objectService = \OCP\Server::get(
 				'OCA\OpenRegister\Service\ObjectService'
 			);
 		} catch (\Throwable $e) {
@@ -217,7 +215,7 @@ class ZgwService {
 		}
 
 		try {
-			$this->consumerMapper = $container->get(
+			$this->consumerMapper = \OCP\Server::get(
 				'OCA\OpenRegister\Db\ConsumerMapper'
 			);
 		} catch (\Throwable $e) {

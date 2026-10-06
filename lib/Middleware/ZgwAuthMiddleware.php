@@ -144,8 +144,7 @@ class ZgwAuthMiddleware extends Middleware {
 	 */
 	private function loadOpenRegisterServices(): void {
 		try {
-			$container = \OC::$server;
-			$this->consumerMapper = $container->get(
+			$this->consumerMapper = \OCP\Server::get(
 				'OCA\OpenRegister\Db\ConsumerMapper'
 			);
 		} catch (\Throwable $e) {
