@@ -91,8 +91,10 @@ class ZgwJwtValidator {
 	 */
 	private function loadOpenRegisterServices(): void {
 		try {
-			$this->consumerMapper = \OCP\Server::get('OCA\OpenRegister\Db\ConsumerMapper');
-			$this->authorizationService = \OCP\Server::get('OCA\OpenRegister\Service\AuthorizationService');
+			$container = \OC::$server;
+
+			$this->consumerMapper = $container->get('OCA\OpenRegister\Db\ConsumerMapper');
+			$this->authorizationService = $container->get('OCA\OpenRegister\Service\AuthorizationService');
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'ZgwJwtValidator: OpenRegister services not available',
