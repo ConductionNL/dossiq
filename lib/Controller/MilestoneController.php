@@ -141,6 +141,13 @@ class MilestoneController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
+		// Writes a milestone record onto the case named in the URL; without
+		// this any authenticated account could mark milestones on any case
+		// (dossiq#801).
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$userId = $user->getUID();
 
 		try {
@@ -172,6 +179,10 @@ class MilestoneController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		$reason = $this->request->getParam('reason', '');

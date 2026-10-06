@@ -298,11 +298,21 @@ class ContactMomentController extends Controller {
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 * @spec openspec/changes/citizen-lookup-is-guarded-and-recorded/specs/security-hardening/spec.md#requirement-a-citizen-lookup-is-rate-limited-per-account-req-sec-cl-2
 	 */
+	#[UserRateLimit(limit: self::LOOKUP_LIMIT_PER_HOUR, period: 3600)]
 	public function statusGeven(): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		// Reads the status and title of a caller-supplied case and can record
+		// an activity on it. Same KCC-role gate as the sibling quick-actions;
+		// without it any authenticated account could read any case's status
+		// (dossiq#801).
+		if ($this->lookups->isAllowed(user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');

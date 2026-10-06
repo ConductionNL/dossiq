@@ -18,11 +18,11 @@
  *    SESSION user, never to a caller-supplied id;
  *  - `reverse` demands a reason and rejects a whitespace-only one (the code
  *    trims), because the reason is the audit record for undoing a milestone;
- *  - and, asserted deliberately: `mark` and `reverse` consult NO per-case guard
- *    at all, unlike their sibling `progress`. That asymmetry is the live
- *    behaviour of the code, so it is pinned rather than assumed — these two
- *    tests are tripwires that must be updated the day a guard is added, and
- *    they document the gap in the meantime.
+ *  - `mark` and `reverse` write onto the case, so they demand
+ *    `CaseAccessGuard::hasCaseMutationAccess()` for the caseId from the URL and
+ *    refuse with 403 before MilestoneService is entered (dossiq#801). Until
+ *    then they consulted no per-case guard at all, and two tripwire tests here
+ *    pinned that gap.
  *
  * @category Tests
  * @package  OCA\Dossiq\Tests\Unit\Controller
@@ -301,6 +301,7 @@ class MilestoneControllerContractTest extends TestCase {
 	 */
 	public function testMarkStampsManualProvenanceAndAttributesTheSessionUser(): void {
 		$this->signIn(uid: 'alice');
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 
 		$this->milestoneService->expects($this->once())
 			->method('markMilestone')
@@ -314,25 +315,24 @@ class MilestoneControllerContractTest extends TestCase {
 	}//end testMarkStampsManualProvenanceAndAttributesTheSessionUser()
 
 	/**
-	 * `mark` consults NO per-case guard — authentication alone is enough.
-	 *
-	 * This is asserted, not assumed: it is the live behaviour and it differs
-	 * from the sibling `progress` on the same case id. The test is a tripwire —
-	 * adding a guard (which would bring `mark` in line with `progress`) makes it
-	 * fail, forcing a deliberate update rather than a silent drift.
+	 * `mark` demands mutation access on the caseId from the URL and refuses
+	 * an account that is not on the case with 403, writing nothing.
 	 *
 	 * @return void
 	 */
-	public function testMarkCurrentlyConsultsNoPerCaseGuard(): void {
-		$this->signIn(uid: 'someone-not-on-this-case');
-		$this->caseAccessGuard->expects($this->never())->method('hasCaseMutationAccess');
-		$this->caseAccessGuard->expects($this->never())->method('hasCaseReadAccess');
-		$this->milestoneService->method('markMilestone')->willReturn(['id' => 'record-1']);
+	public function testMarkDemandsCaseMutationAccessAndRefusesWith403(): void {
+		$user = $this->signIn(uid: 'someone-not-on-this-case');
+		$this->caseAccessGuard->expects($this->once())
+			->method('hasCaseMutationAccess')
+			->with('zaak-of-another-handler', $user)
+			->willReturn(false);
+		$this->milestoneService->expects($this->never())->method('markMilestone');
 
 		$response = $this->controller->mark(caseId: 'zaak-of-another-handler', milestoneId: 'ms-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-	}//end testMarkCurrentlyConsultsNoPerCaseGuard()
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+	}//end testMarkDemandsCaseMutationAccessAndRefusesWith403()
 
 	/**
 	 * A rejected milestone (already reached, unknown definition) answers 400
@@ -342,6 +342,7 @@ class MilestoneControllerContractTest extends TestCase {
 	 */
 	public function testMarkReportsADomainRefusalAs400(): void {
 		$this->signIn();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->milestoneService->method('markMilestone')
 			->willThrowException(new \RuntimeException('Milestone already reached'));
 
@@ -374,6 +375,7 @@ class MilestoneControllerContractTest extends TestCase {
 	 */
 	public function testReverseRejectsAMissingReasonWith400(): void {
 		$this->signIn();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->withParams([]);
 		$this->milestoneService->expects($this->never())->method('reverseMilestone');
 
@@ -394,6 +396,7 @@ class MilestoneControllerContractTest extends TestCase {
 	 */
 	public function testReverseRejectsAWhitespaceOnlyReasonWith400(): void {
 		$this->signIn();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->withParams(['reason' => "   \t\n"]);
 		$this->milestoneService->expects($this->never())->method('reverseMilestone');
 
@@ -414,6 +417,7 @@ class MilestoneControllerContractTest extends TestCase {
 	 */
 	public function testReverseForwardsTheReasonAndReportsTheOutcome(): void {
 		$this->signIn(uid: 'alice');
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->withParams(['reason' => 'Onterecht gemarkeerd']);
 
 		$this->milestoneService->expects($this->once())
@@ -435,6 +439,7 @@ class MilestoneControllerContractTest extends TestCase {
 	 */
 	public function testReverseCarriesAFalseOutcomeThroughRatherThanClaimingSuccess(): void {
 		$this->signIn();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->withParams(['reason' => 'Onterecht gemarkeerd']);
 		$this->milestoneService->method('reverseMilestone')->willReturn(false);
 
@@ -445,22 +450,26 @@ class MilestoneControllerContractTest extends TestCase {
 	}//end testReverseCarriesAFalseOutcomeThroughRatherThanClaimingSuccess()
 
 	/**
-	 * `reverse` likewise consults no per-case guard today — pinned as a
-	 * tripwire alongside `mark`.
+	 * `reverse` demands mutation access on the caseId from the URL and refuses
+	 * an account that is not on the case with 403, reversing nothing, even
+	 * when it supplies a valid reason.
 	 *
 	 * @return void
 	 */
-	public function testReverseCurrentlyConsultsNoPerCaseGuard(): void {
-		$this->signIn(uid: 'someone-not-on-this-case');
+	public function testReverseDemandsCaseMutationAccessAndRefusesWith403(): void {
+		$user = $this->signIn(uid: 'someone-not-on-this-case');
 		$this->withParams(['reason' => 'Onterecht gemarkeerd']);
-		$this->caseAccessGuard->expects($this->never())->method('hasCaseMutationAccess');
-		$this->caseAccessGuard->expects($this->never())->method('hasCaseReadAccess');
-		$this->milestoneService->method('reverseMilestone')->willReturn(true);
+		$this->caseAccessGuard->expects($this->once())
+			->method('hasCaseMutationAccess')
+			->with('zaak-of-another-handler', $user)
+			->willReturn(false);
+		$this->milestoneService->expects($this->never())->method('reverseMilestone');
 
 		$response = $this->controller->reverse(caseId: 'zaak-of-another-handler', milestoneId: 'ms-1');
 
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-	}//end testReverseCurrentlyConsultsNoPerCaseGuard()
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+	}//end testReverseDemandsCaseMutationAccessAndRefusesWith403()
 
 	/**
 	 * A failure during reversal answers 400 with the service's message.
@@ -469,6 +478,7 @@ class MilestoneControllerContractTest extends TestCase {
 	 */
 	public function testReverseReportsADomainRefusalAs400(): void {
 		$this->signIn();
+		$this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 		$this->withParams(['reason' => 'Onterecht gemarkeerd']);
 		$this->milestoneService->method('reverseMilestone')
 			->willThrowException(new \RuntimeException('Milestone was never reached'));

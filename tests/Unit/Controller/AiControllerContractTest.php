@@ -17,6 +17,9 @@
  *    optional and must be forwarded as null, not as an empty string, or the
  *    service would look for a document with the id ""), `suggestNext` demands
  *    only caseId, `recordAction` demands caseId, type AND userAction;
+ *  - every case-scoped endpoint asks `CaseAccessGuard::hasCaseReadAccess()`
+ *    about the caseId from the body and answers 403 without AI work or an
+ *    audit write when it refuses (dossiq#801);
  *  - each delegate is called with its arguments in the right ORDER. All of
  *    these methods take several same-typed strings in a row, so a transposed
  *    pair (`type` and `userAction` on recordUserAction, `question` and `userId`
@@ -101,6 +104,12 @@ class AiControllerContractTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 
+		$this->caseReadable = true;
+		$caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+		$caseAccessGuard->method('hasCaseReadAccess')->willReturnCallback(
+			fn (): bool => $this->caseReadable
+		);
+
 		$this->request = $this->createMock(IRequest::class);
 		$this->aiService = $this->createMock(AiService::class);
 		$this->auditService = $this->createMock(AiAuditService::class);
@@ -113,9 +122,57 @@ class AiControllerContractTest extends TestCase {
 			auditService: $this->auditService,
 			userSession: $this->userSession,
 			logger: $this->createMock(LoggerInterface::class),
-			caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+			caseAccessGuard: $caseAccessGuard,
 		);
 	}//end setUp()
+
+	/**
+	 * Whether the per-case guard grants read access in this test.
+	 *
+	 * @var boolean
+	 */
+	private bool $caseReadable = true;
+
+	/**
+	 * Every case-scoped AI endpoint refuses a caller who cannot read the case
+	 * with 403, before any model call and before any audit row is written.
+	 *
+	 * @return void
+	 */
+	public function testEveryCaseScopedEndpointRefusesACallerWhoCannotReadTheCase(): void {
+		$this->authenticate();
+		$this->caseReadable = false;
+		$this->request->method('getParam')->willReturnCallback(
+			static fn (string $key, mixed $default = null): mixed => [
+				'caseId' => 'case-of-someone-else',
+				'documentId' => 'doc-1',
+				'question' => 'Wat is de status?',
+				'type' => 'case',
+				'userAction' => 'accepted',
+			][$key] ?? $default
+		);
+
+		foreach (['classifyDocument', 'extractData', 'askQuestion', 'summarize', 'suggestRouting', 'suggestNextStep'] as $method) {
+			$this->aiService->expects($this->never())->method($method);
+		}
+
+		$this->auditService->expects($this->never())->method('recordUserAction');
+
+		$responses = [
+			'classify' => $this->controller->classify(),
+			'extract' => $this->controller->extract(),
+			'ask' => $this->controller->ask(),
+			'summarize' => $this->controller->summarize(),
+			'suggestRouting' => $this->controller->suggestRouting(),
+			'suggestNext' => $this->controller->suggestNext(),
+			'recordAction' => $this->controller->recordAction(),
+		];
+
+		foreach ($responses as $endpoint => $response) {
+			$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus(), $endpoint . ' must refuse with 403');
+			$this->assertSame(['error' => 'Not authorized'], $response->getData(), $endpoint);
+		}
+	}//end testEveryCaseScopedEndpointRefusesACallerWhoCannotReadTheCase()
 
 	/**
 	 * Mark the session as authenticated for user `alice`.

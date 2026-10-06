@@ -76,6 +76,9 @@ class CitizenLookupRateLimitTest extends TestCase {
 		// instead of trusting this one.
 		'nieuweZaak',
 		'klachtRegistreren',
+		// Takes a caller-supplied caseId and reads that case's status and
+		// title; gated on the KCC role since dossiq#801, so limited like the rest.
+		'statusGeven',
 	];
 
 	/**

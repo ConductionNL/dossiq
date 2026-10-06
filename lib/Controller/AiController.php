@@ -37,6 +37,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -102,6 +103,10 @@ class AiController extends Controller {
 			);
 		}
 
+		if ($this->mayActOnCase(caseId: (string)$caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$userId = $user->getUID();
 		$result = $this->aiService->classifyDocument($caseId, $documentId, $userId);
 
@@ -133,6 +138,10 @@ class AiController extends Controller {
 			);
 		}
 
+		if ($this->mayActOnCase(caseId: (string)$caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$userId = $user->getUID();
 		$result = $this->aiService->extractData($caseId, $documentId, $userId);
 
@@ -162,6 +171,10 @@ class AiController extends Controller {
 				['error' => 'caseId and question are required'],
 				Http::STATUS_BAD_REQUEST
 			);
+		}
+
+		if ($this->mayActOnCase(caseId: (string)$caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		$userId = $user->getUID();
@@ -204,6 +217,10 @@ class AiController extends Controller {
 			);
 		}
 
+		if ($this->mayActOnCase(caseId: (string)$caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$userId = $user->getUID();
 		$result = $this->aiService->summarize($caseId, $type, $documentId, $userId);
 
@@ -234,6 +251,10 @@ class AiController extends Controller {
 			);
 		}
 
+		if ($this->mayActOnCase(caseId: (string)$caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
+
 		$userId = $user->getUID();
 		$result = $this->aiService->suggestRouting($caseId, $userId);
 
@@ -262,6 +283,10 @@ class AiController extends Controller {
 				['error' => 'caseId is required'],
 				Http::STATUS_BAD_REQUEST
 			);
+		}
+
+		if ($this->mayActOnCase(caseId: (string)$caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		$userId = $user->getUID();
@@ -297,6 +322,10 @@ class AiController extends Controller {
 				['error' => 'caseId, type, and userAction are required'],
 				Http::STATUS_BAD_REQUEST
 			);
+		}
+
+		if ($this->mayActOnCase(caseId: (string)$caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		$userId = $user->getUID();
@@ -376,4 +405,22 @@ class AiController extends Controller {
 			);
 		}//end try
 	}//end auditIndex()
+
+	/**
+	 * Whether the caller may run AI work on, and write AI audit rows to, a case.
+	 *
+	 * Every endpoint here takes `caseId` from the request body and records an
+	 * `aiAuditEntry` against it. Without this check any authenticated account
+	 * could write into the AI audit trail of any case, which `auditIndex()`
+	 * then shows to that case's handlers as their own oversight record
+	 * (dossiq#801). Read access is enough: reviewers act on AI suggestions too.
+	 *
+	 * @param string $caseId The case UUID from the request.
+	 * @param IUser $user The session user.
+	 *
+	 * @return bool True when the caller can read the case.
+	 */
+	private function mayActOnCase(string $caseId, IUser $user): bool {
+		return $this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user);
+	}//end mayActOnCase()
 }//end class

@@ -7,13 +7,14 @@
  * their wire behaviour (gate-25): `statusGeven`, `doorverbinden`,
  * `acceptDoorverbinding` and `rejectDoorverbinding`.
  *
- * These four differ from their neighbours on this controller in one respect
- * that the tests make explicit: `create()`, `index()`, `voorblad()`,
- * `nieuweZaak()` and `klachtRegistreren()` all sit behind
- * `CitizenLookupGuard::isCitizenLookupAllowed()` because they resolve a
- * caller-supplied CITIZEN identifier, while these four address a case or a
- * transfer record and are gated on the session alone. What every one of them
- * must never do is take the acting identity from the request:
+ * `create()`, `index()`, `voorblad()`, `nieuweZaak()` and `klachtRegistreren()`
+ * sit behind `CitizenLookupGuard::isCitizenLookupAllowed()` because they
+ * resolve a caller-supplied citizen identifier. `statusGeven` sits behind the
+ * same KCC-role gate because it reads the status and title of a caller-supplied
+ * case (dossiq#801). The three transfer endpoints are gated on the session,
+ * and accept/reject are checked against the transfer's addressee in
+ * DoorverbindingService. What every one of them must never do is take the
+ * acting identity from the request:
  *
  *  - `doorverbinden` records `fromEmployeeId` from the session;
  *  - `acceptDoorverbinding` accepts AS the session user;
@@ -102,6 +103,13 @@ class ContactMomentControllerContractTest extends TestCase {
 	private IUserSession $userSession;
 
 	/**
+	 * The KCC-role guard behind GuardedCitizenLookup.
+	 *
+	 * @var CitizenLookupGuard|MockObject
+	 */
+	private CitizenLookupGuard $lookupGuard;
+
+	/**
 	 * The controller under test.
 	 *
 	 * @var ContactMomentController
@@ -121,6 +129,7 @@ class ContactMomentControllerContractTest extends TestCase {
 		$this->quickActionService = $this->createMock(QuickActionService::class);
 		$this->transferService = $this->createMock(DoorverbindingService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
+		$this->lookupGuard = $this->createMock(CitizenLookupGuard::class);
 
 		$this->controller = new ContactMomentController(
 			appName: 'dossiq',
@@ -135,7 +144,7 @@ class ContactMomentControllerContractTest extends TestCase {
 			// test observes did not move when the pair was joined: only the
 			// wiring line did.
 			lookups: new GuardedCitizenLookup(
-				$this->createMock(CitizenLookupGuard::class),
+				$this->lookupGuard,
 				$this->createMock(CitizenLookupRecorder::class),
 			),
 		);
@@ -209,6 +218,27 @@ class ContactMomentControllerContractTest extends TestCase {
 	}//end testAllFourEndpointsRefuseAnAnonymousCaller()
 
 	/**
+	 * An account without the KCC role is refused with 403 before the case is
+	 * read: statusGeven would otherwise hand any authenticated account the
+	 * status and title of any case (dossiq#801).
+	 *
+	 * @return void
+	 */
+	public function testStatusGevenRefusesAnAccountWithoutTheKccRole(): void {
+		$this->authenticate();
+		$this->withParams(['caseId' => 'case-of-someone-else', 'confirm' => true]);
+		$this->lookupGuard->method('isCitizenLookupAllowed')->willReturn(false);
+
+		$this->quickActionService->expects($this->never())->method('executeStatusTerugkoppelen');
+		$this->contactMomentService->expects($this->never())->method('recordActivity');
+
+		$response = $this->controller->statusGeven();
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+		$this->assertSame(['error' => 'Not authorized'], $response->getData());
+	}//end testStatusGevenRefusesAnAccountWithoutTheKccRole()
+
+	/**
 	 * Without `confirm`, statusGeven only DRAFTS: the draft text is returned and
 	 * nothing is written to the case's activity log.
 	 *
@@ -219,6 +249,7 @@ class ContactMomentControllerContractTest extends TestCase {
 	 */
 	public function testStatusGevenDraftsWithoutRecordingWhenNotConfirmed(): void {
 		$this->authenticate();
+		$this->lookupGuard->method('isCitizenLookupAllowed')->willReturn(true);
 		$this->withParams(['caseId' => 'case-1']);
 
 		$draft = ['draftText' => 'Uw aanvraag heeft de status: in behandeling.', 'status' => 'in_behandeling'];
@@ -245,6 +276,7 @@ class ContactMomentControllerContractTest extends TestCase {
 	 */
 	public function testStatusGevenRecordsTheActivityUnderTheSessionEmployeeWhenConfirmed(): void {
 		$this->authenticate();
+		$this->lookupGuard->method('isCitizenLookupAllowed')->willReturn(true);
 		$this->withParams(['caseId' => 'case-1', 'confirm' => true, 'kccEmployeeId' => 'mallory']);
 
 		$draft = ['draftText' => 'Uw aanvraag heeft de status: in behandeling.'];
@@ -270,6 +302,7 @@ class ContactMomentControllerContractTest extends TestCase {
 	 */
 	public function testStatusGevenMapsAnUnresolvableCaseTo400(): void {
 		$this->authenticate();
+		$this->lookupGuard->method('isCitizenLookupAllowed')->willReturn(true);
 		$this->withParams(['caseId' => 'case-missing', 'confirm' => true]);
 
 		$this->quickActionService->method('executeStatusTerugkoppelen')
