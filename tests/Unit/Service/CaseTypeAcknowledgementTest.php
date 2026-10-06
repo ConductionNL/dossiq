@@ -304,6 +304,34 @@ class CaseTypeAcknowledgementTest extends TestCase {
 	}//end testTheCitizensRecordedChannelWins()
 
 	/**
+	 * A URL in communicationChannel is not a channel, so the default applies.
+	 *
+	 * The schema declares the field as a URL; the acknowledgement must not
+	 * record that URL as the channel it went out through (#3169).
+	 *
+	 * @return void
+	 */
+	public function testAUrlInTheChannelFieldFallsBackToTheDefault(): void {
+		$caseType = ['acknowledgement' => ['defaultChannel' => 'post']];
+
+		self::assertSame(
+			expected: 'post',
+			actual: $this->declaration->channelFor(
+				case: ['communicationChannel' => 'https://example.org/api/v1/kanalen/7'],
+				caseType: $caseType
+			)
+		);
+		self::assertSame(
+			expected: 'post',
+			actual: $this->declaration->channelFor(case: ['communicationChannel' => 'pigeon'], caseType: $caseType)
+		);
+		self::assertSame(
+			expected: 'email',
+			actual: $this->declaration->channelFor(case: ['communicationChannel' => ' Email '], caseType: $caseType)
+		);
+	}//end testAUrlInTheChannelFieldFallsBackToTheDefault()
+
+	/**
 	 * Content on the platform is read off the case type, not the template.
 	 *
 	 * @return void

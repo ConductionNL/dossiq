@@ -67,6 +67,19 @@ class CaseTypeAcknowledgement {
 	public const ELECTRONIC_CHANNELS = ['email', 'website', 'zgw-api'];
 
 	/**
+	 * The channel names an acknowledgement can go out through.
+	 *
+	 * `case.communicationChannel` is still declared as a URL on the schema
+	 * (and the ZGW API writes a communicatiekanaal URL into it), so a stored
+	 * value is only read as the citizen's choice when it is one of these
+	 * names. Anything else, a URL above all, is not a channel, and the case
+	 * type's default applies (#3169).
+	 *
+	 * @var array<int, string>
+	 */
+	public const RECIPIENT_CHANNELS = ['email', 'portal', 'post', 'website', 'zgw-api'];
+
+	/**
 	 * The moment the statutory acknowledgement is declared at.
 	 *
 	 * @var string
@@ -195,7 +208,10 @@ class CaseTypeAcknowledgement {
 	 * The citizen's own recorded choice wins where there is one; the case
 	 * type's default applies otherwise. dossiq holds neither the preference
 	 * store nor the routing, so `case.communicationChannel` is read as the
-	 * recorded choice and nothing here invents a second one.
+	 * recorded choice and nothing here invents a second one. A stored value
+	 * that is not a channel name (a URL, for one) is no choice, so the
+	 * default applies and the acknowledgement never records a URL as the
+	 * channel it went out through.
 	 *
 	 * @param array<string, mixed> $case     The created case.
 	 * @param array<string, mixed> $caseType The effective case type row.
@@ -205,8 +221,8 @@ class CaseTypeAcknowledgement {
 	 * @spec openspec/changes/ontvangstbevestiging/specs/burger-notifications/spec.md
 	 */
 	public function channelFor(array $case, array $caseType): string {
-		$chosen = trim((string)($case['communicationChannel'] ?? ''));
-		if ($chosen !== '') {
+		$chosen = strtolower(trim((string)($case['communicationChannel'] ?? '')));
+		if (in_array($chosen, self::RECIPIENT_CHANNELS, true) === true) {
 			return $chosen;
 		}
 
