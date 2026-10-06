@@ -19,6 +19,7 @@
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
+import { schemaRefSlug } from '@conduction/nextcloud-vue/src/utils/schemaRefSlug.js'
 import {
 	groupMenuEntries,
 	resolveNextStep,
@@ -376,7 +377,7 @@ describe('the tabs', () => {
 				stagesEndpoint: undefined,
 				stagesSource: {
 					register: 'dossiq',
-					schema: 'statusType',
+					schema: 'statustype',
 					filter: { caseType: '@object.caseType' },
 					orderBy: 'order',
 					labelField: 'name',
@@ -399,6 +400,38 @@ describe('the tabs', () => {
 			)
 		expect(others(simple)).toEqual(others(original))
 		expect(simple.sidebar).toEqual(original.sidebar)
+	})
+
+	it('reads the stages from a schema the register has, as the library will send it', () => {
+		// The library runs every schema name through `schemaRefSlug` before it
+		// builds the request, and that kebab-cases it: `statusType` went out as
+		// `/objects/dossiq/status-type` and answered 404 on :8080 (6 October
+		// 2026), so the widget said "Could not load the stages". OpenRegister
+		// matches a slug without regard to case (`statustype` and `StatusType`
+		// answer 200 on :8097, `status-type` 404), so the overlay writes the
+		// slug in lower case, which the kebab rule leaves alone. This asks the
+		// library's own rule, so a name it would rewrite cannot pass.
+		const source = simple.widgets.find((widget) => widget.id === 'case-stages').content.stagesSource
+		const sent = schemaRefSlug(source.schema)
+		expect(sent).toBe(source.schema)
+		const slugs = Object.entries(register.components.schemas).map(
+			([key, schema]) => String(schema.slug || key),
+		)
+		const named = slugs.find((slug) => slug.toLowerCase() === sent.toLowerCase())
+		expect(named).toBe('statusType')
+		expect(Object.keys(register.components.registers)).toContain(source.register)
+
+		// Every field the source reads is a field the schema carries.
+		const fields = Object.keys(register.components.schemas[named].properties)
+		for (const field of [
+			...Object.keys(source.filter),
+			source.orderBy,
+			source.labelField,
+			source.descriptionField,
+			source.finalField,
+		]) {
+			expect(fields).toContain(field)
+		}
 	})
 
 	it('takes the three tiles out of the grid and keeps every other card where it was', () => {

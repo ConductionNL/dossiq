@@ -396,7 +396,7 @@
 							"ariaLabel": "Case progress",
 							"stagesSource": {
 								"register": "dossiq",
-								"schema": "statusType",
+								"schema": "statustype",
 								"filter": {
 									"caseType": "@object.caseType"
 								},
