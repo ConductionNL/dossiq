@@ -107,20 +107,13 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 	// this resolves for a reader and not for the gate until
 	// `page-topology-cleanup` is archived.
 	//
-	// 🔴 AND THE NEAREST PUBLISHED REQUIREMENT SAYS THE OPPOSITE, SO DO NOT
-	// RE-ANCHOR ONTO IT. `besluitvorming-leaf` REQ-BVL-002 is titled "The
-	// standalone Besluitvorming nav MUST be retired while its pages stay
-	// routable", and its scenario `#former-pages-stay-reachable-by-deep-link`
-	// requires that `/besluitvorming/agenda` "still renders (the route is
-	// registered)". This test asserts it does NOT render and falls through to
-	// the app root. Citing it there would attach the test to a requirement it
-	// disproves, and it would read as coverage.
+	// @e2e openspec/specs/besluitvorming-leaf/spec.md#former-pages-no-longer-render
 	//
-	// The two are not both true, and the conflict is in the published set
-	// rather than in this file: REQ-BVL-002 was superseded by D1 of
-	// `page-topology-cleanup`, which has not been archived, so the retired
-	// requirement is still the published one. Reported with this change;
-	// resolving it belongs to that change's archive step, not to a test file.
+	// `besluitvorming-leaf` REQ-BVL-002 used to say the opposite ("its pages
+	// stay routable"), and this test was deliberately NOT cited there while it
+	// did. The published requirement now states what this test asserts: the
+	// retired views do not render and the router falls through to the app
+	// root (dossiq#2577), so it carries that citation too.
 	//
 	// This scenario has three clauses and this test proves the first. The
 	// sibling below proves the second, and carries the same citation for that
@@ -144,6 +137,7 @@ test.describe('Retired: besluitvorming agenda pages (D1)', () => {
 	})
 
 	// @e2e openspec/changes/page-topology-cleanup/specs/decision-making-surface/spec.md#procest-hosts-no-decision-making-pages
+	// @e2e openspec/specs/besluitvorming-leaf/spec.md#former-pages-no-longer-render
 	//
 	// The scenario's SECOND clause, "no `/besluitvorming/vergaderingen/:id`
 	// page exists". Cited here as well as above because the scenario names

@@ -4,8 +4,8 @@
 
 dossiq shows decidesk's Besluitvorming on the case page instead of building a
 second one. The surface arrives as an OpenRegister integration leaf. The
-standalone Besluitvorming navigation retires, and its pages stay routable so no
-link breaks.
+standalone Besluitvorming navigation and its pages are retired: the case leaf
+is where decision-making is reached.
 
 ## Requirements
 
@@ -31,9 +31,13 @@ The dossiq `CaseDetail` page MUST surface decidesk's decision-making via the sha
 - WHEN the user opens the "Besluitvorming" tab on a case detail
 - THEN a quiet "Besluitvorming unavailable" notice is shown instead of a broken tab
 
-### Requirement: REQ-BVL-002 — The standalone Besluitvorming nav MUST be retired while its pages stay routable
+### Requirement: REQ-BVL-002 — The standalone Besluitvorming nav and its pages MUST be retired
 
-The `Voorstellen`, `Advies` (`Advice`) and `Agenda` (`BesluitvormingAgenda`) top-level navigation entries and the `BesluitvormingGroup` group MUST NOT appear in the dossiq left navigation. Their underlying pages (`/voorstellen`, `/voorstellen/:id`, `/advice`, `/advice/:id`, `/besluitvorming/agenda`, `/besluitvorming/vergaderingen/:id`) and the `voorstel` / `adviesAanvraag` schemas and data MUST remain intact and reachable as deep links (ADR-044).
+The `Voorstellen`, `Advies` (`Advice`) and `Agenda` (`BesluitvormingAgenda`) top-level navigation entries and the `BesluitvormingGroup` group MUST NOT appear in the dossiq left navigation.
+
+Their standalone pages are retired with them, not kept as deep links: dossiq MUST NOT register `/voorstellen`, `/voorstellen/:id`, `/advice`, `/besluitvorming/agenda` or `/besluitvorming/vergaderingen/:id`, and `AgendaCompilerView` and `VergaderingDetailView` MUST NOT be registered as components. A request for one of those routes falls through to the app root. Decision-making is reached on the case through the `decidesk-decisions` leaf (REQ-BVL-001); decidiq owns agenda-building and meetings (ADR-019, ADR-044). The `/advice/:id` detail page of an `adviesAanvraag` on a case is not part of this retirement and stays.
+
+This requirement used to say the pages stay routable. That was superseded by D1 of `page-topology-cleanup` (`decision-making-surface`: "Procest hosts no decision-making pages") and by the deletion of the `Voorstellen` and `Advice` pages recorded in `src/menu-layout.json`; it is restated here so the published spec matches the shipped app (dossiq#2577).
 
 #### Scenario: Besluitvorming nav entries are gone
 
@@ -41,11 +45,12 @@ The `Voorstellen`, `Advies` (`Advice`) and `Agenda` (`BesluitvormingAgenda`) top
 - WHEN the sidebar navigation renders
 - THEN no "Voorstellen", "Advies", "Agenda" or "Besluitvorming" group entries appear in the navigation
 
-#### Scenario: Former pages stay reachable by deep link
+#### Scenario: Former pages no longer render
 
 - GIVEN the Besluitvorming nav has been retired
-- WHEN the user navigates directly to `/voorstellen` (or `/advice`, `/besluitvorming/agenda`)
-- THEN the corresponding page still renders (the route is registered)
+- WHEN the user navigates directly to `/besluitvorming/agenda` (or `/besluitvorming/vergaderingen/:id`, `/voorstellen`, `/advice`)
+- THEN the retired view does not render
+- AND the router falls through to the app root without a server error
 
 ### Requirement: REQ-BVL-003 — The voorstel → decidesk migration MUST reuse the existing delegation repair step
 
