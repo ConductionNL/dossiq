@@ -15,6 +15,16 @@ fault in a legal duty, and the D1 migration hands every Woo request to this code
 Implements Ruben's decisions D1 (dossiq owns the Woo request) and D13 (dossiq joins the measured
 stack; 7.11 was re-mapped to this change because notices are recorded but no transport is called).
 
+## Summary
+
+Every notice dossiq records as sent to a Woo requester is really handed to a transport (digital post, portal inbox or mail), and a notice no transport took is recorded as not sent.
+
+- Rows: 7.11 (the requester hears from the organisation at each step).
+- Wave 1.
+- Dependencies: none. Followed by `dossiq/woo-request-takes-over-from-opencatalogi` (https://github.com/ConductionNL/dossiq/issues/3289) and `dossiq/woo-case-screens-and-objections` (https://github.com/ConductionNL/dossiq/issues/3290).
+- Decisions: D1 (dossiq owns the Woo request) and D13 (dossiq joins the measured stack; 7.11 is re-mapped here).
+- Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 The law asks for three things here:

@@ -1,6 +1,6 @@
 # Tasks: woo-requester-notices-really-go-out
 
-Wave 1. Row 7.11. Kind: code. Build rules: `~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 1. Row 7.11. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 Every task names the requirement it meets and the test that proves it. A test marked
 **fails today** must be run on `origin/development` before the change and seen red; note the
@@ -102,8 +102,7 @@ failure line in the PR body.
   `npm run check:manifest`. Run any other leg that `code-quality.yml` requires, after checking
   `package.json`. Then run hydra's `scripts/run-hydra-gates.sh --base origin/development` and
   count the gates that ran.
-- [ ] 6.4 The coverage guard needs tests for every added statement. Project it as
-  LANE-RULES-BUILD says and state that it is projected.
+- [ ] 6.4 The coverage guard needs tests for every added statement. Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 6.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By`
   on any commit. Done means merged on `development` with CI green. Row 7.11 moves to `yes` (build)
   then, and to `production` only with a store release.
