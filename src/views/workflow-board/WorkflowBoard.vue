@@ -92,15 +92,20 @@
 				<!-- The design (DqWerkbord) draws one case type at a time: its
 					statuses as the columns, its cases on them. Empty, the board
 					is the merged one it always was. -->
-				<NcSelect
-					v-model="caseTypeFilter"
-					:inputLabel="t('dossiq', 'Case type')"
-					:options="caseTypeOptions"
-					:placeholder="t('dossiq', 'All case types')"
-					:clearable="true"
-					label="label"
-					class="workflow-board__case-type"
-					data-testid="workflow-board-case-type" />
+				<label class="workflow-board__case-type">
+					<span class="workflow-board__case-type-label">{{
+						t('dossiq', 'Case type')
+					}}</span>
+					<NcSelect
+						v-model="caseTypeFilter"
+						:ariaLabelCombobox="t('dossiq', 'Case type')"
+						:options="caseTypeOptions"
+						:placeholder="t('dossiq', 'All case types')"
+						:clearable="true"
+						label="label"
+						class="workflow-board__case-type-select"
+						data-testid="workflow-board-case-type" />
+				</label>
 				<NcButton
 					variant="tertiary"
 					@click="$router.push({ name: 'Dashboard' })">
@@ -1382,6 +1387,13 @@ export default {
 }
 
 .workflow-board__case-type {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 14px;
+}
+
+.workflow-board__case-type-select {
 	min-width: 240px;
 }
 

@@ -118,7 +118,12 @@ describe('the board', () => {
 		expect(boardSource).toContain('v-for="col in visibleColumns"')
 		expect(boardSource).toContain(':cases="visibleCasesByStatus[col.id] || []"')
 		expect(boardSource).toContain('mergeColumnBack(')
-		expect(boardSource).toContain(":inputLabel=\"t('dossiq', 'Case type')\"")
+		// A visible label beside the select (DqWerkbord "Zaaktype"), and the
+		// combobox named for assistive technology.
+		expect(boardSource).toContain(
+			":ariaLabelCombobox=\"t('dossiq', 'Case type')\"",
+		)
+		expect(boardSource).toContain('workflow-board__case-type-label')
 	})
 
 	it('clears the navigation toggle: the title starts 56px in, like the library pages', () => {
