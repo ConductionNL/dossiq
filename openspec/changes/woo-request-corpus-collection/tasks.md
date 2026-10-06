@@ -1,7 +1,6 @@
 # Tasks: woo-request-corpus-collection
 
-Wave 2. Rows 19.1, 19.2, 19.3, 19.4 and 19.18. Decision D1. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 2. Rows 19.1, 19.2, 19.3, 19.4 and 19.18. Decision D1. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 **Do not start before** `woo-requests-gather-documents-from-sources` is merged on `development`:
 this change amends its three endpoints. Check its tasks and the routes
@@ -104,7 +103,7 @@ first and seen red. Build every OpenRegister double from the real class signatur
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 7.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 7.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 7.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. The five rows then read `yes` (build); 19.18 reads `yes` for "from
   the last one" and partial for "from a named template" until 5.2 is done. `production` only with a

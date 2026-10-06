@@ -18,6 +18,16 @@ Woo capability programme, round 1, wave 2. Rows 19.1, 19.2, 19.3, 19.4 and 19.18
 Implements Ruben's decision D1: dossiq owns the Woo request, so the corpus of a request is
 recorded on the dossiq Woo case. Before D1 these rows were planned on opencatalogi.
 
+## Summary
+
+A Woo case records its search plan, a re-runnable selection query, the collection per custodian, every exclusion with its reason, and can start from the configuration of a previous request.
+
+- Rows: 19.1, 19.2, 19.3, 19.4 and 19.18.
+- Wave 2.
+- Dependencies: `dossiq/woo-requests-gather-documents-from-sources` (https://github.com/ConductionNL/dossiq/issues/3160), `openregister/records-saved-templates` (no issue; https://github.com/ConductionNL/openregister/tree/development/openspec/changes/records-saved-templates). Followed by `dossiq/woo-review-triage` (https://github.com/ConductionNL/dossiq/issues/3294) and `dossiq/woo-review-reports` (https://github.com/ConductionNL/dossiq/issues/3293).
+- Decisions: D1 (dossiq owns the Woo request, so its corpus is recorded on the Woo case).
+- Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 `woo-requests-gather-documents-from-sources` (dossiq, open, 0/6, built as written in wave 1) lets a
