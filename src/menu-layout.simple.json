@@ -910,7 +910,6 @@
 						"title": "My open cases",
 						"content": {
 							"label": "My open cases",
-							"icon": "FolderOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -943,7 +942,6 @@
 						"title": "Due this week",
 						"content": {
 							"label": "Due this week",
-							"icon": "ClockAlertOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -983,7 +981,6 @@
 						"title": "Awaiting applicant",
 						"content": {
 							"label": "Awaiting applicant",
-							"icon": "AccountOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
@@ -1018,7 +1015,6 @@
 						"title": "Closed this month",
 						"content": {
 							"label": "Closed this month",
-							"icon": "CheckCircleOutline",
 							"format": {
 								"style": "decimal",
 								"decimals": 0
