@@ -218,6 +218,43 @@ class ChecklistGuardTest extends TestCase {
 	}//end testACaseWithNoTasksPasses()
 
 	/**
+	 * A blank uid fails the case-wide check instead of reading as "no tasks".
+	 *
+	 * The engine answers an empty page for a blank uid and reports no error,
+	 * which in derive mode is exactly the passing case above (#2406). The
+	 * double here answers that way, unticked task and all, so only the
+	 * identity check stands between it and a pass.
+	 *
+	 * @return void
+	 */
+	public function testABlankUidFailsTheCaseWideCheck(): void {
+		$unticked = [['id' => 't', 'checklist' => [['label' => 'Stukken compleet', 'checked' => false]]]];
+		$inbox = $this->getMockBuilder(className: EngineTaskInbox::class)
+			->disableOriginalConstructor()
+			->getMock();
+		$inbox->method('forCase')->willReturnCallback(
+			static function (string $caseId, string $actor) use ($unticked): array {
+				if (trim($actor) === '') {
+					return [];
+				}
+
+				return $unticked;
+			}
+		);
+		$inbox->method('lastError')->willReturn('');
+		$guard = new ChecklistGuard(engineTasks: $inbox, engineTask: $this->gateway(task: null), logger: new NullLogger());
+
+		foreach (['', '  '] as $blank) {
+			$result = $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: $blank);
+
+			self::assertFalse(condition: $result->passed);
+			self::assertSame(expected: 'Taken van de zaak niet gevonden', actual: $result->failureMessage);
+		}
+
+		self::assertFalse(condition: $guard->evaluate(guardConfig: [], case: ['id' => 'c'], userId: 'u')->passed);
+	}//end testABlankUidFailsTheCaseWideCheck()
+
+	/**
 	 * A named task the engine cannot produce fails closed.
 	 *
 	 * @return void

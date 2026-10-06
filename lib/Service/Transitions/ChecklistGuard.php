@@ -63,7 +63,7 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 	 *
 	 * @param array<string, mixed> $guardConfig Guard configuration
 	 * @param array<string, mixed> $case Case object; its tasks are the corpus when no taskId is named
-	 * @param string $userId Current user UID (unused)
+	 * @param string $userId Current user UID; the case-wide read needs it
 	 *
 	 * @return GuardResult
 	 *
@@ -124,6 +124,21 @@ class ChecklistGuard implements GuardEvaluatorInterface {
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
 		if ($caseId === '') {
 			return new GuardResult(passed: false, failureMessage: 'Zaak niet herkend voor checklistcontrole');
+		}
+
+		// 🔑 A BLANK UID IS NOT "NO TASKS" (#2406). The engine answers an
+		// empty page for a blank uid and reports no failure, so `lastError()`
+		// below stays '' and an empty list PASSES derive mode: a case with
+		// unticked tasks would move on a transition from occ or a background
+		// job. Without an identity the tasks cannot be read, so the guard
+		// fails closed, as StatusChecklist::tasksFor() does (#2405).
+		if (trim($userId) === '') {
+			$this->logger->error(
+				'ChecklistGuard: no acting identity, so the case tasks cannot be read',
+				['case' => $caseId]
+			);
+
+			return new GuardResult(passed: false, failureMessage: 'Taken van de zaak niet gevonden');
 		}
 
 		$tasks = $this->engineTasks->forCase(caseId: $caseId, actor: $userId);
