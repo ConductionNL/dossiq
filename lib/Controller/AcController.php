@@ -443,6 +443,14 @@ class AcController extends ZgwController {
 				);
 			}
 
+			// Run the same AC business rules as create (ac-001/002/003). The
+			// applicatie being updated is excluded from the clientId uniqueness
+			// check, so keeping its own clientIds is not a conflict.
+			$validationError = $this->validateApplicatieBody(body: $body, excludeUuid: $uuid);
+			if ($validationError !== null) {
+				return $validationError;
+			}
+
 			$consumerData = $this->applicatieToConsumer(body: $body);
 
 			// L2: Only apply setters for known consumer fields to prevent reflection-based
