@@ -162,7 +162,7 @@ silent specialist.
 
 | Dependency | Version |
 |-----------|---------|
-| Nextcloud | 32 – 34 |
+| Nextcloud | 32 – 35 |
 | PHP | 8.3+ |
 | PHP extensions | json, mbstring, zip |
 | [OpenRegister](https://github.com/ConductionNL/openregister) | latest |
