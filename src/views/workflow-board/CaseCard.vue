@@ -79,9 +79,11 @@
 				{{ deadlineLabel }}
 			</span>
 		</div>
-		<p class="case-card__title">
+		<!-- Not a paragraph: the NL Design paragraph sheet sets a paragraph's
+			weight, and the title is bold (DqWerkbord). -->
+		<div class="case-card__title">
 			{{ caseItem.title || '—' }}
-		</p>
+		</div>
 		<div class="case-card__footer">
 			<span class="case-card__requester">
 				{{ requesterLabel }}

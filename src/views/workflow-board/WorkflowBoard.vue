@@ -464,7 +464,14 @@ export default {
 		},
 	},
 
-	// @spec exclude Boot-order guard (register OR object types before fetch); no spec scenario.
+	/**
+	 * Register the OR object types, load the board, then read the case type
+	 * the address names.
+	 *
+	 * @return {Promise<void>}
+	 *
+	 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+	 */
 	async mounted() {
 		// Register the OR object types before fetching — this page may mount
 		// (via direct navigation) before the app-boot initializeStores() has
