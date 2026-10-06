@@ -103,18 +103,18 @@ final class OpenRegisterAutoloader {
 	 * Idempotent: a second call while registered is a no-op and does not stack
 	 * another loader.
 	 *
-	 * @param string|null                    $appId      App id whose `lib/` serves
-	 *                                                   `OCA\OpenRegister\`.
-	 *                                                   Production callers pass
-	 *                                                   nothing and get
-	 *                                                   'openregister'. It exists
-	 *                                                   so the degraded path below
-	 *                                                   — the branch that must
-	 *                                                   NEVER rethrow — is
-	 *                                                   reachable from a test with
-	 *                                                   an id that cannot resolve.
+	 * @param string|null               $appId      App id whose `lib/` serves
+	 *                                              `OCA\OpenRegister\`.
+	 *                                              Production callers pass
+	 *                                              nothing and get
+	 *                                              'openregister'. It exists
+	 *                                              so the degraded path below
+	 *                                              — the branch that must
+	 *                                              NEVER rethrow — is
+	 *                                              reachable from a test with
+	 *                                              an id that cannot resolve.
 	 * @param \OCP\App\IAppManager|null $appManager Injected for tests; resolved
-	 *                                                   from the server when null.
+	 *                                              from the server when null.
 	 *
 	 * @return void This never reports success or failure. The caller's own
 	 *              `class_exists()` guard is the authoritative signal; a
