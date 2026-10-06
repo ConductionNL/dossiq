@@ -105,17 +105,19 @@ Vrij en open source onder de EUPL-1.2-licentie.
         The floor is 32 for two reasons that are true today:
 
         1. Nothing below 32 is tested, and an untested range is an advertised
-           claim we cannot support. .github/workflows/code-quality.yml pins
-           nextcloud-test-refs to exactly ["stable32"]; the stable31 leg was
-           REMOVED, not merely dropped for coverage.
+           claim we cannot support. .github/workflows/code-quality.yml no
+           longer pins nextcloud-test-refs: the shared quality.yml derives the
+           matrix from THIS element, so min..max-version is exactly what CI
+           runs; the stable31 leg was REMOVED, not merely dropped for coverage.
         2. This app declares <php min-version="8.3"/> directly above. Nextcloud
            28 does not support PHP 8.3, so the pair (NC 28, PHP 8.3) that the
            two lines together advertise is not a configuration that exists.
 
-        max-version stays at 34, which is the fleet-wide value everywhere except
-        openconnector (35).
+        max-version is 35: Nextcloud 35 removed the private
+        OC_App::registerAutoloading() the OpenRegister autoload prelude used,
+        and the prelude now uses public API only.
         -->
-        <nextcloud min-version="32" max-version="34"/>
+        <nextcloud min-version="32" max-version="35"/>
         <!-- THE OPENREGISTER REGISTER SLUG NOW MOVES: `procest` -> `dossiq`
              (and the `procest-default` sibling -> `dossiq-default`), together
              with `x-openregister.app`, which for a `type: application`

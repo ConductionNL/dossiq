@@ -182,32 +182,11 @@ jobs:
       app-name: dossiq
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
-      # stable31 is REMOVED, not "dropped for coverage".
-      #
-      # The original reason recorded here — "openregister declares
-      # min-version=32" — is STALE: measured 2026-08-08, openregister@development
-      # declares min-version="28" (openregister#2380 reverted it). Do not rely on
-      # it. What made the stable31 leg worthless still happened, though:
-      # `occ app:enable openregister` failed with only a ::warning::, so the run
-      # continued WITHOUT its data layer and every /apps/openregister/... call
-      # returned Nextcloud's HTML 404 page — a red that said nothing.
-      #
-      # The standing reason is dossiq's own floor: appinfo/info.xml declares
-      # <nextcloud min-version="32"/>, so a leg below 32 would test a
-      # configuration this app does not claim to support.
-      # tests/Unit/AppInfo/NextcloudFloorMatrixTest.php holds the two in sync.
-      # newman, playwright and journeydoc-capture all pin
-      # `fromJSON(inputs.nextcloud-test-refs)[0]`, so the FIRST entry has to be a
-      # version openregister can load.
-      #
-      # THE LIST IS THE WHOLE DECLARED RANGE. An earlier revision of this comment
-      # said "stable33 is deliberately NOT added: this removes an impossible leg,
-      # it does not widen the matrix" — but the same change also dropped stable32,
-      # which was NOT impossible, it was the declared floor. appinfo/info.xml
-      # declares <nextcloud min-version="32" max-version="34"/>, so 32, 33 and 34
-      # each get a leg. tests/Unit/AppInfo/NextcloudFloorMatrixTest.php is what
-      # holds this list and that floor in sync.
-      nextcloud-test-refs: '["stable34", "stable32", "stable33"]'
+      # No `nextcloud-test-refs` override: the shared quality.yml derives the
+      # Nextcloud matrix from appinfo/info.xml (min-version..max-version), so
+      # every declared major — stable35 included — gets a leg and the tested
+      # range cannot drift from the declared one.
+      # tests/Unit/AppInfo/NextcloudFloorMatrixTest.php mirrors that derivation.
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false
