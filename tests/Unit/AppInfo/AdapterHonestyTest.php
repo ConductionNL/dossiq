@@ -38,6 +38,7 @@ use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxAdapter\IntegriqAdapter;
 use OCA\Dossiq\Service\BerichtenboxAdapter\MockAdapter;
 use OCA\Dossiq\Service\IntegrationStatusService;
+use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -121,6 +122,13 @@ class AdapterHonestyTest extends TestCase {
 	private array $logged = [];
 
 	/**
+	 * App-config values the code under test wrote, by key.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $written = [];
+
+	/**
 	 * Build a container that answers with the given adapter class name.
 	 *
 	 * @param string $named The value of the app-config key.
@@ -136,8 +144,22 @@ class AdapterHonestyTest extends TestCase {
 		);
 		$appManager->method('isEnabledForUser')->willReturn($filinq);
 
+		// Stateful, because the template seam writes its filinq default back.
+		$stored = $named;
 		$appConfig = $this->createMock(IAppConfig::class);
-		$appConfig->method('getValueString')->willReturn($named);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static function () use (&$stored): string {
+				return $stored;
+			}
+		);
+		$appConfig->method('setValueString')->willReturnCallback(
+			function (string $app, string $key, string $value) use (&$stored): bool {
+				$this->written[$key] = $value;
+				$stored = $value;
+				return true;
+			}
+		);
+		$this->written = [];
 
 		$l10n = $this->createMock(IL10N::class);
 		$l10n->method('t')->willReturnArgument(0);
@@ -161,10 +183,11 @@ class AdapterHonestyTest extends TestCase {
 		// was not told the default moved.
 		$dispatcher = $this->createMock(IEventDispatcher::class);
 		$userSession = $this->createMock(IUserSession::class);
+		$settings = $this->createMock(originalClassName: SettingsService::class);
 
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
-			static function (string $id) use ($appConfig, $appManager, $dispatcher, $l10n, $logger, $userSession): object {
+			static function (string $id) use (&$container, $appConfig, $appManager, $dispatcher, $l10n, $logger, $settings, $userSession): object {
 				return match ($id) {
 					IAppConfig::class => $appConfig,
 					IAppManager::class => $appManager,
@@ -172,6 +195,12 @@ class AdapterHonestyTest extends TestCase {
 					LoggerInterface::class => $logger,
 					MockAdapter::class => new MockAdapter(logger: $logger),
 					MockTemplateEngineAdapter::class => new MockTemplateEngineAdapter(),
+					FilinqTemplateEngineAdapter::class => new FilinqTemplateEngineAdapter(
+						container: $container,
+						settings: $settings,
+						userSession: $userSession,
+						logger: $logger,
+					),
 					IntegriqAdapter::class => new IntegriqAdapter(
 						dispatcher: $dispatcher,
 						appManager: $appManager,
@@ -267,10 +296,44 @@ class AdapterHonestyTest extends TestCase {
 
 		$factory($this->container(named: '', filinq: false));
 		$this->assertStringContainsString('not installed', $this->logged[0][1]);
-
-		$factory($this->container(named: '', filinq: true));
-		$this->assertStringContainsString('no template adapter is configured', $this->logged[0][1]);
 	}//end testTheTemplateWarningNamesWhatIsActuallyMissing()
+
+	/**
+	 * With filinq enabled and the key unset, filinq renders, not the mock (#3131).
+	 *
+	 * The default used to be the mock regardless, so every beschikking on an
+	 * instance with filinq was a made-up file id until an admin set the key by
+	 * hand. The key is written back so the Integrations page reads the class
+	 * that is actually running.
+	 *
+	 * @return void
+	 */
+	public function testAnUnsetTemplateKeyBindsFilinqWhenFilinqIsEnabled(): void {
+		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
+
+		$template = $factory($this->container(named: '', filinq: true));
+
+		$this->assertInstanceOf(expected: FilinqTemplateEngineAdapter::class, actual: $template);
+		$this->assertSame(expected: [], actual: $this->logged, message: 'filinq answering is nothing to warn about');
+		$this->assertSame(
+			expected: [SubstitutableAdapterRegistrar::TEMPLATE_CONFIG_KEY => FilinqTemplateEngineAdapter::class],
+			actual: $this->written
+		);
+	}//end testAnUnsetTemplateKeyBindsFilinqWhenFilinqIsEnabled()
+
+	/**
+	 * A template key an administrator set is never overwritten, even with filinq.
+	 *
+	 * @return void
+	 */
+	public function testANamedTemplateMockIsKeptWhenFilinqIsEnabled(): void {
+		$factory = $this->registeredFactories()[TemplateEngineAdapterInterface::class];
+
+		$template = $factory($this->container(named: MockTemplateEngineAdapter::class, filinq: true));
+
+		$this->assertInstanceOf(expected: MockTemplateEngineAdapter::class, actual: $template);
+		$this->assertSame(expected: [], actual: $this->written);
+	}//end testANamedTemplateMockIsKeptWhenFilinqIsEnabled()
 
 	/**
 	 * The substitution point that did not exist.

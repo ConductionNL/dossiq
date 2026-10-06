@@ -148,6 +148,11 @@ class SubstitutableAdapterRegistrar {
 		$context->registerService(
 			TemplateEngineAdapterInterface::class,
 			static function (ContainerInterface $c): TemplateEngineAdapterInterface {
+				// An unset key with filinq enabled means filinq (#3131). It used
+				// to mean the mock, so every beschikking on an instance that had
+				// filinq was a made-up file id until an admin set the key by hand.
+				self::resolveTemplateDefault(container: $c);
+
 				return ConfiguredAdapter::resolve(
 					container: $c,
 					configKey: self::TEMPLATE_CONFIG_KEY,
@@ -187,12 +192,42 @@ class SubstitutableAdapterRegistrar {
 	}//end resolveBerichtenboxAlias()
 
 	/**
+	 * Bind the filinq template adapter when the key is unset and filinq is enabled.
+	 *
+	 * Written back into app config, the way {@see self::resolveBerichtenboxAlias()}
+	 * is, so `occ config:app:get` and the Integrations page both show the
+	 * class that is actually running instead of reading an empty key as a mock.
+	 * A key an administrator set, including the mock's class name, is left
+	 * exactly as it is, and an instance without filinq keeps the mock.
+	 *
+	 * @param ContainerInterface $container The DI container.
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private static function resolveTemplateDefault(ContainerInterface $container): void {
+		$config = $container->get(IAppConfig::class);
+		if (trim($config->getValueString('dossiq', self::TEMPLATE_CONFIG_KEY, '')) !== '') {
+			return;
+		}
+
+		if (FleetAppId::isEnabledForUser(appManager: $container->get(IAppManager::class), canonical: 'filinq') === false) {
+			return;
+		}
+
+		$config->setValueString('dossiq', self::TEMPLATE_CONFIG_KEY, FilinqTemplateEngineAdapter::class);
+	}//end resolveTemplateDefault()
+
+	/**
 	 * Why the template mock is running, in the words the reader needs.
 	 *
 	 * Two different sentences, because they ask for two different things. An
-	 * instance without filinq needs to install it; an instance with filinq needs
-	 * to name its adapter. One message covering both would tell each reader half
-	 * of what they have to do.
+	 * instance without filinq needs to install it; an instance with filinq
+	 * normally binds its adapter itself, so the second sentence is only read
+	 * when that could not be written and the key is still empty.
 	 *
 	 * @param ContainerInterface $container The DI container.
 	 *
