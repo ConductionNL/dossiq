@@ -57,12 +57,33 @@
 		},
 		{
 			"id": "WorkGroup",
-			"order": 12
+			"order": 12,
+			"count": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"assignee": "@me",
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false
+				}
+			}
 		},
 		{
 			"id": "Queue",
 			"label": "Team queue",
-			"order": 14
+			"order": 14,
+			"count": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"assignee": "IS NULL",
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false,
+					"isTemplate": false
+				}
+			}
 		},
 		{
 			"id": "CasesCaption",
@@ -106,6 +127,11 @@
 		{
 			"id": "OrganisationsMenu",
 			"order": 44
+		},
+		{
+			"id": "Documentation",
+			"label": "Help and explanation",
+			"icon": "HelpCircleOutline"
 		}
 	],
 	"nav": {
@@ -113,6 +139,57 @@
 			"name": "dossiq",
 			"caption": "@theming.name",
 			"logo": "@theming.emblem|@theming.logo"
+		},
+		"primaryAction": {
+			"label": "New case",
+			"icon": "Plus",
+			"action": {
+				"id": "nav-new-case",
+				"label": "New case",
+				"icon": "Plus",
+				"type": "open-form",
+				"size": "large",
+				"columns": 2,
+				"includeFields": [
+					"caseType",
+					"title",
+					"requester",
+					"description",
+					"assignee",
+					"impact",
+					"urgency",
+					"confidentiality",
+					"intakeChannel",
+					"startDate",
+					"plannedEndDate"
+				],
+				"fieldOverrides": {
+					"description": {
+						"widget": "textarea"
+					},
+					"requester": {
+						"widget": "InitiatorPicker",
+						"label": "Requester"
+					}
+				},
+				"register": "dossiq",
+				"schema": "case",
+				"createOverride": "caseCreateWithDuplicateCheck",
+				"onSuccessRoute": "CaseDetail",
+				"successMessage": "Case created.",
+				"props": {
+					"assignee": "@me",
+					"confidentiality": "vertrouwelijk"
+				}
+			}
+		},
+		"card": {
+			"title": "Close out your day",
+			"text": "See what is still open today and get it ready for tomorrow.",
+			"link": {
+				"label": "To the day close",
+				"route": "EndOfDay"
+			}
 		}
 	},
 	"pages": [
@@ -319,6 +396,11 @@
 				],
 				"typePill": {
 					"field": "identifier"
+				},
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "All cases",
+					"route": "Cases"
 				}
 			},
 			"configPatch": {
@@ -396,7 +478,7 @@
 							"ariaLabel": "Case progress",
 							"stagesSource": {
 								"register": "dossiq",
-								"schema": "statustype",
+								"schema": "statusType",
 								"filter": {
 									"caseType": "@object.caseType"
 								},
@@ -409,7 +491,8 @@
 							"transition": {
 								"kind": "lifecycle"
 							},
-							"unreachableReason": "Not possible from the current status"
+							"unreachableReason": "Not possible from the current status",
+							"variant": "bars"
 						}
 					},
 					"case-panels": {
@@ -478,7 +561,8 @@
 									"label": "Knowledge",
 									"overflow": true
 								}
-							]
+							],
+							"variant": "segmented"
 						}
 					}
 				},
@@ -573,7 +657,19 @@
 						"gridY": 6,
 						"gridWidth": 8,
 						"gridHeight": 4,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "All deadlines",
+							"route": "Cases",
+							"query": {
+								"assignee": "@me",
+								"isFinalStatus": "false",
+								"statusHiddenInLists": "false",
+								"isDraft": "false",
+								"deadline[gte]": "@today",
+								"deadline[lt]": "@today+7d"
+							}
+						}
 					},
 					{
 						"id": "s8",
@@ -582,7 +678,11 @@
 						"gridY": 6,
 						"gridWidth": 4,
 						"gridHeight": 12,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "All tasks",
+							"route": "Tasks"
+						}
 					},
 					{
 						"id": "s9",
@@ -591,7 +691,11 @@
 						"gridY": 10,
 						"gridWidth": 8,
 						"gridHeight": 3,
-						"showTitle": true
+						"showTitle": true,
+						"headerLink": {
+							"label": "To the board",
+							"route": "WorkflowBoard"
+						}
 					},
 					{
 						"id": "s10",
@@ -698,7 +802,8 @@
 						"dateChip": false
 					}
 				],
-				"description": "Your work today, then the team"
+				"description": "Your work today, then the team",
+				"showHeader": false
 			},
 			"configAppend": {
 				"widgets": [
@@ -776,11 +881,8 @@
 							"columns": [
 								{
 									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "identifier",
-									"cellClass": "cn-cell--muted"
+									"cellClass": "cn-cell--strong",
+									"secondary": "identifier"
 								},
 								{
 									"key": "status",

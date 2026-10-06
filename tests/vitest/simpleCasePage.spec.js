@@ -19,13 +19,13 @@
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
-import { schemaRefSlug } from '@conduction/nextcloud-vue/src/utils/schemaRefSlug.js'
 import {
 	groupMenuEntries,
 	resolveNextStep,
 	stageEntry,
 	stageOf,
 } from '@conduction/nextcloud-vue/src/utils/detailActionModel.js'
+import { schemaRefSlug } from '@conduction/nextcloud-vue/src/utils/schemaRefSlug.js'
 import { spawnSync } from 'child_process'
 import fs from 'fs'
 import os from 'os'
@@ -374,10 +374,11 @@ describe('the tabs', () => {
 			content: {
 				...find(original, 'case-stages').content,
 				orientation: 'horizontal',
+				variant: 'bars',
 				stagesEndpoint: undefined,
 				stagesSource: {
 					register: 'dossiq',
-					schema: 'statustype',
+					schema: 'statusType',
 					filter: { caseType: '@object.caseType' },
 					orderBy: 'order',
 					labelField: 'name',
@@ -402,15 +403,14 @@ describe('the tabs', () => {
 		expect(simple.sidebar).toEqual(original.sidebar)
 	})
 
-	it('reads the stages from a schema the register has, as the library will send it', () => {
+	it('reads the stages from a schema the register has, as the library sends it', () => {
 		// The library runs every schema name through `schemaRefSlug` before it
-		// builds the request, and that kebab-cases it: `statusType` went out as
-		// `/objects/dossiq/status-type` and answered 404 on :8080 (6 October
-		// 2026), so the widget said "Could not load the stages". OpenRegister
-		// matches a slug without regard to case (`statustype` and `StatusType`
-		// answer 200 on :8097, `status-type` 404), so the overlay writes the
-		// slug in lower case, which the kebab rule leaves alone. This asks the
-		// library's own rule, so a name it would rewrite cannot pass.
+		// builds the request. Up to 2.63.0 that kebab-cased a slug as well:
+		// `statusType` went out as `/objects/dossiq/status-type` and answered
+		// 404 on :8080 (6 October 2026), so the widget said "Could not load the
+		// stages". nextcloud-vue 2.64.0 (#1337) passes a camelCase slug through
+		// unchanged. This asks the library's own rule, so a name it would
+		// rewrite cannot pass, whichever version is installed.
 		const source = simple.widgets.find((widget) => widget.id === 'case-stages').content.stagesSource
 		const sent = schemaRefSlug(source.schema)
 		expect(sent).toBe(source.schema)
@@ -432,6 +432,26 @@ describe('the tabs', () => {
 		]) {
 			expect(fields).toContain(field)
 		}
+	})
+
+	it('draws the progress as bars and the tabs as a segmented control, with a way back to the list', () => {
+		// DqZaak draws one bar per step with the label under it, the tab strip
+		// as a segmented control, and "All cases / <number>" above the card
+		// instead of a CASE eyebrow. All three are nextcloud-vue 2.64.0 opt-ins,
+		// so the full profile keeps drawing what it drew.
+		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
+		expect(find(simple, 'case-stages').content.variant).toBe('bars')
+		expect(find(original, 'case-stages').content.variant).toBeUndefined()
+		expect(find(simple, 'case-panels').content.variant).toBe('segmented')
+		expect(find(original, 'case-panels').content.variant).toBeUndefined()
+		expect(simple.showTypeEyebrow).toBe(false)
+		expect(simple.breadcrumb).toEqual({ label: 'All cases', route: 'Cases' })
+		expect(original.showTypeEyebrow).toBeUndefined()
+		expect(original.breadcrumb).toBeUndefined()
+		expect(casePage(simpleFile).route).toBeDefined()
+		expect(
+			build(simpleFile).pages.some((page) => page.id === simple.breadcrumb.route),
+		).toBe(true)
 	})
 
 	it('takes the three tiles out of the grid and keeps every other card where it was', () => {

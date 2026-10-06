@@ -319,11 +319,37 @@ describe('the dashboard', () => {
 		expect(mine.content.source).toEqual({ ...recent.content.source, limit: 3 })
 		expect(mine.content.rowRoute).toBe('CaseDetail')
 		expect(mine.content.viewAllRoute).toEqual(recent.content.viewAllRoute)
+		// The case number sits under the title, as on the design, not in a
+		// column of its own (nextcloud-vue 2.64.0 `columns[].secondary`).
 		expect(mine.content.columns.map((column) => column.key)).toEqual([
 			'title',
-			'identifier',
 			'status',
 		])
+		expect(mine.content.columns[0].secondary).toBe('identifier')
+		expect(caseFields.has('identifier')).toBe(true)
+	})
+
+	it('hides the page header and gives the week, the steps and the tasks a link of their own', () => {
+		// The greeting is the page's heading on the design, so the dashboard
+		// title row goes (nextcloud-vue 2.64.0 `config.showHeader`).
+		expect(simple.config.showHeader).toBe(false)
+		expect(before.config.showHeader).toBeUndefined()
+		const link = (widgetId) =>
+			simple.config.layout.find((item) => item.widgetId === widgetId).headerLink
+		expect(link('simple-week').route).toBe('Cases')
+		expect(link('simple-week').query).toEqual(
+			widget('simple-due-soon').content.route.query,
+		)
+		expect(link('simple-my-tasks')).toEqual({ label: 'All tasks', route: 'Tasks' })
+		expect(link('simple-per-step')).toEqual({
+			label: 'To the board',
+			route: 'WorkflowBoard',
+		})
+		const pageIds = new Set(builtSimple.pages.map((item) => item.id))
+		for (const entry of simple.config.layout.filter((item) => item.headerLink)) {
+			expect(pageIds.has(entry.headerLink.route), entry.widgetId).toBe(true)
+		}
+		expect(before.config.layout.filter((item) => item.headerLink)).toEqual([])
 	})
 
 	it('makes "Open the board" the primary action of First today, as the design draws it', () => {

@@ -265,6 +265,62 @@ describe('the simple profile', () => {
 		expect(mainSource).toContain('capabilities?.nldesign?.logos?.emblem')
 	})
 
+	it('draws the sidebar of the design: New case, two counts, the day close card and help', () => {
+		// DqZijbalk: a solid "Nieuwe zaak" button under the brand, a count
+		// beside My work and the team queue, a "Dag afsluiten" card above the
+		// footer and "Hulp en uitleg" in the footer. All are nextcloud-vue
+		// 2.64.0 opt-ins; the full profile declares none of them.
+		const manifestNewCase = manifest()
+			.pages.find((page) => page.id === 'MyWorkHome')
+			.config.headerActions.find((action) => action.id === 'new-case')
+		// The schema wants the action's own id and label as well.
+		expect(built.nav.primaryAction).toEqual({
+			label: 'New case',
+			icon: 'Plus',
+			action: { ...manifestNewCase, id: 'nav-new-case' },
+		})
+		expect(built.nav.card.link.route).toBe('EndOfDay')
+		expect(built.pages.some((page) => page.id === 'EndOfDay')).toBe(true)
+
+		// The counts use the filters of the pages they open, so the number
+		// beside an entry is the number of rows behind it.
+		const entry = (entryId) => flat(built.menu).find((item) => item.id === entryId)
+		const queuePage = built.pages.find((page) => page.id === 'Queue')
+		expect(entry('Queue').count).toEqual({
+			register: 'dossiq',
+			schema: 'case',
+			filter: queuePage.config.filter,
+		})
+		expect(entry('WorkGroup').count).toEqual({
+			register: 'dossiq',
+			schema: 'case',
+			filter: {
+				assignee: '@me',
+				isFinalStatus: false,
+				statusHiddenInLists: false,
+				isDraft: false,
+			},
+		})
+
+		// Help is the documentation link already in the footer, renamed, so
+		// the footer does not list the same page twice.
+		expect(entry('Documentation')).toMatchObject({
+			label: 'Help and explanation',
+			icon: 'HelpCircleOutline',
+			href: 'https://dossiq.conduction.nl',
+			section: 'footer',
+		})
+		expect(built.nav.help).toBeUndefined()
+		expect(iconsSource).toContain('\n\tHelpCircleOutline,\n')
+
+		const full = build(fullFile)
+		expect(full.nav).toBeUndefined()
+		expect(flat(full.menu).filter((item) => item.count !== undefined)).toEqual([])
+		expect(
+			flat(full.menu).find((item) => item.id === 'Documentation').label,
+		).toBe('Documentation')
+	})
+
 	it('moves the recycle bin, the object register and the mail intake log to settings', () => {
 		const settings = section(built.menu, 'settings').map((entry) => entry.id)
 		expect(settings).toEqual(
