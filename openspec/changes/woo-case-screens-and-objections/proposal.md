@@ -15,6 +15,16 @@ Implements Ruben's decisions D1 (dossiq owns the Woo request, so the work betwee
 publication has to be doable in dossiq) and D13 (7.13 was re-mapped to this change because
 objections are API only and the Bezwaar case types are parked).
 
+## Summary
+
+The work between intake and publication of a Woo request can be done on dossiq's case screens, and an objection against the Woo decision is handled in the product.
+
+- Rows: 7.13 (objection handling; Awb art. 6:7 and 7:10).
+- Wave 2.
+- Dependencies: `dossiq/woo-requester-notices-really-go-out` (https://github.com/ConductionNL/dossiq/issues/3286), `dossiq/woo-term-is-computed-and-reported-right` (https://github.com/ConductionNL/dossiq/issues/3287). Reads `dossiq/woo-refusal-grounds-list` (https://github.com/ConductionNL/dossiq/issues/3288) when present.
+- Decisions: D1 (dossiq owns the Woo request) and D13 (7.13 is re-mapped here).
+- Build rules: openspec/woo-build-rules.md
+
 ## The law
 
 - **Awb art. 6:7**: the objection period is six weeks, starting the day after the decision is

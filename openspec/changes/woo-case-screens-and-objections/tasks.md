@@ -1,7 +1,6 @@
 # Tasks: woo-case-screens-and-objections
 
-Wave 2. Row 7.13. Decisions D1 and D13. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 2. Row 7.13. Decisions D1 and D13. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 **Do not start before** `woo-requester-notices-really-go-out` and
 `woo-term-is-computed-and-reported-right` are merged on `development`. If they are not, stop and say
@@ -111,7 +110,7 @@ Every dialog lives in its own file under `src/dialogs/` (hydra gate modal-isolat
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires. Every new user-facing
   string goes through the l10n catalogue. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 7.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 7.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 7.5 One PR (or two, as above), `--base development`. Merge, never rebase. No `Co-Authored-By`.
   Done means merged on `development` with CI green. Row 7.13 then reads `yes` (build), and
   `production` only with a store release.
