@@ -16,6 +16,16 @@ Implements Ruben's decisions D1 (dossiq owns the Woo request and its term) and D
 16.2 were re-mapped to this dossiq change, ahead of the migration, because the migration hands
 every Woo request to this code).
 
+## Summary
+
+The Woo decision term is rolled by the Algemene termijnenwet on the engine calendar for every Woo case, through the API too, and the term report counts arrivals and met terms correctly.
+
+- Rows: 10.9 (statutory: Woo art. 4.4 and Algemene termijnenwet art. 1) and 16.2.
+- Wave 1.
+- Dependencies: none. Followed by `dossiq/woo-request-takes-over-from-opencatalogi` (https://github.com/ConductionNL/dossiq/issues/3289) and `dossiq/woo-case-screens-and-objections` (https://github.com/ConductionNL/dossiq/issues/3290).
+- Decisions: D1 (dossiq owns the Woo request and its term) and D13 (10.9 and 16.2 are re-mapped here).
+- Build rules: openspec/woo-build-rules.md
+
 ## The law
 
 - **Woo art. 4.4 lid 1**: the decision on a Woo request is taken within four weeks after receipt.
