@@ -87,6 +87,16 @@ behaviour.
 
 ## Actions — shipped vs deferred creates
 
+> **Superseded since archiving.** All three deferred writes below now ship.
+> `createBezwaar` and `replyToMessage` declare their case as a `crossRefs`
+> reference that Portaliq's cross-reference guard resolves against the
+> citizen's own cases before writing (403 `cross_ref_refused` otherwise); see
+> `openspec/changes/portal-creates-with-cross-refs`. The inspector submit ships
+> as the update `submitChecklistRun`, which takes no client `case`/`template`.
+> The `portaliq#16` citation below is wrong: that number is an unrelated merged
+> pull request. This section is kept as the record of what was decided at the
+> time.
+
 **Shipped**: `createKlacht` (citizen) — a standalone complaint on `portaalVerzoek`
 stamping `submitterRef == subjectRef`, whitelisting only the citizen's own content
 (soort, categorie, onderwerp, motivering, attachments). No case cross-reference, so

@@ -35,12 +35,20 @@
  * forward path for verified-claim scoping) live in
  * openspec/changes/move-portals-to-portaliq/design.md.
  *
- * Deferred create-actions (write-IDOR, portaliq#16): a citizen bezwaar
- * (needs a `tegenZaakId` client cross-reference + AWB deadline validation) and
- * an inspector run submit (needs a `case`/`template` client cross-reference)
- * cannot be safely stamped by Portaliq's flat writer, which only server-stamps
- * the scope field. Only the standalone citizen complaint (`createKlacht`) is
- * safe and shipped. See design.md "Deferred creates".
+ * Writes. Three citizen creates ship through Portaliq's flat writer:
+ * `createKlacht` (a standalone complaint that names no case), and
+ * `createBezwaar` and `replyToMessage`, which DO name a case and therefore
+ * declare it as a `crossRefs` reference to the citizen's own cases
+ * (`againstCaseId`, `caseId`). Portaliq's cross-reference guard resolves that
+ * reference through the citizen's scoped case read before anything is
+ * written, and refuses the whole write with 403 `cross_ref_refused` when it
+ * does not resolve (portaliq change `portal-create-cross-refs`; dossiq side in
+ * openspec/changes/portal-creates-with-cross-refs). The citizen manifest also
+ * carries the Woo-request endpoint actions and the one case update
+ * (`amendCase`); see {@see CitizenManifest::actions()}. The inspector's run
+ * submit ships as the UPDATE `submitChecklistRun` on a run already assigned to
+ * them, accepting no client `case`/`template` reference at all. The method
+ * docblocks below are authoritative for each write.
  *
  * @category Portal
  * @package  OCA\Dossiq\Portal
