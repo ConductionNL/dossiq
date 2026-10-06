@@ -1,7 +1,6 @@
 # Tasks: woo-delivered-set-is-a-record
 
-Wave 2. Rows 19.15 and 19.16. Decision D1. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 2. Rows 19.15 and 19.16. Decision D1. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 Before starting, read on `development` at that moment: openregister's `object-archive-state`
 change (is REQ-OAS-004 extended to file writes, merged or not) and filinq's
@@ -95,7 +94,7 @@ first and seen red.
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 6.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 19.15 and 19.16 then read `yes` (build); 19.16 only with filinq
   installed. `production` only with a store release.

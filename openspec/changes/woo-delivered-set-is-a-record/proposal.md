@@ -13,11 +13,21 @@ Woo capability programme, round 1, wave 2. Rows 19.15 and 19.16.
 | 19.16 | The delivered rendition sits beside the original, so a reader can compare what went out with what came in | partial (production) |
 
 Implements Ruben's decision D1: dossiq owns the Woo request, so the set it delivers is dossiq's
-record. The plan had these rows on opencatalogi before D1. The gap texts in `gaps.tsv` still name
+record. The plan had these rows on opencatalogi before D1. The plan's gap texts still name
 opencatalogi's model (`#wooAssessment`, `publishBatch`, `documentReference`, `anonymizedDocument`).
 This change translates them onto dossiq's model: the Woo case is the container,
 `wooDocumentAssessment` is the per-document verdict, and `redactedDocumentRef` is the delivered
 rendition of a partly public document.
+
+## Summary
+
+The set of documents delivered to a Woo requester becomes a frozen record with its own identity and a hashed manifest, and the delivered rendition can be compared with its original.
+
+- Rows: 19.15 and 19.16.
+- Wave 2.
+- Dependencies: `openregister/object-archive-state` (https://github.com/ConductionNL/openregister/issues/4390). Uses `filinq/anonymization-review-workbench` (https://github.com/ConductionNL/filinq/issues/1345) for the viewer when present.
+- Decisions: D1 (dossiq owns the Woo request, so the delivered set is dossiq's record).
+- Build rules: openspec/woo-build-rules.md
 
 ## Why
 
