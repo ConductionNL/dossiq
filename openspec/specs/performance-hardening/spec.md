@@ -2,37 +2,33 @@
 
 ## Purpose
 
-Three ways dossiq used to get slow, closed. Audit-log endpoints are bounded and
-filtered on the server. The production build ships no full source maps. The app
+Three ways dossiq used to get slow, closed. Register reads behind list
+endpoints are bounded. The production build ships no full source maps. The app
 manifest is not made deeply reactive at boot.
+
+The first requirement used to be about the archief audit log as well: its
+`GET /api/archief/audit-log` endpoint was to be paginated and its batch lookup
+filtered server-side. That endpoint and its `ArchiefController` were retired
+in `8d5c4b1c0` (archival moved to OpenRegister, ADR-022), and nothing in dossiq
+serves `overdracht_audit_log_schema` any more, so those two scenarios retired
+with the surface (dossiq#2583).
 
 ## Requirements
 
-### Requirement: Audit-log endpoints are bounded and server-filtered
+### Requirement: Register reads behind list endpoints are bounded
 
-The system MUST NOT serve the full archief audit-log register in a single response, and MUST NOT
-filter audit-log rows by loading the entire register into PHP memory first.
-
-#### Scenario: Audit-log endpoint is paginated
-
-- **GIVEN** the `overdracht_audit_log_schema` register holds more rows than one page
-- **WHEN** a client calls `GET /api/archief/audit-log`
-- **THEN** the response SHALL respect `_limit`/`_offset` query parameters
-- **AND** SHALL NOT return every row in the register in one payload
-
-#### Scenario: Batch audit lookup filters server-side
-
-- **GIVEN** a client requests the audit trail for one archiving batch id
-- **WHEN** `ArchiefController` resolves the matching audit-log rows
-- **THEN** the batch-id filter SHALL be applied by the OpenRegister query (object-field filter),
-  not by fetching all rows and scanning them in PHP with `array_filter`/`str_contains`
+The system MUST NOT load an entire register into PHP memory to serve a list
+endpoint. A read that fetches a whole schema's rows for the caller to filter
+SHALL carry a `_limit`.
 
 #### Scenario: Substitution index is bounded
 
 - **GIVEN** the substitution schema register
-- **WHEN** `SubstitutionController` resolves the full substitution list for its index/filter logic
-- **THEN** the underlying `searchObjectsAsArrays()` call SHALL include a `_limit`, consistent with
-  the pagination pattern used elsewhere in this app (e.g. `RaadsinformatieFeedController`)
+- **WHEN** `SubstitutionController::index()` lists substitutions, which it delegates to
+  `SubstitutionAccessGuard::listVisibleTo()`
+- **THEN** the guard's underlying `searchObjectsAsArrays()` call for the full substitution list SHALL
+  include a `_limit` (`SubstitutionAccessGuard::SUBSTITUTION_LIMIT`), and the controller SHALL
+  make no object search of its own
 
 ### Requirement: Production build does not ship full source maps
 

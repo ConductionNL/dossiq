@@ -23,7 +23,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/performance-hardening-audit-log-and-boot/specs/performance-hardening/spec.md
+ * @spec openspec/specs/performance-hardening/spec.md#requirement-register-reads-behind-list-endpoints-are-bounded
  */
 
 declare(strict_types=1);

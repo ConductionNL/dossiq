@@ -227,7 +227,7 @@ class SubstitutionAccessGuard {
 	 *
 	 * @return array<int, array<string, mixed>> The substitution rows.
 	 *
-	 * @spec openspec/changes/performance-hardening-audit-log-and-boot/specs/performance-hardening/spec.md
+	 * @spec openspec/specs/performance-hardening/spec.md#requirement-register-reads-behind-list-endpoints-are-bounded
 	 */
 	private function allSubstitutions(): array {
 		$objectService = $this->settingsService->getObjectService();
