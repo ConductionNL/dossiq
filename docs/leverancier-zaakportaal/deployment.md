@@ -92,6 +92,7 @@ URL) are configured.
   shard traffic.
 - **HTTP 401 on dashboard** — bearer JWT expired (2-hour TTL);
   call `POST /auth/refresh` or re-login.
-- **"Dossiq TENANT_SCHEMA_DELETED" log line** — emitted by
-  `TenantLifecycleControlService::archiveAndDelete()` after a
-  tenant is fully terminated.
+- **No `TENANT_SCHEMA_DELETED` log line** — nothing emits it.
+  `TenantLifecycleControlService::archiveAndDelete()` was removed on
+  purpose (an irreversible whole-tenant delete), so do not wait for
+  this signal when terminating a tenant.

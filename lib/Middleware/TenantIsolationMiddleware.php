@@ -4,8 +4,14 @@
  * Dossiq Tenant Isolation Middleware
  *
  * Sets the Postgres `search_path` for the current request to
- * `public,<tenant_schema>` so any unqualified table reference resolves
- * inside the tenant's schema first. Reads the schema name from the
+ * `<tenant_schema>, public` so any unqualified table reference resolves
+ * inside the tenant's schema first.
+ *
+ * ⚠️ INERT TODAY (dossiq#2470): the tenant schema is created only by
+ * `TenantProvisioningService::provision()`, which nothing calls. Postgres
+ * silently ignores a missing schema on the search_path, so every request
+ * still resolves in `public`. This middleware is NOT an isolation control
+ * until schemas are provisioned; OpenRegister's `_multitenancy` row filter is. Reads the schema name from the
  * `TenantContext` populated by `TenantContextMiddleware`.
  *
  * Runs LAST in the dossiq middleware pipeline (Authenticate → Tenant
@@ -133,7 +139,10 @@ class TenantIsolationMiddleware extends Middleware {
 	}//end afterException()
 
 	/**
-	 * Apply `SET LOCAL search_path TO 'public,<schema>'`.
+	 * Apply `SET search_path TO "<schema>", public`.
+	 *
+	 * Plain `SET` is connection-scoped, not transaction-scoped: it outlives the
+	 * request's transaction, which is why after*() reset it explicitly.
 	 *
 	 * @param string $schemaName Schema name (validated).
 	 *
@@ -153,7 +162,7 @@ class TenantIsolationMiddleware extends Middleware {
 		}
 
 		try {
-			// SET LOCAL keeps the change scoped to the current transaction.
+			// Plain SET (connection-scoped); resetSearchPath() undoes it.
 			$sql = 'SET search_path TO "' . $schemaName . '", public';
 			$this->db->executeStatement($sql);
 		} catch (Throwable $e) {

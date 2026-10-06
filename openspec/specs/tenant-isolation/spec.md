@@ -16,13 +16,13 @@ The system SHALL set the PostgreSQL `search_path` per request so each tenant's q
 
 - **GIVEN** User-A (tenant_id=A) and User-B (tenant_id=B) query the case table simultaneously
 - **WHEN** User-A's request is processed
-- **THEN** `TenantIsolationMiddleware` SHALL set `search_path = 'public,tenant_A_schema'` before any query
+- **THEN** `TenantIsolationMiddleware` SHALL set `search_path = 'tenant_A_schema, public'` before any query
 - **AND** User-A SHALL see only cases residing in tenant_A_schema
-- **AND** User-B's parallel request SHALL have `search_path = 'public,tenant_B_schema'` and see only tenant_B cases
+- **AND** User-B's parallel request SHALL have `search_path = 'tenant_B_schema, public'` and see only tenant_B cases
 
 #### Scenario: Injected cross-tenant filter cannot reach other data
 
-- **GIVEN** User-A's search_path is `public,tenant_A_schema`
+- **GIVEN** User-A's search_path is `tenant_A_schema, public`
 - **WHEN** User-A submits a malicious filter `WHERE tenant_id='B'`
 - **THEN** the query SHALL still resolve only within tenant_A_schema (the other tenant's table is not on the search_path)
 - **AND** no tenant B rows SHALL be returned

@@ -229,4 +229,21 @@ class TenantAuditTrailServiceTest extends TestCase {
 		$byKey = array_column($this->svc->hardeningChecklist(), 'status', 'key');
 		$this->assertSame('unverified', $byKey['isolation_pen_test']);
 	}
+
+	/**
+	 * The search_path middleware points at a tenant schema that nothing
+	 * provisions, so it isolates nothing (dossiq#2470). The checklist must not
+	 * attest either isolation control as passing on its strength.
+	 */
+	public function testInertSearchPathIsNotAttestedAsIsolation(): void {
+		$items = array_column($this->svc->hardeningChecklist(), null, 'key');
+		foreach (['tenant_scoped_queries', 'no_tenant_info_leak'] as $key) {
+			$this->assertSame('unverified', $items[$key]['status'], $key . ' must not claim a pass');
+			$this->assertStringNotContainsString(
+				'TenantIsolationMiddleware sets',
+				$items[$key]['evidence'],
+				$key . ' must not cite the inert search_path as evidence'
+			);
+		}
+	}
 }

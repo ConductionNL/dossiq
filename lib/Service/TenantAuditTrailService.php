@@ -273,8 +273,10 @@ class TenantAuditTrailService {
 			[
 				'key' => 'tenant_scoped_queries',
 				'description' => 'Every query carries the request-scoped tenant filter',
-				'evidence' => 'TenantIsolationMiddleware sets the Postgres search_path; TenantContext carries the active tenant',
-				'status' => 'pass',
+				'evidence' => 'OpenRegister _multitenancy organisation row filter (MagicSearchHandler). '
+					. 'NOT TenantIsolationMiddleware: it sets a search_path to a tenant schema that nothing '
+					. 'provisions (TenantProvisioningService::provision() has no caller), so it scopes nothing',
+				'status' => 'unverified',
 			],
 			[
 				'key' => 'claim_validation',
@@ -299,8 +301,9 @@ class TenantAuditTrailService {
 			[
 				'key' => 'no_tenant_info_leak',
 				'description' => 'Cross-tenant queries return 404 (not 403) to prevent existence leak',
-				'evidence' => 'TenantIsolationMiddleware search_path scoping + controller-level 404 responses',
-				'status' => 'pass',
+				'evidence' => 'Controller-level 404 responses only; the TenantIsolationMiddleware search_path '
+					. 'is inert (the tenant schema is never provisioned) and no test proves cross-tenant 404s',
+				'status' => 'unverified',
 			],
 			[
 				'key' => 'composer_audit',
