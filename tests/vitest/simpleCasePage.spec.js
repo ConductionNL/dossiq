@@ -373,8 +373,25 @@ describe('the tabs', () => {
 			content: {
 				...find(original, 'case-stages').content,
 				orientation: 'horizontal',
+				stagesEndpoint: undefined,
+				stagesSource: {
+					register: 'dossiq',
+					schema: 'statusType',
+					filter: { caseType: '@object.caseType' },
+					orderBy: 'order',
+					labelField: 'name',
+					descriptionField: 'description',
+					finalField: 'isFinal',
+					limit: 50,
+				},
 			},
 		})
+		// The blueprint endpoint the full page reads lists only the statuses a
+		// case type embeds (one, "Afgehandeld", on the seeded Woo type, seen
+		// live 6 October 2026); the statusType collection, which the board
+		// reads, holds all of them. The simple page reads that collection.
+		expect('stagesEndpoint' in find(simple, 'case-stages').content).toBe(false)
+
 		const others = (config) =>
 			config.widgets.filter(
 				(widget) =>

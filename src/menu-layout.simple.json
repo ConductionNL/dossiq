@@ -43,11 +43,7 @@
 		"CaseObjectsMenu",
 		"MailIntakeLogMenu"
 	],
-	"integrationsSection": [
-		"AvgRegisterLink",
-		"AiOversightLink",
-		"DataModelLink"
-	],
+	"integrationsSection": ["AvgRegisterLink", "AiOversightLink", "DataModelLink"],
 	"menu": [
 		{
 			"id": "StartCaption",
@@ -116,7 +112,7 @@
 		"brand": {
 			"name": "dossiq",
 			"caption": "@theming.name",
-			"logo": "@theming.logo"
+			"logo": "@theming.emblem|@theming.logo"
 		}
 	},
 	"pages": [
@@ -398,13 +394,17 @@
 							"orientation": "horizontal",
 							"size": "small",
 							"ariaLabel": "Case progress",
-							"stagesEndpoint": {
-								"url": "/apps/dossiq/api/case-types/@object.caseType/blueprint",
-								"path": "statusTypes",
+							"stagesSource": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"filter": {
+									"caseType": "@object.caseType"
+								},
+								"orderBy": "order",
 								"labelField": "name",
 								"descriptionField": "description",
-								"orderField": "order",
-								"finalField": "isFinal"
+								"finalField": "isFinal",
+								"limit": 50
 							},
 							"transition": {
 								"kind": "lifecycle"
@@ -961,9 +961,7 @@
 							},
 							"dateField": "deadline",
 							"titleField": "title",
-							"metaFields": [
-								"identifier"
-							],
+							"metaFields": ["identifier"],
 							"itemRoute": "CaseDetail",
 							"lateWhen": {
 								"op": "lte",

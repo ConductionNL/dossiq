@@ -219,8 +219,26 @@ describe('the simple profile', () => {
 		expect(simpleFile.nav.brand).toEqual({
 			name: 'dossiq',
 			caption: '@theming.name',
-			logo: '@theming.logo',
+			logo: '@theming.emblem|@theming.logo',
 		})
+		// The set's emblem (thematiq `nldesign.logos.emblem`, the shield on
+		// DqZijbalk) wins; the wordmark stands in when a set ships none.
+		const withEmblem = buildProfiledManifest(
+			buildManifest,
+			manifest(),
+			fragments,
+			simpleFile,
+			{
+				theming: {
+					name: 'Gemeente Voorbeeld',
+					logo: '/core/img/logo.svg',
+					emblem: '/apps/thematiq/img/logos/x-emblem.svg',
+				},
+			},
+		)
+		expect(withEmblem.nav.brand.logo).toBe(
+			'/apps/thematiq/img/logos/x-emblem.svg',
+		)
 		const theming = { name: 'Gemeente Voorbeeld', logo: '/core/img/logo.svg' }
 		const withTheming = buildProfiledManifest(
 			buildManifest,
@@ -243,7 +261,8 @@ describe('the simple profile', () => {
 		expect(mainSource).toContain(
 			"import { getCapabilities } from '@nextcloud/capabilities'",
 		)
-		expect(mainSource).toContain('theming: getCapabilities()?.theming ?? null')
+		expect(mainSource).toContain('theming: navTheming(getCapabilities())')
+		expect(mainSource).toContain('capabilities?.nldesign?.logos?.emblem')
 	})
 
 	it('moves the recycle bin, the object register and the mail intake log to settings', () => {

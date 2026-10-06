@@ -166,7 +166,8 @@ const THEMING_PLACEHOLDER = '@theming.'
 /**
  * Resolve the `nav` block of a profile: `@theming.<key>` strings become the
  * instance's own theming values, one level deep (`brand.caption`,
- * `primaryAction.label`), so no municipality is written into the app.
+ * `primaryAction.label`), so no municipality is written into the app. A
+ * value may list fallbacks with `|` (`@theming.emblem|@theming.logo`).
  *
  * A placeholder the capabilities do not answer resolves to an empty string,
  * which CnAppNav reads as "nothing to draw" for that field. The profile is
@@ -179,19 +180,29 @@ const THEMING_PLACEHOLDER = '@theming.'
  * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
  */
 export function resolveNavPlaceholders(nav, theming) {
+	const resolveOne = (value) => {
+		const key = value.slice(THEMING_PLACEHOLDER.length)
+		const answer =
+			theming && typeof theming === 'object' ? theming[key] : undefined
+		return typeof answer === 'string' ? answer : ''
+	}
 	const resolveValue = (value) => {
 		if (typeof value !== 'string' || !value.startsWith(THEMING_PLACEHOLDER)) {
 			return value
 		}
-		const key = value.slice(THEMING_PLACEHOLDER.length)
-		const answer =
-			theming && typeof theming === 'object' ? theming[key] : undefined
-		if (typeof answer !== 'string' || answer === '') {
+		// `@theming.emblem|@theming.logo`: the first placeholder the instance
+		// answers wins, so a set with an emblem shows it and one without falls
+		// back to its wordmark.
+		const answer = value
+			.split('|')
+			.map((part) => part.trim())
+			.filter((part) => part.startsWith(THEMING_PLACEHOLDER))
+			.map(resolveOne)
+			.find((part) => part !== '')
+		if (answer === undefined) {
 			logger.debug(
 				'structureProfile: the instance has no theming value for a nav placeholder.',
-				{
-					placeholder: value,
-				},
+				{ placeholder: value },
 			)
 			return ''
 		}

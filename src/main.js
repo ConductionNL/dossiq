@@ -200,11 +200,29 @@ const structureProfile = resolveStructureProfile(
 const menuLayout =
 	structureProfile === STRUCTURE_FULL ? menuLayoutFull : menuLayoutSimple
 // The simple profile's brand block names the instance through its theming
-// capabilities (`@theming.name`, `@theming.logo`), so the navigation shows the
-// municipality the instance belongs to without the app naming one.
+// capabilities (`@theming.name`, `@theming.emblem|@theming.logo`), so the
+// navigation shows the municipality the instance belongs to without the app
+// naming one. The emblem is what thematiq exposes for the active set
+// (`nldesign.logos.emblem`, the shield of the workplace boards); without one
+// the wordmark from Nextcloud's theming stands in.
+/**
+ * The theming values the simple profile's nav placeholders read.
+ *
+ * @param {object|null} capabilities `getCapabilities()`.
+ * @return {object} Nextcloud's theming block plus `emblem` from thematiq's
+ *   `nldesign.logos.emblem`, or '' when the set ships none.
+ *
+ * @spec openspec/changes/simple-structure-profile/specs/nav-dedup-and-grouping/spec.md#REQ-PNDG-008
+ */
+function navTheming(capabilities) {
+	const theming = capabilities?.theming ?? {}
+	const emblem = capabilities?.nldesign?.logos?.emblem
+	return { ...theming, emblem: typeof emblem === 'string' ? emblem : '' }
+}
+
 const builtManifest = markRaw({
 	...buildProfiledManifest(buildManifest, bundledManifest, fragments, menuLayout, {
-		theming: getCapabilities()?.theming ?? null,
+		theming: navTheming(getCapabilities()),
 	}),
 	runtime: { user: { isAdmin: currentPermissions().includes('admin') } },
 })
