@@ -587,7 +587,17 @@ class PortalContributionProviderTest extends TestCase {
 		// case page is the one a case opens on: it is a record page on
 		// mijnZaken and it still carries the case screen.
 		$this->assertSame('overzicht', $pages[0]['id']);
-		$this->assertSame('tasks', $pages[0]['blocks'][0]['type']);
+		// The greeting opens the overview (resident-overview-reads-as-designed);
+		// what the resident still has to do comes right after it.
+		$this->assertSame('greeting', $pages[0]['blocks'][0]['type']);
+		$this->assertSame('tasks', $pages[0]['blocks'][1]['type']);
+		$this->assertSame(['type' => 'greeting', 'showDate' => false], $pages[0]['blocks'][0]);
+		$this->assertSame('Wat u nog moet doen', $pages[0]['blocks'][1]['label']);
+		$this->assertSame(
+			['Lopende zaken', 'Nieuwe berichten'],
+			[$pages[0]['blocks'][2]['label'], $pages[0]['blocks'][3]['label']]
+		);
+		$this->assertSame(['cases', 'inbox'], [$pages[0]['blocks'][2]['type'], $pages[0]['blocks'][3]['type']]);
 		$this->assertSame(
 			['collection' => 'mijnZaken', 'titleFields' => ['title']],
 			$pages[1]['record']
@@ -623,6 +633,12 @@ class PortalContributionProviderTest extends TestCase {
 				// a route (REQ-SMO-024), which no dossiq tile needs.
 				if ($block['type'] === 'action' || $block['type'] === 'cta') {
 					$this->assertContains($block['action'], $actions);
+					continue;
+				}
+
+				// A greeting names nothing: it reads the session (resident-overview-reads-as-designed).
+				if ($block['type'] === 'greeting') {
+					$this->assertArrayNotHasKey('collection', $block);
 					continue;
 				}
 

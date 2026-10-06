@@ -170,20 +170,32 @@ class PortalPages {
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/changes/resident-overview-reads-as-designed/specs/portal-contribution/spec.md#requirement-the-overview-greets-and-names-its-lists-req-rod-001
 	 */
 	private function residentOverviewBlocks(array $collections): array {
-		$blocks = [];
+		// THE OVERVIEW OPENS WITH THE TIME OF DAY AND THE RESIDENT'S FIRST NAME
+		// ("Goedemiddag, Sanne"), as the Zuiddrecht design draws it. Portaliq's
+		// `greeting` block says that itself and takes the place of the plain
+		// "Welkom" heading (site-school-blocks); without it the page opened on
+		// a heading the design does not have. The date stays off: the design
+		// shows none.
+		$blocks   = [];
+		$blocks[] = ['type' => 'greeting', 'showDate' => false];
 		if ($this->declares(rows: $collections, id: 'vragenAanU') === true) {
+			// LABELLED AS THE DESIGN READS THEM. Every list block takes a
+			// `label` (portaliq ListBlockNormaliser); without one the lists
+			// ran into each other with no heading between them.
 			$blocks[] = [
 				'type' => 'tasks',
 				'collection' => 'vragenAanU',
 				'dueField' => 'hersteltermijn',
 				'titleFields' => ['summary'],
+				'label' => 'Wat u nog moet doen',
 			];
 		}
 
-		$blocks[] = ['type' => 'cases', 'collection' => 'mijnZaken', 'open' => true, 'limit' => 5];
-		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3];
+		$blocks[] = ['type' => 'cases', 'collection' => 'mijnZaken', 'open' => true, 'limit' => 5, 'label' => 'Lopende zaken'];
+		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten'];
 		$blocks[] = ['type' => 'cta', 'action' => 'createBezwaar', 'label' => 'Bezwaar maken'];
 		$blocks[] = ['type' => 'cta', 'action' => 'createKlacht', 'label' => 'Klacht indienen'];
 

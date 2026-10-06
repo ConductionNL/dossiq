@@ -183,6 +183,12 @@ class PortalCasePageTest extends TestCase {
 					continue;
 				}
 
+				// A greeting names nothing: it reads the session (resident-overview-reads-as-designed).
+				if ($block['type'] === 'greeting') {
+					$this->assertArrayNotHasKey('collection', $block);
+					continue;
+				}
+
 				$this->assertContains($block['collection'], $collectionIds);
 			}
 		}
