@@ -92,22 +92,77 @@ SHALL refuse with 409 while any in-scope document has unseen required pages, nam
 
 ### Requirement: A Woo request is an authorisation container (REQ-WRT-006)
 
-`wooDocumentAssessment`, `wooDocumentReview`, `wooReviewBatch`, `wooTriageRule`, `wooExclusion`,
-`wooSearchPlan`, `wooCollectionQuery` and `wooDeliveredSet` SHALL declare their case reference as
-their `x-openregister-hierarchy` parent with read and update inherited, in the form the case schema
-uses for `parentCase`, and SHALL be listed in `SchemaSlugMap::SCHEMA_ANNOTATION_KEYS` handling so the
-key reaches the instance. Their schema authorisation SHALL NOT grant read to all authenticated
-users. Every dossiq route on these records SHALL check access through `CaseAccessGuard` for the
-case. Until OpenRegister enforces the hierarchy, these schemas SHALL be readable through the
-OpenRegister API by administrators only, so the safe state is no access rather than all access.
+Access to a Woo case's records SHALL follow the case through per-object grants that dossiq sets,
+the mechanism of `dossiq/woo-request-scoped-access`. That change owns `wooDocumentAssessment`
+(REQ-WSA-001 to REQ-WSA-006) and this requirement does not restate it. This requirement covers the
+other seven Woo records: `wooDocumentReview`, `wooReviewBatch`, `wooTriageRule`, `wooExclusion`,
+`wooSearchPlan`, `wooCollectionQuery` and `wooDeliveredSet`.
+
+None of the eight SHALL declare `x-openregister-hierarchy`. OpenRegister's built
+`rbac-inherits-to-children` accepts as hierarchy parent only a property that references the same
+schema (`HierarchyAnnotationValidator::checkParentProperty()`, code `hierarchy.foreign-reference`,
+called from `SchemaMapper::validateHierarchyAnnotation()`), so a parent that points at the case, or
+at a `wooReviewBatch`, is refused at save and the whole schema fails to import. The case schema's
+own `parentCase` edge stays as it is; it is case to case and does not reach these records.
+
+Each of the seven SHALL carry the authorization block
+`{"scope": "private", "read": ["authenticated"], "create": ["authenticated"], "update": ["authenticated"], "delete": ["dossiq-coordinators"]}`,
+and the register version SHALL be raised so it reaches an installed instance. No schema of the
+seven SHALL grant read to authenticated users without `scope` `private`.
+
+`OCA\Dossiq\Woo\WooAssessmentAccess::reconcile(string $caseId): array` SHALL also make the grants
+on every record of the seven that names the case equal this table, with owning group
+`dossiq-coordinators` on each, and SHALL revoke every user grant it did not just compute:
+
+| record | case assignee | reviewer named by a `wooReviewBatch` of the case |
+| --- | --- | --- |
+| `wooDocumentReview` | read, update | read, update, only on the reviews of their own batch |
+| `wooReviewBatch` | read, update | read, only on their own batch |
+| `wooTriageRule` | read, update | none |
+| `wooExclusion` | read, update | none |
+| `wooSearchPlan` | read, update | none |
+| `wooCollectionQuery` | read, update | none |
+| `wooDeliveredSet` | read | none |
+
+It SHALL NOT grant `delete` or `share` on any of them. Its answer keeps the shape REQ-WSA-002
+defines, `{status, granted, revoked, refused}`, with the seven counted in.
+
+`reconcile()` runs in the request of the user who acted, never in a background job: OpenRegister's
+`ObjectSharingService::grant()`, `revoke()` and `ObjectOwnershipService::setOwnerGroup()` throw
+`NotAuthorizedException` unless the caller is the object's owner, an administrator or a member of
+its owning group, and OpenRegister has no system path to set a grant. A grant the caller may not
+set SHALL be counted in `refused`, SHALL NOT be retried, and SHALL leave that record without the
+grant, which is the safe state. The case page SHALL show the number of records still waiting for a
+coordinator. Every dossiq route that creates one of the seven SHALL call `reconcile()` for the case
+after the create, in the same request: the gather add, the search plan save, the query record, the
+exclusion route, the rule create, the batch create and `WooPublicationService::publish()`. The
+repair step of REQ-WRT-001 runs without a user and SHALL NOT call it; the records it creates wait
+for the administrator route of REQ-WSA-006, which SHALL reconcile the seven as well.
+
+Every dossiq route on these records SHALL also check access through `CaseAccessGuard` for the case.
 
 #### Scenario: A reviewer scoped to one request sees only that request
-- **GIVEN** reviewer A granted on Woo case X only, and Woo case Y in the same organisation
-- **WHEN** A lists `wooDocumentAssessment` objects through dossiq's routes
-- **THEN** A SHALL see X's assessments and none of Y's
-- **AND** through the OpenRegister API A SHALL see X's and none of Y's once OpenRegister enforces the hierarchy, and none at all before that
+- **GIVEN** Woo cases X and Y in the same organisation, reviewer A named by a batch of X only, and a coordinator who created that batch
+- **WHEN** A lists `wooDocumentReview` objects through dossiq's routes and through the OpenRegister API
+- **THEN** both SHALL answer the reviews of A's batch in X and none of Y's
 
 #### Scenario: No grant, no read
-- **GIVEN** an authenticated user with no grant on any Woo case
-- **WHEN** they read Woo case X's reviews through either path
-- **THEN** both SHALL refuse
+- **GIVEN** an authenticated user who is not the assignee of any Woo case, is named by no batch and is not a coordinator
+- **WHEN** they read Woo case X's `wooTriageRule`, `wooSearchPlan` and `wooDeliveredSet` objects through either path
+- **THEN** both paths SHALL refuse or list nothing
+
+#### Scenario: No Woo record declares a hierarchy, so every one imports
+- **GIVEN** dossiq's register as the importer reads it
+- **WHEN** an instance imports it
+- **THEN** none of the eight Woo schemas SHALL carry `x-openregister-hierarchy`, each of the seven SHALL read back with `authorization.scope` `private`, and the import SHALL report no failed schema
+
+#### Scenario: A grant the caller may not set is reported, not retried
+- **GIVEN** a `wooDocumentReview` of case X owned by user C, and handler H, who is not a coordinator, creating a batch for reviewer R that includes it
+- **WHEN** the batch is created
+- **THEN** the batch SHALL exist, `reconcile()` SHALL answer `refused` 1, R SHALL NOT read that review, and the case page SHALL show one record waiting for a coordinator
+- **AND** when a coordinator then runs the reconcile for X, R SHALL read it
+
+#### Scenario: A change of hands moves the grants on every record
+- **GIVEN** Woo case X with a search plan, two triage rules and a batch, and assignee `j.devries`
+- **WHEN** a coordinator sets the assignee to `a.smit` (REQ-WSA-005)
+- **THEN** `a.smit` SHALL read and update those records and `j.devries` SHALL read none of them

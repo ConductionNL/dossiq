@@ -2,9 +2,8 @@
 
 Wave 3. Rows 19.7, 19.8, 19.9, 19.10, 19.11 and 19.17. Decision D1. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
-**Do not start before** `woo-request-corpus-collection` is merged on `development`. Read
-openregister's `rbac-inherits-to-children` on `development` and write in the PR body whether the
-platform reads `x-openregister-hierarchy` yet. A test marked **fails today** must be run on
+**Do not start before** `woo-request-corpus-collection` and `woo-request-scoped-access` are merged
+on `development`. Woo records do not use `x-openregister-hierarchy` (see section 6). A test marked **fails today** must be run on
 `origin/development` first and seen red. Build OpenRegister doubles from the real class signatures,
 and construct the real OpenRegister event classes in listener tests.
 
@@ -81,21 +80,45 @@ PR, sections 4 to 6 the second.
 
 ## 6. The request as an authorisation container
 
-- [ ] 6.1 Declare `x-openregister-hierarchy` on the eight schemas of REQ-WRT-006, with their case
-  property as the edge, in the form `parentCase` uses. Make sure the key survives
-  `SchemaSlugMap::SCHEMA_ANNOTATION_KEYS`. Remove any authenticated-read grant on them. Until
-  OpenRegister reads the hierarchy, set their `x-openregister-authorization` read and update to
-  administrators only (REQ-WRT-006).
+Read `dossiq/woo-request-scoped-access` first: this section extends its `WooAssessmentAccess` and
+does not start before that change is merged. Do not declare `x-openregister-hierarchy` on any Woo
+record. OpenRegister refuses a parent that references another schema
+(`HierarchyAnnotationValidator`, `hierarchy.foreign-reference`) and the schema then fails to import.
+
+- [ ] 6.1 Give the seven schemas of REQ-WRT-006 (those this change adds, and `wooSearchPlan`,
+  `wooExclusion`, `wooCollectionQuery` and `wooDeliveredSet` from earlier changes) the private
+  authorization block of REQ-WRT-006, with no `x-openregister-hierarchy` key, and bump the register
+  version (REQ-WRT-006).
   - **fails today**: `tests/Unit/Settings/WooChildSchemasTest.php`
-    `testEveryWooChildDeclaresItsCaseAsParent`, `testNoWooChildIsReadableByAllUsers`, reading the
-    merged register the importer reads.
-- [ ] 6.2 Every Woo route on these records checks `CaseAccessGuard` for the case (REQ-WRT-006).
+    `testEveryWooChildIsPrivateAndDeclaresNoHierarchy` and `testNoWooChildIsReadableByAllUsers`,
+    reading the merged register the importer reads.
+  - Newman `tests/newman/woo-review-triage.postman_collection.json`, folder `schemas`: read each of
+    the seven schemas back and assert `authorization.scope` is `private` and no hierarchy key is set.
+- [ ] 6.2 Extend `WooAssessmentAccess::reconcile()` with the grant table of REQ-WRT-006, and call it
+  after the create, in the same request, from every route that creates one of the seven: the gather
+  add, the search plan save, the query record, the exclusion route, the rule create, the batch
+  create and `WooPublicationService::publish()`. The repair step of 1.1 does not call it. The
+  administrator reconcile route of `woo-request-scoped-access` covers the seven through the same
+  method. No background job sets a grant (REQ-WRT-006).
+  - **fails today**: `tests/Unit/Woo/WooAssessmentAccessTest.php`
+    `testTheAssigneeIsGrantedEveryCaseRecord`, `testABatchReviewerGetsOnlyTheirBatchAndItsReviews`,
+    `testTheDeliveredSetIsNeverGrantedUpdate`, `testNoGrantReachesAnotherCase`,
+    `testAGrantTheCallerMayNotSetIsCountedAndNotRetried` (the sharing double throws
+    `NotAuthorizedException`, built with `environmentAwareDouble()` from the real signature).
+  - Through the caller: `WooReviewControllerTest::testCreateBatchGrantsTheReviewerTheirReviews`,
+    `testCreateRuleGrantsTheAssignee`; `WooSourcesControllerTest::testTheAddGrantsTheCaseRecords`;
+    `WooPublicationServiceTest::testTheDeliveredSetIsGrantedToTheAssignee`;
+    `CreateWooDocumentReviewsTest::testTheRepairGrantsNothing`.
+  - Newman folder `scoped` in the collection of 6.1: two Woo cases, a reviewer in a batch of one;
+    list `wooDocumentReview` and `wooTriageRule` through the OpenRegister API as that reviewer and
+    assert only the own batch's reviews and no rules are listed.
+- [ ] 6.3 Every Woo route on these records checks `CaseAccessGuard` for the case (REQ-WRT-006).
   - unit: one test per controller, `testAUserWithoutAGrantOnTheCaseIsRefused`.
-- [ ] 6.3 Live check after merge on the dev instance, with two Woo cases and a user granted on one:
-  list `wooDocumentAssessment` through the OpenRegister API and through dossiq's routes, and record
-  both results. If OpenRegister does not yet enforce the hierarchy, the API answer must be empty for
-  that user; 19.17 then reads `yes` on dossiq's routes and the PR body says the API half waits on
-  `rbac-inherits-to-children`.
+- [ ] 6.4 Live check after merge on the dev instance, with two Woo cases and a reviewer in a batch
+  of one: list `wooDocumentReview` through the OpenRegister API and through dossiq's routes, and
+  record both answers in the PR. Both must hold only that batch's reviews. Then create a batch as a
+  handler who is not a coordinator over a review someone else owns, and record that the answer
+  counts it in `refused` (REQ-WRT-006).
 
 ## 7. End to end
 
@@ -115,5 +138,5 @@ PR, sections 4 to 6 the second.
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
 - [ ] 8.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 8.5 One PR (or two, as above), `--base development`. Merge, never rebase. No `Co-Authored-By`.
-  Done means merged on `development` with CI green. The six rows then read `yes` (build), with 19.17's
-  API half as stated in 6.3, and `production` only with a store release.
+  Done means merged on `development` with CI green. The six rows then read `yes` (build), 19.17 only once
+  the live check of 6.4 holds on both paths, and `production` only with a store release.

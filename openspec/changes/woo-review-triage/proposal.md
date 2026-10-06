@@ -1,6 +1,6 @@
 ---
 kind: code
-depends_on: [woo-request-corpus-collection]
+depends_on: [woo-request-corpus-collection, woo-request-scoped-access]
 ---
 
 # Proposal: woo-review-triage
@@ -27,7 +27,7 @@ The corpus of a Woo case is marked in or out of scope by hand or by a visible ru
 
 - Rows: 19.7, 19.8, 19.9, 19.10, 19.11 and 19.17.
 - Wave 3.
-- Dependencies: `dossiq/woo-request-corpus-collection` (https://github.com/ConductionNL/dossiq/issues/3292), `openregister/rbac-inherits-to-children` (no issue; https://github.com/ConductionNL/openregister/tree/development/openspec/changes/rbac-inherits-to-children). Followed by `dossiq/woo-review-recall-and-stopping` (https://github.com/ConductionNL/dossiq/issues/3295).
+- Dependencies: `dossiq/woo-request-corpus-collection` (https://github.com/ConductionNL/dossiq/issues/3292), `dossiq/woo-request-scoped-access` (https://github.com/ConductionNL/dossiq/issues/3302), whose per-object grants carry 19.17. No Woo record uses `x-openregister-hierarchy`: OpenRegister refuses a parent that references another schema. Followed by `dossiq/woo-review-recall-and-stopping` (https://github.com/ConductionNL/dossiq/issues/3295).
 - Decisions: D1 (the review of a Woo request is dossiq's).
 - Build rules: openspec/woo-build-rules.md
 
@@ -64,9 +64,13 @@ What dossiq has, read on `development` at 55bbc761:
 5. **Every page seen** (19.11): the review viewer records the pages a reviewer saw. A verdict on a
    document whose required pages are not all seen is refused, and the decision and the publish
    refuse while any in-scope document has unseen required pages.
-6. **The request is an authorisation container** (19.17): every Woo child record names its case as
-   its hierarchy parent, so a grant on one Woo case answers for its records, and the blanket register
-   read on them is removed.
+6. **The request is an authorisation container** (19.17): every Woo child record is private, and
+   dossiq grants it to the case assignee and the batch reviewers through the per-object grants of
+   `woo-request-scoped-access`, so access follows the case and one request is closed to the people
+   of another. The gap text's "the assessment declares its batch as parent" cannot be built:
+   OpenRegister's `rbac-inherits-to-children` refuses at schema save any hierarchy parent that
+   references a different schema (`hierarchy.foreign-reference`), and the batch, like the case, is
+   a different schema.
 
 ## What does not change
 
@@ -77,11 +81,13 @@ What dossiq has, read on `development` at 55bbc761:
 
 - Planned, dossiq, wave 2: `woo-request-corpus-collection` (custodian and system on each document,
   the request configuration this change adds keys to).
-- Open, openregister, outside the plan: `rbac-inherits-to-children` (the platform reading
-  `x-openregister-hierarchy`). dossiq's case schema already declares the edge and notes it is inert
-  until OpenRegister reads it. Without it, 19.17 is enforced on dossiq's own routes by
-  `CaseAccessGuard` and the OpenRegister API is closed to non-administrators for these schemas; see
-  REQ-WRT-006.
+- Planned, dossiq, wave 2: `woo-request-scoped-access` (issue #3302). Its
+  `WooAssessmentAccess::reconcile()` and its callers are the mechanism REQ-WRT-006 extends to the
+  seven other Woo records.
+- Built, openregister `development`: `rbac-inherits-to-children`. It is not used here, because its
+  validator accepts only a parent of the same schema; and `object-level-sharing-and-private-scope`,
+  which is. OpenRegister lets only an object's owner, an administrator or its owning group set a
+  grant, so dossiq sets them in the acting user's request and never from a background job.
 - Followed by: `woo-review-recall-and-stopping` (wave 4).
 
 **App absent.** The review viewer is dossiq's own document view on the Woo case. When filinq's review

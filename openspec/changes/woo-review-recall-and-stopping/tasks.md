@@ -9,9 +9,15 @@ binomial CDF, and the tests pin its values.
 
 ## 1. The stopping rule
 
-- [ ] 1.1 Add schema `wooStoppingRule` in `lib/Settings/register.d/88-woo-recall.json` (with the case
-  as its `x-openregister-hierarchy` parent, as REQ-WRT-006 does for the other Woo children) and bump
-  the register version (REQ-WRS-001).
+- [ ] 1.1 Add schema `wooStoppingRule` in `lib/Settings/register.d/88-woo-recall.json` and bump the
+  register version (REQ-WRS-001). Give it the private authorization block of `woo-review-triage`
+  REQ-WRT-006 and no `x-openregister-hierarchy` key (OpenRegister refuses a parent that references
+  another schema, and the schema would fail to import). Add it to the grant table of
+  `WooAssessmentAccess::reconcile()` as case assignee read and update, batch reviewers none, and call
+  `reconcile()` after the stopping rule route creates it.
+  - **fails today**: `tests/Unit/Settings/WooChildSchemasTest.php`
+    `testTheStoppingRuleIsPrivateAndDeclaresNoHierarchy`, and
+    `tests/Unit/Woo/WooAssessmentAccessTest.php` `testTheStoppingRuleIsGrantedToTheAssigneeOnly`.
 - [ ] 1.2 POST `/api/cases/{id}/woo/stopping-rule`, case mutation guard, refused once any document is
   marked. A listener on OpenRegister's updating and deleting events refuses direct writes once review
   started; construct the real event classes in its test (REQ-WRS-001).

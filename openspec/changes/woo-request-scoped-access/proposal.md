@@ -106,12 +106,12 @@ What OpenRegister ships on `development` that this change builds on (read 2026-1
 
 ## Consistency with `woo-review-triage`
 
-`woo-review-triage` REQ-WRT-006 says the Woo records declare their case reference as their
-`x-openregister-hierarchy` parent. OpenRegister's built `rbac-inherits-to-children` (REQ-RIC-001)
-accepts only a parent property that references the same schema, and answers 422 otherwise, so
-that declaration cannot be saved for `wooDocumentAssessment`. For `wooDocumentAssessment` this
-change is the mechanism. The triage builder reads this change before REQ-WRT-006 and says in its
-PR body how it applied it.
+`woo-review-triage` REQ-WRT-006 builds on this change. OpenRegister's built
+`rbac-inherits-to-children` accepts only a hierarchy parent that references the same schema
+(`HierarchyAnnotationValidator`, `hierarchy.foreign-reference`), so no Woo record can name its case
+or its batch as parent. REQ-WRT-006 therefore extends `WooAssessmentAccess::reconcile()` with a
+grant table for the seven other Woo records and calls it from the routes that create them. This
+change stays the owner of `wooDocumentAssessment`.
 
 ## Dependencies
 
