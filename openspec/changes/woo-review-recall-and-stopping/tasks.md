@@ -1,7 +1,6 @@
 # Tasks: woo-review-recall-and-stopping
 
-Wave 4. Rows 19.12 and 19.13. Decision D1. Kind: code. Build rules:
-`~/memcap-work/woo-build/LANE-RULES-BUILD.md`.
+Wave 4. Rows 19.12 and 19.13. Decision D1. Kind: code. Build rules: `openspec/woo-build-rules.md`.
 
 **Do not start before** `woo-review-triage` is merged on `development`. A test marked **fails
 today** must be run on `origin/development` first and seen red. Do not use a statistics library for
@@ -65,7 +64,7 @@ binomial CDF, and the tests pin its values.
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n` and
   `npm run check:manifest`, plus any other leg `code-quality.yml` requires. Then hydra's
   `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 5.4 Project coverage of the added statements as LANE-RULES-BUILD says.
+- [ ] 5.4 Project coverage of the added statements. When no coverage driver (xdebug or pcov) is available, take the base percentages from `development`'s last green push run, intersect its clover uncovered lines with the lines this branch adds, and say in the PR body that the number is projected, not measured.
 - [ ] 5.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 19.12 and 19.13 then read `yes` (build), and `production` only with a
   store release.

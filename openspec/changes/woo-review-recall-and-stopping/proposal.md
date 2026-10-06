@@ -16,6 +16,16 @@ Implements Ruben's decision D1: the review of a Woo request is dossiq's. Before 
 planned on opencatalogi. There is no fleet precedent for a statistical review estimate; this change
 names the method so a building agent does not choose one.
 
+## Summary
+
+dossiq estimates the recall of a Woo review with a named statistical method and records a stopping rule declared in advance and whether it was met.
+
+- Rows: 19.12 and 19.13.
+- Wave 4.
+- Dependencies: `dossiq/woo-review-triage` (https://github.com/ConductionNL/dossiq/issues/3294).
+- Decisions: D1 (the review of a Woo request is dossiq's).
+- Build rules: openspec/woo-build-rules.md
+
 ## Why
 
 After `woo-review-triage`, every collected document on a Woo case is marked in scope, out of scope
