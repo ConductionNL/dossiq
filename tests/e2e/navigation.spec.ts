@@ -104,8 +104,8 @@ test.describe('Sidebar Navigation', () => {
 
 	test('settings button is visible', async ({ page }) => {
 		await page.goto('/index.php/apps/dossiq')
-		// Settings button at the bottom of the app sidebar — the platform gear
-		// foldout, which legitimately says "Settings".
+		// The foldout button at the bottom of the app sidebar, which the
+		// library labels "Advanced".
 		//
 		// The testid is still the right target, but the collision it was
 		// guarding against is gone: the SettingsMenu nav entry was relabelled
@@ -114,7 +114,7 @@ test.describe('Sidebar Navigation', () => {
 		await expect(
 			page
 				.getByTestId('cn-nav-settings')
-				.getByRole('button', { name: 'Settings' }),
+				.getByRole('button', { name: 'Advanced' }),
 		).toBeVisible()
 	})
 

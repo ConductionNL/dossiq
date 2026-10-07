@@ -37,7 +37,7 @@ test.describe('app chrome (ADR-114)', () => {
 		})
 	})
 
-	test('the footer reads Documentation, Store, Reports, Features & roadmap, each with a glyph', async ({
+	test('the footer reads Documentation, Store, Features & roadmap, each with a glyph', async ({
 		page,
 	}) => {
 		const footer = page.locator(
@@ -52,16 +52,15 @@ test.describe('app chrome (ADR-114)', () => {
 
 		// ORDER is the rule, not the numbers, and not the entry ids either:
 		// this app reaches its reports through an entry called AnalyticsGroup
-		// LABELLED "Reports", which is compliant — ADR-114 constrains the label
-		// and the position, not the id.
+		// LABELLED "Reports". It sits in the Advanced foldout now, so the
+		// footer must no longer carry it.
 		const seen = texts.filter((t) =>
 			/Documentation|Store|Reports|roadmap/i.test(t),
 		)
-		expect(seen.length).toBe(4)
+		expect(seen.length).toBe(3)
 		expect(seen[0]).toMatch(/Documentation/i)
 		expect(seen[1]).toMatch(/Store/i)
-		expect(seen[2]).toMatch(/Reports/i)
-		expect(seen[3]).toMatch(/roadmap/i)
+		expect(seen[2]).toMatch(/roadmap/i)
 
 		for (const row of await rows.all()) {
 			await expect(
@@ -71,10 +70,11 @@ test.describe('app chrome (ADR-114)', () => {
 	})
 
 	test('Reports carries the three reports as cards', async ({ page }) => {
-		const footer = page.locator(
-			'[data-testid="cn-nav"] .cn-app-nav__footer-list',
-		)
-		await footer
+		// Reports sits in the Advanced foldout, so open it first.
+		const nav = page.locator('[data-testid="cn-nav"]')
+		await nav.locator('[data-testid="cn-nav-settings"]').click()
+		await nav
+			.locator('[data-testid="cn-nav-entry-AnalyticsGroup"]')
 			.getByRole('link', { name: /^Reports$/ })
 			.first()
 			.click()
