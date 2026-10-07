@@ -502,3 +502,320 @@ authority; the column number is the affordance and the refusal is the control.
 - **WHEN** a handler drags a card onto it
 - **THEN** the card SHALL return to its own column
 - **AND** the message SHALL name the status and the limit
+
+### Requirement: A transition that moved without all of its actions says so (REQ-STE-14)
+
+When a transition or a free-form transition has moved the case and one or more
+of the actions it dispatched failed, `StatusTransitionService` SHALL answer
+`status: "partial"` and SHALL list each failed action in `failedActions` as
+`{type, error}`, in dispatch order. When no action failed it SHALL answer
+`status: "ok"` with an empty `failedActions`. `failedActions` SHALL always be
+present. A failed action SHALL NOT roll back the move, and the answer SHALL
+NOT be an error: the HTTP status stays 200. Each partial answer SHALL be
+logged at warning level with the case id and the failed rows.
+
+A dispatched row counts as failed only when its `ok` key is `false`. A row
+without an `ok` key counts as done, and a failed row without an `error`
+reports `action_failed`.
+
+The case-page transition dialog and the workflow board SHALL warn the handler
+with the number of actions that did not run, and SHALL still refresh the page:
+the move itself happened.
+
+#### Scenario: Every action ran
+@e2e exclude answer shape only; covered by StatusTransitionServiceFailedActionsTest, which asserts ok and an empty failedActions on both execute paths
+
+- **GIVEN** a transition whose dispatched actions all report `ok: true`
+- **WHEN** the transition is executed
+- **THEN** the answer SHALL carry `status: "ok"`
+- **AND** `failedActions` SHALL be an empty list
+- **AND** no warning SHALL be logged
+
+#### Scenario: An action failed after the case moved
+@e2e exclude a failing action cannot be provoked from the browser on a healthy instance; covered by StatusTransitionServiceFailedActionsTest on execute and executeFreeForm
+
+- **GIVEN** a transition that dispatches `createTask` and `sendEmail`
+- **AND** `createTask` reports `ok: false` with error `no_actor`
+- **WHEN** the transition is executed
+- **THEN** the case SHALL be in the target status
+- **AND** the answer SHALL carry `status: "partial"`
+- **AND** `failedActions` SHALL be `[{type: "createTask", error: "no_actor"}]`
+- **AND** a warning SHALL be logged naming the case
+
+#### Scenario: The handler is told how many actions did not run
+@e2e exclude needs a failing action, which the browser cannot provoke; covered by caseTransitionOutcome.spec.js, which mounts the dialog, and workflowBoardMove.spec.js, which drives the board, both against a partial answer
+
+- **GIVEN** a handler confirms a transition in the case-page dialog
+- **AND** the answer lists two failed actions
+- **WHEN** the answer arrives
+- **THEN** a warning SHALL say two automatic actions did not run
+- **AND** the dialog SHALL close and the page SHALL refresh
+
+### Requirement: A transition declares what must be settled first (REQ-TRD-01)
+
+A transition SHALL be able to declare the dependencies that must be settled
+before it is available. While one is open the transition SHALL be withheld
+rather than offered and refused, and the reason SHALL be readable where the
+transition would have been. Every closing status SHALL be withheld by an
+open dependency, not only the status the case type names as closed.
+
+#### Scenario: A case with an open advice request cannot be closed
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** a case with an open advice request
+- **WHEN** a handler opens the transition list
+- **THEN** no closing status SHALL be offered
+- **AND** the list SHALL say that the advice request is open
+
+#### Scenario: Settling the dependency restores the transition
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** the same case
+- **WHEN** the advice is received and the request is settled
+- **THEN** the closing statuses SHALL be offered again
+
+#### Scenario: A second kind of dependency needs no new service
+@e2e exclude unit over two declared dependencies; TransitionPreconditionTest
+
+- **GIVEN** a case type declaring an unpaid fee as a dependency of closing
+- **WHEN** the fee is unpaid
+- **THEN** the closing transitions SHALL be withheld by the same mechanism as the advice request
+
+### Requirement: A transition and a status carry an explanation (REQ-TRD-02)
+
+An administrator SHALL be able to write an explanation on a status and on a
+transition. The status explanation SHALL be rendered on the case. The
+transition explanation SHALL be rendered in the list the handler chooses
+from. An empty explanation SHALL render nothing rather than an empty space.
+
+#### Scenario: The handler reads the guidance while choosing
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** a transition with an explanation written by an administrator
+- **WHEN** a handler opens the transition list
+- **THEN** the explanation SHALL be readable beside the transition
+
+#### Scenario: The status explanation reaches the case
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** a status whose `description` an administrator has written
+- **WHEN** a case in that status is opened
+- **THEN** the description SHALL be rendered on the case
+
+### Requirement: A transition may be closed to whoever performed an earlier act (REQ-TRD-03)
+
+A transition SHALL be able to declare an earlier act whose performer may not
+make it. The engine SHALL read who performed that act on this case and
+SHALL refuse the transition for that person. The refusal SHALL name the act,
+its date and the person, and the case type SHALL be able to name who may be
+asked instead.
+
+#### Scenario: The author of a decision may not approve it
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** a case whose draft decision was written by a handler
+- **WHEN** that handler tries to approve it
+- **THEN** the transition SHALL be refused
+- **AND** the refusal SHALL name the act and its date
+
+#### Scenario: A colleague may approve it
+@e2e tests/e2e/what-a-transition-declares.spec.ts
+
+- **GIVEN** the same case
+- **WHEN** a colleague with the right mandate approves it
+- **THEN** the transition SHALL proceed
+
+#### Scenario: The same person may approve a case they did not prepare
+@e2e exclude unit; FourEyesTransitionTest
+
+- **GIVEN** a second case the same handler did not prepare
+- **WHEN** they approve it
+- **THEN** the transition SHALL proceed
+- **AND** the rule SHALL have read the act, not the role
+
+### Requirement: A status may declare what makes it true (REQ-SDC-01)
+
+A `statusType` SHALL be able to declare the conditions under which it holds.
+Where it does, the case SHALL move into that status as the conditions become
+true, and the status SHALL NOT be offered as a transition a person picks. A
+status that declares no conditions SHALL keep being reached by a chosen
+transition, as it is today.
+
+#### Scenario: The case becomes complete when the file is complete
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** a case type whose status Complete declares the intake form and four documents
+- **WHEN** the fourth document is added
+- **THEN** the case SHALL move to Complete without anybody choosing it
+
+#### Scenario: A derived status is not offered as a choice
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** the same case type
+- **WHEN** a handler opens the transition list
+- **THEN** Complete SHALL NOT be offered
+- **AND** the statuses that declare no conditions SHALL still be offered
+
+#### Scenario: An unmet derivation says what is missing
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** a case with three of the four documents
+- **WHEN** the handler opens it
+- **THEN** the case SHALL name the missing document as the reason it is not Complete
+
+### Requirement: A status declares who the case is waiting on (REQ-SDC-02)
+
+A `statusType` SHALL declare whether the case waits on us, on the applicant
+or on a named third party. Waiting on the applicant and waiting on a third
+party SHALL be distinct values. Queue and team counts SHALL be built on that
+declaration. The existing `role` values SHALL keep working unchanged.
+
+#### Scenario: Two waiting statuses are told apart
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** a status Waiting for the applicant and a status Waiting for advice
+- **WHEN** both are read
+- **THEN** the first SHALL declare the applicant and the second a third party
+
+#### Scenario: A team sees what is theirs to move
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** a queue of forty cases, twelve waiting on the applicant and six on a third party
+- **WHEN** the queue is counted by who is waited on
+- **THEN** twenty-two SHALL be reported as ours to move
+- **AND** the other two counts SHALL be reported separately
+
+#### Scenario: The shipped flow keeps reading role
+@e2e exclude unit over the lookup; StatusWaitingOnTest
+
+- **GIVEN** a status whose `role` is `pending-info`
+- **WHEN** the shipped flow reads it
+- **THEN** it SHALL behave exactly as it does today
+
+### Requirement: A status may declare a maximum dwell that breaches on its own (REQ-SDC-03)
+
+A `statusType` SHALL be able to declare a maximum dwell, counted on the
+organisation's working calendar. Entering the status SHALL arm a timer and
+leaving it SHALL cancel the timer. A breach SHALL be its own event with its
+own notification and its own filter, and SHALL NOT change the case's
+statutory term or its state.
+
+#### Scenario: Nine weeks in a status inside a healthy term
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** a case with eight weeks left on its term, in a status whose maximum is four weeks
+- **WHEN** the fifth week in that status begins
+- **THEN** the status dwell SHALL be reported as breached
+- **AND** the case term SHALL still read as not breached
+
+#### Scenario: Leaving the status cancels the timer
+@e2e exclude unit; StatusDwellTimerTest
+
+- **GIVEN** a case in a status with a declared maximum
+- **WHEN** it moves to the next status before the maximum
+- **THEN** the timer SHALL be cancelled
+- **AND** no breach SHALL be recorded
+
+#### Scenario: The maximum counts working days
+@e2e exclude unit fixture pair over the seeded calendar; StatusDwellTimerTest
+
+- **GIVEN** a status with a maximum of five days entered on a Friday
+- **WHEN** the weekend and a general holiday fall inside the window
+- **THEN** the breach SHALL be due five working days later, not five calendar days
+
+### Requirement: A status declares which fields it requires, hides and locks (REQ-SDC-04)
+
+A `statusType` SHALL be able to declare, per case field, that the field is
+required, hidden or read only while the case sits in that status. Each
+declaration MAY name the groups it applies to, and a declaration that names
+none SHALL apply to everyone. Each declaration MAY carry a condition in the
+same vocabulary `derivedWhen` uses, and SHALL apply only where that condition
+holds. Each declaration MAY carry the sentence a refusal shows.
+
+Publishing the case type SHALL write those declarations onto the case
+schema's `x-openregister-lifecycle.states.<statusType>.fields`, so
+OpenRegister decides and refuses. dossiq SHALL NOT evaluate the rules a
+second time, and SHALL NOT filter a field of its own.
+
+A property that declares `requiredAtStatus` SHALL be published as a
+`required` declaration of that status, so the one control that already exists
+starts being enforced rather than gaining a rival.
+
+#### Scenario: A status makes a field required
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a status Besluitvorming that declares the motivation required
+- **WHEN** the case type is published
+- **THEN** the case schema SHALL carry that status as a state requiring the motivation
+
+#### Scenario: Saving without the field is refused by the platform
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a case in Besluitvorming with no motivation
+- **WHEN** a handler saves it
+- **THEN** the save SHALL be refused with `state-field-required`
+- **AND** the case page SHALL show the sentence the status declared
+
+#### Scenario: A rule that names groups leaves the others alone
+@e2e exclude unit over the projection; CaseStateFieldRuleProjectorTest
+
+- **GIVEN** a status that locks the confidentiality for `dossiq-handlers`
+- **WHEN** the declarations are published
+- **THEN** the published `readOnly` entry SHALL name that group
+- **AND** a declaration naming no group SHALL be published without one
+
+#### Scenario: A conditional rule is published as a condition, not as a second status
+@e2e exclude unit over the translation; StatusFieldRuleDeclarationTest
+
+- **GIVEN** a rule requiring the motivation only when the decision is a refusal
+- **WHEN** the declarations are published
+- **THEN** the published entry SHALL carry a `when` reading that field
+- **AND** no second status SHALL be created for the branch
+
+#### Scenario: A field required from a status keeps being required
+@e2e exclude unit over the projection; CaseStateFieldRuleProjectorTest
+
+- **GIVEN** a property declaring `requiredAtStatus` of Besluitvorming
+- **WHEN** the case type is published
+- **THEN** that property SHALL be published as required in that status
+
+#### Scenario: The case page reads the decision rather than making one
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a case whose read carries `@self.fieldRules`
+- **WHEN** the case page renders
+- **THEN** it SHALL name what this status requires, hides and locks from that answer alone
+
+### Requirement: The rules of a case type are listed and tried in the editor (REQ-SDC-05)
+
+The case-type editor SHALL list the rules OpenRegister holds for the case
+schema, read from the rules inventory in evaluation order, labelled with the
+kind vocabulary the engine publishes rather than a list dossiq keeps. It
+SHALL let an administrator try a rule against one case and show the verdict,
+the operand and the value that decided. It SHALL key on a rule's id and never
+on its position.
+
+The DMN decision tables SHALL keep working unchanged, as the neighbour of the
+`flow` kind rather than as something this replaces.
+
+#### Scenario: The rules of the case schema are listed
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a case type whose statuses declare field rules
+- **WHEN** an administrator opens the Rules tab
+- **THEN** the rules SHALL be listed in the order the engine evaluates them
+
+#### Scenario: A kind dossiq has never seen still renders
+@e2e exclude unit over the vocabulary read; caseTypeRules.spec.js
+
+- **GIVEN** a vocabulary carrying a kind this release predates
+- **WHEN** the tab renders a rule of that kind
+- **THEN** it SHALL render the kind the vocabulary published
+
+#### Scenario: Trying a rule says what decided
+@e2e tests/e2e/case-types-declare-field-rules.spec.ts
+
+- **GIVEN** a rule and a case
+- **WHEN** the administrator tries the rule against the case
+- **THEN** the verdict SHALL be shown with the operand and the value it read
+- **AND** nothing SHALL be written to the case
