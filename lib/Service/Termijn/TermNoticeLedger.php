@@ -79,6 +79,8 @@ class TermNoticeLedger {
 	 * @throws DbException On any database failure other than the duplicate key.
 	 *
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-sent-once-per-deadline-req-term-071
+	 *
+	 * @phpstan-impure It reads or writes the database.
 	 */
 	public function claim(string $key, string $template, string $instance, int $now): bool {
 		$query = $this->db->getQueryBuilder();
@@ -114,6 +116,8 @@ class TermNoticeLedger {
 	 * @return array{outcome: string, at: int}|null The row.
 	 *
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-sent-once-per-deadline-req-term-071
+	 *
+	 * @phpstan-impure It reads or writes the database.
 	 */
 	public function find(string $key): ?array {
 		$query = $this->db->getQueryBuilder();
@@ -142,6 +146,8 @@ class TermNoticeLedger {
 	 * @return void
 	 *
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-sent-once-per-deadline-req-term-071
+	 *
+	 * @phpstan-impure It reads or writes the database.
 	 */
 	public function settle(string $key, string $outcome, int $now): void {
 		$query = $this->db->getQueryBuilder();
@@ -160,6 +166,8 @@ class TermNoticeLedger {
 	 * @return void
 	 *
 	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-sent-once-per-deadline-req-term-071
+	 *
+	 * @phpstan-impure It reads or writes the database.
 	 */
 	public function release(string $key): void {
 		$query = $this->db->getQueryBuilder();

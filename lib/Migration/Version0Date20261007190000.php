@@ -55,7 +55,6 @@ class Version0Date20261007190000 extends SimpleMigrationStep {
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The signature is SimpleMigrationStep's.
 	 */
 	public function changeSchema(IOutput $output, Closure $schemaClosure, array $options): ?ISchemaWrapper {
-		/** @var ISchemaWrapper $schema */
 		$schema = $schemaClosure();
 		if ($schema->hasTable('dossiq_term_notices') === true) {
 			return null;
