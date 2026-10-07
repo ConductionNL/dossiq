@@ -1048,6 +1048,88 @@ with no single value for a facet or a column to read.
 - **WHEN** you choose the chip All
 - **THEN** the list SHALL show both tasks
 
+### Requirement: REQ-TASK-020 You set a reminder for a colleague from the case
+
+`#CaseDetail` SHALL offer Remind, a form asking who, when and what, that
+creates an engine task on the case with that assignee, due date and title
+and `kind: reminder`. The task SHALL appear on Tasks, on My work of the
+assignee and on the case's Work tab, and the assignee SHALL receive the
+platform's assignment notification.
+
+#### Scenario: A reminder reaches a colleague
+@e2e tests/e2e/case-reminder.spec.ts
+
+- **GIVEN** an open case and a colleague Anna
+- **WHEN** you press Remind, pick Anna, the 3rd and "Call the applicant", and save
+- **THEN** a task "Call the applicant" due the 3rd assigned to Anna SHALL exist on the case
+- **AND** Anna SHALL see it under Mine on Tasks
+
+#### Scenario: A reminder is closed like a task
+@e2e tests/e2e/case-reminder.spec.ts
+
+- **GIVEN** a reminder task on a case
+- **WHEN** you complete it on the Work tab
+- **THEN** it SHALL leave the open tasks of the case
+
+### Requirement: REQ-TASK-019 A task on a case defaults to the case handler
+
+When a transition or a flow step creates a task and its authored assignee
+and fallback both name nobody, the task SHALL be assigned to the case's
+`assignee`; when the case has none, to the case's `assignedGroup`; only
+when both are empty SHALL the task be unassigned. An action with
+`assignee: "none"` SHALL create an unassigned task regardless.
+
+#### Scenario: The handler gets the task
+@e2e tests/e2e/task-defaults-to-case-handler.spec.ts
+
+- **GIVEN** a case assigned to you and a transition whose action names no assignee
+- **WHEN** the transition runs
+- **THEN** the created task SHALL be assigned to you
+- **AND** it SHALL appear under Mine on Tasks
+
+#### Scenario: The team gets the task when there is no handler
+@e2e exclude covered by AssigneeResolverTest::testFallsBackToAssignedGroup over a case fixture
+
+- **GIVEN** a case with no assignee and team Permits
+- **WHEN** a task is created without an authored assignee
+- **THEN** the task SHALL carry team Permits as its assignee group
+
+#### Scenario: An action opts out
+@e2e exclude covered by AssigneeResolverTest::testNoneStaysUnassigned
+
+- **GIVEN** an action with `assignee: "none"` on an assigned case
+- **WHEN** the task is created
+- **THEN** it SHALL have no assignee
+
+### Requirement: REQ-TASK-021 The Tasks index has five search fields
+
+The `#Tasks` sidebar SHALL offer filters on case, assignee, due date range,
+state and priority. Each SHALL be answered by the engine inbox server-side;
+no filter SHALL be applied over a fetched page. A lens and a field SHALL
+compose, and both SHALL be carried in the URL.
+
+#### Scenario: Narrow to one case
+@e2e tests/e2e/task-search-fields.spec.ts
+
+- **GIVEN** tasks on two cases
+- **WHEN** you pick one case in the sidebar
+- **THEN** only that case's tasks SHALL remain
+- **AND** the URL SHALL carry the case filter
+
+#### Scenario: Due window inside a lens
+@e2e tests/e2e/task-search-fields.spec.ts
+
+- **GIVEN** the Mine lens is active
+- **WHEN** you set due between next Monday and Friday
+- **THEN** only your tasks due in that week SHALL remain
+
+#### Scenario: A filter the engine lacks is not faked
+@e2e exclude structural; covered by a vitest asserting every declared sidebar field has a store mapping to an inbox argument
+
+- **GIVEN** the sidebar declaration
+- **WHEN** the store mapping is read
+- **THEN** every declared field SHALL map to an inbox argument
+
 ## Accessibility
 
 All task management interfaces MUST comply with WCAG AA:

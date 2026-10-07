@@ -161,3 +161,51 @@ create rule that refuses an anonymous principal may also refuse
 - **GIVEN** a user who is in no administrative group
 - **WHEN** they open the case list of a case type that declares attributes
 - **THEN** the filter bar SHALL offer that case type's attributes
+
+### Requirement: Attributes are grouped in folders (REQ-PDM-01)
+
+`propertyDefinition` SHALL carry a facetable `category`. The property
+definitions index SHALL show a folder sidebar on it with an All attributes
+entry, and rows without a category SHALL be listed under Uncategorised.
+
+#### Scenario: Attributes by folder
+@e2e tests/e2e/attribute-catalogue-folders.spec.ts
+
+- **GIVEN** attributes in categories Address and Finance and one without
+- **WHEN** you open the property definitions index
+- **THEN** the sidebar SHALL list All attributes, Address, Finance and Uncategorised
+- **AND** picking Finance SHALL list only its attributes
+
+### Requirement: The case type property picker groups by category (REQ-PDM-02)
+
+The property picker on `#CaseTypeDetail` SHALL group attributes by
+`category` with the category as a heading.
+
+#### Scenario: Grouped picker
+@e2e tests/e2e/attribute-catalogue-folders.spec.ts
+
+- **GIVEN** the same attributes
+- **WHEN** you add a property to a case type
+- **THEN** the picker SHALL show Address and Finance as headings with their attributes underneath
+
+### Requirement: A property takes its options from a concept scheme (REQ-PDM-03)
+
+`propertyDefinition` SHALL carry an optional `conceptScheme` reference.
+When set, the case data form SHALL offer the scheme's concepts as options
+and store the chosen concept's URI; when empty, `enumValues` SHALL rule.
+When both are set the scheme SHALL win and the authoring surface SHALL
+warn.
+
+#### Scenario: Options come from the scheme
+@e2e tests/e2e/code-lists-from-concepts.spec.ts
+
+- **GIVEN** a concept scheme Wijken with three concepts and a property bound to it
+- **WHEN** you edit a case of a type with that property
+- **THEN** the picker SHALL offer the three concepts
+
+#### Scenario: Inline lists still work
+@e2e tests/e2e/code-lists-from-concepts.spec.ts
+
+- **GIVEN** a property with `enumValues` and no scheme
+- **WHEN** you edit a case
+- **THEN** the picker SHALL offer the inline values
