@@ -29,7 +29,9 @@ namespace OCA\Dossiq\Tests\Unit\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\CrossAppListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
+use OCA\Dossiq\Tests\Support\InMemoryEventDispatcher;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\EventDispatcher\Event;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -190,32 +192,101 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	}//end portalFacts()
 
 	/**
-	 * The portaliq bindings are guarded, so an instance without portaliq boots.
+	 * The listeners on another app's event are registered by name, unguarded.
 	 *
 	 * Source-read, because the stub makes the class loadable here and a run
-	 * cannot take the false branch. A binding without the guard would fatal
-	 * nowhere and register a listener for an event nobody raises, but a type
-	 * hint or `::class` import on the portaliq class would.
+	 * cannot take the false branch a live instance takes. Nextcloud runs
+	 * dossiq's register() before the autoloader of an app that registers
+	 * after it exists, so a `class_exists` guard read false and the listener
+	 * never registered (measured on djb-live, 2026-10-07: integriq installed,
+	 * no dossiq listener on DeliveryConcludedEvent, IntakeMessageRoutedEvent
+	 * or MessageReceivedEvent).
+	 *
+	 * @param string $listener The dossiq listener.
+	 * @param string $event    The other app's event class.
 	 *
 	 * @return void
+	 *
+	 * @dataProvider crossAppEvents
 	 */
-	public function testThePortalBindingsAreGuardedOnTheEventClass(): void {
+	public function testTheListenerIsRegisteredByNameWithoutAGuard(string $listener, string $event): void {
 		$source = $this->source(class: CrossAppListenerRegistrar::class);
-
-		foreach (['PortalClientWriteListener', 'PortalClientWithdrawalListener'] as $listener) {
-			$this->assertStringContainsString(
-				needle: 'class_exists(\\OCA\\Dossiq\\Listener\\' . $listener . '::EVENT) === true',
-				haystack: $source,
-				message: $listener . ' is bound without a class_exists guard',
-			);
-		}
+		$short = substr($listener, (strrpos($listener, '\\') + 1));
 
 		$this->assertStringNotContainsString(
-			needle: 'Portaliq\\Event\\PortalClientWriteEvent::class',
+			needle: 'class_exists(\\OCA\\Dossiq\\Listener\\' . $short . '::EVENT)',
 			haystack: $source,
-			message: 'the portaliq class must be named by string, never by ::class',
+			message: $short . ' is guarded on a class that does not exist yet when dossiq registers',
 		);
-	}//end testThePortalBindingsAreGuardedOnTheEventClass()
+		$this->assertStringNotContainsString(
+			needle: 'class_exists(\'\\\\' . str_replace('\\', '\\\\', $event) . '\')',
+			haystack: $source,
+			message: $short . ' is guarded on a class that does not exist yet when dossiq registers',
+		);
+		$this->assertStringNotContainsString(
+			needle: $event . '::class',
+			haystack: $source,
+			message: 'the other app\'s event class must be named by string, never by ::class',
+		);
+	}//end testTheListenerIsRegisteredByNameWithoutAGuard()
+
+	/**
+	 * The real event class reaches its listener through the dispatcher.
+	 *
+	 * `dispatchTyped()` dispatches on the event's own class name, so the name
+	 * the registrar registers has to be exactly that class, spelled the way
+	 * PHP reports it. The event is the stub of the other app's class, which
+	 * tests/Support/StubDrift holds to the real one.
+	 *
+	 * @param string $listener The dossiq listener.
+	 * @param string $event    The other app's event class.
+	 *
+	 * @return void
+	 *
+	 * @dataProvider crossAppEvents
+	 */
+	public function testTheRealEventReachesItsListener(string $listener, string $event): void {
+		if (class_exists($event) === false) {
+			$this->markTestSkipped($event . ' has no stub here; its registration is covered by name above.');
+		}
+
+		$dispatcher = new InMemoryEventDispatcher();
+		$received = [];
+		foreach ($this->registrations(registrar: new CrossAppListenerRegistrar()) as $name => $listeners) {
+			foreach ($listeners as $registered) {
+				$dispatcher->addListener(
+					$name,
+					static function (Event $fired) use (&$received, $registered): void {
+						$received[] = [$registered, get_class($fired)];
+					}
+				);
+			}
+		}
+
+		/** @var Event $instance */
+		$instance = (new \ReflectionClass($event))->newInstanceWithoutConstructor();
+		$dispatcher->dispatchTyped($instance);
+
+		$this->assertContains([$listener, $event], $received, $listener . ' never heard ' . $event);
+	}//end testTheRealEventReachesItsListener()
+
+	/**
+	 * Every listener on an app that registers after dossiq, with its event.
+	 *
+	 * @return array<string, array{0: string, 1: string}> The pairs.
+	 */
+	public static function crossAppEvents(): array {
+		return [
+			'delivery concluded' => ['OCA\Dossiq\Listener\DeliveryConcludedListener', 'OCA\Integriq\Event\DeliveryConcludedEvent'],
+			'digital post status' => ['OCA\Dossiq\Listener\DigitalPostDeliveredListener', 'OCA\Integriq\Event\DigitalPostDeliveredEvent'],
+			'intake routed' => ['OCA\Dossiq\Listener\IntakeMessageRoutedListener', 'OCA\Integriq\Event\IntakeMessageRoutedEvent'],
+			'message received' => ['OCA\Dossiq\Listener\MessageReceivedListener', 'OCA\Integriq\Event\MessageReceivedEvent'],
+			'portal write' => ['OCA\Dossiq\Listener\PortalClientWriteListener', 'OCA\Portaliq\Event\PortalClientWriteEvent'],
+			'portal withdrawal' => ['OCA\Dossiq\Listener\PortalClientWithdrawalListener', 'OCA\Portaliq\Event\PortalClientWithdrawalEvent'],
+			'document generated' => ['OCA\Dossiq\Listener\DocumentGeneratedListener', 'OCA\Filinq\Event\DocumentGeneratedEvent'],
+			'form submitted' => ['OCA\Dossiq\Listener\FormSubmittedListener', 'OCA\Forms\Events\FormSubmittedEvent'],
+		];
+	}//end crossAppEvents()
 
 	/**
 	 * The composite still delegates to the cross-app registrar.
