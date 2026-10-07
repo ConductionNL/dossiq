@@ -10735,7 +10735,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/leaf-integrations",
+				"change": "leaf-integrations",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -10801,7 +10801,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/contacts-domain",
+				"change": "contacts-domain",
 				"evidence": "src/manifest.json:6891 #ContactDetail headerAction new-case-for-contact (open-form on case, requester prefilled from @objectId; same action on #OrganisationDetail at src/manifest.json:7183)",
 				"reachedOn": "#ContactDetail and #OrganisationDetail header action \"New case\", via menu Contacts / Organisations",
 				"owner": "ConductionNL/dossiq"
@@ -10969,7 +10969,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/planned-case-series",
+				"change": "planned-case-series",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11217,7 +11217,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-type-version-chain",
+				"change": "case-type-version-chain",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11252,7 +11252,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-claim-action",
+				"change": "case-claim-action",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11290,7 +11290,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/parties-on-the-case",
+				"change": "parties-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11530,7 +11530,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-type-rebind",
+				"change": "case-type-rebind",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11654,7 +11654,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-delete-guard",
+				"change": "case-delete-guard",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11764,7 +11764,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/live-updates-on-the-case-page",
+				"change": "live-updates-on-the-case-page",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11838,7 +11838,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/admin-inspect-entry",
+				"change": "admin-inspect-entry",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11876,7 +11876,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-merge",
+				"change": "case-merge",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11914,7 +11914,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/duplicate-warning-at-intake",
+				"change": "duplicate-warning-at-intake",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -11952,7 +11952,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/pause-reason-with-chasing",
+				"change": "pause-reason-with-chasing",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -12029,7 +12029,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/edit-lock-on-the-case-page",
+				"change": "edit-lock-on-the-case-page",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -12215,7 +12215,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
-				"change": "dossiq/one-case-list",
+				"change": "one-case-list",
 				"evidence": "src/manifest.json#Tasks; #Dashboard/my-tasks",
 				"note": "OpenSpec pass 2026-09-27: decided no for the missing half. openspec/changes/competitor-parity-2026-09/proposal.md, Deliberate no's: the lenses shipped and what is left is one Team chip whose value nextcloud-vue cannot resolve yet.",
 				"owner": "ConductionNL/dossiq"
@@ -12305,7 +12305,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/task-defaults-to-case-handler",
+				"change": "task-defaults-to-case-handler",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -12767,7 +12767,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -12804,7 +12804,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -12870,7 +12870,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "decided-no",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13023,7 +13023,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13061,7 +13061,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13222,7 +13222,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13325,7 +13325,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
-				"change": "dossiq/scan-verdict-on-the-row",
+				"change": "scan-verdict-on-the-row",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13362,7 +13362,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
-				"change": "dossiq/the-case-archives-through-openregister",
+				"change": "the-case-archives-through-openregister",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13429,7 +13429,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13466,7 +13466,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13533,7 +13533,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/contacts-domain",
+				"change": "contacts-domain",
 				"evidence": "src/manifest.json:6780 #Contacts index over brpPerson and src/manifest.json:6829 #Organisations index over kvkCompany",
 				"reachedOn": "app menu \"Contacts\" (src/manifest.json:239) with child \"Organisations\" (src/manifest.json:247)",
 				"owner": "ConductionNL/dossiq"
@@ -13658,7 +13658,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/sensitive-fields-declared",
+				"change": "sensitive-fields-declared",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13725,7 +13725,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "specified",
-				"change": "dossiq/gemachtigde-role-on-every-case-type",
+				"change": "gemachtigde-role-on-every-case-type",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -13850,7 +13850,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/document-correspondents",
+				"change": "document-correspondents",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -14137,7 +14137,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
-				"change": "dossiq/communication-portal-conversation-on-the-case",
+				"change": "communication-portal-conversation-on-the-case",
 				"prs": [
 					{
 						"repo": "portaliq",
@@ -14435,7 +14435,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/timeline-entries-default-internal",
+				"change": "timeline-entries-default-internal",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -14792,7 +14792,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-reminder-as-task",
+				"change": "case-reminder-as-task",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -15003,7 +15003,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/terms-on-the-engine-calendar",
+				"change": "terms-on-the-engine-calendar",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -15041,7 +15041,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/terms-on-the-engine-calendar",
+				"change": "terms-on-the-engine-calendar",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -15507,7 +15507,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/task-search-fields",
+				"change": "task-search-fields",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -15936,7 +15936,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/hours-onto-humaniq-leaf",
+				"change": "hours-onto-humaniq-leaf",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -16003,7 +16003,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-definition-export-is-real",
+				"change": "case-definition-export-is-real",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -16271,7 +16271,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/code-lists-from-concepts",
+				"change": "code-lists-from-concepts",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -16367,7 +16367,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-type-labels-are-translatable",
+				"change": "case-type-labels-are-translatable",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -16501,7 +16501,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/data-model-link",
+				"change": "data-model-link",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -16692,7 +16692,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/attribute-catalogue-folders",
+				"change": "attribute-catalogue-folders",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -16803,7 +16803,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
-				"change": "dossiq/knowledge-base-on-the-case",
+				"change": "knowledge-base-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -17332,7 +17332,7 @@
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json#Integrations (route /settings/integrations) over integriq's connection registry (dossiq/adopt-connection-registry); integriq openspec/specs/connector-catalog/spec.md",
-				"change": "dossiq/pluggable-integration-registry",
+				"change": "pluggable-integration-registry",
 				"readOn": "2026-09-27",
 				"note": "OpenSpec pass 2026-09-27: matrix corrected. The gap scan of 2026-09-19 (market-intelligence procest/_ledger/gap-scan/d.json, verdict sibling-has) finds the connector framework held and shipped by integriq and consumed here. The partial rating is due a re-rate in the corpus.",
 				"owner": "ConductionNL/dossiq"
@@ -17450,7 +17450,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "decided-no",
-				"change": "dossiq/documents-live-on-the-case",
+				"change": "documents-live-on-the-case",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -17774,7 +17774,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/field-rules-declared",
+				"change": "field-rules-declared",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -18052,7 +18052,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"change": "dossiq/substituted-work-reaches-my-work",
+				"change": "substituted-work-reaches-my-work",
 				"prs": [
 					{
 						"repo": "dossiq",
@@ -18090,7 +18090,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"change": "dossiq/case-followers",
+				"change": "case-followers",
 				"prs": [
 					{
 						"repo": "dossiq",
