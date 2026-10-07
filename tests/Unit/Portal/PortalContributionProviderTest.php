@@ -182,7 +182,7 @@ class PortalContributionProviderTest extends TestCase {
 		$page = $this->citizenPage(id: 'mijnZaken');
 		$cta = null;
 		foreach ($page['blocks'] as $block) {
-			if (($block['type'] ?? '') === 'cta') {
+			if (($block['type'] ?? '') === 'cta' && ($block['action'] ?? '') === 'replyToMessage') {
 				$cta = $block;
 			}
 		}
@@ -191,6 +191,17 @@ class PortalContributionProviderTest extends TestCase {
 			['type' => 'cta', 'action' => 'replyToMessage', 'label' => 'Bericht sturen', 'withRecord' => true],
 			$cta
 		);
+
+		// Bezwaar and klacht land the open case the same way, in the field
+		// their own guard checks (case-actions-on-the-case-page).
+		foreach (['createBezwaar', 'createKlacht'] as $id) {
+			$action = $this->citizenAction(id: $id);
+			$this->assertSame('againstCaseId', $action['recordField'], $id);
+			$this->assertContains('againstCaseId', $action['fields'], $id);
+			$this->assertArrayHasKey('againstCaseId', $action['crossRefs'], $id);
+			// The case is given by the page, never typed.
+			$this->assertFalse($action['fieldConfigs']['againstCaseId']['visible'], $id);
+		}
 	}//end testTheReplyActionNamesTheFieldARecordLandsIn()
 
 	/**
@@ -598,6 +609,10 @@ class PortalContributionProviderTest extends TestCase {
 			[$pages[0]['blocks'][2]['label'], $pages[0]['blocks'][3]['label']]
 		);
 		$this->assertSame(['cases', 'inbox'], [$pages[0]['blocks'][2]['type'], $pages[0]['blocks'][3]['type']]);
+		// Bezwaar and klacht act on one case: they left the overview for the
+		// case page (case-actions-on-the-case-page).
+		$this->assertCount(4, $pages[0]['blocks']);
+		$this->assertNotContains('cta', array_column($pages[0]['blocks'], 'type'));
 		$this->assertSame(
 			['collection' => 'mijnZaken', 'titleFields' => ['title'], 'heading' => 'record', 'under' => 'cases'],
 			$pages[1]['record']
@@ -730,12 +745,15 @@ class PortalContributionProviderTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(['createBezwaar', 'replyToMessage'], array_keys($guarded));
+		$this->assertSame(['createKlacht', 'createBezwaar', 'replyToMessage'], array_keys($guarded));
 		foreach ($guarded as $id => $declaration) {
 			$this->assertIsArray($declaration, $id . ' names a case without guarding it');
 			$this->assertSame('case', $declaration['schema'], $id);
 			$this->assertSame('portalSubject', $declaration['scopeField'], $id);
-			$this->assertTrue($declaration['required'], $id);
+			// A klacht may be about the municipality in general, so its case
+			// is optional; when it names one, the guard still checks it is the
+			// citizen's own (case-actions-on-the-case-page).
+			$this->assertSame($id !== 'createKlacht', $declaration['required'], $id);
 		}
 	}
 
