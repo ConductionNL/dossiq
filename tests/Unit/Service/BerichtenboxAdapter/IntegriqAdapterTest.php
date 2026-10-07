@@ -302,22 +302,6 @@ class IntegriqAdapterTest extends TestCase {
 	}//end testIntegriqStillResolvesUnderItsOldId()
 
 	/**
-	 * A read status is never invented: the adapter says it does not know.
-	 *
-	 * @return void
-	 */
-	public function testTheReadStatusIsAnsweredAsUnknownRatherThanRead(): void {
-		$status = $this->adapter()->getReadStatus('dp-4711');
-
-		// `read: true` here would mark a letter read that nobody opened, which
-		// is this whole change one layer down. `unknown` is what lets
-		// BerichtenboxService tell "not read" from "not asked".
-		$this->assertFalse($status['read']);
-		$this->assertTrue($status['unknown']);
-		$this->assertNull($status['readAt']);
-	}//end testTheReadStatusIsAnsweredAsUnknownRatherThanRead()
-
-	/**
 	 * The letter carries its category and its case to integriq (REQ-COO-004).
 	 *
 	 * @return void

@@ -1263,6 +1263,7 @@ OC.L10N.register(
         "Close after silence, in days": "Close after silence, in days",
         "Close mandate details": "Close mandate details",
         "Close out your day": "Close out your day",
+        "Close silent cases automatically": "Close silent cases automatically",
         "Close step configuration": "Close step configuration",
         "Close transition configuration": "Close transition configuration",
         "Closed": "Closed",

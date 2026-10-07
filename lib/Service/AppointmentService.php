@@ -116,7 +116,6 @@ class AppointmentService {
 				'status' => 'scheduled',
 				'externalId' => $backendResult['externalId'] ?? null,
 				'cancelToken' => bin2hex(random_bytes(16)),
-				'reminderSent' => false,
 			]
 		);
 

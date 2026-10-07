@@ -719,7 +719,6 @@ $extra = [
         // ── Berichtenbox (government inbox integration) ─────────────────
     ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],
     ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages',             'verb' => 'GET'],
-    ['name' => 'berichtenbox#poll',     'url' => '/api/berichtenbox/messages/{messageId}', 'verb' => 'GET'],
 
         // ── Beschikking (compose -> onderteken -> Berichtenbox -> archief) ──
         // Specific verb/suffix routes precede the generic PATCH /{id} wildcard.

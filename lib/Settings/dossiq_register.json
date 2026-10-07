@@ -306,10 +306,16 @@
                         "description": "Whether the process owns the status of cases of this type. Where it does, a status only moves through a declared transition and a direct write of the status field is refused. This is a per case type declaration and not a product decision, because a gemeente running both kinds is the normal case.",
                         "title": "Process owns the status"
                     },
+                    "autoCloseOnSilence": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether cases of this type close themselves after the silence period below. Off is the default, and a period on its own does not switch it on: an upgrade must not start closing cases nobody decided to close. When it is on, the background service account aborts the silent case, and that account may abort only cases of a case type where this is on.",
+                        "title": "Close silent cases automatically"
+                    },
                     "autoCloseAfterSilenceDays": {
                         "type": "integer",
                         "minimum": 1,
-                        "description": "How many days of no activity close a case of this type automatically. Empty is off, and off is the default: a case that closes itself in a gemeente without anybody deciding is a besluit nobody took. The applicant is told before it happens and the close records that the product did it.",
+                        "description": "How many days of no activity close a case of this type automatically, once closing silent cases is switched on. Empty is off, and off is the default: a case that closes itself in a gemeente without anybody deciding is a besluit nobody took. The applicant is told before it happens and the close records that the product did it.",
                         "title": "Close after silence, in days"
                     },
                     "autoCloseWarningDays": {

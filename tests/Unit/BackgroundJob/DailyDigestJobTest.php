@@ -38,6 +38,7 @@ use OCA\Dossiq\BackgroundJob\DailyDigestJob;
 use OCA\Dossiq\Service\Queue\DailyDigestComposer;
 use OCA\Dossiq\Service\Queue\DigestDispatcher;
 use OCA\Dossiq\Service\Notification\NotificationRouting;
+use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
 use OCA\Dossiq\Service\Queue\DigestPreferences;
 use OCA\Dossiq\Service\Queue\PersonalQueueService;
 use OCP\App\IAppManager;
@@ -54,6 +55,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\Queue\DigestPreferences
  */
 class DailyDigestJobTest extends TestCase {
+	use MakesBackgroundServiceAccount;
+
 	/**
 	 * The per-user preferences this run holds.
 	 *
@@ -174,7 +177,9 @@ class DailyDigestJobTest extends TestCase {
 			),
 			composer: new DailyDigestComposer(queue: $queue),
 			dispatcher: $dispatcher,
-			logger: $this->createMock(LoggerInterface::class)
+			logger: $this->createMock(LoggerInterface::class),
+			serviceAccount: $this->backgroundAccount(),
+			userSession: $this->backgroundSession(),
 		);
 
 		$run = new \ReflectionMethod(DailyDigestJob::class, 'run');
@@ -312,7 +317,9 @@ class DailyDigestJobTest extends TestCase {
 			),
 			composer: new DailyDigestComposer(queue: $this->createMock(PersonalQueueService::class)),
 			dispatcher: $this->createMock(DigestDispatcher::class),
-			logger: $this->createMock(LoggerInterface::class)
+			logger: $this->createMock(LoggerInterface::class),
+			serviceAccount: $this->backgroundAccount(),
+			userSession: $this->backgroundSession(),
 		);
 
 		$run = new \ReflectionMethod(DailyDigestJob::class, 'run');

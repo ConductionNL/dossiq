@@ -64,6 +64,7 @@ class RepairStepRegistrationTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const INSTALL_EXEMPT = [
+		'RetireUnscheduledBackgroundJobs' => 'removes jobs an earlier version scheduled; a fresh install never schedules them',
 		'RenameDutchDeadlineColumns' => 'renames columns over existing rows',
 		'RenameDutchDirectionValues' => 'rewrites values in existing rows',
 		'RenameDutchColumns' => 'renames columns over existing rows',

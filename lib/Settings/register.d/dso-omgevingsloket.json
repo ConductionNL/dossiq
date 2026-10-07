@@ -31,6 +31,13 @@
             "description": "Computed DSO statutory deadline (working days from indieningsdatum)",
             "visible": false
           },
+          "deadlineOverdue": {
+            "type": "boolean",
+            "title": "Deadline overdue",
+            "default": false,
+            "description": "Set once by DsoDeadlineJob when the statutory DSO deadline has passed, so the handler is told and the case says so.",
+            "visible": false
+          },
           "competentAuthority": {
             "type": "string",
             "title": "Competent Authority",

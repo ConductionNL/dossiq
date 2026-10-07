@@ -7,6 +7,15 @@
  * exponentially via the `pdfAttempts` field maintained by the
  * archival service; gives up after 3 attempts.
  *
+ * DELIBERATELY NOT REGISTERED: PARKED UNTIL THE FILINQ PDF ADAPTER EXISTS.
+ * There is no adapter that converts a mail to PDF yet, so every pass only
+ * re-marks the row failed. Scheduled, it burns the three retries in 45
+ * minutes and drops every failed archival row for good. It stays out of
+ * `appinfo/info.xml`, and the repair step RetireUnscheduledBackgroundJobs
+ * takes it off instances that already had it. Register it again in the same
+ * change that wires the filinq adapter into run(), and move it onto the
+ * background service account then, because it writes.
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *

@@ -1263,6 +1263,7 @@ OC.L10N.register(
         "Close after silence, in days": "Sluiten na stilte, in dagen",
         "Close mandate details": "Mandaatdetails sluiten",
         "Close out your day": "Sluit je dag af",
+        "Close silent cases automatically": "Stille zaken automatisch sluiten",
         "Close step configuration": "Stapconfiguratie sluiten",
         "Close transition configuration": "Overgangconfiguratie sluiten",
         "Closed": "Gesloten",

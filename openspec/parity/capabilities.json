@@ -22300,7 +22300,7 @@
 			"status": "pending",
 			"source": "dossiq#2314, published as 6.20",
 			"dossiq": "no",
-			"dossiqNote": "The beschikking dispatch record carries receipt and read confirmation dates, and BerichtenboxService writes readAt. The job that would poll it is deliberately not registered and has never run on any instance, and nothing rolls up to a sortable field on the case.",
+			"dossiqNote": "The beschikking dispatch record carries receipt and read confirmation dates, and BerichtenboxService writes readAt. Logius Berichtenbox has no read status, so the read-status poll and its job were removed, and nothing rolls up to a sortable field on the case.",
 			"name_nl": "Wanneer de aanvrager voor het laatst echt bereikt is, sorteerbaar in de werklijst",
 			"opencase": "no",
 			"gzac": "no",

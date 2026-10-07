@@ -33,7 +33,6 @@ use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -54,7 +53,6 @@ class BerichtenboxService {
 	 * @param IAppManager $appManager The Nextcloud app manager.
 	 * @param ContainerInterface $container The DI container.
 	 * @param LoggerInterface $logger The logger.
-	 * @param OwningCaseResolver $owningCase Resolves a message's owning case.
 	 * @param BerichtenboxAdapterInterface $adapter The transport this instance has.
 	 * @param BerichtenboxJournal $journal What a send leaves behind for a reader.
 	 * @param BackgroundServiceAccount $serviceAccount Who records the letter when nobody
@@ -65,7 +63,6 @@ class BerichtenboxService {
 		private IAppManager $appManager,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
-		private readonly OwningCaseResolver $owningCase,
 		private readonly BerichtenboxAdapterInterface $adapter,
 		private readonly BerichtenboxJournal $journal,
 		private readonly BackgroundServiceAccount $serviceAccount,
@@ -423,124 +420,6 @@ class BerichtenboxService {
 			['filters' => ['register' => (int)$register, 'schema' => (int)$schema, 'caseId' => $caseId]],
 		);
 	}//end getMessagesForCase()
-
-	/**
-	 * Get all messages whose read-status still needs to be polled.
-	 *
-	 * Returns messages with status 'sent' or 'unread_flagged' that carry an
-	 * externalMessageId (i.e. they were actually delivered to Berichtenbox).
-	 *
-	 * @return array<int, mixed> List of pending message records.
-	 *
-	 * @spec openspec/specs/berichtenbox-integration/spec.md
-	 */
-	public function getPendingMessages(): array {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
-
-		$sent = $objectService->findAll(
-			['filters' => ['register' => (int)$register, 'schema' => (int)$schema, 'status' => 'sent']],
-		);
-
-		$flagged = $objectService->findAll(
-			['filters' => ['register' => (int)$register, 'schema' => (int)$schema, 'status' => 'unread_flagged']],
-		);
-
-		return array_merge($sent, $flagged);
-	}//end getPendingMessages()
-
-	/**
-	 * Resolve the case a stored message belongs to.
-	 *
-	 * `poll()` takes only a message id, so there is nothing in its signature to
-	 * authorise against. This resolves the owning case so the controller can
-	 * apply the same per-case guard as the rest of the file. It returns null —
-	 * which the caller treats as DENY — whenever the message cannot be
-	 * resolved, so an unknown id is not an existence oracle either.
-	 *
-	 * @param string $messageId The OpenRegister message UUID.
-	 *
-	 * @return string|null The owning case UUID, or null when unresolvable.
-	 *
-	 * @spec openspec/specs/authz-bypass-fixes/spec.md
-	 */
-	public function getCaseIdForMessage(string $messageId): ?string {
-		return $this->owningCase->resolve(
-			objectId: $messageId,
-			schemaKey: 'berichtenbox_message_schema',
-			caseField: 'caseId',
-		);
-	}//end getCaseIdForMessage()
-
-	/**
-	 * Poll read status for a message.
-	 *
-	 * @param string $messageId The OpenRegister message UUID.
-	 *
-	 * @return array<string, mixed> The message record, possibly updated with read status.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function pollReadStatus(string $messageId): array {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return ['error' => 'OpenRegister not available'];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
-
-		$message = $objectService->find($messageId, register: (int)$register, schema: (int)$schema);
-		$data = $message->jsonSerialize();
-
-		if (empty($data['externalMessageId']) === true) {
-			return $data;
-		}
-
-		$status = $this->adapter->getReadStatus($data['externalMessageId']);
-
-		// 🔴 AN ADAPTER THAT CANNOT ANSWER MUST NOT MOVE THE RECORD. The
-		// integriq adapter reports status by EVENT, not by poll, so it answers
-		// `unknown` rather than inventing a read flag. Falling through here
-		// would walk every such message into `unread_flagged` after seven days
-		// on the strength of a question nobody asked, and a case would read
-		// "the citizen has not opened this" when the truth is "we did not
-		// check". The poll simply records that it looked.
-		if (($status['unknown'] ?? false) === true) {
-			$data['readPolledAt'] = (new DateTime())->format('c');
-			$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
-
-			return $data;
-		}
-
-		$data['readPolledAt'] = (new DateTime())->format('c');
-
-		if (($status['read'] ?? false) === true) {
-			$data['status'] = 'read';
-			$data['readAt'] = $status['readAt'];
-			$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
-
-			return $data;
-		}
-
-		// Check if unread for > 7 days.
-		if (empty($data['sentAt']) === false) {
-			$sentAt = new DateTime($data['sentAt']);
-			$diff = (new DateTime())->diff($sentAt)->days;
-			if ($diff >= 7 && $data['status'] !== 'unread_flagged') {
-				$data['status'] = 'unread_flagged';
-			}
-		}
-
-		$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
-
-		return $data;
-	}//end pollReadStatus()
 
 	/**
 	 * Validate a BSN using the 11-proef.

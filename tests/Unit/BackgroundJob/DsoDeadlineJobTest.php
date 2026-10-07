@@ -23,9 +23,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\DsoDeadlineJob;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IUserSession;
 use OCP\IAppConfig;
 use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -73,6 +75,18 @@ interface DsoDeadlineObjectServiceStub {
 	 * @return array<string,mixed>
 	 */
 	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+
+	/**
+	 * Merge fields into a stored object.
+	 *
+	 * @param string $objectId The object id
+	 * @param array<string,mixed> $data The fields to change
+	 * @param string $register Register slug
+	 * @param string $schema Schema slug
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function patchObject(string $objectId, array $data, string $register, string $schema): array;
 }//end interface
 
 /**
@@ -147,6 +161,7 @@ class DsoDeadlineJobTest extends TestCase {
 			logger: $this->logger,
 			workingDays: new WorkingDayCalculator(),
 			serviceAccount: $this->passThroughAccount(),
+			journal: new CaseJournal($this->createMock(IUserSession::class)),
 		);
 	}//end buildJob()
 
@@ -208,12 +223,10 @@ class DsoDeadlineJobTest extends TestCase {
 		$cases = [
 			[
 				'id' => 'zaak-overdue-1',
-				'status' => 'submitted',
-				'caseType' => 'omgevingsvergunning',
+				'dsoStatus' => 'submitted',
 				'deadlineDate' => $pastDeadline,
-				'assigneeUserId' => '',
+				'assignee' => '',
 				'deadlineOverdue' => false,
-				'activityLog' => [],
 			],
 		];
 
@@ -222,10 +235,10 @@ class DsoDeadlineJobTest extends TestCase {
 			->method('searchObjectsBySlug')
 			->willReturn($cases);
 
-		// saveObject throws for this zaak — the job must swallow it.
+		// The overdue patch throws for this zaak, and the job must swallow it.
 		$objectServiceMock
 			->expects($this->once())
-			->method('saveObject')
+			->method('patchObject')
 			->willThrowException(new \RuntimeException('DB write failed'));
 
 		$this->container

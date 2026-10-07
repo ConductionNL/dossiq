@@ -1483,6 +1483,10 @@
         "version": "",
         "digest": "0c9db0b921431868e92c6b5d1eb76bf882e105c2df492ec18b2df368288ded5c"
     },
+    "lib/Settings/register.d/90-background-service-account.json::workDigest": {
+        "version": "",
+        "digest": "5210193e6f6cf3560ecbc363cbb26c8d0d26d2b5c5bd744b734b662e9bc87f91"
+    },
     "lib/Settings/register.d/95-dmn-decision-tables.json::decisionTable": {
         "version": "1.0.0",
         "digest": "976115fff5186f91ba4bdeea4056132fdbf6cca99e697941e7b88cc044eb7e7f"
