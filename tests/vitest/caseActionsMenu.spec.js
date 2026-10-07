@@ -711,11 +711,21 @@ describe('Archive and Restore on the case page', () => {
 	 * @param {string} source The file contents.
 	 * @return {string} The source with block, line and HTML comments removed.
 	 */
-	const codeOf = (source) =>
-		source
-			.replace(/<!--[\s\S]*?-->/g, '')
-			.replace(/\/\*[\s\S]*?\*\//g, '')
-			.replace(/^\s*\/\/.*$/gm, '')
+	const codeOf = (source) => {
+		// Repeated until nothing changes, so a comment that removing another
+		// one stitched together is removed too.
+		let text = source
+		let previous
+		do {
+			previous = text
+			text = text
+				.replace(/<!--[\s\S]*?-->/g, '')
+				.replace(/\/\*[\s\S]*?\*\//g, '')
+				.replace(/^\s*\/\/.*$/gm, '')
+		} while (text !== previous)
+
+		return text
+	}
 
 	/** An `/acts` answer where the handler may perform every ending act. */
 	const allowed = {

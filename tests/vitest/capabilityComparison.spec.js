@@ -147,7 +147,17 @@ const FIRST_COMPARED_ON = '2026-09-07'
 // page a resident withdraws a Woo request from (dossiq#3247).
 // 11.25 and 12.14 moved on 2026-10-07: their missing halves shipped in
 // openregister (field-rules-by-state) and integriq (event-broker-transport).
-const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23', '2.47', '11.25', '12.14']
+const RERATED_IDS = [
+	'1.8',
+	'2.8',
+	'2.9',
+	'4.9',
+	'5.5',
+	'11.23',
+	'2.47',
+	'11.25',
+	'12.14',
+]
 
 // Our column moved again on 2026-09-14, and for a different reason: the corpus
 // re-read our case-type configuration end to end and three ratings were too
