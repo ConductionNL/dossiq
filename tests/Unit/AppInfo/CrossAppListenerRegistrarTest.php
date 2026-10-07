@@ -342,7 +342,7 @@ class CrossAppListenerRegistrarTest extends TestCase {
 		return [
 			['OCA\OpenRegister\Service\Flow\RegisterFlowNodesEvent'],
 			['OCA\Dossiq\Flow\DossiqFlowNodeListener'],
-			['OCA\\\\Integriq\\\\Event\\\\DeliveryConcludedEvent'],
+			['OCA\Integriq\Event\DeliveryConcludedEvent'],
 			['OCA\Dossiq\Listener\DeliveryConcludedListener'],
 			['OCA\Dossiq\Listener\IntakeMessageRoutedListener::EVENT'],
 			['OCA\Dossiq\Listener\IntakeMessageRoutedListener::class'],
