@@ -185,8 +185,7 @@
 				"route": "EndOfDay"
 			}
 		},
-		"footer": ["settings", "Documentation"],
-		"settingsLabel": "Settings"
+		"footer": ["settings", "Documentation"]
 	},
 	"pages": [
 		{

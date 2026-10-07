@@ -89,7 +89,7 @@ test.describe('workflow definitions projected onto flows', () => {
 		// but hidden until it is opened. Opening it is what a user does to see
 		// them, so the test does it too.
 		await nav
-			.getByRole('button', { name: 'Settings', exact: true })
+			.getByRole('button', { name: 'Advanced', exact: true })
 			.first()
 			.click()
 
@@ -194,7 +194,7 @@ test.describe('LHS override authorisation', () => {
 		// until it is opened. Opening it is part of what a user does to see
 		// them, so the test does it too.
 		await nav
-			.getByRole('button', { name: 'Settings', exact: true })
+			.getByRole('button', { name: 'Advanced', exact: true })
 			.first()
 			.click()
 

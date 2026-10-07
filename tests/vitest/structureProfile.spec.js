@@ -88,14 +88,14 @@ describe('the full profile', () => {
 		expect(build(fullFile)).toEqual(before)
 	})
 
-	it('still counts 34 entries: 13 main, 5 footer, 13 settings, 3 integrations', () => {
+	it('still counts 34 entries: 13 main, 4 footer, 14 settings, 3 integrations', () => {
 		const menu = build(fullFile).menu
 		const count = (name) =>
 			flat(menu.filter((entry) => (entry.section || 'main') === name)).length
 		expect(flat(menu)).toHaveLength(34)
 		expect(count('main')).toBe(13)
-		expect(count('footer')).toBe(5)
-		expect(count('settings')).toBe(13)
+		expect(count('footer')).toBe(4)
+		expect(count('settings')).toBe(14)
 		expect(count('integrations')).toBe(3)
 	})
 })
@@ -309,11 +309,12 @@ describe('the simple profile', () => {
 		expect(built.nav.help).toBeUndefined()
 		expect(iconsSource).toContain('\n\tHelpCircleOutline,\n')
 
-		// DqZijbalk's footer is "Instellingen" over "Hulp en uitleg" and
+		// DqZijbalk's footer is the settings foldout over "Hulp en uitleg" and
 		// nothing else (nextcloud-vue 2.65.0 `nav.footer`): Store, Reports and
-		// the roadmap move into the settings foldout, not out of reach.
+		// the roadmap move into the foldout, not out of reach. The foldout
+		// keeps the library's own label, "Advanced" ("Geavanceerd").
 		expect(built.nav.footer).toEqual(['settings', 'Documentation'])
-		expect(built.nav.settingsLabel).toBe('Settings')
+		expect(built.nav.settingsLabel).toBeUndefined()
 
 		const full = build(fullFile)
 		expect(full.nav).toBeUndefined()
