@@ -54,10 +54,10 @@ use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
+use OCA\Dossiq\Service\Cases\CaseRebindTerms;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Support\TranslatedText;
-use OCA\Dossiq\Service\Termijn\TermRearm;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -92,20 +92,20 @@ class CaseRebindService {
 	 * @param CaseTypeStore      $store           The app's one case type reader.
 	 * @param CaseTypeResolver   $resolver        Statuses and properties of one case type.
 	 * @param EngineRunMigration $engine          The seam that moves the flow run.
-	 * @param TermRearm          $terms           The re-arm of a case's running terms.
-	 * @param CaseTypeSlugResolver $slugs         Case type uuid to the slug term definitions are keyed by.
+	 * @param CaseRebindTerms    $terms           The re-arm of a case's running terms under its new case type.
 	 * @param CaseRebindGate     $gate            What refuses a rebind, and what the case must answer.
 	 * @param CaseRebindImpact   $impact          What the rebind does to the case's answers.
 	 * @param LoggerInterface    $logger          The logger.
 	 * @param TranslatedText     $text            Translatable titles and names in the reader's language.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeResolver $resolver,
 		private readonly EngineRunMigration $engine,
-		private readonly TermRearm $terms,
-		private readonly CaseTypeSlugResolver $slugs,
+		private readonly CaseRebindTerms $terms,
 		private readonly CaseRebindGate $gate,
 		private readonly CaseRebindImpact $impact,
 		private readonly LoggerInterface $logger,
@@ -160,7 +160,7 @@ class CaseRebindService {
 
 			$targets[] = [
 				'id' => $id,
-				'title' => $this->text->of(value: ($row['title'] ?? null)),
+				'title' => $this->text->forReader(value: ($row['title'] ?? null)),
 				'identifier' => (string)($row['identifier'] ?? ''),
 				'version' => ($row['version'] ?? null),
 				'sameChain' => ($this->identifierOf(caseTypeId: $sourceId) !== ''
@@ -176,7 +176,7 @@ class CaseRebindService {
 		return [
 			'current' => [
 				'caseType' => $sourceId,
-				'title' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
+				'title' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
 				'status' => $this->statusNameOf(caseTypeId: $sourceId, statusId: $this->store->referenceId(value: ($case['status'] ?? ''))),
 			],
 			'targets' => $targets,
@@ -219,7 +219,7 @@ class CaseRebindService {
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $targetCaseTypeId) as $status) {
 			$id = $this->store->rowId(row: $status);
 			if ($id !== '') {
-				$statuses[] = ['id' => $id, 'name' => $this->text->of(value: ($status['name'] ?? null))];
+				$statuses[] = ['id' => $id, 'name' => $this->text->forReader(value: ($status['name'] ?? null))];
 			}
 		}
 
@@ -241,7 +241,7 @@ class CaseRebindService {
 			],
 			'to' => [
 				'caseType' => $targetCaseTypeId,
-				'title' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
+				'title' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
 			],
 			'statuses' => $statuses,
 			'missingProperties' => $this->unanswered(impact: $impact),
@@ -328,16 +328,9 @@ class CaseRebindService {
 
 		$this->write(caseId: $caseId, case: $case);
 
-		// THE SLUG, NOT THE UUID. Term definitions are keyed by the case type
-		// SLUG, and a uuid matches none of them: handing one over re-arms
-		// nothing and reports a clean zero, which is the silent half of this
-		// act. {@see CaseTypeSlugResolver::toSlug()} passes a slug through
-		// unchanged and refuses to guess at a uuid it cannot resolve.
-		$terms = $this->terms->forDefinition(
-			caseId: $caseId,
-			caseTypeSlug: $this->slugs->toSlug(reference: $targetCaseTypeId),
-			reason: $reason
-		);
+		// THE SLUG, NOT THE UUID: {@see CaseRebindTerms::rearm()} keys the
+		// re-arm by the target's slug, because a uuid matches no definition.
+		$terms = $this->terms->rearm(caseId: $caseId, targetCaseTypeId: $targetCaseTypeId, reason: $reason);
 
 		$this->logger->info(
 			'CaseRebindService: a running case was rebound to another case type',
@@ -473,9 +466,9 @@ class CaseRebindService {
 		$entries[] = [
 			'type' => 'case-type-rebind',
 			'fromCaseType' => $sourceId,
-			'fromCaseTypeTitle' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
+			'fromCaseTypeTitle' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
 			'toCaseType' => $targetCaseTypeId,
-			'toCaseTypeTitle' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
+			'toCaseTypeTitle' => $this->text->forReader(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
 			'status' => $targetStatusId,
 			'reason' => $reason,
 			'actor' => $actorUid,
@@ -530,7 +523,7 @@ class CaseRebindService {
 
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
 			if ($this->store->rowId(row: $status) === $statusId) {
-				return $this->text->of(value: ($status['name'] ?? null));
+				return $this->text->forReader(value: ($status['name'] ?? null));
 			}
 		}
 
