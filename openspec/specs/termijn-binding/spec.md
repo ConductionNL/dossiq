@@ -33,3 +33,48 @@ The system SHALL require every zaak to have a matching `TermijnDefinitie` and SH
 - **AND** existing `TermijnInstance` rows SHALL retain their original `einddatumBerekend` with no retroactive change
 - **AND** if the `TermijnDefinitie` is marked `validUntil = today`, new cases of that zaaktype SHALL NOT be created while existing ones continue
 
+
+### Requirement: A term ends on a day, not at a moment (REQ-TERM-DAY-001)
+
+A term's end SHALL be stored as a calendar date in `Y-m-d` form, counted and
+rolled in one call (`lib/Service/TermijnService.php`, `endDateFor()` and the
+`format('Y-m-d')` that follows it). When the end falls on a Saturday, a Sunday
+or a public holiday it SHALL move to the first ordinary day after it, on the
+working calendar the organisation administers in OpenRegister
+(`lib/Service/Termijn/TermEndRoll.php`, Algemene termijnenwet art. 1), unless
+the definition switches the roll off. The terms on a case SHALL be judged in
+whole days from midnight today (`lib/Service/CaseTermsService.php`,
+`daysLeft()`), so a term SHALL count as overdue only from the day after its end
+day, and only while its clock still runs (`lopend`, `verlengd`, `paused`,
+`exceeded`). The result SHALL be shown in the Terms tab of the case
+(`CaseTermsTab`) and on the Deadline tile.
+
+#### Scenario: A term is not overdue on its last day
+@e2e exclude a date comparison with an injected clock; covered by the term unit tests under tests/Unit/Service/Termijn
+
+- **GIVEN** a running term whose end date is today
+- **WHEN** the terms of its case are read at 23:00
+- **THEN** the term SHALL have 0 days left
+- **AND** it SHALL NOT be overdue
+
+#### Scenario: A term is overdue the day after its end
+@e2e exclude a date comparison with an injected clock; covered by the term unit tests under tests/Unit/Service/Termijn
+
+- **GIVEN** a running term whose end date was yesterday
+- **WHEN** the terms of its case are read
+- **THEN** the term SHALL have -1 days left
+- **AND** it SHALL be overdue
+
+#### Scenario: A term ending on a Saturday ends on Monday
+@e2e exclude a calendar roll over the working calendar; covered by tests/Unit/Service/Termijn/WorkingDayRollTest.php
+
+- **GIVEN** a term definition that leaves the Awt roll on, and a count that lands on a Saturday
+- **WHEN** the term is created
+- **THEN** its end date SHALL be the Monday after, or the next ordinary day when that Monday is a public holiday
+
+#### Scenario: A completed term is never overdue
+@e2e exclude a status branch with an injected clock; covered by the term unit tests under tests/Unit/Service/Termijn
+
+- **GIVEN** a term with status `completed` whose end date passed a week ago
+- **WHEN** the terms of its case are read
+- **THEN** the term SHALL NOT be overdue
