@@ -63,6 +63,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Beschikking\OpenRegisterArchivalAdapter
  * @uses \OCA\Dossiq\Service\StateMachineService
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class BezwaarTermijnJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

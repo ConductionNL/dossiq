@@ -46,6 +46,9 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\TriageWakeJob
  * @uses \OCA\Dossiq\Service\Intake\TriageSleep
  * @uses \OCA\Dossiq\Service\Email\IntakeLog
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class TriageWakeJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

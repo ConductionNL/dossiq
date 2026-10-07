@@ -127,7 +127,7 @@ class CaseVersionDiff {
 	private function statusesByName(string $caseTypeId): array {
 		$byName = [];
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
-			$name = $this->text->of(value: ($status['name'] ?? null));
+			$name = $this->text->forReader(value: ($status['name'] ?? null));
 			if ($name === '') {
 				continue;
 			}

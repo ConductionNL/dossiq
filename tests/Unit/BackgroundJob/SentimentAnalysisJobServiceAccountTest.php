@@ -48,6 +48,9 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\SentimentAnalysisJob
  * @covers \OCA\Dossiq\Service\ContactMomentService
  * @uses \OCA\Dossiq\Service\SentimentService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class SentimentAnalysisJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

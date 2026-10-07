@@ -68,6 +68,7 @@ class WidgetDeclaresRolesTest extends TestCase {
 		'open-cases' => 'The open cases the reader can already open.',
 		'followed-cases' => 'The cases this reader chose to follow.',
 		'archival-reviews' => "The reader's own archival reviews, assigned to them.",
+		'your-teams-queue' => 'Open cases nobody has picked up yet, the same set the Cases list shows anyone handling work.',
 	];
 
 	/**

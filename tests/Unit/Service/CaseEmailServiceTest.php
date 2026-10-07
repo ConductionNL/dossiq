@@ -59,6 +59,10 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver
  * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
  * @uses \OCA\Dossiq\Service\Email\RecipientAllowlist
+ * @uses \OCA\Dossiq\Exception\RecipientOptedOutException
+ * @uses \OCA\Dossiq\Service\Email\CaseMailOptOut
+ * @uses \OCA\Dossiq\Service\OptOutGate
+ * @uses \OCA\Dossiq\Support\FleetAppId
  */
 class CaseEmailServiceTest extends TestCase {
 

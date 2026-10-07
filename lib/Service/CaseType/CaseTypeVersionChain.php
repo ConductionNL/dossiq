@@ -172,7 +172,7 @@ class CaseTypeVersionChain {
 	private function entry(array $row, string $id, string $currentId): array {
 		return [
 			'id' => $id,
-			'title' => $this->text->of(value: ($row['title'] ?? null)),
+			'title' => $this->text->forReader(value: ($row['title'] ?? null)),
 			'identifier' => (string)($row['identifier'] ?? ''),
 			'version' => $this->payloads->versionOf(caseType: $row),
 			'isDraft' => (($row['isDraft'] ?? false) === true),

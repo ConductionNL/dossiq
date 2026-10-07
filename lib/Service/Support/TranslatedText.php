@@ -29,7 +29,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Support;
 
-use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use OCP\IL10N;
 
 /**
@@ -42,10 +41,14 @@ class TranslatedText {
 	/**
 	 * Constructor.
 	 *
-	 * @param IL10N $l10n The app's translator, which knows the reader's language.
+	 * @param IL10N           $l10n The app's translator, which knows the reader's language.
+	 * @param LanguageMapText $map  How a language map is read.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly IL10N $l10n,
+		private readonly LanguageMapText $map = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -57,8 +60,9 @@ class TranslatedText {
 	 * @return string The text, trimmed, or '' when there is none.
 	 *
 	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
-	public function of(mixed $value): string {
-		return StatusPublicLabels::textOf(value: $value, language: $this->l10n->getLanguageCode());
-	}//end of()
+	public function forReader(mixed $value): string {
+		return $this->map->textOf(value: $value, language: $this->l10n->getLanguageCode());
+	}//end forReader()
 }//end class

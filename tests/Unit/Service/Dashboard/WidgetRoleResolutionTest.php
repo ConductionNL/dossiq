@@ -105,6 +105,49 @@ class WidgetRoleResolutionTest extends TestCase {
 	}//end testItReadsDashboardDefinitionsAndNotPlacementsOrDetailPanels()
 
 	/**
+	 * A widget declared inside a view of a dashboard page is read like one on
+	 * the page itself, so moving widgets into views cannot hide them from the
+	 * role check.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/dashboard/spec.md
+	 */
+	public function testItReadsTheWidgetsDeclaredInsideAViewOfADashboardPage(): void {
+		$manifest = [
+			'pages' => [
+				[
+					'id' => 'MyWorkHome',
+					'type' => 'dashboard',
+					'config' => [
+						'views' => [
+							['id' => 'mine', 'widgets' => [['id' => 'my-work', 'type' => 'object-list']]],
+							[
+								'id' => 'team',
+								'widgets' => [
+									['id' => 'team-sla', 'type' => 'stat', 'roles' => ['dossiq-teamleider']],
+									['widgetKey' => 'team-sla', 'gridX' => 0, 'gridY' => 0],
+								],
+							],
+							'not a view',
+						],
+					],
+				],
+			],
+		];
+
+		$ids = array_column($this->widgets->dashboardWidgets(manifest: $manifest), 'id');
+		$this->assertSame(['my-work', 'team-sla'], $ids);
+
+		$verdict = $this->widgets->verdictFor(
+			widget: $this->widgets->dashboardWidgets(manifest: $manifest)[1],
+			held: [],
+			known: ['dossiq-teamleider'],
+		);
+		$this->assertSame('hidden', $verdict);
+	}//end testItReadsTheWidgetsDeclaredInsideAViewOfADashboardPage()
+
+	/**
 	 * A reader holding the role sees the figure.
 	 *
 	 * @return void

@@ -39,6 +39,8 @@ use Psr\Log\NullLogger;
  * The age-out patch runs as the configured account, or not at all.
  *
  * @covers \OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class SpecialistBeschikbaarheidRefreshJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

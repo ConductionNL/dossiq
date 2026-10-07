@@ -40,6 +40,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\TenantQuotaService
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
  * @uses \OCA\Dossiq\Command\Backfill\OpenRegisterRowNormaliser
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class ResetMonthlyQuotasJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

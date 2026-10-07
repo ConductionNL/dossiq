@@ -51,6 +51,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
+
 /**
  * What a status says to the applicant.
  *
@@ -138,31 +140,9 @@ final class StatusPublicLabels {
 	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
 	 */
 	public static function textOf(mixed $value, string $language = ''): string {
-		if (is_string($value) === true) {
-			return trim($value);
-		}
-
-		if (is_array($value) === false) {
-			return '';
-		}
-
-		$preferred = [];
-		$base = strtolower(explode('_', str_replace('-', '_', $language))[0]);
-		foreach ([$language, $base, 'nl'] as $code) {
-			if ($code !== '' && array_key_exists($code, $value) === true) {
-				$preferred[$code] = $value[$code];
-			}
-		}
-
-		$candidates = ($preferred + $value);
-
-		foreach ($candidates as $text) {
-			if (is_string($text) === true && trim($text) !== '') {
-				return trim($text);
-			}
-		}
-
-		return '';
+		// The one reading lives in LanguageMapText, which classes that need it
+		// receive by injection; this static form stays for the row helpers here.
+		return (new LanguageMapText())->textOf(value: $value, language: $language);
 	}//end textOf()
 
 	/**

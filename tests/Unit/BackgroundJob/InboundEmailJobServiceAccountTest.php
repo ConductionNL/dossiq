@@ -63,6 +63,18 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Email\UnmatchedMailIntake
  * @uses \OCA\Dossiq\Service\EmailArchivalService
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\AssigneeResolver
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Email\AuthenticationResult
+ * @uses \OCA\Dossiq\Service\Email\AuthenticationVerdict
+ * @uses \OCA\Dossiq\Service\Email\CaseEmailRepository
+ * @uses \OCA\Dossiq\Service\Email\Filters\FilterPipeline
+ * @uses \OCA\Dossiq\Service\Email\Filters\FilterVerdict
+ * @uses \OCA\Dossiq\Service\Email\InboundMessage
+ * @uses \OCA\Dossiq\Service\Email\IntakeAccount
+ * @uses \OCA\Dossiq\Service\Email\IntakePolicy
+ * @uses \OCA\Dossiq\Service\Email\ThreadingCheck
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class InboundEmailJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

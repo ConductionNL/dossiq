@@ -38,6 +38,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\BackgroundJob\PaymentStateProjectionJob
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class PaymentStateProjectionJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

@@ -94,6 +94,7 @@ interface DsoDeadlineObjectServiceStub {
  *
  * @covers \OCA\Dossiq\BackgroundJob\DsoDeadlineJob
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class DsoDeadlineJobTest extends TestCase {
 

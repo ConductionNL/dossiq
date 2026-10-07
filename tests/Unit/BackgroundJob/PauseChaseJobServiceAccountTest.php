@@ -75,6 +75,7 @@ use Stringable;
  * @uses \OCA\Dossiq\Service\Pause\ChaseSchedule
  * @uses \OCA\Dossiq\Service\Pause\PauseReason
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class PauseChaseJobServiceAccountTest extends TestCase {
 	use MakesCaseDateNormaliser;

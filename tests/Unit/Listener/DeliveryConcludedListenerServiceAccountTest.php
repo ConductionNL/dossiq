@@ -36,6 +36,7 @@ use Psr\Log\NullLogger;
  *
  * @covers \OCA\Dossiq\Listener\DeliveryConcludedListener
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class DeliveryConcludedListenerServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

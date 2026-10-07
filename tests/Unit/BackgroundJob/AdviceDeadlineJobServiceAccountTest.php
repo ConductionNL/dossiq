@@ -54,6 +54,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Advice\AdviceRepository
  * @uses \OCA\Dossiq\Service\Advice\AdviceNotifier
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class AdviceDeadlineJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;
