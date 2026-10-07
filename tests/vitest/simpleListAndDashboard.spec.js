@@ -335,12 +335,16 @@ describe('the dashboard', () => {
 		expect(simple.config.showHeader).toBe(false)
 		expect(before.config.showHeader).toBeUndefined()
 		const link = (widgetId) =>
-			simple.config.layout.find((item) => item.widgetId === widgetId).headerLink
+			simple.config.layout.find((item) => item.widgetId === widgetId)
+				.headerLink
 		expect(link('simple-week').route).toBe('Cases')
 		expect(link('simple-week').query).toEqual(
 			widget('simple-due-soon').content.route.query,
 		)
-		expect(link('simple-my-tasks')).toEqual({ label: 'All tasks', route: 'Tasks' })
+		expect(link('simple-my-tasks')).toEqual({
+			label: 'All tasks',
+			route: 'Tasks',
+		})
 		expect(link('simple-per-step')).toEqual({
 			label: 'To the board',
 			route: 'WorkflowBoard',
@@ -479,11 +483,15 @@ describe('the dashboard', () => {
 		expect(widget('simple-my-tasks').type).toBe('custom')
 		expect(simple.slots['widget-simple-my-tasks']).toBe('MyWorkWidget')
 		expect(registrySource).toContain('MyWorkWidget')
-		// The same component, the same content, as on My work.
+		// The same component, the same content, as on My work, plus the one
+		// opt-in key that turns the table into the board's checkbox list.
 		const onMyWork = original('MyWorkHome').config.widgets.find(
 			(item) => item.id === 'my-work',
 		)
-		expect(widget('simple-my-tasks').content).toEqual(onMyWork.content)
+		const { variant, ...rest } = widget('simple-my-tasks').content
+		expect(variant).toBe('list')
+		expect(rest).toEqual(onMyWork.content)
+		expect(onMyWork.content).not.toHaveProperty('variant')
 	})
 
 	it('uses icons the app registers', () => {

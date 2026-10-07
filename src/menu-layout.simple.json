@@ -1103,7 +1103,9 @@
 						"id": "simple-my-tasks",
 						"type": "custom",
 						"title": "My tasks",
+						"_note": "`variant: list` is the opt-in checkbox list of the DqDashboard board (a box, the task, its case on a muted second line, the due date on the right). Ticking a box completes the task through useEngineTaskStore.invoke(uuid, 'complete'), the task page's own path. Without the key MyWorkWidget draws the table, which is what the full profile and the My work page keep.",
 						"content": {
+							"variant": "list",
 							"limit": 10,
 							"rowRoute": "TaskDetail",
 							"viewAllRoute": {

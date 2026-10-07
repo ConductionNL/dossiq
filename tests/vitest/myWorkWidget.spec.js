@@ -66,6 +66,14 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 	useEngineTaskStore: () => storeStub,
 }))
 
+// The list variant toasts its completions. The real module pulls
+// @nextcloud/vue's stylesheets in through a path the test build does not
+// inline, so it is stubbed here as workflowBoardDrag.spec.js stubs it.
+vi.mock('@nextcloud/dialogs', () => ({
+	showError: vi.fn(),
+	showSuccess: vi.fn(),
+}))
+
 const { default: MyWorkWidget } =
 	await import('../../src/views/widgets/MyWorkWidget.vue')
 
