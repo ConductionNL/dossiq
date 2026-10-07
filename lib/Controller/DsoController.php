@@ -51,6 +51,14 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
  */
 class DsoController extends Controller {
+
+	/**
+	 * The DSO-LV statuses the case schema declares for `dsoStatus`.
+	 *
+	 * @var list<string>
+	 */
+	private const DSO_STATUSES = ['submitted', 'in_handling', 'granted', 'refused', 'withdrawn'];
+
 	/**
 	 * Constructor.
 	 *
@@ -101,9 +109,17 @@ class DsoController extends Controller {
 		$regelkwalificatie = $this->request->getParam('regelkwalificatie', '');
 		$location = $this->request->getParam('location', '');
 
-		$params = ['caseType' => 'omgevingsvergunning'];
+		// DSO cases are the ones carrying a DSO-LV status. `caseType` and
+		// `status` hold uuids, so the old `caseType: omgevingsvergunning`
+		// filter matched no case at all. The `status` query parameter is the
+		// DSO value and narrows `dsoStatus`.
+		$params = ['dsoStatus' => self::DSO_STATUSES];
+		$status = (string)$this->request->getParam('status', '');
+		if ($status !== '') {
+			$params['dsoStatus'] = [$status];
+		}
 
-		foreach (['status', 'procedureType', 'municipalityCode'] as $key) {
+		foreach (['procedureType', 'municipalityCode'] as $key) {
 			$value = (string)$this->request->getParam($key, '');
 			if ($value !== '') {
 				$params[$key] = $value;
@@ -161,8 +177,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'newStatus is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$allowedStatuses = ['submitted', 'in_handling', 'granted', 'refused', 'withdrawn'];
-		if (in_array(needle: $newStatus, haystack: $allowedStatuses, strict: true) === false) {
+		if (in_array(needle: $newStatus, haystack: self::DSO_STATUSES, strict: true) === false) {
 			return new JSONResponse(['error' => 'Invalid status value'], Http::STATUS_BAD_REQUEST);
 		}
 
