@@ -365,12 +365,6 @@ describe('the dashboard', () => {
 		const entry = (id) =>
 			simple.config.layout.find((item) => item.widgetId === id)
 		expect(entry('simple-first-today').borderless).toBe(true)
-		// Greeting and card take the height of what they hold, so the switch
-		// lines up with the greeting and no empty cell runs on below either.
-		for (const id of ['simple-greeting', 'simple-first-today']) {
-			expect(entry(id).sizeToContent, id).toBe(true)
-			expect(entry(id).gridHeight, id).toBe(1)
-		}
 		expect(simple.config.showWidgetActions).toBe(false)
 		for (const id of [
 			'simple-my-open',

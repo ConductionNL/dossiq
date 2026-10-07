@@ -597,9 +597,8 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 1,
-						"showTitle": false,
-						"sizeToContent": true
+						"gridHeight": 2,
+						"showTitle": false
 					},
 					{
 						"id": "s2",
@@ -607,7 +606,7 @@
 						"gridX": 0,
 						"gridY": 2,
 						"gridWidth": 12,
-						"gridHeight": 1,
+						"gridHeight": 2,
 						"showTitle": false,
 						"sizeToContent": true,
 						"borderless": true
