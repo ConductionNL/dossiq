@@ -6,6 +6,7 @@
 		"enabled": true,
 		"version": 1,
 		"completionConfigKey": "setup_completed_version",
+		"dismissAction": "dismiss-setup",
 		"steps": [
 			{
 				"id": "welcome",
@@ -28,6 +29,7 @@
 				"id": "dwangsom-secret",
 				"type": "config-fields",
 				"title": "Dwangsom callback signing secret",
+				"body": "Enter the secret your payment provider signs dwangsom payout callbacks with. Without it, nobody can check that a callback is real. You can also set it later in the admin settings.",
 				"required": false,
 				"configKeys": ["dwangsom_callback_secret"],
 				"schema": {

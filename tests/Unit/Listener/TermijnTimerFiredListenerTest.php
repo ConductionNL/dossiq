@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Tests\Unit\Service\FakeTermijnStore;
@@ -90,6 +91,10 @@ class TermijnTimerFiredListenerTest extends TestCase {
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->termService = new TermijnService($settings, $logger);
+		// These tests are about the term, not the writer: the account runs the
+		// fire as it comes. TermijnTimerFiredListenerServiceAccountTest covers who writes.
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 		$this->listener = new TermijnTimerFiredListener(
 			$this->termService,
 			new DeadlineEscalationService(
@@ -105,7 +110,8 @@ class TermijnTimerFiredListenerTest extends TestCase {
 				dates: $this->dates,
 			),
 			$settings,
-			$logger
+			$logger,
+			$account
 		);
 	}
 

@@ -42,6 +42,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\Transitions\StatusPublicLabels
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class StatusPublicLabelsTest extends TestCase {
 	/**

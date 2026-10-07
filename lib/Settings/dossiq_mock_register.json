@@ -25586,6 +25586,66 @@
         ],
         "assessedBy": "admin",
         "assessedAt": "2026-03-03T09:00:00+00:00"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseBerichtenboxMessage",
+          "slug": "caseberichtenboxmessage-1",
+          "id": "2c1b9f0e-6a43-4b8e-9f4e-0d7a1f3c5b01"
+        },
+        "caseId": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "bsn": "999993653",
+        "subject": "Uw aanvraag is ontvangen",
+        "body": "Beste heer De Vries, wij hebben uw aanvraag ontvangen.",
+        "berichtTypeCode": "zaakbericht",
+        "attachmentFileId": null,
+        "externalMessageId": "b74499f0-c6f2-4f7e-aaaf-d01af54e6e01",
+        "status": "sent",
+        "sentAt": "2026-03-01T09:00:00+00:00",
+        "readAt": null,
+        "lastError": "",
+        "simulated": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseBerichtenboxMessage",
+          "slug": "caseberichtenboxmessage-2",
+          "id": "2c1b9f0e-6a43-4b8e-9f4e-0d7a1f3c5b02"
+        },
+        "caseId": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "bsn": "999993653",
+        "subject": "Besluit op uw aanvraag",
+        "body": "Beste mevrouw Jansen, hierbij het besluit op uw aanvraag.",
+        "berichtTypeCode": "besluit",
+        "attachmentFileId": null,
+        "externalMessageId": "b74499f0-c6f2-4f7e-aaaf-d01af54e6e02",
+        "status": "read",
+        "sentAt": "2026-03-02T10:30:00+00:00",
+        "readAt": "2026-03-03T08:15:00+00:00",
+        "lastError": "",
+        "simulated": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseBerichtenboxMessage",
+          "slug": "caseberichtenboxmessage-3",
+          "id": "2c1b9f0e-6a43-4b8e-9f4e-0d7a1f3c5b03"
+        },
+        "caseId": "550ec5f7-08b2-4df7-a072-8a06e7c9efdb",
+        "bsn": "999993653",
+        "subject": "Uw zaak is bijgewerkt",
+        "body": "Beste heer Bakker, uw zaak is bijgewerkt.",
+        "berichtTypeCode": "zaakbericht",
+        "attachmentFileId": null,
+        "externalMessageId": null,
+        "status": "refused",
+        "sentAt": null,
+        "readAt": null,
+        "lastError": "This address opted out (instance).",
+        "simulated": false
       }
     ]
   }

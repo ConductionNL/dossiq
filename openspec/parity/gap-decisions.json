@@ -11,7 +11,7 @@
     "row": "1.7",
     "matrix": "dossiq",
     "decision": "existing",
-    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/ZrcController.php; lib/Controller/DSOIntakeController.php. built.state set to built.",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/ZrcController.php. built.state set to built.",
     "change": null,
     "decidedOn": "2026-09-27"
   },
@@ -547,7 +547,7 @@
     "row": "12.5",
     "matrix": "dossiq",
     "decision": "existing",
-    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/DsoController.php; DSOIntakeController.php; lib/Service/DsoIntakeService.php. built.state set to built.",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/DsoController.php; lib/Listener/VergunningaanvraagCreatedListener.php; lib/Service/DsoCaseService.php. built.state set to built.",
     "change": null,
     "decidedOn": "2026-09-27"
   },

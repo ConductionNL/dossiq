@@ -197,37 +197,6 @@ class IntegriqAdapter implements BerichtenboxAdapterInterface {
 	}//end sendMessage()
 
 	/**
-	 * What became of a sent letter.
-	 *
-	 * NOTHING IS POLLED AND NOTHING IS GUESSED. integriq dispatches
-	 * `DigitalPostDeliveredEvent` on every status change of a tracked message,
-	 * `read` and `failed` included, and {@see \OCA\Dossiq\Listener\DigitalPostDeliveredListener}
-	 * writes it onto the case. So the answer here is "ask the event, not me",
-	 * said in a shape the caller can tell apart from an answer: `unknown` is
-	 * true, and `read` is false rather than absent, because a caller reading
-	 * `read` off a missing key would get null and treat it as unread.
-	 *
-	 * Returning `read: true` on an unanswered question is the failure this
-	 * whole change is about, one layer down: it would mark a letter read that
-	 * nobody opened.
-	 *
-	 * @param string $messageId The external message id.
-	 *
-	 * @return array<string, mixed> The status, with `unknown` set.
-	 *
-	 * @spec openspec/specs/berichtenbox-integration/spec.md
-	 */
-	public function getReadStatus(string $messageId): array {
-		return [
-			'read' => false,
-			'readAt' => null,
-			'unknown' => true,
-			'reason' => 'Integriq reports digital post status by event, so there is nothing '
-				. 'to poll here.',
-		];
-	}//end getReadStatus()
-
-	/**
 	 * Read integriq's answer out of the event's result slot.
 	 *
 	 * The contract says the slot carries either the tracked message id or a

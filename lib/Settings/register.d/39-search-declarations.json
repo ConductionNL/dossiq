@@ -249,6 +249,9 @@
             "matchType": "range",
             "inputControl": "date-range"
           },
+          "deadlineOverdue": {
+            "inputControl": "boolean"
+          },
           "competentAuthority": {
             "matchType": "prefix",
             "inputControl": "text"

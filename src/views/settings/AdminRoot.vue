@@ -168,6 +168,18 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-background-service-account"
+			:name="t('dossiq', 'Background service account')"
+			:description="
+				t(
+					'dossiq',
+					'The account background jobs save as, with the access checks of OpenRegister on.',
+				)
+			">
+			<BackgroundServiceAccountSettings />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-mailbox"
 			:name="t('dossiq', 'Case Email: Shared Mailbox')"
 			:description="
@@ -273,6 +285,7 @@
 
 <script>
 import { CnAdminSettingsShell, CnSettingsSection } from '@conduction/nextcloud-vue'
+import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
@@ -301,6 +314,7 @@ import { initializeStores } from '../../store/store.js'
 export default {
 	name: 'AdminRoot',
 	components: {
+		BackgroundServiceAccountSettings,
 		FirstRunTab,
 		PrerequisitesTab,
 		TenantOnboardingTab,

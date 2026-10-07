@@ -872,4 +872,83 @@ class SetupControllerStatusTest extends TestCase {
 		$this->assertSame([], $built['written']);
 
 	}//end testAFailedCardLoadStoresNothing()
+
+	/**
+	 * Closing the wizard records the setup version and writes nothing else.
+	 *
+	 * 🔴 NOTHING ELSE. The close is not an answer to any step: writing the
+	 * demo-data choice here would record a decision the administrator never
+	 * made, and on an instance where they did make one it would overwrite it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 */
+	public function testClosingTheWizardRecordsOnlyTheSetupVersion(): void {
+		$built = $this->build(config: $this->provisioned(), requestParams: ['finished' => false]);
+
+		$response = $built['controller']->runAction(actionId: 'dismiss-setup');
+
+		$this->assertSame(200, $response->getStatus());
+		$this->assertTrue($response->getData()['success']);
+		$this->assertSame(['setup_dismissed_version' => '1'], $built['written']);
+
+	}//end testClosingTheWizardRecordsOnlyTheSetupVersion()
+
+	/**
+	 * A real demo-data choice survives the close.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 */
+	public function testARealChoiceSurvivesTheClose(): void {
+		$built = $this->build(
+			config: $this->provisioned() + ['demo_dataset' => 'demo', 'demo_data_decided' => 'installed'],
+			requestParams: ['finished' => true],
+		);
+
+		$built['controller']->runAction(actionId: 'dismiss-setup');
+
+		$this->assertArrayNotHasKey('demo_dataset', $built['written']);
+		$this->assertArrayNotHasKey('demo_data_decided', $built['written']);
+
+	}//end testARealChoiceSurvivesTheClose()
+
+	/**
+	 * The status reports the version the wizard was closed at.
+	 *
+	 * CnAppRoot keeps the wizard closed when `dismissed` is at least the
+	 * manifest `setup.version`, in every browser. An integer, not a string:
+	 * the library ignores anything that is not a finite number or `true`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 */
+	public function testStatusReportsTheClosedVersion(): void {
+		$data = $this->controller($this->provisioned() + ['setup_dismissed_version' => '1'])->status()->getData();
+
+		$this->assertSame(1, $data['dismissed'] ?? null);
+		$this->assertFalse($data['steps']['demo-data']['done'], 'the close answers no step');
+
+		$manifest = json_decode(file_get_contents(__DIR__ . '/../../../src/manifest.json'), true);
+		$this->assertSame('dismiss-setup', $manifest['setup']['dismissAction'] ?? null);
+		$this->assertGreaterThanOrEqual($manifest['setup']['version'], $data['dismissed']);
+
+	}//end testStatusReportsTheClosedVersion()
+
+	/**
+	 * Without a close the status carries no `dismissed` key.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
+	 */
+	public function testNoCloseNoDismissedKey(): void {
+		$data = $this->controller($this->provisioned())->status()->getData();
+
+		$this->assertArrayNotHasKey('dismissed', $data);
+
+	}//end testNoCloseNoDismissedKey()
 }//end class

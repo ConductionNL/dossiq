@@ -39,7 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use RuntimeException;
 
 /**
@@ -104,10 +104,14 @@ class CaseTypeResolver {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStore $store Every OpenRegister read this resolver performs.
+	 * @param CaseTypeStore   $store Every OpenRegister read this resolver performs.
+	 * @param LanguageMapText $text  How a translatable title or name is read, the same for every reader.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -431,11 +435,13 @@ class CaseTypeResolver {
 	 * @param array<string, mixed> $ancestor The case type it was declared on.
 	 *
 	 * @return array<string, mixed> The row, with `origin` and `originCaseType`.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	private function tag(array $row, string $origin, array $ancestor): array {
 		$row['origin'] = $origin;
 		$row['originCaseType'] = $this->store->rowId(row: $ancestor);
-		$row['originCaseTypeTitle'] = StatusPublicLabels::textOf(value: ($ancestor['title'] ?? null));
+		$row['originCaseTypeTitle'] = $this->text->textOf(value: ($ancestor['title'] ?? null));
 
 		return $row;
 	}//end tag()
@@ -451,9 +457,11 @@ class CaseTypeResolver {
 	 * the same way for every reader (Dutch first), so it stays stable.
 	 *
 	 * @return string The lower-cased, trimmed name, or the id when it has none.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	private function mergeKey(array $row): string {
-		$name = StatusPublicLabels::textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
+		$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 		if ($name === '') {
 			return 'id:' . $this->store->rowId(row: $row);
 		}

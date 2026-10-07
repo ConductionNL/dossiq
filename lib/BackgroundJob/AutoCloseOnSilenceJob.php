@@ -12,6 +12,13 @@
  * held, and then each case's own type is asked for its period. A case type
  * that declares none is the overwhelming majority and costs one read.
  *
+ * OFF UNTIL A CASE TYPE OPTS IN. A case type closes its silent cases only
+ * when `autoCloseOnSilence` is true; a period alone is not enough, so an
+ * upgrade closes nothing on an existing instance. The sweep runs as the
+ * background service account, because cron has no user and OpenRegister
+ * refuses a write from nobody, and that account may abort a case only when
+ * its case type opted in ({@see \OCA\Dossiq\Service\Lifecycle\LifecycleActorGate}).
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *
@@ -33,6 +40,8 @@ namespace OCA\Dossiq\BackgroundJob;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Service\Lifecycle\SilenceCloseService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -71,6 +80,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that OpenRegister is present.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the sweep acts as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -78,6 +88,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 		private readonly SettingsService $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: 86400);
@@ -95,6 +106,23 @@ class AutoCloseOnSilenceJob extends TimedJob {
 	 * @spec openspec/changes/lifecycle-acts-on-the-case/specs/case-status-machinery/spec.md
 	 */
 	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->sweep());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, warned or closed; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Warn and close, as the background service account.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/background-jobs-decisions/specs/case-status-machinery/spec.md
+	 */
+	private function sweep(): void {
 		$cases = $this->openCases();
 		if ($cases === []) {
 			return;
@@ -137,7 +165,7 @@ class AutoCloseOnSilenceJob extends TimedJob {
 				['warned' => $warned, 'closed' => $closed],
 			);
 		}
-	}//end run()
+	}//end sweep()
 
 	/**
 	 * The open, non-draft cases this sweep considers.

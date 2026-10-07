@@ -27,7 +27,7 @@
             "name": "Klacht registreren",
             "actionType": "complaint_registreren",
             "requirementContext": [],
-            "targetCaseType": "klacht_ex_artikel_9_1_awb",
+            "targetCaseType": "klacht-behandeling",
             "template": "",
             "permissies": ["kcc_medewerker", "klachtenfunctionaris"],
             "sortOrder": 3,

@@ -238,4 +238,28 @@ class ChaseSchedule {
 
 		return $this->dates->tryParse(value: ($instance['pauzeStartDatum'] ?? null));
 	}//end countFrom()
+
+	/**
+	 * The moment a pause started, as the case schema stores it.
+	 *
+	 * The term keeps `pauzeStartDatum` as a date (AWB 4:5 counts days), and
+	 * the case keeps `waitingSince` as a date-time. Copied as is, OpenRegister
+	 * rejected the whole projection on the format, so the queue never read
+	 * who the case was waiting on. The start of that day in the administered
+	 * zone is the same fact in the case's shape.
+	 *
+	 * @param string $date The pause start, a date or already a date-time.
+	 *
+	 * @return string|null The ISO 8601 moment, null when there is no readable date.
+	 *
+	 * @spec openspec/changes/pause-reason-with-chasing/specs/termijn-pause-extension/spec.md
+	 */
+	public function pauseStartMoment(string $date): ?string {
+		$parsed = $this->dates->tryParse(value: $date);
+		if ($parsed === null) {
+			return null;
+		}
+
+		return $this->dates->formatMoment(moment: $parsed);
+	}//end pauseStartMoment()
 }//end class

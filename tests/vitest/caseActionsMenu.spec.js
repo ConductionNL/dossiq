@@ -711,11 +711,32 @@ describe('Archive and Restore on the case page', () => {
 	 * @param {string} source The file contents.
 	 * @return {string} The source with block, line and HTML comments removed.
 	 */
-	const codeOf = (source) =>
-		source
-			.replace(/<!--[\s\S]*?-->/g, '')
-			.replace(/\/\*[\s\S]*?\*\//g, '')
-			.replace(/^\s*\/\/.*$/gm, '')
+	const codeOf = (source) => {
+		// A plain scan, not a regex replace: everything from an opener to its
+		// closer goes, and an opener without a closer takes the rest of the
+		// file with it, so no comment can survive in pieces.
+		const dropBetween = (text, open, close) => {
+			let out = ''
+			let at = 0
+			for (;;) {
+				const start = text.indexOf(open, at)
+				if (start === -1) {
+					return out + text.slice(at)
+				}
+				out += text.slice(at, start)
+				const end = text.indexOf(close, start + open.length)
+				if (end === -1) {
+					return out
+				}
+				at = end + close.length
+			}
+		}
+
+		return dropBetween(dropBetween(source, '<!--', '-->'), '/*', '*/')
+			.split('\n')
+			.filter((line) => !line.trim().startsWith('//'))
+			.join('\n')
+	}
 
 	/** An `/acts` answer where the handler may perform every ending act. */
 	const allowed = {

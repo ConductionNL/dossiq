@@ -250,7 +250,6 @@ class CasePriorityDeclarationTest extends TestCase {
 	public function testNoServiceWritesTheLiteralCasePriority(): void {
 		foreach (
 			[
-				'lib/Service/DsoIntakeService.php',
 				'lib/Service/ComplaintService.php',
 				'lib/Service/DemoCaseloadSeedDataService.php',
 			] as $relative

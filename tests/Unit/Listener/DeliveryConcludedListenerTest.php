@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Listener;
 
 use OCA\Dossiq\Listener\DeliveryConcludedListener;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Integriq\Event\DeliveryConcludedEvent;
 use PHPUnit\Framework\TestCase;
@@ -88,7 +89,8 @@ class DeliveryConcludedListenerTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('reg');
 		$this->listener = new DeliveryConcludedListener(
 			settingsService: $this->settingsService,
-			logger: $this->createMock(originalClassName: LoggerInterface::class)
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->passThroughAccount()
 		);
 	}//end setUp()
 
@@ -262,4 +264,16 @@ class DeliveryConcludedListenerTest extends TestCase {
 
 		$this->listener->handle($this->concludedEvent(sourceApp: 'dossiq', status: 'delivered', correlationId: 'corr-9'));
 	}//end testNoSaveWhenNoPublicationMatches()
+
+	/**
+	 * A service account that runs the operation as whoever is signed in.
+	 *
+	 * @return BackgroundServiceAccount The pass-through account.
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

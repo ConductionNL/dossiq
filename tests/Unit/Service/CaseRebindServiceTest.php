@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\CaseRebindService;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Cases\CaseAnswerReader;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
+use OCA\Dossiq\Service\Cases\CaseRebindTerms;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
@@ -61,6 +62,10 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseType\EngineRunMigration
  * @uses \OCA\Dossiq\Service\SettingsService
  * @uses \OCA\Dossiq\Service\Termijn\TermRearm
+ * @uses \OCA\Dossiq\Service\Cases\CaseRebindTerms
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
  */
 class CaseRebindServiceTest extends TestCase {
 
@@ -194,8 +199,7 @@ class CaseRebindServiceTest extends TestCase {
 			store: $store,
 			resolver: $resolver,
 			engine: $this->engine(refusal: $engineRefusal),
-			terms: $this->terms(),
-			slugs: $this->createMock(CaseTypeSlugResolver::class),
+			terms: new CaseRebindTerms(terms: $this->terms(), slugs: $this->createMock(CaseTypeSlugResolver::class)),
 			// A REAL gate over the SAME store, resolver and group double the
 			// assertions read through. Only the wiring line moved when the
 			// refusals were split out.

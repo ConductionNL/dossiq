@@ -30,6 +30,7 @@ use OCA\Dossiq\Service\CaseDateNormaliser;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Intake\ChannelIntake;
 use OCA\Dossiq\Service\Intake\MessageFacts;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Integriq\Event\IntakeMessageRoutedEvent;
@@ -327,6 +328,7 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 		return new IntakeMessageRoutedListener(
 			intake: $intake,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->passThroughAccount(),
 		);
 	}//end listener()
 
@@ -525,4 +527,16 @@ class IntakeMessageRoutedListenerTest extends TestCase {
 
 		$this->assertNull($event->getCreatedRef());
 	}//end testTheListenerNeverThrows()
+
+	/**
+	 * A service account that runs the operation as whoever is signed in.
+	 *
+	 * @return BackgroundServiceAccount The pass-through account.
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

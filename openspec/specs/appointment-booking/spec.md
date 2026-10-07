@@ -16,7 +16,7 @@ Enable Dossiq cases to schedule, manage, and cancel citizen appointments through
 
 ## Requirements
 
-### REQ-001: AppointmentBackendInterface SHALL define a 4-method contract for pluggable appointment-scheduling backends
+### Requirement: REQ-001: AppointmentBackendInterface SHALL define a 4-method contract for pluggable appointment-scheduling backends
 
 `OCA\Dossiq\Service\AppointmentBackend\AppointmentBackendInterface` SHALL define exactly four methods that every backend implementation SHALL implement:
 - `getTimeslots(string $productId, string $locationId, string $date): array` — return the list of available timeslots `[{time, duration, available}]` for a (product, location, date) triple.
@@ -40,7 +40,7 @@ The interface SHALL be the only point of coupling between `AppointmentService` a
 #### Notes
 - Adding a new municipal-system backend requires only a new class implementing the interface plus a config entry — no `AppointmentService` changes.
 
-### REQ-002: AppointmentService SHALL persist every booked appointment to OpenRegister and SHALL generate per-appointment cancel tokens
+### Requirement: REQ-002: AppointmentService SHALL persist every booked appointment to OpenRegister and SHALL generate per-appointment cancel tokens
 
 `OCA\Dossiq\Service\AppointmentService` SHALL be the single orchestrator that ties backends to OpenRegister persistence. The service SHALL expose six public methods:
 - `getTimeslots(string $productId, string $locationId, string $date): array` — delegate to the active backend.
@@ -71,7 +71,7 @@ The persisted appointment SHALL live in the configured `register` + `appointment
 - The cancel token's entropy (128 bits) is sufficient to prevent brute-forcing; rotation on cancel/reschedule is a future TODO.
 - The "book in backend first, then persist" order means a successful backend booking with a failed OpenRegister persist leaves an orphan in the external system — flagged in observed behavior; a future REQ may codify the compensating cancel.
 
-### REQ-003: AppointmentController SHALL expose the internal handler-facing CRUD endpoints
+### Requirement: REQ-003: AppointmentController SHALL expose the internal handler-facing CRUD endpoints
 
 `OCA\Dossiq\Controller\AppointmentController` SHALL expose five authenticated action methods (default `#[NoAdminRequired]`):
 - `index()` — list appointments for the current handler / filter context.
@@ -90,7 +90,7 @@ The persisted appointment SHALL live in the configured `register` + `appointment
 - **THEN** the persisted status SHALL flip to `noShow` (or equivalent)
 - **AND** no outbound backend cancel/reschedule call SHALL be issued
 
-### REQ-004: PublicAppointmentController SHALL serve token-gated view + cancel for citizens
+### Requirement: REQ-004: PublicAppointmentController SHALL serve token-gated view + cancel for citizens
 
 `OCA\Dossiq\Controller\PublicAppointmentController` SHALL expose two unauthenticated (`#[PublicPage] #[NoCSRFRequired]`) action methods keyed by the `cancelToken` from REQ-002:
 - `view(string $token)` — return the appointment record (date, time, location, status) for the matching token, or `404` when the token does not match.
@@ -112,7 +112,7 @@ The controller SHALL NEVER expose the persisted appointment UUID, caseId, or bac
 #### Notes
 - Rate-limiting the token-validation endpoint is a security TODO; today the controller relies on token entropy alone (128 bits — well above brute-force territory but worth pairing with rate-limit per IP).
 
-### REQ-005: AppointmentReminderJob SHALL dispatch citizen reminders before scheduled appointments via the Nextcloud TimedJob queue
+### Requirement: REQ-005: AppointmentReminderJob SHALL dispatch citizen reminders before scheduled appointments via the Nextcloud TimedJob queue
 
 `OCA\Dossiq\BackgroundJob\AppointmentReminderJob` SHALL extend `\OCP\BackgroundJob\TimedJob`. The `run(...)` method SHALL:
 - Scan persisted appointments for records with `status = 'scheduled'`, `reminderSent = false`, and `dateTime` within the configured reminder window.

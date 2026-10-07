@@ -105,7 +105,6 @@ class ConfigKeys {
 		'appointment_backend',
 		'appointment_backend_url',
 		'appointment_backend_api_key',
-		'appointment_reminder_days',
 		'case_share_schema',
 		'partner_organization_schema',
 		'share_permission_level_schema',
@@ -359,6 +358,7 @@ class ConfigKeys {
 		// transport ships here: both are per-customer contracts and belong in
 		// integriq (ADR-041, and the dossiq-delivers-nothing ruling).
 		'berichtenbox_adapter',
+		'berichtenbox_message_schema',
 		'beschikking_template_adapter',
 		// What a new instance starts with (starter-content-and-templates).
 		'shipped_origin_schema',
