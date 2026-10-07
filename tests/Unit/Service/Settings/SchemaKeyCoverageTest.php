@@ -53,7 +53,6 @@ class SchemaKeyCoverageTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const KNOWN_UNRECONCILED = [
-		'berichtenbox_message_schema' => 'Berichtenbox message log. Unmapped since the berichtenbox-integration change.',
 		'besluit_schema' => 'The ZGW Besluit projection. BesluitMaterialisationService falls back to the slug `decision`, so it resolves by accident rather than by configuration.',
 		'case_decision_schema' => 'Case-level decision link. Unmapped.',
 		'dso_samenwerkverzoek_schema' => 'DSO samenwerkingsverzoek. Unmapped since the dso-omgevingsloket register landed.',
@@ -139,6 +138,23 @@ class SchemaKeyCoverageTest extends TestCase {
 		self::assertSame('bezwaar_trigger_schema', $mapped['bezwaarTrigger'] ?? null);
 		self::assertSame('mandaat_regeling_schema', $mapped['mandateArrangement'] ?? null);
 	}//end testTheBeschikkingLifecycleSchemasAreMapped()
+
+	/**
+	 * 🔴 A BERICHTENBOX LETTER IS RECORDED IN A SCHEMA THE REGISTER DECLARES.
+	 *
+	 * `berichtenbox_message_schema` was never mapped and no schema carried it,
+	 * so every send resolved schema 0 and OpenRegister threw after integriq had
+	 * already sent the letter (measured on idp-live, 2026-10-07).
+	 *
+	 * @return void
+	 */
+	public function testTheBerichtenboxMessageSchemaIsMappedAndDeclared(): void {
+		self::assertSame('berichtenbox_message_schema', SchemaSlugMap::SLUG_TO_CONFIG_KEY['caseBerichtenboxMessage'] ?? null);
+
+		$descriptor = json_decode((string)file_get_contents(dirname(__DIR__, 4) . '/lib/Settings/dossiq_register.json'), true);
+		self::assertArrayHasKey('caseBerichtenboxMessage', $descriptor['components']['schemas']);
+		self::assertContains('caseBerichtenboxMessage', $descriptor['components']['registers']['dossiq']['schemas']);
+	}//end testTheBerichtenboxMessageSchemaIsMappedAndDeclared()
 
 	/**
 	 * Every distinct `*_schema` appconfig key resolved anywhere under lib/.

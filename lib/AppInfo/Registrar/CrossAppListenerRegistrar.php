@@ -140,18 +140,16 @@ class CrossAppListenerRegistrar {
 		// dispatches DigitalPostDeliveredEvent on EVERY status change of a
 		// tracked message, `failed` and `read` included, so this is how a case
 		// learns that a letter did not arrive rather than going on showing the
-		// last good news anyone heard. FQN string and a `class_exists` guard,
-		// the same as the three above and for the same reason.
-		//
-		// It fails towards doing nothing: a wrong name registers nothing, the
-		// stored message keeps the status the send gave it, and nobody is told
-		// a letter arrived that did not.
-		if (class_exists(\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT) === true) {
-			$context->registerEventListener(
-				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT,
-				\OCA\Dossiq\Listener\DigitalPostDeliveredListener::class
-			);
-		}
+		// last good news anyone heard. FQN string, and NO `class_exists`
+		// guard: Nextcloud runs this register() before integriq's autoloader
+		// exists, so the guard read false on every live instance and the
+		// listener never registered (measured on idp-live, 2026-10-07).
+		// Registering by name autoloads nothing; without integriq nobody
+		// raises the event and the listener never runs.
+		$context->registerEventListener(
+			\OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT,
+			\OCA\Dossiq\Listener\DigitalPostDeliveredListener::class
+		);
 	}//end registerDeliveryListeners()
 
 	/**

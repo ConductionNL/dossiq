@@ -92,6 +92,36 @@ class CrossAppListenerRegistrarTest extends TestCase {
 	}//end testTheDeliverySeamIsRegisteredWhereIntegriqIsPresent()
 
 	/**
+	 * The digital post status listener is registered even when integriq's classes are not loaded yet.
+	 *
+	 * Nextcloud runs dossiq's register() before integriq's autoloader exists
+	 * (apps register in order), so a class_exists() guard on integriq's event
+	 * read false on every live instance and dossiq never heard that a letter
+	 * was delivered, read or failed (measured on idp-live, 2026-10-07).
+	 * Registering by name autoloads nothing and costs nothing without integriq.
+	 *
+	 * @return void
+	 */
+	public function testTheDigitalPostStatusListenerIsRegisteredByName(): void {
+		// Source-read for the guard, because the stub makes the class loadable
+		// here and a run cannot take the false branch a live instance takes.
+		$this->assertStringNotContainsString(
+			needle: 'class_exists(\\OCA\\Dossiq\\Listener\\DigitalPostDeliveredListener::EVENT)',
+			haystack: $this->source(class: CrossAppListenerRegistrar::class),
+			message: 'a class_exists() guard on an integriq event is false when dossiq registers',
+		);
+
+		$event = \OCA\Dossiq\Listener\DigitalPostDeliveredListener::EVENT;
+		$registered = $this->registrations(registrar: new CrossAppListenerRegistrar());
+
+		$this->assertContains(
+			needle: \OCA\Dossiq\Listener\DigitalPostDeliveredListener::class,
+			haystack: ($registered[$event] ?? []),
+			message: 'without this a case keeps showing "sent" for a letter that was delivered, read or failed',
+		);
+	}//end testTheDigitalPostStatusListenerIsRegisteredByName()
+
+	/**
 	 * The integriq channel intake is answered when integriq is installed.
 	 *
 	 * integriq dispatches this and reads the result slot back. Registered by
