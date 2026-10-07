@@ -448,3 +448,41 @@ that matched nothing cannot report success.
 - **WHEN** that tab is removed from the manifest and the entry is left behind
 - **THEN** the registry orphan test SHALL fail
 - **AND** it SHALL name the modal that no page opens
+
+### Requirement: REQ-ZAK-024 A document carries free keywords
+
+An `informatieobject` SHALL carry `keywords`, an optional list of free-text
+strings of at most 64 characters each, declared facetable on the schema
+(`lib/Settings/register.d/70-document-zaakdossier.json`). A keyword carries no
+confidentiality default and no type: a document has one type and any number of
+keywords. A handler SHALL edit them in the Document properties dialog that the
+Files tab offers on every file row (`src/modals/DocumentMetadataDialog.vue`,
+opened by the `rowActions` of the CaseDetail Files tab in `src/manifest.json`).
+The dialog SHALL trim each keyword, drop empty and duplicate entries, cut each
+to 64 characters and send plain strings, whether the person typed the keyword
+or picked it. The metadata endpoint (`ZaakdossierController`, the `keywords`
+parameter) SHALL store the list on the record and SHALL leave it untouched when
+the request carries no `keywords`. A document written before the property
+existed SHALL read as carrying no keywords, never as an error
+(`documentKeywords()` in `src/utils/dossierHelpers.js`).
+
+Not covered today: the keywords are not shown on the file row and the case page
+offers no keyword filter. The helpers that did both (`collectKeywords()`,
+`filterGroupsByKeywords()`) lost their caller when the Documents tab was
+retired on 2026-09-13.
+
+#### Scenario: A handler tags a document from its row
+@e2e exclude no e2e drives the Document properties dialog yet; the write is covered by tests/Unit/Service/Zaakdossier/InformatieobjectMetadataWriteTest.php
+
+- **GIVEN** a case with a file in its Files tab
+- **WHEN** the handler opens Document properties on that row, types `bouwtekening` and ` bezwaar ` and saves
+- **THEN** the document's record SHALL carry the keywords `bouwtekening` and `bezwaar`
+- **AND** reopening the dialog SHALL show both keywords
+
+#### Scenario: A document without keywords reads as an empty list
+@e2e exclude a pure helper over a stored record; covered by tests/vitest/dossierHelpers.spec.js
+
+- **GIVEN** a document record with no `keywords` property, or with `keywords` set to null
+- **WHEN** its keywords are read
+- **THEN** the result SHALL be an empty list
+- **AND** no error SHALL be raised
