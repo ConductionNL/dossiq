@@ -43,9 +43,10 @@ favour of (b) — an openconnector source mirroring `shared-pdok-via-openconnect
   local fallback. An unconfigured/unknown backend now throws a configuration
   error instead of silently scheduling locally.
 - Zaak-specific appointment metadata the leaf does not model (`productId`,
-  `locationId`, `cancelToken`, `reminderSent`, no-show status) is retained on
-  the appointment object in dossiq's register, and `AppointmentReminderJob`
-  continues to read it.
+  `locationId`, `cancelToken`, no-show status) is retained on the appointment
+  object in dossiq's register. `AppointmentReminderJob` and its `reminderSent`
+  flag were removed on 2026-10-08: the job was never scheduled and sent
+  nothing, it only set the flag.
 - The citizen public cancel-by-token surface (`PublicAppointmentController`)
   is retained for external bookings.
 - Follow-up: GH issue tracks the (a)→(b) re-evaluation trigger.

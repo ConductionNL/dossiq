@@ -112,12 +112,11 @@ describe('berichtenboxApi calls only routes the server declares', () => {
 
 	it('does not poll read status from the browser, and names no /types', () => {
 		// Named rather than left to the rule above, because both were removed
-		// for a reason the rule cannot state. Read status arrives by event
-		// through DigitalPostDeliveredListener; IntegriqAdapter answers
-		// getReadStatus with `unknown`, so a poll from a page would stamp
-		// readPolledAt and tell the handler nothing while looking like it
-		// asked. `/types` was never routed at all; the compose dialog holds
-		// its own list.
+		// for a reason the rule cannot state. Logius Berichtenbox has no read
+		// status, so there is nothing to poll and the server route is gone
+		// too; delivery arrives by event through DigitalPostDeliveredListener.
+		// `/types` was never routed at all; the compose dialog holds its own
+		// list.
 		const calls = clientCalls()
 		expect(calls.some((call) => call.path.startsWith('/poll'))).toBe(false)
 		expect(calls.some((call) => call.path === '/types')).toBe(false)

@@ -105,7 +105,6 @@ class ConfigKeys {
 		'appointment_backend',
 		'appointment_backend_url',
 		'appointment_backend_api_key',
-		'appointment_reminder_days',
 		'case_share_schema',
 		'partner_organization_schema',
 		'share_permission_level_schema',

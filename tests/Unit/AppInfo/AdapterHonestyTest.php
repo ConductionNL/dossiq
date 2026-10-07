@@ -80,17 +80,6 @@ class RealBerichtenboxAdapter implements BerichtenboxAdapterInterface {
 	): array {
 		return ['messageId' => 'real-1', 'status' => 'sent'];
 	}//end sendMessage()
-
-	/**
-	 * Pretend to poll.
-	 *
-	 * @param string $messageId The external message id.
-	 *
-	 * @return array<string, mixed> The read status.
-	 */
-	public function getReadStatus(string $messageId): array {
-		return ['read' => false, 'readAt' => null];
-	}//end getReadStatus()
 }//end class
 
 /**

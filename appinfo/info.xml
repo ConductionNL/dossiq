@@ -185,7 +185,6 @@ Vrij en open source onder de EUPL-1.2-licentie.
         -->
         <job>OCA\Dossiq\BackgroundJob\InboundEmailJob</job>
         <job>OCA\Dossiq\BackgroundJob\CaseEmailMatchJob</job>
-        <job>OCA\Dossiq\BackgroundJob\EmailPdfRetryJob</job>
         <job>OCA\Dossiq\BackgroundJob\SentimentAnalysisJob</job>
         <job>OCA\Dossiq\BackgroundJob\SpecialistBeschikbaarheidRefreshJob</job>
         <job>OCA\Dossiq\BackgroundJob\BottleneckDetectionJob</job>
@@ -339,6 +338,8 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Dossiq\Repair\ProvisionAssignedGroups</step>
             <!-- The group the background jobs write with (PauseChaseJob); never picks an account. -->
             <step>OCA\Dossiq\Repair\CreateBackgroundServiceGroup</step>
+            <!-- Nextcloud never removes a job info.xml stops naming: parked EmailPdfRetryJob, removed AppointmentReminderJob and BerichtenboxReadStatusJob. -->
+            <step>OCA\Dossiq\Repair\RetireUnscheduledBackgroundJobs</step>
             <step>OCA\Dossiq\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarBeroepData</step>
             <step>OCA\Dossiq\Repair\SeedBezwaarWorkflowDefinition</step>

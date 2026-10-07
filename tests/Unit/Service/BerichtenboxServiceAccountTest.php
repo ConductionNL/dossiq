@@ -34,7 +34,6 @@ use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Dossiq\Service\BerichtenboxService;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
@@ -205,7 +204,6 @@ class BerichtenboxServiceAccountTest extends TestCase {
 				'appManager' => $apps,
 				'container' => $container,
 				'logger' => new NullLogger(),
-				'owningCase' => $this->getMockBuilder(OwningCaseResolver::class)->disableOriginalConstructor()->getMock(),
 				'adapter' => $adapter,
 				'journal' => new BerichtenboxJournal($timeline),
 				'serviceAccount' => $this->backgroundAccount(),

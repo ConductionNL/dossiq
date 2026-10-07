@@ -90,21 +90,4 @@ class MockAdapter implements BerichtenboxAdapterInterface {
 			'sentAt' => (new DateTime())->format('c'),
 		];
 	}//end sendMessage()
-
-	/**
-	 * Simulate a read-status check.
-	 *
-	 * @param string $messageId The external message id.
-	 *
-	 * @return array<string, mixed> Mock read status (always read 1h ago).
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function getReadStatus(string $messageId): array {
-		// Simulate: messages are "read" after they've existed for a while.
-		return [
-			'read' => true,
-			'readAt' => (new DateTime('-1 hour'))->format('c'),
-		];
-	}//end getReadStatus()
 }//end class
