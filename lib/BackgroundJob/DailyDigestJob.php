@@ -65,6 +65,10 @@ use Throwable;
  * @psalm-suppress UnusedClass
  *
  * @spec openspec/changes/one-personal-queue/specs/my-work/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The classes over the limit are the
+ *   background service account, its refusal and the session that carries the
+ *   recipient, which composing as the recipient needs.
  */
 class DailyDigestJob extends TimedJob {
 	/**
