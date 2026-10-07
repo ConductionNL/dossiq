@@ -30,6 +30,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Lifecycle\LifecycleActorGate;
 use OCA\Dossiq\Service\Lifecycle\LifecycleCaseTypeRules;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -82,6 +83,7 @@ class CaseLifecycleGateTest extends TestCase {
 			groupManager: $groups,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->createMock(originalClassName: BackgroundServiceAccount::class),
 		);
 	}//end gate()
 
@@ -201,6 +203,7 @@ class CaseLifecycleGateTest extends TestCase {
 			groupManager: $this->createMock(originalClassName: IGroupManager::class),
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->createMock(originalClassName: BackgroundServiceAccount::class),
 		);
 
 		$this->assertFalse(condition: $gate->may(act: 'finish', case: self::CASE));
@@ -234,6 +237,7 @@ class CaseLifecycleGateTest extends TestCase {
 			groupManager: $groups,
 			userSession: $session,
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			serviceAccount: $this->createMock(originalClassName: BackgroundServiceAccount::class),
 		);
 
 		$this->assertFalse(condition: $gate->may(act: 'archive', case: self::CASE));
