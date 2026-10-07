@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Declares the six OpenRegister schemas for the termijn/dwangsom engine — TermijnDefinitie, TermijnInstance, TermijnGebeurtenis, Ingebrekestelling, DwangsomBerekening, and DwangsomUitbetaling — with their documented properties, enums, and relations so every consumer reads the same canonical shape. It also seeds three demo TermijnDefinities (Omgevingsvergunning-regulier, Wmo-aanvraag, and Woo-verzoek) via the register repair step so the engine has working configuration out of the box.
+
 ## Requirements
+
 ### Requirement: Termijn and dwangsom register schemas (REQ-TERM-SCHEMA-001)
 
 The system SHALL declare six OpenRegister schemas — `TermijnDefinitie`, `TermijnInstance`, `TermijnGebeurtenis`, `Ingebrekestelling`, `DwangsomBerekening`, and `DwangsomUitbetaling` — with the documented properties, enums, and relations, registered through the dossiq register template so every consumer reads the same canonical shape.
@@ -43,3 +45,31 @@ The system SHALL seed three `TermijnDefinitie` rows — Omgevingsvergunning-regu
 - **THEN** the test SHALL assert the documented required properties are present
 - **AND** the test SHALL assert the three seed `TermijnDefinitie` rows exist with their documented durations
 
+### Requirement: A term declares whether it counts calendar or working days (REQ-TERM-013)
+
+`deadlineDefinition` SHALL carry `countingMode` with values `calendarDays`
+(default) and `workingDays`. The armed timer SHALL use it as its SLA unit
+and `endDateCalculated` SHALL be computed in the same mode, so the two
+agree at day granularity.
+
+#### Scenario: A working-day term skips the weekend
+@e2e exclude covered by the TermijnService fixture pair (D-3); the calendar is seeded, not driven through the UI
+
+- **GIVEN** a definition of 5 `workingDays` and a case started on a Thursday
+- **WHEN** the instance is created
+- **THEN** `endDateCalculated` SHALL be the next Thursday
+- **AND** the armed timer SHALL carry `unit: businessDays`
+
+#### Scenario: A calendar-day term is unchanged
+@e2e exclude covered by the same fixture pair
+
+- **GIVEN** a definition without `countingMode` of 56 days
+- **WHEN** the instance is created
+- **THEN** `endDateCalculated` SHALL be start plus 56 days as before
+
+#### Scenario: The mode is visible in settings
+@e2e tests/e2e/termijn-counting-mode.spec.ts
+
+- **GIVEN** the termijn settings tab
+- **WHEN** you open a definition
+- **THEN** Counting mode SHALL be shown and editable
