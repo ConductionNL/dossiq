@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
@@ -97,7 +97,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
 			$this->termService,
-			new BerichtenboxRoutingService($logger),
+			$this->createMock(TermNoticeSender::class),
 			$logger
 		);
 		// The retired daily scan's role is now split: the engine sweep

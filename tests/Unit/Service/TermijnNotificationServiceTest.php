@@ -25,7 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\TermijnNotificationService
  * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  *
- * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
+ * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\TermijnService
  * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
  * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
@@ -69,7 +69,7 @@ class TermijnNotificationServiceTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->service = new TermijnNotificationService(
 			new TermijnService($settings, $logger),
-			new BerichtenboxRoutingService($logger),
+			$this->sender(),
 			$logger
 		);
 	}
@@ -133,4 +133,16 @@ class TermijnNotificationServiceTest extends TestCase {
 		$this->expectException(\InvalidArgumentException::class);
 		$this->service->sendTermijnNotification('nope', 'ti-1', 'burger-1');
 	}
+
+	/**
+	 * A sender that answers a delivery record, so these tests stay about the wording.
+	 *
+	 * @return TermNoticeSender The sender.
+	 */
+	private function sender(): TermNoticeSender {
+		$sender = $this->createMock(TermNoticeSender::class);
+		$sender->method('send')->willReturn(['notificationChannel' => 'email', 'sent' => true, 'duplicate' => false]);
+
+		return $sender;
+	}//end sender()
 }

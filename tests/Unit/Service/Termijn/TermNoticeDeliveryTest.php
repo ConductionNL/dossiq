@@ -39,7 +39,7 @@ use OCA\Dossiq\Service\Pause\PauseChaseService;
 use OCA\Dossiq\Service\Pause\PauseReason;
 use OCA\Dossiq\Service\Pause\PauseReasonReader;
 use OCA\Dossiq\Service\SettingsService;
-use OCA\Dossiq\Service\Termijn\NoticeNotSentException;
+use OCA\Dossiq\Exception\NoticeNotSentException;
 use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
