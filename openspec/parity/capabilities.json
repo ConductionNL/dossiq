@@ -14492,7 +14492,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
-				"change": "pipelinq/contact-moments-on-pipelinq-schema",
+				"change": "parties-and-contact-moments-consume-pipelinq",
 				"prs": [
 					{
 						"repo": "pipelinq",
@@ -14503,7 +14503,7 @@
 				],
 				"evidence": "register.d/30-kcc.json#customerContact; 40-kcc-werkplek.json#contactmoment; lib/Controller/ContactMomentController.php; pipelinq#1970 428bd3a6b",
 				"owner": "ConductionNL/pipelinq",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/pipelinq openspec/changes/contact-moments-on-pipelinq-schema (pipelinq lane).",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/pipelinq openspec/changes/contact-moments-on-pipelinq-schema (pipelinq lane). Spec part 3 (2026-10-07): pipelinq's half is done (all 9 tasks ticked, pipelinq#1970). dossiq shows contact moments with channel and direction on the case (Communication tab) and on the contact and organisation pages, but still writes its own contactmoment schema; the dossiq half, appending to pipelinq's record and retiring the duplicate, is the open dossiq change parties-and-contact-moments-consume-pipelinq (REQ-PLQ-02; tasks unticked although lib/Service/Pipelinq/ContactMomentBridge.php exists).",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": [
@@ -15943,7 +15943,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
-				"change": "openregister/unified-search-index",
+				"change": "unified-search-opens-every-hit-in-dossiq",
 				"prs": [
 					{
 						"repo": "openregister",
@@ -15953,7 +15953,7 @@
 				],
 				"evidence": "lib/Search/ObjectsProvider.php",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane).",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane). Spec part 3 (2026-10-07): openregister's half is done (unified-search-index, all tasks ticked). The dossiq half is specified in unified-search-opens-every-hit-in-dossiq: 162 of 167 dossiq schemas are searchable with no deep link, so a hit opens openregister's JSON endpoint. Engine tasks still have no provider; that half is openregister's.",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
@@ -16385,7 +16385,7 @@
 			"featureConfidence": "medium",
 			"built": {
 				"state": "specified",
-				"change": "openregister/unified-search-index",
+				"change": "unified-search-opens-every-hit-in-dossiq",
 				"prs": [
 					{
 						"repo": "openregister",
@@ -16396,7 +16396,7 @@
 				"evidence": "src/manifest.json:7534 deepLinks (case, objectionProceeding, beroep, brpPerson, kvkCompany) handed to OpenRegister's unified search provider through the AppHost registration in lib/AppInfo/Registrar/AppHostRegistrar.php:99 register(); no dossiq IProvider of its own; engine tasks have no provider",
 				"reachedOn": "Nextcloud header unified search, results open /apps/dossiq/cases/{uuid} (#CaseDetail) and the other detail pages",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane).",
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane). Spec part 3 (2026-10-07): openregister's half is done (unified-search-index, all tasks ticked). The dossiq half is specified in unified-search-opens-every-hit-in-dossiq: 162 of 167 dossiq schemas are searchable with no deep link, so a hit opens openregister's JSON endpoint. Engine tasks still have no provider; that half is openregister's.",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqKop"
