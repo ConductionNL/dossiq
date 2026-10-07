@@ -113,9 +113,11 @@ class AssignedCasesSource extends RegisterBackedSource {
 			$schema = 'case';
 		}
 
+		// `0`, not `false`: OpenRegister answers a boolean filter value with
+		// no rows, so `false` emptied every queue and every digest.
 		$rows = $this->rows(
 			schema: $schema,
-			filters: ['assignee' => $userId, 'isFinalStatus' => false]
+			filters: ['assignee' => $userId, 'isFinalStatus' => 0]
 		);
 
 		$items = [];
