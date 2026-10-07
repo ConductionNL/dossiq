@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\Cases;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Cases\CaseAnswerReader;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\Cases\RebindValueConverter;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -37,6 +38,7 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Dossiq\Service\Cases\RebindValueConverter
  *
  * @uses \OCA\Dossiq\Service\CaseTypeStore
+ * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseRebindImpactTest extends TestCase {
@@ -59,10 +61,13 @@ class CaseRebindImpactTest extends TestCase {
 			}
 		);
 
+		$store = new CaseTypeStore($this->createMock(SettingsService::class));
+
 		return new CaseRebindImpact(
-			store: new CaseTypeStore($this->createMock(SettingsService::class)),
+			store: $store,
 			resolver: $resolver,
 			converter: new RebindValueConverter(),
+			answers: new CaseAnswerReader(store: $store, converter: new RebindValueConverter()),
 		);
 	}//end impact()
 

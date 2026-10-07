@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\CaseRebindService;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
+use OCA\Dossiq\Service\Cases\CaseAnswerReader;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\Cases\RebindValueConverter;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
@@ -49,6 +50,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindImpact
  * @uses \OCA\Dossiq\Service\Cases\RebindValueConverter
+ * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Exception\RefusedException
@@ -183,7 +185,12 @@ class CaseRebindServiceTest extends TestCase {
 			// assertions read through. Only the wiring line moved when the
 			// refusals were split out.
 			gate: new CaseRebindGate(store: $store, resolver: $resolver, groupManager: $groups),
-			impact: new CaseRebindImpact(store: $store, resolver: $resolver, converter: new RebindValueConverter()),
+			impact: new CaseRebindImpact(
+				store: $store,
+				resolver: $resolver,
+				converter: new RebindValueConverter(),
+				answers: new CaseAnswerReader(store: $store, converter: new RebindValueConverter()),
+			),
 			logger: new NullLogger(),
 		);
 	}//end service()

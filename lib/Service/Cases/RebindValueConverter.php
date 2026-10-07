@@ -39,8 +39,6 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
-use DateTimeImmutable;
-
 /**
  * Fit a stored answer onto a target property definition.
  *
@@ -149,8 +147,12 @@ class RebindValueConverter {
 			return '';
 		}
 
-		if (is_bool($value) === true) {
-			return $value === true ? 'true' : 'false';
+		if ($value === true) {
+			return 'true';
+		}
+
+		if ($value === false) {
+			return 'false';
 		}
 
 		if (is_scalar($value) === true) {
@@ -315,16 +317,15 @@ class RebindValueConverter {
 	 * @return string|null The date as Y-m-d, or null.
 	 */
 	private function fitDate(string $value): ?string {
-		if (preg_match('/^(\d{4}-\d{2}-\d{2})(?:$|T)/', $value, $match) !== 1) {
+		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/', $value, $match) !== 1) {
 			return null;
 		}
 
-		$date = DateTimeImmutable::createFromFormat('!Y-m-d', $match[1]);
-		if ($date === false || $date->format('Y-m-d') !== $match[1]) {
+		if (checkdate((int)$match[2], (int)$match[3], (int)$match[1]) === false) {
 			return null;
 		}
 
-		return $match[1];
+		return $match[1] . '-' . $match[2] . '-' . $match[3];
 	}//end fitDate()
 
 	/**

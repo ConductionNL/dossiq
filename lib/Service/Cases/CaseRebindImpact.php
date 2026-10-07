@@ -9,13 +9,8 @@
  * (required). The preview shows it, and the rebind applies exactly it, so the
  * dialog and the write cannot disagree about what happens to an answer.
  *
- * 🔴 `case.properties` IS A LIST, NOT A MAP. The register declares it as an
- * array of `{propertyDefinition, name, value}` entries, which is what the
- * `FoldCasePropertiesOntoCase` repair writes, what `RequiredFieldGuard` reads
- * and what the Woo intake creates. The rebind used to read it as a name-keyed
- * map, so every live case looked like it answered nothing, and a rebind wrote
- * a map onto an array property. A legacy map is still read here, and the list
- * is what is written back.
+ * The answers are read by {@see CaseAnswerReader}, which knows the register
+ * stores them as a list; {@see apply()} writes that list back.
  *
  * Answers are matched by field NAME, case-insensitively. Across two case types
  * a name is the only thing two fields can share, and the coordinator sees
@@ -61,11 +56,13 @@ class CaseRebindImpact {
 	 * @param CaseTypeStore        $store     The app's one case type reader.
 	 * @param CaseTypeResolver     $resolver  Property definitions of one case type, inherited and shared included.
 	 * @param RebindValueConverter $converter Whether an answer fits a field.
+	 * @param CaseAnswerReader     $answers   The case's answers, in the register's shape.
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeResolver $resolver,
 		private readonly RebindValueConverter $converter,
+		private readonly CaseAnswerReader $answers,
 	) {
 	}//end __construct()
 
@@ -78,7 +75,9 @@ class CaseRebindImpact {
 	 * @param array<string, string> $remap            Source answer name => target field name, chosen by the coordinator.
 	 * @param array<string, mixed>  $answers          Target field name => answer, given in the dialog.
 	 *
-	 * @return array{dropped: array<int, array<string, mixed>>, ported: array<int, array<string, mixed>>, required: array<int, array<string, mixed>>, complete: bool}
+	 * @return (array<int, array<string, mixed>>|bool)[] The `dropped`, `ported` and `required` rows, and `complete`.
+	 *
+	 * @psalm-return array{dropped: list<array<string, mixed>>, ported: list<array<string, mixed>>, required: list<array<string, mixed>>, complete: bool}
 	 *
 	 * @throws RefusedException When a remap names an answer or a field that does not exist, is taken, or does not fit.
 	 *
@@ -91,29 +90,63 @@ class CaseRebindImpact {
 		array $remap = [],
 		array $answers = [],
 	): array {
-		$sourceId = $this->store->referenceId(value: ($case['caseType'] ?? ''));
-		$sourceDefs = $this->definitionsOf(caseTypeId: $sourceId);
+		$sourceDefs = $this->definitionsOf(caseTypeId: $this->store->referenceId(value: ($case['caseType'] ?? '')));
 		$targetDefs = $this->definitionsOf(caseTypeId: $targetCaseTypeId);
 		$remap = array_filter(
-			array_map(static fn (mixed $name): string => trim((string)$name), $this->keyed(values: $remap)),
+			array_map(static fn (mixed $name): string => trim((string)$name), $this->answers->keyed(values: $remap)),
 			static fn (string $name): bool => $name !== ''
 		);
 
-		$taken = [];
-		$ported = [];
-		$dropped = [];
-		$deferred = [];
-		foreach ($this->entriesOf(case: $case) as $entry) {
-			$key = $this->key(name: $entry['name']);
+		$state = $this->portByName(
+			entries: $this->answers->entriesOf(case: $case),
+			remap: $remap,
+			sourceDefs: $sourceDefs,
+			targetDefs: $targetDefs
+		);
+		$state = $this->portRemapped(state: $state, remap: $remap, targetDefs: $targetDefs);
+
+		$dropped = $this->withCandidates(dropped: $state['dropped'], targetDefs: $targetDefs, taken: $state['taken'], sourceDefs: $sourceDefs);
+		$required = $this->requiredRows(
+			targetDefs: $targetDefs,
+			taken: $state['taken'],
+			statusId: $targetStatusId,
+			answers: $this->answers->keyed(values: $answers)
+		);
+
+		return [
+			'dropped' => $dropped,
+			'ported' => $state['ported'],
+			'required' => $required,
+			'complete' => in_array(false, array_column($required, 'valid'), true) === false,
+		];
+	}//end compute()
+
+	/**
+	 * Carry every answer onto the target field of the same name, or drop it.
+	 *
+	 * Answers the coordinator remapped are set aside for {@see portRemapped()}:
+	 * an explicit choice is never second-guessed by a name match.
+	 *
+	 * @param array<int, array{name: string, definition: string, value: string}> $entries    The case's answers.
+	 * @param array<string, string>                                              $remap      Remaps, keyed by comparable source name.
+	 * @param array<string, array<string, mixed>>                                $sourceDefs The source definitions.
+	 * @param array<string, array<string, mixed>>                                $targetDefs The target definitions.
+	 *
+	 * @return array<string, array<mixed>> The state: `taken`, `ported`, `dropped` and `deferred`.
+	 */
+	private function portByName(array $entries, array $remap, array $sourceDefs, array $targetDefs): array {
+		$state = ['taken' => [], 'ported' => [], 'dropped' => [], 'deferred' => []];
+		foreach ($entries as $entry) {
+			$key = $this->answers->key(name: $entry['name']);
 			$source = $this->sourceDefinition(entry: $entry, sourceDefs: $sourceDefs);
 			if (array_key_exists($key, $remap) === true) {
-				$deferred[$key] = ['entry' => $entry, 'source' => $source];
+				$state['deferred'][$key] = ['entry' => $entry, 'source' => $source];
 				continue;
 			}
 
 			$target = ($targetDefs[$key] ?? []);
 			$fitted = null;
-			if ($target !== [] && isset($taken[$key]) === false) {
+			if ($target !== [] && isset($state['taken'][$key]) === false) {
 				$fitted = $this->converter->fit(value: $entry['value'], source: $source, target: $target);
 			}
 
@@ -123,30 +156,37 @@ class CaseRebindImpact {
 					$reason = 'type';
 				}
 
-				$dropped[] = $this->droppedRow(entry: $entry, source: $source, reason: $reason);
+				$state['dropped'][] = $this->droppedRow(entry: $entry, source: $source, reason: $reason);
 				continue;
 			}
 
-			$taken[$key] = true;
-			$ported[] = $this->portedRow(entry: $entry, source: $source, target: $target, value: $fitted, remapped: false);
+			$state['taken'][$key] = true;
+			$state['ported'][] = $this->portedRow(entry: $entry, source: $source, target: $target, value: $fitted, remapped: false);
 		}//end foreach
 
+		return $state;
+	}//end portByName()
+
+	/**
+	 * Carry every remapped answer onto the field the coordinator chose.
+	 *
+	 * @param array<string, array<mixed>>         $state      What {@see portByName()} left.
+	 * @param array<string, string>               $remap      Remaps, keyed by comparable source name.
+	 * @param array<string, array<string, mixed>> $targetDefs The target definitions.
+	 *
+	 * @return array<string, array<mixed>> The state.
+	 *
+	 * @throws RefusedException When a remap cannot be made.
+	 */
+	private function portRemapped(array $state, array $remap, array $targetDefs): array {
 		foreach ($remap as $sourceKey => $targetName) {
-			$found = ($deferred[$sourceKey] ?? null);
+			$found = ($state['deferred'][$sourceKey] ?? null);
 			if ($found === null) {
 				$this->refuseRemap(rule: 'rebind-remap-unknown-answer', sentence: 'This case has no answer called ' . $sourceKey . ' to move.');
 			}
 
-			$targetKey = $this->key(name: $targetName);
-			$target = ($targetDefs[$targetKey] ?? []);
-			if ($target === []) {
-				$this->refuseRemap(rule: 'rebind-remap-unknown-field', sentence: 'The target case type has no field called ' . $targetName . '.');
-			}
-
-			if (isset($taken[$targetKey]) === true) {
-				$this->refuseRemap(rule: 'rebind-remap-field-taken', sentence: 'The field ' . $targetName . ' already receives another answer.');
-			}
-
+			$targetKey = $this->answers->key(name: $targetName);
+			$target = $this->remapTarget(targetDefs: $targetDefs, taken: $state['taken'], targetName: $targetName);
 			$fitted = $this->converter->fit(value: $found['entry']['value'], source: $found['source'], target: $target);
 			if ($fitted === null) {
 				$this->refuseRemap(
@@ -155,22 +195,37 @@ class CaseRebindImpact {
 				);
 			}
 
-			$taken[$targetKey] = true;
-			$ported[] = $this->portedRow(entry: $found['entry'], source: $found['source'], target: $target, value: $fitted, remapped: true);
-		}//end foreach
-
-		$dropped = $this->withCandidates(dropped: $dropped, targetDefs: $targetDefs, taken: $taken, sourceDefs: $sourceDefs);
-		$required = $this->requiredRows(targetDefs: $targetDefs, taken: $taken, statusId: $targetStatusId, answers: $this->keyed(values: $answers));
-
-		$complete = true;
-		foreach ($required as $row) {
-			if ($row['valid'] === false) {
-				$complete = false;
-			}
+			$state['taken'][$targetKey] = true;
+			$state['ported'][] = $this->portedRow(entry: $found['entry'], source: $found['source'], target: $target, value: $fitted, remapped: true);
 		}
 
-		return ['dropped' => $dropped, 'ported' => $ported, 'required' => $required, 'complete' => $complete];
-	}//end compute()
+		return $state;
+	}//end portRemapped()
+
+	/**
+	 * The target field a remap names, when it exists and is still free.
+	 *
+	 * @param array<string, array<string, mixed>> $targetDefs The target definitions.
+	 * @param array<string, bool>                 $taken      Fields that already receive an answer.
+	 * @param string                              $targetName The field asked for.
+	 *
+	 * @return array<string, mixed> The field.
+	 *
+	 * @throws RefusedException When it does not exist or is taken.
+	 */
+	private function remapTarget(array $targetDefs, array $taken, string $targetName): array {
+		$targetKey = $this->answers->key(name: $targetName);
+		$target = ($targetDefs[$targetKey] ?? []);
+		if ($target === []) {
+			$this->refuseRemap(rule: 'rebind-remap-unknown-field', sentence: 'The target case type has no field called ' . $targetName . '.');
+		}
+
+		if (isset($taken[$targetKey]) === true) {
+			$this->refuseRemap(rule: 'rebind-remap-field-taken', sentence: 'The field ' . $targetName . ' already receives another answer.');
+		}
+
+		return $target;
+	}//end remapTarget()
 
 	/**
 	 * The case's `properties`, rewritten to what the impact says.
@@ -203,61 +258,6 @@ class CaseRebindImpact {
 		return $case;
 	}//end apply()
 
-	/**
-	 * The answers on a case that hold a value, from the list or a legacy map.
-	 *
-	 * @param array<string, mixed> $case The case.
-	 *
-	 * @return array<int, array{name: string, definition: string, value: string}> The answers.
-	 *
-	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
-	 */
-	public function entriesOf(array $case): array {
-		$raw = ($case['properties'] ?? []);
-		if (is_string($raw) === true) {
-			$raw = json_decode($raw, true);
-		}
-
-		if (is_array($raw) === false) {
-			return [];
-		}
-
-		$entries = [];
-		foreach ($raw as $index => $item) {
-			$entry = $this->entryOf(index: $index, item: $item);
-			if ($entry !== null) {
-				$entries[] = $entry;
-			}
-		}
-
-		return $entries;
-	}//end entriesOf()
-
-	/**
-	 * One answer, from a list entry or a legacy map pair.
-	 *
-	 * @param int|string $index The list index, or the map key that is the name.
-	 * @param mixed      $item  The entry, or the map value.
-	 *
-	 * @return array{name: string, definition: string, value: string}|null The answer, or null when it holds nothing.
-	 */
-	private function entryOf(int|string $index, mixed $item): ?array {
-		if (is_int($index) === true && is_array($item) === true) {
-			$name = trim((string)($item['name'] ?? ''));
-			$definition = $this->store->referenceId(value: ($item['propertyDefinition'] ?? ''));
-			$value = $this->converter->asText(value: ($item['value'] ?? null));
-		} else {
-			$name = trim((string)$index);
-			$definition = '';
-			$value = $this->converter->asText(value: $item);
-		}
-
-		if ($name === '' || $value === '') {
-			return null;
-		}
-
-		return ['name' => $name, 'definition' => $definition, 'value' => $value];
-	}//end entryOf()
 
 	/**
 	 * A case type's property definitions, keyed by comparable name.
@@ -273,7 +273,7 @@ class CaseRebindImpact {
 
 		$keyed = [];
 		foreach ($this->resolver->propertyDefinitionsFor(caseTypeId: $caseTypeId) as $definition) {
-			$key = $this->key(name: (string)($definition['name'] ?? ''));
+			$key = $this->answers->key(name: (string)($definition['name'] ?? ''));
 			if ($key !== '' && isset($keyed[$key]) === false) {
 				$keyed[$key] = $definition;
 			}
@@ -299,7 +299,7 @@ class CaseRebindImpact {
 			}
 		}
 
-		return ($sourceDefs[$this->key(name: $entry['name'])] ?? []);
+		return ($sourceDefs[$this->answers->key(name: $entry['name'])] ?? []);
 	}//end sourceDefinition()
 
 	/**
@@ -457,35 +457,7 @@ class CaseRebindImpact {
 		return $this->converter->kindOf(definition: $source);
 	}//end sourceKind()
 
-	/**
-	 * A name => value map, keyed by comparable name.
-	 *
-	 * @param array<mixed, mixed> $values The map as posted.
-	 *
-	 * @return array<string, mixed> The map.
-	 */
-	private function keyed(array $values): array {
-		$keyed = [];
-		foreach ($values as $name => $value) {
-			$key = $this->key(name: (string)$name);
-			if ($key !== '') {
-				$keyed[$key] = $value;
-			}
-		}
 
-		return $keyed;
-	}//end keyed()
-
-	/**
-	 * The comparable form of a field name.
-	 *
-	 * @param string $name The name.
-	 *
-	 * @return string The key.
-	 */
-	private function key(string $name): string {
-		return mb_strtolower(trim($name));
-	}//end key()
 
 	/**
 	 * Refuse a remap the coordinator cannot make.
