@@ -599,6 +599,10 @@
         "version": "1.0.0",
         "digest": "bd97b84e4e59f5ed2063ac3999ab1f7e0ec65881be35022acb420b88149b757f"
     },
+    "lib/Settings/dossiq_register.json::berichtenboxMessage": {
+        "version": "1.0.0",
+        "digest": "a3bf8a2eeb5e8a20d10dc2468262d70f3bf7f97cbe5fdc94b589738894126c40"
+    },
     "lib/Settings/dossiq_register.json::beroep": {
         "version": "1.0.0",
         "digest": "30aa210ecb3ff7ef763a8ba27c22bb11c2bc18f27c3d637c8c03805250b9c934"
