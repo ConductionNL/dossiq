@@ -13394,14 +13394,16 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "70-document-zaakdossier.json#informatieobject.keywords",
-				"readOn": "2026-09-27",
+				"evidence": "lib/Settings/register.d/70-document-zaakdossier.json informatieobject.keywords (facetable, max 64 characters); edited in src/modals/DocumentMetadataDialog.vue:114-121 from the Files tab row action Document properties (src/manifest.json CaseDetail Files rowActions) and stored by lib/Controller/ZaakdossierController.php:282; collectKeywords() and filterGroupsByKeywords() in src/utils/dossierHelpers.js have no caller since the Documents tab was retired on 2026-09-13",
+				"readOn": "2026-10-07",
 				"owner": "ConductionNL/dossiq",
-				"spec": "none",
+				"spec": "openspec/specs/document-zaakdossier",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakDocumenten"
-				}
+				},
+				"reachedOn": "#CaseDetail Files tab > row > Document properties",
+				"note": "Re-read 2026-10-07 while writing its spec (document-zaakdossier REQ-ZAK-024): a handler tags a document, but the keywords are no longer shown on the row and the case page has no keyword filter, so the row reads as partial. Missing: keyword chips and a keyword filter on the Files tab (nextcloud-vue files-browser-columns, the same gap as row 4.8). Proposed rating partial (from yes), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 has no tag or label field; the only classification is the fixed category (Indgående, Udgående, Intern) and document type in src/components/EditDocumentDialog.vue:10 | round 2 drive: procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\"",
@@ -14335,14 +14337,16 @@
 			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
-				"state": "building",
+				"state": "specified",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/registry-subscription-connector",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/registry-subscription-connector, an existing open change, covers it (integriq lane).",
+				"note": "Re-read 2026-10-07: integriq archived registry-subscription-connector on 2026-09-29 and openregister ships the request path, but the dossiq half is missing: the person and company schemas declare no x-openregister-registry annotation and no page offers the subscribe action. Contact import stays a live BRP/KvK lookup (lib/Service/External/Kvk/KvkApiAdapter.php). The BRP and KvK bindings have not run against a live subscription contract.",
 				"screen": {
 					"board": null,
 					"reason": "backend: registry subscription connector in integriq"
-				}
+				},
+				"evidence": "integriq lib/Service/Registry (SubscriptionRequestHandler, BrpVolgindicatieProvider, KvkMutatieProvider) and RegistrySubscriptionPollJob answer openregister's RegistrySubscriptionRequestedEvent (openregister lib/Service/Registry/RegistrySubscriptionNotifier.php:75); no dossiq schema in lib/Settings declares x-openregister-registry, so no dossiq contact can request a subscription",
+				"readOn": "2026-10-07"
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Db/CprEvent.php entity and lib/Service/AuditService.php:630,637 logCprEventReceived have no caller in the public tree; the CPR subscription and receiver sit in the enterprise package; not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:231 \"CPR event subscriptions :: partial (enterprise)\" | open for the lab: With the enterprise package, does a CPR change event for a party land on its cases as a log entry?",
@@ -15906,11 +15910,12 @@
 				"evidence": "lib/Service/TermijnService.php:156 stores the term end as a Y-m-d date (counted and rolled by the Awt roll in lib/Service/Termijn/TermEndRoll.php:102); lib/Service/CaseTermsService.php:525 daysLeft() compares whole days, so a term is overdue only after its end day",
 				"reachedOn": "#CaseDetail sidebar tab \"Terms\" (src/manifest.json:3136, CaseTermsTab) and the Deadline tile (src/manifest.json:2097)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "none",
+				"spec": "openspec/specs/termijn-binding",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaak"
-				}
+				},
+				"readOn": "2026-10-07"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:215,221 einddatum_gepland and uiterlijke_einddatum_afdoening are DateField",
@@ -16077,11 +16082,13 @@
 				"state": "specified",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/view-group-share",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/view-group-share (openregister lane).",
+				"note": "Re-read 2026-10-07: the backend is built in openregister, but the dialog a dossiq user saves a view in (nextcloud-vue CnSaveViewDialog) has no group picker, so a saved case search can be private or public and never shared with one department. Missing: a group share in CnSaveViewDialog and CnSavedViewsControl (nextcloud-vue).",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaken"
-				}
+				},
+				"evidence": "openregister view-group-share (archived 2026-09-30): View.sharedWith with ViewMapper::findAllFor(user) and owner-or-admin guards, editable in openregister's own src/modals/view/EditView.vue:284; dossiq's lists save views through nextcloud-vue CnSaveViewDialog, which offers only a public toggle (src/components/CnSaveViewDialog/CnSaveViewDialog.vue:28-31)",
+				"readOn": "2026-10-07"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches exist at all (see 9.3), so none can be shared | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
@@ -17773,7 +17780,7 @@
 			"feature": "case-types",
 			"featureConfidence": "low",
 			"built": {
-				"state": "specified",
+				"state": "built",
 				"change": "openregister/field-rules-by-state",
 				"prs": [
 					{
@@ -17789,13 +17796,15 @@
 						"mergedAt": "2026-09-16T10:09:00Z"
 					}
 				],
-				"evidence": "openregister#3771 1faffb050; dossiq#2857 17c7a3102",
+				"evidence": "role half: field-rules-declared (row 13.8, fieldRoleRules, src/utils/fieldRoleRules.js); state half: a status declares fieldRules (lib/Settings/dossiq_register.json:922, edited in src/views/settings/components/StatusTypeForm.vue via src/utils/statusFieldRules.js), lib/Service/Status/CaseStateFieldRuleProjector.php:188 publishes them onto x-openregister-lifecycle.states.<status>.fields when the case type is published (lib/Service/CaseTypePublishService.php:72), and openregister field-rules-by-state (archived 2026-10-05) enforces them and returns @self.fieldRules (openregister lib/Service/Object/RenderObject.php:2421), which the case page reads (src/services/caseAccessApi.js:571, src/components/case/CaseStatusDeclarationPanel.vue)",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/field-rules-by-state (openregister lane).",
+				"note": "Re-read 2026-10-07: openregister archived field-rules-by-state on 2026-10-05 and dossiq declares, publishes and shows the rules (what-a-status-declares, still an open change here). Hidden, read-only and required now apply per role and per status. Proposed rating yes (from partial), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body.",
 				"screen": {
 					"board": null,
 					"reason": "not designed yet: field rules per role and state"
-				}
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "Settings > case type > status (StatusTypeForm, Field rules) and #CaseDetail status strip (CaseStatusDeclarationPanel)"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 authorisations are per component, scope, zaaktype and confidentiality (components/autorisaties); nothing hides or locks individual fields by role or status",
@@ -18111,15 +18120,16 @@
 			"feature": "digid-eherkenning",
 			"featureConfidence": "high",
 			"built": {
-				"state": "building",
-				"evidence": "lib/Service/Auth/SimulatorDigidSamlAdapter.php; SimulatorEHerkenningSamlAdapter.php",
+				"state": "specified",
+				"evidence": "lib/Service/Auth/SimulatorDigidSamlAdapter.php and SimulatorEHerkenningSamlAdapter.php simulate the login; lib/Service/Auth/LogDigidSamlAdapter.php:97 refuses until the integriq broker is configured; integriq idp-broker-envelope-runtime (archived 2026-09-29) ships the trust table, pseudonym, envelope and exchange",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/idp-broker-envelope-runtime",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/idp-broker-envelope-runtime, an existing open change, covers it (integriq lane).",
+				"note": "Re-read 2026-10-07: integriq archived idp-broker-envelope-runtime with the SAML Service Provider, the OIDC Relying Party and the Beheer > Authenticatie screen named as not done (its tasks.md, 'Not done'). No citizen logs in with DigiD, eHerkenning or eIDAS yet, so the row stays partial and specified until that vendor work lands.",
 				"screen": {
 					"board": null,
 					"reason": "backend: citizen login through integriq"
-				}
+				},
+				"readOn": "2026-10-07"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'digid|eherkenning|eidas|mitid|nemlog' over lib and src returns nothing; SAML is for staff (SamlController.php) | round 2 drive: procest/opencase/round2/code-census.md:181 \"The only unauthenticated surfaces are the mTLS receiver endpoints and the SAML endpoints\"",
@@ -18221,7 +18231,7 @@
 			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
-				"state": "building",
+				"state": "specified",
 				"change": "integriq/document-generation-vendor-adapter",
 				"prs": [
 					{
@@ -18231,13 +18241,14 @@
 						"mergedAt": "2026-09-19T06:45:00Z"
 					}
 				],
-				"evidence": "lib/Service/Beschikking/TemplateEngineAdapterInterface.php; MockTemplateEngineAdapter.php; integriq#2080 472b0721",
+				"evidence": "lib/Service/Beschikking/FilinqTemplateEngineAdapter.php renders through filinq when beschikking_template_adapter names it (lib/Settings/connections.json:98-102), otherwise MockTemplateEngineAdapter answers; integriq document-generation-vendor-adapter (archived 2026-09-28, integriq#2080) ships the SmartDocuments and Xential bindings",
 				"owner": "ConductionNL/integriq",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/document-generation-vendor-adapter, an existing open change, covers it (integriq lane).",
+				"note": "Re-read 2026-10-07: integriq's half is archived, but filinq has no vendor template engine yet (ConductionNL/filinq#1253 open: a template engine of vendor:<sourceSlug>) and dossiq still binds the mock by default (ConductionNL/dossiq#3131 open). No besluit reaches SmartDocuments or Xential from a case.",
 				"screen": {
 					"board": null,
 					"reason": "backend: document generation vendor adapter"
-				}
+				},
+				"readOn": "2026-10-07"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php merges DOCX, XLSX and ODT templates locally; no SmartDocuments or Xential client | round 2 drive: procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\"",
@@ -18344,15 +18355,17 @@
 			"feature": "case-email-integration",
 			"featureConfidence": "high",
 			"built": {
-				"state": "building",
-				"evidence": "lib/Service/Transitions/WebhookHandler.php",
+				"state": "built",
+				"evidence": "integriq lib/AppInfo/Application.php:287,297 listens to openregister ObjectCreatedEvent and ObjectUpdatedEvent, so every case write is an integriq event; lib/Service/EventService.php:1277 dispatches action.kind 'broker' through lib/Broker/BrokerTransportRegistry.php to Kafka REST, RabbitMQ HTTP or CloudEvents HTTP (lib/Broker/Transport/*); an administrator picks the broker in the event subscription modal (src/modals/EventSubscription/SubscriptionActionFields.vue:153)",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/event-broker-transport",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/event-broker-transport, an existing open change, covers it (integriq lane).",
+				"note": "Re-read 2026-10-07: integriq archived event-broker-transport on 2026-09-29. dossiq's own lib/Service/Transitions/WebhookHandler.php stays the per-transition webhook; streaming case events to a broker is integriq's and dossiq consumes it without code of its own. Proposed rating yes (from partial), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body.",
 				"screen": {
 					"board": null,
 					"reason": "backend: event broker transport"
-				}
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "integriq > Events > subscription > action Broker (src/modals/EventSubscription/SubscriptionActionFields.vue:153)"
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'rabbitmq|kafka|amqp' over lib returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:271 \"| 12.14 | Message broker or event streaming | no |\"",

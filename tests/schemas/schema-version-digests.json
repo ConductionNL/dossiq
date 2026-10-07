@@ -1423,6 +1423,14 @@
         "version": "1.0.0",
         "digest": "1d0a9ca7042939efab4202f938d992bff7ed8a4692b277aca418c42bcaacde6a"
     },
+    "lib/Settings/register.d/90-background-service-account.json::deadlineInstance": {
+        "version": "",
+        "digest": "a8d865bea87cef1051f79bf8cec31d26aedd292a7437e37daf1a648da09546ad"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::termijnGebeurtenis": {
+        "version": "",
+        "digest": "0c9db0b921431868e92c6b5d1eb76bf882e105c2df492ec18b2df368288ded5c"
+    },
     "lib/Settings/register.d/95-dmn-decision-tables.json::decisionTable": {
         "version": "1.0.0",
         "digest": "976115fff5186f91ba4bdeea4056132fdbf6cca99e697941e7b88cc044eb7e7f"
