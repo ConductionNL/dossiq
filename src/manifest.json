@@ -6188,7 +6188,7 @@
 			"type": "custom",
 			"component": "FeaturesRoadmapView",
 			"title": "Features & roadmap",
-			"_note": "Was type:\"roadmap\". The library's CnFeaturesAndRoadmapView renders exactly two tabs and declares zero slots (verified against the installed dist, @conduction/nextcloud-vue 2.41.0), so the capability comparison could not be added from the manifest. FeaturesRoadmapView renders that library page unchanged as its default section and adds the comparison as a second one. Revert to type:\"roadmap\" the day the library grows a slot or a comparison tab.",
+			"_note": "Was type:\"roadmap\". The library's CnFeaturesAndRoadmapView renders exactly two tabs and declares zero slots (verified against the installed dist, @conduction/nextcloud-vue 2.41.0). FeaturesRoadmapView renders that library page unchanged and adds one link above it: how dossiq compares, on dossiq.conduction.nl/compare. The comparison itself left the app on 2026-10-07 (Ruben: how an app compares belongs on its public site, for every app); the docs page reads openspec/parity/capabilities.json, the same file the tab read. Revert to type:\"roadmap\" the day the library page can carry that link.",
 			"config": {
 				"documentationUrl": "https://dossiq.conduction.nl"
 			}

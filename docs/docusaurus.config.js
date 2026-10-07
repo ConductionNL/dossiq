@@ -114,6 +114,11 @@ const config = createConfig({
         position: 'left',
       },
       {
+        to: '/compare',
+        label: 'How dossiq compares',
+        position: 'left',
+      },
+      {
         href: 'https://github.com/ConductionNL/dossiq',
         label: 'GitHub',
         position: 'right',
