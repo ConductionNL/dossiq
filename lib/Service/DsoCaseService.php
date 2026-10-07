@@ -465,7 +465,8 @@ class DsoCaseService {
 	 */
 	public function authorizeZaakMutation(array $case, IUser $user): void {
 		$uid = $user->getUID();
-		$assignee = (string)($case['assigneeUserId'] ?? ($case['handler'] ?? ''));
+		// The case schema declares `assignee`; the other two are older shapes.
+		$assignee = (string)($case['assignee'] ?? ($case['assigneeUserId'] ?? ($case['handler'] ?? '')));
 
 		if ($uid === $assignee) {
 			return;
@@ -473,7 +474,7 @@ class DsoCaseService {
 
 		try {
 			$groupManager = $this->container->get('OCP\IGroupManager');
-			if ($groupManager->isAdmin(uid: $uid) === true) {
+			if ($groupManager->isAdmin(userId: $uid) === true) {
 				return;
 			}
 		} catch (\Throwable $e) {
