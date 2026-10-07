@@ -172,9 +172,11 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 	/**
 	 * Build the real service with whatever collaborators its constructor takes.
 	 *
+	 * @param ContainerInterface|null $container The container, a bare double by default.
+	 *
 	 * @return DsoCaseService
 	 */
-	private function service(): DsoCaseService {
+	private function service(?ContainerInterface $container = null): DsoCaseService {
 		$config = [
 			'register' => '21',
 			'case_schema' => '113',
@@ -198,7 +200,7 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 
 		$available = [
 			'appConfig' => $appConfig,
-			'container' => $this->createMock(ContainerInterface::class),
+			'container' => ($container ?? $this->createMock(ContainerInterface::class)),
 			'notifier' => new DsoStatusChangeNotifier(eventDispatcher: $this->createMock(IEventDispatcher::class)),
 			'logger' => $this->createMock(LoggerInterface::class),
 			'objectService' => $this->objectService,
@@ -269,4 +271,38 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 		$this->assertSame('granted', $write['data']['dsoStatus'] ?? null);
 		$this->assertNotSame('granted', $write['data']['status'] ?? null, 'the DSO value never lands on the uuid status');
 	}//end testAStatusMoveFitsTheRealCaseSchema()
+
+	/**
+	 * An administrator and the case's assignee may move its DSO status.
+	 *
+	 * Measured live: an admin was answered 403, because the check called
+	 * `isAdmin(uid: ...)` on a method whose parameter is `$userId`, and the
+	 * assignee was read from `assigneeUserId`, which the case schema does not
+	 * declare (it declares `assignee`).
+	 *
+	 * @return void
+	 */
+	public function testAnAdminAndTheAssigneeMayMoveTheDsoStatus(): void {
+		$groups = $this->createMock(\OCP\IGroupManager::class);
+		$groups->method('isAdmin')->willReturnCallback(static fn (string $userId): bool => $userId === 'admin');
+
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturn($groups);
+
+		$service = $this->service(container: $container);
+
+		$user = function (string $uid): \OCP\IUser {
+			$user = $this->createMock(\OCP\IUser::class);
+			$user->method('getUID')->willReturn($uid);
+			return $user;
+		};
+
+		$case = ['id' => self::CASE_ID, 'assignee' => 'alice'];
+
+		$service->authorizeZaakMutation(case: $case, user: $user('admin'));
+		$service->authorizeZaakMutation(case: $case, user: $user('alice'));
+
+		$this->expectExceptionMessage('Not authorized');
+		$service->authorizeZaakMutation(case: $case, user: $user('bob'));
+	}//end testAnAdminAndTheAssigneeMayMoveTheDsoStatus()
 }//end class
