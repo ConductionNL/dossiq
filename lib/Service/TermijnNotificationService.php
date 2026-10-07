@@ -3,11 +3,13 @@
 /**
  * Dossiq TermijnNotificationService.
  *
- * Renders + routes the four AWB notification templates (ontvangstbevestiging,
- * extension, ingebrekestelling-receipt, dwangsom-payment) using the
- * application's translation layer (en/nl) and dispatches them to the
- * recipient via {@see BerichtenboxRoutingService} (or returns the
- * rendered payload when no router is wired).
+ * Renders the AWB notification templates (ontvangstbevestiging, extension,
+ * ingebrekestelling-receipt, dwangsom-payment and the rest of TEMPLATES) in
+ * en/nl and mails them to the recipient through {@see TermNoticeSender}, which
+ * asks integriq first and sends each notice once.
+ *
+ * It used to hand them to BerichtenboxRoutingService::routeToBerichtenbox(),
+ * which only logged and returned a derived id, so no notice reached anyone.
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -35,6 +37,7 @@ use OCA\Dossiq\Service\CaseType\CaseTypeHandling;
 use InvalidArgumentException;
 use OCA\Dossiq\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCA\Dossiq\Service\Termijn\TermLetters;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
@@ -64,7 +67,7 @@ class TermijnNotificationService {
 	 * Constructor.
 	 *
 	 * @param TermijnService $termService Termijn service.
-	 * @param BerichtenboxRoutingService $router Router (dossiq notification-router).
+	 * @param TermNoticeSender $sender Mails a notice once, after integriq allows it.
 	 * @param LoggerInterface $logger Logger.
 	 * @param IJobList|null $jobList Optional job list for async dispatch.
 	 * @param TermLetters $letters The wording of every term notification. Defaulted rather than
@@ -73,7 +76,7 @@ class TermijnNotificationService {
 	 */
 	public function __construct(
 		private readonly TermijnService $termService,
-		private readonly BerichtenboxRoutingService $router,
+		private readonly TermNoticeSender $sender,
 		private readonly LoggerInterface $logger,
 		private readonly ?IJobList $jobList = null,
 		private readonly TermLetters $letters = new TermLetters(),
@@ -152,9 +155,12 @@ class TermijnNotificationService {
 	 * @param array<string, mixed> $context Extra context (zaak ref, dates, amounts).
 	 *
 	 * @return array<string, mixed> Dispatched payload (with rendered subject +
-	 *                              body and the `verzending` delivery record).
+	 *                              body and the `dispatch` delivery record).
+	 *
+	 * @throws \OCA\Dossiq\Exception\NoticeNotSentException When nothing was sent.
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 * @spec openspec/changes/termijn-notices-send/specs/burger-notifications/spec.md#requirement-a-term-notice-is-mailed-after-integriq-allows-it-req-term-070
 	 */
 	public function sendTermijnNotification(
 		string $type,
@@ -173,15 +179,17 @@ class TermijnNotificationService {
 		$payload['deadlineInstance'] = $termInstanceId;
 		$payload['template'] = $type;
 
-		// Route the rendered notification through the dossiq notification
-		// router so the burger actually receives it; the returned delivery
-		// record (kanaal / berichtId / verzondenOp) is attached to the payload
-		// and is what the caller persists as proof of dispatch.
-		$payload['dispatch'] = $this->router->routeToBerichtenbox(
-			[
-				'reference' => $termInstanceId,
-				'addressee' => (array)($context['addressee'] ?? []),
-			]
+		// Mail it. The sender throws when nothing went out, so a caller that
+		// gets a payload back holds a record of a notice that left (or that an
+		// earlier run already sent), never a record of one that did not.
+		$payload['dispatch'] = $this->sender->send(
+			template: $type,
+			instanceId: $termInstanceId,
+			recipient: $recipientUserId,
+			caseRef: $this->caseRefOf(instance: ($instance ?? []), context: $context),
+			subject: (string)$payload['subject'],
+			body: (string)$payload['body'],
+			dedupeKey: (string)($context['dedupeKey'] ?? ''),
 		);
 
 		$this->logger->info(
@@ -190,12 +198,33 @@ class TermijnNotificationService {
 				'type' => $type,
 				'recipient' => $recipientUserId,
 				'instance' => $termInstanceId,
-				'notificationChannel' => $payload['dispatch']['notificationChannel'],
+				'notificationChannel' => (string)($payload['dispatch']['notificationChannel'] ?? ''),
+				'duplicate' => (($payload['dispatch']['duplicate'] ?? false) === true),
 			]
 		);
 
 		return $payload;
 	}//end sendTermijnNotification()
+
+	/**
+	 * The case a notice is about, as integriq's case-scoped opt-out knows it.
+	 *
+	 * The term's own case link first, which is the case UUID the unsubscribe
+	 * link of a case mail carries; the caller's context otherwise.
+	 *
+	 * @param array<string, mixed> $instance The term instance, or [].
+	 * @param array<string, mixed> $context  The caller's context.
+	 *
+	 * @return string The case reference, or ''.
+	 */
+	private function caseRefOf(array $instance, array $context): string {
+		$fromTerm = trim((string)($instance['case'] ?? ''));
+		if ($fromTerm !== '') {
+			return $fromTerm;
+		}
+
+		return trim((string)($context['case'] ?? ''));
+	}//end caseRefOf()
 
 	/**
 	 * Render a template (nl) into a payload with subject + body.

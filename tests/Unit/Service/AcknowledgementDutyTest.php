@@ -31,7 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Portal\PortalContributionProvider;
 use OCA\Dossiq\Service\AcknowledgementService;
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
 use OCA\Dossiq\Service\CaseFieldWriter;
 use OCA\Dossiq\Service\CaseTypeAcknowledgement;
 use OCA\Dossiq\Service\CaseTypeResolver;
@@ -102,7 +102,7 @@ class AcknowledgementCaseStore {
  * @covers \OCA\Dossiq\Service\AcknowledgementService
  *
  * @uses \OCA\Dossiq\Portal\PortalContributionProvider
- * @uses \OCA\Dossiq\Service\BerichtenboxRoutingService
+ * @uses \OCA\Dossiq\Service\Termijn\TermNoticeSender
  * @uses \OCA\Dossiq\Service\CaseFieldWriter
  * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
  * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
@@ -191,7 +191,7 @@ class AcknowledgementDutyTest extends TestCase {
 			termService: $terms,
 			notifications: new TermijnNotificationService(
 				termService: $this->createMock(originalClassName: TermijnService::class),
-				router: new BerichtenboxRoutingService(logger: $logger),
+				sender: $this->sentNotices(),
 				logger: $logger
 			),
 			contacts: new CaseContactDirectory(),
@@ -488,4 +488,18 @@ class AcknowledgementDutyTest extends TestCase {
 		self::assertStringContainsString(needle: '2026-11-01', haystack: $result['payload']['body']);
 		self::assertStringContainsString(needle: 'Dakkapel Kerkstraat 12', haystack: $result['payload']['body']);
 	}//end testTheMessageCarriesTheKenmerkAndTheDeadline()
+
+	/**
+	 * A sender that answers a delivery record, so these tests stay about the duty.
+	 *
+	 * The mail itself is TermNoticeDeliveryTest's subject.
+	 *
+	 * @return TermNoticeSender The sender.
+	 */
+	private function sentNotices(): TermNoticeSender {
+		$sender = $this->createMock(originalClassName: TermNoticeSender::class);
+		$sender->method('send')->willReturn(['notificationChannel' => 'email', 'sent' => true, 'duplicate' => false]);
+
+		return $sender;
+	}//end sentNotices()
 }//end class

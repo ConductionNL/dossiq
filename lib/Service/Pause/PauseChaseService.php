@@ -284,6 +284,8 @@ class PauseChaseService {
 			return false;
 		}
 
+		$number = ($this->schedule->sent(instance: $instance) + 1);
+
 		try {
 			$this->notifications->sendTermijnNotification(
 				self::TEMPLATE,
@@ -293,6 +295,10 @@ class PauseChaseService {
 					'case' => $caseId,
 					'chaseText' => (string)$reason['chaseText'],
 					'pauseDeadline' => (string)($instance['pauseDeadline'] ?? ''),
+					// One name per reminder: the engine rung and the daily sweep
+					// asking for reminder N on this term ask for the same notice,
+					// and the sender sends it once.
+					'dedupeKey' => $instanceId . ':chase:' . $number,
 				],
 			);
 		} catch (Throwable $e) {
@@ -305,8 +311,6 @@ class PauseChaseService {
 			);
 			return false;
 		}//end try
-
-		$number = ($this->schedule->sent(instance: $instance) + 1);
 
 		$this->termService->updateTermijnInstance(
 			$instanceId,
