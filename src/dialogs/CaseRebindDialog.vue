@@ -16,11 +16,19 @@
   names and every refusal sentence come from the server, so what this shows and
   what the write does cannot disagree.
 
+  Once a target is picked, the dialog shows what happens to the answers on the
+  case (CaseRebindImpact): what is removed, what carries over where, and what
+  the new type needs now. Every move and answer asks the server again, so the
+  groups on screen are always the ones the rebind will apply. Removed values
+  must be confirmed, and the POST names them, so a case that changed after the
+  preview is refused rather than rebound blind.
+
   A reason is required, and it goes on the case's journal beside both case type
-  ids. The number, the folder, the documents and the roles do not change: this
+  ids, with every removed value. The number, the folder, the documents and the roles do not change: this
   is a change of blueprint, not a new case.
 
   @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+  @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 -->
 <template>
 	<NcDialog
@@ -75,25 +83,14 @@
 					{{ preview.results.note }}
 				</p>
 
-				<div
-					v-if="preview.missingProperties.length > 0"
-					data-testid="case-rebind-missing">
-					<p class="case-rebind__warning">
-						{{
-							t(
-								'dossiq',
-								'{type} asks for these in that status, and this case does not carry them yet.',
-								{ type: preview.to.title },
-							)
-						}}
-					</p>
-					<NcTextField
-						v-for="name in preview.missingProperties"
-						:key="name"
-						v-model="answers[name]"
-						:data-testid="`case-rebind-property-${name}`"
-						:label="name" />
-				</div>
+				<CaseRebindImpact
+					v-if="preview.impact"
+					v-model:remap="remap"
+					v-model:answers="answers"
+					v-model:dropConfirmed="dropConfirmed"
+					:impact="preview.impact"
+					:targetTitle="preview.to.title"
+					:statusChosen="Boolean(status)" />
 
 				<p class="case-rebind__note">
 					{{ preview.run.reason }}
@@ -139,19 +136,22 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
+import CaseRebindImpact from '../components/case/CaseRebindImpact.vue'
 
 const PAGE_REFRESH = 'cn:page:refresh'
+
+/** How long a typed answer settles before the server is asked again. */
+const PREVIEW_DEBOUNCE_MS = 300
 
 export default {
 	name: 'CaseRebindDialog',
 
 	components: {
+		CaseRebindImpact,
 		NcButton,
 		NcDialog,
 		NcSelect,
 		NcTextArea,
-		NcTextField,
 	},
 
 	props: {
@@ -175,6 +175,10 @@ export default {
 			status: '',
 			preview: null,
 			answers: {},
+			remap: {},
+			dropConfirmed: false,
+			previewing: false,
+			previewSeq: 0,
 			reason: '',
 			error: '',
 			loading: true,
@@ -241,21 +245,54 @@ export default {
 		 * @return {boolean} True when it may.
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 		 */
 		canConfirm() {
 			return (
 				this.busy === false
+				&& this.previewing === false
 				&& Boolean(this.target)
 				&& Boolean(this.status)
 				&& this.preview?.canRebind === true
+				&& (this.droppedNames.length === 0 || this.dropConfirmed)
 				&& this.reason.trim().length > 0
 			)
+		},
+
+		/**
+		 * The answers the server says this rebind removes.
+		 *
+		 * @return {Array<string>} Their names.
+		 *
+		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 */
+		droppedNames() {
+			return (this.preview?.impact?.dropped ?? []).map((row) => row.name)
 		},
 	},
 
 	watch: {
 		target: 'onTargetChange',
 		status: 'loadPreview',
+		remap: { handler: 'schedulePreview', deep: true },
+		answers: { handler: 'schedulePreview', deep: true },
+		/**
+		 * A different list of removed answers needs a fresh confirmation.
+		 *
+		 * @param {Array<string>} now The names now.
+		 * @param {Array<string>} before The names before.
+		 *
+		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 */
+		droppedNames(now, before) {
+			if (now.join('\n') !== (before ?? []).join('\n')) {
+				this.dropConfirmed = false
+			}
+		},
+	},
+
+	beforeUnmount() {
+		clearTimeout(this.previewTimer)
 	},
 
 	async mounted() {
@@ -295,11 +332,29 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 		 */
 		async onTargetChange() {
 			this.status = ''
 			this.answers = {}
+			this.remap = {}
+			this.dropConfirmed = false
+			this.preview = null
 			await this.loadPreview()
+		},
+
+		/**
+		 * Ask the server again once a move or an answer settles.
+		 *
+		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+		 */
+		schedulePreview() {
+			clearTimeout(this.previewTimer)
+			this.previewing = true
+			this.previewTimer = setTimeout(
+				() => this.loadPreview(),
+				PREVIEW_DEBOUNCE_MS,
+			)
 		},
 
 		/**
@@ -308,19 +363,40 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 		 */
 		async loadPreview() {
-			this.preview = null
+			clearTimeout(this.previewTimer)
 			if (!this.target) {
+				this.preview = null
+				this.previewing = false
 				return
 			}
+			// Only the newest answer counts: a slow reply to an older question
+			// must not overwrite the groups for the current one.
+			const seq = ++this.previewSeq
+			this.previewing = true
 			try {
 				const { data } = await axios.get(this.endpoint(), {
-					params: { target: this.target, status: this.status },
+					params: {
+						target: this.target,
+						status: this.status,
+						remap: this.remap,
+						properties: this.answers,
+					},
 				})
-				this.preview = data?.preview ?? null
+				if (seq === this.previewSeq) {
+					this.preview = data?.preview ?? null
+					this.error = ''
+				}
 			} catch (e) {
-				this.error = this.refusalOf(e)
+				if (seq === this.previewSeq) {
+					this.error = this.refusalOf(e)
+				}
+			} finally {
+				if (seq === this.previewSeq) {
+					this.previewing = false
+				}
 			}
 		},
 
@@ -330,6 +406,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+		 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 		 */
 		async confirm() {
 			if (!this.canConfirm) {
@@ -343,6 +420,8 @@ export default {
 					status: this.status,
 					reason: this.reason.trim(),
 					properties: this.answers,
+					remap: this.remap,
+					confirmDropped: this.droppedNames,
 				})
 				// Tell the whole page: the header, the stages widget and the
 				// attributes panel all read the case type.
