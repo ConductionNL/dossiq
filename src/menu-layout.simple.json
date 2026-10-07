@@ -597,8 +597,9 @@
 						"gridX": 0,
 						"gridY": 0,
 						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
+						"gridHeight": 1,
+						"showTitle": false,
+						"sizeToContent": true
 					},
 					{
 						"id": "s2",
@@ -606,7 +607,7 @@
 						"gridX": 0,
 						"gridY": 2,
 						"gridWidth": 12,
-						"gridHeight": 2,
+						"gridHeight": 1,
 						"showTitle": false,
 						"sizeToContent": true,
 						"borderless": true
@@ -1202,7 +1203,9 @@
 					}
 				],
 				"showTitle": true,
-				"countSubtitle": "{total} cases"
+				"countSubtitle": "{total} cases",
+				"showViewToggle": false,
+				"headerFilters": false
 			},
 			"configPatch": {
 				"quickFilters": {

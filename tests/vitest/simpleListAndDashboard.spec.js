@@ -213,6 +213,14 @@ describe('the cases list', () => {
 		expect(before.countSubtitle).toBeUndefined()
 	})
 
+	it('draws the table without the view switch and the column filters, which the design has none of', () => {
+		// The filters stay in the filter panel; the full list keeps both.
+		expect(simple.showViewToggle).toBe(false)
+		expect(simple.headerFilters).toBe(false)
+		expect(before.showViewToggle).toBeUndefined()
+		expect(before.headerFilters).toBeUndefined()
+	})
+
 	it('touches nothing else on the list', () => {
 		const rest = ({
 			quickFilters,
@@ -221,6 +229,8 @@ describe('the cases list', () => {
 			folderSidebar,
 			showTitle,
 			countSubtitle,
+			showViewToggle,
+			headerFilters,
 			...others
 		}) => others
 		expect(rest(simple)).toEqual(rest(before))
@@ -355,6 +365,12 @@ describe('the dashboard', () => {
 		const entry = (id) =>
 			simple.config.layout.find((item) => item.widgetId === id)
 		expect(entry('simple-first-today').borderless).toBe(true)
+		// Greeting and card take the height of what they hold, so the switch
+		// lines up with the greeting and no empty cell runs on below either.
+		for (const id of ['simple-greeting', 'simple-first-today']) {
+			expect(entry(id).sizeToContent, id).toBe(true)
+			expect(entry(id).gridHeight, id).toBe(1)
+		}
 		expect(simple.config.showWidgetActions).toBe(false)
 		for (const id of [
 			'simple-my-open',
