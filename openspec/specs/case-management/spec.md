@@ -969,10 +969,18 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 ### Requirement: Every new case gets a number (REQ-CM-25)
 
 Every new case gets a number like 2026-0042 without you typing it. The `case`
-schema SHALL declare `identifier` as a generated value: the year of the start
-date, a hyphen and a four-digit sequence that restarts every year. The field
-SHALL be read-only on every form and SHALL NOT appear on the New case form. A
-case that already holds an identifier SHALL keep it.
+schema SHALL declare `identifier` as a generated identifier through
+`x-openregister-generated`: sequence `case`, format `{year}-{seq:4}`,
+`resetOn: year`, so OpenRegister takes the number under a lock inside the
+create transaction. The field SHALL be read-only on every form and SHALL NOT
+appear on the New case form. A case that already holds an identifier SHALL
+keep it, and the counter SHALL advance past the number it holds. A change to
+the number SHALL be refused, and the refusal SHALL read in OpenRegister's own
+words.
+
+The year SHALL be the year the case was filed. The retired
+`x-openregister-calculations` expression read the start date instead; see
+design D-2.
 
 **Feature tier**: MVP
 
@@ -990,7 +998,7 @@ case that already holds an identifier SHALL keep it.
 - **GIVEN** a case posted to the case endpoint without an identifier
 - **WHEN** the answer arrives
 - **THEN** its identifier SHALL match `YYYY-NNNN`
-- **AND** the year SHALL be the year of its start date
+- **AND** the year SHALL be the year it was filed
 
 #### Scenario: An existing number stays
 @e2e tests/e2e/case-identity.spec.ts
@@ -998,6 +1006,30 @@ case that already holds an identifier SHALL keep it.
 - **GIVEN** a case that holds the identifier BZW-2025-17
 - **WHEN** you edit and save its title
 - **THEN** its identifier SHALL still be BZW-2025-17
+
+#### Scenario: Two cases filed at once get two numbers
+@e2e exclude {the lock lives in OpenRegister's SequenceService and is proven by its own concurrency test; dossiq declares the annotation and can only assert that}
+
+- **GIVEN** the `case` schema declaring sequence `case`
+- **WHEN** two cases are filed in the same second
+- **THEN** they SHALL hold two different numbers
+
+#### Scenario: A number you supply is kept and pushes the counter on
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case imported with the identifier 2026-0120
+- **WHEN** the next case is filed without one
+- **THEN** the imported case SHALL still read 2026-0120
+- **AND** the new case SHALL NOT be given a number below it
+
+#### Scenario: Changing the number is refused in OpenRegister's words
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case numbered 2026-0042
+- **WHEN** you send an update that changes the identifier to 2026-0099
+- **THEN** the write SHALL be refused
+- **AND** the message SHALL name the number that was issued
+- **AND** the case SHALL still read 2026-0042
 
 ### Requirement: You tag a case and filter on tags (REQ-CM-26)
 
@@ -1341,6 +1373,1677 @@ requirement does not restate it.
 - **WHEN** you set Deadline before to 10 days from today
 - **THEN** the list SHALL show the case due in 3 days and SHALL NOT show the case due in 30 days
 - **AND** the chip Mine SHALL still be active
+
+### Requirement: An admin inspects a case from its page (REQ-CM-36)
+
+`#CaseDetail` SHALL offer Inspect raw data and Inspect flow runs to
+administrators only. Inspect raw data SHALL show the case exactly as Open
+Register stored it, and Inspect flow runs SHALL open Open Register's runs page
+filtered to the case.
+
+Both are affordances and not controls: Open Register answers the read either
+way, and it is the one that refuses.
+
+#### Scenario: Raw data shows the stored case
+@e2e tests/e2e/admin-inspect.spec.ts
+
+- **GIVEN** you are an admin on a case page
+- **WHEN** you press Inspect raw data
+- **THEN** a dialog SHALL show the case object as Open Register stored it
+
+#### Scenario: Handlers do not see Inspect
+@e2e tests/e2e/admin-inspect.spec.ts
+
+- **GIVEN** you are a handler on a case page
+- **WHEN** you open the header actions
+- **THEN** neither Inspect entry SHALL be offered
+
+### Requirement: You claim an unassigned case with one click (REQ-CM-33)
+
+`#CaseDetail` SHALL offer Claim on an open case. Claim SHALL set `assignee` to
+the signed-in user and SHALL record nothing beyond the audit row the field
+change already carries. A claim on a case that already has a handler SHALL be
+refused with a status naming the rule, and SHALL leave the assignee unchanged.
+`#Queue` and `#Cases` SHALL offer Claim as a row action.
+
+#### Scenario: Claim from the case page
+@e2e tests/e2e/case-claim.spec.ts
+
+- **GIVEN** an open case without an assignee
+- **WHEN** you press Claim
+- **THEN** the case SHALL have you as assignee
+- **AND** a second claim SHALL be refused, naming that you already hold it
+
+#### Scenario: Claim from the queue
+@e2e tests/e2e/case-claim.spec.ts
+
+- **GIVEN** the Queue lists an unassigned case
+- **WHEN** you press Claim on its row
+- **THEN** the row SHALL leave the Queue
+- **AND** the case SHALL appear under Mine on Cases
+
+### Requirement: You release a case you hold (REQ-CM-34)
+
+`#CaseDetail` SHALL offer Release on an open case. Release SHALL clear
+`assignee`. A release by anyone who is not the assignee SHALL be refused with a
+status naming the rule, SHALL show that refusal, and SHALL change nothing.
+
+#### Scenario: Release returns the case to the queue
+@e2e tests/e2e/case-claim.spec.ts
+
+- **GIVEN** a case assigned to you
+- **WHEN** you press Release
+- **THEN** the case SHALL have no assignee
+- **AND** it SHALL be listed on the Queue
+
+### Requirement: An edit takes the platform lock and names its holder (REQ-CM-39)
+
+Opening the case edit form SHALL take OpenRegister's object lock and
+closing it SHALL release it. While another user holds the lock, the case
+header SHALL show the holder and the time, and Edit SHALL be disabled with
+that message. A write refused by the lock SHALL show the holder's name and
+keep the input.
+
+#### Scenario: Two handlers, one lock
+@e2e tests/e2e/case-edit-lock.spec.ts
+
+- **GIVEN** Anna has the edit form of a case open
+- **WHEN** you open the same case
+- **THEN** the header SHALL read "Being edited by Anna since <time>"
+- **AND** Edit SHALL be disabled
+
+#### Scenario: Leaving releases
+@e2e tests/e2e/case-edit-lock.spec.ts
+
+- **GIVEN** Anna leaves the page without saving
+- **WHEN** you reload the case
+- **THEN** Edit SHALL be enabled
+
+### Requirement: A held case cannot be deleted, and you are told why (REQ-CM-35)
+
+A delete of a `case` SHALL be refused while any of these hold: an open
+statutory term (`deadlineInstance` in `lopend`, `verlengd` or `paused`), a
+case naming it as `parentCase`, an active legal hold, or a closed case still
+inside its retention period. The refusal SHALL name every rule that holds in
+one message and SHALL carry a 4xx status.
+
+#### Scenario: An open term blocks the delete
+@e2e tests/e2e/case-delete-guard.spec.ts
+
+- **GIVEN** an open case with a running beslistermijn
+- **WHEN** you delete the case
+- **THEN** the delete SHALL be refused with status 409
+- **AND** the message SHALL name the open term
+
+#### Scenario: Two rules are named together
+@e2e exclude covered by CaseDeleteGuardListenerTest over the store stub; the two-rule fixture needs a sub-case and a term on one case
+
+- **GIVEN** a case with a sub-case and a running term
+- **WHEN** the delete event fires
+- **THEN** the event SHALL be stopped
+- **AND** the message SHALL name both the sub-case and the term
+
+#### Scenario: A free case is deleted
+@e2e tests/e2e/case-delete-guard.spec.ts
+
+- **GIVEN** a closed case past its retention with no sub-cases and no hold
+- **WHEN** you delete it
+- **THEN** the delete SHALL succeed
+
+### Requirement: You follow a case you do not own (REQ-CM-40)
+
+`#CaseDetail` SHALL offer Follow, creating the platform's subscription of
+the signed-in user to the case, and Unfollow. `#Cases` SHALL carry a lens
+Followed and `#MyWorkHome` a tile Cases I follow, both over the platform's
+subscribed-by-me query. The People tab SHALL list the followers.
+
+#### Scenario: Follow a colleague's case
+@e2e tests/e2e/case-followers.spec.ts
+
+- **GIVEN** a case assigned to Anna
+- **WHEN** you press Follow
+- **THEN** the case SHALL appear under Followed on Cases
+- **AND** you SHALL be listed under Followers on the People tab
+
+#### Scenario: A follower hears
+@e2e tests/e2e/case-followers.spec.ts
+
+- **GIVEN** you follow the case
+- **WHEN** Anna changes its status
+- **THEN** you SHALL receive the platform's notification for it
+
+#### Scenario: Unfollow
+@e2e tests/e2e/case-followers.spec.ts
+
+- **GIVEN** you follow the case
+- **WHEN** you press Unfollow
+- **THEN** it SHALL leave the Followed lens
+
+### Requirement: Two cases merge into one through the platform (REQ-CM-37)
+
+The `case` schema SHALL declare its `mdm-merge` rule (relinked parts, kept
+fields, reversal window). `#CaseDetail` SHALL offer Merge into, which picks
+a survivor and hands the merge to OpenRegister. The merged case SHALL end
+with result `merged` and `mergedInto` set, and its active term SHALL be
+completed with reason merged. A reversal inside the window SHALL reopen
+the case and re-arm its term.
+
+#### Scenario: A duplicate is merged
+@e2e tests/e2e/case-merge.spec.ts
+
+- **GIVEN** two open cases for the same applicant, each with a task
+- **WHEN** you merge the second into the first
+- **THEN** the first SHALL carry both tasks
+- **AND** the second SHALL read result merged with a link to the first
+
+#### Scenario: The merged term is closed, the survivor's counts
+@e2e exclude covered by tests/Unit/Service/CaseMergeServiceTest.php::testTheMergedTermIsCompletedAndTheSurvivorsIsUntouched
+
+- **GIVEN** the merge above with a running term on each case
+- **WHEN** the merge event is handled
+- **THEN** the second case's instance SHALL be completed with reason merged
+- **AND** the first case's instance SHALL be unchanged
+
+### Requirement: The old number still finds the case (REQ-CM-38)
+
+A mail or a portal message addressed to a merged case SHALL be routed to
+the survivor, and the merged case's public status page SHALL show the
+survivor's status.
+
+#### Scenario: A reply to the old number
+@e2e exclude the inbound path runs in the mail intake; covered by tests/Unit/Service/CaseEmailMatchServiceTest.php::testMergedResolvesToSurvivor
+
+- **GIVEN** a mail quoting the merged case's number
+- **WHEN** it is matched
+- **THEN** it SHALL be filed on the survivor
+
+#### Scenario: The old public link
+@e2e tests/e2e/case-merge.spec.ts
+
+- **GIVEN** the merged case's public status link
+- **WHEN** an applicant opens it
+- **THEN** the survivor's status SHALL be shown
+
+### Requirement: A closed case is archived and comes back (REQ-CM-41)
+
+`#CaseDetail` SHALL offer Archive on a case in a final status, writing the
+platform's archive state, and SHALL offer Restore on an archived case.
+Archiving SHALL also set `case.archiveStatus` to `gearchiveerd` and
+restoring SHALL set it back, with the platform's marker as the state that
+is read. The ZGW delete guard SHALL be unchanged.
+
+#### Scenario: archive a closed case
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** a case in a final status
+- **WHEN** a handler presses Archive
+- **THEN** the case SHALL be archived
+- **AND** `case.archiveStatus` SHALL read `gearchiveerd`
+
+#### Scenario: archive is not offered on a running case
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** a case in a status that is not final
+- **WHEN** a handler opens the actions menu
+- **THEN** Archive SHALL NOT be offered
+
+#### Scenario: restore in one action
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** an archived case
+- **WHEN** a handler presses Restore
+- **THEN** the case SHALL be back in the working lenses
+- **AND** `case.archiveStatus` SHALL read its previous value
+
+### Requirement: Archived cases leave the working lenses and keep one of their own (REQ-CM-42)
+
+`#Cases` and `#Queue` SHALL exclude archived cases from every lens except
+an Archived lens, and `#MyWorkHome` tiles and the case search SHALL take
+the same default. The Archived lens SHALL add no navigation entry.
+
+#### Scenario: the archived case is gone from Cases
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** ten cases of which three are archived
+- **WHEN** a handler opens Cases
+- **THEN** seven SHALL be listed
+
+#### Scenario: the Archived lens finds them
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** the same ten cases
+- **WHEN** the handler opens the Archived lens
+- **THEN** the three archived cases SHALL be listed
+
+#### Scenario: search does not return an archived case
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** an archived case whose title contains a distinctive word
+- **WHEN** a handler searches for that word
+- **THEN** the archived case SHALL NOT be in the results
+
+#### Scenario: a tile and its list agree
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** the same ten cases
+- **WHEN** the handler reads the My work tile counting them
+- **THEN** the tile SHALL count seven
+
+### Requirement: An archived case is read-only and says so (REQ-CM-43)
+
+An archived case SHALL render without edit affordances. A write attempted
+on it anyway SHALL show the platform's refusal message rather than
+failing silently.
+
+#### Scenario: the fields cannot be edited
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** an archived case
+- **WHEN** a handler opens it
+- **THEN** no field SHALL be editable and no status transition SHALL be offered
+
+#### Scenario: a write shows the reason
+@e2e tests/e2e/archived-cases-leave-the-lenses.spec.ts
+
+- **GIVEN** an archived case and a handler who reaches a write another way
+- **WHEN** the write is attempted
+- **THEN** the platform's refusal message SHALL be shown, naming the archive
+
+### Requirement: Every date on a case is written through one path (REQ-CM-45)
+
+Every write path that sets a date or a moment on a case, or on an object
+linked to a case, SHALL normalise it through `CaseDateNormaliser`. A
+calendar date SHALL be stored as `Y-m-d`. A moment SHALL be stored as
+ATOM with an explicit offset. No other class in `lib/` SHALL parse or
+format a date.
+
+An unreadable value SHALL be refused at the write path. It SHALL NOT be
+stored raw, and it SHALL NOT be replaced by today.
+
+#### Scenario: the same date through every write path stores one value
+@e2e tests/e2e/one-date-write-path.spec.ts
+
+- **GIVEN** a tenant whose time zone is `Europe/Amsterdam`
+- **WHEN** `2028-01-31` is submitted through each of the nine write paths that set a case date
+- **THEN** every stored value SHALL be the same string
+- **AND** each SHALL carry the offset the tenant zone gives that date
+
+#### Scenario: an unreadable date is refused, not guessed
+@e2e tests/e2e/one-date-write-path.spec.ts
+
+- **GIVEN** an advice request with `deadline` set to `31-01-2028`
+- **WHEN** it is submitted
+- **THEN** the write SHALL be refused with a message naming the field
+- **AND** no advice request SHALL be created
+- **AND** the deadline SHALL NOT default to today
+
+#### Scenario: a date written yesterday still reads the same today
+
+- **GIVEN** a case whose `endDate` was written before this change
+- **WHEN** the case is read
+- **THEN** the stored value SHALL be returned unchanged
+
+### Requirement: The time zone is administered and read once (REQ-CM-46)
+
+The zone in which a case date is interpreted SHALL come from the
+administered setting. `CaseDateNormaliser` SHALL be the only class that
+resolves it. It SHALL read the engine calendar's zone when openregister
+`calendar-time-zone` is available, and `tenantConfiguration.timezone`
+otherwise. No class in `lib/` SHALL name an IANA zone as a literal.
+
+#### Scenario: a Belgian tenant gets Belgian timestamps
+@e2e tests/e2e/one-date-write-path.spec.ts
+
+- **GIVEN** a tenant whose `tenantConfiguration.timezone` is `Europe/Brussels`
+- **WHEN** a case is created and a StUF message is built for it
+- **THEN** both SHALL carry the offset for `Europe/Brussels`
+
+#### Scenario: the engine calendar wins over the tenant setting
+
+- **GIVEN** a working calendar declaring `Europe/Amsterdam` and a tenant declaring `UTC`
+- **WHEN** a case date is normalised
+- **THEN** the calendar's zone SHALL be used
+
+#### Scenario: no calendar falls back to the tenant
+
+- **GIVEN** an instance with no working calendar configured
+- **WHEN** a case date is normalised
+- **THEN** the tenant zone SHALL be used
+- **AND** the fallback SHALL be recorded in the log once per request, not per date
+
+### Requirement: A second date path cannot be added unnoticed (REQ-CM-47)
+
+A structural test SHALL fail when a class in `lib/` other than
+`CaseDateNormaliser` parses or formats a date, and when a private method
+in `lib/` normalises one. The failure SHALL name `CaseDateNormaliser` and
+the method the author should call instead.
+
+#### Scenario: a new private normaliser fails the build
+
+- **GIVEN** a new private method in a service that parses a date string
+- **WHEN** the structural test runs
+- **THEN** it SHALL fail
+- **AND** the message SHALL name the file, the method and `CaseDateNormaliser`
+
+#### Scenario: a hard-coded zone fails the build
+
+- **GIVEN** a new `new DateTimeZone('Europe/Amsterdam')` anywhere in `lib/`
+- **WHEN** the structural test runs
+- **THEN** it SHALL fail
+
+#### Scenario: the normaliser itself is allowed
+
+- **GIVEN** `lib/Service/CaseDateNormaliser.php` parsing and formatting dates
+- **WHEN** the structural test runs
+- **THEN** it SHALL pass
+
+### Requirement: A bulk act is handed to a job and reports per row (REQ-BLK-01)
+
+dossiq SHALL hand every bulk act on cases to openregister's bulk job and
+SHALL NOT iterate in the browser. dossiq SHALL render the job's progress
+and its per-row outcome, including a list of the rows it skipped and the
+reason for each. dossiq SHALL NOT implement a job runner, a retry or a
+cancellation.
+
+#### Scenario: four hundred cases, twelve skipped, and the twelve are named
+@e2e tests/e2e/bulk-actions-report-progress.spec.ts
+
+- **GIVEN** a bulk status transition over four hundred cases where twelve refuse
+- **WHEN** the job finishes
+- **THEN** the handler SHALL see the twelve, each with its reason
+
+#### Scenario: closing the tab does not stop the act
+@e2e tests/e2e/bulk-actions-report-progress.spec.ts
+
+- **GIVEN** a running bulk act
+- **WHEN** the handler closes the page and returns
+- **THEN** the job SHALL still be running or finished
+- **AND** its outcome SHALL be readable
+
+#### Scenario: dossiq runs no job of its own
+
+- **GIVEN** the dossiq tree
+- **WHEN** it is read for a bulk iteration over cases
+- **THEN** none SHALL exist outside the hand-off to the job
+
+### Requirement: A bulk distribution needs a written justification (REQ-BLK-02)
+
+Reassigning cases in bulk SHALL require a written justification before the
+job is handed over. The justification SHALL be stored with the act and
+SHALL be readable afterwards. An empty justification SHALL refuse the act.
+
+#### Scenario: a coordinator explains a mass reassignment
+@e2e tests/e2e/bulk-actions-report-progress.spec.ts
+
+- **GIVEN** a coordinator reassigning four hundred cases
+- **WHEN** they submit without a justification
+- **THEN** the act SHALL be refused
+
+#### Scenario: the reason survives the act
+@e2e tests/e2e/bulk-actions-report-progress.spec.ts
+
+- **GIVEN** a completed bulk reassignment
+- **WHEN** the act is read afterwards
+- **THEN** the justification SHALL be shown with it
+
+### Requirement: A bulk attribute change is refused across case type versions (REQ-BLK-03)
+
+A bulk change to a case-type attribute SHALL be refused when the selection
+spans more than one version of a case type. The refusal SHALL happen at
+selection time, before any simulation, and SHALL name the versions in the
+selection.
+
+#### Scenario: a selection spanning two versions is stopped early
+@e2e tests/e2e/bulk-actions-report-progress.spec.ts
+
+- **GIVEN** a selection holding cases on two versions of one case type
+- **WHEN** a handler asks for a bulk attribute change
+- **THEN** it SHALL be refused, naming both versions
+- **AND** no simulation SHALL run
+
+### Requirement: Select-all says which all it means (REQ-BLK-04)
+
+When a handler selects every row, dossiq SHALL state in words whether the
+selection is the current page or every row matching the search, and SHALL
+state the number. Moving from the page to the whole result SHALL be a
+separate, deliberate act.
+
+#### Scenario: a handler knows whether they have 25 or 400
+@e2e tests/e2e/bulk-actions-report-progress.spec.ts
+
+- **GIVEN** a search matching four hundred cases, showing twenty-five
+- **WHEN** the handler selects all on the page
+- **THEN** the product SHALL say twenty-five on this page
+- **AND** SHALL offer to select all four hundred as a separate act
+
+### Requirement: A departed handler's caseload is released through the same job (REQ-BLK-05)
+
+Releasing the caseload of a handler who left or is absent SHALL build a
+selection and hand it to the same bulk job, with the same justification
+requirement. `SubstitutionController` SHALL NOT iterate over cases itself.
+
+#### Scenario: a handler leaves and their work is released
+@e2e tests/e2e/bulk-actions-report-progress.spec.ts
+
+- **GIVEN** a handler with forty open cases who has left
+- **WHEN** a coordinator releases their caseload with a justification
+- **THEN** the release SHALL run as a job reporting per row
+
+### Requirement: A case shows who holds which right, and where the grant came from (REQ-CGP-01)
+
+A case SHALL be able to show who holds which right on it and the source of
+each grant, read from openregister's provenance. dossiq SHALL NOT compute
+an effective permission, SHALL NOT store a copy of a grant, and SHALL NOT
+summarise the provenance into a value of its own.
+
+#### Scenario: an auditor asks who could open this dossier
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a case whose grants come from a role, a group and a share
+- **WHEN** an authorised reader opens its access panel
+- **THEN** each holder SHALL be listed with the source of their grant
+
+#### Scenario: dossiq computes nothing
+@e2e exclude a structural scan of lib/, not a journey: the class whose existence it forbids has no page to open. tests/Unit/Architecture/NoSecondPermissionEvaluatorTest.php
+
+- **GIVEN** the dossiq tree
+- **WHEN** it is read for an effective-permission evaluator
+- **THEN** none SHALL exist
+
+### Requirement: A refusal names the rule that refused (REQ-CGP-02)
+
+When an act on a case is refused, dossiq SHALL show the rule that refused
+it, and SHALL NOT show only a status code. `CaseActionProvider` SHALL keep
+answering which actions the calling user may take, and SHALL read
+openregister's effective grants as well as its own guards.
+
+#### Scenario: a handler is told why, not just no
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a handler without the right to close a case
+- **WHEN** they try to close it
+- **THEN** the refusal SHALL name the rule that refused
+
+#### Scenario: the action list still answers up front
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a handler opening a case
+- **WHEN** the case is returned
+- **THEN** the actions they may take SHALL be returned with it
+- **AND** an action they may not take SHALL NOT be offered
+
+### Requirement: Case-type rights are declared per department, role and confidentiality (REQ-CGP-03)
+
+A case type SHALL declare its rights as a matrix of department by role,
+separately per confidentiality level. Confidentiality SHALL be a dimension
+of the declaration and SHALL NOT be folded into a role name.
+
+#### Scenario: a department may see the ordinary cases and not the confidential ones
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a case type granting a department read at the ordinary level only
+- **WHEN** a member of that department lists cases of that type
+- **THEN** the confidential ones SHALL NOT be listed
+
+#### Scenario: no role name carries a confidentiality level
+@e2e exclude the declared role vocabulary is read from the shipped register definitions, which no browser reaches. tests/Unit/Settings/CaseTypeRightsMatrixTest.php
+
+- **GIVEN** the declared roles
+- **WHEN** their names are read
+- **THEN** none SHALL encode a confidentiality level
+
+### Requirement: A group of case types is granted once (REQ-CGP-04)
+
+Case types SHALL be groupable, and a right SHALL be grantable on the group
+so that every type in it inherits the grant. Inheritance SHALL be
+openregister's, and dossiq SHALL NOT re-apply a group grant to each type.
+
+#### Scenario: a samenwerkingsverband grants once
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a group holding thirty case types and one grant on the group
+- **WHEN** a member opens a case of any of them
+- **THEN** the grant SHALL apply
+
+#### Scenario: adding a case type to the group needs no second grant
+@e2e tests/e2e/case-grants-name-their-source.spec.ts
+
+- **GIVEN** a granted group
+- **WHEN** a new case type joins it
+- **THEN** the grant SHALL apply to the new type without a further act
+
+### Requirement: Every row of the access panel names the rule behind it (REQ-CGP-05)
+
+The access panel SHALL read the permission set openregister publishes for
+the case itself, and SHALL show each holder with the verbs they hold and
+the rule behind each one: the level the rule is written at, the role it
+arrived through, and whether the verb is in the published catalogue.
+
+A verb the catalogue does not publish SHALL be shown as undeclared rather
+than dropped. dossiq SHALL NOT subtract a deny from a grant, and SHALL NOT
+fill in a rule openregister did not report.
+
+A caller who may read the case but may not review its access SHALL be told
+so, and that refusal SHALL NOT be rendered as a case with no rules on it.
+
+#### Scenario: an auditor sees the rule, not only the holder
+@e2e tests/e2e/case-grants-history-and-scope.spec.ts
+
+- **GIVEN** a case whose read is granted through a role written at the schema level
+- **WHEN** an authorised reader opens its access panel
+- **THEN** the row SHALL name the role and the level the rule is written at
+
+#### Scenario: a verb outside the catalogue is shown as undeclared
+@e2e exclude the catalogue is read by the shaping function, and an undeclared verb needs a register that ships one. tests/vitest/caseAccessPanel.spec.js
+
+- **GIVEN** a grant naming a verb the catalogue does not publish
+- **WHEN** the panel lists it
+- **THEN** the row SHALL say the verb is not declared
+
+#### Scenario: a reader without the right to review access is told so
+@e2e tests/e2e/case-grants-history-and-scope.spec.ts
+
+- **GIVEN** a reader who may open the case but holds no manage right on it
+- **WHEN** they open its access panel
+- **THEN** the panel SHALL say they may not review access here
+- **AND** the panel SHALL NOT report that no rule holds on the case
+
+### Requirement: The panel answers who held a right on a past date (REQ-CGP-06)
+
+A reader SHALL be able to ask the access panel for the set as it stood at a
+named moment, read from openregister's history of the object. The answer
+SHALL name who set the grant and which change took it away afterwards.
+
+A moment openregister cannot answer for SHALL be reported as unanswered.
+It SHALL NOT be shown as a moment at which nobody held anything.
+
+#### Scenario: an auditor asks who could open this dossier in March
+@e2e tests/e2e/case-grants-history-and-scope.spec.ts
+
+- **GIVEN** a case whose grants changed since March
+- **WHEN** a reader asks the panel for the set as it stood in March
+- **THEN** the holders of that date SHALL be listed with who set them
+
+#### Scenario: a date the trail does not reach says so
+@e2e exclude a trail shorter than the question needs a register seeded months back, which no run has. tests/vitest/caseAccessPanel.spec.js
+
+- **GIVEN** a case whose audit trail starts after the date asked about
+- **WHEN** the panel reports that date
+- **THEN** it SHALL say the set is unanswered for that moment
+
+### Requirement: A grant that ends, or that reaches one area, says so (REQ-CGP-07)
+
+A grant carrying an end SHALL be shown with the moment it ends, and a
+grant confined to named registers or schemas SHALL be shown with the area
+it reaches. dossiq SHALL read both from the rule openregister reported and
+SHALL NOT decide whether such a grant still answers.
+
+#### Scenario: a grant that runs out names its last day
+@e2e tests/e2e/case-grants-history-and-scope.spec.ts
+
+- **GIVEN** a grant written to end on a named date
+- **WHEN** the panel lists it
+- **THEN** the row SHALL name that date
+
+#### Scenario: a delegated administrator's area is on the row
+@e2e exclude the area is a property of the rule the panel renders, asserted on the shaping function. tests/vitest/caseAccessPanel.spec.js
+
+- **GIVEN** a manage grant confined to one register
+- **WHEN** the panel lists it
+- **THEN** the row SHALL name that register
+
+### Requirement: A case type may say when a right it grants ends (REQ-CGP-08)
+
+A row of a case type's rights matrix MAY declare when the grant it
+produces ends, written in the key and the format openregister reads, so
+that no translation stands between the declaration and the rule.
+
+The declaration SHALL be optional, and a row without it SHALL grant
+without an end.
+
+#### Scenario: a waarnemer is granted until the holiday ends
+@e2e exclude the declared vocabulary is read from the shipped register definitions, which no browser reaches. tests/Unit/Settings/CaseTypeRightsMatrixTest.php
+
+- **GIVEN** a rights row declaring the date its grant ends
+- **WHEN** the case type is saved
+- **THEN** the declaration SHALL be kept in openregister's own spelling
+
+#### Scenario: a row without an end grants without one
+@e2e exclude the same declaration read, with nothing on screen to open. tests/Unit/Settings/CaseTypeRightsMatrixTest.php
+
+- **GIVEN** a rights row that declares no end
+- **WHEN** the case type is saved
+- **THEN** the row SHALL remain valid
+
+### Requirement: A deleted case is recoverable for a stated period (REQ-CRW-01)
+
+Deleting a case SHALL pass `case-delete-guard` first, and a permitted
+delete SHALL put the case in openregister's recycle state rather than
+destroying it. The case SHALL read as deleted, SHALL show the date its
+recovery window ends, and SHALL be findable in a deleted lens on the case
+list. dossiq SHALL NOT implement a soft delete of its own.
+
+#### Scenario: a bezwaar deleted by mistake is still there
+@e2e tests/e2e/case-recycle-window.spec.ts
+
+- **GIVEN** a deleted bezwaar inside its recovery window
+- **WHEN** a handler opens the deleted lens
+- **THEN** the case SHALL be listed with the date its window ends
+
+#### Scenario: the guard still refuses what it refused before
+@e2e tests/e2e/case-recycle-window.spec.ts
+
+- **GIVEN** a case the delete guard refuses
+- **WHEN** a handler deletes it
+- **THEN** the delete SHALL be refused
+- **AND** the case SHALL NOT enter the recycle state
+
+#### Scenario: dossiq ships no soft delete
+
+- **GIVEN** the dossiq tree
+- **WHEN** it is read for a soft-delete implementation
+- **THEN** none SHALL exist
+
+### Requirement: Restoring and destroying are separate, recorded acts (REQ-CRW-02)
+
+Restoring a deleted case SHALL record who restored it and when.
+Destroying one SHALL be a second act, distinct from deleting, SHALL record
+who decided, and SHALL be permitted only to the role the case type
+declares. Destroying SHALL also destroy the process data behind the case.
+
+#### Scenario: a case is got back
+@e2e tests/e2e/case-recycle-window.spec.ts
+
+- **GIVEN** a deleted case inside its window
+- **WHEN** a handler restores it
+- **THEN** the case SHALL be live again
+- **AND** the restore SHALL record who and when
+
+#### Scenario: only the declared role destroys
+@e2e tests/e2e/case-recycle-window.spec.ts
+
+- **GIVEN** a case type declaring a destroying role
+- **WHEN** a handler without that role tries to destroy a deleted case
+- **THEN** the act SHALL be refused
+
+#### Scenario: nothing survives a destruction
+@e2e tests/e2e/case-recycle-window.spec.ts
+
+- **GIVEN** a destroyed case
+- **WHEN** its task history and notes are searched for
+- **THEN** none SHALL remain
+
+### Requirement: The lawful-purpose clock and the archive clock are kept apart (REQ-CRW-03)
+
+A case SHALL carry a lawful-purpose end date and an archive retention date
+as two separate, labelled values. Neither SHALL be derived from the other,
+and dossiq SHALL NOT apply one rule to both.
+
+#### Scenario: a case whose purpose ended is still archived
+@e2e tests/e2e/case-recycle-window.spec.ts
+
+- **GIVEN** a case whose lawful purpose has ended and whose retention runs to 2034
+- **WHEN** the case is read
+- **THEN** both dates SHALL be shown, labelled and different
+
+#### Scenario: one rule does not set both dates
+
+- **GIVEN** a case type's retention configuration
+- **WHEN** the lawful-purpose date is set
+- **THEN** the archive retention date SHALL be unchanged
+
+### Requirement: A split divides a case rather than duplicating it (REQ-CM-50)
+
+Splitting a case SHALL open a second, separately numbered case and SHALL
+move the documents, parties and tasks the handler chose. A moved item SHALL
+leave a reference in the original case, so the original file still reads as
+a whole. Splitting SHALL NOT copy the whole file to both cases.
+
+#### Scenario: A document goes to one half and not the other
+@e2e tests/e2e/splitting-a-case-and-its-incidents.spec.ts
+
+- **GIVEN** a case with four documents and two parties
+- **WHEN** a handler splits it, choosing two documents and one party for the new case
+- **THEN** the new case SHALL hold those two documents and that party
+- **AND** the original SHALL hold the other two documents and the other party
+- **AND** the original SHALL show a reference to what moved
+
+#### Scenario: A party relevant to both halves stays on both
+@e2e exclude unit; CaseSplitServiceTest
+
+- **GIVEN** a case with a party the handler marks as relevant to both halves
+- **WHEN** the case is split
+- **THEN** the party SHALL be present on both cases with its role intact
+
+### Requirement: The split is related in both directions (REQ-CM-51)
+
+A split SHALL write a typed relation on both cases, so each names the other
+without a query. The relation SHALL be one of the types dossiq already
+stores; a split SHALL NOT invent a private link.
+
+#### Scenario: Both cases name each other
+@e2e tests/e2e/splitting-a-case-and-its-incidents.spec.ts
+
+- **GIVEN** a case split in two
+- **WHEN** either case is opened
+- **THEN** its Related tab SHALL name the other case and say the relation came from a split
+
+### Requirement: A case type declares what a split may divide (REQ-CM-52)
+
+A case type SHALL declare whether documents, parties and tasks may be
+divided, defaulting to all three. A split of something the case type does
+not allow SHALL be refused, and the refusal SHALL name the rule that refused
+it.
+
+#### Scenario: A case type that forbids dividing documents
+@e2e tests/e2e/splitting-a-case-and-its-incidents.spec.ts
+
+- **GIVEN** a case type declaring that documents may not be divided
+- **WHEN** a handler tries to move a document to the new case
+- **THEN** the attempt SHALL be refused
+- **AND** the refusal SHALL name the case-type rule
+
+### Requirement: A case holds several dated incidents (REQ-CM-53)
+
+A case SHALL be able to hold several `caseIncident` records. Each SHALL carry
+the date of the event, the moment it was recorded, the reporter, a
+description, an owner, a state and an outcome. An incident SHALL NOT carry a
+term or a decision of its own.
+
+#### Scenario: Three reports on one address
+@e2e tests/e2e/splitting-a-case-and-its-incidents.spec.ts
+
+- **GIVEN** a case about one address
+- **WHEN** three reports are recorded with dates in March, June and September
+- **THEN** the case SHALL list three incidents in that order
+- **AND** each SHALL show its own reporter and outcome
+
+#### Scenario: A late recording shows its delay
+@e2e exclude unit; IncidentServiceTest
+
+- **GIVEN** an incident whose event date is three weeks before the day it was recorded
+- **WHEN** the incidents are listed
+- **THEN** it SHALL be ordered by the event date
+- **AND** the recording delay SHALL be visible
+
+### Requirement: An incident carries its own hand-off (REQ-CM-54)
+
+An incident SHALL carry its own assignee, and reassigning it SHALL NOT
+change who holds the case. Open incidents SHALL be countable and filterable
+on the work list.
+
+#### Scenario: One report moves to an inspector
+@e2e tests/e2e/splitting-a-case-and-its-incidents.spec.ts
+
+- **GIVEN** a case held by an area handler with two open incidents
+- **WHEN** one incident is assigned to an inspector
+- **THEN** that incident SHALL name the inspector
+- **AND** the case SHALL still be held by the area handler
+
+#### Scenario: The work list counts open incidents
+@e2e exclude unit over the queue reader; IncidentQueueCountTest
+
+- **GIVEN** five cases holding nine open incidents between them
+- **WHEN** the work list is read with the open-incident filter
+- **THEN** it SHALL return the five cases
+- **AND** the open-incident count SHALL be nine
+
+### Requirement: An attention flag is raised and cleared with a written reason (REQ-MRK-01)
+
+A case SHALL carry an attention flag that is raised with a written reason
+and cleared with a written reason. Each act SHALL record who performed it
+and when. Neither act SHALL be possible without a reason, and clearing SHALL
+NOT delete the raising.
+
+#### Scenario: Clearing without a reason is refused
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** a case flagged as needing attention
+- **WHEN** a user clears the flag without writing a reason
+- **THEN** the clearing SHALL be refused
+- **AND** the flag SHALL still be raised
+
+#### Scenario: Both acts are attributed and kept
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** a case flagged by one handler and cleared by another, both with reasons
+- **WHEN** the case is read
+- **THEN** both acts SHALL be readable with their reasons, names and moments
+
+#### Scenario: A case flagged four times shows four raisings
+@e2e exclude unit; CaseAttentionFlagTest
+
+- **GIVEN** a case raised and cleared four times over a year
+- **WHEN** its flag history is read
+- **THEN** four raisings and four clearings SHALL be returned
+- **AND** no earlier reason SHALL have been overwritten
+
+#### Scenario: The work list filters on the flag
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** three flagged cases among twenty
+- **WHEN** the work list is filtered on needing attention
+- **THEN** exactly the three SHALL be listed
+
+### Requirement: The case carries an assessed risk level behind its own permission (REQ-MRK-02)
+
+A case SHALL be able to carry a `riskAssessment` with a level, the ground it
+rests on, the assessor, the assessment date and a review date. Reading it
+SHALL require a permission beyond the permission to read the case, declared
+in the platform's field-level vocabulary rather than checked in dossiq code.
+The assessment SHALL be available to every domain, not to VTH alone.
+
+#### Scenario: Reading the case does not reveal the level
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** a case with a risk assessment
+- **WHEN** a handler without the extra permission opens it
+- **THEN** the case SHALL be readable
+- **AND** the level, the ground and the assessor SHALL NOT be returned
+
+#### Scenario: The permitted reader sees the assessment and its ground
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** the same case
+- **WHEN** a handler with the extra permission opens it
+- **THEN** the level, the ground, the assessor and the dates SHALL be readable
+
+#### Scenario: A stale assessment says so
+@e2e exclude unit; CaseRiskAssessmentTest
+
+- **GIVEN** an assessment whose review date has passed
+- **WHEN** it is read
+- **THEN** it SHALL be marked as due for review
+
+#### Scenario: The level feeds impact, not a new priority word
+@e2e exclude unit; RiskFeedsImpactTest
+
+- **GIVEN** a case type whose matrix reads impact from the risk assessment
+- **WHEN** the assessed level rises
+- **THEN** the derived priority SHALL be recomputed through REQ-PRI-02
+- **AND** no priority value outside `low`, `normal`, `high`, `urgent` SHALL be written
+
+### Requirement: The system raises attention markers against a named tab (REQ-MRK-03)
+
+A marker SHALL declare the tab it points at, the condition that raises it
+and the condition that clears it. A marker SHALL be raised by the system,
+SHALL NOT be per user, and SHALL NOT clear because somebody opened the tab.
+It SHALL clear when the condition behind it stops being true.
+
+#### Scenario: A failed scan marks the documents tab
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** a case whose document failed a virus scan
+- **WHEN** the case is opened
+- **THEN** the Documents tab SHALL carry an attention marker naming the reason
+
+#### Scenario: Opening the tab does not clear the marker
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** the same case
+- **WHEN** the handler opens the Documents tab and leaves again
+- **THEN** the marker SHALL still be there
+- **AND** the per-user unread badge SHALL have cleared, being a different fact
+
+#### Scenario: Handling the work clears the marker
+@e2e tests/e2e/markers-and-assessments-on-the-case.spec.ts
+
+- **GIVEN** the same case
+- **WHEN** the failed document is removed or replaced
+- **THEN** the marker SHALL clear on its own
+- **AND** no person SHALL have had to dismiss it
+
+#### Scenario: A marker without a clearing condition is refused
+@e2e exclude structural, over the shipped declarations; CaseAttentionMarkerTest
+
+- **GIVEN** a marker declared with a raise condition and no clear condition
+- **WHEN** the declarations are validated
+- **THEN** the validation SHALL fail naming the marker
+
+### Requirement: A live conversation runs from any case (REQ-LIVE-01)
+
+A handler SHALL be able to start a live conversation from any case, in
+Nextcloud Talk, through the same broker the hearing already uses. The
+bezwaar hoorzitting SHALL become one configured use of it rather than the
+only one. dossiq SHALL ship no calling, no recorder and no signalling of
+its own.
+
+#### Scenario: a conversation starts from an ordinary case
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a vergunning case
+- **WHEN** a handler starts a conversation from it
+- **THEN** a Talk room SHALL be created and linked to the case
+
+#### Scenario: the hoorzitting still works as it did
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a bezwaar with a scheduled video hearing
+- **WHEN** the hearing is opened
+- **THEN** it SHALL behave as before
+- **AND** it SHALL use the same conversation mechanism
+
+#### Scenario: no Talk, no affordance
+
+- **GIVEN** an instance without the Talk app
+- **WHEN** a handler opens a case
+- **THEN** no conversation affordance SHALL be offered
+- **AND** the case SHALL say why
+
+### Requirement: The conversation is recorded on the case (REQ-LIVE-02)
+
+A conversation SHALL be recorded on the case with the moment it started,
+who joined, and how long it lasted. What it produces, a recording, a
+transcript or minutes, SHALL become a document on the case. What the
+citizen may see of it SHALL be decided by the case type's visibility
+declaration, and SHALL NOT be readable in the portal by default.
+
+#### Scenario: who was heard, and when
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a conversation two people joined
+- **WHEN** it ends
+- **THEN** the case SHALL record the moment, both participants and the duration
+
+#### Scenario: a recording becomes a case document
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a recorded conversation
+- **WHEN** it ends
+- **THEN** the recording SHALL be a document on the case
+
+#### Scenario: the citizen does not get it by default
+
+- **GIVEN** a recording on a case type that does not declare it visible
+- **WHEN** the citizen opens the case in the portal
+- **THEN** the recording SHALL NOT be listed
+
+### Requirement: A voice note or a capture attaches to a case or a task (REQ-LIVE-03)
+
+A person SHALL be able to attach a voice note or a screen capture to a case
+or to a task, where the platform provides a recorder. It SHALL land as a
+case document under the same visibility rules as a conversation recording.
+Where the platform provides no recorder, the affordance SHALL be absent
+and dossiq SHALL NOT provide one.
+
+#### Scenario: a constatering ter plaatse is a photo and a voice note
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a toezichtzaak
+- **WHEN** an inspector attaches a voice note
+- **THEN** it SHALL be a document on the case
+
+#### Scenario: a capture on a task follows the task
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** an open task with a capture attached
+- **WHEN** the task completes
+- **THEN** the capture SHALL be a document on the case
+
+#### Scenario: no recorder, no affordance
+
+- **GIVEN** a platform with no recorder
+- **WHEN** a handler opens the case
+- **THEN** no capture affordance SHALL be offered
+
+### Requirement: A major case opens one channel with named responders (REQ-LIVE-04)
+
+A case SHALL be declarable major by a permissioned act. Declaring it SHALL
+open exactly one working channel and SHALL notify the responders the case
+type names, over the notification dialect. The declaration SHALL record who
+made it, when, and who was pulled in. A case type whose responders cannot
+be resolved SHALL refuse the declaration rather than open an empty
+channel.
+
+#### Scenario: a calamiteit is stood up in one act
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a case type naming four responders
+- **WHEN** a coordinator declares the case major
+- **THEN** one channel SHALL open
+- **AND** the four SHALL be notified and recorded
+
+#### Scenario: one channel, not two
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a case already declared major
+- **WHEN** a second person declares it major
+- **THEN** no second channel SHALL open
+- **AND** they SHALL be taken to the existing one
+
+#### Scenario: unresolvable responders refuse the declaration
+
+- **GIVEN** a case type naming a responder group that does not resolve
+- **WHEN** a coordinator declares the case major
+- **THEN** it SHALL be refused
+- **AND** the refusal SHALL name the group
+
+#### Scenario: the channel closes with the case and its content stays
+@e2e tests/e2e/live-conversation-on-the-case.spec.ts
+
+- **GIVEN** a major case with an open channel
+- **WHEN** the case is closed
+- **THEN** the channel SHALL close
+- **AND** what was said SHALL be filed on the case
+
+### Requirement: A case is handed to another team as a recorded act (REQ-HAND-01)
+
+A case SHALL be handed to another team inside the organisation as a
+first-class act, writing the same transfer record the federated transfer
+writes, with the team in place of the target organisation. The case SHALL
+keep its number, its history, its documents and its running terms. The act
+SHALL carry a reason and SHALL record who performed it. A handover to a
+team that cannot be resolved SHALL be refused rather than leaving the case
+unowned.
+
+#### Scenario: Vergunningen hands a case to Toezicht
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** an open case owned by Vergunningen
+- **WHEN** a handler hands it to Toezicht with a reason
+- **THEN** the case SHALL be owned by Toezicht
+- **AND** its number, history and terms SHALL be unchanged
+
+#### Scenario: the handover joins the custody trail
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a case handed internally and previously transferred from another organisation
+- **WHEN** its custody trail is read
+- **THEN** both moves SHALL be on the one trail
+
+#### Scenario: an unresolvable team refuses the handover
+
+- **GIVEN** a handover naming a team that does not exist
+- **WHEN** it is performed
+- **THEN** it SHALL be refused
+- **AND** the case SHALL keep its current owner
+
+### Requirement: The receiving team can refuse a handover back (REQ-HAND-02)
+
+A receiving team SHALL be able to refuse a handover with a reason, which
+SHALL return the case to the sending team and SHALL be recorded on the
+custody trail. A handover nobody has accepted SHALL stay visible to the
+sending team as outstanding.
+
+#### Scenario: the wrong team sends it back
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a case handed to Toezicht
+- **WHEN** Toezicht refuses it with a reason
+- **THEN** the case SHALL return to the sending team
+- **AND** the reason SHALL be on the custody trail
+
+#### Scenario: an unaccepted handover does not vanish
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a handover nobody has accepted
+- **WHEN** the sending team reads its cases
+- **THEN** the case SHALL be listed as an outstanding handover
+
+### Requirement: A doorzending tells the applicant where the case went (REQ-HAND-03)
+
+A handover SHALL declare whether it is a doorzending under Awb 2:3. Where
+it is, the applicant SHALL be told that the case moved and to whom,
+through the case type's declared automatic moments. Where it is an
+internal move within the same bestuursorgaan, no message SHALL be sent to
+the applicant.
+
+#### Scenario: the sender is told, per Awb 2:3
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a case handed on as a doorzending
+- **WHEN** the handover completes
+- **THEN** the applicant SHALL be told the case moved and to whom
+
+#### Scenario: an internal move is not announced
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a case handed from one internal team to another, not marked a doorzending
+- **WHEN** the handover completes
+- **THEN** no message SHALL be sent to the applicant
+
+### Requirement: A case may be homed in another application (REQ-HAND-04)
+
+A case SHALL be able to declare that it is homed in another application,
+naming the application, the identifier there and a link to it. Such a case
+SHALL still carry its type, status, terms and parties, and SHALL appear in
+the central list beside the cases dossiq handles. dossiq SHALL NOT offer
+to perform work on an externally homed case, and SHALL show where the work
+is instead.
+
+#### Scenario: one list answers for both kinds
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** a generic case and a case homed in a specialist application
+- **WHEN** a teamleider reads the case list
+- **THEN** both SHALL be listed with their type, status and term
+
+#### Scenario: the externally homed case points at its home
+@e2e tests/e2e/handing-a-case-over.spec.ts
+
+- **GIVEN** an externally homed case
+- **WHEN** a handler opens it
+- **THEN** it SHALL name the application and the identifier there
+- **AND** it SHALL offer the link
+
+#### Scenario: dossiq does not pretend to hold the work
+
+- **GIVEN** an externally homed case
+- **WHEN** a handler opens the lifecycle menu
+- **THEN** the acts that perform the work SHALL be disabled
+- **AND** they SHALL say where the work is done
+
+### Requirement: One menu holds every lifecycle act (REQ-LIFE-10)
+
+Every lifecycle act on a case SHALL be reached from one menu on the case
+page, drawn from the acts the lifecycle provider publishes. An act the
+handler may not perform or the case does not allow SHALL be shown and
+disabled with the reason, and SHALL NOT be hidden. The menu SHALL ask the
+server before it posts.
+
+#### Scenario: a handler sees what they may do in one place
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case in an open status
+- **WHEN** a handler opens the lifecycle menu
+- **THEN** it SHALL list every act the provider publishes for that case
+
+#### Scenario: a refused act says why
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case whose guard refuses closing
+- **WHEN** a handler opens the menu
+- **THEN** Close SHALL be shown and disabled
+- **AND** it SHALL carry the guard's own sentence
+
+#### Scenario: an act a handler may not perform is not simply missing
+
+- **GIVEN** a handler without the archiving role
+- **WHEN** they open the menu
+- **THEN** Archive SHALL be shown and disabled
+- **AND** it SHALL say which role is needed
+
+### Requirement: Finish, abort, archive and reopen are four acts (REQ-LIFE-11)
+
+Ending a case SHALL be four separate acts, each with its own permission,
+its own recorded reason, and its own archival consequence. Finishing SHALL
+require a result. Aborting SHALL record a result that is not a besluit.
+Archiving SHALL write the retention rule from the result type. Reopening
+SHALL keep the record that the case was ended, with who ended it and when.
+
+#### Scenario: an intrekking is not a granted vergunning
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** an open aanvraag
+- **WHEN** a handler aborts it as withdrawn
+- **THEN** the case SHALL record an abort with its reason
+- **AND** it SHALL NOT record a besluit
+
+#### Scenario: archiving writes the retention rule
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a finished case with a result type carrying an archival period
+- **WHEN** a handler archives it
+- **THEN** the retention rule SHALL be written from that result type
+
+#### Scenario: reopening keeps the ending in the record
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case finished last month
+- **WHEN** a handler reopens it
+- **THEN** the case SHALL be open
+- **AND** the record SHALL still name who finished it and when
+
+#### Scenario: finishing without a result is refused
+
+- **GIVEN** an open case with no result chosen
+- **WHEN** a handler finishes it
+- **THEN** it SHALL be refused
+- **AND** the refusal SHALL name the missing result
+
+### Requirement: A case closes before its phases are complete (REQ-LIFE-12)
+
+A handler SHALL be able to close a case before its phases are complete,
+recording the result and which phases were skipped. Every guard protecting
+the result SHALL still run. An early close whose result cannot be named
+SHALL be refused. A close with a preset outcome SHALL still record its
+reason.
+
+#### Scenario: a niet-ontvankelijkverklaring arrives in phase two
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case in phase two of five
+- **WHEN** a handler closes it as niet-ontvankelijk
+- **THEN** the case SHALL close with that result
+- **AND** the skipped phases SHALL be recorded
+
+#### Scenario: the guards still run
+
+- **GIVEN** a case whose result guard refuses
+- **WHEN** a handler closes it early
+- **THEN** it SHALL be refused with the guard's sentence
+
+#### Scenario: a preset outcome still records a reason
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a quick close with a preset outcome
+- **WHEN** a handler uses it
+- **THEN** the case SHALL close with that outcome
+- **AND** a reason SHALL be recorded
+
+### Requirement: Incompleteness is recorded, not blocked and not hidden (REQ-LIFE-13)
+
+A case SHALL be creatable with required fields knowingly left empty. The
+case SHALL then record that it is incomplete and SHALL name which fields
+are missing. It SHALL NOT report itself complete, and intake SHALL NOT be
+refused. Acts that need the missing data SHALL be refused, naming the
+field.
+
+#### Scenario: a phone intake is not lost
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case type with three required fields
+- **WHEN** a handler creates a case with one of them empty and confirms
+- **THEN** the case SHALL be created
+- **AND** it SHALL read incomplete, naming that field
+
+#### Scenario: the incompleteness travels to the list
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** an incomplete case
+- **WHEN** the working list is read
+- **THEN** the case SHALL be marked incomplete
+
+#### Scenario: an act that needs the field is refused
+
+- **GIVEN** an incomplete case missing the applicant's address
+- **WHEN** a handler sends the besluit
+- **THEN** it SHALL be refused
+- **AND** the refusal SHALL name the address
+
+### Requirement: A draft case is private, unclocked and promoted once (REQ-LIFE-14)
+
+A case SHALL be creatable as a draft. A draft SHALL bind no term, SHALL
+appear in no working list, count or report, and SHALL be visible only to
+its author. Promoting SHALL be one act that binds the term and makes the
+case visible. The moment the draft was created SHALL be kept on the case.
+
+#### Scenario: a concept-zaak is not already overdue
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case type with a statutory term
+- **WHEN** a handler begins a draft
+- **THEN** no term SHALL be bound
+- **AND** the draft SHALL NOT be in the working list
+
+#### Scenario: a draft is private to its author
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a draft created by one handler
+- **WHEN** another handler searches for it
+- **THEN** it SHALL NOT be found
+
+#### Scenario: promoting binds the clock
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a draft case
+- **WHEN** its author promotes it
+- **THEN** the statutory term SHALL be bound
+- **AND** the case SHALL carry the moment the draft was created
+
+### Requirement: A case is held with a reason and a wake date (REQ-LIFE-15)
+
+A handler SHALL be able to put a case on hold, recording a reason and a
+date on which it returns. A held case SHALL be marked as held wherever it
+is listed and SHALL return to the working queue on its date. A hold SHALL
+NOT stop any statutory term.
+
+#### Scenario: a case is parked until a date
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** an open case
+- **WHEN** a handler holds it until 1 March with a reason
+- **THEN** the case SHALL read held
+- **AND** the reason and the date SHALL be recorded
+
+#### Scenario: a hold does not stop the clock
+@e2e tests/e2e/lifecycle-acts-on-the-case.spec.ts
+
+- **GIVEN** a case with a running statutory term
+- **WHEN** it is held
+- **THEN** the term SHALL keep running
+
+#### Scenario: it comes back on its date
+
+- **GIVEN** a case held until yesterday
+- **WHEN** the working queue is read
+- **THEN** the case SHALL be in it
+
+### Requirement: A linked object's title and status are read, never copied (REQ-HINGE-01)
+
+The `caseObject` schema SHALL declare, under `x-openregister-lenses`, a
+lens onto the linked object's title and a lens onto its status, both
+looking through the property that holds the link. Neither SHALL be a
+stored property of the schema. The Objects tab on the case page SHALL
+show both.
+
+#### Scenario: the object is renamed in its own register
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case linked to an object
+- **WHEN** the object's title changes in its own register
+- **THEN** the Objects tab on the case SHALL show the new title
+- **AND** nothing on the case record SHALL have been written
+
+#### Scenario: a lens is refused on write
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case object read back with its lens properties
+- **WHEN** a client sends it back unchanged
+- **THEN** the write SHALL be refused with a message naming the lens property
+
+### Requirement: An unreadable lens value says so (REQ-HINGE-02)
+
+Where the reader may not open the linked object, a lens column SHALL
+render the value as withheld, in words. It SHALL NOT render it blank, and
+it SHALL NOT render the marker object. The reason SHALL be available to a
+reader who asks for it.
+
+#### Scenario: a handler without access to the object register
+
+- **GIVEN** a case linked to an object in a register the handler may not read
+- **WHEN** the handler opens the Objects tab
+- **THEN** the Object column SHALL say that the value is withheld
+- **AND** it SHALL NOT be empty
+
+#### Scenario: a case linked to nothing
+
+- **GIVEN** a case object whose link resolves to no record
+- **WHEN** the handler opens the Objects tab
+- **THEN** the Object column SHALL be empty
+- **AND** it SHALL NOT say the value is withheld
+
+### Requirement: The case-object schema declares how it lists (REQ-HINGE-03)
+
+The `caseObject` schema SHALL declare, under `x-openregister-list`, the
+columns a list of case objects shows and the fields it searches. Every
+declared column and search field SHALL name a property the schema
+declares. The Objects index SHALL show the declared columns, in the
+declared order, before any column of its own.
+
+#### Scenario: a generic list over the schema
+
+- **GIVEN** a surface with no page written for case objects
+- **WHEN** it reads the schema's list presentation
+- **THEN** it SHALL receive the declared columns and search fields
+- **AND** `declared` SHALL be true
+
+### Requirement: An object's own page names the cases it carries (REQ-HINGE-04)
+
+A `caseObject` record SHALL be named after the case it belongs to, so the
+reverse view on the linked object lists the cases by name. The name SHALL
+be taken from the case reference itself rather than from a stored copy of
+the case's title, and SHALL be written by the same save that creates the
+record. It SHALL fall back to the object identification and then to the
+object type, so a record is never unnamed.
+
+#### Scenario: a building with three cases on it
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a building linked to three cases
+- **WHEN** a handler opens the building's Referenced by tab
+- **THEN** it SHALL list three records
+- **AND** each one SHALL carry the title of its case
+
+#### Scenario: the first save names the record
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case object that has been created and never edited since
+- **WHEN** the reverse view on its object is read
+- **THEN** the record SHALL already carry its case's title
+
+#### Scenario: a case with no title
+
+- **GIVEN** a case object whose case carries no title
+- **WHEN** the record is saved
+- **THEN** its name SHALL be the object identification, or the object type
+
+### Requirement: A case location inherits the object's geometry (REQ-HINGE-05)
+
+The `case-location` schema SHALL declare, under
+`x-openregister-geo-inheritance`, the reference property it inherits map
+features through, and SHALL declare that property. An inherited feature
+SHALL name the relation it arrived through and the record it came from. A
+location's own feature SHALL outrank an inherited one for the same
+purpose, and the inherited one SHALL be marked rather than dropped.
+
+#### Scenario: a case about an address shows the address point
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case location pointing at a BAG object that holds a point
+- **WHEN** the case's map is drawn
+- **THEN** it SHALL show that point
+- **AND** the point SHALL be marked as inherited, naming the object it came from
+
+#### Scenario: a location that carries its own geometry
+
+- **GIVEN** a case location with its own geometry and an inherited one for the same purpose
+- **WHEN** the features are collected
+- **THEN** the location's own feature SHALL be returned first
+- **AND** the inherited one SHALL be returned marked superseded
+
+### Requirement: The channels a case arrives through are objects (REQ-HINGE-06)
+
+The channels dossiq handles, mail, the portal, the API, the contact
+centre and the DSO, SHALL be declared as objects in the `intake-sources`
+register. Each SHALL carry a stable slug, a title, a description and the
+transport it arrives over. Every channel SHALL be created switched off.
+
+#### Scenario: a fresh install
+
+- **GIVEN** an install with the intake-sources register present
+- **WHEN** the repair step runs
+- **THEN** five intake sources SHALL exist
+- **AND** every one of them SHALL be disabled
+
+#### Scenario: the register is not there yet
+
+- **GIVEN** an install whose OpenRegister has not seeded the intake-sources register
+- **WHEN** the repair step runs
+- **THEN** it SHALL report that no channel was seeded
+- **AND** it SHALL NOT fail the upgrade
+
+### Requirement: An upgrade never switches a channel back on (REQ-HINGE-07)
+
+Where an intake source already exists, the seed SHALL refresh its title,
+description, transport and target, and SHALL leave its enabled flag, its
+connection, its location, its state and its settings exactly as they are.
+
+#### Scenario: an administrator switched a channel off
+
+- **GIVEN** an intake source an administrator disabled
+- **WHEN** the app is upgraded
+- **THEN** the source SHALL still be disabled
+- **AND** its connection SHALL be unchanged
+
+### Requirement: A complaint number comes from the same counter mechanism (REQ-CNUM-01)
+
+A klachtnummer SHALL be issued by the platform and not counted in dossiq. The
+`complaint` schema SHALL declare `complaintNumber` through
+`x-openregister-generated` with its own sequence `complaint`, format
+`KL-{year}-{seq:4}` and `resetOn: year`. `ComplaintService` SHALL NOT compute
+a number, and no dossiq class SHALL count existing rows to produce one.
+
+**Feature tier**: MVP
+
+#### Scenario: A complaint is filed and carries a KL number
+@e2e exclude {the complaint intake surface has no page of its own yet; the schema declaration is asserted in tests/Unit/Settings/CaseIdentitySchemaTest.php and the service in tests/Unit/Service/ComplaintServiceTest.php}
+
+- **GIVEN** a complaint filed through `ComplaintService`
+- **WHEN** it is saved
+- **THEN** its complaintNumber SHALL match `KL-YYYY-NNNN`
+
+#### Scenario: Deleting a complaint does not hand its number out again
+@e2e exclude {a deletion and a refile inside one run needs two writes against a shared counter; asserted in tests/Unit/Service/ComplaintServiceTest.php against the retired counter}
+
+- **GIVEN** this year's last complaint is KL-2026-0007
+- **WHEN** it is deleted and another complaint is filed
+- **THEN** the new complaint SHALL NOT be numbered KL-2026-0007
+
+### Requirement: You star a case and it stays starred for you alone (REQ-FAV-01)
+
+You SHALL be able to star a case from its page and from a row in any case
+list, and unstar it the same way. The star SHALL be written through
+OpenRegister's favourite endpoint, SHALL be yours alone, and SHALL leave the
+case itself untouched: no new version, no audit entry, no change anybody else
+sees. dossiq SHALL store no favourite of its own.
+
+**Feature tier**: MVP
+
+#### Scenario: You star a case from its page
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case you have not starred
+- **WHEN** you press the star on the case page
+- **THEN** the star SHALL read as set after a reload
+
+#### Scenario: Starring changes nothing on the case
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case with a known number of audit entries
+- **WHEN** you star it and read it back
+- **THEN** the case SHALL carry the same number of audit entries
+
+#### Scenario: You star a case from a list row
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** the Cases list
+- **WHEN** you use Add to favourites on a row
+- **THEN** that case SHALL appear under the Favourites chip
+
+### Requirement: Favourites and recently opened are lenses and tiles (REQ-FAV-02)
+
+The Cases index SHALL offer a Favourites chip and a Recently opened chip, each
+narrowing the list through OpenRegister's own lens rather than a dossiq query.
+The Dashboard SHALL carry a Favourites tile and a Recently opened tile over
+the same two lenses, each linking through to the matching chip.
+
+**Feature tier**: MVP
+
+#### Scenario: The Favourites chip lists only what you starred
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** two of five cases starred by you
+- **WHEN** you pick the Favourites chip on Cases
+- **THEN** the list SHALL hold those two cases and no others
+
+#### Scenario: The Recently opened chip leads with the last case you read
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** three cases you opened, the last of them case C
+- **WHEN** you pick the Recently opened chip on Cases
+- **THEN** case C SHALL be the first row
+
+#### Scenario: The dashboard tiles show the same two lists
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a starred case and a case you opened
+- **WHEN** you open the Dashboard
+- **THEN** the Favourites tile SHALL name the starred case
+- **AND** the Recently opened tile SHALL name the case you opened
+
+### Requirement: The picker says what may be divided before the handler chooses (REQ-CM-49)
+
+The split picker SHALL ask the server which parts the case type allows before
+it draws, and SHALL offer a part only when the case type allows it. It SHALL
+NOT carry a copy of the rule. A case type that allows nothing and a case that
+holds nothing of what it allows SHALL read as two different sentences.
+
+#### Scenario: A case type that forbids dividing documents offers no documents
+
+- **GIVEN** a case type whose `splittableParts` names parties and tasks
+- **WHEN** the picker is opened on a case of that type
+- **THEN** the answer SHALL name parties and tasks and SHALL NOT name documents
+- @e2e exclude the offer is computed server-side; asserted in tests/Unit/Service/Cases/CaseSplitDivisiblePartsTest.php::testAForbiddenPartIsNotOffered
+
+#### Scenario: A case type that declares nothing offers all three
+
+- **GIVEN** a case type with no `splittableParts` declaration
+- **WHEN** the picker is opened
+- **THEN** all three parts SHALL be offered
+- @e2e exclude asserted in tests/Unit/Service/Cases/CaseSplitDivisiblePartsTest.php::testACaseTypeThatDeclaresNothingOffersAllThree
+
+#### Scenario: An unreadable case type does not invent a restriction
+
+- **GIVEN** a case whose case type cannot be read
+- **WHEN** the picker is opened
+- **THEN** all three parts SHALL be offered rather than none
+- @e2e exclude a broken reference cannot be staged from a browser; asserted in tests/Unit/Service/Cases/CaseSplitDivisiblePartsTest.php::testAnUnreadableCaseTypeOffersAllThree
+
+#### Scenario: An empty case is not told its case type is the problem
+
+- **GIVEN** a case type that allows all three parts and a case holding none of them
+- **WHEN** the picker is opened
+- **THEN** it SHALL say the case holds nothing to divide
+- **AND** it SHALL NOT say the case type forbids dividing anything
+- @e2e exclude two rendered sentences over one manifest-mounted dialog; asserted in tests/vitest/caseSplitPicker.spec.js
+
+### Requirement: dossiq's notification settings are the shared screen
+
+dossiq's notification settings SHALL render `CnNotificationMatrix` rather
+than a second implementation of the same screen, so that a handler sees which
+of their preferences an administrator has overridden and why.
+
+#### Scenario: an administrator has forced a channel
+
+- **GIVEN** a handler has switched a notice off for themselves
+- **AND** an administrator has forced that notice on
+- **WHEN** the handler opens their notification settings
+- **THEN** the row SHALL be locked
+- **AND** it SHALL name who forced it and the reason they gave
+- **AND** it SHALL NOT read as a setting the handler made
+
+#### Scenario: an administrator has forced a channel off
+
+- **GIVEN** an administrator has forced a notice OFF
+- **WHEN** the handler opens their notification settings
+- **THEN** the row SHALL render as off and locked
+- **AND** it SHALL NOT be switched on, because a forced row read as "always on"
+  would switch on a channel an administrator forbade
+
+#### Scenario: the platform refuses a channel for this recipient
+
+- **GIVEN** the platform refuses a notice for this recipient with a reason
+- **WHEN** the handler opens their notification settings
+- **THEN** the row SHALL state the rule
+- **AND** it SHALL NOT read as a channel the instance has not configured, which
+  would send somebody to change a configuration that is not the cause
+
+#### Scenario: a layer nobody answered for
+
+- **GIVEN** the platform returns an effective value and the source that decided it
+- **AND** the source is the handler's own override
+- **WHEN** the screen renders
+- **THEN** the shipped default underneath SHALL NOT be inferred from the
+  effective value, because a made-up value would render on a layer the screen
+  displays as fact
+
+#### Scenario: the platform has no channel axis
+
+- **GIVEN** the platform answers with one value per notification and no channels
+- **WHEN** the screen renders
+- **THEN** it SHALL render exactly one column, named for what it is
+- **AND** it SHALL NOT fabricate a column per channel, because a handler's
+  click would be collapsed onto the single value that exists
+
+#### Scenario: a write the platform refuses
+
+- **GIVEN** a handler changes a setting
+- **AND** the platform refuses the write
+- **WHEN** the refusal comes back
+- **THEN** the screen SHALL say so
+- **AND** it SHALL re-read, so the switch shows what the platform stored rather
+  than where the click put it
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 
