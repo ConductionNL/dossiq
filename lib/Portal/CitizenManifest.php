@@ -604,6 +604,15 @@ class CitizenManifest {
 			// let the sender pick would let one arrive dressed as the
 			// other.
 			'defaults' => ['kind' => 'bezwaarschrift'],
+			// The case is the one on screen, not a box the resident fills in;
+			// the other fields ask in the resident's words.
+			'requiredFields' => ['rationale'],
+			'fieldConfigs' => [
+				'againstCaseId' => ['visible' => false],
+				'subject' => ['label' => 'Waar gaat uw bezwaar over?'],
+				'rationale' => ['label' => 'Waarom bent u het niet eens met het besluit?', 'size' => 'large'],
+				'attachments' => ['label' => 'Stukken die u meestuurt'],
+			],
 			'crossRefs' => [
 				'againstCaseId' => [
 					'register' => PortalContributionProvider::REGISTER,
@@ -658,6 +667,16 @@ class CitizenManifest {
 			// sender, the portal sent 'klacht', which the schema's enum
 			// refuses, so every complaint answered 502 write_failed.
 			'defaults' => ['kind' => 'klachtschrift'],
+			// The case is the one on screen, not a box the resident fills in;
+			// the "Klacht indienen" page leaves it empty.
+			'requiredFields' => ['rationale'],
+			'fieldConfigs' => [
+				'againstCaseId' => ['visible' => false],
+				'category' => ['label' => 'Waar gaat uw klacht over?'],
+				'subject' => ['label' => 'Onderwerp'],
+				'rationale' => ['label' => 'Wat ging er mis?', 'size' => 'large'],
+				'attachments' => ['label' => 'Stukken die u meestuurt'],
+			],
 			'crossRefs' => [
 				'againstCaseId' => [
 					'register' => PortalContributionProvider::REGISTER,

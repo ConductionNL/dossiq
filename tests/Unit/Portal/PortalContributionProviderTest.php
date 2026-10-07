@@ -199,6 +199,8 @@ class PortalContributionProviderTest extends TestCase {
 			$this->assertSame('againstCaseId', $action['recordField'], $id);
 			$this->assertContains('againstCaseId', $action['fields'], $id);
 			$this->assertArrayHasKey('againstCaseId', $action['crossRefs'], $id);
+			// The case is given by the page, never typed.
+			$this->assertFalse($action['fieldConfigs']['againstCaseId']['visible'], $id);
 		}
 	}//end testTheReplyActionNamesTheFieldARecordLandsIn()
 
