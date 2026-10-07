@@ -611,6 +611,10 @@
         "version": "1.0.0",
         "digest": "d192c5258cfac5265db0ba34a5b226609855f6eac2abd56b6873df27df76427d"
     },
+    "lib/Settings/dossiq_register.json::caseBerichtenboxMessage": {
+        "version": "1.0.0",
+        "digest": "24209f2f312a352f260402154452600da0d491caba9e72704f7046a33c7af328"
+    },
     "lib/Settings/dossiq_register.json::case": {
         "version": "1.34.0",
         "digest": "037f1e49c678672fc7c769f37547804a8ea528a55ffd0c6c9487dccd37ca4884"
