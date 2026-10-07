@@ -373,7 +373,15 @@ class ContactMomentService {
 				'timestamp' => $this->dates->nowAsMoment(),
 			];
 
-			$objectService->saveObject(object: ['activity' => $activity], register: $register, schema: $caseSchema, uuid: $caseId);
+			// A patch, not a save: a uuid save of `['activity' => ...]` alone
+			// replaces the case and wipes every other field on it.
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				id: $caseId,
+				changes: ['activity' => $activity]
+			);
 			return true;
 		} catch (Throwable $e) {
 			$this->logger->error(

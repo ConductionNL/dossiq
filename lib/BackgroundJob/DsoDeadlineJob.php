@@ -8,6 +8,9 @@
  * to the case handler and marks overdue cases. Deadline thresholds are
  * configurable via IAppConfig.
  *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *
@@ -27,6 +30,8 @@ namespace OCA\Dossiq\BackgroundJob;
 use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -40,6 +45,9 @@ use Psr\Log\LoggerInterface;
  * Daily timed job for DSO omgevingsvergunning deadline monitoring.
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The two classes over the limit are the
+ *   background service account and its refusal, which every writing job now carries.
  */
 class DsoDeadlineJob extends TimedJob {
 
@@ -54,6 +62,7 @@ class DsoDeadlineJob extends TimedJob {
 	 * @param INotificationManager $notificationManager The notification manager
 	 * @param LoggerInterface $logger The logger
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday arithmetic
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as
 	 */
 	public function __construct(
 		ITimeFactory $timeFactory,
@@ -62,6 +71,7 @@ class DsoDeadlineJob extends TimedJob {
 		private readonly INotificationManager $notificationManager,
 		private readonly LoggerInterface $logger,
 		private readonly WorkingDayCalculator $workingDays,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $timeFactory);
 		$this->setInterval(seconds: 24 * 3600);
@@ -83,6 +93,22 @@ class DsoDeadlineJob extends TimedJob {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
 	 */
 	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Check every open omgevingsvergunning deadline, as the service account.
+	 *
+	 * @return void
+	 *
+	 */
+	private function work(): void {
 		$objectService = $this->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -167,7 +193,7 @@ class DsoDeadlineJob extends TimedJob {
 				);
 			}
 		}//end foreach
-	}//end run()
+	}//end work()
 
 	/**
 	 * Get the remaining working days from today until the given deadline date.

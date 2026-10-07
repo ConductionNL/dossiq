@@ -42,6 +42,7 @@ use OCA\Dossiq\Service\TermijnService;
 use OCA\Dossiq\Service\Timeline\CaseTimeline;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
+use OCA\Dossiq\Tests\Support\RealSchemaValidator;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
@@ -251,6 +252,30 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 
 		$this->assertNull($this->acting);
 	}//end testThePreviousUserIsRestoredWhenTheOperationThrows()
+
+	/**
+	 * The waiting facts projected onto the case pass the case schema.
+	 *
+	 * `waitingSince` is a date-time on the case, and the pause start it comes
+	 * from is a date. Copied as is, OpenRegister rejected the whole projection
+	 * ("should match format 'date-time' but '2026-09-30' does not"), so the
+	 * queue never read who the case was waiting on.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseProjectionPassesTheRealCaseSchema(): void {
+		$this->runJob(job: $this->job());
+
+		$projections = array_values(array_filter($this->writes, static fn (array $write): bool => $write[1] === '9'));
+		$this->assertNotSame([], $projections, 'The waiting facts were not written onto the case.');
+
+		$payload = $projections[0][2];
+		unset($payload['id']);
+		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'case', payload: $payload, creating: false));
+
+		$started = (string)$this->rows['t1']['pauzeStartDatum'];
+		$this->assertStringStartsWith($started.'T00:00:00', (string)$payload['waitingSince']);
+	}//end testTheCaseProjectionPassesTheRealCaseSchema()
 
 	/**
 	 * Run the job's protected run() once.

@@ -1423,9 +1423,61 @@
         "version": "1.0.0",
         "digest": "1d0a9ca7042939efab4202f938d992bff7ed8a4692b277aca418c42bcaacde6a"
     },
+    "lib/Settings/register.d/90-background-service-account.json::aanvullingsverzoek": {
+        "version": "",
+        "digest": "6a9121e30829215000d98df0d6957e81afd954d1b420c6c66097524546ab3c71"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::adviesAanvraag": {
+        "version": "",
+        "digest": "91ae023dc7dbfd67af8d990320315a8418165ed998e5a195634d23725f340282"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::beschikking": {
+        "version": "",
+        "digest": "2b920a7a4185358cd9d6ece542e2aa33b950e895022fcc3f94797c0dbf9d9210"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::bezwaarTrigger": {
+        "version": "",
+        "digest": "6d9d03a3d9ca3520790628af0d4ed13954a53c86befde681a5d6f041f8e4f347"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::caseBerichtenboxMessage": {
+        "version": "",
+        "digest": "8c0969dfb1dab979342de9fac385c8e9ddbba568a395e3e30e8f4a728bb82178"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::caseDocument": {
+        "version": "",
+        "digest": "6c2000b5bc53d99890316c1b4acb9425de2b12896659ecf920af995bb3f1b712"
+    },
     "lib/Settings/register.d/90-background-service-account.json::deadlineInstance": {
         "version": "",
         "digest": "a8d865bea87cef1051f79bf8cec31d26aedd292a7437e37daf1a648da09546ad"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::klantSentiment": {
+        "version": "",
+        "digest": "3595b400c6e36233172cc0af54d934d2633ac9226519c973cfb12d604960fc2f"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::mailIntakeEntry": {
+        "version": "",
+        "digest": "2fc177f282f1e0edfdc00b90e21c7cfe1214d110effffc327ec22fd66028ead9"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::penaltyPaymentCalculation": {
+        "version": "",
+        "digest": "b90870799edfb110593ffa228ca40c4c15f0c8541ed1987e046f0922465cb0f2"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::specialistBeschikbaarheid": {
+        "version": "",
+        "digest": "14e6bb7eb340230dca3d4814b73383e7a2ac59d621ee5c2ed57fac0619306220"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::stateMachineLog": {
+        "version": "",
+        "digest": "bb75af30eb825a2e81a47641db35d1b1957e9cf7b8469e27b9e13789cccd3b0d"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::stufMessage": {
+        "version": "",
+        "digest": "36812fb85e8b6ba6d6221139be3ccdad383cd44268091047a8d1fdaa448b7582"
+    },
+    "lib/Settings/register.d/90-background-service-account.json::tenantQuota": {
+        "version": "",
+        "digest": "01f3c553e03220f3de00cdcb3e3d0ba68e975a3e7fcb4080966b9ac5857eac06"
     },
     "lib/Settings/register.d/90-background-service-account.json::termijnGebeurtenis": {
         "version": "",

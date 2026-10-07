@@ -39,6 +39,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Service\Intake\TriageSleep;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 use Psr\Log\LoggerInterface;
@@ -46,6 +48,9 @@ use Throwable;
 
 /**
  * Returns slept triage items to the queue on their date.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @psalm-suppress UnusedClass
  *
@@ -61,14 +66,16 @@ class TriageWakeJob extends TimedJob {
 	/**
 	 * Constructor.
 	 *
-	 * @param ITimeFactory    $time   The time factory.
-	 * @param TriageSleep     $sleep  The triage sleep.
-	 * @param LoggerInterface $logger The logger.
+	 * @param ITimeFactory             $time           The time factory.
+	 * @param TriageSleep              $sleep          The triage sleep.
+	 * @param LoggerInterface          $logger         The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the sweep writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly TriageSleep $sleep,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL_SECONDS);
@@ -88,6 +95,23 @@ class TriageWakeJob extends TimedJob {
 	 */
 	protected function run($argument): void {
 		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * The wake sweep itself, run as the service account.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-triage-and-refusal/specs/kcc-routing/spec.md
+	 */
+	private function work(): void {
+		try {
 			$woken = $this->sleep->wakeDue();
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -106,5 +130,5 @@ class TriageWakeJob extends TimedJob {
 			'Dossiq triage: {count} item(s) returned to the queue',
 			['count' => count($woken)],
 		);
-	}//end run()
+	}//end work()
 }//end class

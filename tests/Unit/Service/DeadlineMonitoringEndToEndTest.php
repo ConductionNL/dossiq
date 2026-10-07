@@ -40,6 +40,7 @@ use OCA\Dossiq\Service\DwangsomBezwaarService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\DwangsomUitbetalingService;
 use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
@@ -102,6 +103,10 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		);
 		// The retired daily scan's role is now split: the engine sweep
 		// fires the armed timers, and this listener does the domain side.
+		// These tests are about the term, not the writer: the account runs the
+		// fire as it comes. TermijnTimerFiredListenerServiceAccountTest covers who writes.
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 		$this->firedListener = new TermijnTimerFiredListener(
 			$this->termService,
 			new DeadlineEscalationService(
@@ -113,7 +118,8 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			),
 			$this->calcService,
 			$settings,
-			$logger
+			$logger,
+			$account
 		);
 
 		// Seed AWB-default Wmo definition.

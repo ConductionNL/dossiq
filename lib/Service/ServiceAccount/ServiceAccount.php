@@ -200,6 +200,28 @@ abstract class ServiceAccount {
 	}//end runAs()
 
 	/**
+	 * Run an operation as the account only when nobody is signed in.
+	 *
+	 * For code that a request and cron both reach, such as a listener on an
+	 * OpenRegister event: a handler who is signed in stays the writer, and
+	 * only a run with no user at all (cron, where OpenRegister would refuse
+	 * the write as Anonymous) takes the account.
+	 *
+	 * @param callable $operation The operation.
+	 *
+	 * @return mixed Whatever the operation returns.
+	 *
+	 * @spec openspec/specs/termijn-pause-extension/spec.md
+	 */
+	public function runAsWhenNobodyIsSignedIn(callable $operation): mixed {
+		if ($this->userSession->getUser() !== null) {
+			return $operation();
+		}
+
+		return $this->runAs(operation: $operation);
+	}//end runAsWhenNobodyIsSignedIn()
+
+	/**
 	 * Pick the account: it must exist and be enabled. It joins the service group.
 	 *
 	 * @param string $userId The uid.

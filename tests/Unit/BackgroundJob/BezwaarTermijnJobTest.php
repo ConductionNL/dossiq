@@ -28,6 +28,7 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\BezwaarTermijnJob;
 use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Tests\Unit\Service\FakeObjectService;
 use OCP\App\IAppManager;
@@ -108,6 +109,7 @@ class BezwaarTermijnJobTest extends TestCase {
 			$this->settings,
 			$this->appManager,
 			$logger,
+			$this->passThroughAccount(),
 		);
 	}//end setUp()
 
@@ -213,4 +215,16 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->assertTrue(true);
 	}//end testNoOpWithoutOpenRegister()
+
+	/**
+	 * A service account that just runs the operation.
+	 *
+	 * @return BackgroundServiceAccount
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAs')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

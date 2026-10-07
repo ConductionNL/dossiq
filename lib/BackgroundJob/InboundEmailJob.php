@@ -52,6 +52,8 @@ use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Email\InboundMailIntake;
 use OCA\Dossiq\Service\Email\IntakeAccount;
 use OCA\Dossiq\Service\Email\MailGatewayInterface;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -60,6 +62,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Sweeps the intake mailbox through the filter pipeline.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
@@ -78,13 +83,14 @@ class InboundEmailJob extends TimedJob {
 	/**
 	 * Constructor.
 	 *
-	 * @param ITimeFactory         $time       Time factory.
-	 * @param IAppConfig           $appConfig  App config.
-	 * @param IAppManager          $appManager App manager.
-	 * @param MailGatewayInterface $gateway    The mail gateway.
-	 * @param IntakeAccount        $account    The account and folder intake reads.
-	 * @param InboundMailIntake    $intake     The intake path.
-	 * @param LoggerInterface      $logger     Logger.
+	 * @param ITimeFactory             $time           Time factory.
+	 * @param IAppConfig               $appConfig      App config.
+	 * @param IAppManager              $appManager     App manager.
+	 * @param MailGatewayInterface     $gateway        The mail gateway.
+	 * @param IntakeAccount            $account        The account and folder intake reads.
+	 * @param InboundMailIntake        $intake         The intake path.
+	 * @param LoggerInterface          $logger         Logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -94,6 +100,7 @@ class InboundEmailJob extends TimedJob {
 		private readonly IntakeAccount $account,
 		private readonly InboundMailIntake $intake,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$interval = (int)$this->appConfig->getValueString(
@@ -109,17 +116,34 @@ class InboundEmailJob extends TimedJob {
 	}//end __construct()
 
 	/**
-	 * Run a single sweep.
+	 * Run once as the background service account.
 	 *
-	 * @param mixed $argument Job argument (unused).
+	 * @param mixed $argument The job argument.
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
+	 */
+	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Run a single sweep.
+	 *
+	 * @return void
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	protected function run($argument): void {
+	private function work(): void {
 		try {
 			if ($this->appManager->isInstalled('openregister') === false) {
 				return;
@@ -162,7 +186,7 @@ class InboundEmailJob extends TimedJob {
 				['error' => $e->getMessage(), 'app' => Application::APP_ID]
 			);
 		}//end try
-	}//end run()
+	}//end work()
 
 	/**
 	 * How many messages one sweep takes.
