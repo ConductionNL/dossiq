@@ -46,6 +46,20 @@ SHALL declare that field in `crossRefs`, naming the `case` schema and the
 guarded against the citizen's own cases. No such create SHALL accept a case
 reference without a guard.
 
+#### Scenario: A citizen objects to their own case
+
+- **GIVEN** the citizen audience's `createBezwaar`
+- **WHEN** it is declared
+- **THEN** `againstCaseId` SHALL be guarded against the citizen's own cases
+- @e2e exclude {the guard is enforced inside Portaliq and has no dossiq browser path; asserted in tests/Unit/Portal/PortalContributionProviderTest.php::testEveryCitizenCreateNamingACaseGuardsIt}
+
+#### Scenario: A citizen replies about their own case
+
+- **GIVEN** the citizen audience's `replyToMessage`
+- **WHEN** it is declared
+- **THEN** `caseId` SHALL be guarded against the citizen's own cases, and the reply SHALL be scoped by who sent it
+- @e2e exclude {same enforcement point; asserted in the same test}
+
 #### Scenario: A citizen complains about their own case
 
 - **GIVEN** the citizen audience's `createKlacht`

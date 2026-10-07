@@ -969,10 +969,18 @@ The system MUST maintain a complete audit trail for all case modifications. The 
 ### Requirement: Every new case gets a number (REQ-CM-25)
 
 Every new case gets a number like 2026-0042 without you typing it. The `case`
-schema SHALL declare `identifier` as a generated value: the year of the start
-date, a hyphen and a four-digit sequence that restarts every year. The field
-SHALL be read-only on every form and SHALL NOT appear on the New case form. A
-case that already holds an identifier SHALL keep it.
+schema SHALL declare `identifier` as a generated identifier through
+`x-openregister-generated`: sequence `case`, format `{year}-{seq:4}`,
+`resetOn: year`, so OpenRegister takes the number under a lock inside the
+create transaction. The field SHALL be read-only on every form and SHALL NOT
+appear on the New case form. A case that already holds an identifier SHALL
+keep it, and the counter SHALL advance past the number it holds. A change to
+the number SHALL be refused, and the refusal SHALL read in OpenRegister's own
+words.
+
+The year SHALL be the year the case was filed. The retired
+`x-openregister-calculations` expression read the start date instead; see
+design D-2.
 
 **Feature tier**: MVP
 
@@ -990,7 +998,7 @@ case that already holds an identifier SHALL keep it.
 - **GIVEN** a case posted to the case endpoint without an identifier
 - **WHEN** the answer arrives
 - **THEN** its identifier SHALL match `YYYY-NNNN`
-- **AND** the year SHALL be the year of its start date
+- **AND** the year SHALL be the year it was filed
 
 #### Scenario: An existing number stays
 @e2e tests/e2e/case-identity.spec.ts
@@ -998,6 +1006,30 @@ case that already holds an identifier SHALL keep it.
 - **GIVEN** a case that holds the identifier BZW-2025-17
 - **WHEN** you edit and save its title
 - **THEN** its identifier SHALL still be BZW-2025-17
+
+#### Scenario: Two cases filed at once get two numbers
+@e2e exclude {the lock lives in OpenRegister's SequenceService and is proven by its own concurrency test; dossiq declares the annotation and can only assert that}
+
+- **GIVEN** the `case` schema declaring sequence `case`
+- **WHEN** two cases are filed in the same second
+- **THEN** they SHALL hold two different numbers
+
+#### Scenario: A number you supply is kept and pushes the counter on
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case imported with the identifier 2026-0120
+- **WHEN** the next case is filed without one
+- **THEN** the imported case SHALL still read 2026-0120
+- **AND** the new case SHALL NOT be given a number below it
+
+#### Scenario: Changing the number is refused in OpenRegister's words
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case numbered 2026-0042
+- **WHEN** you send an update that changes the identifier to 2026-0099
+- **THEN** the write SHALL be refused
+- **AND** the message SHALL name the number that was issued
+- **AND** the case SHALL still read 2026-0042
 
 ### Requirement: You tag a case and filter on tags (REQ-CM-26)
 
@@ -2686,6 +2718,332 @@ NOT stop any statutory term.
 - **GIVEN** a case held until yesterday
 - **WHEN** the working queue is read
 - **THEN** the case SHALL be in it
+
+### Requirement: A linked object's title and status are read, never copied (REQ-HINGE-01)
+
+The `caseObject` schema SHALL declare, under `x-openregister-lenses`, a
+lens onto the linked object's title and a lens onto its status, both
+looking through the property that holds the link. Neither SHALL be a
+stored property of the schema. The Objects tab on the case page SHALL
+show both.
+
+#### Scenario: the object is renamed in its own register
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case linked to an object
+- **WHEN** the object's title changes in its own register
+- **THEN** the Objects tab on the case SHALL show the new title
+- **AND** nothing on the case record SHALL have been written
+
+#### Scenario: a lens is refused on write
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case object read back with its lens properties
+- **WHEN** a client sends it back unchanged
+- **THEN** the write SHALL be refused with a message naming the lens property
+
+### Requirement: An unreadable lens value says so (REQ-HINGE-02)
+
+Where the reader may not open the linked object, a lens column SHALL
+render the value as withheld, in words. It SHALL NOT render it blank, and
+it SHALL NOT render the marker object. The reason SHALL be available to a
+reader who asks for it.
+
+#### Scenario: a handler without access to the object register
+
+- **GIVEN** a case linked to an object in a register the handler may not read
+- **WHEN** the handler opens the Objects tab
+- **THEN** the Object column SHALL say that the value is withheld
+- **AND** it SHALL NOT be empty
+
+#### Scenario: a case linked to nothing
+
+- **GIVEN** a case object whose link resolves to no record
+- **WHEN** the handler opens the Objects tab
+- **THEN** the Object column SHALL be empty
+- **AND** it SHALL NOT say the value is withheld
+
+### Requirement: The case-object schema declares how it lists (REQ-HINGE-03)
+
+The `caseObject` schema SHALL declare, under `x-openregister-list`, the
+columns a list of case objects shows and the fields it searches. Every
+declared column and search field SHALL name a property the schema
+declares. The Objects index SHALL show the declared columns, in the
+declared order, before any column of its own.
+
+#### Scenario: a generic list over the schema
+
+- **GIVEN** a surface with no page written for case objects
+- **WHEN** it reads the schema's list presentation
+- **THEN** it SHALL receive the declared columns and search fields
+- **AND** `declared` SHALL be true
+
+### Requirement: An object's own page names the cases it carries (REQ-HINGE-04)
+
+A `caseObject` record SHALL be named after the case it belongs to, so the
+reverse view on the linked object lists the cases by name. The name SHALL
+be taken from the case reference itself rather than from a stored copy of
+the case's title, and SHALL be written by the same save that creates the
+record. It SHALL fall back to the object identification and then to the
+object type, so a record is never unnamed.
+
+#### Scenario: a building with three cases on it
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a building linked to three cases
+- **WHEN** a handler opens the building's Referenced by tab
+- **THEN** it SHALL list three records
+- **AND** each one SHALL carry the title of its case
+
+#### Scenario: the first save names the record
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case object that has been created and never edited since
+- **WHEN** the reverse view on its object is read
+- **THEN** the record SHALL already carry its case's title
+
+#### Scenario: a case with no title
+
+- **GIVEN** a case object whose case carries no title
+- **WHEN** the record is saved
+- **THEN** its name SHALL be the object identification, or the object type
+
+### Requirement: A case location inherits the object's geometry (REQ-HINGE-05)
+
+The `case-location` schema SHALL declare, under
+`x-openregister-geo-inheritance`, the reference property it inherits map
+features through, and SHALL declare that property. An inherited feature
+SHALL name the relation it arrived through and the record it came from. A
+location's own feature SHALL outrank an inherited one for the same
+purpose, and the inherited one SHALL be marked rather than dropped.
+
+#### Scenario: a case about an address shows the address point
+@e2e tests/e2e/case-objects-hinge.spec.ts
+
+- **GIVEN** a case location pointing at a BAG object that holds a point
+- **WHEN** the case's map is drawn
+- **THEN** it SHALL show that point
+- **AND** the point SHALL be marked as inherited, naming the object it came from
+
+#### Scenario: a location that carries its own geometry
+
+- **GIVEN** a case location with its own geometry and an inherited one for the same purpose
+- **WHEN** the features are collected
+- **THEN** the location's own feature SHALL be returned first
+- **AND** the inherited one SHALL be returned marked superseded
+
+### Requirement: The channels a case arrives through are objects (REQ-HINGE-06)
+
+The channels dossiq handles, mail, the portal, the API, the contact
+centre and the DSO, SHALL be declared as objects in the `intake-sources`
+register. Each SHALL carry a stable slug, a title, a description and the
+transport it arrives over. Every channel SHALL be created switched off.
+
+#### Scenario: a fresh install
+
+- **GIVEN** an install with the intake-sources register present
+- **WHEN** the repair step runs
+- **THEN** five intake sources SHALL exist
+- **AND** every one of them SHALL be disabled
+
+#### Scenario: the register is not there yet
+
+- **GIVEN** an install whose OpenRegister has not seeded the intake-sources register
+- **WHEN** the repair step runs
+- **THEN** it SHALL report that no channel was seeded
+- **AND** it SHALL NOT fail the upgrade
+
+### Requirement: An upgrade never switches a channel back on (REQ-HINGE-07)
+
+Where an intake source already exists, the seed SHALL refresh its title,
+description, transport and target, and SHALL leave its enabled flag, its
+connection, its location, its state and its settings exactly as they are.
+
+#### Scenario: an administrator switched a channel off
+
+- **GIVEN** an intake source an administrator disabled
+- **WHEN** the app is upgraded
+- **THEN** the source SHALL still be disabled
+- **AND** its connection SHALL be unchanged
+
+### Requirement: A complaint number comes from the same counter mechanism (REQ-CNUM-01)
+
+A klachtnummer SHALL be issued by the platform and not counted in dossiq. The
+`complaint` schema SHALL declare `complaintNumber` through
+`x-openregister-generated` with its own sequence `complaint`, format
+`KL-{year}-{seq:4}` and `resetOn: year`. `ComplaintService` SHALL NOT compute
+a number, and no dossiq class SHALL count existing rows to produce one.
+
+**Feature tier**: MVP
+
+#### Scenario: A complaint is filed and carries a KL number
+@e2e exclude {the complaint intake surface has no page of its own yet; the schema declaration is asserted in tests/Unit/Settings/CaseIdentitySchemaTest.php and the service in tests/Unit/Service/ComplaintServiceTest.php}
+
+- **GIVEN** a complaint filed through `ComplaintService`
+- **WHEN** it is saved
+- **THEN** its complaintNumber SHALL match `KL-YYYY-NNNN`
+
+#### Scenario: Deleting a complaint does not hand its number out again
+@e2e exclude {a deletion and a refile inside one run needs two writes against a shared counter; asserted in tests/Unit/Service/ComplaintServiceTest.php against the retired counter}
+
+- **GIVEN** this year's last complaint is KL-2026-0007
+- **WHEN** it is deleted and another complaint is filed
+- **THEN** the new complaint SHALL NOT be numbered KL-2026-0007
+
+### Requirement: You star a case and it stays starred for you alone (REQ-FAV-01)
+
+You SHALL be able to star a case from its page and from a row in any case
+list, and unstar it the same way. The star SHALL be written through
+OpenRegister's favourite endpoint, SHALL be yours alone, and SHALL leave the
+case itself untouched: no new version, no audit entry, no change anybody else
+sees. dossiq SHALL store no favourite of its own.
+
+**Feature tier**: MVP
+
+#### Scenario: You star a case from its page
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case you have not starred
+- **WHEN** you press the star on the case page
+- **THEN** the star SHALL read as set after a reload
+
+#### Scenario: Starring changes nothing on the case
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a case with a known number of audit entries
+- **WHEN** you star it and read it back
+- **THEN** the case SHALL carry the same number of audit entries
+
+#### Scenario: You star a case from a list row
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** the Cases list
+- **WHEN** you use Add to favourites on a row
+- **THEN** that case SHALL appear under the Favourites chip
+
+### Requirement: Favourites and recently opened are lenses and tiles (REQ-FAV-02)
+
+The Cases index SHALL offer a Favourites chip and a Recently opened chip, each
+narrowing the list through OpenRegister's own lens rather than a dossiq query.
+The Dashboard SHALL carry a Favourites tile and a Recently opened tile over
+the same two lenses, each linking through to the matching chip.
+
+**Feature tier**: MVP
+
+#### Scenario: The Favourites chip lists only what you starred
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** two of five cases starred by you
+- **WHEN** you pick the Favourites chip on Cases
+- **THEN** the list SHALL hold those two cases and no others
+
+#### Scenario: The Recently opened chip leads with the last case you read
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** three cases you opened, the last of them case C
+- **WHEN** you pick the Recently opened chip on Cases
+- **THEN** case C SHALL be the first row
+
+#### Scenario: The dashboard tiles show the same two lists
+@e2e tests/e2e/case-number-and-favourites.spec.ts
+
+- **GIVEN** a starred case and a case you opened
+- **WHEN** you open the Dashboard
+- **THEN** the Favourites tile SHALL name the starred case
+- **AND** the Recently opened tile SHALL name the case you opened
+
+### Requirement: The picker says what may be divided before the handler chooses (REQ-CM-49)
+
+The split picker SHALL ask the server which parts the case type allows before
+it draws, and SHALL offer a part only when the case type allows it. It SHALL
+NOT carry a copy of the rule. A case type that allows nothing and a case that
+holds nothing of what it allows SHALL read as two different sentences.
+
+#### Scenario: A case type that forbids dividing documents offers no documents
+
+- **GIVEN** a case type whose `splittableParts` names parties and tasks
+- **WHEN** the picker is opened on a case of that type
+- **THEN** the answer SHALL name parties and tasks and SHALL NOT name documents
+- @e2e exclude the offer is computed server-side; asserted in tests/Unit/Service/Cases/CaseSplitDivisiblePartsTest.php::testAForbiddenPartIsNotOffered
+
+#### Scenario: A case type that declares nothing offers all three
+
+- **GIVEN** a case type with no `splittableParts` declaration
+- **WHEN** the picker is opened
+- **THEN** all three parts SHALL be offered
+- @e2e exclude asserted in tests/Unit/Service/Cases/CaseSplitDivisiblePartsTest.php::testACaseTypeThatDeclaresNothingOffersAllThree
+
+#### Scenario: An unreadable case type does not invent a restriction
+
+- **GIVEN** a case whose case type cannot be read
+- **WHEN** the picker is opened
+- **THEN** all three parts SHALL be offered rather than none
+- @e2e exclude a broken reference cannot be staged from a browser; asserted in tests/Unit/Service/Cases/CaseSplitDivisiblePartsTest.php::testAnUnreadableCaseTypeOffersAllThree
+
+#### Scenario: An empty case is not told its case type is the problem
+
+- **GIVEN** a case type that allows all three parts and a case holding none of them
+- **WHEN** the picker is opened
+- **THEN** it SHALL say the case holds nothing to divide
+- **AND** it SHALL NOT say the case type forbids dividing anything
+- @e2e exclude two rendered sentences over one manifest-mounted dialog; asserted in tests/vitest/caseSplitPicker.spec.js
+
+### Requirement: dossiq's notification settings are the shared screen
+
+dossiq's notification settings SHALL render `CnNotificationMatrix` rather
+than a second implementation of the same screen, so that a handler sees which
+of their preferences an administrator has overridden and why.
+
+#### Scenario: an administrator has forced a channel
+
+- **GIVEN** a handler has switched a notice off for themselves
+- **AND** an administrator has forced that notice on
+- **WHEN** the handler opens their notification settings
+- **THEN** the row SHALL be locked
+- **AND** it SHALL name who forced it and the reason they gave
+- **AND** it SHALL NOT read as a setting the handler made
+
+#### Scenario: an administrator has forced a channel off
+
+- **GIVEN** an administrator has forced a notice OFF
+- **WHEN** the handler opens their notification settings
+- **THEN** the row SHALL render as off and locked
+- **AND** it SHALL NOT be switched on, because a forced row read as "always on"
+  would switch on a channel an administrator forbade
+
+#### Scenario: the platform refuses a channel for this recipient
+
+- **GIVEN** the platform refuses a notice for this recipient with a reason
+- **WHEN** the handler opens their notification settings
+- **THEN** the row SHALL state the rule
+- **AND** it SHALL NOT read as a channel the instance has not configured, which
+  would send somebody to change a configuration that is not the cause
+
+#### Scenario: a layer nobody answered for
+
+- **GIVEN** the platform returns an effective value and the source that decided it
+- **AND** the source is the handler's own override
+- **WHEN** the screen renders
+- **THEN** the shipped default underneath SHALL NOT be inferred from the
+  effective value, because a made-up value would render on a layer the screen
+  displays as fact
+
+#### Scenario: the platform has no channel axis
+
+- **GIVEN** the platform answers with one value per notification and no channels
+- **WHEN** the screen renders
+- **THEN** it SHALL render exactly one column, named for what it is
+- **AND** it SHALL NOT fabricate a column per channel, because a handler's
+  click would be collapsed onto the single value that exists
+
+#### Scenario: a write the platform refuses
+
+- **GIVEN** a handler changes a setting
+- **AND** the platform refuses the write
+- **WHEN** the refusal comes back
+- **THEN** the screen SHALL say so
+- **AND** it SHALL re-read, so the switch shows what the platform stored rather
+  than where the click put it
 
 ## Sharing, Transfer, Email & Public Access (retrofit)
 
