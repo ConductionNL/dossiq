@@ -3,7 +3,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The addresses the simple dashboard asks for its counts.
+ * The addresses the simple landing page asks for its counts (its My work
+ * view since landing-views; the simple dashboard asked them before).
  *
  * `simpleListAndDashboard.spec.js` compares FILTERS. That was not enough: the
  * First today card declared `deadline: { lt: ... }`, the filter read correct,
@@ -31,6 +32,7 @@ import fs from 'fs'
 import path from 'path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 function readJson(...parts) {
@@ -46,8 +48,8 @@ const dashboard = buildProfiledManifest(
 	readJson('src', 'manifest.json'),
 	fragments,
 	readJson('src', 'menu-layout.simple.json'),
-).pages.find((page) => page.id === 'Dashboard')
-const widget = (id) => dashboard.config.widgets.find((item) => item.id === id)
+).pages.find((page) => page.id === 'MyWorkHome')
+const widget = (id) => pageWidgets(dashboard).find((item) => item.id === id)
 
 const DAY = /^\d{4}-\d{2}-\d{2}/
 
@@ -97,7 +99,7 @@ describe('what the simple dashboard asks OpenRegister', () => {
 	it('holds no nested operator anywhere the library would write it as JSON', () => {
 		// Every `visibleWhen.source.filter` on the page goes through
 		// buildQueryString, so none may hold an object value.
-		for (const item of dashboard.config.widgets) {
+		for (const item of pageWidgets(dashboard)) {
 			const filter =
 				item.visibleWhen?.source?.filter
 				?? item.content?.visibleWhen?.source?.filter

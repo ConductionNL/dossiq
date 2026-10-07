@@ -22,6 +22,7 @@ import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
@@ -69,9 +70,9 @@ const simpleLayout = JSON.parse(
 )
 
 /** The full profile's own tile: the My work page's `my-work` widget. */
-const fullTile = manifest.pages
-	.find((p) => p.id === 'MyWorkHome')
-	.config.widgets.find((w) => w.id === 'my-work')
+const fullTile = pageWidgets(manifest.pages.find((p) => p.id === 'MyWorkHome')).find(
+	(w) => w.id === 'my-work',
+)
 
 /**
  * Every widget entry in a JSON tree, wherever it sits.

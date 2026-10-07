@@ -190,6 +190,526 @@
 	"pages": [
 		{
 			"id": "MyWorkHome",
+			"_note": "The landing page in the simple structure (openspec/changes/landing-views). It carries what the dashboard carried in this structure until 7 October 2026: the greeting with its My work / My team switch, First today, four counts of MY cases, the week, my cases per step, my tasks and continue working (openspec/changes/simple-list-and-dashboard, whose notes on each widget still hold). THE SWITCH NOW CHANGES VIEWS, NOT PAGES. Its options carry `view` (nextcloud-vue 2.66.0 page views): My work is the `mine` view, My team the `team` view the manifest declares on this page. Before, My work opened the dashboard and My team the team queue, two pages with two headers, and the greeting stood over an empty area. THE GREETING IS THE PAGE'S OWN GRID, the views are drawn below it. `configPatch` replaces only the `mine` view's widgets and layout, so `team` stays the manifest's, one definition for both structures. `mine` keeps two widgets of the full My work page that nothing in the design replaces: Cases you follow and My archival reviews. Deadlines, Open Cases and the task table are not repeated: the week, the counts, First today and My tasks already show the same cases. THE PAGE HEADER STAYS. The dashboard hid it (`showHeader: false`), but this page's header carries the links that stand in for the menu entries this profile removes (Your queue, Assigned to me, Close out your day), and a hidden header hides them too. `simple-my-tasks` is a custom widget, so the page gains its slot.",
+			"config": {
+				"widgets": [
+					{
+						"id": "simple-greeting",
+						"type": "header",
+						"title": "Greeting",
+						"content": {
+							"greeting": true,
+							"showDate": true,
+							"ground": true,
+							"views": {
+								"ariaLabel": "Whose work",
+								"options": [
+									{
+										"label": "My work",
+										"view": "mine"
+									},
+									{
+										"label": "My team",
+										"view": "team"
+									}
+								]
+							}
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "s1",
+						"widgetId": "simple-greeting",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
+					}
+				],
+				"description": "Your work today, then the team",
+				"showWidgetActions": false
+			},
+			"configPatch": {
+				"views": {
+					"mine": {
+						"widgets": [
+							{
+								"id": "simple-first-today",
+								"type": "banner",
+								"title": "First today",
+								"content": {
+									"layout": "attention",
+									"variant": "error",
+									"kicker": "First today",
+									"title": "Cases past their deadline",
+									"reason": "{value} of your cases are past their deadline or end today.",
+									"visibleWhen": {
+										"source": {
+											"register": "dossiq",
+											"schema": "case",
+											"filter": {
+												"assignee": "@me",
+												"isFinalStatus": false,
+												"statusHiddenInLists": false,
+												"isDraft": false,
+												"deadline[lt]": "@today+1d"
+											}
+										},
+										"op": "gt",
+										"value": 0
+									},
+									"actions": [
+										{
+											"label": "Open these cases",
+											"route": {
+												"name": "Cases",
+												"query": {
+													"assignee": "@me",
+													"isFinalStatus": "false",
+													"statusHiddenInLists": "false",
+													"isDraft": "false",
+													"deadline[lt]": "@today+1d"
+												}
+											}
+										},
+										{
+											"label": "Open the board",
+											"route": "WorkflowBoard",
+											"primary": true
+										}
+									],
+									"text": "Cases past their deadline"
+								}
+							},
+							{
+								"id": "simple-my-open",
+								"type": "stat",
+								"title": "My open cases",
+								"content": {
+									"label": "My open cases",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false"
+										}
+									},
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-due-soon",
+								"type": "stat",
+								"title": "Due this week",
+								"content": {
+									"label": "Due this week",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"deadline": {
+												"gte": "@today",
+												"lt": "@today+7d"
+											}
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"deadline[gte]": "@today",
+											"deadline[lt]": "@today+7d"
+										}
+									},
+									"variant": "warning",
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-waiting",
+								"type": "stat",
+								"title": "Awaiting applicant",
+								"content": {
+									"label": "Awaiting applicant",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"waitingOnApplicant": true
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"waitingOnApplicant": "true"
+										}
+									},
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-closed-month",
+								"type": "stat",
+								"title": "Closed this month",
+								"content": {
+									"label": "Closed this month",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": true,
+											"endDate": {
+												"gte": "@monthStart"
+											}
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "true",
+											"endDate[gte]": "@monthStart"
+										}
+									},
+									"variant": "success",
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-week",
+								"type": "week-strip",
+								"title": "Deadlines this week",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										}
+									},
+									"dateField": "deadline",
+									"titleField": "title",
+									"metaFields": ["identifier"],
+									"itemRoute": "CaseDetail",
+									"lateWhen": {
+										"op": "lte",
+										"value": 0
+									},
+									"emptyText": "No deadlines"
+								}
+							},
+							{
+								"id": "simple-my-tasks",
+								"type": "custom",
+								"title": "My tasks",
+								"_note": "`variant: list` is the opt-in checkbox list of the DqDashboard board (a box, the task, its case on a muted second line, the due date on the right). Ticking a box completes the task through useEngineTaskStore.invoke(uuid, 'complete'), the task page's own path. Without the key MyWorkWidget draws the table, which is what the full profile and the My work page keep.",
+								"content": {
+									"variant": "list",
+									"limit": 10,
+									"rowRoute": "TaskDetail",
+									"viewAllRoute": {
+										"name": "Tasks"
+									},
+									"viewAllLabel": "View all",
+									"emptyText": "You have no open tasks"
+								}
+							},
+							{
+								"id": "simple-per-step",
+								"type": "stacked-bar",
+								"title": "My cases per step",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"groupBy": "statusRole",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										}
+									},
+									"order": [
+										"intake",
+										"pending-info",
+										"in-progress",
+										"review"
+									],
+									"labels": {
+										"intake": "Received",
+										"pending-info": "Waiting for information",
+										"in-progress": "In handling",
+										"review": "Decision"
+									},
+									"emptyText": "You have no open cases"
+								}
+							},
+							{
+								"id": "simple-continue",
+								"type": "object-table",
+								"title": "Continue working",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"_recent": true
+										},
+										"limit": 3
+									},
+									"columns": [
+										{
+											"key": "title",
+											"cellClass": "cn-cell--strong",
+											"secondary": "identifier"
+										},
+										{
+											"key": "status",
+											"label": "Status",
+											"formatter": "statusTypeName",
+											"widget": "statusBadge"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"_recent": "true"
+										}
+									},
+									"viewAllLabel": "View all",
+									"hideHeader": true,
+									"borderless": true,
+									"emptyText": "Cases you open show up here"
+								}
+							},
+							{
+								"id": "followed-cases",
+								"type": "object-table",
+								"title": "Cases you follow",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"_watching": true
+										},
+										"limit": 5
+									},
+									"columns": [
+										{
+											"key": "identifier",
+											"cellClass": "cn-cell--muted"
+										},
+										{
+											"key": "title",
+											"cellClass": "cn-cell--strong"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"_watching": "true"
+										}
+									},
+									"viewAllLabel": "View all",
+									"hideHeader": true,
+									"borderless": true,
+									"emptyText": "Follow a case to keep an eye on it here"
+								}
+							},
+							{
+								"id": "archival-reviews",
+								"type": "custom",
+								"title": "My archival reviews",
+								"icon": "ArchiveOutline"
+							}
+						],
+						"layout": [
+							{
+								"id": "s2",
+								"widgetId": "simple-first-today",
+								"gridX": 0,
+								"gridY": 0,
+								"gridWidth": 12,
+								"gridHeight": 2,
+								"showTitle": false,
+								"sizeToContent": true,
+								"borderless": true
+							},
+							{
+								"id": "s3",
+								"widgetId": "simple-my-open",
+								"gridX": 0,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s4",
+								"widgetId": "simple-due-soon",
+								"gridX": 3,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s5",
+								"widgetId": "simple-waiting",
+								"gridX": 6,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s6",
+								"widgetId": "simple-closed-month",
+								"gridX": 9,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s7",
+								"widgetId": "simple-week",
+								"gridX": 0,
+								"gridY": 4,
+								"gridWidth": 8,
+								"gridHeight": 4,
+								"showTitle": true,
+								"headerLink": {
+									"label": "All deadlines",
+									"route": "Cases",
+									"query": {
+										"assignee": "@me",
+										"isFinalStatus": "false",
+										"statusHiddenInLists": "false",
+										"isDraft": "false",
+										"deadline[gte]": "@today",
+										"deadline[lt]": "@today+7d"
+									}
+								}
+							},
+							{
+								"id": "s8",
+								"widgetId": "simple-my-tasks",
+								"gridX": 8,
+								"gridY": 4,
+								"gridWidth": 4,
+								"gridHeight": 12,
+								"showTitle": true,
+								"headerLink": {
+									"label": "All tasks",
+									"route": "Tasks"
+								}
+							},
+							{
+								"id": "s9",
+								"widgetId": "simple-per-step",
+								"gridX": 0,
+								"gridY": 8,
+								"gridWidth": 8,
+								"gridHeight": 3,
+								"showTitle": true,
+								"headerLink": {
+									"label": "To the board",
+									"route": "WorkflowBoard"
+								}
+							},
+							{
+								"id": "s10",
+								"widgetId": "simple-continue",
+								"gridX": 0,
+								"gridY": 11,
+								"gridWidth": 8,
+								"gridHeight": 5,
+								"showTitle": true
+							},
+							{
+								"id": "s11",
+								"widgetId": "followed-cases",
+								"gridX": 0,
+								"gridY": 16,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": true
+							},
+							{
+								"id": "s12",
+								"widgetId": "archival-reviews",
+								"gridX": 6,
+								"gridY": 16,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": true
+							}
+						]
+					}
+				}
+			},
 			"configAppend": {
 				"headerActions": [
 					{
@@ -214,6 +734,9 @@
 						"target": "EndOfDay"
 					}
 				]
+			},
+			"slots": {
+				"widget-simple-my-tasks": "MyWorkWidget"
 			}
 		},
 		{
@@ -581,553 +1104,8 @@
 		},
 		{
 			"id": "Dashboard",
-			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, eighteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); and recent activity (dossiq has no per-person activity feed). THE GREETING SITS ON THE PAGE GROUND (`ground`) WITH A MY WORK / MY TEAM SWITCH (`views`, nextcloud-vue 2.65.0). dossiq has no team dashboard, so My team opens the team queue, the page of the team's unclaimed work; the switch is drawn on the dashboard only. FIRST TODAY IS `borderless`: the banner draws its own card, and the grid cell drew a second, taller white card under it. The four counts are `stacked` (label over value) and no widget shows an Actions menu (`showWidgetActions: false`), as on DqDashboard. `simple-my-tasks` is the My work page's own widget, so the page gains its slot. ONE STORY ABOUT DEADLINES (live check, 5 October 2026: a count of 58 stood over an empty week). The count is now Due this week, with the filter of the list's own Due this week view plus `assignee`, so the tile, the view and the strip agree. What is already late is the First today card: it counts every open case of yours whose deadline has passed or ends today, and links to exactly those. LABELS ARE SHORT because a tile cuts its label at about twenty characters. THE CARD'S COUNT FILTER IS WRITTEN FLAT (`deadline[lt]`), NOT NESTED. The library's count source builds its address with `buildQueryString` (nextcloud-vue src/utils/headers.js, the `typeof value === 'object'` branch), which writes a nested operator as JSON, and OpenRegister answers that with a 500. The tiles and the week strip flatten a nested operator themselves, so they may nest. THE CARD CARRIES `text` AS WELL AS `title`, with the same words. The dashboard page gives up the grid cell of any banner whose `content.text` is empty (nextcloud-vue CnDashboardPage.vue, isCollapsedWidget), and it does not look at `title`, so an attention card with only a title never rendered. The card shows the title and does not repeat the text. THE WEEK, THE STEPS AND MY TASKS EACH TAKE THE FULL WIDTH: side by side at 1440 px the Friday column and the Days left column were cut off.",
-			"config": {
-				"layout": [
-					{
-						"id": "s1",
-						"widgetId": "simple-greeting",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
-					},
-					{
-						"id": "s2",
-						"widgetId": "simple-first-today",
-						"gridX": 0,
-						"gridY": 2,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false,
-						"sizeToContent": true,
-						"borderless": true
-					},
-					{
-						"id": "s3",
-						"widgetId": "simple-my-open",
-						"gridX": 0,
-						"gridY": 4,
-						"gridWidth": 3,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "s4",
-						"widgetId": "simple-due-soon",
-						"gridX": 3,
-						"gridY": 4,
-						"gridWidth": 3,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "s5",
-						"widgetId": "simple-waiting",
-						"gridX": 6,
-						"gridY": 4,
-						"gridWidth": 3,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "s6",
-						"widgetId": "simple-closed-month",
-						"gridX": 9,
-						"gridY": 4,
-						"gridWidth": 3,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "s7",
-						"widgetId": "simple-week",
-						"gridX": 0,
-						"gridY": 6,
-						"gridWidth": 8,
-						"gridHeight": 4,
-						"showTitle": true,
-						"headerLink": {
-							"label": "All deadlines",
-							"route": "Cases",
-							"query": {
-								"assignee": "@me",
-								"isFinalStatus": "false",
-								"statusHiddenInLists": "false",
-								"isDraft": "false",
-								"deadline[gte]": "@today",
-								"deadline[lt]": "@today+7d"
-							}
-						}
-					},
-					{
-						"id": "s8",
-						"widgetId": "simple-my-tasks",
-						"gridX": 8,
-						"gridY": 6,
-						"gridWidth": 4,
-						"gridHeight": 12,
-						"showTitle": true,
-						"headerLink": {
-							"label": "All tasks",
-							"route": "Tasks"
-						}
-					},
-					{
-						"id": "s9",
-						"widgetId": "simple-per-step",
-						"gridX": 0,
-						"gridY": 10,
-						"gridWidth": 8,
-						"gridHeight": 3,
-						"showTitle": true,
-						"headerLink": {
-							"label": "To the board",
-							"route": "WorkflowBoard"
-						}
-					},
-					{
-						"id": "s10",
-						"widgetId": "simple-continue",
-						"gridX": 0,
-						"gridY": 13,
-						"gridWidth": 8,
-						"gridHeight": 5,
-						"showTitle": true
-					},
-					{
-						"id": "1",
-						"widgetId": "kpi-open-cases",
-						"gridX": 0,
-						"gridY": 18,
-						"gridWidth": 3,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "2",
-						"widgetId": "kpi-overdue",
-						"gridX": 3,
-						"gridY": 18,
-						"gridWidth": 3,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "3",
-						"widgetId": "kpi-completed",
-						"gridX": 6,
-						"gridY": 18,
-						"gridWidth": 2,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "4",
-						"widgetId": "kpi-my-tasks",
-						"gridX": 8,
-						"gridY": 18,
-						"gridWidth": 2,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					},
-					{
-						"id": "5",
-						"widgetId": "cases-by-status",
-						"gridX": 0,
-						"gridY": 20,
-						"gridWidth": 6,
-						"gridHeight": 4,
-						"showTitle": false
-					},
-					{
-						"id": "6",
-						"widgetId": "cases-by-type",
-						"gridX": 6,
-						"gridY": 20,
-						"gridWidth": 6,
-						"gridHeight": 4,
-						"showTitle": false
-					},
-					{
-						"id": "10",
-						"widgetId": "stalled-cases",
-						"gridX": 0,
-						"gridY": 24,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "14",
-						"widgetId": "favourite-cases",
-						"gridX": 4,
-						"gridY": 24,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "15",
-						"widgetId": "recent-cases",
-						"gridX": 8,
-						"gridY": 24,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "13",
-						"widgetId": "kpi-sla-compliance",
-						"gridX": 10,
-						"gridY": 18,
-						"gridWidth": 2,
-						"gridHeight": 2,
-						"showTitle": false,
-						"dateChip": false
-					}
-				],
-				"description": "Your work today, then the team",
-				"showHeader": false,
-				"showWidgetActions": false
-			},
+			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
 			"configAppend": {
-				"widgets": [
-					{
-						"id": "simple-greeting",
-						"type": "header",
-						"title": "Greeting",
-						"content": {
-							"greeting": true,
-							"showDate": true,
-							"ground": true,
-							"views": {
-								"ariaLabel": "Whose work",
-								"options": [
-									{
-										"label": "My work",
-										"route": "Dashboard"
-									},
-									{
-										"label": "My team",
-										"route": "Queue"
-									}
-								]
-							}
-						}
-					},
-					{
-						"id": "simple-first-today",
-						"type": "banner",
-						"title": "First today",
-						"content": {
-							"layout": "attention",
-							"variant": "error",
-							"kicker": "First today",
-							"title": "Cases past their deadline",
-							"reason": "{value} of your cases are past their deadline or end today.",
-							"visibleWhen": {
-								"source": {
-									"register": "dossiq",
-									"schema": "case",
-									"filter": {
-										"assignee": "@me",
-										"isFinalStatus": false,
-										"statusHiddenInLists": false,
-										"isDraft": false,
-										"deadline[lt]": "@today+1d"
-									}
-								},
-								"op": "gt",
-								"value": 0
-							},
-							"actions": [
-								{
-									"label": "Open these cases",
-									"route": {
-										"name": "Cases",
-										"query": {
-											"assignee": "@me",
-											"isFinalStatus": "false",
-											"statusHiddenInLists": "false",
-											"isDraft": "false",
-											"deadline[lt]": "@today+1d"
-										}
-									}
-								},
-								{
-									"label": "Open the board",
-									"route": "WorkflowBoard",
-									"primary": true
-								}
-							],
-							"text": "Cases past their deadline"
-						}
-					},
-					{
-						"id": "simple-continue",
-						"type": "object-table",
-						"title": "Continue working",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"_recent": true
-								},
-								"limit": 3
-							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong",
-									"secondary": "identifier"
-								},
-								{
-									"key": "status",
-									"label": "Status",
-									"formatter": "statusTypeName",
-									"widget": "statusBadge"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"_recent": "true"
-								}
-							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "Cases you open show up here"
-						}
-					},
-					{
-						"id": "simple-my-open",
-						"type": "stat",
-						"title": "My open cases",
-						"content": {
-							"label": "My open cases",
-							"format": {
-								"style": "decimal",
-								"decimals": 0
-							},
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"metric": "count",
-								"filter": {
-									"assignee": "@me",
-									"isFinalStatus": false,
-									"statusHiddenInLists": false,
-									"isDraft": false
-								}
-							},
-							"route": {
-								"name": "Cases",
-								"query": {
-									"assignee": "@me",
-									"isFinalStatus": "false",
-									"statusHiddenInLists": "false",
-									"isDraft": "false"
-								}
-							},
-							"layout": "stacked"
-						}
-					},
-					{
-						"id": "simple-due-soon",
-						"type": "stat",
-						"title": "Due this week",
-						"content": {
-							"label": "Due this week",
-							"format": {
-								"style": "decimal",
-								"decimals": 0
-							},
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"metric": "count",
-								"filter": {
-									"assignee": "@me",
-									"isFinalStatus": false,
-									"statusHiddenInLists": false,
-									"isDraft": false,
-									"deadline": {
-										"gte": "@today",
-										"lt": "@today+7d"
-									}
-								}
-							},
-							"route": {
-								"name": "Cases",
-								"query": {
-									"assignee": "@me",
-									"isFinalStatus": "false",
-									"statusHiddenInLists": "false",
-									"isDraft": "false",
-									"deadline[gte]": "@today",
-									"deadline[lt]": "@today+7d"
-								}
-							},
-							"variant": "warning",
-							"layout": "stacked"
-						}
-					},
-					{
-						"id": "simple-waiting",
-						"type": "stat",
-						"title": "Awaiting applicant",
-						"content": {
-							"label": "Awaiting applicant",
-							"format": {
-								"style": "decimal",
-								"decimals": 0
-							},
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"metric": "count",
-								"filter": {
-									"assignee": "@me",
-									"isFinalStatus": false,
-									"statusHiddenInLists": false,
-									"isDraft": false,
-									"waitingOnApplicant": true
-								}
-							},
-							"route": {
-								"name": "Cases",
-								"query": {
-									"assignee": "@me",
-									"isFinalStatus": "false",
-									"statusHiddenInLists": "false",
-									"isDraft": "false",
-									"waitingOnApplicant": "true"
-								}
-							},
-							"layout": "stacked"
-						}
-					},
-					{
-						"id": "simple-closed-month",
-						"type": "stat",
-						"title": "Closed this month",
-						"content": {
-							"label": "Closed this month",
-							"format": {
-								"style": "decimal",
-								"decimals": 0
-							},
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"metric": "count",
-								"filter": {
-									"assignee": "@me",
-									"isFinalStatus": true,
-									"endDate": {
-										"gte": "@monthStart"
-									}
-								}
-							},
-							"route": {
-								"name": "Cases",
-								"query": {
-									"assignee": "@me",
-									"isFinalStatus": "true",
-									"endDate[gte]": "@monthStart"
-								}
-							},
-							"variant": "success",
-							"layout": "stacked"
-						}
-					},
-					{
-						"id": "simple-week",
-						"type": "week-strip",
-						"title": "Deadlines this week",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"assignee": "@me",
-									"isFinalStatus": false,
-									"statusHiddenInLists": false,
-									"isDraft": false
-								}
-							},
-							"dateField": "deadline",
-							"titleField": "title",
-							"metaFields": ["identifier"],
-							"itemRoute": "CaseDetail",
-							"lateWhen": {
-								"op": "lte",
-								"value": 0
-							},
-							"emptyText": "No deadlines"
-						}
-					},
-					{
-						"id": "simple-per-step",
-						"type": "stacked-bar",
-						"title": "My cases per step",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"groupBy": "statusRole",
-								"filter": {
-									"assignee": "@me",
-									"isFinalStatus": false,
-									"statusHiddenInLists": false,
-									"isDraft": false
-								}
-							},
-							"order": [
-								"intake",
-								"pending-info",
-								"in-progress",
-								"review"
-							],
-							"labels": {
-								"intake": "Received",
-								"pending-info": "Waiting for information",
-								"in-progress": "In handling",
-								"review": "Decision"
-							},
-							"emptyText": "You have no open cases"
-						}
-					},
-					{
-						"id": "simple-my-tasks",
-						"type": "custom",
-						"title": "My tasks",
-						"_note": "`variant: list` is the opt-in checkbox list of the DqDashboard board (a box, the task, its case on a muted second line, the due date on the right). Ticking a box completes the task through useEngineTaskStore.invoke(uuid, 'complete'), the task page's own path. Without the key MyWorkWidget draws the table, which is what the full profile and the My work page keep.",
-						"content": {
-							"variant": "list",
-							"limit": 10,
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": {
-								"name": "Tasks"
-							},
-							"viewAllLabel": "View all",
-							"emptyText": "You have no open tasks"
-						}
-					}
-				],
 				"headerActions": [
 					{
 						"id": "open-end-of-day",
@@ -1137,9 +1115,6 @@
 						"target": "EndOfDay"
 					}
 				]
-			},
-			"slots": {
-				"widget-simple-my-tasks": "MyWorkWidget"
 			}
 		},
 		{

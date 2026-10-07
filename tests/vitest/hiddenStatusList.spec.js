@@ -30,6 +30,7 @@
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const manifest = JSON.parse(
@@ -76,7 +77,7 @@ function chip(pageId, label) {
  * @return {object} The widget entry.
  */
 function widget(pageId, widgetId) {
-	return page(pageId).config.widgets.find((entry) => entry.id === widgetId)
+	return pageWidgets(page(pageId)).find((entry) => entry.id === widgetId)
 }
 
 describe('a hidden status leaves every working lens', () => {

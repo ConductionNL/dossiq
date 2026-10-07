@@ -2,7 +2,8 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * The cases list, the board and the dashboard in the simple structure.
+ * The cases list, the board, the dashboard and the landing page in the
+ * simple structure.
  *
  * All three are overlays in `src/menu-layout.simple.json`. An overlay fails
  * quietly: a patch that names a lens which does not exist adds no count, a
@@ -12,6 +13,7 @@
  * the manifest.
  *
  * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md
+ * @spec openspec/changes/landing-views/specs/my-work-landing/spec.md
  */
 
 import { buildManifest } from '@conduction/nextcloud-vue/src/utils/buildManifest.js'
@@ -22,6 +24,7 @@ import path from 'path'
 import { describe, expect, it } from 'vitest'
 import { cardDueSeverity } from '../../src/utils/cardDueSeverity.js'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
+import { pageGrids, pageView, pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8')
@@ -70,6 +73,18 @@ function original(id) {
 }
 
 /**
+ * A definition without its `_` notes, which a copy leaves behind.
+ *
+ * @param {object} definition A widget definition.
+ * @return {object} The same definition, notes left out.
+ */
+function withoutNotes(definition) {
+	return Object.fromEntries(
+		Object.entries(definition).filter(([key]) => !key.startsWith('_')),
+	)
+}
+
+/**
  * The case fields a filter narrows on, bracket and nested forms alike.
  *
  * @param {object} filter A widget or lens filter.
@@ -82,8 +97,8 @@ function filterFields(filter) {
 }
 
 describe('the full structure', () => {
-	it('keeps the list, the board and the dashboard exactly as the manifest declares them', () => {
-		for (const id of ['Cases', 'WorkflowBoard', 'Dashboard']) {
+	it('keeps the list, the board, the dashboard and the landing page exactly as the manifest declares them', () => {
+		for (const id of ['Cases', 'WorkflowBoard', 'Dashboard', 'MyWorkHome']) {
 			expect(page(builtFull, id), id).toEqual(original(id))
 		}
 	})
@@ -299,18 +314,26 @@ describe('the board', () => {
 	})
 })
 
-describe('the dashboard', () => {
-	const simple = page(builtSimple, 'Dashboard')
-	const before = original('Dashboard')
-	const widget = (id) => simple.config.widgets.find((item) => item.id === id)
+describe('the landing page', () => {
+	// landing-views: the design's widgets moved from the dashboard to the
+	// landing page (MyWorkHome), whose greeting switches between two views
+	// of that page instead of opening two other pages.
+	const simple = page(builtSimple, 'MyWorkHome')
+	const mine = pageView(simple, 'mine')
+	const widget = (id) => pageWidgets(simple).find((item) => item.id === id)
+	const entry = (id) => mine.layout.find((item) => item.widgetId === id)
 
-	it('puts the design first: greeting, first today, four counts, then two columns', () => {
-		const top = simple.config.layout
-			.filter((entry) => entry.gridY < 18)
-			.sort((a, b) => a.gridY - b.gridY || a.gridX - b.gridX)
-			.map((entry) => entry.widgetId)
-		expect(top).toEqual([
+	it('puts the greeting on the page grid and the design in the My work view', () => {
+		expect(simple.config.layout.map((item) => item.widgetId)).toEqual([
 			'simple-greeting',
+		])
+		expect(simple.config.widgets.map((item) => item.id)).toEqual([
+			'simple-greeting',
+		])
+		const order = [...mine.layout]
+			.sort((a, b) => a.gridY - b.gridY || a.gridX - b.gridX)
+			.map((item) => item.widgetId)
+		expect(order).toEqual([
 			'simple-first-today',
 			'simple-my-open',
 			'simple-due-soon',
@@ -320,27 +343,30 @@ describe('the dashboard', () => {
 			'simple-my-tasks',
 			'simple-per-step',
 			'simple-continue',
+			'followed-cases',
+			'archival-reviews',
 		])
 		// The design (DqDashboard) draws two columns under the counts: the
 		// week, the steps and "continue working" take two thirds on the left,
 		// my tasks the right third beside all three.
-		const entry = (id) =>
-			simple.config.layout.find((item) => item.widgetId === id)
 		for (const id of ['simple-week', 'simple-per-step', 'simple-continue']) {
 			expect(entry(id).gridX, id).toBe(0)
 			expect(entry(id).gridWidth, id).toBe(8)
 		}
 		expect(entry('simple-my-tasks')).toMatchObject({
 			gridX: 8,
-			gridY: 6,
+			gridY: 4,
 			gridWidth: 4,
 		})
 		expect(
 			entry('simple-my-tasks').gridY + entry('simple-my-tasks').gridHeight,
 		).toBe(entry('simple-continue').gridY + entry('simple-continue').gridHeight)
-		// The greeting sits on the page ground with the "My work | My team"
-		// switch at its right (nextcloud-vue 2.65.0 `ground`, `views`). dossiq
-		// has no team dashboard, so My team opens the team queue.
+	})
+
+	it('switches views of this page, not pages', () => {
+		// Ruben, 7 October 2026: the switch opened the dashboard and the team
+		// queue, and the greeting stood over an empty area. Each option now
+		// names a view the page declares, and none names a route.
 		expect(widget('simple-greeting').content).toEqual({
 			greeting: true,
 			showDate: true,
@@ -348,22 +374,42 @@ describe('the dashboard', () => {
 			views: {
 				ariaLabel: 'Whose work',
 				options: [
-					{ label: 'My work', route: 'Dashboard' },
-					{ label: 'My team', route: 'Queue' },
+					{ label: 'My work', view: 'mine' },
+					{ label: 'My team', view: 'team' },
 				],
 			},
 		})
+		const views = simple.config.views
 		for (const option of widget('simple-greeting').content.views.options) {
-			expect(page(builtSimple, option.route), option.route).toBeDefined()
+			const view = views.find((item) => item.id === option.view)
+			expect(view, option.view).toBeDefined()
+			expect(view.label).toBe(option.label)
+			expect(option).not.toHaveProperty('route')
 		}
+		expect(simple.config.defaultView).toBe('mine')
+	})
+
+	it('changes only the My work view: My team is the manifest declaration, in both structures', () => {
+		const team = (built) => pageView(page(built, 'MyWorkHome'), 'team')
+		expect(team(builtSimple)).toEqual(pageView(original('MyWorkHome'), 'team'))
+		expect(team(builtSimple)).toEqual(team(builtFull))
+		expect(simple.config.views.map((view) => view.id)).toEqual(['mine', 'team'])
+	})
+
+	it('keeps the two My work widgets the design has no stand-in for, as the manifest declares them', () => {
+		const base = pageView(original('MyWorkHome'), 'mine').widgets
+		for (const id of ['followed-cases', 'archival-reviews']) {
+			expect(widget(id), id).toEqual(
+				withoutNotes(base.find((w) => w.id === id)),
+			)
+		}
+		expect(simple.slots['widget-archival-reviews']).toBe('MyArchivalReviews')
 	})
 
 	it('draws First today without a card around it, no widget menus and stacked counts', () => {
 		// The attention card is a card of its own; its grid cell drew a second,
 		// larger white card under it. DqDashboard has no Actions menus, and
 		// draws each count as the label over the value.
-		const entry = (id) =>
-			simple.config.layout.find((item) => item.widgetId === id)
 		expect(entry('simple-first-today').borderless).toBe(true)
 		expect(simple.config.showWidgetActions).toBe(false)
 		for (const id of [
@@ -374,52 +420,61 @@ describe('the dashboard', () => {
 		]) {
 			expect(widget(id).content.layout, id).toBe('stacked')
 		}
-		// The full dashboard keeps its menus and cards.
-		expect(before.config.showWidgetActions).toBeUndefined()
-		expect(before.config.layout.some((item) => item.borderless === true)).toBe(
-			false,
-		)
+		// The full landing page keeps its menus and cards.
+		expect(original('MyWorkHome').config.showWidgetActions).toBeUndefined()
 	})
 
-	it('keeps everything the dashboard held, eighteen rows down and otherwise as it was', () => {
-		for (const was of before.config.widgets) {
-			expect(widget(was.id), was.id).toEqual(was)
+	it('keeps the page header, because it carries the links that stand in for removed menu entries', () => {
+		// The dashboard hid its header for the greeting. Here that would also
+		// hide Your queue, Assigned to me and Close out your day, which this
+		// profile takes out of the menu.
+		expect(simple.config.showHeader).toBeUndefined()
+		const ids = simple.config.headerActions.map((action) => action.id)
+		for (const id of [
+			'open-your-queue',
+			'open-assigned-to-me',
+			'open-end-of-day',
+		]) {
+			expect(ids, id).toContain(id)
 		}
-		for (const was of before.config.layout) {
-			const now = simple.config.layout.find((entry) => entry.id === was.id)
-			expect(now, was.widgetId).toEqual({ ...was, gridY: was.gridY + 18 })
-		}
-		expect(simple.config.layout).toHaveLength(before.config.layout.length + 10)
+	})
+
+	it('gives the dashboard back its full-structure widgets', () => {
+		const dashboard = page(builtSimple, 'Dashboard')
+		const before = original('Dashboard')
+		expect(dashboard.config.widgets).toEqual(before.config.widgets)
+		expect(dashboard.config.layout).toEqual(before.config.layout)
+		expect(dashboard.config.showHeader).toBeUndefined()
+		expect(dashboard.slots).toEqual(before.slots)
+		expect(dashboard.config.headerActions.map((action) => action.id)).toContain(
+			'open-end-of-day',
+		)
 	})
 
 	it('continues where the handler left off, over the recent lens the full dashboard already uses', () => {
 		// "Verder werken" on the design: the cases this reader opened last.
 		// OpenRegister's `_recent` lens carries its own order, so the widget
 		// declares none, exactly like the full dashboard's Recently opened.
-		const recent = widget('recent-cases')
-		const mine = widget('simple-continue')
-		expect(mine.type).toBe('object-table')
-		expect(mine.content.source).toEqual({ ...recent.content.source, limit: 3 })
-		expect(mine.content.rowRoute).toBe('CaseDetail')
-		expect(mine.content.viewAllRoute).toEqual(recent.content.viewAllRoute)
+		const recent = original('Dashboard').config.widgets.find(
+			(item) => item.id === 'recent-cases',
+		)
+		const cont = widget('simple-continue')
+		expect(cont.type).toBe('object-table')
+		expect(cont.content.source).toEqual({ ...recent.content.source, limit: 3 })
+		expect(cont.content.rowRoute).toBe('CaseDetail')
+		expect(cont.content.viewAllRoute).toEqual(recent.content.viewAllRoute)
 		// The case number sits under the title, as on the design, not in a
 		// column of its own (nextcloud-vue 2.64.0 `columns[].secondary`).
-		expect(mine.content.columns.map((column) => column.key)).toEqual([
+		expect(cont.content.columns.map((column) => column.key)).toEqual([
 			'title',
 			'status',
 		])
-		expect(mine.content.columns[0].secondary).toBe('identifier')
+		expect(cont.content.columns[0].secondary).toBe('identifier')
 		expect(caseFields.has('identifier')).toBe(true)
 	})
 
-	it('hides the page header and gives the week, the steps and the tasks a link of their own', () => {
-		// The greeting is the page's heading on the design, so the dashboard
-		// title row goes (nextcloud-vue 2.64.0 `config.showHeader`).
-		expect(simple.config.showHeader).toBe(false)
-		expect(before.config.showHeader).toBeUndefined()
-		const link = (widgetId) =>
-			simple.config.layout.find((item) => item.widgetId === widgetId)
-				.headerLink
+	it('gives the week, the steps and the tasks a link of their own', () => {
+		const link = (widgetId) => entry(widgetId).headerLink
 		expect(link('simple-week').route).toBe('Cases')
 		expect(link('simple-week').query).toEqual(
 			widget('simple-due-soon').content.route.query,
@@ -433,10 +488,9 @@ describe('the dashboard', () => {
 			route: 'WorkflowBoard',
 		})
 		const pageIds = new Set(builtSimple.pages.map((item) => item.id))
-		for (const entry of simple.config.layout.filter((item) => item.headerLink)) {
-			expect(pageIds.has(entry.headerLink.route), entry.widgetId).toBe(true)
+		for (const item of mine.layout.filter((cell) => cell.headerLink)) {
+			expect(pageIds.has(item.headerLink.route), item.widgetId).toBe(true)
 		}
-		expect(before.config.layout.filter((item) => item.headerLink)).toEqual([])
 	})
 
 	it('makes "Open the board" the primary action of First today, as the design draws it', () => {
@@ -447,28 +501,30 @@ describe('the dashboard', () => {
 		])
 	})
 
-	it('places every widget it adds, on a grid where no two cards overlap', () => {
-		const ids = new Set(simple.config.widgets.map((item) => item.id))
-		const cells = new Set()
-		for (const entry of simple.config.layout) {
-			expect(ids.has(entry.widgetId), entry.widgetId).toBe(true)
-			expect(entry.gridX + entry.gridWidth).toBeLessThanOrEqual(12)
-			for (let x = entry.gridX; x < entry.gridX + entry.gridWidth; x++) {
-				for (let y = entry.gridY; y < entry.gridY + entry.gridHeight; y++) {
-					const cell = `${x}:${y}`
-					expect(
-						cells.has(cell),
-						`${entry.widgetId} overlaps at ${cell}`,
-					).toBe(false)
-					cells.add(cell)
+	it('places every widget of every grid, and no two cards of one grid overlap', () => {
+		for (const grid of pageGrids(simple)) {
+			const ids = new Set(grid.widgets.map((item) => item.id))
+			const cells = new Set()
+			for (const item of grid.layout) {
+				expect(ids.has(item.widgetId), `${grid.id}: ${item.widgetId}`).toBe(
+					true,
+				)
+				expect(item.gridX + item.gridWidth).toBeLessThanOrEqual(12)
+				for (let x = item.gridX; x < item.gridX + item.gridWidth; x++) {
+					for (let y = item.gridY; y < item.gridY + item.gridHeight; y++) {
+						const cell = `${x}:${y}`
+						expect(
+							cells.has(cell),
+							`${grid.id}: ${item.widgetId} overlaps at ${cell}`,
+						).toBe(false)
+						cells.add(cell)
+					}
 				}
 			}
-		}
-		const placed = new Set(simple.config.layout.map((entry) => entry.widgetId))
-		for (const item of simple.config.widgets.filter((w) =>
-			w.id.startsWith('simple-'),
-		)) {
-			expect(placed.has(item.id), item.id).toBe(true)
+			const placed = new Set(grid.layout.map((item) => item.widgetId))
+			for (const id of ids) {
+				expect(placed.has(id), `${grid.id}: ${id}`).toBe(true)
+			}
 		}
 	})
 
@@ -566,9 +622,10 @@ describe('the dashboard', () => {
 		expect(widget('simple-my-tasks').type).toBe('custom')
 		expect(simple.slots['widget-simple-my-tasks']).toBe('MyWorkWidget')
 		expect(registrySource).toContain('MyWorkWidget')
-		// The same component, the same content, as on My work, plus the one
-		// opt-in key that turns the table into the board's checkbox list.
-		const onMyWork = original('MyWorkHome').config.widgets.find(
+		// The same component, the same content, as on the full My work view,
+		// plus the one opt-in key that turns the table into the board's
+		// checkbox list.
+		const onMyWork = pageView(original('MyWorkHome'), 'mine').widgets.find(
 			(item) => item.id === 'my-work',
 		)
 		const { variant, ...rest } = widget('simple-my-tasks').content
@@ -578,7 +635,7 @@ describe('the dashboard', () => {
 	})
 
 	it('uses icons the app registers', () => {
-		for (const item of simple.config.widgets.filter((w) =>
+		for (const item of pageWidgets(simple).filter((w) =>
 			w.id.startsWith('simple-'),
 		)) {
 			if (item.content?.icon) {

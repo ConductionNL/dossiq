@@ -58,8 +58,9 @@ const casesPage = manifest.pages.find((page) => page.id === 'Cases')
 
 /** The pages that hand their geometry to the reader. */
 const DASHBOARD_PAGES = [
+	// Not MyWorkHome: its widgets live in its views since landing-views,
+	// and a reader's arrangement covers the page's own grid only.
 	'Dashboard',
-	'MyWorkHome',
 	'Doorlooptijd',
 	'ProcessMiningDashboard',
 	'TermijnDashboard',

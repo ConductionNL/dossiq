@@ -33,6 +33,7 @@ import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
@@ -85,7 +86,7 @@ const registrySource = fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8
 /** The My Work landing page as the manifest declares it. */
 const myWorkPage = manifest.pages.find((p) => p.id === 'MyWorkHome')
 /** The tile's manifest entry, which is also the component's config. */
-const myWork = myWorkPage.config.widgets.find((w) => w.id === 'my-work')
+const myWork = pageWidgets(myWorkPage).find((w) => w.id === 'my-work')
 
 /**
  * One engine row, in the engine's own vocabulary.
