@@ -4,9 +4,9 @@
  * Dossiq first-run readiness.
  *
  * The minimum an instance needs before it can take a case, read live and
- * reported per item. Nothing here blocks: `register-check` is the only gate
- * the wizard has, and an instance an administrator deliberately leaves half
- * configured is a legitimate instance. An instance nobody can see the state
+ * reported per item. Nothing here blocks: the wizard has no gate, and an
+ * instance an administrator deliberately leaves half configured is a
+ * legitimate instance. An instance nobody can see the state
  * of is not.
  *
  * Every item is a question asked of the tree at request time, never a stored

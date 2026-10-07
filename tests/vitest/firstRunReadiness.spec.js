@@ -62,11 +62,13 @@ describe('the readiness declaration', () => {
 })
 
 describe('nothing in the readiness list gates the app', () => {
-	it('leaves register-check as the only required step', () => {
+	// register-check left the wizard for the admin settings page
+	// (wizard-dataset-card-load), so no wizard step is required.
+	it('leaves no step required', () => {
 		const required = manifest.setup.steps.filter(
 			(step) => step.required === true,
 		)
-		expect(required.map((step) => step.id)).toEqual(['register-check'])
+		expect(required.map((step) => step.id)).toEqual([])
 	})
 
 	it('promotes no readiness item into the wizard steps', () => {
