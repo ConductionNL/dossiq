@@ -58,10 +58,11 @@ const casesPage = manifest.pages.find((page) => page.id === 'Cases')
 
 /** The pages that hand their geometry to the reader. */
 const DASHBOARD_PAGES = [
-	// Not MyWorkHome: its widgets live in its views since landing-views,
-	// and a reader's arrangement covers the page's own grid only.
 	'Dashboard',
 	'Doorlooptijd',
+	// landing-view-layouts: its widgets live in its views, and since
+	// nextcloud-vue 2.69.0 a reader's arrangement is kept per view.
+	'MyWorkHome',
 	'ProcessMiningDashboard',
 	'TermijnDashboard',
 ]
