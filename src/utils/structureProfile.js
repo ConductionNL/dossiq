@@ -6,7 +6,7 @@
  *
  * dossiq ships `simple` and `full`. `full` is the navigation and the pages as
  * they were before this file existed. `simple` is what a case handler needs on
- * a working day: nine menu entries under three captions, with everything else
+ * a working day: nine menu entries, two of the three groups under a caption, with everything else
  * one level down. `simple` is the default, and an administrator brings `full`
  * back with the app setting `menu_structure`.
  *
