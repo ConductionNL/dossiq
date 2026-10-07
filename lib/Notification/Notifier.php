@@ -147,6 +147,11 @@ class Notifier implements INotifier {
 	public const SUBJECT_APPLICANT_WITHDREW = 'applicant_withdrew';
 
 	/**
+	 * The background jobs have no usable service account, so they wrote nothing.
+	 */
+	public const SUBJECT_BACKGROUND_ACCOUNT_MISSING = 'background_service_account_missing';
+
+	/**
 	 * Every subject key this notifier can render.
 	 *
 	 * A subject that is not on this list is refused in `prepare()`, and
@@ -175,6 +180,7 @@ class Notifier implements INotifier {
 		self::SUBJECT_STUF_PERMANENT_ERROR,
 		self::SUBJECT_APPLICANT_RESPONDED,
 		self::SUBJECT_APPLICANT_WITHDREW,
+		self::SUBJECT_BACKGROUND_ACCOUNT_MISSING,
 	];
 
 	/**
@@ -267,6 +273,7 @@ class Notifier implements INotifier {
 				subjectRaw: $subjectRaw,
 				l: $l,
 			),
+			self::SUBJECT_BACKGROUND_ACCOUNT_MISSING => $this->backgroundAccountText(l: $l),
 			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
 		};
 
@@ -529,6 +536,20 @@ class Notifier implements INotifier {
 			$l->t('Open the case and plan the decision.'),
 		];
 	}//end deadlineText()
+
+	/**
+	 * The text for an admin while the background jobs have no service account.
+	 *
+	 * @param \OCP\IL10N $l The recipient's localisation.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 */
+	private function backgroundAccountText(\OCP\IL10N $l): array {
+		return [
+			$l->t('Dossiq background jobs have no service account'),
+			$l->t('Reminders on suspended terms are not sent and nothing is saved until you choose an account in the Dossiq settings.'),
+		];
+	}//end backgroundAccountText()
 
 	/**
 	 * The three StUF wordings.
