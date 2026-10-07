@@ -1,5 +1,7 @@
 # Tasks: landing-views
 
+> Archive pass 2026-10-07: code done; held: its REMOVED REQ-DASH-025 is added by `simple-list-and-dashboard` (open: 6.1 live check), so that change archives first.
+
 - [x] 1.1 Bump `@conduction/nextcloud-vue` to `^2.67.0` (lockfile only;
   dependencies identical to 2.65.0).
 - [x] 2.1 `src/manifest.json`: `MyWorkHome` declares `views` (`mine`, `team`),

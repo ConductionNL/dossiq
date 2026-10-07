@@ -6,7 +6,9 @@ status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change
 
 ## Purpose
 Enforces AVG/GDPR-compliant handling of special-category personal data in sociaal-domein cases (WMO, Jeugdwet, Participatiewet). Every case must declare its data-category classification at creation, access is restricted to the case's wijkteam with data-driven guards, exports without recorded consent are automatically anonymized, and all reads are immutably audit-logged. It also tracks revocable citizen consent, statutory retention with archivaris-reviewed destruction, subject-access-requests, and data-breach incident reporting.
+
 ## Requirements
+
 ### Requirement: Mandatory AvgClassificatie block at zaak creation
 Every sociaal-domein zaak MUST declare its special-category data scope via an embedded `AvgClassificatie` value-type before creation is allowed. The value-type carries `categorieen` (array of `medisch`/`gezinssituatie`/`financieel`/`justitieel`/`etnisch`/`religieus`/`politieke-overtuiging`), `bijzonderePersoonsgegevens` (auto-flag), `rechtvaardiging` (AVG 9.2 exemption code), `rechtvaardigingToelichting`, `bewaarTermijnJaren` (WMO 15 / Jeugdwet 20 / Participatiewet 10), `vernietigingDatum` (auto-calculated), `toegangsBeperking`, `anonimiseringBijDelen`, and `exportBeperking`.
 
@@ -134,3 +136,55 @@ If a breach occurs it MUST be documented as an `AvgIncident` and, where required
 - **AND** if required, `meldingAp` is set to `true` and a 72-hour notification task is created for the DPA
 - **AND** a breach-impact summary is generated for gemeente leadership
 
+### Requirement: Another domain answers only that a case exists (REQ-XDV-01)
+
+A cross-domain lookup SHALL return, for a person, whether an open case
+exists in another domain, which domain it is and the contact for it. It
+SHALL return nothing else: no content, no status, no dates and no case
+number. The content of the other domain's case SHALL stay unreadable.
+
+#### Scenario: A consulent learns that a household is known elsewhere
+@e2e tests/e2e/the-social-domain-plan-and-its-grounds.spec.ts
+
+- **GIVEN** a person with an open Jeugdwet case and a Wmo consulent looking them up
+- **WHEN** the lookup runs
+- **THEN** it SHALL answer that a case exists, that it is Jeugdwet, and who to contact
+- **AND** it SHALL return no content of that case
+
+#### Scenario: Nothing leaks through the projection
+@e2e exclude unit over the projection; CrossDomainExistenceTest
+
+- **GIVEN** the same lookup
+- **WHEN** the returned fields are enumerated
+- **THEN** they SHALL be exactly the existence, the domain and the contact
+
+### Requirement: The lookup requires a ground, chosen first and logged (REQ-XDV-02)
+
+A cross-domain lookup SHALL require an authorisation ground to be chosen
+before it runs, and SHALL be refused without one. The ground, the person
+looked up, the requester, the moment and what was returned SHALL be written
+to `sociaalDomeinAuditLog` in the same act as the answer. The log SHALL
+answer what was looked up about a person.
+
+#### Scenario: No ground, no answer
+@e2e tests/e2e/the-social-domain-plan-and-its-grounds.spec.ts
+
+- **GIVEN** a consulent who has chosen no ground
+- **WHEN** they try to look a person up across domains
+- **THEN** the lookup SHALL be refused
+- **AND** the refusal SHALL say that a ground is required
+
+#### Scenario: The ground is written with the answer
+@e2e exclude unit; SociaalDomeinAuditLogTest
+
+- **GIVEN** a lookup performed on a chosen ground
+- **WHEN** the log is read
+- **THEN** it SHALL hold the ground, the person, the requester, the moment and what was returned
+- **AND** the field `authorisationGround` SHALL be populated rather than declared and empty
+
+#### Scenario: A person can be told what was looked up about them
+@e2e tests/e2e/the-social-domain-plan-and-its-grounds.spec.ts
+
+- **GIVEN** a person looked up twice in a year
+- **WHEN** the log is read for that person
+- **THEN** both lookups SHALL be returned with their grounds and their dates
