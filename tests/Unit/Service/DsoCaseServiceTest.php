@@ -23,13 +23,17 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
+use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
+use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\DsoCaseService;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
+use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -105,6 +109,11 @@ class DsoCaseServiceTest extends TestCase {
 			// reason the interface exists.
 			objectService: $this->createMock(ObjectServiceInterface::class),
 			workingDays: new WorkingDayCalculator(),
+			intakeCases: new DsoIntakeCasePayload(
+				caseTypes: $this->caseTypes(),
+				journal: new CaseJournal(userSession: $this->createMock(IUserSession::class))
+			),
+			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
 		);
 	}//end setUp()
 
@@ -272,6 +281,7 @@ class DsoCaseServiceTest extends TestCase {
 			'id' => 'aanvraag-uuid-1',
 			'title' => 'Bouwen van een aanbouw',
 			'indieningsdatum' => '2026-03-01',
+			'mappedCaseTypes' => ['OMGEVINGSVERGUNNING'],
 			'activiteiten' => [
 				['name' => 'bouwen', 'regelkwalificatie' => 'reguliere'],
 			],
@@ -331,6 +341,11 @@ class DsoCaseServiceTest extends TestCase {
 			logger: $this->logger,
 			objectService: $objectServiceMock,
 			workingDays: new WorkingDayCalculator(),
+			intakeCases: new DsoIntakeCasePayload(
+				caseTypes: $this->caseTypes(),
+				journal: new CaseJournal(userSession: $this->createMock(IUserSession::class))
+			),
+			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
 		);
 
 		$result = $service->createZaakFromVergunningaanvraag(
@@ -339,4 +354,17 @@ class DsoCaseServiceTest extends TestCase {
 
 		$this->assertSame('zaak-uuid-1', $result['id']);
 	}//end testCreateZaakFromVergunningaanvraagCallsObjectService()
+
+	/**
+	 * A resolver that answers one case type for any reference.
+	 *
+	 * @return CaseTypeReferenceResolver
+	 */
+	private function caseTypes(): CaseTypeReferenceResolver {
+		$resolver = $this->createMock(CaseTypeReferenceResolver::class);
+		$resolver->method('resolve')->willReturn(['id' => '3562629e-bf38-4ce2-9c42-25dbfac308ca']);
+		$resolver->method('idOf')->willReturn('3562629e-bf38-4ce2-9c42-25dbfac308ca');
+		$resolver->method('initialStatusOf')->willReturn('c49063df-4484-4bc6-a92f-fe7442b11f9a');
+		return $resolver;
+	}//end caseTypes()
 }//end class
