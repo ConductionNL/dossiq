@@ -93,8 +93,11 @@ import {
 // pins moving. With both, 129/72/24 became 141/61/23. The re-issue held 12.23
 // at partial, so the sync script's check against the corpus reports that one
 // row until the corpus reads it the same way.
+//
+// On 2026-10-07 the spec round's re-read moved 11.25 and 12.14 from partial to
+// yes (see RERATED_IDS), so 141/61/23 became 143/59/23.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 141, partial: 61, no: 23, unknown: 0 },
+	dossiq: { yes: 143, partial: 59, no: 23, unknown: 0 },
 	opencase: { yes: 62, partial: 37, no: 116, unknown: 10 },
 	gzac: { yes: 66, partial: 68, no: 91, unknown: 0 },
 	zaaksysteem: { yes: 150, partial: 38, no: 37, unknown: 0 },
@@ -137,7 +140,11 @@ const FIRST_COMPARED_ON = '2026-09-07'
 // the ratings themselves so a note cannot outlive the score it explains.
 // 2.47 moved on 2026-10-02, a proposal row: dossiq declared the portal case
 // page a resident withdraws a Woo request from (dossiq#3247).
-const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23', '2.47']
+// 11.25 and 12.14 moved on 2026-10-07, partial to yes: the openregister and
+// integriq changes they waited on were archived with their code, and a re-read
+// found the dossiq half reached (field rules on the status form and the case
+// strip; case events through integriq's broker action).
+const RERATED_IDS = ['1.8', '2.8', '2.9', '4.9', '5.5', '11.23', '2.47', '11.25', '12.14']
 
 // Our column moved again on 2026-09-14, and for a different reason: the corpus
 // re-read our case-type configuration end to end and three ratings were too
