@@ -14339,8 +14339,8 @@
 			"built": {
 				"state": "specified",
 				"owner": "ConductionNL/integriq",
-				"change": "integriq/registry-subscription-connector",
-				"note": "Re-read 2026-10-07: integriq archived registry-subscription-connector on 2026-09-29 and openregister ships the request path, but the dossiq half is missing: the person and company schemas declare no x-openregister-registry annotation and no page offers the subscribe action. Contact import stays a live BRP/KvK lookup (lib/Service/External/Kvk/KvkApiAdapter.php). The BRP and KvK bindings have not run against a live subscription contract.",
+				"change": "openregister/registry-subscriptions",
+				"note": "Re-read 2026-10-07: integriq archived registry-subscription-connector on 2026-09-29 and openregister ships the request path, but the dossiq half is missing: the person and company schemas declare no x-openregister-registry annotation and no page offers the subscribe action. Contact import stays a live BRP/KvK lookup (lib/Service/External/Kvk/KvkApiAdapter.php). The BRP and KvK bindings have not run against a live subscription contract. Missing half specified in openregister/registry-subscriptions (spec round part 3, 2026-10-07); delivered half: integriq/registry-subscription-connector.",
 				"screen": {
 					"board": null,
 					"reason": "backend: registry subscription connector in integriq"
@@ -16081,8 +16081,8 @@
 			"built": {
 				"state": "specified",
 				"owner": "ConductionNL/openregister",
-				"change": "openregister/view-group-share",
-				"note": "Re-read 2026-10-07: the backend is built in openregister, but the dialog a dossiq user saves a view in (nextcloud-vue CnSaveViewDialog) has no group picker, so a saved case search can be private or public and never shared with one department. Missing: a group share in CnSaveViewDialog and CnSavedViewsControl (nextcloud-vue).",
+				"change": "nextcloud-vue/saved-views-shared-by-role",
+				"note": "Re-read 2026-10-07: the backend is built in openregister, but the dialog a dossiq user saves a view in (nextcloud-vue CnSaveViewDialog) has no group picker, so a saved case search can be private or public and never shared with one department. Missing: a group share in CnSaveViewDialog and CnSavedViewsControl (nextcloud-vue). Missing half specified in nextcloud-vue/saved-views-shared-by-role (spec round part 3, 2026-10-07); delivered half: openregister/view-group-share.",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaken"
