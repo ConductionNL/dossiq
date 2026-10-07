@@ -59,6 +59,8 @@ namespace OCA\Dossiq\Listener;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
 use OCA\Dossiq\Service\Email\IntakeLog;
 use OCA\Dossiq\Service\Email\UnmatchedMailIntake;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -112,16 +114,18 @@ class MessageReceivedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseEmailRepository $cases     Resolves a case reference and files the message.
-	 * @param UnmatchedMailIntake $unmatched The fallback rule, shared with the poller.
-	 * @param IntakeLog           $log       The per-message record, and the duplicate guard.
-	 * @param LoggerInterface     $logger    Logger.
+	 * @param CaseEmailRepository      $cases          Resolves a case reference and files the message.
+	 * @param UnmatchedMailIntake      $unmatched      The fallback rule, shared with the poller.
+	 * @param IntakeLog                $log            The per-message record, and the duplicate guard.
+	 * @param LoggerInterface          $logger         Logger.
+	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
 		private readonly CaseEmailRepository $cases,
 		private readonly UnmatchedMailIntake $unmatched,
 		private readonly IntakeLog $log,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 	}//end __construct()
 
@@ -135,6 +139,29 @@ class MessageReceivedListener implements IEventListener {
 	 * @spec openspec/specs/case-email-integration/spec.md
 	 */
 	public function handle(Event $event): void {
+		try {
+			// Integriq raises this from its own background work, with nobody
+			// signed in, and OpenRegister refuses a write from nobody. A
+			// signed-in caller keeps writing as themselves.
+			$this->serviceAccount->runAsWhenNobodyIsSignedIn(operation: fn () => $this->answer(event: $event));
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// written; the offer stays unanswered, so integriq files the
+			// message under `unassigned`.
+			return;
+		}
+	}//end handle()
+
+	/**
+	 * Answer the event, as whoever is writing.
+	 *
+	 * @param Event $event The integriq event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	private function answer(Event $event): void {
 		if (method_exists($event, 'setOutcome') === false || method_exists($event, 'getMessage') === false) {
 			return;
 		}
@@ -216,7 +243,7 @@ class MessageReceivedListener implements IEventListener {
 				['error' => $e->getMessage()]
 			);
 		}
-	}//end handle()
+	}//end answer()
 
 	/**
 	 * The case this message was already filed on, when it was.
