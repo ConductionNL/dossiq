@@ -12,5 +12,9 @@
 - [x] 4.1 `tests/vitest/landingViews.spec.js` and `tests/vitest/helpers/pageViews.js`;
   the specs that read the landing page's widgets read them through the helper.
 - [x] 4.2 One new string (`Nothing to show for your team yet`), en and nl.
-- [ ] 5.1 Live check by the coordinator: open `/apps/dossiq/` in both structures,
+- [x] 5.1 Live check by the coordinator: open `/apps/dossiq/` in both structures,
   switch to My team and back, reload with `?view=team`.
+  Done 7 October 2026: simple structure (greeting draws the switch) and full
+  structure (switch in the header), `?view=team` survives a reload, the stored
+  choice opens next time, My work shows its widgets and My team the team queue,
+  counts and stalled cases.

@@ -114,6 +114,19 @@ describe('a reader keeps their own arrangement of a dashboard', () => {
 		expect(carrying.sort()).toEqual([...DASHBOARDS, 'MyWorkHome'].sort())
 	})
 
+	it('offers the Edit button wherever a reader may arrange the page', () => {
+		// CnDashboardPage draws its Edit toggle only with `allowEdit`. Every
+		// page here declared `userLayout` without it, so the arrangement was
+		// stored and loaded but no reader could ever start one (live check,
+		// 7 October 2026).
+		const carrying = (manifest.pages || []).filter(
+			(p) => p.config && p.config.userLayout,
+		)
+		for (const p of carrying) {
+			expect(p.config.allowEdit, `${p.id} has no Edit button`).toBe(true)
+		}
+	})
+
 	it('leaves membership with the manifest: every dashboard still ships widgets', () => {
 		for (const id of DASHBOARDS) {
 			const widgets = page(id).config.widgets || []
