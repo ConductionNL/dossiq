@@ -10745,7 +10745,11 @@
 					}
 				],
 				"evidence": "lib/Service/FormsIntakeService.php; dossiq#2927 58f2b2c28",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: the citizen form is portaliq's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php:23-68 the only /public routes are three mTLS message receivers and a bearer-token data API; lib/Controller grep for PublicPage finds only SAML, auth and PublicApi controllers, no form page | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
@@ -10775,7 +10779,11 @@
 				"evidence": "src/manifest.json#Dashboard/headerActions.new-case",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/friendly-case-create-form"
+				"spec": "openspec/specs/friendly-case-create-form",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqNieuweZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:178,194-197 header Opret menu lists Ny sag per case type and mounts NewCaseDialog; src/components/NewCaseDialog.vue:104,594-615 required fields incl. organisation, KLE, sensitivity, responsible user and a case-type-driven participant, then store createCase and createCaseParticipant | round 2 drive: procest/opencase/round2/create-case-anatomy.md:3 \"The app header Create menu opens a modal \"Create new <type> case\" on whatever page you are on\"",
@@ -10806,7 +10814,15 @@
 				"evidence": "src/manifest.json:6891 #ContactDetail headerAction new-case-for-contact (open-form on case, requester prefilled from @objectId; same action on #OrganisationDetail at src/manifest.json:7183)",
 				"reachedOn": "#ContactDetail and #OrganisationDetail header action \"New case\", via menu Contacts / Organisations",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/semantic-case-intake"
+				"spec": "openspec/specs/semantic-case-intake",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqContact",
+						"DqOrganisatie",
+						"DqNieuweZaak"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CitizenSearchView.vue:183-190 Opret sag button opens NewCaseDialog prefilled with the selected citizen; lib/Controller/CitizenController.php:158-177 search runs against Datafordeler when enterprise, else falls back to local participants, so the path works in the public build | round 2 drive: procest/opencase/round2/pages/Search-Citizen.md:9 \"result view: Create case (prefilled with this citizen)\"",
@@ -10849,7 +10865,11 @@
 					}
 				],
 				"evidence": "filinq src/views/intake/IntakeIndex.vue; filinq lib/Service/IntakeService.php; filinq appinfo/routes.php:77-79; filinq#1119; filinq#1132 e5580bbb4",
-				"owner": "ConductionNL/filinq"
+				"owner": "ConductionNL/filinq",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: the document intake inbox is filinq's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js:138 route /inbound -> InboundDocumentsView (nav src/App.vue:148); filled by lib/BackgroundJob/ProcessImportsJob.php:392 (folder and IMAP import into an inbox case); src/views/DocumentDetailView.vue:74,81 journaliser on an existing or a new case; :91 Slet. Reject is a delete with a confirm, no reason is recorded | round 2 drive: procest/opencase/round2/code-census.md:142 \"are moved to a case or a new case from `src/views/InboundDocumentsView.vue` (`MoveToCaseDialog`, `MoveToNewCaseDialog`)\"",
@@ -10886,7 +10906,11 @@
 					}
 				],
 				"evidence": "lib/Service/Email/UnmatchedMailIntake.php; integriq#2052 e8e127fa8",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakEmail"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:54-60,117,186-199 IMAP import location reads unseen INBOX messages but imports only attachments (line 266 getAttachments) onto the system inbox case; the mail body and headers are not kept; registered unconditionally in lib/AppInfo/Application.php:242 | round 2 drive: procest/opencase/round2/code-census.md:112 \"inbound IMAP mailboxes as import locations (`lib/BackgroundJob/ProcessImportsJob.php:54`)\"",
@@ -10915,7 +10939,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/filinq",
 				"change": "filinq/scan-intake-with-separator-sheets",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/filinq openspec/changes/scan-intake-with-separator-sheets (filinq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/filinq openspec/changes/scan-intake-with-separator-sheets (filinq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: scan intake is filinq's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:38-52,112 folder import locations scanned on a timer, PDFs split on QR separation sheets into existing case, new case, inbox or attachment; lib/Service/SeparationSheetService.php generates the sheets | round 2 drive: procest/opencase/round2/code-census.md:189 \"Separation sheets and QR cover sheets for scanning :: yes :: lib/Service/SeparationSheetService.php\"",
@@ -10948,7 +10976,11 @@
 				"spec": [
 					"openspec/specs/zgw-api-mapping",
 					"openspec/specs/dso-omgevingsloket"
-				]
+				],
+				"screen": {
+					"board": null,
+					"reason": "backend: ZGW and DSO intake API"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php:31-41 bearer-token public API incl. POST /public/v1/api/cases, participants, caseworkers, documents; lib/Controller/PublicApi/PublicCaseApiController.php:136,239 PublicPage actions guarded by the PublicDataApiMiddleware client check | round 2 drive: procest/opencase/round2/code-census.md:192 \"Public data API to create cases and documents :: yes\"",
@@ -10985,7 +11017,14 @@
 					}
 				],
 				"evidence": "#CaseDetail/headerActions.plan-follow-up; lib/Service/Flow/PlannedFollowUpDocument.php; dossiq#2732 110476a9e",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakGerelateerd",
+						"DqZaakDialogen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -il recurring, recurrence, gentag, periodisk over lib and src returns nothing; lib/BackgroundJob holds only export, index, import and sync jobs | round 2 drive: procest/opencase/round2/code-census.md:97 \"AccessDeadlineNotificationJob, BulkReindexJob, ExportClosedCasesJob, IndexFileJob, ProcessImportsJob, SyncFilecache, SyncOrganisationsJob.\"",
@@ -11014,7 +11053,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/messaging-intake-routing-rules",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/integriq openspec/changes/messaging-intake-routing-rules (integriq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/integriq openspec/changes/messaging-intake-routing-rules (integriq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: Office, Teams and Outlook add-ins belong to integriq"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 docs/dokumenter/ms-office.md:8,50-62 (vendor docs, not code) Outlook task pane can create a new case and save the mail as a document, Enterprise only; appinfo/routes.php:70,91 login-flow helper and manifest download serve the add-in; the add-in source (msoffice/) is not in the public tree | round 2 drive: procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\" | open for the lab: On an Enterprise instance with the Outlook add-in installed, does the task pane offer Opret ny sag and create the case with the mail saved on it?",
@@ -11043,7 +11086,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/files-leaf-save-to-object",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/files-leaf-save-to-object (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/files-leaf-save-to-object (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: a save action in Files and Talk through the OpenRegister files leaf"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/files-plugin.js:21-23 Save to OpenCase file action and src/talk-plugin.js:32 Talk message action, loaded by lib/Listener/FilesIntegrationListener.php:42 and TalkIntegrationListener.php:42; backend lib/Controller/FilesIntegrationController.php:48 and TalkController.php:48 | round 2 drive: procest/opencase/round2/code-census.md:191 \"Save any Nextcloud file or Talk chat to a case :: yes\"",
@@ -11072,7 +11119,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/shillinq",
 				"change": "shillinq/leges-at-intake",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/shillinq openspec/changes/leges-at-intake (shillinq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/shillinq openspec/changes/leges-at-intake (shillinq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: payment at intake happens in the portal and shillinq"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -il payment, betaling, mollie, stripe over lib and src returns nothing; no citizen intake exists to pay in | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -11106,7 +11157,11 @@
 					"openspec/specs/kcc-routing",
 					"openspec/specs/role-based-step-routing",
 					"openspec/specs/role-routing-via-or-rbac"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqTeamwachtrij"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:100 one configured incoming_organisation for all imported documents (set under src/views/ConfigurationView.vue:217 Indkommende dokumenter); separation sheets carry per-sheet case metadata. No rule that routes a new case to a unit or role by type | round 2 drive: procest/opencase/round2/code-census.md:177 \"Indkommende dokumenter (defaults for inbound documents: organisation, sensitivity, KLE, facet, insight level)\"",
@@ -11136,7 +11191,14 @@
 				"evidence": "src/manifest.json#Dashboard/headerActions.new-case; lib/Dashboard/StartCaseWidget.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"change": "2026-03-24-start-case-widget"
+				"change": "2026-03-24-start-case-widget",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqDashboard",
+						"DqMijnWerk"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/HomeView.vue:167,261 mounts NewCaseDialog and defines openNewCaseDialog but no template element calls it; lib/Dashboard widgets only link to existing cases. Nearest is the header Opret menu on every page (src/App.vue:194) | round 2 drive: procest/opencase/round2/pages/NextcloudDashboardWidgets.md:9 \"each row links into /apps/opencase/case/<id> or /document/<id>.\"",
@@ -11173,7 +11235,14 @@
 					}
 				],
 				"evidence": "openregister#3785 e7ac79d12",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/CaseNumberService.php:12-29,55-59,74-88 admin mask (yyyy, yy, #...#) with a per-year sequence taken under SELECT FOR UPDATE; lib/Migration/Version000001Date20260729000000.php:306 unique index on case_number | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:15 \"From the mask `yyyy-#####` in Configuration.\"",
@@ -11203,7 +11272,11 @@
 				"evidence": "dossiq_register.json#propertyDefinition; src/views/settings/tabs/PropertiesTab.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/property-definition-management"
+				"spec": "openspec/specs/property-definition-management",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type tabs under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseType.php:23-33 a case type holds only language, name, expired and primaryParticipant; CaseEntity has fixed columns and no per-type field set | round 2 drive: procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\"",
@@ -11238,7 +11311,11 @@
 					}
 				],
 				"evidence": "dossiq_register.json#workflowTemplate; caseType.isDraft/validFrom/validUntil; procest/_round4/discovery/casetype-configurability.md",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type pages under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseType.php:23-33 case type is a code-list row (name, language, expired, primaryParticipant) edited in CodeListDialog; no version, draft or publish state | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -11276,7 +11353,15 @@
 				],
 				"evidence": "src/manifest.json#Queue; #Cases/bulkActions.reassign; dossiq#2723 d7d8ec7c3",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with case-claim-action (dossiq#2723). The partial rating predates it and is due a re-rate in the corpus.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqTeamwachtrij",
+						"DqAanMijToegewezen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/EditCaseDialog.vue:55-62 the responsible user is changed only through the Edit dialog; NewCaseDialog.vue:599 makes it required, so a case cannot be unassigned; grep -i claim, overtag, assignToMe over src and lib finds no take-it-myself action | round 2 drive: procest/opencase/round2/code-census.md:130 \"responsible user (`setResponsibleUser`)\"",
@@ -11313,7 +11398,14 @@
 					}
 				],
 				"evidence": "src/manifest.json; dossiq#2849 132decb34",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakBetrokkenen",
+						"DqOverdragen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseEntity.php:55-56 orgUuid and accessProfileId: the case belongs to one organisation unit, required in NewCaseDialog; there is no role on that unit and no work queue per unit | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:18 \"The SF1500 unit that owns the case.\"",
@@ -11346,7 +11438,11 @@
 				"spec": [
 					"openspec/specs/reassignment-bulk-action",
 					"openspec/specs/case-bulk-status-transition"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaken"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseListView.vue:10-20 only filter selects, no row selection; grep -i checkbox or bulk over CaseListView and MyCasesView finds nothing | round 2 drive: procest/opencase/round2/code-census.md:169 \"No column chooser, no saved searches, no bulk actions.\"",
@@ -11376,7 +11472,11 @@
 				"evidence": "dossiq_register.json#statusType; src/views/settings/tabs/StatusesTab.vue; procest/_round4/discovery/casetype-configurability.md; StatusesTab.vue:47",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-types"
+				"spec": "openspec/specs/case-types",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type pages under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseStatus.php:23-26 status rows hold name, language, isClosed, expired only, edited as a code list (src/views/ConfigurationView.vue:229); src/views/CaseDetailView.vue:76-84 the header actions hard-code status ids 1 and 2. No colour, no order | round 2 drive: procest/opencase/round2/pages/Configuration-CodeLists.md:10 \"Case status columns: Danish, English, Expired.\"",
@@ -11406,7 +11506,14 @@
 				"evidence": "dossiq_register.json#case.tags",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"change": "2026-09-08-case-identity"
+				"change": "2026-09-08-case-identity",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseEntity.php fixed columns with no tag or label field; grep -i tag over src/components finds no case tagging | round 2 drive: procest/opencase/round2/code-census.md:77 \"Case core: `CaseEntity` (caseNumber, title, accessProfileId, orgUuid, year, statusId, casetypeId\"",
@@ -11436,7 +11543,14 @@
 				"evidence": "lib/Service/CaseCopyService.php; lib/Controller/CaseActionsController.php; #CaseDetail/headerActions.copy-case",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"change": "2026-09-09-case-actions-menu"
+				"change": "2026-09-09-case-actions-menu",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakDialogen",
+						"DqZaakMeer"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:58-62,251 Kopier sag opens CopyCaseDialog; src/components/CopyCaseDialog.vue:552-591 creates a new case and copies chosen documents with files, participants and journal notes | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:22 \"Edit, Copy case, Create subcase, New reminder\"",
@@ -11469,7 +11583,11 @@
 				"spec": [
 					"openspec/specs/deelzaak-support",
 					"openspec/specs/related-case-linking"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakGerelateerd"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:225,257 Opret undersag opens CreateSubCaseDialog and the Sagshierarki tab renders CaseHierarchyTab; CaseEntity parentCaseId. Hierarchy only, no sideways related-case link | round 2 drive: procest/opencase/round2/pages/CaseDetail-CaseHierarchy.md:5 \"Tree of parent and sub-cases.\"",
@@ -11499,7 +11617,11 @@
 				"evidence": "lib/Service/DeadlinePauseService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/termijn-pause-extension"
+				"spec": "openspec/specs/termijn-pause-extension",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqVolgendeStap"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseStatus.php and src/views/CaseDetailView.vue:76-87 only open, closed and archived; grep -i suspend or pause over src and lib finds no suspension | round 2 drive: procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
@@ -11529,7 +11651,11 @@
 				"evidence": "/api/case/{caseId}/reopen; appinfo/routes.php:443",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-management"
+				"spec": "openspec/specs/case-management",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqVolgendeStap"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:80-82 Genåbn sag when status_id is 2 calls changeStatus(1) via PUT /api/v1/cases/{id}/status (lib/Controller/CaseController.php:356) | round 2 drive: procest/opencase/round2/code-census.md:202 \"Case status open/closed/archived with reopen :: yes\"",
@@ -11566,7 +11692,11 @@
 					}
 				],
 				"evidence": "src/manifest.json:3465; src/dialogs/CaseRebindDialog.vue; lib/Service/CaseRebindService.php; appinfo/routes.php:162-164; dossiq#2914 8f2cd30b",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDialogen"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/CaseController.php:298-325 case update accepts title, organisation, KLE, sensitivity, responsible user, insight level, facet and summary, never casetype_id | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:16 \"A code-list value; changes only via Edit.\"",
@@ -11601,7 +11731,14 @@
 					"openspec/specs/case-map-via-maps-leaf",
 					"openspec/specs/map-component",
 					"openspec/specs/gis-integration"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZakenKaart"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue Ejendomme tab (CaseEstateList.vue) links BBR and cadastral estates with addresses to a case; grep -il leaflet, openlayers, maplibre over src and package.json returns nothing, so no map | round 2 drive: procest/opencase/round2/pages/EstateDetail.md:5 \"An estate (property) as a first-class object with its cadastral sub-objects and the cases on it.\"",
@@ -11631,7 +11768,14 @@
 				"evidence": "/case-objects",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-management"
+				"spec": "openspec/specs/case-management",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakGerelateerd",
+						"DqZaakDialogen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CaseEstateList.vue and CreateEstateDialog.vue: one fixed object type, the estate, linked to cases; no configurable object types | round 2 drive: procest/opencase/round2/code-census.md:204 \"Estates (property) as a first-class linked object :: yes :: src/components/CaseEstateList.vue\"",
@@ -11661,7 +11805,11 @@
 				"evidence": "src/manifest.json:3125 #CaseDetail sidebar tab audit (OpenRegister audit trail, actor, action and changes per row)",
 				"reachedOn": "#CaseDetail sidebar tab \"History\"",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-history-surface"
+				"spec": "openspec/specs/case-history-surface",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakHistorie"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/AuditService.php:42-48 case_metadata_changed stores from and to per field; src/components/CaseAuditLog.vue:206-222 the Log tab renders them (title, organisation, KLE, sensitivity changed from to); a change log, not a restorable snapshot | round 2 drive: procest/opencase/round2/pages/CaseDetail-Log.md:15 \"Access granted (with expiry), Case handler added, Case summary changed\"",
@@ -11699,7 +11847,11 @@
 				],
 				"evidence": "lib/Listener/BezwaarLegalHoldListener.php; src/modals/DeelzaakDeleteWarningModal.vue; dossiq#2729 022f821b7",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with case-delete-guard (dossiq#2729). The partial rating predates it and is due a re-rate in the corpus.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakMeer"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php and lib/Controller/CaseController.php have DELETE routes for documents (routes.php:163), files (:177) and grants (CaseController.php:511) but none for a case; closing and archiving are the end states | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:22 \"Close case (Reopen case and Archive when closed)\"",
@@ -11732,7 +11884,14 @@
 				"spec": [
 					"openspec/specs/case-access-control",
 					"openspec/specs/document-zaakdossier"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaakBetrokkenen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/NewCaseDialog.vue:597 sensitivity required on create; lib/Db/CaseEntity.php accessProfileId (organisation x KLE x sensitivity) and insightLevelId, shown in CaseInfoPanel.vue and driving access | round 2 drive: procest/opencase/round2/code-census.md:197 \"KLE classification, facet, sensitivity, insight level on the case :: yes\"",
@@ -11775,7 +11934,14 @@
 					}
 				],
 				"evidence": "openregister#3766 77bdb1901; dossiq#2875 a4919e93a",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqDashboard",
+						"DqMijnWerk"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js:115-122 recent and recent/cases routes plus favorites routes; lib/Db/FavoriteEntity.php and HistoryEntity.php; src/components/FavoriteButton.vue on the case header; lib/Dashboard FavoritesWidget and RecentWidget | round 2 drive: procest/opencase/round2/code-census.md:201 \"Favourites and recent items (cases and documents) :: yes\"",
@@ -11812,7 +11978,11 @@
 					}
 				],
 				"evidence": "src/main.js:243; src/services/caseLiveUpdates.js; src/manifest.json:2058; dossiq#2925 29488fa7",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -il websocket, EventSource, notify_push, setInterval over src hits only AdminSettings.vue:2379, a sync-status poll on the admin page; the case page does not refresh on others' changes | round 2 drive: procest/_round2/compare/M1-functionality.md:73 \"| 2.20 | Live updates on the case page | no |\"",
@@ -11848,7 +12018,11 @@
 				],
 				"evidence": "register.d/50-zaakportaal.json#portaalVerzoek",
 				"readOn": "2026-09-26",
-				"owner": "ConductionNL/portaliq"
+				"owner": "ConductionNL/portaliq",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: the change proposal queue is portaliq's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i proposal, forslag over src and lib finds no queue of proposed changes; writes apply directly | round 2 drive: procest/_round2/compare/M1-functionality.md:74 \"| 2.21 | Change proposals from colleagues or citizens queued for acceptance | no |\"",
@@ -11887,7 +12061,14 @@
 				],
 				"evidence": "src/manifest.json#StatusRecordDetail; dossiq#2912 7146db3bc",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with admin-inspect-entry (dossiq#2912). The partial rating predates it and is due a re-rate in the corpus.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakMeer",
+						"DqZaakDialogen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no admin view of a case's raw record; the admin Transaktionslog (lib/Controller/TransactionLogController.php) lists API and admin actions, not case data | round 2 drive: procest/opencase/round2/code-census.md:69 \"Admin settings (Nextcloud admin > OpenCase, `lib/Settings/AdminSettings.php`, `src/AdminSettings.vue`) sections: Serviceplatformen, Datafordeler\"",
@@ -11924,7 +12105,11 @@
 					}
 				],
 				"evidence": "src/manifest.json:3367; lib/Service/CaseMergeService.php; lib/Listener/CaseMergedListener.php; appinfo/routes.php:499; dossiq#2916 51a29efde",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDialogen"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no merge action on ZaakViewSet or ZaakAdmin",
@@ -11962,7 +12147,11 @@
 					}
 				],
 				"evidence": "src/manifest.json:641; src/services/createCaseWithDuplicateCheck.js; lib/Service/Intake/DuplicatePolicy.php; lib/Listener/IntakeRequirementsListener.php; dossiq#2900",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: duplicate warning at intake is next wave in vergelijking-dossiq.md"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 only identificatie uniqueness (models/identification.py unique constraint); no similarity check",
@@ -12000,7 +12189,14 @@
 					}
 				],
 				"evidence": "lib/Service/Pause/PauseChaseService.php; lib/BackgroundJob/PauseChaseJob.php; appinfo/info.xml:175; lib/Settings/register.d/66-pause-reason.json; dossiq#2876 327b1c01a",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaakDialogen"
+					]
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 stores dates and sends ZGW notifications on change; no timed chasing",
@@ -12039,7 +12235,11 @@
 				],
 				"evidence": "openregister#3764 4d8f0d2e2",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/relation-types-with-inverses (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/relation-types-with-inverses (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakGerelateerd"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/constants.py:99-111 aard_relatie vervolg, onderwerp, bijdrage on RelevanteZaakRelatie (models/zaken.py:715-760), one-sided; hoofdzaak and deelzaken are the only paired link",
@@ -12077,7 +12277,11 @@
 					}
 				],
 				"evidence": "src/manifest.json:3187; tests/vitest/caseEditLock.spec.js; nextcloud-vue src/components/CnDetailPage/CnDetailPage.vue; openregister appinfo/routes.php:1243-1244; dossiq#2924 b87d6d3c",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: no board names the lock holder"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 lock and unlock exist on enkelvoudiginformatieobjecten only (components/documenten); Zaak has no lock field",
@@ -12127,7 +12331,11 @@
 				],
 				"evidence": "lib/Service/Cmmn/CaseModelEngine.php; openregister#3944 878de2cd; openregister#3948 de4079be; openregister lib/Service/Flow/Bpmn/FlowBpmnImporter.php:120 and appinfo/routes.php:825-826: BPMN is import and export only, run as a native flow on lib/Service/Flow/FlowEngine.php (openregister#4040)",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: process engine in OpenRegister"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ril bpmn over lib and src returns nothing; lib/Service/WorkflowService.php:46 the only workflow is a document review or approval with two fixed types | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -12162,7 +12370,14 @@
 					"openspec/specs/workflow-definition-model",
 					"openspec/specs/process-step-configuration",
 					"openspec/specs/workflow-variants"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqWerkbord"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:76-87 status is open, closed, archived set from the header menu (Luk sag, Genaabn sag, Arkiver); case types are a bare code list in src/views/ConfigurationView.vue:229 | round 2 drive: procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
@@ -12195,7 +12410,14 @@
 				"spec": [
 					"openspec/specs/case-types",
 					"openspec/specs/status-transition-engine"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqTaak",
+						"DqVolgendeStap"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri checklist over lib and src returns nothing; there are no phases to hang items on (src/views/CaseDetailView.vue:76-87) | round 2 drive: procest/opencase/round2/code-census.md:207 \"Phases or checklists on a case :: no\"",
@@ -12236,7 +12458,11 @@
 					}
 				],
 				"evidence": "lib/Flow/DossiqAskPersonNode.php:141,394; dossiq#3086 6a1ab145",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqTaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:134-166 a workflow step is a review or approve action with a comment, opened from src/views/HomeView.vue:89-96 and the document Workflow tab (src/views/DocumentDetailView.vue:191); no configurable task form | round 2 drive: procest/opencase/round2/journeys.md:24 \"the only completable work item is a step in a document review or approval chain\"",
@@ -12301,7 +12527,15 @@
 				"evidence": "lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/components/tabs/CaseTasksTab.vue:58 task.dueDate with the overdue mark",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/task-management"
+				"spec": "openspec/specs/task-management",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqTaken",
+						"DqTaak",
+						"DqZaakTaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CreateWorkflowDialog.vue:21 workflow deadline split over steps by lib/Service/WorkflowService.php:81,336-351; reminder deadline in src/components/ReminderDialog.vue:14-16, overdue styling in src/components/ReminderList.vue:125 | round 2 drive: procest/opencase/round2/code-census.md:139 \"an optional deadline that is split evenly across steps (`calculateStepDeadlines`)\"",
@@ -12336,7 +12570,14 @@
 				"spec": [
 					"openspec/specs/task-management",
 					"openspec/specs/case-flow-human-steps"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqTaak",
+						"DqTaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CreateWorkflowDialog.vue:31-44 users are picked once when a review or approval workflow is created, lib/Service/WorkflowService.php:153-159 only the step user may act; src/components/ReminderDialog.vue:22 responsible user on a reminder; no claim, unassign or team assignment | round 2 drive: procest/opencase/round2/pages/DocumentDetail-Workflow.md:9 \"Users in order with Add and reorder arrows\"",
@@ -12373,7 +12614,11 @@
 					}
 				],
 				"evidence": "lib/Service/Transitions/CreateTaskHandler.php; lib/Service/Routing/*; dossiq#2721 cf3eff839",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakTaken"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 there are no generated tasks; workflow steps name their users explicitly at creation (lib/Service/WorkflowService.php:83-91) | round 2 drive: procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
@@ -12403,7 +12648,11 @@
 				"evidence": "lib/Service/Transitions/*Handler.php; lib/Flow/DossiqTx*Node.php; DossiqMergeTemplateNode.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/automatic-actions"
+				"spec": "openspec/specs/automatic-actions",
+				"screen": {
+					"board": null,
+					"reason": "backend: actions run by the engine on a transition"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 changeStatus from src/views/CaseDetailView.vue:76-87 only writes the status; grep over lib/Service for a status listener or automatic action returns none | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\"",
@@ -12436,7 +12685,14 @@
 				"spec": [
 					"openspec/specs/workflow-definition-engine",
 					"openspec/specs/cmmn-adaptive-case"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakDialogen",
+						"DqZaak"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CreateSubCaseDialog.vue opened from the Opret undersag action creates a plain child case (parentCaseId); there is no process or reusable building block to start | round 2 drive: procest/opencase/round2/code-census.md:108 \"BPM: none. Document review/approval workflow only\"",
@@ -12466,7 +12722,11 @@
 				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Service/Dmn/DecisionTableService.php; src/views/settings/tabs/DecisionTablesTab.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/dmn-decision-tables"
+				"spec": "openspec/specs/dmn-decision-tables",
+				"screen": {
+					"board": null,
+					"reason": "backend: decision tables evaluated by OpenRegister"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri 'rule|condition' over lib/Service finds only permission checks; case types carry no configuration (src/views/ConfigurationView.vue:229) | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -12495,7 +12755,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/buildiq",
 				"change": "buildiq/registration-form-builder",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/registration-form-builder (buildiq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/registration-form-builder (buildiq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: the form builder is buildiq's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no forms engine; dialogs are fixed Vue components (src/components/*Dialog.vue); no citizen or step form | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -12530,7 +12794,14 @@
 					}
 				],
 				"evidence": "src/manifest.json:2317; src/registry.js:651; src/modals/DocumentMetadataDialog.vue:152; dossiq#3083 19b334fb",
-				"owner": "ConductionNL/decidiq"
+				"owner": "ConductionNL/decidiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqUwWachtrij",
+						"DqZaakDocumenten"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:39-126,134-213 review or approval workflow on a document with ordered users, per-step deadlines, approve or reject with comment, notifications; src/views/DocumentDetailView.vue:191-194 Workflow tab with WorkflowPanel; appinfo/routes.php:193-198 | round 2 drive: procest/opencase/round2/code-census.md:208 \"Document review/approval workflow with ordered users and deadlines :: yes\"",
@@ -12559,7 +12830,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/nextcloud-vue",
 				"change": "nextcloud-vue/form-dialog-autosave",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/form-dialog-autosave (nextcloud-vue lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/form-dialog-autosave (nextcloud-vue lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqTaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no task forms to save part-way; workflow actions are single submits (lib/Service/WorkflowService.php:134) | round 2 drive: procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
@@ -12589,7 +12864,11 @@
 				"evidence": "src/manifest.json#CaseDetail/case-stages; lib/Service/MilestoneService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/milestone-tracking"
+				"spec": "openspec/specs/milestone-tracking",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue has no phase or progress element; the only progress bar is on a document's workflow (src/views/DocumentDetailView.vue:42-50) | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -12627,7 +12906,11 @@
 				],
 				"evidence": "lib/Command/MigrateWorkflowDefinitionsToFlowsCommand.php; openregister#3871 80fc3cd2",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/migrate-run-between-versions (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/migrate-run-between-versions (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: migration of running cases between definition versions"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types have no versions or definitions to migrate between (src/views/ConfigurationView.vue:229 code list only) | round 2 drive: procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
@@ -12657,7 +12940,11 @@
 				"evidence": "lib/Service/Dmn/DecisionTableService.php; lib/Service/TermijnService.php",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/2026-06-14-computed-fields",
-				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-computed-fields (save-time computed fields with date arithmetic); dossiq's half is in lib/Service/Dmn/DecisionTableService.php and lib/Service/TermijnService.php, read at dossiq 96b8ef8f. The missing scalar functions are openregister's calc-engine-scalar-functions (corrected 2026-09-28)."
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-computed-fields (save-time computed fields with date arithmetic); dossiq's half is in lib/Service/Dmn/DecisionTableService.php and lib/Service/TermijnService.php, read at dossiq 96b8ef8f. The missing scalar functions are openregister's calc-engine-scalar-functions (corrected 2026-09-28).",
+				"screen": {
+					"board": null,
+					"reason": "backend: computed fields in OpenRegister"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no formula or computed field; the only date arithmetic is the FOI deadline in lib/Service/AccessDeadlineService.php:20-28 and workflow step splitting | round 2 drive: procest/_round2/compare/M1-functionality.md:97 \"| 3.17 | Formula-based field fill and date calculation | no |\"",
@@ -12694,7 +12981,14 @@
 				],
 				"evidence": "#CaseDetail/case-tasks",
 				"owner": "ConductionNL/buildiq",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/pages-task-panel-beside-case-tabs (buildiq lane). built.change previously named buildiq/case-page-layout-per-case-type, which carried the built half."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/pages-task-panel-beside-case-tabs (buildiq lane). built.change previously named buildiq/case-page-layout-per-case-type, which carried the built half.",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaakTaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tabs only, no side panel; the case shows only a reminder banner (lines 24-32) | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:54 \"No tasks tab: work items are workflow steps on documents and reminders on the case.\"",
@@ -12731,7 +13025,11 @@
 				],
 				"evidence": "src/manifest.d/consultation-public.json#ExternalConsultationResponse",
 				"readOn": "2026-09-26",
-				"owner": "ConductionNL/portaliq"
+				"owner": "ConductionNL/portaliq",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: partner tasks live in the portaliq partner portal"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 workflow steps and reminders go to Nextcloud users only (lib/Service/WorkflowService.php:54-57 rejects unknown users); no external party task and no portal | round 2 drive: procest/_round2/compare/M1-functionality.md:99 \"| 3.19 | External (supply chain partner) task assignment | no |\"",
@@ -12775,7 +13073,11 @@
 				"evidence": "src/manifest.json:1542 #Cases bulkActions (reassign, transition, suspend, resume, extend-term), one act each; several changes per transition via automaticActions such as lib/Service/Transitions/SetFieldHandler.php:65 handle()",
 				"reachedOn": "#Cases list selection bulk actions; no next-item navigation after the write",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/macro-flows-with-next-item (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/macro-flows-with-next-item (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: no board for a macro"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 grep -ri macro over src returns nothing; an API has no one-click action for a handler",
@@ -12809,7 +13111,11 @@
 				"spec": [
 					"openspec/specs/document-zaakdossier",
 					"openspec/specs/document-projection"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 document record with case, number, type, status, dates, category; lib/Db/FileEntity.php:43 file rows point to a documentId; src/views/DocumentDetailView.vue:404 Filer tab lists the files of one document | round 2 drive: procest/opencase/round2/code-census.md:214 \"Document as a container of files with metadata and numbering :: yes\"",
@@ -12846,7 +13152,11 @@
 					}
 				],
 				"evidence": "dossiq#2642 a4685e7a6",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 has no folder or parent field; grep -i 'folder|mappe' over src/components/DocumentList.vue and FileList.vue returns nothing; documents sit flat on the case | round 2 drive: procest/opencase/round2/pages/CaseDetail-Files.md:5 \"Flat list of every file across the case's documents.\"",
@@ -12883,7 +13193,11 @@
 					}
 				],
 				"evidence": "src/manifest.json:2321; dossiq#3078 8babeadf; dossiq#2642 a4685e7a6",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/FileVersionsDialog.vue:48,54,60 Vis version, Download version, Gendan version; lib/Controller/FileController.php:503,540,602 versions, downloadVersion, restoreVersion; opened from FileList.vue:73 | round 2 drive: procest/opencase/round2/usability.md:15 \"file versions can be viewed and restored\"",
@@ -12916,7 +13230,11 @@
 				"spec": [
 					"openspec/specs/template-library",
 					"openspec/specs/beschikking-generatie"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqDocumentGenereren"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php:68,146 buildValues from case and document then mergeToTempFile; lib/Controller/FileController.php:225 files/from-template; src/services/api.js:190 called by NewFileFromTemplateDialog.vue; merge fields listed in src/views/TemplateFieldsView.vue | round 2 drive: procest/opencase/round2/code-census.md:216 \"New file from template with merge fields :: yes\"",
@@ -13012,7 +13330,11 @@
 				"evidence": "src/modals/DocumentMetadataDialog.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/document-zaakdossier"
+				"spec": "openspec/specs/document-zaakdossier",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:47-56 type, status, insight level, document, received and registered dates, category; lib/Migration/SeedReferenceData.php:72-74 categories Indgående, Udgående, Intern (direction), :223-228 insight levels as confidentiality; edited in src/components/EditDocumentDialog.vue:10-39 | round 2 drive: procest/opencase/round2/code-census.md:78 \"`Document` (caseId, documentNumber, title, documentType, status, insightLevelId, documentDate, receivedDate, registeredDate, documentCategoryId\"",
@@ -13041,7 +13363,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/nextcloud-vue",
 				"change": "nextcloud-vue/files-browser-columns",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/files-browser-columns (nextcloud-vue lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/files-browser-columns (nextcloud-vue lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/DocumentList.vue renders fixed rows with Åbn and Slet actions (lines 25,29); grep -i 'column' finds no chooser or column setting | round 2 drive: procest/opencase/round2/pages/CaseDetail-Documents.md:10 \"cards, no columns, no filters\"",
@@ -13071,7 +13397,11 @@
 				"evidence": "70-document-zaakdossier.json#informatieobject.keywords",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "none"
+				"spec": "none",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 has no tag or label field; the only classification is the fixed category (Indgående, Udgående, Intern) and document type in src/components/EditDocumentDialog.vue:10 | round 2 drive: procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\"",
@@ -13177,7 +13507,11 @@
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php; /api/beschikkingen/{id}/onderteken",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/libresign-besluit-signing"
+				"spec": "openspec/specs/libresign-besluit-signing",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakBesluiten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'sign' over lib/Service/DocumentService.php and FileService.php (excluding assign and design) returns nothing; no signing service or provider in lib/Service | round 2 drive: procest/opencase/round2/code-census.md:105 \"E-signing: none found (no sign/signature service in `lib/Service`).\"",
@@ -13207,7 +13541,11 @@
 				"evidence": "lib/Service/WOORedactionService.php; WOOAnonymisationAssistService.php; src/dialogs/RedactionAssistDialog.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/woo-llm-anonymisation"
+				"spec": "openspec/specs/woo-llm-anonymisation",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: review of the redaction proposal (capabilities-dossiq.md)"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/AccessRedaction.php:30-34 redaction record with type, original text, replacement, reason, legal reference; src/components/AccessRedactionList.vue:7,34 Tilføj maskering inside an aktindsigt request; appinfo/routes.php upload_masked stores a hand-masked file; nothing applies the redaction to the file | round 2 drive: procest/opencase/round2/pages/AccessRequestDetail.md:5 \"per-document decisions, redaction uploads and a decision letter.\" | open for the lab: On an aktindsigt item, is the masked file produced by OpenCase or uploaded by the case worker?",
@@ -13243,7 +13581,11 @@
 					}
 				],
 				"evidence": "lib/Service/Zaakdossier/DossierZipExporter.php; lib/Service/EmailArchivalService.php",
-				"owner": "ConductionNL/filinq"
+				"owner": "ConductionNL/filinq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: merge to PDF has no board"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/DocumentDetailView.vue:70-81 Journaliser på eksisterende or ny sag moves a document (MoveToCaseDialog.vue:70 moveDocumentToCase); copies only inside Kopier sag (CopyCaseDialog.vue:573 copyFilesToDocument); no merge into one PDF (Fpdi only reads separation sheets, ProcessImportsJob.php:798) | round 2 drive: procest/opencase/round2/code-census.md:110 \"PDF conversion via LibreOffice binary (`lib/Service/LibreOfficeService.php:64`)\"",
@@ -13347,7 +13689,11 @@
 					}
 				],
 				"evidence": "openregister lib/Listener/FileChangeListener.php; openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3903; openregister's own matrix (openregister#4040) reads this as API only with no screen, which misses ObjectsProvider.php:519: Nextcloud's search bar is a screen and it searches file text",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqKop"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/IndexFileJob.php:22-23,139-143 sends file bytes to Elasticsearch; lib/Service/ElasticsearchService.php:78-102 ingest-attachment pipeline (Tika) extracts text into attachment.content (:169-172); searched from src/views/SearchView.vue | round 2 drive: procest/opencase/round2/code-census.md:250 \"Full-text search over file content (Elasticsearch, Danish analyzer) :: yes\" | open for the lab: Does a free-text search find a word that only appears inside an uploaded PDF (needs Elasticsearch with ingest-attachment)?",
@@ -13412,7 +13758,11 @@
 					}
 				],
 				"evidence": "register.d/50-subsidie.json#bewijsstuk.fileHashSha256; dossiq#2919 1a2482883",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: the scan verdict on the document row has no board"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/FileService.php:119,131 stores a sha256 checksum per file and version, exposed at lib/Controller/PublicApi/PublicFileApiController.php:226; nothing re-verifies it and grep -i 'virus|clamav' over lib finds no scan | round 2 drive: procest/_round2/compare/M1-functionality.md:123 \"| 4.19 | Virus scan and integrity check | no |\"",
@@ -13450,7 +13800,14 @@
 				],
 				"evidence": "src/manifest.json:3363; dossiq#3078 8babeadf",
 				"note": "OpenSpec pass 2026-09-27: the zip export has its surface (document-acts-reach-a-surface, dossiq#3078). XML, SIP and TMLO or MDTO are openregister's e-Depot handover; dossiq's consumer half is the open change the-case-archives-through-openregister.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakArchivering",
+						"DqArchiveren"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/CaseExportService.php:44-55 writes case.xml (validated against appinfo/schema/case-export.xsd), files and audit logs per closed case; occ opencase:export-closed-cases and ExportClosedCasesJob; admin tab Eksporter lukkede sager at src/AdminSettings.vue:1740-1741 | round 2 drive: procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\"",
@@ -13480,7 +13837,11 @@
 				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php Corrections round 8 (2026-09-28), dossiq#3162: publish writes wooPublication onto the decision at lib/Service/WooPublicationService.php:255-261, but the decision schema at lib/Settings/dossiq_register.json:4010 declares none of the Woo fields and every dossiq schema is magic-mapped (lib/Service/Settings/RegisterStorageDeclaration.php:114), so the reference is dropped on save and withdraw at lib/Service/WooPublicationService.php:406-408 finds no publication, at c8ac742.",
 				"owner": "ConductionNL/opencatalogi",
 				"note": "OpenSpec pass 2026-09-27: matrix corrected (opencatalogi lane: existing): rated yes with built.state none. lib/Service/WooPublicationService.php and lib/Service/PublicationService.php read at dossiq 96b8ef8f (corrected 2026-09-28). Corrections round 8 (2026-09-28): the publication reference is not stored because the decision schema does not declare it, so a published Woo decision cannot be withdrawn and publishing again creates a second publication (live check in woo-publish-decision-from-the-case task 1.1), dossiq#3162; rating kept because the publish itself still reaches OpenCatalogi.",
-				"spec": "openspec/specs/woo-publication-via-opencatalogi"
+				"spec": "openspec/specs/woo-publication-via-opencatalogi",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqPubliceren"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no portal or publication code: appinfo/routes.php has no publish route and lib/Db/Document.php:44-56 no publication flag | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
@@ -13517,7 +13878,11 @@
 					}
 				],
 				"evidence": "lib/Service/Zaakdossier/DossierUploadHandler.php; dossiq#2642 a4685e7a6",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep for @drop, dragover, dropzone over src/ returns no handler; upload is a file input in src/components/NewDocumentDialog.vue; the virtual Files mount refuses new paths (lib/Storage/OpenCaseStorage.php:324-327 fopen returns false unless the path resolves to an existing file), so dragging into Files does not upload either. Agrees with the drive (journeys.md:19) | round 2 drive: procest/opencase/round2/journeys.md:19 \"Native picker; no drag and drop seen\"",
@@ -13588,7 +13953,11 @@
 				"spec": [
 					"openspec/specs/people-on-the-case",
 					"openspec/specs/roles-decisions"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakBetrokkenen"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/CaseParticipantController.php:91,105,123,195 participant roles, list, add, remove; src/components/CaseParticipantList.vue on the Parter tab of CaseDetailView | round 2 drive: procest/opencase/round2/code-census.md:225 \"Parties tab with roles, citizen or company, address protection :: yes\"",
@@ -13619,7 +13988,16 @@
 				"evidence": "src/manifest.json:6780 #Contacts index over brpPerson and src/manifest.json:6829 #Organisations index over kvkCompany",
 				"reachedOn": "app menu \"Contacts\" (src/manifest.json:239) with child \"Organisations\" (src/manifest.json:247)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/partner-organisations"
+				"spec": "openspec/specs/partner-organisations",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqContacten",
+						"DqContact",
+						"DqOrganisaties",
+						"DqOrganisatie"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no contact table: parties are stored per case (lib/Db/CaseParticipant.php) and per document (DocumentContact); the citizen and company search without enterprise falls back to those rows (lib/Controller/CitizenController.php:114-125 searchLocal over participantMapper and contactMapper) | round 2 drive: procest/opencase/round2/pages/Search-Citizen.md:15 \"the search runs over locally stored parties only\"",
@@ -13653,7 +14031,11 @@
 					"openspec/specs/brp-register",
 					"openspec/specs/kvk-register",
 					"openspec/specs/initiator-selection"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqNieuweZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Service/CprCvrLookupService.php:34-36,67-69 calls Datafordeler CitizenClient and CompanyClient only when enterprise_version is on and the class exists; those client classes are absent from the public tree (lib/Service/Datafordeler holds only DTOs); not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:226 \"CPR/CVR lookup (Datafordeler) :: partial (enterprise)\" | open for the lab: With the enterprise package enabled, does Søg Borger query CPR by number and return a person not yet on any case?",
@@ -13690,7 +14072,14 @@
 					}
 				],
 				"evidence": "src/manifest.json:7053,7145,7344,7436; dossiq#3083 19b334fb; openregister#3893 caf4fd43a",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqContact",
+						"DqOrganisatie"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CitizenSearchView.vue:178-234 citizen view with tabs Sager and Dokumenter; appinfo/routes.php:227-228 citizen cases and documents; CitizenController documents lists documents where the person is sender or recipient (findRawDocumentsByCpr), which is how OpenCase records correspondence; journal notes are not shown | round 2 drive: procest/opencase/round2/journeys.md:29 \"One match jumps straight to a citizen 360 view: card with masked CPR, tabs Cases (1) and Documents, Create case button.\"",
@@ -13723,7 +14112,15 @@
 				"spec": [
 					"openspec/specs/brp-register",
 					"openspec/specs/initiator-display"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqContacten",
+						"DqContact",
+						"DqZaakBetrokkenen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:40-43 Beskyttet adresse badge that reveals on click; src/views/CitizenSearchView.vue:486 logs each reveal to /transaction-log/address-protection (lib/Controller/TransactionLogController.php:26); CaseParticipant hasAddressProtection | round 2 drive: procest/opencase/round2/code-census.md:283 \"Address protection reveal with audit :: yes\"",
@@ -13761,7 +14158,11 @@
 				],
 				"evidence": "register.d/50-sociaal-domein.json#gdprClassification.accessRestriction; lib/Service/CitizenLookupGuard.php; dossiq#2926 e4b78094",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with sensitive-fields-declared (dossiq#2926). The partial rating predates it and is due a re-rate in the corpus.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqContacten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CprDisplay.vue:5-11 CPR masked until clicked, and address protection reveal is logged (CitizenSearchView.vue:486); sensitivity is part of the case access profile (lib/Db/AccessProfile.php); no separate permission gates the personal data itself | round 2 drive: procest/opencase/round2/create-case-anatomy.md:27 \"Organisation, KLE code and Sensitivity together form the access profile of the case.\"",
@@ -13791,7 +14192,11 @@
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; RolNode.vue; register.d/61-mandaat-matrix.json#organisatieRol",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/mandaat-matrix"
+				"spec": "openspec/specs/mandaat-matrix",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: organisation tree administration under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/EmployeeController.php:65,232 org tree and employee search; src/views/OrganisationSearchView.vue:122-123 OrgTreeNode tree; EmployeeSearchView lists employees with their cases (EmployeeController.php:185); organisations synced from SF1500 | round 2 drive: procest/opencase/round2/code-census.md:229 \"Organisation tree and employee search :: yes\"",
@@ -13829,7 +14234,11 @@
 				],
 				"evidence": "lib/Settings/bezwaar_seed_data.json; dossiq#2918 d1ab0af9",
 				"note": "OpenSpec pass 2026-09-27: the missing half, the generic Gemachtigde role type and its Represented by column, is open task 3.7 of gemachtigde-role-on-every-case-type.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakBetrokkenen"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Migration/SeedReferenceData.php:365-368 participant roles Sagspart, Ansøger, Klager, Høringspart; roles are an editable code list (Parts roller in ConfigurationView), so a representative can only be added as a plain role with no mandate meaning; grep -i 'fuldmagt|repræsentant|værge' finds nothing | round 2 drive: procest/opencase/round2/code-census.md:82 \"`AccessRequest` (type public_access / party_access / gdpr_access\"",
@@ -13859,7 +14268,11 @@
 				"evidence": "src/manifest.json#CaseDetail/initiator",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/initiator-display"
+				"spec": "openspec/specs/initiator-display",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:36-46 primary party line in the case header with CPR display, name, protected address and P-nummer | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:20 \"person icon, masked CPR button 010180XXXX, name, address\"",
@@ -13892,7 +14305,11 @@
 				"spec": [
 					"openspec/specs/bag-register-adapter",
 					"openspec/specs/brk-woz-register-adapters"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/EstateController.php:243,310,347 create an estate, link it to a case, list case estates; src/views/CaseDetailView.vue:233-235 Ejendomme tab with CaseEstateList; manual estates work without enterprise, BBR and MAT lookup needs it | round 2 drive: procest/opencase/round2/search-anatomy.md:12 \"Estates are first-class objects; see `pages/EstateDetail.md`.\"",
@@ -13921,7 +14338,11 @@
 				"state": "building",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/registry-subscription-connector",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/registry-subscription-connector, an existing open change, covers it (integriq lane)."
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/registry-subscription-connector, an existing open change, covers it (integriq lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: registry subscription connector in integriq"
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Db/CprEvent.php entity and lib/Service/AuditService.php:630,637 logCprEventReceived have no caller in the public tree; the CPR subscription and receiver sit in the enterprise package; not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:231 \"CPR event subscriptions :: partial (enterprise)\" | open for the lab: With the enterprise package, does a CPR change event for a party land on its cases as a log entry?",
@@ -13957,7 +14378,11 @@
 				],
 				"evidence": "dossiq_register.json#dispatch",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with document-correspondents (dossiq#2905). The partial rating predates it and is due a re-rate in the corpus.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakDocumenten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/DocumentContactController routes documents/{id}/contacts with contact roles (appinfo/routes.php document_contact#*); src/views/DocumentDetailView.vue:163-165,405 Afsendere/Modtagere tab with DocumentContactList | round 2 drive: procest/opencase/round2/code-census.md:228 \"Document senders/recipients :: yes\"",
@@ -13995,7 +14420,11 @@
 				],
 				"evidence": "src/components/map/AddressSearch.vue; openregister#3900 11cd9c2e9",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/external-register-view-leaf (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/external-register-view-leaf (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: embedded external register view"
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 src/router/index.js routes search-citizen, search-company, search-estate and estate-detail show register data with the cases on it, but live CPR, CVR and BBR reads need EnterpriseClient classes absent from the public tree (lib/Controller/EstateController.php:95-110 falls back to local rows); not checked: enterprise package is closed source | round 2 drive: procest/_round2/compare/M1-functionality.md:145 \"| 5.13 | External register views embedded in the app | no |\" | open for the lab: With the enterprise package, does /estate/<bfe> show BBR building data fetched live?",
@@ -14025,7 +14454,14 @@
 				"evidence": "src/manifest.json#CaseDetail/case-notes-panel",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-management"
+				"spec": "openspec/specs/case-management",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakEmail",
+						"DqZaak"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/JournalNoteController.php:59,75,110,143,163 list, create, edit, delete and lock journal notes; src/views/CaseDetailView.vue:186 JournalNoteList on the Journalnotater tab | round 2 drive: procest/opencase/round2/code-census.md:234 \"Journal notes (rich text, lockable) :: yes\"",
@@ -14063,7 +14499,14 @@
 				],
 				"evidence": "register.d/30-kcc.json#customerContact; 40-kcc-werkplek.json#contactmoment; lib/Controller/ContactMomentController.php; pipelinq#1970 428bd3a6b",
 				"owner": "ConductionNL/pipelinq",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/pipelinq openspec/changes/contact-moments-on-pipelinq-schema (pipelinq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/pipelinq openspec/changes/contact-moments-on-pipelinq-schema (pipelinq lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakContact",
+						"DqContact"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no contact moment entity in lib/Db and no channel or direction on journal notes (lib/Db/JournalNote.php:30-36) | round 2 drive: procest/opencase/round2/code-census.md:80 \"Communication: `JournalNote` (title, text, isLocked), `DpShipment`\"",
@@ -14093,7 +14536,11 @@
 				"evidence": "src/views/cases/components/CaseEmailTab.vue; /api/email/{caseId}/send-template; dossiq_register.json#emailTemplate",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-email-integration"
+				"spec": "openspec/specs/case-email-integration",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakEmail"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/SendEmailDialog.vue:11-129 Fra, Til, Cc, Bcc, Emne, rich text Besked, Gem som dokument på sagen and the document's files as attachments; lib/Controller/EmailController.php:215-251 sends through the user's Mail app account; no mail templates | round 2 drive: procest/opencase/round2/code-census.md:112 \"E-mail: sending a document from the user's own Mail-app account\"",
@@ -14136,7 +14583,14 @@
 					}
 				],
 				"evidence": "lib/Service/Timeline/TimelineKinds.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6",
-				"owner": "ConductionNL/openregister"
+				"owner": "ConductionNL/openregister",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakHistorie",
+						"DqZaakContact"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 notes (Journalnotater tab), sent mail and digital post (as documents) and the audit Log tab (CaseAuditLog.vue) are separate; no merged communication view in src/views/CaseDetailView.vue tabs | round 2 drive: procest/_round2/compare/M1-functionality.md:154 \"| 6.4 | Unified communication timeline per case (notes, mail, messages) | no |\"",
@@ -14173,7 +14627,11 @@
 					}
 				],
 				"evidence": "/api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: the organisation-wide inbox has no board"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ProcessImportsJob.php:55,253-266 imports attachments of unseen mails from IMAP import locations as documents on an inbox case; src/views/InboundDocumentsView.vue:26-29 organisation-wide list opens the document, whose Journaliser på eksisterende sag moves it to a case; the mails themselves are not kept as messages | round 2 drive: procest/opencase/round2/pages/IncomingDocuments.md:5 \"Inbox of documents that arrived from Digital Post, watched folders or IMAP mailboxes, to be journalised on an existing or new case.\"",
@@ -14214,7 +14672,11 @@
 				"spec": [
 					"openspec/specs/berichtenbox-integration",
 					"openspec/specs/burger-notifications"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqBerichtVersturen"
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Controller/DigitalPostController.php:64-73 returns 501 unless enterprise_version is on and Serviceplatformen PostForespoergClient exists; lib/Command/KombiPostAfsendCommand.php:32 needs DigitalPostSendClient; neither client is in the public tree (lib/Service/Serviceplatformen); not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:236 \"Digital post shipment with reply flag and status :: partial (enterprise)\" | open for the lab: With the enterprise package, does Forsendelse, Digital post on a document send it and show a shipment status?",
@@ -14259,7 +14721,11 @@
 				"evidence": "register.d/50-zaakportaal.json#portaalBericht; portaliq#607 809fde293; dossiq#2928 1184f78f2",
 				"readOn": "2026-09-26",
 				"note": "OpenSpec pass 2026-09-27: the missing half is the inbox contract (body, receivedAt and read), the attachments and the handler side. Specified with portaliq rows cmp-act-ask-question-case, dem-tnd-portal-talk-on-case and sib-dossiq-6-7.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakContact"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js:84 only a staff citizen search, no citizen route; appinfo/routes.php:20-34 public endpoints are mTLS machine receivers and a SAML bearer case API, no citizen login or message thread | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
@@ -14290,7 +14756,11 @@
 				"evidence": "lib/Notification/Notifier.php; lib/Service/MentionNotificationService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"change": "2026-07-14-ncvue-w2-leaves-adoption"
+				"change": "2026-07-14-ncvue-w2-leaves-adoption",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: the Nextcloud notification bell"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:214-218 Adviseringer bell button opens NotificationsDialog (App.vue:180); src/services/api.js:890-896 reads Nextcloud notifications filtered to app opencase; lib/Service/WorkflowService.php and FileShareService.php create them | round 2 drive: procest/opencase/round2/menu-tree.md:44 \"Notifications: opens the app's own Notifications dialog (workflow steps to act on, files shared with me).\"",
@@ -14328,7 +14798,11 @@
 				],
 				"evidence": "lib/Service/TermijnNotificationService.php; lib/Flow/DossiqScheduleReminderNode.php; openregister#3912 042864247",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/send-at-on-the-messaging-leaf (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/send-at-on-the-messaging-leaf (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakEmail"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'send_at|scheduled|planlagt|udskudt' near mail over lib and src returns nothing; lib/BackgroundJob holds import, index, export and access deadline jobs, no mail queue | round 2 drive: procest/_round2/compare/M1-functionality.md:159 \"| 6.9 | Scheduled or planned e-mails | no |\"",
@@ -14365,7 +14839,11 @@
 					}
 				],
 				"evidence": "dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakEmail"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 docs/dokumenter/ms-office.md:8,52-60 Enterprise Outlook task pane saves the selected mail as a case document and registers the sender as contact (vendor docs, not code; msoffice/ is not in the public tree); lib/Controller/EmailController.php:373 only writes .eml for mail sent from the app | round 2 drive: procest/opencase/round2/code-census.md:106 \"Office add-ins: Outlook, Word, Excel, PowerPoint task panes\" | open for the lab: With the enterprise Outlook add-in, can a saved .msg or .eml file (not a mail open in Outlook) be imported into a case with its sender and attachments parsed?",
@@ -14395,7 +14873,11 @@
 				"evidence": "lib/Service/Transitions/WebhookHandler.php; lib/Controller/NrcController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/automatic-actions"
+				"spec": "openspec/specs/automatic-actions",
+				"screen": {
+					"board": null,
+					"reason": "backend: webhooks on case events"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'webhook|cloudevent' over lib returns nothing; the public routes (appinfo/routes.php:20-34) are inbound only | round 2 drive: procest/_round2/compare/M1-functionality.md:161 \"| 6.11 | Event outbox or webhooks on case events | no |\"",
@@ -14433,7 +14915,11 @@
 				],
 				"evidence": "lib/Service/Conversation/CaseConversationService.php; CaseConversationsPanel.vue; openregister#3897 2a56f39b5",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/files-leaf-save-to-object (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/files-leaf-save-to-object (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakContact"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/talk-plugin.js:32-33,73 registers a Talk message action that posts to talk/save-chat, loaded by lib/Listener/TalkIntegrationListener.php:42; lib/Controller/TalkController.php:49,137 saves the transcript as a case document, PDF via LibreOffice | round 2 drive: procest/opencase/round2/code-census.md:238 \"Talk chat export to case :: yes\"",
@@ -14478,7 +14964,14 @@
 				"evidence": "lib/Controller/KccContactController.php; BelplanController.php; lib/Service/DoorverbindingService.php; src/views/settings/KccIntegrationSettings.vue; integriq#2072 3db280a65; integriq#2076 82bfbe6b0",
 				"owner": "ConductionNL/integriq",
 				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/kcc-cti-adapter, an existing open change, covers it (integriq lane).",
-				"spec": "openspec/specs/kcc-werkplek-zaaksysteem-bridge"
+				"spec": "openspec/specs/kcc-werkplek-zaaksysteem-bridge",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakContact",
+						"DqZaakDialogen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -i 'telefon|pbx|softphone|opkald' over lib and src hits only phone number fields in party dialogs | round 2 drive: procest/_round2/compare/M1-functionality.md:163 \"| 6.13 | Telephony (KCC) panel | no |\"",
@@ -14515,7 +15008,11 @@
 					}
 				],
 				"evidence": "dossiq#3116 fc7fc1bc8; dossiq#3086 6a1ab145; integriq#2070 fe1704f5f",
-				"owner": "ConductionNL/integriq"
+				"owner": "ConductionNL/integriq",
+				"screen": {
+					"board": null,
+					"reason": "backend: sync to an external case register"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/JournalNoteController.php stores journal notes locally; grep -i 'sbsys|fesd|external|sync' in it returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:164 \"| 6.14 | Notes synced to an external case register | no |\"",
@@ -14552,7 +15049,14 @@
 					}
 				],
 				"evidence": "src/manifest.json:3276; lib/Listener/ContactMomentTimelineListener.php; lib/Portal/PortalContributionProvider.php; src/views/public/PublicStatusPage.vue; dossiq#2907 afcc1626",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakEmail",
+						"DqZaakContact"
+					]
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:892,925-929 SubStatus.doelgroep betrokkenen or intern (constants.py:117-119); openapi.yaml:15003-15006 zaaknotitie notitieType intern or extern; only these two experimental entry kinds carry it, and nothing filters on it",
@@ -14612,7 +15116,11 @@
 				"evidence": "dossiq_register.json#resultType; src/views/settings/tabs/ResultsTab.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/result-type-management"
+				"spec": "openspec/specs/result-type-management",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqVolgendeStap"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case close only sets status 2 (src/views/CaseDetailView.vue:76-79); lib/Db/CaseEntity.php has no result field; case types carry no result list | round 2 drive: procest/opencase/round2/code-census.md:242 \"Formal case decision or result type :: no\"",
@@ -14642,7 +15150,11 @@
 				"evidence": "register.d/95-dmn-decision-tables.json#decisionTable; lib/Controller/DecisionTableController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/dmn-decision-tables"
+				"spec": "openspec/specs/dmn-decision-tables",
+				"screen": {
+					"board": null,
+					"reason": "backend: decision tables evaluated by OpenRegister"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri 'dmn|decision table' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:171 \"| 7.2 | Decision tables (DMN) | no |\"",
@@ -14678,7 +15190,14 @@
 					"openspec/specs/besluitvorming-leaf",
 					"openspec/specs/remaining-decision-delegation",
 					"openspec/specs/zgw-brc"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakBesluiten",
+						"DqBesluit"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/AccessDecisionService.php:15,36-44,81 a decision record (decision text, complaint guidance, approved by, sent by) exists for FOI requests only; ordinary cases have no decision record | round 2 drive: procest/opencase/round2/code-census.md:82 \"Decisions: FOI only: `AccessRequest`\"",
@@ -14711,7 +15230,14 @@
 				"spec": [
 					"openspec/specs/beschikking-generatie",
 					"openspec/specs/vth-beschikking-generation"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqDocumentGenereren",
+						"DqZaakBesluiten"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/AccessExportService.php:19-20,73-74 the FOI export builds a cover letter from the decision text inside the ZIP; FOI only, a text file, no template step for other decisions | round 2 drive: procest/opencase/round2/code-census.md:82 \"`AccessDecision` (decisionText, complaintGuidance, approvedBy, sentBy, deliveryMethod)\"",
@@ -14741,7 +15267,15 @@
 				"evidence": "lib/Controller/WOOAssessmentController.php; lib/Service/WOODocumentAssessmentService.php; src/views/doorlooptijd/widgets/DtWooWidget.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/woo-case-type"
+				"spec": "openspec/specs/woo-case-type",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqWooVerzoeken",
+						"DqBesluit",
+						"DqPubliceren"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/AccessRequestDetailView.vue:124-125,145,286 per-document decision with exclusion reason and a Maskering tab; lib/Service/AccessRequestService.php:15-19 nine-state request flow; appinfo/routes.php:338-345; lib/Service/AccessExportService.php:56-91 export of the released set | round 2 drive: procest/opencase/round2/code-census.md:241 \"FOI (aktindsigt) request with per-document decision, redaction upload, decision letter, export ZIP :: yes\"",
@@ -14780,7 +15314,14 @@
 					"openspec/specs/bezwaar-hearing",
 					"openspec/specs/bezwaar-rest-api",
 					"openspec/specs/objections-appeals-nav-group"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaakBesluiten"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 the only objection element is the complaint guidance text in the FOI decision (lib/Service/AccessDecisionService.php:15); grep -ri 'klage' over src/views finds no objection surface | round 2 drive: procest/_round2/compare/M1-functionality.md:175 \"| 7.6 | Objection handling surface | no |\"",
@@ -14810,7 +15351,14 @@
 				"evidence": "lib/Service/Archival/ArchivalNominationDeriver.php:144 derive() sets archiveNomination and archiveActionDate from resultType; called via lib/Service/Transitions/CaseResultWriter.php:150 archivalFuture() from lib/Service/StatusTransitionService.php:567 on closing",
 				"reachedOn": "#CaseDetail case-stages move to a final status; result shown in tab \"Archiving\" (src/manifest.json:2952)",
 				"owner": "ConductionNL/openregister",
-				"spec": "openspec/specs/archief-edepot-handover"
+				"spec": "openspec/specs/archief-edepot-handover",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakArchivering",
+						"DqArchiveren"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 there is no result; archiving is a status value 3 (src/views/CaseDetailView.vue:84-87) and a closed-case XML export (lib/Service/CaseExportService.php), with no retention rule | round 2 drive: procest/_round2/compare/M1-functionality.md:176 \"| 7.7 | Result drives archival nomination and retention | no |\"",
@@ -14844,7 +15392,11 @@
 					"openspec/specs/termijn-binding",
 					"openspec/specs/termijnbewaking-schemas",
 					"openspec/specs/termijn-verification-admin"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/AccessDeadlineService.php:11-28 a statutory term per FOI request type (7 working days, 30 days for GDPR) with deadlineAt; ordinary case types carry no lead time (src/views/ConfigurationView.vue:229) | round 2 drive: procest/opencase/round2/code-census.md:247 \"Case lead time or due date :: no\"",
@@ -14877,7 +15429,15 @@
 				"spec": [
 					"openspec/specs/case-dashboard-view",
 					"openspec/specs/doorlooptijd-dashboard"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaken",
+						"DqDashboard"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:24-32,706-707 overdue styling on the next reminder in the case header; src/views/AccessRequestListView.vue:36 traffic-light AccessDeadlineBadge on FOI requests; the case lists (CaseListView.vue, MyCasesView.vue) show no deadline | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:19 \"Red when overdue (1 sep on a 7 sep instance).\"",
@@ -14907,7 +15467,14 @@
 				"evidence": "lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/store/modules/engineTask.js; src/components/tabs/CaseTasksTab.vue:58",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/task-management"
+				"spec": "openspec/specs/task-management",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqTaken",
+						"DqTaak"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/WorkflowService.php:81,89,336-351 per-step deadlines on review and approval steps, shown on the home page (src/views/HomeView.vue:86-120); reminders carry a deadline (src/components/ReminderDialog.vue:14-16) | round 2 drive: procest/opencase/round2/pages/DocumentDetail-Workflow.md:6 \"ordered step list (n. user, step deadline\"",
@@ -14944,7 +15511,14 @@
 					}
 				],
 				"evidence": "lib/Flow/DossiqScheduleReminderNode.php; #Dashboard/task-reminders; dossiq#2920 3e36eb6c",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakDialogen",
+						"DqUwWachtrij"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Reminder.php entity with deadline, status and responsible user; src/components/ReminderDialog.vue:14-36 Frist and Ansvarlig; banner for the next active reminder src/views/CaseDetailView.vue:24-32; appinfo/routes.php:372-378; lib/Controller/ReminderController.php:302 notifies the responsible user | round 2 drive: procest/opencase/round2/code-census.md:209 \"Reminders with deadline and responsible user on cases and documents :: yes\"",
@@ -14974,7 +15548,11 @@
 				"evidence": "lib/Service/DeadlineExtensionService.php; /api/termijn/instances/{id}/verleng; caseType.extensionAllowed/extensionPeriod",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/termijn-pause-extension"
+				"spec": "openspec/specs/termijn-pause-extension",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqVolgendeStap"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/AccessRequestService.php:86-88 extended_deadline_at with extension_reason for FOI requests, accepted by PATCH /api/v1/access-requests/{id} (appinfo/routes.php:343); no screen sends it (grep extended_deadline over src only finds the read-only display at src/views/AccessRequestDetailView.vue:69-70) | round 2 drive: procest/opencase/round2/code-census.md:83 \"`AccessRequest.deadlineAt` / `extendedDeadlineAt` (7-day FOI deadline\"",
@@ -15004,7 +15582,11 @@
 				"evidence": "lib/BackgroundJob/DeadlineNotificationDispatchJob.php; lib/Service/TermijnNotificationService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/termijn-escalation"
+				"spec": "openspec/specs/termijn-escalation",
+				"screen": {
+					"board": null,
+					"reason": "backend: deadline e-mails"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/AccessDeadlineNotificationJob.php:22-80 would notify on FOI deadlines, but nothing schedules it (not in appinfo/info.xml, not added in lib/AppInfo/Application.php:172-245) and lib/Notification/FileShareNotifier.php:229 throws UnknownNotificationException for its access_deadline_* subjects; no e-mail path | round 2 drive: procest/opencase/round2/code-census.md:245 \"FOI statutory deadline with extension and notification job :: yes\"",
@@ -15034,7 +15616,11 @@
 				"evidence": "lib/Service/Recycle/RetentionClocks.php:108 clocksFor() (lawful purpose and archive dates) and lib/Service/Recycle/CaseDestructionService.php:163 destroy(); no automatic deletion job in dossiq",
 				"reachedOn": "#CasesDeleted (menu \"Deleted cases\", src/manifest.json:261) via src/views/cases/DeletedCasesView.vue, API /api/case/{caseId}/destroy and /retention-clocks",
 				"owner": "ConductionNL/openregister",
-				"change": "case-recycle-window"
+				"change": "case-recycle-window",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakArchivering"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ExportClosedCasesJob.php:14-44 exports closed cases to an archive folder hourly when enabled; no retention period, destruction date or deletion anywhere in lib/Service | round 2 drive: procest/opencase/round2/code-census.md:222 \"Closed-case XML export for archive :: yes\"",
@@ -15064,7 +15650,11 @@
 				"evidence": "register.d/65-milestone-tracking.json#milestoneDefinition; lib/Service/MilestoneService.php; src/manifest.json#CaseDetail/case-stages",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/milestone-tracking"
+				"spec": "openspec/specs/milestone-tracking",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri milestone over lib and src returns nothing; no phases | round 2 drive: procest/opencase/round2/case-detail-anatomy.md:51 \"No phase, progress bar, milestone or \"next step\" anywhere.\"",
@@ -15094,7 +15684,11 @@
 				"evidence": "lib/Service/TermijnTimerService.php; lib/Listener/TermijnTimerFiredListener.php; lib/Repair/ArmTermijnEngineTimers.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"change": "every-term-on-the-engine-calendar"
+				"change": "every-term-on-the-engine-calendar",
+				"screen": {
+					"board": null,
+					"reason": "backend: timers in the term engine"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no process engine; background jobs are fixed Nextcloud TimedJobs (lib/BackgroundJob) | round 2 drive: procest/opencase/round2/code-census.md:138 \"No BPMN, CMMN or phase model.\"",
@@ -15124,7 +15718,11 @@
 				"evidence": "lib/Service/DeadlinePauseService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/termijn-pause-extension"
+				"spec": "openspec/specs/termijn-pause-extension",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqVolgendeStap"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case status is open, closed or archived (src/views/CaseDetailView.vue:76-87); grep -ri 'suspend|pause' over lib and src finds no suspension | round 2 drive: procest/opencase/round2/code-census.md:138 \"A case is a record with a 3-value status (open, closed, archived)\"",
@@ -15161,7 +15759,11 @@
 					}
 				],
 				"evidence": "lib/Service/Termijn/TermEndRoll.php; lib/Settings/register.d/60-termijnbewaking.json:66; src/views/settings/tabs/TermijnDefinitiesTab.vue; dossiq#2941 b72f2f3f",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "backend: the term engine moves the end date"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:680-690 startdatum plus doorlooptijd; src/openzaak/components/besluiten/models.py:169-172 a TODO notes the reactiedatum should respect weekends and holidays and leaves it undone",
@@ -15199,7 +15801,11 @@
 					}
 				],
 				"evidence": "dossiq#2941 b72f2f3f",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: working calendar administration under Advanced"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no calendar model in any component; the only mention is the TODO at src/openzaak/components/besluiten/models.py:172",
@@ -15230,7 +15836,11 @@
 				"evidence": "lib/Service/DeadlinePauseService.php:94 registerPauze() extends einddatumActueel by the pause and :303 resumeAfterPauze() gives back only the unconsumed days; called from lib/Service/CaseLifecycleService.php:142 suspend() and :187 resume()",
 				"reachedOn": "#CaseDetail header action \"Lifecycle\" (Suspend, Resume in src/dialogs/CaseLifecycleMenuDialog.vue:267) and #Cases bulk actions Suspend / Resume; API /api/case/{caseId}/suspend and /resume",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/termijn-pause-extension"
+				"spec": "openspec/specs/termijn-pause-extension",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/api/serializers/zaken.py:1811-1850 zaak_opschorten stores the flag and reason; no date is recomputed on suspend or resume",
@@ -15261,7 +15871,11 @@
 				"evidence": "lib/Service/DeadlineEscalationService.php:58 DEFAULT_MATRIX four rungs (14d handler, 7d plus teamleader, 2d plus manager, 0d overschreden critical), fired by lib/Listener/TermijnTimerFiredListener.php:204 notifyThreshold(); share based rungs in lib/Service/Term/ThresholdShares.php:73 rulesFor()",
 				"reachedOn": "background timer, delivered as Nextcloud notifications; terms overview on #TermijnDashboard (menu src/manifest.json:396)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/termijn-escalation"
+				"spec": "openspec/specs/termijn-escalation",
+				"screen": {
+					"board": null,
+					"reason": "backend: escalation notifications"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no escalation in any component; notifications are resource-change events only (src/openzaak/notifications)",
@@ -15292,7 +15906,11 @@
 				"evidence": "lib/Service/TermijnService.php:156 stores the term end as a Y-m-d date (counted and rolled by the Awt roll in lib/Service/Termijn/TermEndRoll.php:102); lib/Service/CaseTermsService.php:525 daysLeft() compares whole days, so a term is overdue only after its end day",
 				"reachedOn": "#CaseDetail sidebar tab \"Terms\" (src/manifest.json:3136, CaseTermsTab) and the Deadline tile (src/manifest.json:2097)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "none"
+				"spec": "none",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:215,221 einddatum_gepland and uiterlijke_einddatum_afdoening are DateField",
@@ -15330,7 +15948,11 @@
 				],
 				"evidence": "lib/Search/ObjectsProvider.php",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqKop"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:36 nav entry to the search page; src/views/SearchView.vue:7,229 one box over content, titles and case numbers, dispatches the store search; lib/Controller/SearchController.php:61 GET /api/v1/search returns cases, documents and files; lib/AppInfo/Application.php:114-116 three Nextcloud unified search providers in the header | round 2 drive: procest/opencase/round2/search-anatomy.md:18 \"Query \"Lund\" grouped both cases under Cases with number and title, each linking to the case.\"",
@@ -15382,7 +16004,14 @@
 				],
 				"evidence": "CaseTypeFieldFilters.vue; dossiq#3085 87ec6952",
 				"owner": "ConductionNL/openregister",
-				"spec": "openspec/specs/case-search-via-or-unified-search"
+				"spec": "openspec/specs/case-search-via-or-unified-search",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqKop",
+						"DqZaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseFieldSearchView.vue:9-70 ten fixed fields (text, organisation, year, status, case type, KLE, sensitivity, facet, insight level, responsible), :277 api.getCases; no field varies with the case type | round 2 drive: procest/opencase/round2/search-anatomy.md:8 \"Ten fields on one form. No deadline or date-range filter on cases.\" | open for the lab: Does choosing a Sagstype in Søg sager add any case-type-specific field to the form?",
@@ -15412,7 +16041,14 @@
 				"evidence": "src/manifest.json:1580 #Cases allowSavedViews true (also #Queue at :1409, #CaseObjects at :4154, #Contacts at :6787, #Organisations at :6836): the CnIndexPage Views dropdown over the user's OpenRegister saved views",
 				"reachedOn": "#Cases, #Queue, #CaseObjects, #Contacts, #Organisations list header \"Views\" dropdown, \"Save current view\"; not on #Tasks (allowSavedViews false at src/manifest.json:3967)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-search-and-lists"
+				"spec": "openspec/specs/case-search-and-lists",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaken",
+						"DqTaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'saved.?search|saved.?view|gemt søgning' over src and lib returns nothing; src/views/SearchView.vue and CaseFieldSearchView.vue have no save action | round 2 drive: procest/opencase/round2/search-anatomy.md:26 \"None. No saved views, no pinned filters, no recent queries.\"",
@@ -15441,7 +16077,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/view-group-share",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/view-group-share (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/view-group-share (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaken"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches exist at all (see 9.3), so none can be shared | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
@@ -15471,7 +16111,14 @@
 				"evidence": "src/manifest.json:1923 #Cases sidebar enabled, mounting CnIndexSidebar whose Columns tab toggles visible columns",
 				"reachedOn": "#Cases list sidebar tab \"Columns\"",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-search-and-lists"
+				"spec": "openspec/specs/case-search-and-lists",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaken",
+						"DqTaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep for column chooser or kolonne over src returns only CSS; src/views/CaseListView.vue renders fixed columns | round 2 drive: procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\"",
@@ -15509,7 +16156,11 @@
 				],
 				"evidence": "openregister lib/Search/ObjectsProvider.php:519; openregister lib/Service/Object/ContentSearchHandler.php; openregister#3892",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/content-search-index (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/content-search-index (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqKop"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/ElasticsearchService.php:78-89 ingest-attachment pipeline extracts all file text, :169-176 attachment.content indexed with a Danish analyzer; lib/Service/SearchService.php:205-210 search page queries it; src/views/SearchView.vue:8 placeholder Søg i indhold | round 2 drive: procest/opencase/round2/search-anatomy.md:7 \"The only search that reads inside files.\"",
@@ -15539,7 +16190,11 @@
 				"evidence": "lib/Service/CaseAccessGuard.php",
 				"owner": "ConductionNL/openregister",
 				"note": "OpenSpec pass 2026-09-27: matrix corrected: rated yes with built.state none. Access-filtered search is built: openregister lib/Db/MagicMapper/MagicRbacHandler.php filters rows in SQL (read at openregister 555af721); dossiq lib/Service/CaseAccessGuard.php (corrected 2026-09-28).",
-				"spec": "openspec/specs/case-access-control"
+				"spec": "openspec/specs/case-access-control",
+				"screen": {
+					"board": null,
+					"reason": "backend: access filter on every query"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/SearchService.php:64 refuses users without any access, :208-210 passes access profile ids and direct case ids to Elasticsearch; ElasticsearchService.php:337 terms filter on access_profile_id; lib/Db/CaseMapper.php:892-894 case query joined on the user's case access | round 2 drive: procest/opencase/round2/code-census.md:254 \"Search results filtered by access profile :: yes\"",
@@ -15572,7 +16227,11 @@
 				"spec": [
 					"openspec/specs/case-map-overview",
 					"openspec/specs/case-map-via-maps-leaf"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZakenKaart"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'leaflet|openlayers|maplibre' over src returns nothing; search views render lists only | round 2 drive: procest/opencase/round2/search-anatomy.md:30 \"dossiq's Cases index (CnIndexPage) carries saved views, table, cards and map view modes\"",
@@ -15610,7 +16269,14 @@
 				],
 				"evidence": "src/components/initiator/InitiatorPicker.vue; openregister#3893 caf4fd43a",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/contacts-leaf-cases-panel (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/contacts-leaf-cases-panel (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqKop",
+						"DqContacten"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js /search/citizen and /search/company; lib/Controller/CitizenController.php:143,158 GET /api/v1/citizen/search uses the CPR service when enterprise is on and a local fallback search (:106) when it is off; /api/v1/citizen/cases and /documents give the 360 view | round 2 drive: procest/opencase/round2/pages/Search-Citizen.md:5 \"Find a citizen by CPR, name or address and open a citizen 360 view with their cases and documents.\"",
@@ -15640,7 +16306,11 @@
 				"evidence": "src/manifest.json:4118 #CaseObjects index over caseObject with search and saved views (:4154)",
 				"reachedOn": "app menu \"Objects\" (src/manifest.json:268), #CaseObjects list search; row action opens the linked case",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-search-and-lists"
+				"spec": "openspec/specs/case-search-and-lists",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: the case objects index has no board"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js /search/estate, EstateSearchView.vue by BFE number or address; estates are one fixed entity, no user-defined object types | round 2 drive: procest/opencase/round2/pages/Search-Estate.md:5 \"Find an estate by BFE number or address\"",
@@ -15677,7 +16347,11 @@
 					}
 				],
 				"evidence": "dossiq#2898 75d5c333",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqTaken"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/WorkflowController.php:92 GET /api/v1/me/workflow-tasks lists the user's document workflow tasks with no filter parameters; no task search view in src/router/index.js | round 2 drive: procest/opencase/round2/code-census.md:81 \"Tasks and phases: none as an entity.\"",
@@ -15715,7 +16389,11 @@
 				"evidence": "src/manifest.json:7534 deepLinks (case, objectionProceeding, beroep, brpPerson, kvkCompany) handed to OpenRegister's unified search provider through the AppHost registration in lib/AppInfo/Registrar/AppHostRegistrar.php:99 register(); no dossiq IProvider of its own; engine tasks have no provider",
 				"reachedOn": "Nextcloud header unified search, results open /apps/dossiq/cases/{uuid} (#CaseDetail) and the other detail pages",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/unified-search-index (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqKop"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/AppInfo/Application.php:114-116 registers OpenCaseCasesSearchProvider, OpenCaseDocumentsSearchProvider and OpenCaseFilesSearchProvider; lib/Search/OpenCaseCasesSearchProvider.php:43-74 returns cases linking to case/{id} | round 2 drive: procest/opencase/round2/pages/NextcloudUnifiedSearch.md:5 \"Three OpenCase providers in unified search: Cases, Documents, Files.\"",
@@ -15744,7 +16422,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/saved-view-count-alert",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/saved-view-count-alert (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/saved-view-count-alert (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: saved search alerts"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no saved searches and no threshold alerting in src/openzaak",
@@ -15786,7 +16468,11 @@
 				"spec": [
 					"openspec/specs/termijn-reporting",
 					"openspec/specs/sla-charts-via-analytics-leaf"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqDashboard"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/AppInfo/Application.php:107-110 four dashboard widgets (my cases, inbound documents, favorites, recent), all lists; no count, gauge or chart component in src/components | round 2 drive: procest/opencase/round2/home-anatomy.md:5 \"There are no KPI numbers, no charts and no list of cases on the page.\"",
@@ -15819,7 +16505,14 @@
 				"spec": [
 					"openspec/specs/signalering-widgets",
 					"openspec/specs/dashboard"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqDashboard",
+						"DqMijnWerk"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/AppInfo/Application.php:107-110 registers four widgets on the Nextcloud dashboard, where each user picks widgets; OpenCase's own home view (src/views/HomeView.vue) is not configurable | round 2 drive: procest/opencase/round2/menu-tree.md:53 \"Dashboard widgets (`/apps/dashboard`, Customize): Mine sager, Indkommende dokumenter, Favoritter, Seneste.\"",
@@ -15849,7 +16542,14 @@
 				"evidence": "src/components/export/CaseListExportAction.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-list-export-via-or-export-leaf"
+				"spec": "openspec/specs/case-list-export-via-or-export-leaf",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaken",
+						"DqTaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri 'csv|xlsx|export' over src/views finds no export on case or search lists; the only CSV download is the admin transaction log (src/AdminSettings.vue:1350,2555) | round 2 drive: procest/opencase/round2/search-anatomy.md:3 \"None of them has saved searches, a column chooser, export or sort.\"",
@@ -15879,7 +16579,11 @@
 				"evidence": "src/manifest.json#ProcessMiningDashboard; lib/Service/ProcessMiningService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"change": "2026-07-14-process-mining-bottlenecks"
+				"change": "2026-07-14-process-mining-bottlenecks",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: process analytics page under Reports"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'heatmap|lead.?time|throughput' over src and lib returns nothing; no report or chart view in src/router/index.js | round 2 drive: procest/opencase/round2/code-census.md:258 \"Report pages or charts :: no\"",
@@ -15909,7 +16613,11 @@
 				"evidence": "src/views/settings/StufAuditLog.vue; lib/Controller/AiAuditExportController.php; openregister src/views/logs/AuditTrailIndex.vue and export at appinfo/routes.php:1350 are admin-only; openregister#4018 adds GET /api/audit-trails/readable with no screen",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/audit-log-page",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/audit-log-page (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/audit-log-page (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: the audit log page is OpenRegister's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1268-1350 Transaktionslog tab with filters on user, from and to time, log source (searches and lookups or audit trail) and type, plus Eksporter til CSV (:2555); appinfo/routes.php:94-95 settings/transaction-log | round 2 drive: procest/opencase/round2/code-census.md:259 \"Transaction log viewer for admins :: yes\"",
@@ -15939,7 +16647,11 @@
 				"evidence": "/api/dashboard/kpis; /api/reports/process-mining; /api/metrics",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/prometheus-metrics"
+				"spec": "openspec/specs/prometheus-metrics",
+				"screen": {
+					"board": null,
+					"reason": "backend: reporting and metrics API"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php:142 GET /api/v1/cases/stats; lib/Controller/CaseController.php:411 counts cases per organisation and year; src/store/index.js:39-40 the SPA reads it to build the organisation list; no other reporting endpoint | round 2 drive: procest/opencase/round2/code-census.md:122 \"Statistics endpoint `GET /api/v1/cases/statistics` (`API.md:56`).\"",
@@ -15969,7 +16681,11 @@
 				"evidence": "openregister lib/Db/ExportRun.php; openregister appinfo/routes.php:1937",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/an-export-is-a-file-with-a-life",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/an-export-is-a-file-with-a-life (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/an-export-is-a-file-with-a-life (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: export files area"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no stored export area; the access request export streams a ZIP (src/views/AccessRequestDetailView.vue:449-451) and nothing lists past exports | round 2 drive: procest/_round2/compare/M1-functionality.md:220 \"| 10.7 | Export files area with expiry and download counts | no |\"",
@@ -16013,7 +16729,11 @@
 				],
 				"evidence": "lib/Controller/DossierExportController.php; lib/Service/BeroepDossierExport.php; openregister#3885 daa74b456; openregister#3889 fe252b5c6",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/activity-leaf (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/activity-leaf (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakHistorie"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/CaseAuditLog.vue:153 lists the case audit log with paging only; no export control; lib/Controller/AuditController.php:48 has no export format | round 2 drive: procest/_round2/compare/M1-functionality.md:221 \"| 10.8 | Timeline export per case or contact | no |\"",
@@ -16043,7 +16763,11 @@
 				"evidence": "src/manifest.json:3125 #CaseDetail sidebar tab audit (CnAuditTrailTab over the OpenRegister audit trail, actor and action per row) plus src/manifest.json:2450 case-timeline-panel (case-timeline-pane over notes, calls and messages)",
 				"reachedOn": "#CaseDetail sidebar tab \"History\" and body tab \"Timeline\"",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-history-surface"
+				"spec": "openspec/specs/case-history-surface",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakHistorie"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:215 mounts CaseAuditLog; src/components/CaseAuditLog.vue:153 api.getAuditLog; appinfo/routes.php:265 /api/v1/cases/{caseId}/audit-log | round 2 drive: procest/opencase/round2/pages/CaseDetail-Log.md:5 \"Audit trail including every read.\"",
@@ -16081,7 +16805,11 @@
 				],
 				"evidence": "nextcloud-vue#1209 744a5a12f",
 				"owner": "ConductionNL/nextcloud-vue",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/a-saved-view-drives-a-widget (nextcloud-vue lane). built.change previously named nextcloud-vue/dashboard-layout-per-user, which carried the built half."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/nextcloud-vue openspec/changes/a-saved-view-drives-a-widget (nextcloud-vue lane). built.change previously named nextcloud-vue/dashboard-layout-per-user, which carried the built half.",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqDashboard"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no saved searches (9.3); the four dashboard widgets (lib/Dashboard) run fixed queries | round 2 drive: procest/opencase/round2/code-census.md:253 \"Saved searches :: no\"",
@@ -16118,7 +16846,14 @@
 				],
 				"evidence": "src/manifest.json:2025 #CaseDetail widget case-kpis-hours (integration humaniq-hours, placed at layout src/manifest.json:3021); booking itself lives in humaniq",
 				"reachedOn": "#CaseDetail grid tile \"Hours booked\" (humaniq leaf; renders only with humaniq installed)",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqDagAfsluiten"
+					]
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 the same grep over src/openzaak finds nothing; no time model in the ZGW Zaken API",
@@ -16149,7 +16884,11 @@
 				"evidence": "src/views/settings/CaseTypeDetail.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-types"
+				"spec": "openspec/specs/case-types",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type pages under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/ConfigurationView.vue:228,230 case type (Sagstype) is one of seven flat code lists edited in CodeListDialog; lib/Controller/CodeListController.php:66,105 create and update a code list row only, no statuses, fields or roles attach to a case type | round 2 drive: procest/opencase/round2/code-census.md:177 \"There is no case type editor.\"",
@@ -16187,7 +16926,11 @@
 				],
 				"evidence": "src/manifest.json:6588; dossiq#3084 1c85c2a5",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/dossiq-store-surface"
+				"spec": "openspec/specs/dossiq-store-surface",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: Store page under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/CodeListController.php:47,66,105 case types are code list rows with GET, POST and PUT only; lib/Command/ lists ImportTemplatesCommand and config get/set/list but no case type import or export | round 2 drive: procest/_round2/compare/M1-functionality.md:230 \"| 11.2 | Config as code, import and export of case types | no |\"",
@@ -16217,7 +16960,11 @@
 				"evidence": "dossiq_register.json#propertyDefinition; PropertiesTab.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/property-definition-management"
+				"spec": "openspec/specs/property-definition-management",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type tabs under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/CaseEntity.php fixed columns only (caseNumber, title, casetypeId, statusId, KLE, facet, sensitivity, insightLevel, summary); grep -ri 'customfield|custom field|extra_field' over lib and src returns nothing; src/components/CaseInfoPanel.vue shows the same fixed fields for every case type | round 2 drive: procest/opencase/round2/journeys.md:37 \"No statuses, roles, deadlines, fields or workflow can be attached\"",
@@ -16246,7 +16993,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/buildiq",
 				"change": "buildiq/registration-form-builder",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/registration-form-builder (buildiq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/registration-form-builder (buildiq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: the form builder is buildiq's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/router/index.js has no form route; src/views and src/components hold no form designer; the only field lists are hard coded dialogs such as src/components/NewCaseDialog.vue | round 2 drive: procest/opencase/round2/code-census.md:109 \"Forms: none (no citizen forms).\"",
@@ -16295,7 +17046,11 @@
 				],
 				"evidence": "src/views/settings/WorkflowEditor.vue; WorkflowTab.vue; openregister#3944 878de2cd; openregister#3948 de4079be; openregister has no BPMN modeller page; BPMN only through appinfo/routes.php:825-826 (openregister#4040)",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/flow-bpmn-interchange (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: the BPMN modeller is OpenRegister's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 package.json has no bpmn dependency; lib/Service/WorkflowService.php is a fixed review or approval step list on documents, not a process model | round 2 drive: procest/opencase/round2/code-census.md:276 \"BPM engine :: no\"",
@@ -16324,7 +17079,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/buildiq",
 				"change": "buildiq/case-page-layout-per-case-type",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: case page layout is configured in buildiq"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:447,449,456,459,465 caseTabs() is a hard coded list (Info, Dokumenter, Filer, Parter, Journalnotater, Andre sagsbehandlere, Log, Adgang plus three data-driven extras), identical for every case type | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -16353,7 +17112,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/buildiq",
 				"change": "buildiq/case-page-layout-per-case-type",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: case page layout is configured in buildiq"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue tab bodies are fixed components (CaseInfoPanel.vue, DocumentList.vue, CaseParticipantList.vue); no widget model in lib/Db | round 2 drive: procest/opencase/round2/code-census.md:153 \"No sidebar. No KPI row. No phase or progress widget.\"",
@@ -16382,7 +17145,11 @@
 				"state": "specified",
 				"owner": "ConductionNL/buildiq",
 				"change": "buildiq/case-page-layout-per-case-type",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/buildiq openspec/changes/case-page-layout-per-case-type (buildiq lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: case page layout is configured in buildiq"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:15-117 header is one template (title, number, type, status badge, organisation, reminder banner, primary party) for every case type | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -16419,7 +17186,11 @@
 					}
 				],
 				"evidence": "lib/Settings/register.d/39-case-type-list-layout.json; dossiq#3112 a7118ddf1; dossiq#3085 87ec6952; nextcloud-vue#1213 93efc0c58",
-				"owner": "ConductionNL/nextcloud-vue"
+				"owner": "ConductionNL/nextcloud-vue",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: list columns per case type under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseListView.vue fixed columns Sagsnummer, Titel, Organisation, KLE-nummer, Status, Opdateret; no column chooser and nothing per case type | round 2 drive: procest/opencase/round2/code-census.md:173 \"Per-case-type column configuration: none.\"",
@@ -16457,7 +17228,11 @@
 				],
 				"evidence": "dossiq#2913 7b9c360a",
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with code-lists-from-concepts (dossiq#2913). The partial rating predates it and is due a re-rate in the corpus.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type tabs under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:166 Konfiguration for Administrator; src/views/ConfigurationView.vue:216,228-235 Værdilister tab with seven lists (case status, case type, contact roles, document categories, document status, insight level, party roles) opened in CodeListDialog; lib/Controller/CodeListController.php:47,66,105 list, create, update | round 2 drive: procest/opencase/round2/code-census.md:262 \"Code lists editable by admin :: yes\"",
@@ -16487,7 +17262,11 @@
 				"evidence": "lib/Controller/TemplateController.php; lib/Service/TemplateLibraryService.php; lib/Controller/VTHTemplateController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/template-library"
+				"spec": "openspec/specs/template-library",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqDocumentGenereren"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/App.vue:157,337 Administrer skabeloner for Administrator or Template Designer; src/router/index.js templates and templates/fields routes; lib/Controller/TemplateController.php:43,60,111,129 list, upload, delete, download; lib/Service/TemplateMergeService.php merges case and document fields | round 2 drive: procest/opencase/round2/pages/ManageTemplates.md:5 \"Upload, create and manage document templates that merge case, document and address fields.\"",
@@ -16517,7 +17296,11 @@
 				"evidence": "src/views/casetypes/components/EmailTemplateAdmin.vue; dossiq_register.json#emailTemplate; lib/Controller/EmailTemplateController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-email-integration"
+				"spec": "openspec/specs/case-email-integration",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakEmail"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Controller/EmailController.php sends a free-text mail from the user's Mail app account; grep -ri 'mailtemplate|emailtemplate' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:240 \"| 11.12 | E-mail template library | no |\"",
@@ -16555,7 +17338,11 @@
 				],
 				"evidence": "src/manifest.json:6509,6573; dossiq#3084 1c85c2a5",
 				"owner": "ConductionNL/openregister",
-				"spec": "openspec/specs/case-configuration-i18n"
+				"spec": "openspec/specs/case-configuration-i18n",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: translations tab on the case type under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 strings are shipped in l10n/*.json and l10n/*.js through Nextcloud; no translation screen in src/router/index.js or the admin settings | round 2 drive: procest/_round2/compare/M1-functionality.md:241 \"| 11.13 | Translation management in the UI | no |\"",
@@ -16586,7 +17373,11 @@
 				"owner": "ConductionNL/thematiq",
 				"change": "thematiq/2026-07-25-app-token-set-selection",
 				"note": "OpenSpec pass 2026-09-27: matrix corrected (thematiq lane: existing): thematiq themes every page, dossiq included (ConductionNL/thematiq openspec/changes/archive/2026-07-25-app-token-set-selection); dossiq lib/Service/Tenant/TenantBrandingSanitiser.php read at dossiq 96b8ef8f. Rating stays partial (corrected 2026-09-28).",
-				"spec": "openspec/specs/tenant-configuration"
+				"spec": "openspec/specs/tenant-configuration",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: tenant branding settings"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 the app uses Nextcloud Vue components (src/App.vue NcAppNavigation) so the host's Nextcloud theming (logo, colour) applies; the app itself has no branding setting in src/AdminSettings.vue or src/views/ConfigurationView.vue:214-218 | round 2 drive: procest/_round2/compare/M1-functionality.md:242 \"| 11.14 | Branding and theming | partial `appinfo/info.xml` (Nextcloud theming) |\"",
@@ -16624,7 +17415,11 @@
 				],
 				"evidence": "lib/Controller/SettingsController.php; openregister#3902 5b6834c6",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/feature-toggle-surface (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/feature-toggle-surface (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: feature toggles are OpenRegister's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/Configuration.php:140 enterprise_version gate; src/views/ConfigurationView.vue:8-30 settings tab edits config keys; lib/Command/ConfigSetCommand.php and EnterpriseEnableCommand.php. A few switches, no feature flag framework | round 2 drive: procest/opencase/round2/code-census.md:4 \"gates it on `enterprise_version` (`lib/Service/Configuration.php:140`) and `ai_enabled`\"",
@@ -16654,7 +17449,11 @@
 				"evidence": "src/views/settings/StufEndpoints.vue; ZgwMappingSettings.vue; KccIntegrationSettings.vue; tabs/StoreSettingsTab.vue; tabs/FinancialIntegrationTab.vue",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/admin-settings"
+				"spec": "openspec/specs/admin-settings",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: integration settings under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:574-583,645-656 password fields for the SFTP passphrase and Datafordeler API keys, disabled unless enterprise_version; AdminSettings.vue:68,70 certificates are registered by occ opencase:register-certificate, not in the UI; a fixed set of Danish integrations, no generic plugin model | round 2 drive: procest/opencase/round2/code-census.md:69 \"API (API clients, certificates)\"",
@@ -16691,7 +17490,11 @@
 					}
 				],
 				"evidence": "dossiq_register.json#caseObject; dossiq#2911 fffc5d7d",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: object type administration under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db holds fixed entities (case, document, estate, participant); no object type definition entity and no screen in src/router/index.js | round 2 drive: procest/_round2/compare/M1-functionality.md:245 \"| 11.17 | Custom object type management | no |\"",
@@ -16721,7 +17524,11 @@
 				"evidence": "src/views/settings/components/WorkflowValidationBanner.vue; /api/case-definitions/validate",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-type-publish-validation"
+				"spec": "openspec/specs/case-type-publish-validation",
+				"screen": {
+					"board": null,
+					"reason": "backend: checks on publish"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:7,10,14 Prerequisites section checks required Nextcloud apps (group folders, full text search) and shows an error box; nothing checks case types or code lists for gaps | round 2 drive: procest/opencase/round2/pages/AdminSettings.md:6 \"Prerequisites (Group folders, Full text search x3)\"",
@@ -16759,7 +17566,11 @@
 				],
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; MandaatToewijzingenTable.vue; openregister#3874 18628dff",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: user, role and department administration is OpenRegister's"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1034,1158,1173 Lokale brugere: search a Nextcloud user, set OpenCase user info and privilege groups, delete a privilege; lib/Controller/SettingsController.php:57-60 local-users endpoints; organisations come from the SF1500 sync or the Nextcloud groups | round 2 drive: procest/opencase/round2/code-census.md:69 \"Lokale brugere (local users and privileges)\"",
@@ -16789,7 +17600,11 @@
 				"evidence": "lib/Service/Transitions/GuardRegistry.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/status-transition-engine"
+				"spec": "openspec/specs/status-transition-engine",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type rules under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types are code list rows (src/views/ConfigurationView.vue:230); lib/Service holds no rule or condition engine; document workflows (lib/Service/WorkflowService.php) are fixed review or approval steps | round 2 drive: procest/opencase/round2/code-census.md:138 \"Case types are a code list only (`opencase_casetype`), they carry no configuration.\"",
@@ -16819,7 +17634,11 @@
 				"evidence": "lib/Service/CaseTypeResolver.php; tests/e2e/case-type-parent-chain.spec.ts",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"change": "2026-09-08-case-type-authoring-extras"
+				"change": "2026-09-08-case-type-authoring-extras",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type pages under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 sub-cases exist per case (CaseEntity.parentCaseId, src/components/CreateSubCaseDialog.vue) but case types carry no configuration to inherit | round 2 drive: procest/_round2/compare/M1-functionality.md:249 \"| 11.21 | Mother and child case types (inheritance) | no |\"",
@@ -16849,7 +17668,11 @@
 				"evidence": "lib/Settings/dossiq_register.json:455 caseType.processesPersonalData, :462 personalDataCategories, :483 legalBasis, :497 verwerkingsactiviteit; shown by src/manifest.json:6382 #CaseTypeDetail widget case-type-privacy",
 				"reachedOn": "#CaseTypeDetail widget \"Personal data\" (Settings, menu \"Case types\" src/manifest.json:365)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/avg-verwerkingenlogging"
+				"spec": "openspec/specs/avg-verwerkingenlogging",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type privacy fields under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types are code list rows; sensitivity and insight level are case metadata (lib/Db/CaseEntity.php), not processing register fields per type | round 2 drive: procest/_round2/compare/M1-functionality.md:250 \"| 11.22 | GDPR register fields per case type | no |\"",
@@ -16886,7 +17709,11 @@
 					}
 				],
 				"evidence": "dossiq#2915 0c78cefa",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: catalogue folders under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/ConfigurationView.vue:228-235 flat code lists; templates are a flat list at /templates | round 2 drive: procest/_round2/compare/M1-functionality.md:251 \"| 11.23 | Catalog with folders for case types, attributes, templates | no |\"",
@@ -16916,7 +17743,11 @@
 				"evidence": "src/views/settings/tabs/GeneralTab.vue; lib/Controller/SettingsController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/admin-settings"
+				"spec": "openspec/specs/admin-settings",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: instance settings under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/ConfigurationView.vue:204 settings tab edits four keys (case number mask, search limits, history count) through lib/Controller/ConfigController.php:74,89; src/AdminSettings.vue holds integration settings; no notification or portal texts, CORS is Nextcloud's | round 2 drive: procest/opencase/round2/pages/Configuration-Settings.md:5 \"In-app configuration; the Settings section holds one value.\"",
@@ -16960,7 +17791,11 @@
 				],
 				"evidence": "openregister#3771 1faffb050; dossiq#2857 17c7a3102",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/field-rules-by-state (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/field-rules-by-state (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: field rules per role and state"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 authorisations are per component, scope, zaaktype and confidentiality (components/autorisaties); nothing hides or locks individual fields by role or status",
@@ -16999,7 +17834,11 @@
 				],
 				"evidence": "src/manifest.json:2933; dossiq#3083 19b334fb",
 				"owner": "ConductionNL/openregister",
-				"spec": "openspec/specs/case-knowledge-base"
+				"spec": "openspec/specs/case-knowledge-base",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no article or knowledge model under src/openzaak; the admin links list is not a knowledge base",
@@ -17034,7 +17873,11 @@
 					"openspec/specs/zgw-api-mapping",
 					"openspec/specs/zgw-brc",
 					"openspec/specs/zgw-business-rules-compliance"
-				]
+				],
+				"screen": {
+					"board": null,
+					"reason": "backend: ZGW APIs"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'zgw|zaken.?api|catalogi' over lib and src returns nothing; the data lives in its own tables | round 2 drive: procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\"",
@@ -17064,7 +17907,11 @@
 				"evidence": "lib/Controller/NrcController.php; lib/Service/NotificatieService.php; dossiq_register.json#abonnement",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/zgw-api-mapping"
+				"spec": "openspec/specs/zgw-api-mapping",
+				"screen": {
+					"board": null,
+					"reason": "backend: Notificaties API"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no notificaties client or webhook in lib; events are Nextcloud internal events (lib/Event, lib/Listener) | round 2 drive: procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
@@ -17093,7 +17940,11 @@
 				"state": "building",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/objecten-api-facade",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/objecten-api-facade, an existing open change, covers it (integriq lane)."
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/objecten-api-facade, an existing open change, covers it (integriq lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: Objecten API facade in integriq"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no Objecten or Objecttypen client in lib | round 2 drive: procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
@@ -17126,7 +17977,11 @@
 				"spec": [
 					"openspec/specs/stuf-integration",
 					"openspec/specs/stuf-zkn-outbound"
-				]
+				],
+				"screen": {
+					"board": null,
+					"reason": "backend: StUF gateway"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -ri stuf over lib and src returns nothing | round 2 drive: procest/opencase/round2/code-census.md:103 \"ZGW / StUF / DSO: none.\"",
@@ -17160,7 +18015,11 @@
 					"openspec/specs/dso-omgevingsloket",
 					"openspec/specs/dso-omgevingsloket-client",
 					"openspec/specs/vth-dso-integration"
-				]
+				],
+				"screen": {
+					"board": null,
+					"reason": "backend: DSO intake; the cases arrive in the case list"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'omgevingswet|dso' over lib and src returns nothing (Danish product) | round 2 drive: procest/opencase/round2/code-census.md:274 \"ZGW APIs, StUF, DSO :: no\"",
@@ -17193,7 +18052,11 @@
 				"spec": [
 					"openspec/specs/brp-register",
 					"openspec/specs/kvk-register"
-				]
+				],
+				"screen": {
+					"board": null,
+					"reason": "backend: registry adapters, used inside DqNieuweZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Controller/CitizenController.php:14,158-159 and lib/Service/CprCvrLookupService.php:7,35 use Datafordeler\\CitizenClient only when enterprise_version is 1 and the class exists; lib/Service/Datafordeler holds data classes but no CitizenClient or CompanyClient. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:103 \"Datafordeler (`lib/Service/Datafordeler/`: CPR CitizenData, CVR CompanyData, BBR/MAT estate data)\" | open for the lab: On an OpenCase enterprise instance, does Søg borger by CPR return a person from the CPR register?",
@@ -17252,7 +18115,11 @@
 				"evidence": "lib/Service/Auth/SimulatorDigidSamlAdapter.php; SimulatorEHerkenningSamlAdapter.php",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/idp-broker-envelope-runtime",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/idp-broker-envelope-runtime, an existing open change, covers it (integriq lane)."
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/idp-broker-envelope-runtime, an existing open change, covers it (integriq lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: citizen login through integriq"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'digid|eherkenning|eidas|mitid|nemlog' over lib and src returns nothing; SAML is for staff (SamlController.php) | round 2 drive: procest/opencase/round2/code-census.md:181 \"The only unauthenticated surfaces are the mTLS receiver endpoints and the SAML endpoints\"",
@@ -17290,7 +18157,11 @@
 				],
 				"evidence": "dossiq#3081 226b7e0b; integriq#2062 626d8dabc",
 				"owner": "ConductionNL/integriq",
-				"spec": "openspec/specs/berichtenbox-integration"
+				"spec": "openspec/specs/berichtenbox-integration",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqBerichtVersturen"
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Controller/DigitalPostController.php:70 answers only when enterprise_version is 1 and PostForespoergClient exists; that client is not in the open tree; src/components/DigitalPostDialog.vue is the client side. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:104 \"Digital post: `lib/Controller/DigitalPostController.php` (check, createShipment, latestShipment\" | open for the lab: On an enterprise instance, does Send digital post from a document deliver to Digital Post and show a shipment status?",
@@ -17320,7 +18191,11 @@
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/libresign-besluit-signing"
+				"spec": "openspec/specs/libresign-besluit-signing",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakBesluiten"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 the sign hits are SAML signatures and certificates; no signing workflow or provider in lib or src | round 2 drive: procest/opencase/round2/code-census.md:275 \"E-signing :: no\"",
@@ -17358,7 +18233,11 @@
 				],
 				"evidence": "lib/Service/Beschikking/TemplateEngineAdapterInterface.php; MockTemplateEngineAdapter.php; integriq#2080 472b0721",
 				"owner": "ConductionNL/integriq",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/document-generation-vendor-adapter, an existing open change, covers it (integriq lane)."
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/document-generation-vendor-adapter, an existing open change, covers it (integriq lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: document generation vendor adapter"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/TemplateMergeService.php merges DOCX, XLSX and ODT templates locally; no SmartDocuments or Xential client | round 2 drive: procest/opencase/round2/code-census.md:110 \"Document generation: DOCX/XLSX/ODT template merge (`lib/Service/TemplateMergeService.php`\"",
@@ -17395,7 +18274,11 @@
 				],
 				"evidence": "lib/Controller/DwangsomPaymentCallbackController.php",
 				"owner": "ConductionNL/shillinq",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/shillinq openspec/changes/case-payment-requests (shillinq lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/shillinq openspec/changes/case-payment-requests (shillinq lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaak"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'payment|betaling|mobilepay|nets' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:269 \"| 12.12 | Payments | no |\"",
@@ -17428,7 +18311,14 @@
 				"spec": [
 					"openspec/specs/appointment-booking",
 					"openspec/specs/case-appointment-via-calendar-leaf"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqTaak",
+						"DqZaakTaken"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'appointment|booking|tidsbestilling' over lib and src returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:270 \"| 12.13 | Appointment booking | no |\"",
@@ -17458,7 +18348,11 @@
 				"evidence": "lib/Service/Transitions/WebhookHandler.php",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/event-broker-transport",
-				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/event-broker-transport, an existing open change, covers it (integriq lane)."
+				"note": "OpenSpec pass 2026-09-27: building: ConductionNL/integriq openspec/changes/event-broker-transport, an existing open change, covers it (integriq lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: event broker transport"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'rabbitmq|kafka|amqp' over lib returns nothing | round 2 drive: procest/_round2/compare/M1-functionality.md:271 \"| 12.14 | Message broker or event streaming | no |\"",
@@ -17521,7 +18415,14 @@
 					"openspec/specs/gis-integration",
 					"openspec/specs/wms-wfs-layers",
 					"openspec/specs/pdok-consumer"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZakenKaart",
+						"DqZaak"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 lib/Controller/EstateController.php:30,100,147 live estate lookup from Datafordeler only with enterprise_version 1; lib/Service/Datafordeler EstateData, LandPlotData are data classes without a client in the open tree; no map. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/pages/EstateDetail.md:15 \"Enterprise edition fetches it from Datafordeler; Basic edition lets you type it.\" | open for the lab: On an enterprise instance, does Søg ejendom fetch BBR and cadastral data from Datafordeler?",
@@ -17552,7 +18453,11 @@
 				"change": "pluggable-integration-registry",
 				"readOn": "2026-09-27",
 				"note": "OpenSpec pass 2026-09-27: matrix corrected. The gap scan of 2026-09-19 (market-intelligence procest/_ledger/gap-scan/d.json, verdict sibling-has) finds the connector framework held and shipped by integriq and consumed here. The partial rating is due a re-rate in the corpus.",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "backend: connector framework"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no plugin or connector registry in lib; each integration is a fixed service class | round 2 drive: procest/opencase/round2/code-census.md:90 \"OpenCase has no plugin system of its own.\"",
@@ -17582,7 +18487,11 @@
 				"evidence": "lib/Controller/ZgwOpenApiController.php; lib/Settings/dossiq_register.json",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/zgw-openapi-publication"
+				"spec": "openspec/specs/zgw-openapi-publication",
+				"screen": {
+					"board": null,
+					"reason": "backend: OpenAPI documents"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 openapi.json holds one path (/ocs/v2.php/apps/opencase/api); API.md is a hand-written 664-line reference; public-api.schema.json describes the public endpoints as JSON Schema, not OpenAPI | round 2 drive: procest/opencase/round2/code-census.md:121 \"`openapi.json` exists but holds 1 path\"",
@@ -17612,7 +18521,11 @@
 				"evidence": "lib/Middleware/ZgwAuthMiddleware.php; lib/Service/ZgwJwtValidator.php; lib/Controller/AcController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/zgw-autorisaties-api"
+				"spec": "openspec/specs/zgw-autorisaties-api",
+				"screen": {
+					"board": null,
+					"reason": "backend: ZGW authorisations"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 appinfo/routes.php:32-41 /public/v1/api case, document and journal note endpoints; lib/Middleware/PublicDataApiMiddleware.php:23-34 bearer SAML assertion checked against registered API client certificates; lib/Controller/PublicApi | round 2 drive: procest/opencase/round2/code-census.md:273 \"mTLS and bearer API clients :: yes\"",
@@ -17743,7 +18656,11 @@
 					"openspec/specs/mcp-integration",
 					"openspec/specs/ai-oversight-log",
 					"openspec/specs/case-assistant-via-hermiq"
-				]
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: the assistant has no surface of its own"
+				}
 			},
 			"evidence": {
 				"opencase": "not checked: opencase@1.1.0 src/components/AiSidePanel.vue, AiActionsMenu.vue, AiPromptDialog.vue are the client; lib/Controller/PageController.php:71 passes ai_enabled; no AI route or service in appinfo/routes.php or lib. Not checked: enterprise package is closed source | round 2 drive: procest/opencase/round2/code-census.md:113 \"AI: chat side panel with a prompt library and executable actions\" | open for the lab: With AI enabled on an enterprise instance, can the side panel carry out an action on a case, such as creating a journal note?",
@@ -17773,7 +18690,11 @@
 				"evidence": "lib/Repair/ProvisionAssignedGroups.php",
 				"owner": "ConductionNL/openregister",
 				"note": "OpenSpec pass 2026-09-27: matrix corrected: rated yes with built.state none. lib/Repair/ProvisionAssignedGroups.php read at dossiq 96b8ef8f (corrected 2026-09-28).",
-				"spec": "openspec/specs/case-access-control"
+				"spec": "openspec/specs/case-access-control",
+				"screen": {
+					"board": null,
+					"reason": "no dossiq screen: groups are managed in Nextcloud"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/RoleService.php:18,21 privilege types map to the roles User, Administrator, Template Designer; lib/Migration/SeedReferenceData.php:259 seeds them; src/App.vue:166 Konfiguration menu gated on Administrator | round 2 drive: procest/opencase/round2/code-census.md:131 \"Roles: `User`, `Administrator`, `Template Designer`\"",
@@ -17803,7 +18724,11 @@
 				"evidence": "lib/Service/Sharing/CaseAccessPolicy.php; lib/Service/CaseAccessGuard.php",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/2026-05-02-rbac-scopes",
-				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-05-02-rbac-scopes (conditional matching on group and object data); dossiq's half is in lib/Service/Sharing/CaseAccessPolicy.php and lib/Service/CaseAccessGuard.php, read at dossiq 96b8ef8f (corrected 2026-09-28)."
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-05-02-rbac-scopes (conditional matching on group and object data); dossiq's half is in lib/Service/Sharing/CaseAccessPolicy.php and lib/Service/CaseAccessGuard.php, read at dossiq 96b8ef8f (corrected 2026-09-28).",
+				"screen": {
+					"board": null,
+					"reason": "backend: access policies in OpenRegister"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:255,267,272 a user reaches a case through a profile matched on organisation, sensitivity and a KLE LIKE pattern; lib/Service/PermissionService.php:141,159 read follows the profile level | round 2 drive: procest/opencase/round2/code-census.md:128 \"Access profile = unique tuple (organisation, KLE classification code, sensitivity)\"",
@@ -17840,7 +18765,11 @@
 				],
 				"evidence": "src/views/cases/components/CaseSharingTab.vue; openregister#3966 16fce31bc",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/object-level-sharing-and-private-scope (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/object-level-sharing-and-private-scope (openregister lane).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakBetrokkenen"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/views/CaseDetailView.vue:220,456 Adgang tab mounts CaseAccessPanel; src/components/CaseAccessPanel.vue:11,109 Giv adgang and Fjern adgang; src/services/api.js:587,596 POST and DELETE cases/{id}/grants; lib/Service/PermissionService.php:153,222 grants read in the access check | round 2 drive: procest/opencase/round2/pages/CaseDetail-Access.md:9 \"Grant access (user, Read or Write, Time-limited with Expires date); row Remove access\"",
@@ -17870,7 +18799,11 @@
 				"evidence": "register.d/62-handler-vervanging.json#substitution.endDate",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/handler-vervanging-waarneming"
+				"spec": "openspec/specs/handler-vervanging-waarneming",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakBetrokkenen"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/components/GrantAccessDialog.vue:35,41 Tidsbegraenset adgang with an expiry date; lib/Service/PermissionService.php:154,183 expired grants give no read or write; src/components/CaseAccessPanel.vue:97,103 Udloebet or Permanent shown per grant | round 2 drive: procest/opencase/round2/code-census.md:280 \"Direct time-limited case grants :: yes\"",
@@ -17907,7 +18840,11 @@
 				],
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php; openregister#3966 16fce31bc",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/object-level-sharing-and-private-scope (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/object-level-sharing-and-private-scope (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: per-document access override"
+				}
 			},
 			"evidence": {
 				"opencase": "settled from source by the lane on 2026-09-26, no lab needed: PermissionService.php:274-279 honours a per-user deny override, but no screen writes one (grep -i deny over src finds none); DocumentShareDialog only widens access, which is the override this row asks for | source: opencase@1.1.0 src/views/DocumentDetailView.vue:241 opens DocumentShareDialog; src/components/DocumentShareDialog.vue:4,26,44 share one document to a user, read or edit, with expiry; lib/Service/PermissionService.php:274,280,365 per-user document override (read, write, deny) checked before case access | round 2 drive: procest/opencase/round2/code-census.md:281 \"Per-document user overrides (grant or deny) :: yes\"",
@@ -17945,7 +18882,11 @@
 				],
 				"evidence": "organisatieRol.department/team; openregister#3874 18628dff; openregister lib/Service/Object/PermissionHandler.php:2699 compileDepartmentMatrix enforces the matrix; no screen sets it (openregister#4040)",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "backend: team visibility rule in OpenRegister"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:272,274 a privilege matches all organisations or the profile's own organisation unit; src/AdminSettings.vue:1237,1246 privilege form picks Organisationsenhed; lib/Db/Organisation (orgUuid, ncGroupId) ties units to Nextcloud groups | round 2 drive: procest/opencase/round2/code-census.md:79 \"`Organisation` (orgUuid, orgParentUuid, ncGroupId, groupfolderId)\"",
@@ -17975,7 +18916,14 @@
 				"evidence": "lib/Settings/dossiq_register.json:2747 case.confidentiality (ZGW enum openbaar to zeer_geheim), default from caseType.confidentiality at :216; enforced for documents by lib/Service/InformatieobjectAccessGuard.php:49",
 				"reachedOn": "#CaseDetail edit form field \"Confidentiality\" (src/manifest.json:1970) and Files action \"Change confidentiality\" (src/manifest.json:2395)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/case-access-control"
+				"spec": "openspec/specs/case-access-control",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaak",
+						"DqZaakBetrokkenen"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PrivilegeService.php:265 profile match requires the case sensitivity (Foelsomhed); src/AdminSettings.vue:1201 privilege granted per sensitivity; src/components/CaseInfoPanel.vue shows Foelsomhed and Indsigtsgrad on the case | round 2 drive: procest/opencase/round2/create-case-anatomy.md:23 \"Open (Public), Internal, Limited (Confidential), Closed (Highly Confidential/Personal)\"",
@@ -18012,7 +18960,11 @@
 					}
 				],
 				"evidence": "dossiq#2899 8de94cb4a",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"board": null,
+					"reason": "backend: field permissions"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/PermissionService.php:141,170,274 rights are per case, document and file only; nearest is the protected-address reveal on a party (src/views/CaseDetailView.vue:40), a data-subject protection rather than a field permission | round 2 drive: procest/_round2/compare/M1-functionality.md:293 \"| 13.8 | Field-level permissions | no |\"",
@@ -18045,7 +18997,11 @@
 				"spec": [
 					"openspec/specs/avg-verwerkingenlogging",
 					"openspec/specs/case-history-surface"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakHistorie"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Service/CaseService.php:377 logCaseViewed on every case read; lib/Service/AuditService.php:84,112,124 document viewed, file viewed and downloaded; src/views/CaseDetailView.vue:215,455 Log tab mounts CaseAuditLog | round 2 drive: procest/opencase/round2/code-census.md:134 \"Every read is audited\"",
@@ -18075,7 +19031,11 @@
 				"evidence": "lib/Listener/BezwaarLegalHoldListener.php",
 				"owner": "ConductionNL/openregister",
 				"change": "openregister/2026-06-14-retention-management",
-				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-retention-management (the destruction check job); dossiq's half, writing the retention onto the case at close, is built: lib/Service/Archival/ArchivalNominationDeriver.php:144 derive(), called from lib/Service/Transitions/CaseResultWriter.php and lib/Service/StatusTransitionService.php:567 on closing (row 7.7), read at dossiq 96b8ef8f (corrected 2026-09-28)."
+				"note": "OpenSpec pass 2026-09-27: Open Register's half shipped in openregister openspec/changes/archive/2026-06-14-retention-management (the destruction check job); dossiq's half, writing the retention onto the case at close, is built: lib/Service/Archival/ArchivalNominationDeriver.php:144 derive(), called from lib/Service/Transitions/CaseResultWriter.php and lib/Service/StatusTransitionService.php:567 on closing (row 7.7), read at dossiq 96b8ef8f (corrected 2026-09-28).",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakArchivering"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/BackgroundJob/ExportClosedCasesJob.php:36 and lib/Service/CaseExportService.php:117,162 export closed cases as XML; appinfo/routes.php has no case DELETE route and grep -ri 'retention|kassation|bevaring' over lib returns nothing | round 2 drive: procest/opencase/round2/code-census.md:114 \"Archiving: closed-case XML export with XSD\"",
@@ -18105,7 +19065,11 @@
 				"evidence": "lib/Settings/dossiq_register.json:497 caseType.verwerkingsactiviteit links each case type to OpenRegister's AVG register, seeded by lib/Repair/SeedVerwerkingsactiviteiten.php:96 run() (repair step in appinfo/info.xml:459); shown by src/manifest.json:6382 case-type-privacy",
 				"reachedOn": "#CaseTypeDetail widget \"Personal data\"; register itself via menu link \"Processing activities (AVG)\" (src/manifest.json:507, OpenRegister /avg)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "openspec/specs/avg-verwerkingenlogging"
+				"spec": "openspec/specs/avg-verwerkingenlogging",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: case type privacy fields under Advanced"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 case types are a flat code list (src/views/ConfigurationView.vue:229); grep -ri 'gdpr|databehandl' finds only the gdpr_access type of aktindsigt (lib/Service/AccessRequestService.php:15), no processing register | round 2 drive: procest/_round2/compare/M1-functionality.md:296 \"| 13.11 | GDPR register per case type | no |\"",
@@ -18138,7 +19102,15 @@
 				"spec": [
 					"openspec/specs/handler-vervanging-waarneming",
 					"openspec/specs/mandaat-matrix"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqAanMijToegewezen",
+						"DqUwWachtrij",
+						"DqZaakBesluiten"
+					]
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 grep -riE 'delegat|stedfortr|substitut|vikar|fuldmagt' over lib/Service and src/views finds no mandate or substitute model; lib/Service/PermissionService.php:141 access comes from responsible, grants and profiles only | round 2 drive: procest/opencase/round2/code-census.md:284 \"Delegation or mandates :: no\"",
@@ -18171,7 +19143,11 @@
 				"spec": [
 					"openspec/specs/zaakportaal-mijngemeente",
 					"openspec/specs/case-share-via-shares-leaf"
-				]
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": "DqZaakBetrokkenen"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 no citizen portal: the only unauthenticated routes are the mTLS receivers and SAML endpoints (lib/Controller/PublicApi/PublicApiController.php); access requests are registered by staff (src/components/NewAccessRequestDialog.vue) | round 2 drive: procest/opencase/round2/code-census.md:181 \"None. No citizen portal, no public status page, no web forms.\"",
@@ -18266,7 +19242,11 @@
 				],
 				"evidence": "src/views/settings/tabs/MandaatMatrixTab.vue; OrganisatieRolManager.vue; openregister#3874 18628dff",
 				"owner": "ConductionNL/openregister",
-				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane)."
+				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane).",
+				"screen": {
+					"board": null,
+					"reason": "not designed yet: access control administration"
+				}
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 src/AdminSettings.vue:1034,1188,1258 Lokale brugere section adds a privilege by type, sensitivity, KLE and organisation unit; appinfo/routes.php:104 delete privilege; lib/Controller/AdminController.php:222,239 revoke and bulk grant profiles | round 2 drive: procest/opencase/round2/code-census.md:177 \"Users and privileges: `/settings/local-users/{userId}/privileges`.\"",
@@ -18303,7 +19283,14 @@
 					}
 				],
 				"evidence": "lib/Settings/register.d/62-handler-vervanging.json; src/views/admin/SubstitutionAdmin.vue; src/views/MyWorkCards.vue; dossiq#2719 6b59b276f",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqAanMijToegewezen",
+						"DqUwWachtrij"
+					]
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 no user work model: Open Zaak has no case-worker screen; grep -riE 'afwezig|vervang' over src/openzaak returns nothing",
@@ -18341,7 +19328,14 @@
 					}
 				],
 				"evidence": "src/components/case/CaseFollowStrip.vue; src/components/case/CaseBannerStack.vue; src/manifest.json:2534,2922; openregister appinfo/routes.php:127-140; dossiq#2895 790c1bcf3",
-				"owner": "ConductionNL/dossiq"
+				"owner": "ConductionNL/dossiq",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakBetrokkenen",
+						"DqZaak"
+					]
+				}
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 Rol (src/openzaak/components/zaken/models/zaken.py) records betrokkenen; notifications go to subscribed API clients, not to watching people",
