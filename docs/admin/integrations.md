@@ -75,8 +75,9 @@ An unknown or unset mode always falls back to `log`.
 - **There is no DSO client yet, and the bearer token key is gone.** `DsoLvAuthService` held
   `dso_lv_auth_token` and built an `Authorization: Bearer` header, and nothing in the app ever
   asked it for one: no file under `lib/` that touches DSO uses `IClientService`, so dossiq makes
-  no outbound DSO call at all. DSO today is INBOUND — `DSOIntakeController` is a public webhook
-  authenticated with the shared `dso_webhook_secret`, which is a different mechanism. The token
+  no outbound DSO call at all. DSO today is INBOUND, and it does not reach dossiq directly: integriq
+  receives the STAM verzoek and maps it, and `VergunningaanvraagCreatedListener` makes the one
+  case. The former public webhook (`/api/vth/dso/intake`, `dso_webhook_secret`) is gone. The token
   key comes back with the client that needs it, named for whatever it actually sends.
 - **Access request**: the DSO pre-prod endpoint is **certificate-bound** — it needs the DSO
   aansluittraject (service request via the Ontwikkelaarsportaal → client_id + test API key,

@@ -58,17 +58,16 @@ class TimedJobRegistrationTest extends TestCase {
 	 * does not run, which is a different and worse state than a job whose
 	 * absence is a decision.
 	 *
-	 * Both were found by this test on the day it was written. Neither is
+	 * Two were found by this test on the day it was written. Neither was
 	 * referenced anywhere in `lib/`, so neither has ever run on any instance,
-	 * and the features behind them have therefore never fired. Resolving an
+	 * and the features behind them have therefore never fired. The appointment
+	 * reminder was retired (it only set a flag and sent nothing). Resolving an
 	 * entry means either registering the job or writing the marker with a real
 	 * reason; deleting an entry without doing one of those two re-hides it.
 	 *
 	 * @var array<string, string>
 	 */
 	private const UNEXPLAINED = [
-		'AppointmentReminderJob' => 'never registered and never referenced, so no appointment reminder '
-			. 'has ever been sent; needs an owner to decide register-or-retire',
 		'ShareMaintenanceJob' => 'never registered and never referenced, so share maintenance has never '
 			. 'run; needs an owner to decide register-or-retire',
 	];

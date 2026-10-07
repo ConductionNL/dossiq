@@ -33,6 +33,9 @@ switcher and the acting-for bar already exist in portaliq.
 - [ ] 2.2 `mandateField: 'portalParty'` and `portalParty` in the projection on `mijnZaken`.
 - [ ] 2.3 `portalBranch` and `branchField` for `business` (`portal-case-list-declarations`
       3.1, 3.2).
+  - The declaration can be built now. Its live check waits on Ruben's broker decision D1:
+    until a broker vendor is chosen, no eHerkenning session carries a branch to stamp.
+    Requested by portaliq row dem-cl-eherkenning-branch; 2.2 by portaliq row cas-mandate-org-cases.
 - [ ] 2.4 A repair step that backfills `portalParty` from `portalSubject` on cases that have
       one and no party.
 

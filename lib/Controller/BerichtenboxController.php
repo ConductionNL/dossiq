@@ -160,38 +160,4 @@ class BerichtenboxController extends Controller {
 		$messages = $this->berichtenboxService->getMessagesForCase($caseId);
 		return new JSONResponse(['success' => true, 'messages' => $messages]);
 	}//end messages()
-
-	/**
-	 * Poll read-status for a sent Berichtenbox message.
-	 *
-	 * @param string $messageId The external message identifier.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @NoAdminRequired
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function poll(string $messageId): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		// The route carries only a message id, so the owning case is resolved
-		// first and the same per-case guard applied. An unresolvable message
-		// denies, so this is not an existence oracle.
-		$caseId = $this->berichtenboxService->getCaseIdForMessage($messageId);
-		if ($caseId === null
-			|| $this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false
-		) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'Not authorized'],
-				Http::STATUS_FORBIDDEN
-			);
-		}
-
-		$result = $this->berichtenboxService->pollReadStatus($messageId);
-		return new JSONResponse(['success' => true, 'message' => $result]);
-	}//end poll()
 }//end class

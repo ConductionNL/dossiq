@@ -50,6 +50,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\Service\Intake\ChannelIntake;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -76,12 +78,14 @@ class IntakeMessageRoutedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param ChannelIntake   $intake Decides whether a message opens a case.
-	 * @param LoggerInterface $logger Logger.
+	 * @param ChannelIntake            $intake         Decides whether a message opens a case.
+	 * @param LoggerInterface          $logger         Logger.
+	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 */
 	public function __construct(
 		private readonly ChannelIntake $intake,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 	}//end __construct()
 
@@ -95,6 +99,29 @@ class IntakeMessageRoutedListener implements IEventListener {
 	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
 	 */
 	public function handle(Event $event): void {
+		try {
+			// Integriq raises this from its own background work, with nobody
+			// signed in, and OpenRegister refuses a write from nobody. A
+			// signed-in caller keeps writing as themselves.
+			$this->serviceAccount->runAsWhenNobodyIsSignedIn(operation: fn () => $this->answer(event: $event));
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// written; the slot stays empty, so integriq holds the message as
+			// unanswered.
+			return;
+		}
+	}//end handle()
+
+	/**
+	 * Answer the event, as whoever is writing.
+	 *
+	 * @param Event $event The integriq event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/an-intake-message-opens-a-case/specs/intake-from-a-channel/spec.md
+	 */
+	private function answer(Event $event): void {
 		if (method_exists($event, 'getTargetSchema') === false) {
 			return;
 		}
@@ -128,7 +155,7 @@ class IntakeMessageRoutedListener implements IEventListener {
 				['error' => $e->getMessage()]
 			);
 		}
-	}//end handle()
+	}//end answer()
 
 	/**
 	 * Read an array off the event, whatever it answers.

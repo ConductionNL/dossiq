@@ -81,6 +81,17 @@ class SetupController extends Controller {
 	private const DATASET_KEY = 'demo_dataset';
 
 	/**
+	 * App-config key holding the setup version the wizard was closed at.
+	 *
+	 * Written by the `dismiss-setup` action that CnAppRoot posts when the
+	 * wizard is closed or finished (`manifest.setup.dismissAction`), read back
+	 * by `status()` as `dismissed`. A later setup version opens the wizard again.
+	 *
+	 * @var string
+	 */
+	private const DISMISSED_VERSION_KEY = 'setup_dismissed_version';
+
+	/**
 	 * Construct the setup controller.
 	 *
 	 * @param string $appName The app id.
@@ -116,6 +127,7 @@ class SetupController extends Controller {
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
 	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function status(): DataResponse {
@@ -186,6 +198,14 @@ class SetupController extends Controller {
 		];
 
 		$response = array_merge($response, $this->firstRun());
+
+		// The close is recorded on the server, so a new browser does not
+		// reopen the wizard. Left out until someone closed it: CnAppRoot then
+		// falls back to the per-browser record, as before.
+		$dismissedAt = $this->config(key: self::DISMISSED_VERSION_KEY);
+		if ($dismissedAt !== '') {
+			$response['dismissed'] = (int)$dismissedAt;
+		}
 
 		// Financial-integration (dwangsom uitbetaling) capability: surface a
 		// missing callback secret before go-live rather than after an
@@ -298,11 +318,12 @@ class SetupController extends Controller {
 	/**
 	 * Run a privileged server-side setup action.
 	 *
-	 * @param string $actionId One of `install-demo-data` | `skip-demo-data` | `init-register` | `seed`.
+	 * @param string $actionId One of `load-demo-data` | `install-demo-data` | `skip-demo-data` | `dismiss-setup` | `init-register` | `seed`.
 	 *
 	 * @return DataResponse `{ success, message, detail }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/setup-wizard-stays-closed-on-server/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function runAction(string $actionId): DataResponse {
@@ -315,6 +336,14 @@ class SetupController extends Controller {
 
 		if ($actionId === 'skip-demo-data') {
 			return $this->skipDemoData();
+		}
+
+		// The wizard was closed or finished (`manifest.setup.dismissAction`).
+		// Only the setup version is stored: the close answers no step, so a
+		// demo-data choice or a secret the administrator set stays as it was.
+		if ($actionId === 'dismiss-setup') {
+			$this->appConfig->setValueString('dossiq', self::DISMISSED_VERSION_KEY, (string)self::SETUP_VERSION);
+			return new DataResponse(['success' => true, 'message' => 'The setup wizard stays closed.']);
 		}
 
 		// No longer a wizard step: the admin settings page repairs the register

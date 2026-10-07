@@ -54,6 +54,7 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Dossiq\Service\StepConfigValidator
  * @uses \OCA\Dossiq\Service\StepConfig\EscalationRuleValidator
  * @uses \OCA\Dossiq\Service\Workflow\WorkflowJsonProperty
+ * @uses \OCA\Dossiq\Service\Workflow\StepConfigCheck
  */
 class StepConfigPublishTest extends TestCase {
 

@@ -38,6 +38,12 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Repair\RewriteRetiredFlowNodes
+ * @uses \OCA\Dossiq\Service\Flow\RetiredDocumentSteps
+ * @uses \OCA\Dossiq\Service\Flow\RetiredNodeMap
+ * @uses \OCA\Dossiq\Service\Flow\RetiredNodeRewriter
+ * @uses \OCA\Dossiq\Service\Flow\RetiredNodeTranslator
+ * @uses \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
+ * @uses \OCA\Dossiq\Service\Flow\RetiredWebhookSteps
  */
 class RewriteRetiredFlowNodesTest extends TestCase {
 

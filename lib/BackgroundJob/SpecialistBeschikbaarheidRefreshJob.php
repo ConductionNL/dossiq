@@ -33,6 +33,8 @@ declare(strict_types=1);
 namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -43,6 +45,9 @@ use Throwable;
 
 /**
  * Timed job that ages out stale specialist availability records.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T16
  */
@@ -61,12 +66,14 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 	 * @param SettingsService $settingsService The settings service.
 	 * @param IAppManager $appManager The app manager.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the refresh writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly SettingsService $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		// Every 30 seconds (matches specialist_availability_polling_interval default).
@@ -85,6 +92,23 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
 	 */
 	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * The availability refresh pass itself, run as the service account.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-specialist-beschikbaarheid-cache-stays-fresh
+	 */
+	private function work(): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
 			return;
 		}
@@ -124,7 +148,7 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 				staleSeconds: $staleSeconds,
 			);
 		}
-	}//end run()
+	}//end work()
 
 	/**
 	 * Mark a single record as afwezig when its last update is stale.

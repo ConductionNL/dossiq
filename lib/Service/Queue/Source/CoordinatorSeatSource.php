@@ -138,7 +138,7 @@ class CoordinatorSeatSource extends RegisterBackedSource {
 		}
 
 		$items = [];
-		foreach ($this->rows(schema: $schema, filters: ['isFinalStatus' => false]) as $row) {
+		foreach ($this->rows(schema: $schema, filters: ['isFinalStatus' => 0]) as $row) {
 			$id = $this->idOf(row: $row);
 			if ($id === '' || in_array($id, $coordinated, true) === false) {
 				continue;

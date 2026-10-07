@@ -41,6 +41,8 @@ use OCA\Dossiq\Service\AanvullingsverzoekResolutionService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\Pause\PauseChaseService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\Dossiq\Service\TermijnService;
@@ -56,6 +58,9 @@ use Psr\Log\LoggerInterface;
  * @template-implements IEventListener<Event>
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The class over the limit is the background
+ *   service account's refusal: a fire from cron writes as that account or not at all.
  */
 class TermijnTimerFiredListener implements IEventListener {
 	use SearchesObjects;
@@ -75,6 +80,9 @@ class TermijnTimerFiredListener implements IEventListener {
 	 * @param DwangsomCalculationService $penaltyService Dwangsom accrual derivation.
 	 * @param SettingsService $settingsService Settings + ObjectService access.
 	 * @param LoggerInterface $logger Logger.
+	 * @param BackgroundServiceAccount $serviceAccount Who writes when the fire comes
+	 *        from cron with nobody signed in. OpenRegister's FlowTimerWorker is a
+	 *        background job, and OpenRegister refuses a write from nobody.
 	 * @param AanvullingsverzoekResolutionService|null $aanvullingen The request
 	 *        the hersteltermijn belonged to, so the day it runs out is recorded
 	 *        on the request and not only on the timer. Optional, so an instance
@@ -90,6 +98,7 @@ class TermijnTimerFiredListener implements IEventListener {
 		private readonly DwangsomCalculationService $penaltyService,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 		private readonly ?AanvullingsverzoekResolutionService $aanvullingen = null,
 		private readonly ?PauseChaseService $chases = null,
 	) {
@@ -110,7 +119,17 @@ class TermijnTimerFiredListener implements IEventListener {
 		}
 
 		try {
-			$this->dispatch(event: $event);
+			// The fire comes from OpenRegister's FlowTimerWorker, a cron job
+			// with nobody signed in, so the instance update and the event
+			// were refused as Anonymous. A signed-in caller keeps writing as
+			// themselves.
+			$this->serviceAccount->runAsWhenNobodyIsSignedIn(
+				operation: fn () => $this->dispatch(event: $event)
+			);
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// written for this fire.
+			return;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq termijn: timer fire handling failed',

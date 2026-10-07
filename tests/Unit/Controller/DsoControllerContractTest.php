@@ -12,9 +12,10 @@
  * The contract pinned here:
  *
  *  - no session answers 401 on all three, before any OpenRegister read;
- *  - the dashboard query is SCOPED to `caseType: omgevingsvergunning` and
- *    paginated — an unscoped dashboard would list every case in the register
- *    while still rendering perfectly;
+ *  - the dashboard query is SCOPED to DSO cases (`dsoStatus`) and paginated,
+ *    because an unscoped dashboard would list every case in the register
+ *    while still rendering perfectly. It used to filter `caseType:
+ *    omgevingsvergunning`, a name on a uuid field, which matched no case;
  *  - an OpenRegister outage on the dashboard is a 503, and any other failure a
  *    masked 500 — the two are distinct branches with distinct meanings;
  *  - `doorsturen` demands a target bevoegd gezag (400), 404s an unknown case,
@@ -443,13 +444,13 @@ class DsoControllerContractTest extends TestCase {
 	}//end testDashboardRefusesAnUnauthenticatedCallerWith401()
 
 	/**
-	 * The dashboard query is scoped to omgevingsvergunning cases and paginated,
+	 * The dashboard query is scoped to DSO cases and paginated,
 	 * and the caller's filters are passed through. An unscoped query would list
 	 * the whole register while still rendering a plausible dashboard.
 	 *
 	 * @return void
 	 */
-	public function testDashboardScopesTheQueryToOmgevingsvergunningCases(): void {
+	public function testDashboardScopesTheQueryToDsoCases(): void {
 		$this->signIn();
 		$captured = [];
 
@@ -480,11 +481,32 @@ class DsoControllerContractTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame(2, $response->getData()['count']);
-		$this->assertSame('omgevingsvergunning', $captured['params']['caseType']);
-		$this->assertSame('in_handling', $captured['params']['status']);
+		$this->assertArrayNotHasKey('caseType', $captured['params'], 'caseType is a uuid; a name on it matches nothing');
+		$this->assertArrayNotHasKey('status', $captured['params'], 'status is a uuid; the DSO value is dsoStatus');
+		$this->assertSame(['in_handling'], $captured['params']['dsoStatus']);
 		$this->assertSame(100, $captured['params']['_limit']);
 		$this->assertSame('bouwen', $captured['activiteitgroep']);
-	}//end testDashboardScopesTheQueryToOmgevingsvergunningCases()
+	}//end testDashboardScopesTheQueryToDsoCases()
+
+	/**
+	 * Without a status filter the dashboard reads every DSO status.
+	 *
+	 * @return void
+	 */
+	public function testDashboardWithoutAStatusReadsEveryDsoCase(): void {
+		$this->signIn();
+		$captured = [];
+		$this->repository->method('fetchDashboard')->willReturnCallback(
+			static function (array $params) use (&$captured): array {
+				$captured = $params;
+				return ['error' => null, 'results' => []];
+			}
+		);
+
+		$this->controllerWith()->dashboard();
+
+		$this->assertSame(['submitted', 'in_handling', 'granted', 'refused', 'withdrawn'], $captured['dsoStatus']);
+	}//end testDashboardWithoutAStatusReadsEveryDsoCase()
 
 	/**
 	 * An OpenRegister outage answers 503 with the repository's reason — not an

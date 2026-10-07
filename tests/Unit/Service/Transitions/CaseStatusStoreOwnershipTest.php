@@ -43,6 +43,7 @@ use RuntimeException;
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class CaseStatusStoreOwnershipTest extends TestCase {
 	/**

@@ -684,9 +684,10 @@ $extra = [
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
     ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],
 
-        // ── VTH Module: DSO intake, checklist results, advice, LHS lookup ─
-        // @spec openspec/changes/vth-module/tasks.md#task-3
-    ['name' => 'dSOIntake#intake', 'url' => '/api/vth/dso/intake', 'verb' => 'POST'],
+        // ── VTH Module: checklist results, advice, LHS lookup ─
+        // A DSO verzoek has no route here: integriq receives it and
+        // VergunningaanvraagCreatedListener makes the case (one path).
+        // @spec openspec/changes/dso-single-intake-path/specs/vth-dso-integration/spec.md
         // @spec openspec/changes/vth-module/tasks.md#task-8
     ['name' => 'lhs#lookup',          'url' => '/api/vth/lhs/lookup', 'verb' => 'GET'],
 
@@ -719,7 +720,6 @@ $extra = [
         // ── Berichtenbox (government inbox integration) ─────────────────
     ['name' => 'berichtenbox#send',     'url' => '/api/berichtenbox/send',                 'verb' => 'POST'],
     ['name' => 'berichtenbox#messages', 'url' => '/api/berichtenbox/messages',             'verb' => 'GET'],
-    ['name' => 'berichtenbox#poll',     'url' => '/api/berichtenbox/messages/{messageId}', 'verb' => 'GET'],
 
         // ── Beschikking (compose -> onderteken -> Berichtenbox -> archief) ──
         // Specific verb/suffix routes precede the generic PATCH /{id} wildcard.
@@ -764,6 +764,9 @@ $extra = [
     ['name' => 'emailTemplate#seedDefaults',   'url' => '/api/casetypes/{caseTypeId}/email-templates/seed-defaults',    'verb' => 'POST'],
     ['name' => 'emailTemplate#updateTemplate', 'url' => '/api/email-templates/{templateId}',                            'verb' => 'PUT'],
     ['name' => 'emailTemplate#prefillDraft',   'url' => '/api/cases/{caseId}/email-templates/{templateId}/draft',       'verb' => 'POST'],
+    // The account the background jobs (the termijn reminder sweep) write as. Admin only.
+    ['name' => 'backgroundServiceAccount#show', 'url' => '/api/settings/background-service-account', 'verb' => 'GET'],
+    ['name' => 'backgroundServiceAccount#save', 'url' => '/api/settings/background-service-account', 'verb' => 'PUT'],
     ['name' => 'emailTemplate#getSettings',    'url' => '/api/settings/email',                                          'verb' => 'GET'],
     ['name' => 'emailTemplate#saveSettings',   'url' => '/api/settings/email',                                          'verb' => 'PUT'],
     ['name' => 'emailTemplate#mailAccounts',    'url' => '/api/settings/email/mail-accounts',                             'verb' => 'GET'],

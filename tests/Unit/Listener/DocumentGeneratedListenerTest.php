@@ -32,6 +32,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Dossiq\Listener\DocumentGeneratedListener
  * @covers \OCA\Dossiq\Service\Support\CaseObjectReference
+ * @uses \OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler
  */
 class DocumentGeneratedListenerTest extends TestCase {
 

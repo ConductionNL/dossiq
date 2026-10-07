@@ -516,17 +516,22 @@ class PauseChaseService {
 			return;
 		}
 
+		$changes = [
+			'pauseWaitingOn' => (string)$reason['waitingOn'],
+			'chasesSent' => $chases,
+		];
+		$since = $this->schedule->pauseStartMoment(date: (string)($instance['pauzeStartDatum'] ?? ''));
+		if ($since !== null) {
+			$changes['waitingSince'] = $since;
+		}
+
 		try {
 			$this->patchObjectAsArray(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
 				id: $caseId,
-				changes: [
-					'pauseWaitingOn' => (string)$reason['waitingOn'],
-					'waitingSince' => (string)($instance['pauzeStartDatum'] ?? ''),
-					'chasesSent' => $chases,
-				]
+				changes: $changes
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

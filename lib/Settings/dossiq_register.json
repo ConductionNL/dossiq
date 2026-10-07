@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.15"
+        "version": "0.20.16"
     },
     "x-openregister": {
         "type": "application",
@@ -306,10 +306,16 @@
                         "description": "Whether the process owns the status of cases of this type. Where it does, a status only moves through a declared transition and a direct write of the status field is refused. This is a per case type declaration and not a product decision, because a gemeente running both kinds is the normal case.",
                         "title": "Process owns the status"
                     },
+                    "autoCloseOnSilence": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Whether cases of this type close themselves after the silence period below. Off is the default, and a period on its own does not switch it on: an upgrade must not start closing cases nobody decided to close. When it is on, the background service account aborts the silent case, and that account may abort only cases of a case type where this is on.",
+                        "title": "Close silent cases automatically"
+                    },
                     "autoCloseAfterSilenceDays": {
                         "type": "integer",
                         "minimum": 1,
-                        "description": "How many days of no activity close a case of this type automatically. Empty is off, and off is the default: a case that closes itself in a gemeente without anybody deciding is a besluit nobody took. The applicant is told before it happens and the close records that the product did it.",
+                        "description": "How many days of no activity close a case of this type automatically, once closing silent cases is switched on. Empty is off, and off is the default: a case that closes itself in a gemeente without anybody deciding is a besluit nobody took. The applicant is told before it happens and the close records that the product did it.",
                         "title": "Close after silence, in days"
                     },
                     "autoCloseWarningDays": {
@@ -10839,6 +10845,84 @@
                     }
                 }
             },
+            "caseBerichtenboxMessage": {
+                "slug": "caseBerichtenboxMessage",
+                "icon": "EmailOutline",
+                "version": "1.0.0",
+                "title": "Berichtenbox Message",
+                "description": "One letter a handler sent to a citizen's Berichtenbox through integriq digital post, and what became of it: sent, delivered, read, failed, or refused (an opt-out, a missing digital post account, a provider error). A refused send is recorded too, so the handler sees why nothing went out.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "status"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case the letter belongs to."
+                    },
+                    "bsn": {
+                        "type": "string",
+                        "title": "BSN",
+                        "description": "The citizen the letter was addressed to."
+                    },
+                    "subject": {
+                        "type": "string",
+                        "title": "Subject",
+                        "description": "The subject line of the letter."
+                    },
+                    "body": {
+                        "type": "string",
+                        "title": "Body",
+                        "description": "The text of the letter as the handler wrote it."
+                    },
+                    "berichtTypeCode": {
+                        "type": "string",
+                        "title": "Message type code",
+                        "description": "The Berichtenbox message type the letter was sent under."
+                    },
+                    "attachmentFileId": {
+                        "type": "string",
+                        "nullable": true,
+                        "title": "Attachment file",
+                        "description": "The Nextcloud file sent with the letter, when there is one."
+                    },
+                    "externalMessageId": {
+                        "type": "string",
+                        "nullable": true,
+                        "title": "Integriq message",
+                        "description": "The integriq digitalPostMessage the letter is tracked under; empty when it was refused."
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "sent, delivered, read, failed or refused."
+                    },
+                    "sentAt": {
+                        "type": "string",
+                        "nullable": true,
+                        "title": "Sent at",
+                        "description": "When integriq accepted the letter; empty when it was refused."
+                    },
+                    "readAt": {
+                        "type": "string",
+                        "nullable": true,
+                        "title": "Read at",
+                        "description": "When the citizen opened the letter, as the provider reported it."
+                    },
+                    "lastError": {
+                        "type": "string",
+                        "title": "Last error",
+                        "description": "Why the letter was refused or failed, in the words of integriq or the provider."
+                    },
+                    "simulated": {
+                        "type": "boolean",
+                        "title": "Simulated",
+                        "description": "True when a mock provider answered, so nothing reached a real mailbox."
+                    }
+                }
+            },
             "supplierMessage": {
                 "slug": "supplierMessage",
                 "icon": "MessageText",
@@ -11701,6 +11785,7 @@
                     "supplierContract",
                     "caseSupplierInvoice",
                     "supplierMessage",
+                    "caseBerichtenboxMessage",
                     "supplierKpi",
                     "emailTemplate",
                     "adviceRequest",

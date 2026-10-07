@@ -78,6 +78,7 @@ interface RouteSeamObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Transitions\StatusTypeLookup
  * @uses \OCA\Dossiq\Service\Transitions\TransitionSpecReader
  * @uses \OCA\Dossiq\Service\Transitions\OfferedTransitions
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
  */
 class StatusTransitionServiceRouteSeamTest extends TestCase {
 	use MakesStatusDeclarations;

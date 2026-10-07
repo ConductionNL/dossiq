@@ -25,6 +25,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\Dossiq\Service\TenantSaasService;
 use OCP\App\IAppManager;
@@ -36,6 +38,9 @@ use Throwable;
 
 /**
  * Resets monthly + hourly quotas after their window elapses.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-09-quotas-enforcement/tasks.md
  */
@@ -53,6 +58,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 * @param IAppManager $appManager App manager.
 	 * @param ContainerInterface $container Service container.
 	 * @param LoggerInterface $logger Logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -60,24 +66,41 @@ class ResetMonthlyQuotasJob extends TimedJob {
 		private readonly IAppManager $appManager,
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL_SECONDS);
 	}//end __construct()
 
 	/**
-	 * Reset monthly quotas for all tenants when their period is due.
+	 * Run once as the background service account.
 	 *
-	 * @param mixed $argument Job argument (unused).
+	 * @param mixed $argument The job argument.
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
-	 * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
+	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
+	 */
+	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Reset monthly quotas for all tenants when their period is due.
+	 *
+	 * @return void
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
 	 */
-	protected function run($argument): void {
+	private function work(): void {
 		// IAppManager::getInstalledApps() declares its array return in PHPDoc
 		// only, so normalise defensively before the membership test.
 		$installed = (array)$this->appManager->getInstalledApps();
@@ -121,7 +144,7 @@ class ResetMonthlyQuotasJob extends TimedJob {
 		if ($resetCount > 0) {
 			$this->logger->info('Dossiq: ResetMonthlyQuotasJob reset ' . $resetCount . ' quotas');
 		}
-	}//end run()
+	}//end work()
 
 	/**
 	 * Reset every quota row whose window has passed.

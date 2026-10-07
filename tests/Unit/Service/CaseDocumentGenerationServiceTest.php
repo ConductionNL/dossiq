@@ -36,6 +36,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseDocumentGenerationService
+ * @uses \OCA\Dossiq\Service\Actions\ActionResult
+ * @uses \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
  */
 class CaseDocumentGenerationServiceTest extends TestCase {
 

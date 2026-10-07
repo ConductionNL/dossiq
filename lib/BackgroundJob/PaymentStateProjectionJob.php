@@ -44,6 +44,8 @@ namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\Service\Money\CasePaymentReader;
 use OCA\Dossiq\Service\Money\CasePaymentState;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -54,6 +56,9 @@ use Throwable;
 
 /**
  * Hourly sweep refreshing the payment state the case list filters on.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
  */
@@ -81,6 +86,7 @@ class PaymentStateProjectionJob extends TimedJob {
 	 * @param SettingsService $settingsService Bridge to OpenRegister plus config.
 	 * @param IAppManager $appManager Establishes that the apps are present.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -88,23 +94,41 @@ class PaymentStateProjectionJob extends TimedJob {
 		private readonly SettingsService $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: 3600);
 	}//end __construct()
 
 	/**
-	 * Refresh the payment state of every open case.
+	 * Run once as the background service account.
 	 *
-	 * @param mixed $argument The job argument, unused.
+	 * @param mixed $argument The job argument.
 	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
+	 */
+	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Refresh the payment state of every open case.
+	 *
+	 * @return void
 	 *
 	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
-	protected function run($argument): void {
+	private function work(): void {
 		if ($this->appManager->isInstalled(CasePaymentReader::MONEY_APP) === false) {
 			// No money app, so no money facts to project. Deliberately NOT a
 			// sweep that writes `notRequired` everywhere: an instance that
@@ -152,7 +176,7 @@ class PaymentStateProjectionJob extends TimedJob {
 				['written' => $written],
 			);
 		}
-	}//end run()
+	}//end work()
 
 	/**
 	 * Refresh the payment state of one case, and say whether anything was written.
