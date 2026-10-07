@@ -11,7 +11,7 @@ Send a citizen a message in their Mijn Overheid Berichtenbox, list the messages 
 
 ## Requirements
 
-### REQ-001: Berichtenbox send / list / poll REST endpoints
+### Requirement: REQ-001: Berichtenbox send / list / poll REST endpoints
 
 The system SHALL expose three `@NoAdminRequired` JSON endpoints on `BerichtenboxController` — `send`, `messages`, and `poll` — that route to `BerichtenboxService` for message dispatch, case-scoped message listing, and per-message read-status polling respectively.
 
@@ -40,7 +40,7 @@ The system SHALL expose three `@NoAdminRequired` JSON endpoints on `Berichtenbox
 - All three endpoints are `@NoAdminRequired` — they rely on case-level access checks performed downstream.
 - The poll scenario used to read `poll/{messageId}`, which was never a route. When #627 routed the controller it chose `GET /api/berichtenbox/messages/{messageId}`, and the wording here was left behind. `src/services/berichtenboxApi.js` had been written from the old wording and posted to the path that did not exist. Corrected 2026-09-19, with `tests/vitest/berichtenboxApiRoutes.spec.js` reading the client against `appinfo/routes.php` so the same drift cannot go unseen again.
 
-### REQ-002: BSN 11-proef + plain-text message validation
+### Requirement: REQ-002: BSN 11-proef + plain-text message validation
 
 The system SHALL validate every outbound Berichtenbox message before dispatch: BSN MUST be a 9-digit string passing the Dutch 11-proef checksum; subject and body MUST be non-empty; body MUST contain no HTML markup.
 
@@ -67,7 +67,7 @@ The system SHALL validate every outbound Berichtenbox message before dispatch: B
 - The 11-proef weights digits 1-8 by `(9 - i)` and subtracts digit 9, accepting only `sum % 11 === 0` AND `sum !== 0`.
 - Multiple errors are accumulated and joined with `'; '` in the returned `error` field.
 
-### REQ-003: Pluggable Berichtenbox adapter contract
+### Requirement: REQ-003: Pluggable Berichtenbox adapter contract
 
 The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `sendMessage(bsn, subject, body, typeCode, ?attachment): array` returning at minimum `{messageId, status}`, and `getReadStatus(messageId): array` returning at minimum `{read: bool, readAt: ?datetime}` — so that production Berichtenbox API adapters can be swapped in without touching `BerichtenboxService`.
 
@@ -107,7 +107,7 @@ The system SHALL define a `BerichtenboxAdapterInterface` with two methods — `s
 - The defect this requirement was rewritten to close was NOT the missing transport. `getAdapter()` built `MockAdapter` inline behind the comment "For MVP, always use mock adapter": no registration, no config switch, and everything around it real. A send returned a message id and nothing left the instance.
 - `MockAdapter::sendMessage` logs only the first 4 BSN digits, masking the rest with `*****` — PII handling pattern future production adapters should preserve.
 
-### REQ-004: Read-status polling with 7-day unread-flagging
+### Requirement: REQ-004: Read-status polling with 7-day unread-flagging
 
 When `pollReadStatus(messageId)` is called, the system SHALL look up the stored Berichtenbox message in OpenRegister, call the adapter's `getReadStatus` with the stored `externalMessageId`, update local status to `read` (with `readAt`) when the adapter reports read, and otherwise stamp `readPolledAt` and re-flag status as `unread_flagged` when the message has been unread for 7 or more days.
 
@@ -136,7 +136,7 @@ When `pollReadStatus(messageId)` is called, the system SHALL look up the stored 
 - The 7-day threshold is hardcoded; making it configurable is a known follow-up.
 - When OpenRegister is unavailable the service SHORT-CIRCUITS with `{error: 'OpenRegister not available'}` — Berichtenbox messages are not persisted anywhere else.
 
-### REQ-005: Daily background polling job
+### Requirement: REQ-005: Daily background polling job
 
 The system SHALL register a `BerichtenboxReadStatusJob` extending `TimedJob` with an interval of `86400` seconds (daily) that the Nextcloud cron picks up and runs server-side.
 

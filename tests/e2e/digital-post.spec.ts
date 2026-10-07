@@ -155,7 +155,7 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 		expect([401, 403, 412]).toContain(response.status())
 	})
 
-	// @e2e openspec/specs/berichtenbox-integration/spec.md#scenario-there-is-no-read-status-route
+	// @e2e openspec/specs/berichtenbox-integration/spec.md#scenario-poll-read-status
 	test('there is no read-status route, because the Berichtenbox has no read status', async ({
 		request,
 	}) => {
