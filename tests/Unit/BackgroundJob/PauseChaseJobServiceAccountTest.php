@@ -273,8 +273,8 @@ class PauseChaseJobServiceAccountTest extends TestCase {
 		unset($payload['id']);
 		$this->assertSame([], (new RealSchemaValidator())->errors(slug: 'case', payload: $payload, creating: false));
 
-		$started = new DateTimeImmutable((string)$this->rows['t1']['pauzeStartDatum']);
-		$this->assertSame($started->format(DATE_ATOM), $payload['waitingSince']);
+		$started = (string)$this->rows['t1']['pauzeStartDatum'];
+		$this->assertStringStartsWith($started.'T00:00:00', (string)$payload['waitingSince']);
 	}//end testTheCaseProjectionPassesTheRealCaseSchema()
 
 	/**

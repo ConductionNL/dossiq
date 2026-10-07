@@ -520,7 +520,7 @@ class PauseChaseService {
 			'pauseWaitingOn' => (string)$reason['waitingOn'],
 			'chasesSent' => $chases,
 		];
-		$since = $this->startMoment(date: (string)($instance['pauzeStartDatum'] ?? ''));
+		$since = $this->schedule->pauseStartMoment(date: (string)($instance['pauzeStartDatum'] ?? ''));
 		if ($since !== null) {
 			$changes['waitingSince'] = $since;
 		}
@@ -540,36 +540,6 @@ class PauseChaseService {
 			);
 		}
 	}//end projectOntoCase()
-
-	/**
-	 * The moment a pause started, as the case schema stores it.
-	 *
-	 * The term keeps `pauzeStartDatum` as a date (AWB 4:5 counts days), and
-	 * the case keeps `waitingSince` as a date-time. Copied as is, OpenRegister
-	 * rejected the whole projection on the format, so the queue never read
-	 * who the case was waiting on. The start of that day in the server's time
-	 * zone is the same fact in the case's shape.
-	 *
-	 * @param string $date The pause start, a date or already a date-time.
-	 *
-	 * @return string|null The ISO 8601 date-time, null when there is no readable date.
-	 */
-	private function startMoment(string $date): ?string {
-		$date = trim($date);
-		if ($date === '') {
-			return null;
-		}
-
-		try {
-			return (new DateTimeImmutable($date))->format(DATE_ATOM);
-		} catch (Throwable $e) {
-			$this->logger->warning(
-				'Dossiq pause: the pause start is not a date, so the case keeps no waiting since',
-				['app' => Application::APP_ID, 'value' => $date]
-			);
-			return null;
-		}
-	}//end startMoment()
 
 	/**
 	 * Every suspended term instance.
