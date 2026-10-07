@@ -100,23 +100,27 @@ class WidgetRoles {
 	 * says WHERE a widget goes, and counting it as one would ask the same
 	 * widget to declare its audience twice, in two places that can disagree.
 	 *
+	 * A page that offers VIEWS (`config.views[].widgets`, the landing page's
+	 * My work and My team) declares widgets there too, and they are read the
+	 * same way: a widget that moved into a view still says who may see it.
+	 *
 	 * @param array<string, mixed> $page One manifest page.
 	 *
 	 * @return array<int, array<string, mixed>> The definitions.
 	 * @spec openspec/changes/widget-roles-declared/specs/dashboard/spec.md
+	 * @spec openspec/changes/beta-quality-report-green/specs/dashboard/spec.md
 	 */
 	public function definitionsOn(array $page): array {
-		$onConfig = [];
-		if (is_array($page['config']['widgets'] ?? null) === true) {
-			$onConfig = $page['config']['widgets'];
-		}
+		$candidates = array_merge(
+			$this->listAt(value: ($page['config']['widgets'] ?? null)),
+			$this->listAt(value: ($page['widgets'] ?? null))
+		);
 
-		$onPage = [];
-		if (is_array($page['widgets'] ?? null) === true) {
-			$onPage = $page['widgets'];
+		foreach ($this->listAt(value: ($page['config']['views'] ?? null)) as $view) {
+			if (is_array($view) === true) {
+				$candidates = array_merge($candidates, $this->listAt(value: ($view['widgets'] ?? null)));
+			}
 		}
-
-		$candidates = array_merge($onConfig, $onPage);
 
 		$definitions = [];
 		foreach ($candidates as $widget) {
@@ -127,6 +131,23 @@ class WidgetRoles {
 
 		return $definitions;
 	}//end definitionsOn()
+
+	/**
+	 * A manifest value as a list, or an empty one when it is not a list.
+	 *
+	 * @param mixed $value The value.
+	 *
+	 * @return array<int|string, mixed> The list.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/dashboard/spec.md
+	 */
+	private function listAt(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return [];
+	}//end listAt()
 
 	/**
 	 * The roles one widget declares.
