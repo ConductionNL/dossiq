@@ -2,10 +2,15 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  * SPDX-License-Identifier: EUPL-1.2
  *
- * Presentation logic for the capability comparison on the Features & roadmap
- * page. Pure functions over `openspec/parity/capabilities.json`, kept out of
- * the .vue file so the grouping and the tallies are unit-testable in the node
- * environment (vitest.config.js: component specs need jsdom, these do not).
+ * Presentation logic for the capability comparison. Pure functions over
+ * `openspec/parity/capabilities.json`, unit-testable in the node environment
+ * (vitest.config.js: component specs need jsdom, these do not).
+ *
+ * THE APP BUNDLE DOES NOT IMPORT THIS ANY MORE. The comparison was a tab on
+ * the in-app Features & roadmap page until 2026-10-07 and is now the
+ * "How dossiq compares" page on dossiq.conduction.nl, which imports this file
+ * from `docs/src/components/CapabilityComparison`. It stays here, beside the
+ * data and its tests, so the docs page and the data have one set of helpers.
  *
  * ROWS AND PROPOSALS ARE TWO LISTS, AND ONLY ONE OF THEM IS SCORED.
  * `data.capabilities` holds the rows: every system has been read against each
