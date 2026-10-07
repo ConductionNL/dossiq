@@ -144,7 +144,7 @@ class DoorzendingNotificationTest extends TestCase {
 	public function testTheWordingNamesTheDestinationInBothLanguages(): void {
 		$service = new TermijnNotificationService(
 			termService: $this->createMock(originalClassName: \OCA\Dossiq\Service\TermijnService::class),
-			router: $this->createMock(originalClassName: \OCA\Dossiq\Service\BerichtenboxRoutingService::class),
+			sender: $this->createMock(originalClassName: \OCA\Dossiq\Service\Termijn\TermNoticeSender::class),
 			logger: $this->createMock(originalClassName: LoggerInterface::class),
 		);
 

@@ -50,7 +50,8 @@ Spec only until Ruben approves ConductionNL/hydra#739. Build after integriq ship
 
 ## 5. Follow-up found while reading
 
-- [ ] 5.0 Open a separate change for termijn notifications: `BerichtenboxRoutingService::routeToBerichtenbox()` only logs and returns a derived id (design section 7). Not built here.
+- [x] 5.0 Open a separate change for termijn notifications: `BerichtenboxRoutingService::routeToBerichtenbox()` only logs and returns a derived id (design section 7). Not built here.
+  - built as `openspec/changes/termijn-notices-send/` (2026-10-07).
 
 ## 6. Verify
 
