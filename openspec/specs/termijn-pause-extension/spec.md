@@ -128,3 +128,155 @@ reason a suspended clock is suspended for and the reminders sent under it.
 - **GIVEN** a case that is ours to move
 - **WHEN** the queue is read
 - **THEN** no waiting sentence SHALL be shown beside it
+
+### Requirement: A request to complete an application is a record on the case (REQ-AVR-01)
+
+A request to an applicant to complete their submission SHALL be written as
+an `aanvullingsverzoek` object on the case. It SHALL name the party asked,
+the `pauseReason` that types it, the items that are missing, who asked, when
+they asked and the date the hersteltermijn ends. A suspended term SHALL NOT
+stand in for the record.
+
+#### Scenario: Asking writes the request and suspends the term
+@e2e tests/e2e/aanvullingsverzoek-as-a-record.spec.ts
+
+- **GIVEN** a case in behandeling with a running beslistermijn
+- **WHEN** a handler asks the applicant for two missing documents
+- **THEN** an `aanvullingsverzoek` SHALL be written naming both items, the reason and the hersteltermijn date
+- **AND** the term SHALL be suspended through the engine timer, not by a second clock
+
+#### Scenario: The request names who asked
+@e2e exclude unit; AanvullingsverzoekServiceTest
+
+- **GIVEN** a request written by a named handler
+- **WHEN** the record is read a year later
+- **THEN** it SHALL still name the handler, the moment and the reason
+
+### Requirement: The answer says which items arrived (REQ-AVR-02)
+
+Recording an answer SHALL mark each requested item as received or still
+missing, SHALL close the request only when the handler says it is complete,
+and SHALL resume the term through the existing credit path. A partially
+answered request SHALL stay open with its outstanding items named.
+
+#### Scenario: A partial answer leaves the request open
+@e2e tests/e2e/aanvullingsverzoek-as-a-record.spec.ts
+
+- **GIVEN** an open request for two items
+- **WHEN** one of them arrives and the handler records it
+- **THEN** the request SHALL stay open naming the item still missing
+- **AND** the term SHALL stay suspended
+
+#### Scenario: A full answer closes the request and resumes the clock
+@e2e tests/e2e/aanvullingsverzoek-as-a-record.spec.ts
+
+- **GIVEN** an open request for two items
+- **WHEN** both arrive and the handler records the answer as complete
+- **THEN** the request SHALL read answered
+- **AND** the unused part of the suspension SHALL be credited back as it is today
+
+### Requirement: An unanswered request expires and stays readable (REQ-AVR-03)
+
+A request whose hersteltermijn passes without an answer SHALL become
+`expired`. It SHALL remain readable with its items and its dates unchanged,
+and nothing SHALL delete or rewrite it.
+
+#### Scenario: The hersteltermijn passes
+@e2e exclude time-dependent; unit over the timer-fired listener, AanvullingsverzoekExpiryTest
+
+- **GIVEN** an open request whose hersteltermijn is today
+- **WHEN** the day passes without an answer
+- **THEN** the request SHALL read expired
+- **AND** the items it asked for SHALL still be readable
+
+### Requirement: Cases waiting on an applicant are a list (REQ-AVR-04)
+
+A case with an open `aanvullingsverzoek` SHALL be findable as such. The work
+list SHALL filter on it and SHALL show how long the request has been open. A
+count of cases waiting on an applicant SHALL come from the requests
+themselves.
+
+#### Scenario: The work list answers what we are waiting on
+@e2e tests/e2e/aanvullingsverzoek-as-a-record.spec.ts
+
+- **GIVEN** three cases with an open request and twelve without
+- **WHEN** a handler filters the work list on waiting for the applicant
+- **THEN** exactly the three SHALL be listed
+- **AND** each SHALL show the days its request has been open
+
+#### Scenario: Answering removes the case from the filter
+@e2e tests/e2e/aanvullingsverzoek-as-a-record.spec.ts
+
+- **GIVEN** a case in that filter
+- **WHEN** its request is answered in full
+- **THEN** the case SHALL leave the filter
+
+### Requirement: The declared suspension and extension lengths are enforced (REQ-TERM-066)
+
+`caseType` SHALL declare a maximum suspension length in days beside its
+existing `suspensionAllowed`, `extensionAllowed` and `extensionPeriod`. A
+suspension or an extension longer than the declared length SHALL be
+refused with a 4xx carrying `{message, error}`, the rule named in `error`.
+`extensionPeriod` SHALL be read by the service that moves the deadline and
+SHALL NOT be read only by the ZGW mapping.
+
+#### Scenario: an extension beyond the declared period is refused
+@e2e tests/e2e/phase-terms-and-the-internal-target.spec.ts
+
+- **GIVEN** a case type declaring an extension period of 42 days
+- **WHEN** a handler extends the term by 60 days
+- **THEN** it SHALL be refused with a 4xx
+- **AND** the response SHALL name the rule and the declared period
+
+#### Scenario: an extension within the period is allowed
+@e2e tests/e2e/phase-terms-and-the-internal-target.spec.ts
+
+- **GIVEN** a case type declaring an extension period of 42 days
+- **WHEN** a handler extends the term by 30 days
+- **THEN** the term SHALL move by 30 working days
+
+#### Scenario: a suspension beyond the declared length is refused
+
+- **GIVEN** a case type declaring a maximum suspension of 28 days
+- **WHEN** a handler suspends for 60 days
+- **THEN** it SHALL be refused
+- **AND** the refusal SHALL name the maximum
+
+#### Scenario: a case type that allows neither refuses both
+
+- **GIVEN** a case type with `suspensionAllowed` and `extensionAllowed` false
+- **WHEN** either is attempted
+- **THEN** each SHALL be refused with the rule named
+
+### Requirement: Asking the applicant and suspending the term are one act (REQ-TERM-067)
+
+Requesting information from the applicant SHALL send the request, record
+what was asked for, and suspend the term, as one act with one record, per
+Awb 4:5. If the request fails to send, the term SHALL NOT be suspended.
+Receiving the aanvulling SHALL resume the term as one act and SHALL record
+what was received.
+
+#### Scenario: the letter and the pause happen together
+@e2e tests/e2e/phase-terms-and-the-internal-target.spec.ts
+
+- **GIVEN** a case with a running statutory term
+- **WHEN** a handler requests missing information
+- **THEN** the request SHALL be sent
+- **AND** the term SHALL be suspended
+- **AND** one record SHALL carry what was asked, when, and the suspension
+
+#### Scenario: a failed letter leaves the clock running
+@e2e tests/e2e/phase-terms-and-the-internal-target.spec.ts
+
+- **GIVEN** an unreachable transport
+- **WHEN** a handler requests missing information
+- **THEN** the term SHALL NOT be suspended
+- **AND** the failure SHALL be visible on the case
+
+#### Scenario: receiving the aanvulling resumes the term
+@e2e tests/e2e/phase-terms-and-the-internal-target.spec.ts
+
+- **GIVEN** a suspended term and a recorded request
+- **WHEN** the aanvulling is received
+- **THEN** the term SHALL resume
+- **AND** the record SHALL carry what was received and when
