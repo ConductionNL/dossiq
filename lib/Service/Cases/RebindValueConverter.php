@@ -39,12 +39,25 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Cases;
 
+use DateTimeInterface;
+use OCA\Dossiq\Service\CaseDateNormaliser;
+
 /**
  * Fit a stored answer onto a target property definition.
  *
  * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
  */
 class RebindValueConverter {
+
+	/**
+	 * Constructor.
+	 *
+	 * @param CaseDateNormaliser $dates The app's one rule for what a date is.
+	 */
+	public function __construct(
+		private readonly CaseDateNormaliser $dates,
+	) {
+	}//end __construct()
 
 	/**
 	 * Kinds the dialog can render a field for and this class can check.
@@ -310,41 +323,25 @@ class RebindValueConverter {
 	}//end fitBoolean()
 
 	/**
-	 * A calendar date, from a date or the date part of a timestamp.
+	 * A calendar date, read by the app's one date rule.
 	 *
 	 * @param string $value The answer.
 	 *
 	 * @return string|null The date as Y-m-d, or null.
 	 */
 	private function fitDate(string $value): ?string {
-		if (preg_match('/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/', $value, $match) !== 1) {
-			return null;
-		}
-
-		if (checkdate((int)$match[2], (int)$match[3], (int)$match[1]) === false) {
-			return null;
-		}
-
-		return $match[1] . '-' . $match[2] . '-' . $match[3];
+		return $this->dates->toCalendarDateOrNull(value: $value);
 	}//end fitDate()
 
 	/**
-	 * A timestamp, or a date read as its start.
+	 * A moment, read by the app's one date rule, with its offset.
 	 *
 	 * @param string $value The answer.
 	 *
-	 * @return string|null The value, or null.
+	 * @return string|null The moment in ATOM form, or null.
 	 */
 	private function fitDateTime(string $value): ?string {
-		if ($this->fitDate(value: $value) === null) {
-			return null;
-		}
-
-		if (strtotime($value) === false) {
-			return null;
-		}
-
-		return $value;
+		return $this->dates->tryParse(value: $value)?->format(DateTimeInterface::ATOM);
 	}//end fitDateTime()
 
 	/**

@@ -65,8 +65,8 @@ property.
   loss. Required rows render a field per type (text, number, date, choice,
   yes/no). The confirm button stays disabled until the server says the
   impact is complete.
-- `CaseRebindGate` reads and writes the list shape, and keeps reading a
-  legacy map.
+- `CaseAnswerReader` reads the list shape, and keeps reading a legacy map;
+  `CaseRebindGate` drops its map-shaped helpers.
 
 ## Capabilities
 
@@ -75,6 +75,7 @@ property.
 ## Impact
 
 `lib/Service/Cases/CaseRebindImpact.php`,
+`lib/Service/Cases/CaseAnswerReader.php`,
 `lib/Service/Cases/RebindValueConverter.php` (new);
 `lib/Service/Cases/CaseRebindGate.php`, `lib/Service/CaseRebindService.php`,
 `lib/Controller/CaseRebindController.php`;

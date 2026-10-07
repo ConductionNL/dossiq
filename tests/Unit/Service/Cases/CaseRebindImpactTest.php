@@ -25,7 +25,6 @@ namespace OCA\Dossiq\Tests\Unit\Service\Cases;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Cases\CaseAnswerReader;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
-use OCA\Dossiq\Service\Cases\RebindValueConverter;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
@@ -40,8 +39,11 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class CaseRebindImpactTest extends TestCase {
+
+	use BuildsRebindConverter;
 
 	/**
 	 * The impact over two case types' definitions.
@@ -66,8 +68,8 @@ class CaseRebindImpactTest extends TestCase {
 		return new CaseRebindImpact(
 			store: $store,
 			resolver: $resolver,
-			converter: new RebindValueConverter(),
-			answers: new CaseAnswerReader(store: $store, converter: new RebindValueConverter()),
+			converter: $this->rebindConverter(),
+			answers: new CaseAnswerReader(store: $store, converter: $this->rebindConverter()),
 		);
 	}//end impact()
 
@@ -176,6 +178,33 @@ class CaseRebindImpactTest extends TestCase {
 		// Free text onto a list is a change of kind, even when the word is listed.
 		self::assertSame('converted', $impact['ported'][0]['mapping']);
 	}//end testChoicesAndStructuredKindsAreStrict()
+
+	/**
+	 * A date is judged by the app's one date rule: a real day carries, an impossible one is dropped.
+	 *
+	 * @return void
+	 */
+	public function testADateIsJudgedByTheOneDateRule(): void {
+		$impact = $this->impact(
+			source: [
+				['id' => 'src-start', 'name' => 'start'],
+				['id' => 'src-eind', 'name' => 'eind'],
+			],
+			target: [
+				['id' => 'dst-start', 'name' => 'start', 'propertyType' => 'date'],
+				['id' => 'dst-eind', 'name' => 'eind', 'propertyType' => 'date'],
+			],
+		)->compute(
+			case: $this->caseAnswering(['start' => '2026-06-01', 'eind' => '2026-02-30']),
+			targetCaseTypeId: 'ct-dst',
+			targetStatusId: '',
+		);
+
+		self::assertSame(['start'], array_column($impact['ported'], 'target'));
+		self::assertSame('2026-06-01', $impact['ported'][0]['newValue']);
+		self::assertSame(['eind'], array_column($impact['dropped'], 'name'));
+		self::assertSame('type', $impact['dropped'][0]['reason']);
+	}//end testADateIsJudgedByTheOneDateRule()
 
 	/**
 	 * A remap moves a dropped answer onto a compatible free field, and fills a required one.

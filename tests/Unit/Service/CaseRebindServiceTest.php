@@ -31,13 +31,13 @@ use OCA\Dossiq\Service\CaseRebindService;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Cases\CaseAnswerReader;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
-use OCA\Dossiq\Service\Cases\RebindValueConverter;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Termijn\TermRearm;
+use OCA\Dossiq\Tests\Unit\Service\Cases\BuildsRebindConverter;
 use OCP\IGroupManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
@@ -50,6 +50,7 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindGate
  * @uses \OCA\Dossiq\Service\Cases\CaseRebindImpact
  * @uses \OCA\Dossiq\Service\Cases\RebindValueConverter
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
@@ -60,6 +61,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Termijn\TermRearm
  */
 class CaseRebindServiceTest extends TestCase {
+
+	use BuildsRebindConverter;
 
 	/**
 	 * The store every test reads and writes, keyed by id.
@@ -188,8 +191,8 @@ class CaseRebindServiceTest extends TestCase {
 			impact: new CaseRebindImpact(
 				store: $store,
 				resolver: $resolver,
-				converter: new RebindValueConverter(),
-				answers: new CaseAnswerReader(store: $store, converter: new RebindValueConverter()),
+				converter: $this->rebindConverter(),
+				answers: new CaseAnswerReader(store: $store, converter: $this->rebindConverter()),
 			),
 			logger: new NullLogger(),
 		);
