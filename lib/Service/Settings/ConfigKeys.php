@@ -359,6 +359,7 @@ class ConfigKeys {
 		// transport ships here: both are per-customer contracts and belong in
 		// integriq (ADR-041, and the dossiq-delivers-nothing ruling).
 		'berichtenbox_adapter',
+		'berichtenbox_message_schema',
 		'beschikking_template_adapter',
 		// What a new instance starts with (starter-content-and-templates).
 		'shipped_origin_schema',

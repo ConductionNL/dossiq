@@ -3,7 +3,7 @@
     "info": {
         "title": "Dossiq Case Management Register",
         "description": "Register containing all schemas for the Dossiq case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, automaticAction, and their instance counterparts. v0.19.2 marks `caseType` shareable (`configuration.x-openregister-shareable`), so OpenRegister's federated configuration sharing offers case types as a shareable type with no dossiq code. The number moves on purpose: OpenRegister's ImportHandler skips an app import when `version_compare(new, existing, '<=')` holds, so a schema change with this number left alone reaches a fresh CI install and no existing instance at all.",
-        "version": "0.20.15"
+        "version": "0.20.16"
     },
     "x-openregister": {
         "type": "application",
@@ -10839,6 +10839,84 @@
                     }
                 }
             },
+            "berichtenboxMessage": {
+                "slug": "berichtenboxMessage",
+                "icon": "EmailOutline",
+                "version": "1.0.0",
+                "title": "Berichtenbox Message",
+                "description": "One letter a handler sent to a citizen's Berichtenbox through integriq digital post, and what became of it: sent, delivered, read, failed, or refused (an opt-out, a missing digital post account, a provider error). A refused send is recorded too, so the handler sees why nothing went out.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "status"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "title": "Case",
+                        "description": "The case the letter belongs to."
+                    },
+                    "bsn": {
+                        "type": "string",
+                        "title": "BSN",
+                        "description": "The citizen the letter was addressed to."
+                    },
+                    "subject": {
+                        "type": "string",
+                        "title": "Subject"
+                    },
+                    "body": {
+                        "type": "string",
+                        "title": "Body"
+                    },
+                    "berichtTypeCode": {
+                        "type": "string",
+                        "title": "Message type code"
+                    },
+                    "attachmentFileId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "title": "Attachment file"
+                    },
+                    "externalMessageId": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "title": "Integriq message",
+                        "description": "The integriq digitalPostMessage the letter is tracked under; empty when it was refused."
+                    },
+                    "status": {
+                        "type": "string",
+                        "title": "Status",
+                        "description": "sent, delivered, read, failed or refused."
+                    },
+                    "sentAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "title": "Sent at"
+                    },
+                    "readAt": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "title": "Read at"
+                    },
+                    "lastError": {
+                        "type": "string",
+                        "title": "Last error"
+                    },
+                    "simulated": {
+                        "type": "boolean",
+                        "title": "Simulated"
+                    }
+                }
+            },
             "supplierMessage": {
                 "slug": "supplierMessage",
                 "icon": "MessageText",
@@ -11701,6 +11779,7 @@
                     "supplierContract",
                     "caseSupplierInvoice",
                     "supplierMessage",
+                    "berichtenboxMessage",
                     "supplierKpi",
                     "emailTemplate",
                     "adviceRequest",
