@@ -125,16 +125,19 @@ final class StatusPublicLabels {
 	 * "Array", which is how every step on a resident's case read "Array" and
 	 * then folded into one, because eight labels of "Array" are equal.
 	 *
-	 * Dutch first, the language these labels are written in, then the first
-	 * non-empty text in the map.
+	 * The reader's language first when one is given (`en_GB` also accepts
+	 * `en`), then Dutch, the language these labels are written in, then the
+	 * first non-empty text in the map.
 	 *
-	 * @param mixed $value A string, a language map, or anything else.
+	 * @param mixed  $value    A string, a language map, or anything else.
+	 * @param string $language The reader's language code, or '' for none.
 	 *
 	 * @return string The text, trimmed, or '' when there is none.
 	 *
 	 * @spec openspec/changes/citizen-status-labels/specs/case-types/spec.md
+	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
 	 */
-	public static function textOf(mixed $value): string {
+	public static function textOf(mixed $value, string $language = ''): string {
 		if (is_string($value) === true) {
 			return trim($value);
 		}
@@ -143,10 +146,15 @@ final class StatusPublicLabels {
 			return '';
 		}
 
-		$candidates = $value;
-		if (array_key_exists('nl', $value) === true) {
-			$candidates = (['nl' => $value['nl']] + $value);
+		$preferred = [];
+		$base = strtolower(explode('_', str_replace('-', '_', $language))[0]);
+		foreach ([$language, $base, 'nl'] as $code) {
+			if ($code !== '' && array_key_exists($code, $value) === true) {
+				$preferred[$code] = $value[$code];
+			}
 		}
+
+		$candidates = ($preferred + $value);
 
 		foreach ($candidates as $text) {
 			if (is_string($text) === true && trim($text) !== '') {

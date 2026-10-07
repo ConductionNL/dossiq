@@ -210,4 +210,19 @@ class StatusPublicLabelsTest extends TestCase {
 			actual: StatusPublicLabels::descriptionOnCase(case: ['identifier' => '2026-0001'])
 		);
 	}//end testACaseWithoutTheFieldsReadsAsNothing()
+
+	/**
+	 * The reader's language wins, its base language counts, Dutch is next.
+	 *
+	 * @return void
+	 */
+	public function testTheReadersLanguageWinsOverDutch(): void {
+		$map = ['de' => 'Eingang', 'nl' => 'Ontvangen', 'en' => 'Received'];
+
+		self::assertSame('Received', StatusPublicLabels::textOf(value: $map, language: 'en'));
+		self::assertSame('Received', StatusPublicLabels::textOf(value: $map, language: 'en_GB'));
+		self::assertSame('Ontvangen', StatusPublicLabels::textOf(value: $map, language: 'fr'));
+		self::assertSame('Ontvangen', StatusPublicLabels::textOf(value: $map));
+		self::assertSame('Eingang', StatusPublicLabels::textOf(value: ['de' => 'Eingang', 'en' => ' '], language: 'en'));
+	}//end testTheReadersLanguageWinsOverDutch()
 }//end class

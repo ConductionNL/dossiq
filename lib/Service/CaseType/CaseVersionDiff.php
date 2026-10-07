@@ -40,8 +40,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\CaseType;
 
+use OCA\Dossiq\Service\Cases\CaseAnswerReader;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Support\TranslatedText;
 
 /**
  * Compares two versions of a case type against one running case.
@@ -58,11 +60,15 @@ class CaseVersionDiff {
 	 * @param CaseTypeStore        $store    The app's one case type reader.
 	 * @param CaseTypeResolver     $resolver The effective blueprint of a version.
 	 * @param CaseTypeVersionChain $chain    The versions, for naming them.
+	 * @param CaseAnswerReader     $answers  The case's answers, from the register's list shape.
+	 * @param TranslatedText       $text     Translatable status names in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
 		private readonly CaseTypeResolver $resolver,
 		private readonly CaseTypeVersionChain $chain,
+		private readonly CaseAnswerReader $answers,
+		private readonly TranslatedText $text,
 	) {
 	}//end __construct()
 
@@ -76,6 +82,7 @@ class CaseVersionDiff {
 	 * @return array<string, mixed> The differences, and whether the case can land.
 	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
 	 */
 	public function between(array $case, string $sourceId, string $targetId): array {
 		$sourceStatuses = $this->statusesByName(caseTypeId: $sourceId);
@@ -120,7 +127,7 @@ class CaseVersionDiff {
 	private function statusesByName(string $caseTypeId): array {
 		$byName = [];
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
-			$name = trim((string)($status['name'] ?? ''));
+			$name = $this->text->of(value: ($status['name'] ?? null));
 			if ($name === '') {
 				continue;
 			}
@@ -228,27 +235,29 @@ class CaseVersionDiff {
 	 * costs the handler nothing; one that holds an answer is the sentence the
 	 * dialog has to show before anybody presses the button.
 	 *
+	 * The register stores `properties` as a list of {propertyDefinition, name,
+	 * value}; reading it as a name-keyed map (as this did) finds no answer at
+	 * all, so every dropped field read as unanswered.
+	 *
 	 * @param array<string, mixed> $case  The case.
 	 * @param array<int, string>   $names The field names being dropped.
 	 *
 	 * @return array<int, string> The ones with an answer on this case.
 	 *
 	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
 	 */
 	private function answeredAmong(array $case, array $names): array {
-		$properties = ($case['properties'] ?? []);
-		if (is_array($properties) === false) {
-			return [];
+		$filled = [];
+		foreach ($this->answers->entriesOf(case: $case) as $entry) {
+			$filled[$this->answers->key(name: $entry['name'])] = true;
 		}
 
 		$answered = [];
 		foreach ($names as $name) {
-			$value = ($properties[$name] ?? null);
-			if ($value === null || $value === '' || $value === []) {
-				continue;
+			if (isset($filled[$this->answers->key(name: $name)]) === true) {
+				$answered[] = $name;
 			}
-
-			$answered[] = $name;
 		}
 
 		return $answered;
