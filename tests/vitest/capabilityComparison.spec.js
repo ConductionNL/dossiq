@@ -95,9 +95,10 @@ import {
 // row until the corpus reads it the same way.
 //
 // On 2026-10-07 the spec round's re-read moved 11.25 and 12.14 from partial to
-// yes (see RERATED_IDS), so 141/61/23 became 143/59/23.
+// yes (see RERATED_IDS) and corrected 4.9 from yes to partial (see
+// CORRECTED_IDS), so 141/61/23 became 142/60/23.
 const AUDIT_TOTALS = {
-	dossiq: { yes: 143, partial: 59, no: 23, unknown: 0 },
+	dossiq: { yes: 142, partial: 60, no: 23, unknown: 0 },
 	opencase: { yes: 62, partial: 37, no: 116, unknown: 10 },
 	gzac: { yes: 66, partial: 68, no: 91, unknown: 0 },
 	zaaksysteem: { yes: 150, partial: 38, no: 37, unknown: 0 },
@@ -240,6 +241,10 @@ const CORRECTED_IDS = [
 	'12.7',
 	'12.21',
 	'4.15',
+	// 2026-10-07, the spec round: 4.9 yes to partial. Keywords are still set
+	// in Document properties, but no row shows them and no filter offers them
+	// since the Documents tab was retired on 2026-09-13.
+	'4.9',
 ]
 
 // Rows round 3 added to the list on 2026-09-09, from GLPI 11.0.8 and Zammad

@@ -802,6 +802,14 @@
 			"to": "yes",
 			"cause": "built",
 			"reason": "Fields hidden, required or read only by case state now hold: a status declares fieldRules, publishing the case type writes them onto the case schema, and openregister's field-rules-by-state (archived 2026-10-05) enforces them; the role half was already there."
+		},
+		{
+			"id": "4.9",
+			"on": "2026-10-07",
+			"from": "yes",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "A handler still tags a document in Document properties on its Files row, but since the Documents tab was retired on 2026-09-13 the keywords show on no row and no filter offers them: collectKeywords() and filterGroupsByKeywords() in src/utils/dossierHelpers.js have no caller. The 2026-09-08 reason described the retired tab."
 		}
 	],
 	"_competitorRerated": [
@@ -13398,7 +13406,7 @@
 			"area": "documents",
 			"name": "Document labels or tags",
 			"name_nl": "Labels of tags op documenten",
-			"dossiq": "yes",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -13410,14 +13418,16 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "70-document-zaakdossier.json#informatieobject.keywords",
-				"readOn": "2026-09-27",
+				"evidence": "lib/Settings/register.d/70-document-zaakdossier.json informatieobject.keywords (facetable, max 64 characters); edited in src/modals/DocumentMetadataDialog.vue:114-121 from the Files tab row action Document properties (src/manifest.json CaseDetail Files rowActions) and stored by lib/Controller/ZaakdossierController.php:282; collectKeywords() and filterGroupsByKeywords() in src/utils/dossierHelpers.js have no caller since the Documents tab was retired on 2026-09-13",
+				"readOn": "2026-10-07",
 				"owner": "ConductionNL/dossiq",
-				"spec": "none",
+				"spec": "openspec/specs/document-zaakdossier",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaakDocumenten"
-				}
+				},
+				"reachedOn": "#CaseDetail Files tab > row > Document properties",
+				"note": "Re-read 2026-10-07 while writing its spec (document-zaakdossier REQ-ZAK-024): a handler tags a document, but the keywords are no longer shown on the row and the case page has no keyword filter, so the row is partial. Missing: keyword chips and a keyword filter on the Files tab (nextcloud-vue files-browser-columns, the same gap as row 4.8)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 has no tag or label field; the only classification is the fixed category (Indgående, Udgående, Intern) and document type in src/components/EditDocumentDialog.vue:10 | round 2 drive: procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\"",
@@ -15924,11 +15934,12 @@
 				"evidence": "lib/Service/TermijnService.php:156 stores the term end as a Y-m-d date (counted and rolled by the Awt roll in lib/Service/Termijn/TermEndRoll.php:102); lib/Service/CaseTermsService.php:525 daysLeft() compares whole days, so a term is overdue only after its end day",
 				"reachedOn": "#CaseDetail sidebar tab \"Terms\" (src/manifest.json:3136, CaseTermsTab) and the Deadline tile (src/manifest.json:2097)",
 				"owner": "ConductionNL/dossiq",
-				"spec": "none",
+				"spec": "openspec/specs/termijn-binding",
 				"screen": {
 					"canvas": "5NkFW28vZUUij43xzxHg5a",
 					"board": "DqZaak"
-				}
+				},
+				"readOn": "2026-10-07"
 			},
 			"evidence": {
 				"openzaak": "openzaak@1.30.0 src/openzaak/components/zaken/models/zaken.py:215,221 einddatum_gepland and uiterlijke_einddatum_afdoening are DateField",
