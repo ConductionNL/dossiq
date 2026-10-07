@@ -59,6 +59,47 @@ class BackgroundServiceAccountWiringTest extends TestCase {
 	}//end testTheSweptSchemasGrantTheGroupAndKeepTheOpenDefault()
 
 	/**
+	 * Every schema the other background jobs and the timer listener write
+	 * grants the group create and update, keeps every logged-in user, and
+	 * does not open reads to anonymous callers.
+	 *
+	 * @return void
+	 */
+	public function testTheJobSchemasGrantTheGroupAndStayClosedToAnonymousReads(): void {
+		$fragment = json_decode(
+			(string)file_get_contents(__DIR__.'/../../../../lib/Settings/register.d/90-background-service-account.json'),
+			true
+		);
+
+		$written = [
+			'adviesAanvraag',
+			'aanvullingsverzoek',
+			'beschikking',
+			'bezwaarTrigger',
+			'caseDocument',
+			'klantSentiment',
+			'mailIntakeEntry',
+			'penaltyPaymentCalculation',
+			'specialistBeschikbaarheid',
+			'stateMachineLog',
+			'stufMessage',
+			'tenantQuota',
+		];
+		foreach ($written as $slug) {
+			$auth = $fragment['components']['schemas'][$slug]['authorization'];
+			$this->assertContains(BackgroundServiceAccount::GROUP, $auth['create'], $slug);
+			$this->assertContains(BackgroundServiceAccount::GROUP, $auth['update'], $slug);
+			foreach (['create', 'read', 'update', 'delete'] as $action) {
+				$this->assertContains('authenticated', $auth[$action], $slug.' '.$action);
+			}
+
+			$this->assertNotContains('public', $auth['read'], $slug);
+		}
+
+		$this->assertArrayNotHasKey('case', $fragment['components']['schemas']);
+	}//end testTheJobSchemasGrantTheGroupAndStayClosedToAnonymousReads()
+
+	/**
 	 * The repair step is registered in both the upgrade and the install block.
 	 *
 	 * @return void
