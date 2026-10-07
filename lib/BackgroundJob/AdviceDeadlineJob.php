@@ -7,6 +7,9 @@
  * sends reminders 3 days before deadline and transitions overdue
  * advice requests to status `verlopen`.
  *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *
@@ -31,6 +34,8 @@ namespace OCA\Dossiq\BackgroundJob;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\AdviceService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -51,6 +56,7 @@ class AdviceDeadlineJob extends TimedJob {
 	 * @param SettingsService $settingsService The settings service
 	 * @param IAppManager $appManager The app manager
 	 * @param LoggerInterface $logger The logger
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -58,6 +64,7 @@ class AdviceDeadlineJob extends TimedJob {
 		private readonly SettingsService $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		// Daily.
@@ -76,6 +83,25 @@ class AdviceDeadlineJob extends TimedJob {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Process the advice deadlines, as the service account.
+	 *
+	 * @param mixed $argument The job argument (unused).
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
+	private function work(mixed $argument): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
 			return;
 		}
@@ -131,5 +157,5 @@ class AdviceDeadlineJob extends TimedJob {
 				);
 			}
 		}//end foreach
-	}//end run()
+	}//end work()
 }//end class

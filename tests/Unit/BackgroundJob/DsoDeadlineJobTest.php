@@ -24,6 +24,7 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\DsoDeadlineJob;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
 use OCP\Notification\IManager as INotificationManager;
@@ -145,6 +146,7 @@ class DsoDeadlineJobTest extends TestCase {
 			notificationManager: $this->notificationManager,
 			logger: $this->logger,
 			workingDays: new WorkingDayCalculator(),
+			serviceAccount: $this->passThroughAccount(),
 		);
 	}//end buildJob()
 
@@ -259,4 +261,16 @@ class DsoDeadlineJobTest extends TestCase {
 		// If we reach this assertion, the exception was swallowed correctly.
 		$this->assertTrue(true);
 	}//end testRunCatchesExceptionsPerTask()
+
+	/**
+	 * A service account that just runs the operation.
+	 *
+	 * @return BackgroundServiceAccount
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAs')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class
