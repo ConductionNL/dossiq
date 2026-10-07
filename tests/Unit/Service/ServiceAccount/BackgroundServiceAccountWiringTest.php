@@ -76,6 +76,7 @@ class BackgroundServiceAccountWiringTest extends TestCase {
 			'aanvullingsverzoek',
 			'beschikking',
 			'bezwaarTrigger',
+			'caseBerichtenboxMessage',
 			'caseDocument',
 			'klantSentiment',
 			'mailIntakeEntry',

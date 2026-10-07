@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Service;
 use DateTime;
 use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -40,6 +42,9 @@ use Psr\Log\LoggerInterface;
  * Service for sending messages to Mijn Overheid Berichtenbox.
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The class over the limit is the background
+ *   service account's refusal: a letter with nobody signed in is recorded as that account or not sent.
  */
 class BerichtenboxService {
 	/**
@@ -52,6 +57,8 @@ class BerichtenboxService {
 	 * @param OwningCaseResolver $owningCase Resolves a message's owning case.
 	 * @param BerichtenboxAdapterInterface $adapter The transport this instance has.
 	 * @param BerichtenboxJournal $journal What a send leaves behind for a reader.
+	 * @param BackgroundServiceAccount $serviceAccount Who records the letter when nobody
+	 *        is signed in: OpenRegister refuses a write from nobody.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
@@ -61,6 +68,7 @@ class BerichtenboxService {
 		private readonly OwningCaseResolver $owningCase,
 		private readonly BerichtenboxAdapterInterface $adapter,
 		private readonly BerichtenboxJournal $journal,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 	}//end __construct()
 
@@ -88,6 +96,49 @@ class BerichtenboxService {
 		string $typeCode,
 		?string $attachmentFileId = null,
 		string $category = 'case-update',
+	): array {
+		// A send with nobody signed in (a flow, an occ run) records the letter
+		// as the background service account, or OpenRegister refuses the
+		// record after the letter already left. Without a usable account it
+		// stops before the adapter is asked, so no letter leaves unrecorded.
+		try {
+			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
+				operation: fn (): array => $this->send(
+					caseId: $caseId,
+					bsn: $bsn,
+					subject: $subject,
+					body: $body,
+					typeCode: $typeCode,
+					attachmentFileId: $attachmentFileId,
+					category: $category,
+				)
+			);
+		} catch (ServiceAccountUnavailableException $e) {
+			return ['error' => 'No background service account is set, so the letter was not sent.'];
+		}
+	}//end sendMessage()
+
+	/**
+	 * Send one letter and record it, as whoever is acting.
+	 *
+	 * @param string      $caseId           The case UUID.
+	 * @param string      $bsn              Citizen BSN.
+	 * @param string      $subject          Message subject.
+	 * @param string      $body             Plain text message body.
+	 * @param string      $typeCode         Bericht type code.
+	 * @param string|null $attachmentFileId Optional Nextcloud file ID of the attachment.
+	 * @param string      $category         What the letter is.
+	 *
+	 * @return array<string, mixed> The stored message record or an error payload.
+	 */
+	private function send(
+		string $caseId,
+		string $bsn,
+		string $subject,
+		string $body,
+		string $typeCode,
+		?string $attachmentFileId,
+		string $category,
 	): array {
 		// Validate inputs.
 		$errors = $this->validateMessage(bsn: $bsn, subject: $subject, body: $body);
@@ -162,7 +213,7 @@ class BerichtenboxService {
 		}
 
 		return $stored;
-	}//end sendMessage()
+	}//end send()
 
 
 
@@ -225,6 +276,42 @@ class BerichtenboxService {
 		string $lastError = '',
 		bool $simulated = false,
 	): bool {
+		// Integriq raises the status event from its own background work, with
+		// nobody signed in, so the update writes as the background service
+		// account. Without a usable account nothing is written: the account
+		// already logged that and told the admins.
+		try {
+			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
+				operation: fn (): bool => $this->recordStatus(
+					externalMessageId: $externalMessageId,
+					status: $status,
+					lastError: $lastError,
+					simulated: $simulated,
+				)
+			);
+		} catch (ServiceAccountUnavailableException $e) {
+			return false;
+		}
+	}//end recordDeliveryStatus()
+
+	/**
+	 * Record one status, as whoever is acting.
+	 *
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 * @param string $status            The status it moved to.
+	 * @param string $lastError         The provider's reason, when it failed.
+	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
+	 *
+	 * @return bool True when a stored message was updated.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$simulated` is data written onto the message, see recordDeliveryStatus().
+	 */
+	private function recordStatus(
+		string $externalMessageId,
+		string $status,
+		string $lastError,
+		bool $simulated,
+	): bool {
 		if (trim($externalMessageId) === '' || trim($status) === '') {
 			return false;
 		}
@@ -264,7 +351,7 @@ class BerichtenboxService {
 		);
 
 		return true;
-	}//end recordDeliveryStatus()
+	}//end recordStatus()
 
 	/**
 	 * The stored message integriq is tracking under this external id, as an array.

@@ -1439,6 +1439,10 @@
         "version": "",
         "digest": "6d9d03a3d9ca3520790628af0d4ed13954a53c86befde681a5d6f041f8e4f347"
     },
+    "lib/Settings/register.d/90-background-service-account.json::caseBerichtenboxMessage": {
+        "version": "",
+        "digest": "8c0969dfb1dab979342de9fac385c8e9ddbba568a395e3e30e8f4a728bb82178"
+    },
     "lib/Settings/register.d/90-background-service-account.json::caseDocument": {
         "version": "",
         "digest": "6c2000b5bc53d99890316c1b4acb9425de2b12896659ecf920af995bb3f1b712"
