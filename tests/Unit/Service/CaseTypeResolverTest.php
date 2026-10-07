@@ -207,6 +207,37 @@ class CaseTypeResolverTest extends TestCase {
 	}//end testAChildsRowWithTheSameNameReplacesTheParents()
 
 	/**
+	 * 🔴 Statuses whose names are language maps stay separate rows.
+	 *
+	 * `statusType.name` is `translatable`, so a row from `searchObjects()`
+	 * carries `{"nl": "..."}`. The merge key used to cast that map to the
+	 * string "Array", so every status of a case type merged into the last one
+	 * and the change case type dialog offered a single status called "Array".
+	 * A child's map with the same Dutch text still replaces the parent's row.
+	 */
+	public function testLanguageMapNamesKeepTheirOwnRows(): void {
+		$resolver = $this->resolver(
+			[
+				'parent' => ['id' => 'parent', 'title' => ['nl' => 'Bezwaar']],
+				'child' => ['id' => 'child', 'title' => ['nl' => 'Kort'], 'parentCaseType' => 'parent'],
+			],
+			[
+				'status_type_schema' => [
+					['id' => 's1', 'name' => ['nl' => 'Ontvangen'], 'order' => 1, 'caseType' => 'parent'],
+					['id' => 's2', 'name' => ['nl' => 'In behandeling'], 'order' => 2, 'caseType' => 'parent'],
+					['id' => 's9', 'name' => ['nl' => 'Afgehandeld'], 'order' => 9, 'caseType' => 'parent'],
+					['id' => 'c1', 'name' => ['nl' => 'ontvangen', 'en' => 'Received'], 'order' => 1, 'caseType' => 'child'],
+				],
+			]
+		);
+
+		$statuses = $resolver->statusTypesFor(caseTypeId: 'child');
+
+		self::assertSame(['c1', 's2', 's9'], array_column($statuses, 'id'));
+		self::assertSame('Bezwaar', $statuses[1]['originCaseTypeTitle']);
+	}//end testLanguageMapNamesKeepTheirOwnRows()
+
+	/**
 	 * The merged list is ordered the way a lifecycle is read.
 	 */
 	public function testTheMergedListIsOrderedByOrder(): void {

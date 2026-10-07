@@ -56,6 +56,7 @@ use OCA\Dossiq\Service\Cases\CaseRebindGate;
 use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Termijn\TermRearm;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -96,6 +97,7 @@ class CaseRebindService {
 	 * @param CaseRebindGate     $gate            What refuses a rebind, and what the case must answer.
 	 * @param CaseRebindImpact   $impact          What the rebind does to the case's answers.
 	 * @param LoggerInterface    $logger          The logger.
+	 * @param TranslatedText     $text            Translatable titles and names in the reader's language.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
@@ -107,6 +109,7 @@ class CaseRebindService {
 		private readonly CaseRebindGate $gate,
 		private readonly CaseRebindImpact $impact,
 		private readonly LoggerInterface $logger,
+		private readonly TranslatedText $text,
 	) {
 	}//end __construct()
 
@@ -142,6 +145,7 @@ class CaseRebindService {
 	 * @throws RefusedException When the case cannot be read.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
 	 */
 	public function options(string $caseId): array {
 		$case = $this->readCase(caseId: $caseId);
@@ -156,7 +160,7 @@ class CaseRebindService {
 
 			$targets[] = [
 				'id' => $id,
-				'title' => (string)($row['title'] ?? ''),
+				'title' => $this->text->of(value: ($row['title'] ?? null)),
 				'identifier' => (string)($row['identifier'] ?? ''),
 				'version' => ($row['version'] ?? null),
 				'sameChain' => ($this->identifierOf(caseTypeId: $sourceId) !== ''
@@ -172,7 +176,7 @@ class CaseRebindService {
 		return [
 			'current' => [
 				'caseType' => $sourceId,
-				'title' => (string)($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? ''),
+				'title' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
 				'status' => $this->statusNameOf(caseTypeId: $sourceId, statusId: $this->store->referenceId(value: ($case['status'] ?? ''))),
 			],
 			'targets' => $targets,
@@ -199,6 +203,7 @@ class CaseRebindService {
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
 	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/rebind-dialog-translated-labels/specs/zaaktype-versioning/spec.md
 	 */
 	public function preview(
 		string $caseId,
@@ -214,7 +219,7 @@ class CaseRebindService {
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $targetCaseTypeId) as $status) {
 			$id = $this->store->rowId(row: $status);
 			if ($id !== '') {
-				$statuses[] = ['id' => $id, 'name' => (string)($status['name'] ?? '')];
+				$statuses[] = ['id' => $id, 'name' => $this->text->of(value: ($status['name'] ?? null))];
 			}
 		}
 
@@ -236,7 +241,7 @@ class CaseRebindService {
 			],
 			'to' => [
 				'caseType' => $targetCaseTypeId,
-				'title' => (string)($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? ''),
+				'title' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
 			],
 			'statuses' => $statuses,
 			'missingProperties' => $this->unanswered(impact: $impact),
@@ -468,9 +473,9 @@ class CaseRebindService {
 		$entries[] = [
 			'type' => 'case-type-rebind',
 			'fromCaseType' => $sourceId,
-			'fromCaseTypeTitle' => (string)($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? ''),
+			'fromCaseTypeTitle' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $sourceId)['title'] ?? null)),
 			'toCaseType' => $targetCaseTypeId,
-			'toCaseTypeTitle' => (string)($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? ''),
+			'toCaseTypeTitle' => $this->text->of(value: ($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? null)),
 			'status' => $targetStatusId,
 			'reason' => $reason,
 			'actor' => $actorUid,
@@ -525,7 +530,7 @@ class CaseRebindService {
 
 		foreach ($this->resolver->statusTypesFor(caseTypeId: $caseTypeId) as $status) {
 			if ($this->store->rowId(row: $status) === $statusId) {
-				return (string)($status['name'] ?? '');
+				return $this->text->of(value: ($status['name'] ?? null));
 			}
 		}
 
