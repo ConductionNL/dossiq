@@ -3,7 +3,7 @@
 	"$id": "https://raw.githubusercontent.com/ConductionNL/nextcloud-vue/main/src/schemas/app-manifest-v2.schema.json",
 	"title": "Conduction App Manifest v2",
 	"description": "v2 schema for the JSON-driven page and navigation manifest consumed by @conduction/nextcloud-vue. Introduces a uniform widgets[] array on every page type with a per-slot grid coordinate system, a typed actions[] discriminator, and the required $schema field for version detection. v1 manifests continue to validate against app-manifest.schema.json (unchanged).",
-	"version": "2.46.0",
+	"version": "2.47.0",
 	"type": "object",
 	"required": ["$schema", "version"],
 	"allOf": [
@@ -271,6 +271,11 @@
 						"route": { "type": "string" },
 						"href": { "type": "string" }
 					}
+				},
+				"footer": {
+					"type": "array",
+					"items": { "type": "string", "minLength": 1 },
+					"description": "Declare the navigation footer (zuiddrecht-pixel-gaps-2): an ordered list of `section: \"footer\"` menu entry ids, plus the reserved ids `help` (the `nav.help` entry) and `settings` (the settings foldout). Only the named footer entries render there, in that order; footer entries left out move into the settings foldout so their pages stay reachable. `settings` first puts the foldout above the list (the board's `[\"settings\", \"help\"]`). Omitted, the footer renders as before: help, every footer entry, then the foldout."
 				},
 				"primaryAction": {
 					"$ref": "#/$defs/primaryAction",
@@ -3603,6 +3608,11 @@
 							"default": true,
 							"description": "type='dashboard': `false` drops the header row (title, description, header actions, edit toggle) for a page that opens with its own heading, such as a greeting widget; the title stays as a visually hidden heading (zuiddrecht-pixel-gaps). Maps to CnDashboardPage `showHeader`."
 						},
+						"showWidgetActions": {
+							"type": "boolean",
+							"default": true,
+							"description": "type='dashboard': `false` drops the overflow Actions menu from every widget that does not set `showActions` itself, for a dashboard whose widget headers carry a header link and nothing else (zuiddrecht-pixel-gaps-2). Maps to CnDashboardPage `showWidgetActions`."
+						},
 						"showTitle": {
 							"type": "boolean",
 							"default": false,
@@ -3626,8 +3636,19 @@
 								"label": { "type": "string", "minLength": 1 },
 								"route": { "type": "string" },
 								"params": { "type": "object", "additionalProperties": true },
-								"href": { "type": "string" }
+								"href": { "type": "string" },
+								"icon": { "type": "string", "minLength": 1, "description": "Optional MDI icon name (e.g. `Home`) drawn as the first crumb instead of the label, which then becomes its accessible name (zuiddrecht-pixel-gaps-2). Without it the label shows as text." }
 							}
+						},
+						"headerCard": {
+							"type": "boolean",
+							"default": false,
+							"description": "type='detail': draw the header (pills, title, actions) as a bordered card on the surface colour, as the board's case header (zuiddrecht-pixel-gaps-2). Maps to CnDetailPage `headerCard`."
+						},
+						"headerWidget": {
+							"type": "string",
+							"minLength": 1,
+							"description": "type='detail': the id of a widget in `widgets` to render inside the header on its own row under the title, without a card of its own, e.g. the stages bars (zuiddrecht-pixel-gaps-2). The widget leaves the body grid. Maps to CnDetailPage `headerWidget`."
 						},
 						"mapConfig": {
 							"type": "object",
