@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use DateTimeImmutable;
 use OCA\Dossiq\BackgroundJob\DsoDeadlineJob;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\WorkingDayCalculator;
 use OCA\Dossiq\Tests\Support\AnonymousRefusingRegister;
 use OCA\Dossiq\Tests\Support\MakesBackgroundServiceAccount;
@@ -238,6 +239,7 @@ class DsoDeadlineJobServiceAccountTest extends TestCase {
 				'logger' => new NullLogger(),
 				'workingDays' => new WorkingDayCalculator(),
 				'serviceAccount' => $this->backgroundAccount(),
+				'journal' => new CaseJournal($this->backgroundSession()),
 			]
 		);
 	}//end job()

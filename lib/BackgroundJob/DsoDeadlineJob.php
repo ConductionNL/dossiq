@@ -30,6 +30,7 @@ namespace OCA\Dossiq\BackgroundJob;
 use DateTime;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -63,6 +64,7 @@ class DsoDeadlineJob extends TimedJob {
 	 * @param LoggerInterface $logger The logger
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday arithmetic
 	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as
+	 * @param CaseJournal $journal Writes the overdue entry onto the case's activity
 	 */
 	public function __construct(
 		ITimeFactory $timeFactory,
@@ -72,17 +74,31 @@ class DsoDeadlineJob extends TimedJob {
 		private readonly LoggerInterface $logger,
 		private readonly WorkingDayCalculator $workingDays,
 		private readonly BackgroundServiceAccount $serviceAccount,
+		private readonly CaseJournal $journal,
 	) {
 		parent::__construct(time: $timeFactory);
 		$this->setInterval(seconds: 24 * 3600);
 	}//end __construct()
 
 	/**
+	 * The DSO statuses of a case still waiting on a decision.
+	 *
+	 * The case schema stores `caseType` and `status` as uuids, so a filter on
+	 * the words `omgevingsvergunning` and `in_handling` matched no case ever
+	 * stored and the job never acted. A DSO case is the one that carries
+	 * `dsoStatus`, the DSO-LV status mirrored from the vergunningaanvraag, and
+	 * these two values are the open ones.
+	 *
+	 * @var array<int, string>
+	 */
+	private const OPEN_DSO_STATUSES = ['submitted', 'in_handling'];
+
+	/**
 	 * Run the deadline monitoring job.
 	 *
-	 * Queries all open omgevingsvergunning zaken (status ingediend or
-	 * in_behandeling) and checks each deadline, sending notifications
-	 * as the deadline approaches and marking overdue zaken.
+	 * Queries all open DSO zaken (dsoStatus submitted or in_handling) and
+	 * checks each deadline, sending notifications as the deadline approaches
+	 * and marking overdue zaken.
 	 *
 	 * @param mixed $argument The job argument (unused)
 	 *
@@ -158,8 +174,7 @@ class DsoDeadlineJob extends TimedJob {
 				register: $register,
 				schema: $caseSchema,
 				filters: [
-					'caseType' => 'omgevingsvergunning',
-					'status' => ['submitted', 'in_handling'],
+					'dsoStatus' => self::OPEN_DSO_STATUSES,
 					'_limit' => 500,
 					'_offset' => 0,
 				]
@@ -279,7 +294,7 @@ class DsoDeadlineJob extends TimedJob {
 		}
 
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		$assignee = (string)($case['assigneeUserId'] ?? ($case['handler'] ?? ''));
+		$assignee = (string)($case['assignee'] ?? '');
 		$remaining = $this->getRemainingWorkingDays(deadlineDate: $deadlineDate);
 
 		if ($remaining <= 0) {
@@ -289,20 +304,24 @@ class DsoDeadlineJob extends TimedJob {
 				subject: 'dso_deadline_overdue'
 			);
 
-			// Mark zaak as overdue.
-			if (($case['deadlineOverdue'] ?? false) === false) {
-				$case['deadlineOverdue'] = true;
-				$activityLog = $case['activityLog'] ?? [];
-				$activityLog[] = [
-					'timestamp' => date('c'),
-					'action' => 'deadline_overdue',
-					'note' => 'Wettelijke beslistermijn overschreden.',
-				];
-				$case['activityLog'] = $activityLog;
-				$objectService->saveObject(
+			// Mark the zaak overdue once. A patch of the two declared fields
+			// only: saving the whole case back would also send its read-only
+			// computed fields, and `activityLog` was never declared, so
+			// OpenRegister dropped it in silence.
+			if (($case['deadlineOverdue'] ?? false) !== true) {
+				$marked = $this->journal->append(
+					case: $case,
+					entry: ['type' => 'dsoDeadlineOverdue', 'note' => 'Wettelijke beslistermijn overschreden.'],
+				);
+				$this->patchObjectAsArray(
+					objectService: $objectService,
 					register: $register,
 					schema: $caseSchema,
-					object: $case
+					id: $caseId,
+					changes: [
+						'deadlineOverdue' => true,
+						CaseJournal::FIELD => $marked[CaseJournal::FIELD],
+					],
 				);
 			}
 
