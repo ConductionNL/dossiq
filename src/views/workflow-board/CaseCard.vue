@@ -409,7 +409,7 @@ export default {
 
 @media (prefers-reduced-motion: reduce) {
 	.case-card,
-	.case-card__select {
+	.case-card .case-card__select {
 		transition: none;
 	}
 
