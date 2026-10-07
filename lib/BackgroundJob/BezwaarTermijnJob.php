@@ -85,6 +85,8 @@ class BezwaarTermijnJob extends TimedJob {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T12
 	 */
 	protected function run($argument): void {
 		try {
