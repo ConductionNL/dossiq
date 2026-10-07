@@ -14,7 +14,7 @@
  * What has to stay true:
  *   - the full profile is byte for byte what it was before profiles existed;
  *   - the simple menu is the nine entries of the design, in order, under
- *     three captions;
+ *     two captions, the first group having none;
  *   - nothing is lost: every entry the full menu offers is in the simple menu
  *     or its settings, or a page the simple menu opens links to it.
  *
@@ -104,9 +104,8 @@ describe('the simple profile', () => {
 	const built = build(simpleFile)
 	const main = section(built.menu, 'main')
 
-	it('shows nine entries under three captions, in the order of the design', () => {
+	it('shows nine entries, the first group without a caption as on DqZijbalk, in the order of the design', () => {
 		expect(main.map((entry) => entry.id)).toEqual([
-			'StartCaption',
 			'Dashboard',
 			'WorkGroup',
 			'Queue',
@@ -120,11 +119,7 @@ describe('the simple profile', () => {
 			'OrganisationsMenu',
 		])
 		const captions = main.filter((entry) => entry.type === 'caption')
-		expect(captions.map((entry) => entry.label)).toEqual([
-			'Start',
-			'Cases',
-			'Relations',
-		])
+		expect(captions.map((entry) => entry.label)).toEqual(['Cases', 'Relations'])
 		expect(main.filter((entry) => entry.type !== 'caption')).toHaveLength(9)
 	})
 
