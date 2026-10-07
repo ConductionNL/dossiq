@@ -65,6 +65,10 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Queue\DigestPreferences
  * @uses \OCA\Dossiq\Service\Queue\Source\AssignedCasesSource
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\Queue\QueueItem
+ * @uses \OCA\Dossiq\Service\Queue\QueueItemLifecycle
+ * @uses \OCA\Dossiq\Service\Queue\Source\RegisterBackedSource
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class DailyDigestJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

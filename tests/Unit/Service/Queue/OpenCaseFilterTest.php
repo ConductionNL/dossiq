@@ -35,6 +35,9 @@ use PHPUnit\Framework\TestCase;
  * A boolean filter finds nothing in OpenRegister, so the source must not send one.
  *
  * @covers \OCA\Dossiq\Service\Queue\Source\AssignedCasesSource
+ * @uses \OCA\Dossiq\Service\Queue\QueueItem
+ * @uses \OCA\Dossiq\Service\Queue\Source\RegisterBackedSource
+ * @uses \OCA\Dossiq\Service\Termijn\TermRearm
  */
 final class OpenCaseFilterTest extends TestCase {
 

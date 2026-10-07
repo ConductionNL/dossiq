@@ -61,6 +61,8 @@ interface ConcludedObjectServiceStub {
  * Unit tests for DecisionConcludedListener.
  *
  * @covers \OCA\Dossiq\Listener\DecisionConcludedListener
+ * @uses \OCA\Dossiq\Service\Support\CaseObjectReference
+ * @uses \OCA\Dossiq\Service\Support\FlowDecisionSubject
  */
 class DecisionConcludedListenerTest extends TestCase {
 	/**

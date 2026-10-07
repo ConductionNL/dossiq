@@ -60,6 +60,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class AutoCloseOnSilenceJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

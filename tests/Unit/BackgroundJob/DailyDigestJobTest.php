@@ -53,6 +53,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\BackgroundJob\DailyDigestJob
  * @covers \OCA\Dossiq\Service\Queue\DailyDigestComposer
  * @covers \OCA\Dossiq\Service\Queue\DigestPreferences
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class DailyDigestJobTest extends TestCase {
 	use MakesBackgroundServiceAccount;

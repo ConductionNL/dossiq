@@ -46,6 +46,8 @@ use Psr\Log\LoggerInterface;
  * like a test that passed.
  *
  * @covers \OCA\Dossiq\Listener\VergunningaanvraagCreatedListener
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class VergunningaanvraagCreatedListenerTest extends TestCase {
 

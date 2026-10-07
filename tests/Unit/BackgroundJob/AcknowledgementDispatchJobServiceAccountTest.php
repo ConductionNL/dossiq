@@ -53,6 +53,17 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\AcknowledgementDispatchJob
  * @uses \OCA\Dossiq\Service\AcknowledgementService
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Portal\PortalContributionProvider
+ * @uses \OCA\Dossiq\Service\CaseFieldWriter
+ * @uses \OCA\Dossiq\Service\CaseTypeAcknowledgement
+ * @uses \OCA\Dossiq\Service\CaseType\CaseTypeHandling
+ * @uses \OCA\Dossiq\Service\Email\CaseContactDirectory
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Service\TermijnNotificationService
+ * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
+ * @uses \OCA\Dossiq\Service\Termijn\TermLetters
  */
 class AcknowledgementDispatchJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

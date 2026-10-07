@@ -46,6 +46,8 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Dso\DsoIntakeCasePayload
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class DsoCaseServiceTest extends TestCase {
 

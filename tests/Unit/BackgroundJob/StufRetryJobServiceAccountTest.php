@@ -63,6 +63,9 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\Stuf\StufRegisterAccess
  * @uses \OCA\Dossiq\Service\Stuf\CircuitBreakerService
  * @uses \OCA\Dossiq\Service\Stuf\StufMessageParser
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
  */
 class StufRetryJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

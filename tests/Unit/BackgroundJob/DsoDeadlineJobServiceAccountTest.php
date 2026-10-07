@@ -46,6 +46,9 @@ use Psr\Log\NullLogger;
  * @covers \OCA\Dossiq\BackgroundJob\DsoDeadlineJob
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
  * @uses \OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
+ * @uses \OCA\Dossiq\Service\ServiceAccount\ServiceAccount
+ * @uses \OCA\Dossiq\Service\Settings\RegisterFragmentMerger
  */
 class DsoDeadlineJobServiceAccountTest extends TestCase {
 	use MakesBackgroundServiceAccount;

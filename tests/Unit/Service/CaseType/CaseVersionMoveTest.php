@@ -54,6 +54,12 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Service\CaseTypeResolver
  * @uses \OCA\Dossiq\Service\CaseTypeStore
  * @uses \OCA\Dossiq\Exception\RefusedException
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
+ * @uses \OCA\Dossiq\Service\Cases\CaseAnswerReader
+ * @uses \OCA\Dossiq\Service\Cases\RebindValueConverter
+ * @uses \OCA\Dossiq\Service\Support\LanguageMapText
+ * @uses \OCA\Dossiq\Service\Support\TranslatedText
+ * @uses \OCA\Dossiq\Service\Transitions\StatusPublicLabels
  */
 class CaseVersionMoveTest extends TestCase {
 

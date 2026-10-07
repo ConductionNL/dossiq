@@ -54,6 +54,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for DashboardController's SPA shell endpoints.
  *
  * @covers \OCA\Dossiq\Controller\DashboardController
+ * @uses \OCA\Dossiq\Service\Settings\MenuStructure
  */
 class DashboardControllerContractTest extends TestCase {
 
