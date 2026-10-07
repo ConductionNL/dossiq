@@ -85,7 +85,7 @@ export function resolveStructureProfile(raw) {
  * Apply one page overlay to one built page, without touching the original.
  *
  * @param {object} page The built page.
- * @param {object} overlay `{ id, config?, configPatch?, configAppend?, configOrder? }`.
+ * @param {object} overlay `{ id, title?, config?, configPatch?, configAppend?, configOrder? }`.
  *   The order is fixed: replace keys, patch items by name, append, then order.
  * @return {object} A new page object.
  *
@@ -129,16 +129,23 @@ export function applyPageOverlay(page, overlay) {
 			.filter((item) => item !== undefined)
 		config[key] = [...lead, ...current.filter((item) => !lead.includes(item))]
 	}
+	// The page title is a top-level key, and the renderer lets it win over
+	// any `config.title`, so an overlay that renames a page names it here.
+	const titled =
+		typeof overlay.title === 'string' && overlay.title !== ''
+			? { title: overlay.title }
+			: {}
 	if (overlay.slots && typeof overlay.slots === 'object') {
 		// A `custom` widget resolves through the page's own top-level `slots`
 		// map, so a page that gains one needs its slot beside it.
 		return {
 			...page,
+			...titled,
 			config,
 			slots: { ...(page.slots || {}), ...overlay.slots },
 		}
 	}
-	return { ...page, config }
+	return { ...page, ...titled, config }
 }
 
 /**

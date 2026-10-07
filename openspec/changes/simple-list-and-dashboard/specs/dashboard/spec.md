@@ -55,3 +55,34 @@ MUST keep its own rule.
 - **GIVEN** the full structure and a case whose deadline is today
 - **WHEN** a handler opens the board
 - **THEN** the card MUST show a warning, not overdue
+
+### Requirement: The simple pages draw the Zuiddrecht boards' header, cards and footer (REQ-DASH-028)
+In the simple structure the dashboard MUST draw the greeting on the page ground
+with a "My work | My team" switch, MUST draw First today without a second card
+around it, MUST draw the four counts stacked and MUST show no widget Actions
+menus. The case page MUST draw its header as a card holding the stages, and
+MUST place the banner stack in the side column. The cases list MUST show its
+title, the count of rows and the case number under the title. The board MUST
+NOT offer a Dashboard button. The navigation footer MUST hold Settings and Help
+only. The full structure MUST keep every one of these pages as it was.
+
+#### Scenario: The dashboard header and First today
+@e2e exclude Library opt-ins asserted on the built manifest in simpleListAndDashboard.spec.js; the coordinator compares the page with DqDashboard live.
+- **GIVEN** the simple structure
+- **WHEN** a handler opens the dashboard
+- **THEN** the greeting MUST sit on the page ground with My work and My team at its right
+- **AND** My team MUST open the team queue
+- **AND** First today MUST be drawn without a card around its own card
+
+#### Scenario: The case page header
+@e2e exclude Asserted on the built manifest in simpleCasePage.spec.js; compared with DqZaak live.
+- **GIVEN** the simple structure
+- **WHEN** a handler opens a case
+- **THEN** the stages MUST sit inside the header card
+- **AND** favourite, follow and attention MUST be in the side column, not above the tabs
+
+#### Scenario: The full structure is unchanged
+@e2e exclude A comparison of the built pages with the manifest, asserted in simpleListAndDashboard.spec.js and simpleCasePage.spec.js.
+- **GIVEN** the full structure
+- **WHEN** the pages are built
+- **THEN** the dashboard, the case page, the list and the board MUST equal what the manifest declares
