@@ -1316,7 +1316,7 @@ const registry = {
 	FeaturesRoadmapView: {
 		kind: 'page',
 		component: FeaturesRoadmapView,
-		_note: 'Features & roadmap. Wraps the library\'s CnFeaturesAndRoadmapPage (which has no slots, so `type: "roadmap"` could not carry a third surface) and adds the capability comparison.',
+		_note: "Features & roadmap. Wraps the library's CnFeaturesAndRoadmapPage (which has no slots) and adds one link to the capability comparison on dossiq.conduction.nl/compare.",
 	},
 	DeletedCasesView: {
 		kind: 'page',
