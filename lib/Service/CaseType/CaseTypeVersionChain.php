@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service\CaseType;
 
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Support\TranslatedText;
 
 /**
  * Reads a case type's version chain, newest version first.
@@ -54,10 +55,12 @@ class CaseTypeVersionChain {
 	 *
 	 * @param CaseTypeStore          $store    The app's one case type reader.
 	 * @param DerivedCaseTypePayload $payloads What a version number means when the row carries none.
+	 * @param TranslatedText         $text     The translatable title in the reader's language.
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
 		private readonly DerivedCaseTypePayload $payloads,
+		private readonly TranslatedText $text,
 	) {
 	}//end __construct()
 
@@ -169,7 +172,7 @@ class CaseTypeVersionChain {
 	private function entry(array $row, string $id, string $currentId): array {
 		return [
 			'id' => $id,
-			'title' => (string)($row['title'] ?? ''),
+			'title' => $this->text->of(value: ($row['title'] ?? null)),
 			'identifier' => (string)($row['identifier'] ?? ''),
 			'version' => $this->payloads->versionOf(caseType: $row),
 			'isDraft' => (($row['isDraft'] ?? false) === true),

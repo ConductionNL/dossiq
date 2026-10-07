@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Transitions\StatusPublicLabels;
 use RuntimeException;
 
 /**
@@ -434,7 +435,7 @@ class CaseTypeResolver {
 	private function tag(array $row, string $origin, array $ancestor): array {
 		$row['origin'] = $origin;
 		$row['originCaseType'] = $this->store->rowId(row: $ancestor);
-		$row['originCaseTypeTitle'] = (string)($ancestor['title'] ?? '');
+		$row['originCaseTypeTitle'] = StatusPublicLabels::textOf(value: ($ancestor['title'] ?? null));
 
 		return $row;
 	}//end tag()
@@ -444,10 +445,15 @@ class CaseTypeResolver {
 	 *
 	 * @param array<string, mixed> $row The row.
 	 *
+	 * `name` and `title` are `translatable`, so a row from `searchObjects()`
+	 * carries a language map. Cast to a string, every map read "Array" and
+	 * every status of a case type merged into ONE row. The key reads the map
+	 * the same way for every reader (Dutch first), so it stays stable.
+	 *
 	 * @return string The lower-cased, trimmed name, or the id when it has none.
 	 */
 	private function mergeKey(array $row): string {
-		$name = trim((string)($row['name'] ?? ($row['title'] ?? '')));
+		$name = StatusPublicLabels::textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 		if ($name === '') {
 			return 'id:' . $this->store->rowId(row: $row);
 		}

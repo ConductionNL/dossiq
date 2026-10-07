@@ -36,9 +36,11 @@ use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeSlugResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
 use OCA\Dossiq\Service\Termijn\TermRearm;
 use OCA\Dossiq\Tests\Unit\Service\Cases\BuildsRebindConverter;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -77,6 +79,13 @@ class CaseRebindServiceTest extends TestCase {
 	 * @var array<int, array{schema: string, id: string, object: array<string, mixed>}>
 	 */
 	private array $writes = [];
+
+	/**
+	 * The reader's language, as the app's translator reports it.
+	 *
+	 * @var string
+	 */
+	private string $language = 'en';
 
 	/**
 	 * Two unrelated published case types, and a case running on the first.
@@ -177,6 +186,9 @@ class CaseRebindServiceTest extends TestCase {
 
 		$resolver = new CaseTypeResolver(store: $store);
 
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn($this->language);
+
 		return new CaseRebindService(
 			settingsService: $settings,
 			store: $store,
@@ -195,6 +207,7 @@ class CaseRebindServiceTest extends TestCase {
 				answers: new CaseAnswerReader(store: $store, converter: $this->rebindConverter()),
 			),
 			logger: new NullLogger(),
+			text: new TranslatedText(l10n: $l10n),
 		);
 	}//end service()
 
@@ -379,6 +392,39 @@ class CaseRebindServiceTest extends TestCase {
 		self::assertSame('In behandeling', $options['current']['status']);
 		self::assertSame(['ct-omg'], array_column($options['targets'], 'id'));
 	}//end testTheTargetsAreThePublishedTypesOtherThanItsOwn()
+
+	/**
+	 * 🔴 Translatable titles and names arrive as language maps and read as text.
+	 *
+	 * `caseType.title` and `statusType.name` are declared `translatable`, so a
+	 * row from `searchObjects()` carries `{"nl": "..."}`. A string cast made
+	 * every option in the dialog read "Array". The reader's language wins,
+	 * Dutch is the fallback, then whatever text the map holds.
+	 *
+	 * @return void
+	 */
+	public function testLanguageMapsReadAsTextInTheReadersLanguage(): void {
+		$this->store['ct-kap']['data']['title'] = ['nl' => 'Kapvergunning'];
+		$this->store['ct-omg']['data']['title'] = ['nl' => 'Omgevingsvergunning', 'en' => 'Environmental permit'];
+		$this->store['kap-behandeling']['data']['name'] = ['nl' => 'In behandeling'];
+		$this->store['omg-behandeling']['data']['name'] = ['de' => 'In Bearbeitung'];
+		$this->store['omg-toetsing']['data']['name'] = ['nl' => 'Toetsing', 'en' => 'Review'];
+
+		$options = $this->service()->options(caseId: 'case-1');
+		self::assertSame('Kapvergunning', $options['current']['title']);
+		self::assertSame('In behandeling', $options['current']['status']);
+		self::assertSame(['Environmental permit'], array_column($options['targets'], 'title'));
+
+		$preview = $this->service()->preview(caseId: 'case-1', targetCaseTypeId: 'ct-omg', targetStatusId: '');
+		self::assertSame(['In Bearbeitung', 'Review'], array_column($preview['statuses'], 'name'));
+		self::assertSame('Environmental permit', $preview['to']['title']);
+		self::assertSame('In behandeling', $preview['from']['status']);
+
+		$this->language = 'nl';
+		$preview = $this->service()->preview(caseId: 'case-1', targetCaseTypeId: 'ct-omg', targetStatusId: '');
+		self::assertSame(['In Bearbeitung', 'Toetsing'], array_column($preview['statuses'], 'name'));
+		self::assertSame('Omgevingsvergunning', $preview['to']['title']);
+	}//end testLanguageMapsReadAsTextInTheReadersLanguage()
 
 	/**
 	 * 🔴 The landing status is ASKED for, never matched by name.

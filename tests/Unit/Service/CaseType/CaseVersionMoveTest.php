@@ -29,6 +29,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service\CaseType;
 
 use OCA\Dossiq\Exception\RefusedException;
+use OCA\Dossiq\Service\Cases\CaseAnswerReader;
 use OCA\Dossiq\Service\CaseType\CaseTypeVersionChain;
 use OCA\Dossiq\Service\CaseType\CaseVersionDiff;
 use OCA\Dossiq\Service\CaseType\CaseVersionMove;
@@ -36,6 +37,9 @@ use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\Support\TranslatedText;
+use OCA\Dossiq\Tests\Unit\Service\Cases\BuildsRebindConverter;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
@@ -52,6 +56,8 @@ use Psr\Log\NullLogger;
  * @uses \OCA\Dossiq\Exception\RefusedException
  */
 class CaseVersionMoveTest extends TestCase {
+
+	use BuildsRebindConverter;
 
 	/**
 	 * The store every test reads and writes, keyed by id.
@@ -106,7 +112,13 @@ class CaseVersionMoveTest extends TestCase {
 				'id' => 'case-1',
 				'caseType' => 'ct-1',
 				'status' => 's1-a',
-				'properties' => ['kenteken' => 'AB-12-CD', 'oppervlakte' => 42],
+				// THE REGISTER'S SHAPE: a list of {propertyDefinition, name,
+				// value}. This fixture used to be a name-keyed map, which is
+				// the shape the diff read and no live case has.
+				'properties' => [
+					['propertyDefinition' => 'pd-1', 'name' => 'kenteken', 'value' => 'AB-12-CD'],
+					['propertyDefinition' => 'pd-2', 'name' => 'oppervlakte', 'value' => 42],
+				],
 			]],
 		];
 		$this->writes = [];
@@ -138,7 +150,10 @@ class CaseVersionMoveTest extends TestCase {
 
 		$store = new CaseTypeStore($settings);
 
-		$chain = new CaseTypeVersionChain(store: $store, payloads: new DerivedCaseTypePayload());
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('getLanguageCode')->willReturn('en');
+
+		$chain = new CaseTypeVersionChain(store: $store, payloads: new DerivedCaseTypePayload(), text: new TranslatedText(l10n: $l10n));
 
 		return new CaseVersionMove(
 			settingsService: $settings,
@@ -148,6 +163,8 @@ class CaseVersionMoveTest extends TestCase {
 				store: $store,
 				resolver: new CaseTypeResolver(store: $store),
 				chain: $chain,
+				answers: new CaseAnswerReader(store: $store, converter: $this->rebindConverter()),
+				text: new TranslatedText(l10n: $l10n),
 			),
 			logger: new NullLogger(),
 		);
@@ -309,9 +326,35 @@ class CaseVersionMoveTest extends TestCase {
 		self::assertSame(['oppervlakte'], $preview['fields']['answered']);
 
 		// An empty answer is not an answer, so it is not reported as a loss.
-		$this->store['case-1']['data']['properties']['oppervlakte'] = '';
+		$this->store['case-1']['data']['properties'][1]['value'] = '';
 		self::assertSame([], $this->service()->preview(caseId: 'case-1', targetCaseTypeId: 'ct-2')['fields']['answered']);
 	}//end testThePreviewSeparatesTheAnswersAboutToBeLost()
+
+	/**
+	 * 🔴 Status names stored as language maps still map by their text.
+	 *
+	 * `statusType.name` is `translatable`, so the rows carry `{"nl": "..."}`.
+	 * Cast to a string every name read "Array", every status of a version
+	 * collapsed onto that one key, and the landing status was a guess.
+	 *
+	 * @return void
+	 */
+	public function testLanguageMapStatusNamesMapByTheirText(): void {
+		foreach (['s1-a', 's1-b', 's2-a', 's2-c'] as $id) {
+			$this->store[$id]['data']['name'] = ['nl' => $this->store[$id]['data']['name']];
+		}
+
+		$this->store['ct-2']['data']['title'] = ['nl' => 'Parkeervergunning', 'en' => 'Parking permit'];
+		self::assertSame('Parking permit', $this->service()->options(caseId: 'case-1')['targets'][0]['title']);
+
+		$preview = $this->service()->preview(caseId: 'case-1', targetCaseTypeId: 'ct-2');
+
+		self::assertSame('Ontvangen', $preview['status']['from']);
+		self::assertSame('Ontvangen', $preview['status']['to']);
+		self::assertSame('s2-a', $preview['status']['targetStatusId']);
+		self::assertSame(['In behandeling'], $preview['statuses']['added']);
+		self::assertSame(['Ingetrokken'], $preview['statuses']['removed']);
+	}//end testLanguageMapStatusNamesMapByTheirText()
 
 	/**
 	 * 🔴 A status the other version does not carry refuses the move BY NAME.
