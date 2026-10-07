@@ -10874,17 +10874,13 @@
                         "title": "Message type code"
                     },
                     "attachmentFileId": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
+                        "nullable": true,
                         "title": "Attachment file"
                     },
                     "externalMessageId": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
+                        "nullable": true,
                         "title": "Integriq message",
                         "description": "The integriq digitalPostMessage the letter is tracked under; empty when it was refused."
                     },
@@ -10894,17 +10890,13 @@
                         "description": "sent, delivered, read, failed or refused."
                     },
                     "sentAt": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
+                        "nullable": true,
                         "title": "Sent at"
                     },
                     "readAt": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
+                        "nullable": true,
                         "title": "Read at"
                     },
                     "lastError": {
