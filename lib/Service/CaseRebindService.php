@@ -53,6 +53,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Cases\CaseRebindGate;
+use OCA\Dossiq\Service\Cases\CaseRebindImpact;
 use OCA\Dossiq\Service\CaseType\EngineRunMigration;
 use OCA\Dossiq\Service\Support\RefusesWhenIndeterminate;
 use OCA\Dossiq\Service\Termijn\TermRearm;
@@ -93,6 +94,7 @@ class CaseRebindService {
 	 * @param TermRearm          $terms           The re-arm of a case's running terms.
 	 * @param CaseTypeSlugResolver $slugs         Case type uuid to the slug term definitions are keyed by.
 	 * @param CaseRebindGate     $gate            What refuses a rebind, and what the case must answer.
+	 * @param CaseRebindImpact   $impact          What the rebind does to the case's answers.
 	 * @param LoggerInterface    $logger          The logger.
 	 */
 	public function __construct(
@@ -103,6 +105,7 @@ class CaseRebindService {
 		private readonly TermRearm $terms,
 		private readonly CaseTypeSlugResolver $slugs,
 		private readonly CaseRebindGate $gate,
+		private readonly CaseRebindImpact $impact,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -179,17 +182,31 @@ class CaseRebindService {
 	/**
 	 * What rebinding onto that type, landing in that status, would ask for.
 	 *
-	 * @param string $caseId           The case uuid.
-	 * @param string $targetCaseTypeId The case type asked about.
-	 * @param string $targetStatusId   The status the coordinator picked, or ''.
+	 * The `impact` block is the same computation {@see rebind()} applies: what
+	 * is dropped, what is ported where, and what the target still requires.
+	 * `canRebind` is true only when a status is chosen and that impact is
+	 * complete, so the dialog cannot enable a button the write would refuse.
 	 *
-	 * @return array<string, mixed> The statuses to choose from, what is missing, and whether it can be done.
+	 * @param string                $caseId           The case uuid.
+	 * @param string                $targetCaseTypeId The case type asked about.
+	 * @param string                $targetStatusId   The status the coordinator picked, or ''.
+	 * @param array<string, string> $remap            Dropped answer name => target field name.
+	 * @param array<string, mixed>  $properties       Answers to the target's required fields.
 	 *
-	 * @throws RefusedException When the case or the target cannot be read.
+	 * @return array<string, mixed> The statuses to choose from, the impact, and whether it can be done.
+	 *
+	 * @throws RefusedException When the case or the target cannot be read, or a remap cannot be made.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 	 */
-	public function preview(string $caseId, string $targetCaseTypeId, string $targetStatusId): array {
+	public function preview(
+		string $caseId,
+		string $targetCaseTypeId,
+		string $targetStatusId,
+		array $remap = [],
+		array $properties = [],
+	): array {
 		$case = $this->readCase(caseId: $caseId);
 		$this->gate->assertTarget(caseId: $caseId, case: $case, targetCaseTypeId: $targetCaseTypeId);
 
@@ -201,14 +218,13 @@ class CaseRebindService {
 			}
 		}
 
-		$missing = [];
-		if ($targetStatusId !== '') {
-			$missing = $this->gate->missingAt(
-				case: $case,
-				targetCaseTypeId: $targetCaseTypeId,
-				targetStatusId: $targetStatusId
-			);
-		}
+		$impact = $this->impact->compute(
+			case: $case,
+			targetCaseTypeId: $targetCaseTypeId,
+			targetStatusId: $targetStatusId,
+			remap: $remap,
+			answers: $properties
+		);
 
 		return [
 			'from' => [
@@ -223,13 +239,14 @@ class CaseRebindService {
 				'title' => (string)($this->store->readCaseType(caseTypeId: $targetCaseTypeId)['title'] ?? ''),
 			],
 			'statuses' => $statuses,
-			'missingProperties' => $missing,
+			'missingProperties' => $this->unanswered(impact: $impact),
+			'impact' => $impact,
 			'results' => $this->gate->resultCompatibility(case: $case, targetCaseTypeId: $targetCaseTypeId),
 			// The engine seam rides on the PREVIEW too, not only on the write:
 			// a coordinator deciding whether to rebind should read what happens
 			// to the run before pressing the button, not afterwards.
 			'run' => ['moved' => false, 'reason' => EngineRunMigration::RUN_NOT_MOVED],
-			'canRebind' => ($targetStatusId !== '' && $missing === []),
+			'canRebind' => ($targetStatusId !== '' && $impact['complete'] === true),
 		];
 	}//end preview()
 
@@ -242,12 +259,15 @@ class CaseRebindService {
 	 * @param string               $reason           Why it is being rebound.
 	 * @param array<string, mixed> $properties       The answers to what the target requires and the case lacks.
 	 * @param string               $actorUid         The coordinator doing it.
+	 * @param array<string, string> $remap           Dropped answer name => target field name.
+	 * @param array<int, string>   $confirmDropped   The dropped answer names the coordinator saw and accepted.
 	 *
 	 * @return array<string, mixed> What was applied.
 	 *
 	 * @throws RefusedException When the rebind is refused, or a write fails.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 	 */
 	public function rebind(
 		string $caseId,
@@ -256,6 +276,8 @@ class CaseRebindService {
 		string $reason,
 		array $properties,
 		string $actorUid,
+		array $remap = [],
+		array $confirmDropped = [],
 	): array {
 		$reason = $this->gate->assertMayRebind(actorUid: $actorUid, reason: $reason);
 
@@ -264,16 +286,18 @@ class CaseRebindService {
 		$this->gate->assertTarget(caseId: $caseId, case: $case, targetCaseTypeId: $targetCaseTypeId);
 		$this->gate->assertStatus(targetCaseTypeId: $targetCaseTypeId, targetStatusId: $targetStatusId);
 
-		// D-1: the answers given in the dialog count towards what the target
-		// requires, so a coordinator who filled them in is not refused for the
-		// very fields they just supplied.
-		$case = $this->gate->applyAnswers(case: $case, properties: $properties);
-		$missing = $this->gate->missingAt(
+		// The SAME computation the preview showed, recomputed from the case as
+		// it is now: a case that changed since the preview is refused below
+		// rather than rebound on a picture that no longer holds.
+		$impact = $this->impact->compute(
 			case: $case,
 			targetCaseTypeId: $targetCaseTypeId,
-			targetStatusId: $targetStatusId
+			targetStatusId: $targetStatusId,
+			remap: $remap,
+			answers: $properties
 		);
-		$this->gate->assertNothingMissing(missing: $missing);
+		$this->gate->assertDropConfirmed(dropped: array_column($impact['dropped'], 'name'), confirmed: $confirmDropped);
+		$this->gate->assertNothingMissing(missing: $this->unanswered(impact: $impact));
 
 		// D-2 step 2, BEFORE any write: a run that refuses to move leaves a
 		// case whose blueprint and whose process disagree.
@@ -283,6 +307,7 @@ class CaseRebindService {
 			actorUid: $actorUid
 		);
 
+		$case = $this->impact->apply(case: $case, impact: $impact);
 		$case['caseType'] = $targetCaseTypeId;
 		$case['status'] = $targetStatusId;
 		$case = $this->rebindTemplate(case: $case, targetCaseTypeId: $targetCaseTypeId);
@@ -292,7 +317,8 @@ class CaseRebindService {
 			targetCaseTypeId: $targetCaseTypeId,
 			targetStatusId: $targetStatusId,
 			reason: $reason,
-			actorUid: $actorUid
+			actorUid: $actorUid,
+			impact: $impact
 		);
 
 		$this->write(caseId: $caseId, case: $case);
@@ -327,8 +353,38 @@ class CaseRebindService {
 			'reason' => $reason,
 			'run' => ['moved' => $run['migrated'], 'reason' => $run['reason']],
 			'terms' => $terms,
+			'properties' => [
+				'dropped' => array_column($impact['dropped'], 'name'),
+				'ported' => array_map(
+					static fn (array $row): array => ['from' => $row['source'], 'to' => $row['target']],
+					$impact['ported']
+				),
+				'answered' => array_column($impact['required'], 'name'),
+			],
 		];
 	}//end rebind()
+
+	/**
+	 * The required fields the impact still has no valid answer for.
+	 *
+	 * @param array{required: array<int, array<string, mixed>>} $impact The impact.
+	 *
+	 * @return array<int, string> Their names.
+	 *
+	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 */
+	private function unanswered(array $impact): array {
+		$names = [];
+		foreach ($impact['required'] as $row) {
+			if ($row['valid'] === false) {
+				$names[] = (string)$row['name'];
+			}
+		}
+
+		sort($names);
+
+		return $names;
+	}//end unanswered()
 
 	/**
 	 * Pin the case to the target case type's own workflow template.
@@ -380,10 +436,12 @@ class CaseRebindService {
 	 * @param string               $targetStatusId   The status it lands in.
 	 * @param string               $reason           Why.
 	 * @param string               $actorUid         Who.
+	 * @param array<string, mixed> $impact           What happened to the answers.
 	 *
 	 * @return array<string, mixed> The case, with the entry appended.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md
+	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 	 */
 	private function journal(
 		array $case,
@@ -392,6 +450,7 @@ class CaseRebindService {
 		string $targetStatusId,
 		string $reason,
 		string $actorUid,
+		array $impact,
 	): array {
 		$entries = [];
 		$raw = ($case['activity'] ?? null);
@@ -415,6 +474,23 @@ class CaseRebindService {
 			'status' => $targetStatusId,
 			'reason' => $reason,
 			'actor' => $actorUid,
+			// THE DROPPED VALUES ARE KEPT HERE, value and all. They leave the
+			// case's `properties` in this same write, and this entry is where
+			// a reader finds what the case said before it moved.
+			'droppedProperties' => array_map(
+				static fn (array $row): array => ['name' => $row['name'], 'value' => $row['value']],
+				$impact['dropped']
+			),
+			'portedProperties' => array_map(
+				static fn (array $row): array => [
+					'from' => $row['source'],
+					'to' => $row['target'],
+					'value' => $row['value'],
+					'newValue' => $row['newValue'],
+				],
+				$impact['ported']
+			),
+			'answeredProperties' => array_column($impact['required'], 'name'),
 			'timestamp' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 		];
 

@@ -126,6 +126,7 @@ class CaseRebindController extends Controller {
 	 * @return JSONResponse The options, with the preview when a target is named.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
+	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 	 */
 	#[NoAdminRequired]
 	public function options(string $caseId): JSONResponse {
@@ -147,6 +148,8 @@ class CaseRebindController extends Controller {
 					caseId: $caseId,
 					targetCaseTypeId: $target,
 					targetStatusId: trim((string)$this->request->getParam('status', '')),
+					remap: $this->arrayParam(name: 'remap'),
+					properties: $this->arrayParam(name: 'properties'),
 				);
 			}
 
@@ -166,17 +169,13 @@ class CaseRebindController extends Controller {
 	 * @return JSONResponse What was applied, or the refusal naming the rule.
 	 *
 	 * @spec openspec/changes/case-type-rebind/specs/zaaktype-versioning/spec.md#requirement-a-coordinator-may-rebind-a-running-case-with-a-mapping-and-a-reason-req-zv-07
+	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
 	 */
 	#[NoAdminRequired]
 	public function rebind(string $caseId): JSONResponse {
 		$user = $this->writerOf(caseId: $caseId);
 		if ($user === null) {
 			return $this->notYours();
-		}
-
-		$properties = $this->request->getParam('properties', []);
-		if (is_array($properties) === false) {
-			$properties = [];
 		}
 
 		try {
@@ -186,8 +185,10 @@ class CaseRebindController extends Controller {
 					targetCaseTypeId: trim((string)$this->request->getParam('target', '')),
 					targetStatusId: trim((string)$this->request->getParam('status', '')),
 					reason: (string)$this->request->getParam('reason', ''),
-					properties: $properties,
+					properties: $this->arrayParam(name: 'properties'),
 					actorUid: $user->getUID(),
+					remap: $this->arrayParam(name: 'remap'),
+					confirmDropped: array_values($this->arrayParam(name: 'confirmDropped')),
 				)
 			);
 		} catch (RefusedException $e) {
@@ -196,6 +197,24 @@ class CaseRebindController extends Controller {
 			return $this->broke(op: 'rebind', e: $e);
 		}
 	}//end rebind()
+
+	/**
+	 * One request parameter that must be a map or a list, or [] when it is not.
+	 *
+	 * @param string $name The parameter.
+	 *
+	 * @return array<mixed, mixed> The value.
+	 *
+	 * @spec openspec/changes/case-type-rebind-property-impact/specs/zaaktype-versioning/spec.md
+	 */
+	private function arrayParam(string $name): array {
+		$value = $this->request->getParam($name, []);
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
+	}//end arrayParam()
 
 	/**
 	 * The caller, when they may write this case, and null otherwise.
