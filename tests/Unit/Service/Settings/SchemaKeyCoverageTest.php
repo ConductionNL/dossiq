@@ -149,11 +149,11 @@ class SchemaKeyCoverageTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheBerichtenboxMessageSchemaIsMappedAndDeclared(): void {
-		self::assertSame('berichtenbox_message_schema', SchemaSlugMap::SLUG_TO_CONFIG_KEY['berichtenboxMessage'] ?? null);
+		self::assertSame('berichtenbox_message_schema', SchemaSlugMap::SLUG_TO_CONFIG_KEY['caseBerichtenboxMessage'] ?? null);
 
 		$descriptor = json_decode((string)file_get_contents(dirname(__DIR__, 4) . '/lib/Settings/dossiq_register.json'), true);
-		self::assertArrayHasKey('berichtenboxMessage', $descriptor['components']['schemas']);
-		self::assertContains('berichtenboxMessage', $descriptor['components']['registers']['dossiq']['schemas']);
+		self::assertArrayHasKey('caseBerichtenboxMessage', $descriptor['components']['schemas']);
+		self::assertContains('caseBerichtenboxMessage', $descriptor['components']['registers']['dossiq']['schemas']);
 	}//end testTheBerichtenboxMessageSchemaIsMappedAndDeclared()
 
 	/**

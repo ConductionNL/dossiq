@@ -10839,8 +10839,8 @@
                     }
                 }
             },
-            "berichtenboxMessage": {
-                "slug": "berichtenboxMessage",
+            "caseBerichtenboxMessage": {
+                "slug": "caseBerichtenboxMessage",
                 "icon": "EmailOutline",
                 "version": "1.0.0",
                 "title": "Berichtenbox Message",
@@ -10863,20 +10863,24 @@
                     },
                     "subject": {
                         "type": "string",
-                        "title": "Subject"
+                        "title": "Subject",
+                        "description": "The subject line of the letter."
                     },
                     "body": {
                         "type": "string",
-                        "title": "Body"
+                        "title": "Body",
+                        "description": "The text of the letter as the handler wrote it."
                     },
                     "berichtTypeCode": {
                         "type": "string",
-                        "title": "Message type code"
+                        "title": "Message type code",
+                        "description": "The Berichtenbox message type the letter was sent under."
                     },
                     "attachmentFileId": {
                         "type": "string",
                         "nullable": true,
-                        "title": "Attachment file"
+                        "title": "Attachment file",
+                        "description": "The Nextcloud file sent with the letter, when there is one."
                     },
                     "externalMessageId": {
                         "type": "string",
@@ -10892,20 +10896,24 @@
                     "sentAt": {
                         "type": "string",
                         "nullable": true,
-                        "title": "Sent at"
+                        "title": "Sent at",
+                        "description": "When integriq accepted the letter; empty when it was refused."
                     },
                     "readAt": {
                         "type": "string",
                         "nullable": true,
-                        "title": "Read at"
+                        "title": "Read at",
+                        "description": "When the citizen opened the letter, as the provider reported it."
                     },
                     "lastError": {
                         "type": "string",
-                        "title": "Last error"
+                        "title": "Last error",
+                        "description": "Why the letter was refused or failed, in the words of integriq or the provider."
                     },
                     "simulated": {
                         "type": "boolean",
-                        "title": "Simulated"
+                        "title": "Simulated",
+                        "description": "True when a mock provider answered, so nothing reached a real mailbox."
                     }
                 }
             },
@@ -11771,7 +11779,7 @@
                     "supplierContract",
                     "caseSupplierInvoice",
                     "supplierMessage",
-                    "berichtenboxMessage",
+                    "caseBerichtenboxMessage",
                     "supplierKpi",
                     "emailTemplate",
                     "adviceRequest",

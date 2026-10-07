@@ -51,7 +51,8 @@ class SchemaSlugMap {
 		'zgwCatalogus' => 'catalogus_schema',
 		'case' => 'case_schema',
 		// One Berichtenbox letter and what became of it (mijn-overheid-integration).
-		'berichtenboxMessage' => 'berichtenbox_message_schema',
+		// Not `berichtenboxMessage`: pipelinq owns that slug, and slugs are global.
+		'caseBerichtenboxMessage' => 'berichtenbox_message_schema',
 		// `caseTask` is gone. remove-casetask deleted the schema from both
 		// descriptors, so a mapping left here would ask SchemaKeyReconciler to
 		// resolve a slug the register no longer declares, once per import. The
