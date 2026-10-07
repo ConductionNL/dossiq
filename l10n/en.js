@@ -2341,6 +2341,7 @@ OC.L10N.register(
         "Enter sub-case title…": "Enter sub-case title…",
         "Enter task title...": "Enter task title...",
         "Enter text": "Enter text",
+        "Enter the secret your payment provider signs dwangsom payout callbacks with. Without it, nobody can check that a callback is real. You can also set it later in the admin settings.": "Enter the secret your payment provider signs dwangsom payout callbacks with. Without it, nobody can check that a callback is real. You can also set it later in the admin settings.",
         "Enter value...": "Enter value...",
         "Enter your message...": "Enter your message...",
         "Enter your message…": "Enter your message…",
