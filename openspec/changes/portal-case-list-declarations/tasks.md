@@ -21,6 +21,7 @@ Tier: V1. Kind: code. Halves: portaliq `cases-my-cases-page`,
   - unit: a schema test asserts both properties; `npm run check:schema-l10n`
 - [ ] 3.2 `branchField: 'portalBranch'` on `mijnZaken`, and every path that opens a case from a portal write copies the stamped branch (design D3).
   - unit: one PHPUnit per path, with and without a branch
+  - The live check waits on Ruben's broker decision D1: no eHerkenning session carries a branch until a broker vendor is chosen (portaliq row dem-cl-eherkenning-branch).
 
 ## 4. Case number
 
