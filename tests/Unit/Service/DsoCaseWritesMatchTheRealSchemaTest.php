@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\CaseTypeStore;
+use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\DsoCaseService;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
@@ -206,9 +207,12 @@ class DsoCaseWritesMatchTheRealSchemaTest extends TestCase {
 			'objectService' => $this->objectService,
 			'workingDays' => new WorkingDayCalculator(),
 		];
-		if (class_exists(CaseTypeReferenceResolver::class) === true) {
-			$available['caseTypes'] = new CaseTypeReferenceResolver(store: new CaseTypeStore(settingsService: $settings));
+		if (class_exists(DsoIntakeCasePayload::class) === true) {
 			$available['journal'] = new CaseJournal(userSession: $userSession);
+			$available['intakeCases'] = new DsoIntakeCasePayload(
+				caseTypes: new CaseTypeReferenceResolver(store: new CaseTypeStore(settingsService: $settings)),
+				journal: $available['journal']
+			);
 		}
 
 		$args = [];

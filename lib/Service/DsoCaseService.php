@@ -27,7 +27,7 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use Exception;
 use OCA\Dossiq\AppInfo\Application;
-use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
+use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
@@ -68,7 +68,7 @@ class DsoCaseService {
 	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
 	 *                                          arithmetic for the statutory deadlines
-	 * @param CaseTypeReferenceResolver $caseTypes The mapped case type reference, to its row
+	 * @param DsoIntakeCasePayload $intakeCases The case an intake record becomes
 	 * @param CaseJournal $journal The case's activity record
 	 */
 	public function __construct(
@@ -78,7 +78,7 @@ class DsoCaseService {
 		private readonly LoggerInterface $logger,
 		private readonly ObjectServiceInterface $objectService,
 		private readonly WorkingDayCalculator $workingDays,
-		private readonly CaseTypeReferenceResolver $caseTypes,
+		private readonly DsoIntakeCasePayload $intakeCases,
 		private readonly CaseJournal $journal,
 	) {
 	}//end __construct()
@@ -140,7 +140,8 @@ class DsoCaseService {
 			return $existing[0];
 		}
 
-		$case = $this->intakeCase(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
+		$case = $this->intakeCases->payloadFor(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
+		$case['deadlineDate'] = $this->computeDeadline(submissionDate: $case['startDate'], procedureType: $case['procedureType']);
 
 		// The saveObject() call returns an ObjectEntityInterface (ADR-084); this
 		// method declares `: array`. Normalise, exactly as findObjectAsArray()
@@ -270,139 +271,6 @@ class DsoCaseService {
 	}//end transitionStatus()
 
 	/**
-	 * The case an intake record becomes, in the shape the case schema accepts.
-	 *
-	 * @param string               $permitApplicationId The record's UUID
-	 * @param array<string, mixed> $permitApplication   The record
-	 *
-	 * @return array<string, mixed> The case payload
-	 *
-	 * @throws \RuntimeException When the record names no case type that resolves
-	 */
-	private function intakeCase(string $permitApplicationId, array $permitApplication): array {
-		$caseType = $this->caseTypeFor(permitApplication: $permitApplication);
-		if ($caseType === []) {
-			throw new RuntimeException(
-				'No dossiq case type answers to the activity mapping of vergunningaanvraag ' . $permitApplicationId
-				. ' (mappedCaseTypes: ' . implode(', ', $this->caseTypeReferences(permitApplication: $permitApplication)) . ')'
-			);
-		}
-
-		$activiteiten = $this->listAt(record: $permitApplication, key: 'activiteiten');
-		if ($activiteiten === []) {
-			$activiteiten = $this->listAt(record: $this->listAt(record: $permitApplication, key: 'rawRequest'), key: 'activiteiten');
-		}
-
-		$procedureType = $this->determineProcedureType(activiteiten: $activiteiten);
-
-		$submitted = (string)($permitApplication['submissionDate'] ?? ($permitApplication['indieningsdatum'] ?? ''));
-		$submissionDate = substr($submitted, 0, 10);
-		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $submissionDate) !== 1) {
-			$submissionDate = date('Y-m-d');
-		}
-
-		$name = trim((string)($permitApplication['mappedTitle'] ?? ''));
-		if ($name === '') {
-			$name = trim((string)($permitApplication['title'] ?? ''));
-		}
-
-		if ($name === '') {
-			$name = $permitApplicationId;
-		}
-
-		$case = [
-			'title' => mb_substr('Omgevingsvergunning: ' . $name, 0, 255),
-			'caseType' => $this->caseTypes->idOf(caseType: $caseType),
-			'dsoStatus' => 'submitted',
-			'procedureType' => $procedureType,
-			'permitApplicationRef' => $permitApplicationId,
-			'startDate' => $submissionDate,
-			'deadlineDate' => $this->computeDeadline(submissionDate: $submissionDate, procedureType: $procedureType),
-		];
-
-		$summary = trim((string)($permitApplication['mappedSummary'] ?? ''));
-		if ($summary !== '') {
-			$case['description'] = $summary;
-		}
-
-		$initial = $this->caseTypes->initialStatusOf(caseType: $caseType);
-		if ($initial !== '') {
-			$case['status'] = $initial;
-		}
-
-		return $this->journal->append(
-			case: $case,
-			entry: ['type' => 'dsoIntake', 'note' => 'Zaak aangemaakt vanuit DSO vergunningaanvraag ' . $permitApplicationId . '.']
-		);
-	}//end intakeCase()
-
-	/**
-	 * The first case type the record's activity mapping names that resolves.
-	 *
-	 * @param array<string, mixed> $permitApplication The record
-	 *
-	 * @return array<string, mixed> The case type row, or an empty array
-	 */
-	private function caseTypeFor(array $permitApplication): array {
-		foreach ($this->caseTypeReferences(permitApplication: $permitApplication) as $reference) {
-			$caseType = $this->caseTypes->resolve(reference: $reference);
-			if ($caseType !== []) {
-				return $caseType;
-			}
-		}
-
-		return [];
-	}//end caseTypeFor()
-
-	/**
-	 * The case type references a record carries.
-	 *
-	 * The activity mapping in integriq writes `mappedCaseTypes` (a ZGW zaaktype URL
-	 * or a catalogue identifier per entry). A legacy record may name one in
-	 * `caseType`.
-	 *
-	 * @param array<string, mixed> $permitApplication The record
-	 *
-	 * @return list<string> The references, in the order the record gives them
-	 */
-	private function caseTypeReferences(array $permitApplication): array {
-		$references = [];
-		foreach ($this->listAt(record: $permitApplication, key: 'mappedCaseTypes') as $reference) {
-			if (is_array($reference) === true) {
-				$reference = ($reference['reference'] ?? '');
-			}
-
-			if (is_string($reference) === true && trim($reference) !== '') {
-				$references[] = trim($reference);
-			}
-		}
-
-		$legacy = $permitApplication['caseType'] ?? '';
-		if (is_string($legacy) === true && trim($legacy) !== '') {
-			$references[] = trim($legacy);
-		}
-
-		return $references;
-	}//end caseTypeReferences()
-
-	/**
-	 * The array a record holds under a key, or an empty array.
-	 *
-	 * @param array<string, mixed> $record The record
-	 * @param string               $key    The key
-	 *
-	 * @return array<array-key, mixed> The value when it is an array
-	 */
-	private function listAt(array $record, string $key): array {
-		$value = ($record[$key] ?? []);
-		if (is_array($value) === false) {
-			return [];
-		}
-
-		return $value;
-	}//end listAt()
-
-	/**
 	 * One of this app's config values.
 	 *
 	 * @param string $key The key
@@ -530,36 +398,6 @@ class DsoCaseService {
 
 		return [];
 	}//end normalizeToArray()
-
-	/**
-	 * Determine the procedure type from the activiteiten list.
-	 *
-	 * Returns 'uitgebreide' when any activiteit has regelkwalificatie set to
-	 * 'uitgebreide' or when there are more than 3 activiteiten; 'reguliere'
-	 * otherwise.
-	 *
-	 * @param array<int,mixed> $activiteiten The activiteiten array
-	 *
-	 * @return string 'reguliere' or 'uitgebreide'
-	 */
-	private function determineProcedureType(array $activiteiten): string {
-		if (count($activiteiten) > 3) {
-			return 'uitgebreide';
-		}
-
-		foreach ($activiteiten as $activity) {
-			if (is_array($activity) === false) {
-				continue;
-			}
-
-			$kwalificatie = (string)($activity['regelkwalificatie'] ?? '');
-			if ($kwalificatie === 'uitgebreide') {
-				return 'uitgebreide';
-			}
-		}
-
-		return 'reguliere';
-	}//end determineProcedureType()
 
 	/**
 	 * Check whether a given date is a working day.

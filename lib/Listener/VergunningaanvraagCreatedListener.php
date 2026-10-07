@@ -106,31 +106,8 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 			return;
 		}
 
-		$schemaId = $this->resolveSchemaId(object: $object);
-		if ($schemaId === '') {
-			return;
-		}
-
-		$configuredSchemaId = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'dso_vergunningaanvraag_schema',
-			default: ''
-		);
-
-		if ($configuredSchemaId === '' || $schemaId !== $configuredSchemaId) {
-			return;
-		}
-
-		$objectId = (string)($object['id'] ?? ($object['uuid'] ?? ($object['@self']['id'] ?? '')));
+		$objectId = $this->readyIntakeId(object: $object);
 		if ($objectId === '') {
-			$this->logger->warning(
-				'Dossiq DSO listener: event for vergunningaanvraag schema but no object id found',
-				['app' => Application::APP_ID]
-			);
-			return;
-		}
-
-		if (in_array((string)($object['status'] ?? ''), self::NOT_READY, true) === true) {
 			return;
 		}
 
@@ -173,6 +150,48 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 			);
 		}//end try
 	}//end handle()
+
+	/**
+	 * The id of the intake record, when this write is one to make a case from.
+	 *
+	 * A write on another schema, a record without an id, and integriq's
+	 * records before mapping all answer ''.
+	 *
+	 * @param array<string, mixed> $object The written object
+	 *
+	 * @return string The record's uuid, or ''
+	 */
+	private function readyIntakeId(array $object): string {
+		$schemaId = $this->resolveSchemaId(object: $object);
+		if ($schemaId === '') {
+			return '';
+		}
+
+		$configuredSchemaId = $this->appConfig->getValueString(
+			app: Application::APP_ID,
+			key: 'dso_vergunningaanvraag_schema',
+			default: ''
+		);
+
+		if ($configuredSchemaId === '' || $schemaId !== $configuredSchemaId) {
+			return '';
+		}
+
+		$objectId = (string)($object['id'] ?? ($object['uuid'] ?? ($object['@self']['id'] ?? '')));
+		if ($objectId === '') {
+			$this->logger->warning(
+				'Dossiq DSO listener: event for vergunningaanvraag schema but no object id found',
+				['app' => Application::APP_ID]
+			);
+			return '';
+		}
+
+		if (in_array((string)($object['status'] ?? ''), self::NOT_READY, true) === true) {
+			return '';
+		}
+
+		return $objectId;
+	}//end readyIntakeId()
 
 	/**
 	 * Extract the object payload from a create or update event as an array.

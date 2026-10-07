@@ -24,6 +24,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
+use OCA\Dossiq\Service\Dso\DsoIntakeCasePayload;
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Dossiq\Service\DsoCaseService;
 use OCA\Dossiq\Service\Lifecycle\CaseJournal;
@@ -108,7 +109,10 @@ class DsoCaseServiceTest extends TestCase {
 			// reason the interface exists.
 			objectService: $this->createMock(ObjectServiceInterface::class),
 			workingDays: new WorkingDayCalculator(),
-			caseTypes: $this->caseTypes(),
+			intakeCases: new DsoIntakeCasePayload(
+				caseTypes: $this->caseTypes(),
+				journal: new CaseJournal(userSession: $this->createMock(IUserSession::class))
+			),
 			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
 		);
 	}//end setUp()
@@ -337,7 +341,10 @@ class DsoCaseServiceTest extends TestCase {
 			logger: $this->logger,
 			objectService: $objectServiceMock,
 			workingDays: new WorkingDayCalculator(),
-			caseTypes: $this->caseTypes(),
+			intakeCases: new DsoIntakeCasePayload(
+				caseTypes: $this->caseTypes(),
+				journal: new CaseJournal(userSession: $this->createMock(IUserSession::class))
+			),
 			journal: new CaseJournal(userSession: $this->createMock(IUserSession::class)),
 		);
 
