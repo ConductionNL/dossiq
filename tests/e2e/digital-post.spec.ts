@@ -175,6 +175,8 @@ test.describe('digital post reaches integriq, or says why it did not', () => {
 			'/apps/dossiq/api/berichtenbox/messages/00000000-0000-0000-0000-000000000000',
 			{ failOnStatusCode: false, maxRedirects: 0 },
 		)
-		expect(gone.headers()['content-type'] ?? '').not.toContain('application/json')
+		expect(gone.headers()['content-type'] ?? '').not.toContain(
+			'application/json',
+		)
 	})
 })
