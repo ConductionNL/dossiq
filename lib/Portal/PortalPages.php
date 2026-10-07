@@ -165,7 +165,7 @@ class PortalPages {
 
 	/**
 	 * The overview's blocks: what the resident still has to do, their running
-	 * cases, the newest messages, and the two things they can start.
+	 * cases and the newest messages.
 	 *
 	 * @param array<int, array<string, mixed>> $collections The citizen collections.
 	 *
@@ -220,16 +220,16 @@ class PortalPages {
 		];
 		// The messages as a plain list: a title and the day, no badge.
 		$blocks[] = ['type' => 'inbox', 'collection' => 'berichten', 'limit' => 3, 'label' => 'Nieuwe berichten', 'display' => 'list'];
-		$blocks[] = ['type' => 'cta', 'action' => 'createBezwaar', 'label' => 'Bezwaar maken'];
-		$blocks[] = ['type' => 'cta', 'action' => 'createKlacht', 'label' => 'Klacht indienen'];
+		// "Bezwaar maken" and "Klacht indienen" act on one case, so they
+		// stand on the case page (residentCaseBlocks), not here.
 
 		return $blocks;
 	}//end residentOverviewBlocks()
 
 	/**
 	 * The case page's blocks, in the order the design reads them: the question
-	 * on THIS case, where it stands, its documents, what happened, the facts,
-	 * a way to write, and the case screen.
+	 * on THIS case, where it stands, the facts, its documents, what happened,
+	 * a way to write, a bezwaar or a klacht about it, and the case screen.
 	 *
 	 * @param array<int, array<string, mixed>> $collections The citizen collections.
 	 * @param array<int, array<string, mixed>> $actions     The citizen actions.
@@ -237,6 +237,7 @@ class PortalPages {
 	 * @return array<int, array<string, mixed>> The blocks, in order.
 	 *
 	 * @spec openspec/changes/site-resident-portal-design/specs/portal-contribution/spec.md#requirement-the-resident-pages-are-declared-and-none-of-them-is-a-menu-entry-req-srpd-005
+	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
 	 */
 	private function residentCaseBlocks(array $collections, array $actions): array {
 		$blocks = [];
@@ -252,19 +253,18 @@ class PortalPages {
 		}
 
 		$blocks[] = ['type' => 'steps', 'collection' => 'mijnZaken'];
-		// "Stukken" with the add button beside it, and "Gegevens" over the
-		// facts without a second history under them (portaliq#1253).
+		// "Gegevens" over the facts without a second history under them, then
+		// "Stukken" with the add button beside it, as the Zaak board orders
+		// them (portaliq#1253).
+		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken', 'label' => 'Gegevens', 'timeline' => false];
 		$blocks[] = ['type' => 'documents', 'collection' => 'mijnZaken', 'label' => 'Stukken', 'upload' => true];
 		$blocks[] = ['type' => 'timeline', 'collection' => 'mijnZaken'];
-		$blocks[] = ['type' => 'detail', 'collection' => 'mijnZaken', 'label' => 'Gegevens', 'timeline' => false];
-		if ($this->declares(rows: $actions, id: 'replyToMessage') === true) {
-			$blocks[] = [
-				'type' => 'cta',
-				'action' => 'replyToMessage',
-				'label' => 'Bericht sturen',
-				// The open case lands in the action's recordField.
-				'withRecord' => true,
-			];
+		// A way to write, and the two things a resident can start about THIS
+		// case: each lands the open case in the action's recordField.
+		foreach (['replyToMessage' => 'Bericht sturen', 'createBezwaar' => 'Bezwaar maken', 'createKlacht' => 'Klacht indienen'] as $action => $label) {
+			if ($this->declares(rows: $actions, id: $action) === true) {
+				$blocks[] = ['type' => 'cta', 'action' => $action, 'label' => $label, 'withRecord' => true];
+			}
 		}
 
 		// The case screen as the board's notice: the closed-window sentence,

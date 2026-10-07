@@ -60,22 +60,29 @@ class PortalCasePageTest extends TestCase {
 
 		$this->assertArrayHasKey('mijnZaken', $pages);
 		// Renamed so it does not repeat the site's own "Mijn zaken" (portal-pages-in-resident-groups).
-		// The case page of the design (site-resident-portal-design D4): the
-		// question on this case first, then where it stands, its documents,
-		// what happened, the four facts, a way to write and the case screen.
+		// The case page of the Zaak board (site-resident-portal-design D4,
+		// case-actions-on-the-case-page): the question on this case first,
+		// then where it stands, the facts, its documents, what happened, a
+		// way to write, a bezwaar or a klacht about it, and the case screen.
 		$this->assertSame('Uw zaak', $pages['mijnZaken']['label']);
 		$this->assertSame(
 			[
 				'tasks',
 				'steps',
+				'detail',
 				'documents',
 				'timeline',
-				'detail',
+				'cta',
+				'cta',
 				'cta',
 				'citizenCase',
 			],
 			array_column($pages['mijnZaken']['blocks'], 'type')
 		);
+		$ctas = array_values(array_filter($pages['mijnZaken']['blocks'], static fn (array $block): bool => $block['type'] === 'cta'));
+		$this->assertSame(['replyToMessage', 'createBezwaar', 'createKlacht'], array_column($ctas, 'action'));
+		// Each carries the open case into its action's recordField.
+		$this->assertSame([true, true, true], array_column($ctas, 'withRecord'));
 		// It is a record page on its own collection, which is how portaliq
 		// finds it when a case is opened from a list, a card or a notice, and
 		// what lets steps, documents and timeline render at all.

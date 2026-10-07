@@ -271,33 +271,7 @@ class CitizenManifest {
 	 */
 	public function actions(): array {
 		return [
-			[
-				'id' => 'createKlacht',
-				'type' => 'create',
-				'label' => 'Klacht indienen',
-				// WHAT A VISITOR READS ON THE TILE before they sign in. One
-				// sentence, from the approved mockup (DossiqHome.dc.html), and
-				// the audiences it is offered to (site-resident-portal-design
-				// D5). The mockup's service promise is left out: dossiq cannot
-				// know it is true for an instance, so an editor adds it on the
-				// page instead of the app claiming it.
-				'summary' => 'Vertel ons wat er misging.',
-				'audiences' => ['citizen', 'client'],
-				'register' => PortalContributionProvider::REGISTER,
-				'schema' => 'portaalVerzoek',
-				'scopeField' => 'submitterRef',
-				'minTrust' => 'low',
-				'fields' => [
-					'category',
-					'subject',
-					'rationale',
-					'attachments',
-				],
-				// Stamped server-side, like the bezwaar's. Left to the
-				// sender, the portal sent 'klacht', which the schema's enum
-				// refuses, so every complaint answered 502 write_failed.
-				'defaults' => ['kind' => 'klachtschrift'],
-			],
+			$this->complaintAction(),
 			$this->objectionAction(),
 			[
 				'id' => 'replyToMessage',
@@ -608,6 +582,10 @@ class CitizenManifest {
 		return [
 			'id' => 'createBezwaar',
 			'type' => 'create',
+			// The case a resident objects to: portaliq's cta with
+			// `withRecord: true` on the case page presets it to the case on
+			// screen, and `crossRefs` below checks it is theirs.
+			'recordField' => 'againstCaseId',
 			'label' => 'Bezwaar maken',
 			'summary' => 'Bent u het niet eens met een besluit? Maak binnen zes weken bezwaar.',
 			'audiences' => ['citizen', 'client'],
@@ -636,5 +614,59 @@ class CitizenManifest {
 			],
 		];
 	}//end objectionAction()
+
+	/**
+	 * The klacht a citizen files, about one of their cases or about the
+	 * municipality in general.
+	 *
+	 * Pressed on a case page it carries that case (`recordField`), guarded
+	 * against the citizen's own cases like the bezwaar's; filed from the
+	 * "Klacht indienen" page it carries none, so the reference is not
+	 * required. Its own method because {@see self::actions()} is at the
+	 * length phpmd refuses.
+	 *
+	 * @return array<string, mixed> The action.
+	 *
+	 * @spec openspec/changes/case-actions-on-the-case-page/specs/portal-contribution/spec.md#requirement-the-case-page-offers-bezwaar-and-klacht-for-the-case-on-screen
+	 */
+	private function complaintAction(): array {
+		return [
+			'id' => 'createKlacht',
+			'type' => 'create',
+			'recordField' => 'againstCaseId',
+			'label' => 'Klacht indienen',
+			// WHAT A VISITOR READS ON THE TILE before they sign in. One
+			// sentence, from the approved mockup (DossiqHome.dc.html), and
+			// the audiences it is offered to (site-resident-portal-design
+			// D5). The mockup's service promise is left out: dossiq cannot
+			// know it is true for an instance, so an editor adds it on the
+			// page instead of the app claiming it.
+			'summary' => 'Vertel ons wat er misging.',
+			'audiences' => ['citizen', 'client'],
+			'register' => PortalContributionProvider::REGISTER,
+			'schema' => 'portaalVerzoek',
+			'scopeField' => 'submitterRef',
+			'minTrust' => 'low',
+			'fields' => [
+				'category',
+				'subject',
+				'rationale',
+				'attachments',
+				'againstCaseId',
+			],
+			// Stamped server-side, like the bezwaar's. Left to the
+			// sender, the portal sent 'klacht', which the schema's enum
+			// refuses, so every complaint answered 502 write_failed.
+			'defaults' => ['kind' => 'klachtschrift'],
+			'crossRefs' => [
+				'againstCaseId' => [
+					'register' => PortalContributionProvider::REGISTER,
+					'schema' => 'case',
+					'scopeField' => 'portalSubject',
+					'required' => false,
+				],
+			],
+		];
+	}//end complaintAction()
 
 }//end class
