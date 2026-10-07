@@ -58,6 +58,9 @@ use Psr\Log\LoggerInterface;
  * @template-implements IEventListener<Event>
  *
  * @spec openspec/changes/termijnbewaking-op-engine-timers/tasks.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The class over the limit is the background
+ *   service account's refusal: a fire from cron writes as that account or not at all.
  */
 class TermijnTimerFiredListener implements IEventListener {
 	use SearchesObjects;

@@ -45,6 +45,9 @@ use Psr\Log\LoggerInterface;
  * Daily timed job for DSO omgevingsvergunning deadline monitoring.
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The two classes over the limit are the
+ *   background service account and its refusal, which every writing job now carries.
  */
 class DsoDeadlineJob extends TimedJob {
 
