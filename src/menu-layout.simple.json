@@ -190,7 +190,9 @@
 				"label": "To the day close",
 				"route": "EndOfDay"
 			}
-		}
+		},
+		"footer": ["settings", "Documentation"],
+		"settingsLabel": "Settings"
 	},
 	"pages": [
 		{
@@ -223,7 +225,7 @@
 		},
 		{
 			"id": "CaseDetail",
-			"_note": "The case page in the simple structure (openspec/changes/simple-case-page). The full structure has no overlay, so its page is today's page. STAGE: `statusRole` is the role of the status the case sits in (statusType.role), materialised on the case. A status without a role leaves it empty: no what-now card, no stage button, and Lifecycle stays the first entry of the More menu, as it is today. THREE STEPS OF THE DESIGN HAVE NO ACTION OF THEIR OWN IN DOSSIQ and are not invented here: recording a decision (decidiq owns it), publishing as a step (Publish exists, and hangs on wooPublicationStatus, not on a role) and closing as one act (it is a choice inside the Lifecycle dialog). All three open the Lifecycle dialog under the label Next step. THE PILL ABOVE THE TITLE IS THE CASE NUMBER, in the `typePill` place: the case holds its case type as a uuid and no name, so there is no type to show there, and the number is what a handler looks for first. NO COUNTS ON TABS: the case carries no count of its documents, messages or tasks. THE SIX SIDEBAR TABS STAY IN THE SIDEBAR: they are sidebar components, and the tab strip holds widgets. `case-rebind` IS IN THE CASE GROUP AND NOT ADMIN ONLY: who may change a case's type is decided by its own permission endpoint (`mayRebind`), in both structures. The simple structure regroups actions. It does not change who may do what. The same rule keeps `case-version-move` and `cross-domain-lookup` in the Case group: the design lists both as admin actions, but today any handler may use them, and `adminOnly` would take them away. Only the two inspect actions are admin only, and both were already gated on the admin probe. EVERY STAGE WITH A CARD HAS A BUTTON THAT CANNOT HIDE. The intake stage first pointed at Claim, and Claim hides once the case has a handler: a case in intake with a handler showed a finished checklist and no button (live check, 5 October 2026). The library's fallback for a hidden stage action is the page's `primaryAction`, which is a link and cannot open a dialog, so the stage itself names Next step, which opens the Lifecycle dialog and has no condition. Claim stays in the Case group. Waiting for information keeps Remind, whose only condition is that the case is not archived. THREE TILES LEFT THE GRID: beside the side column the grid is narrow and drew number, type and deadline as three full-width cards. The number is the pill, the deadline is the first card of the side column, and the type is in the Overview tab. Hours booked takes the full row.",
+			"_note": "The case page in the simple structure (openspec/changes/simple-case-page). The full structure has no overlay, so its page is today's page. STAGE: `statusRole` is the role of the status the case sits in (statusType.role), materialised on the case. A status without a role leaves it empty: no what-now card, no stage button, and Lifecycle stays the first entry of the More menu, as it is today. THREE STEPS OF THE DESIGN HAVE NO ACTION OF THEIR OWN IN DOSSIQ and are not invented here: recording a decision (decidiq owns it), publishing as a step (Publish exists, and hangs on wooPublicationStatus, not on a role) and closing as one act (it is a choice inside the Lifecycle dialog). All three open the Lifecycle dialog under the label Next step. THE PILL ABOVE THE TITLE IS THE CASE NUMBER, in the `typePill` place: the case holds its case type as a uuid and no name, so there is no type to show there, and the number is what a handler looks for first. NO COUNTS ON TABS: the case carries no count of its documents, messages or tasks. THE SIX SIDEBAR TABS STAY IN THE SIDEBAR: they are sidebar components, and the tab strip holds widgets. `case-rebind` IS IN THE CASE GROUP AND NOT ADMIN ONLY: who may change a case's type is decided by its own permission endpoint (`mayRebind`), in both structures. The simple structure regroups actions. It does not change who may do what. The same rule keeps `case-version-move` and `cross-domain-lookup` in the Case group: the design lists both as admin actions, but today any handler may use them, and `adminOnly` would take them away. Only the two inspect actions are admin only, and both were already gated on the admin probe. EVERY STAGE WITH A CARD HAS A BUTTON THAT CANNOT HIDE. The intake stage first pointed at Claim, and Claim hides once the case has a handler: a case in intake with a handler showed a finished checklist and no button (live check, 5 October 2026). The library's fallback for a hidden stage action is the page's `primaryAction`, which is a link and cannot open a dialog, so the stage itself names Next step, which opens the Lifecycle dialog and has no condition. Claim stays in the Case group. Waiting for information keeps Remind, whose only condition is that the case is not archived. THREE TILES LEFT THE GRID: beside the side column the grid is narrow and drew number, type and deadline as three full-width cards. The number is the pill, the deadline is the first card of the side column, and the type is in the Overview tab. Hours booked takes the full row. THE HEADER IS A CARD THAT HOLDS THE STAGES (`headerCard`, `headerWidget: case-stages`, nextcloud-vue 2.65.0), so the stages leave the grid. THE BANNER STACK (favourite, follow, new since you looked, what this status asks, attention) moves to the bottom of the side column: DqZaak draws nothing between the header and the tabs, and the column keeps every one of those controls in reach.",
 			"config": {
 				"stageField": "statusRole",
 				"primaryActionByStage": {
@@ -392,7 +394,8 @@
 							"hideEmpty": true,
 							"editable": false
 						}
-					}
+					},
+					"case-banner-stack"
 				],
 				"typePill": {
 					"field": "identifier"
@@ -401,7 +404,9 @@
 				"breadcrumb": {
 					"label": "All cases",
 					"route": "Cases"
-				}
+				},
+				"headerCard": true,
+				"headerWidget": "case-stages"
 			},
 			"configPatch": {
 				"headerActions": {
@@ -570,25 +575,20 @@
 					"kpi-1": null,
 					"kpi-2": null,
 					"kpi-5": null,
-					"3": {
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 12,
-						"gridHeight": 2,
-						"showTitle": false
-					},
+					"3": null,
 					"6": {
 						"gridX": 9,
 						"gridY": 4,
 						"gridWidth": 3,
 						"gridHeight": 2
-					}
+					},
+					"case-banners": null
 				}
 			}
 		},
 		{
 			"id": "Dashboard",
-			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, eighteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); recent activity (dossiq has no per-person activity feed); and the My work / My team switch. `simple-my-tasks` is the My work page's own widget, so the page gains its slot. ONE STORY ABOUT DEADLINES (live check, 5 October 2026: a count of 58 stood over an empty week). The count is now Due this week, with the filter of the list's own Due this week view plus `assignee`, so the tile, the view and the strip agree. What is already late is the First today card: it counts every open case of yours whose deadline has passed or ends today, and links to exactly those. LABELS ARE SHORT because a tile cuts its label at about twenty characters. THE CARD'S COUNT FILTER IS WRITTEN FLAT (`deadline[lt]`), NOT NESTED. The library's count source builds its address with `buildQueryString` (nextcloud-vue src/utils/headers.js, the `typeof value === 'object'` branch), which writes a nested operator as JSON, and OpenRegister answers that with a 500. The tiles and the week strip flatten a nested operator themselves, so they may nest. THE CARD CARRIES `text` AS WELL AS `title`, with the same words. The dashboard page gives up the grid cell of any banner whose `content.text` is empty (nextcloud-vue CnDashboardPage.vue, isCollapsedWidget), and it does not look at `title`, so an attention card with only a title never rendered. The card shows the title and does not repeat the text. THE WEEK, THE STEPS AND MY TASKS EACH TAKE THE FULL WIDTH: side by side at 1440 px the Friday column and the Days left column were cut off.",
+			"_note": "The dashboard in the simple structure (openspec/changes/simple-list-and-dashboard). The design's widgets come first: greeting, First today, four counts of MY cases, the week's deadlines, my cases per step and my tasks. Everything the dashboard held before follows underneath, eighteen rows down and otherwise as it was, so the team view is not lost. `layout` is therefore the old layout shifted plus nine new entries, and the spec fails if an old entry goes missing. WHAT THE DESIGN SHOWS AND THIS DOES NOT, because dossiq has no data for it: the one named case and a Suspend the term button on First today (the card is counted, not bound to a record); the notes under the four counts (new this week, longest wait, last month); a Publish step in the bar (no status role means publishing); and recent activity (dossiq has no per-person activity feed). THE GREETING SITS ON THE PAGE GROUND (`ground`) WITH A MY WORK / MY TEAM SWITCH (`views`, nextcloud-vue 2.65.0). dossiq has no team dashboard, so My team opens the team queue, the page of the team's unclaimed work; the switch is drawn on the dashboard only. FIRST TODAY IS `borderless`: the banner draws its own card, and the grid cell drew a second, taller white card under it. The four counts are `stacked` (label over value) and no widget shows an Actions menu (`showWidgetActions: false`), as on DqDashboard. `simple-my-tasks` is the My work page's own widget, so the page gains its slot. ONE STORY ABOUT DEADLINES (live check, 5 October 2026: a count of 58 stood over an empty week). The count is now Due this week, with the filter of the list's own Due this week view plus `assignee`, so the tile, the view and the strip agree. What is already late is the First today card: it counts every open case of yours whose deadline has passed or ends today, and links to exactly those. LABELS ARE SHORT because a tile cuts its label at about twenty characters. THE CARD'S COUNT FILTER IS WRITTEN FLAT (`deadline[lt]`), NOT NESTED. The library's count source builds its address with `buildQueryString` (nextcloud-vue src/utils/headers.js, the `typeof value === 'object'` branch), which writes a nested operator as JSON, and OpenRegister answers that with a 500. The tiles and the week strip flatten a nested operator themselves, so they may nest. THE CARD CARRIES `text` AS WELL AS `title`, with the same words. The dashboard page gives up the grid cell of any banner whose `content.text` is empty (nextcloud-vue CnDashboardPage.vue, isCollapsedWidget), and it does not look at `title`, so an attention card with only a title never rendered. The card shows the title and does not repeat the text. THE WEEK, THE STEPS AND MY TASKS EACH TAKE THE FULL WIDTH: side by side at 1440 px the Friday column and the Days left column were cut off.",
 			"config": {
 				"layout": [
 					{
@@ -608,7 +608,8 @@
 						"gridWidth": 12,
 						"gridHeight": 2,
 						"showTitle": false,
-						"sizeToContent": true
+						"sizeToContent": true,
+						"borderless": true
 					},
 					{
 						"id": "s3",
@@ -803,7 +804,8 @@
 					}
 				],
 				"description": "Your work today, then the team",
-				"showHeader": false
+				"showHeader": false,
+				"showWidgetActions": false
 			},
 			"configAppend": {
 				"widgets": [
@@ -814,7 +816,20 @@
 						"content": {
 							"greeting": true,
 							"showDate": true,
-							"plain": true
+							"ground": true,
+							"views": {
+								"ariaLabel": "Whose work",
+								"options": [
+									{
+										"label": "My work",
+										"route": "Dashboard"
+									},
+									{
+										"label": "My team",
+										"route": "Queue"
+									}
+								]
+							}
 						}
 					},
 					{
@@ -933,7 +948,8 @@
 									"statusHiddenInLists": "false",
 									"isDraft": "false"
 								}
-							}
+							},
+							"layout": "stacked"
 						}
 					},
 					{
@@ -972,7 +988,8 @@
 									"deadline[lt]": "@today+7d"
 								}
 							},
-							"variant": "warning"
+							"variant": "warning",
+							"layout": "stacked"
 						}
 					},
 					{
@@ -1006,7 +1023,8 @@
 									"isDraft": "false",
 									"waitingOnApplicant": "true"
 								}
-							}
+							},
+							"layout": "stacked"
 						}
 					},
 					{
@@ -1039,7 +1057,8 @@
 									"endDate[gte]": "@monthStart"
 								}
 							},
-							"variant": "success"
+							"variant": "success",
+							"layout": "stacked"
 						}
 					},
 					{
@@ -1137,8 +1156,12 @@
 				"quickFilterMaxVisible": 5,
 				"folderSidebar": null,
 				"columns": [
-					"identifier",
-					"title",
+					{
+						"key": "title",
+						"label": "Case",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier} · {initiatorDisplayName}"
+					},
 					{
 						"key": "caseType",
 						"label": "Case type",
@@ -1177,7 +1200,11 @@
 							]
 						}
 					}
-				]
+				],
+				"showTitle": true,
+				"countSubtitle": "{total} cases",
+				"showViewToggle": false,
+				"headerFilters": false
 			},
 			"configPatch": {
 				"quickFilters": {
@@ -1216,7 +1243,8 @@
 					"Waiting on the applicant",
 					"Woo requests"
 				]
-			}
+			},
+			"title": "All cases"
 		},
 		{
 			"id": "WorkflowBoard",
@@ -1236,7 +1264,8 @@
 							"variant": "warning"
 						}
 					]
-				}
+				},
+				"showDashboardLink": false
 			}
 		}
 	]

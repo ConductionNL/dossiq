@@ -9,3 +9,8 @@
 - [x] 5.1 `tests/vitest/simpleListAndDashboard.spec.js`, and the overlay
   operations in `tests/vitest/structureProfile.spec.js`.
 - [ ] 6.1 Live check by the coordinator.
+- [x] 7.1 nextcloud-vue ^2.65.0 opt-ins: greeting on the ground with My work | My
+  team, First today borderless, stacked counts, no widget menus, case header card
+  with the stages, banner stack in the side column, list title and count, case
+  number under the title, no Dashboard button on the board, declared nav footer
+  (REQ-DASH-028).

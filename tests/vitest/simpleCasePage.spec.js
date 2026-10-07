@@ -411,7 +411,8 @@ describe('the tabs', () => {
 		// stages". nextcloud-vue 2.64.0 (#1337) passes a camelCase slug through
 		// unchanged. This asks the library's own rule, so a name it would
 		// rewrite cannot pass, whichever version is installed.
-		const source = simple.widgets.find((widget) => widget.id === 'case-stages').content.stagesSource
+		const source = simple.widgets.find((widget) => widget.id === 'case-stages')
+			.content.stagesSource
 		const sent = schemaRefSlug(source.schema)
 		expect(sent).toBe(source.schema)
 		const slugs = Object.entries(register.components.schemas).map(
@@ -439,7 +440,8 @@ describe('the tabs', () => {
 		// as a segmented control, and "All cases / <number>" above the card
 		// instead of a CASE eyebrow. All three are nextcloud-vue 2.64.0 opt-ins,
 		// so the full profile keeps drawing what it drew.
-		const find = (config, id) => config.widgets.find((widget) => widget.id === id)
+		const find = (config, id) =>
+			config.widgets.find((widget) => widget.id === id)
 		expect(find(simple, 'case-stages').content.variant).toBe('bars')
 		expect(find(original, 'case-stages').content.variant).toBeUndefined()
 		expect(find(simple, 'case-panels').content.variant).toBe('segmented')
@@ -450,14 +452,18 @@ describe('the tabs', () => {
 		expect(original.breadcrumb).toBeUndefined()
 		expect(casePage(simpleFile).route).toBeDefined()
 		expect(
-			build(simpleFile).pages.some((page) => page.id === simple.breadcrumb.route),
+			build(simpleFile).pages.some(
+				(page) => page.id === simple.breadcrumb.route,
+			),
 		).toBe(true)
 	})
 
 	it('takes the three tiles out of the grid and keeps every other card where it was', () => {
 		// Beside the side column the grid is narrow, and number, type and
 		// deadline drew as three full-width cards under each other.
-		const gone = ['kpi-1', 'kpi-2', 'kpi-5']
+		// The stages (`3`) sit in the header card (`config.headerWidget`) and the
+		// banner stack in the side column, so neither keeps a grid cell.
+		const gone = ['kpi-1', 'kpi-2', 'kpi-5', '3', 'case-banners']
 		expect(simple.layout.map((entry) => entry.id)).toEqual(
 			original.layout
 				.map((entry) => entry.id)
@@ -465,19 +471,6 @@ describe('the tabs', () => {
 		)
 		for (const entry of simple.layout) {
 			const was = original.layout.find((item) => item.id === entry.id)
-			if (entry.id === '3') {
-				// The stages take the tile row, full width, above the tabs: the
-				// design draws the progress bar first (DqZaak).
-				expect(entry).toEqual({
-					...was,
-					gridX: 0,
-					gridY: 0,
-					gridWidth: 12,
-					gridHeight: 2,
-					showTitle: false,
-				})
-				continue
-			}
 			if (entry.id === '6') {
 				// Hours booked moves to where the stages were, beside the tabs.
 				expect(entry).toEqual({
@@ -534,6 +527,34 @@ describe('the header and the side column', () => {
 		}
 		// The deadline has its own card, so no data card repeats it.
 		expect(shown).not.toContain('deadline')
+	})
+
+	it('draws the header as a card holding the stages, and the banners in the side column', () => {
+		// DqZaak puts the progress bars inside the header card, and draws no
+		// favourites, follow, dwell or attention row above the tabs. Both are
+		// nextcloud-vue 2.65.0 opt-ins (`headerCard`, `headerWidget`); the
+		// banner stack moves to the bottom of the side column, so nothing it
+		// offers is lost. The full profile declares none of this.
+		expect(simple.headerCard).toBe(true)
+		expect(simple.headerWidget).toBe('case-stages')
+		expect(simple.widgets.some((widget) => widget.id === 'case-stages')).toBe(
+			true,
+		)
+		expect(simple.layout.some((entry) => entry.widgetId === 'case-stages')).toBe(
+			false,
+		)
+		expect(simple.sideColumn.at(-1)).toBe('case-banner-stack')
+		expect(
+			simple.widgets.some((widget) => widget.id === 'case-banner-stack'),
+		).toBe(true)
+		expect(
+			simple.layout.some((entry) => entry.widgetId === 'case-banner-stack'),
+		).toBe(false)
+		expect(original.headerCard).toBeUndefined()
+		expect(original.headerWidget).toBeUndefined()
+		expect(
+			original.layout.some((entry) => entry.widgetId === 'case-banner-stack'),
+		).toBe(true)
 	})
 })
 

@@ -263,7 +263,10 @@ export default {
 		background 0.15s ease;
 }
 
-.case-card__select {
+/* Two classes: NcCheckboxRadioSwitch sets `position: relative` on its own
+   root at the same scoped weight, and whichever sheet loads last won, so the
+   checkbox sometimes took a row of its own above the number. */
+.case-card .case-card__select {
 	position: absolute;
 	top: 2px;
 	left: 2px;
@@ -406,7 +409,7 @@ export default {
 
 @media (prefers-reduced-motion: reduce) {
 	.case-card,
-	.case-card__select {
+	.case-card .case-card__select {
 		transition: none;
 	}
 

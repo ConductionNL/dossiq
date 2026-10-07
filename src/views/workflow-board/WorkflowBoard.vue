@@ -107,6 +107,7 @@
 						data-testid="workflow-board-case-type" />
 				</label>
 				<NcButton
+					v-if="showDashboardLink"
 					variant="tertiary"
 					@click="$router.push({ name: 'Dashboard' })">
 					{{ t('dossiq', 'Dashboard') }}
@@ -261,6 +262,11 @@ export default {
 		NcSelect,
 	},
 
+	inject: {
+		/** The built manifest, for the board page's own `config`. */
+		cnManifest: { default: null },
+	},
+
 	/**
 	 * The context-menu seam the board's card menu is driven from.
 	 *
@@ -344,6 +350,26 @@ export default {
 	},
 
 	computed: {
+		/**
+		 * Whether the header offers a Dashboard button.
+		 *
+		 * The navigation already holds the dashboard, and the simple
+		 * structure's board (DqWerkbord) draws only the case type select, so
+		 * it declares `showDashboardLink: false` on the `WorkflowBoard` page.
+		 * Without the key, which is the full structure, the button stays.
+		 *
+		 * @return {boolean}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-028
+		 */
+		showDashboardLink() {
+			const pages = this.cnManifest?.pages
+			const board = Array.isArray(pages)
+				? pages.find((page) => page.id === 'WorkflowBoard')
+				: null
+			return board?.config?.showDashboardLink !== false
+		},
+
 		/**
 		 * The case types a handler can narrow the board to, by name.
 		 *

@@ -284,7 +284,8 @@ describe('the simple profile', () => {
 
 		// The counts use the filters of the pages they open, so the number
 		// beside an entry is the number of rows behind it.
-		const entry = (entryId) => flat(built.menu).find((item) => item.id === entryId)
+		const entry = (entryId) =>
+			flat(built.menu).find((item) => item.id === entryId)
 		const queuePage = built.pages.find((page) => page.id === 'Queue')
 		expect(entry('Queue').count).toEqual({
 			register: 'dossiq',
@@ -313,9 +314,17 @@ describe('the simple profile', () => {
 		expect(built.nav.help).toBeUndefined()
 		expect(iconsSource).toContain('\n\tHelpCircleOutline,\n')
 
+		// DqZijbalk's footer is "Instellingen" over "Hulp en uitleg" and
+		// nothing else (nextcloud-vue 2.65.0 `nav.footer`): Store, Reports and
+		// the roadmap move into the settings foldout, not out of reach.
+		expect(built.nav.footer).toEqual(['settings', 'Documentation'])
+		expect(built.nav.settingsLabel).toBe('Settings')
+
 		const full = build(fullFile)
 		expect(full.nav).toBeUndefined()
-		expect(flat(full.menu).filter((item) => item.count !== undefined)).toEqual([])
+		expect(flat(full.menu).filter((item) => item.count !== undefined)).toEqual(
+			[],
+		)
 		expect(
 			flat(full.menu).find((item) => item.id === 'Documentation').label,
 		).toBe('Documentation')

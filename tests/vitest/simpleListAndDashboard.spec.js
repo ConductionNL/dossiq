@@ -148,20 +148,23 @@ describe('the cases list', () => {
 		).toContain(`"${WOO}"`)
 	})
 
-	it('shows six columns, each a field the case carries', () => {
+	it('shows five columns, the number and the requester under the title, each a field the case carries', () => {
 		const keys = simple.columns.map((column) =>
 			typeof column === 'string' ? column : column.key,
 		)
-		expect(keys).toEqual([
-			'identifier',
-			'title',
-			'caseType',
-			'status',
-			'assignee',
-			'deadline',
-		])
+		expect(keys).toEqual(['title', 'caseType', 'status', 'assignee', 'deadline'])
 		for (const key of keys) {
 			expect(caseFields.has(key), key).toBe(true)
+		}
+		// DqZaken's "Zaak" column: the title, and "2026-0061 · M. de Graaf"
+		// under it (nextcloud-vue 2.64.0 column `secondary`).
+		const title = simple.columns.find((column) => column.key === 'title')
+		expect(title).toMatchObject({
+			label: 'Case',
+			secondary: '{identifier} · {initiatorDisplayName}',
+		})
+		for (const field of title.secondary.match(/\{([^}]+)\}/g)) {
+			expect(caseFields.has(field.slice(1, -1)), field).toBe(true)
 		}
 		// Type and status keep the formatter and widget they had.
 		for (const key of ['caseType', 'status']) {
@@ -199,12 +202,35 @@ describe('the cases list', () => {
 		expect(simple.columns.some((column) => column.key === 'caseType')).toBe(true)
 	})
 
+	it('shows its title and the count of rows, as the design does', () => {
+		// DqZaken: "Alle zaken" over "48 ...". The page title is the menu
+		// label, and `{total}` is the total of the view the list shows.
+		expect(page(builtSimple, 'Cases').title).toBe('All cases')
+		expect(simple.showTitle).toBe(true)
+		expect(simple.countSubtitle).toBe('{total} cases')
+		expect(page(builtFull, 'Cases').title).toBe(original('Cases').title)
+		expect(before.showTitle).toBeUndefined()
+		expect(before.countSubtitle).toBeUndefined()
+	})
+
+	it('draws the table without the view switch and the column filters, which the design has none of', () => {
+		// The filters stay in the filter panel; the full list keeps both.
+		expect(simple.showViewToggle).toBe(false)
+		expect(simple.headerFilters).toBe(false)
+		expect(before.showViewToggle).toBeUndefined()
+		expect(before.headerFilters).toBeUndefined()
+	})
+
 	it('touches nothing else on the list', () => {
 		const rest = ({
 			quickFilters,
 			quickFilterMaxVisible,
 			columns,
 			folderSidebar,
+			showTitle,
+			countSubtitle,
+			showViewToggle,
+			headerFilters,
 			...others
 		}) => others
 		expect(rest(simple)).toEqual(rest(before))
@@ -213,6 +239,27 @@ describe('the cases list', () => {
 
 describe('the board', () => {
 	const rule = page(builtSimple, 'WorkflowBoard').config.dueRule
+
+	it('drops the Dashboard button in the simple structure only, read from the board page', () => {
+		// DqWerkbord's header holds the title and the case type select; the
+		// dashboard is in the navigation already.
+		expect(page(builtSimple, 'WorkflowBoard').config.showDashboardLink).toBe(
+			false,
+		)
+		expect(
+			page(builtFull, 'WorkflowBoard').config.showDashboardLink,
+		).toBeUndefined()
+		const boardSource = read(
+			'src',
+			'views',
+			'workflow-board',
+			'WorkflowBoard.vue',
+		)
+		expect(boardSource).toContain('v-if="showDashboardLink"')
+		expect(boardSource).toContain(
+			'return board?.config?.showDashboardLink !== false',
+		)
+	})
 
 	it('declares a due rule in the simple structure and none in the full one', () => {
 		expect(rule).toEqual({
@@ -291,11 +338,47 @@ describe('the dashboard', () => {
 		expect(
 			entry('simple-my-tasks').gridY + entry('simple-my-tasks').gridHeight,
 		).toBe(entry('simple-continue').gridY + entry('simple-continue').gridHeight)
+		// The greeting sits on the page ground with the "My work | My team"
+		// switch at its right (nextcloud-vue 2.65.0 `ground`, `views`). dossiq
+		// has no team dashboard, so My team opens the team queue.
 		expect(widget('simple-greeting').content).toEqual({
 			greeting: true,
 			showDate: true,
-			plain: true,
+			ground: true,
+			views: {
+				ariaLabel: 'Whose work',
+				options: [
+					{ label: 'My work', route: 'Dashboard' },
+					{ label: 'My team', route: 'Queue' },
+				],
+			},
 		})
+		for (const option of widget('simple-greeting').content.views.options) {
+			expect(page(builtSimple, option.route), option.route).toBeDefined()
+		}
+	})
+
+	it('draws First today without a card around it, no widget menus and stacked counts', () => {
+		// The attention card is a card of its own; its grid cell drew a second,
+		// larger white card under it. DqDashboard has no Actions menus, and
+		// draws each count as the label over the value.
+		const entry = (id) =>
+			simple.config.layout.find((item) => item.widgetId === id)
+		expect(entry('simple-first-today').borderless).toBe(true)
+		expect(simple.config.showWidgetActions).toBe(false)
+		for (const id of [
+			'simple-my-open',
+			'simple-due-soon',
+			'simple-waiting',
+			'simple-closed-month',
+		]) {
+			expect(widget(id).content.layout, id).toBe('stacked')
+		}
+		// The full dashboard keeps its menus and cards.
+		expect(before.config.showWidgetActions).toBeUndefined()
+		expect(before.config.layout.some((item) => item.borderless === true)).toBe(
+			false,
+		)
 	})
 
 	it('keeps everything the dashboard held, eighteen rows down and otherwise as it was', () => {
