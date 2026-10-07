@@ -92,7 +92,7 @@ class BackgroundServiceAccountCheck implements ISetupCheck {
 		$why = match ($status['reason']) {
 			ServiceAccount::REASON_UNKNOWN => $this->l10n->t('The chosen account does not exist.'),
 			ServiceAccount::REASON_DISABLED => $this->l10n->t('The chosen account is disabled.'),
-			ServiceAccount::REASON_NOT_IN_GROUP => $this->l10n->t(
+			ServiceAccount::REASON_NOT_A_MEMBER => $this->l10n->t(
 				'The chosen account is not in the group %s.',
 				[$this->serviceAccount->group()]
 			),

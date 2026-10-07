@@ -81,7 +81,7 @@ abstract class ServiceAccount {
 	 *
 	 * @var string
 	 */
-	public const REASON_NOT_IN_GROUP = 'not-in-group';
+	public const REASON_NOT_A_MEMBER = 'not-in-group';
 
 	/**
 	 * Constructor.
@@ -226,10 +226,6 @@ abstract class ServiceAccount {
 		}
 
 		$group = $this->ensureGroup();
-		if ($group === null) {
-			throw new InvalidArgumentException('The group '.$this->group().' could not be created.');
-		}
-
 		if ($group->inGroup($account) === false) {
 			$group->addUser($account);
 		}
@@ -242,25 +238,34 @@ abstract class ServiceAccount {
 	/**
 	 * Create the service group when it does not exist.
 	 *
-	 * @return IGroup|null The group, or null when it could not be created.
+	 * @return IGroup The group.
+	 *
+	 * @throws InvalidArgumentException When the group cannot be created.
 	 *
 	 * @spec openspec/specs/termijn-pause-extension/spec.md
 	 */
-	public function ensureGroup(): ?IGroup {
+	public function ensureGroup(): IGroup {
 		$group = $this->groupManager->get($this->group());
 		if ($group !== null) {
 			return $group;
 		}
 
+		$created = null;
 		try {
-			return $this->groupManager->createGroup($this->group());
+			$created = $this->groupManager->createGroup($this->group());
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Dossiq: could not create a service group',
 				['app' => Application::APP_ID, 'group' => $this->group(), 'exception' => $e->getMessage()]
 			);
-			return null;
+			throw new InvalidArgumentException('The group '.$this->group().' could not be created.', 0, $e);
 		}
+
+		if ($created === null) {
+			throw new InvalidArgumentException('The group '.$this->group().' could not be created.');
+		}
+
+		return $created;
 	}//end ensureGroup()
 
 	/**
@@ -285,7 +290,7 @@ abstract class ServiceAccount {
 		}
 
 		if ($this->groupManager->isInGroup($userId, $this->group()) === false) {
-			return self::REASON_NOT_IN_GROUP;
+			return self::REASON_NOT_A_MEMBER;
 		}
 
 		return null;

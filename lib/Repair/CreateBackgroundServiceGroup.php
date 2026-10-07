@@ -71,8 +71,10 @@ class CreateBackgroundServiceGroup implements IRepairStep {
 	 */
 	public function run(IOutput $output): void {
 		$group = $this->serviceAccount->group();
-		if ($this->serviceAccount->ensureGroup() === null) {
-			$output->warning('Could not create group '.$group.'.');
+		try {
+			$this->serviceAccount->ensureGroup();
+		} catch (InvalidArgumentException $e) {
+			$output->warning('Could not create group '.$group.': '.$e->getMessage());
 			return;
 		}
 
