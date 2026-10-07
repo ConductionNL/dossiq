@@ -190,34 +190,29 @@ class SetupControllerStatusTest extends TestCase {
 	public function testTheRetiredSeedStepIsNotReported(): void {
 		$data = $this->controller($this->provisioned())->status()->getData();
 
-		$this->assertTrue($data['completed'], 'completed describes REQUIRED steps, and the required one is done');
+		$this->assertTrue($data['completed'], 'completed describes REQUIRED steps, and none is left');
 		$this->assertArrayNotHasKey('seed', $data['steps'], 'the wizard declares no seed step to report on');
 		$this->assertArrayHasKey('demo-data', $data['steps'], 'an omitted step is invisible to the wizard');
-		$this->assertTrue($data['steps']['register-check']['done']);
+		$this->assertArrayNotHasKey('register-check', $data['steps'], 'the register is repaired from the admin page now');
+		$this->assertTrue($data['registerReady']);
 
 	}//end testTheRetiredSeedStepIsNotReported()
 
 	/**
-	 * Every step the manifest declares must appear in the payload.
+	 * Every step the manifest declares must appear in the payload, and
+	 * nothing else.
 	 *
 	 * Read straight from the shipped manifest rather than from a literal list,
 	 * so adding a setup step without reporting it fails here instead of
-	 * silently producing a step no wizard can ever prompt for.
+	 * silently producing a step no wizard can ever prompt for. `info` and
+	 * `summary` steps are reported too (always done), so the payload names
+	 * every manifest step id (wizard-dataset-card-load).
 	 *
 	 * @return void
 	 */
 	public function testEveryActionableManifestStepIsReported(): void {
 		$manifest = json_decode(file_get_contents(__DIR__ . '/../../../src/manifest.json'), true);
-		$declared = [];
-		foreach (($manifest['setup']['steps'] ?? []) as $step) {
-			// `info` and `summary` carry no work, so the server has nothing to
-			// report for them by design.
-			if (in_array($step['type'], ['info', 'summary'], true) === true) {
-				continue;
-			}
-
-			$declared[] = $step['id'];
-		}
+		$declared = array_column(($manifest['setup']['steps'] ?? []), 'id');
 
 		$this->assertNotEmpty($declared, 'the manifest must declare actionable setup steps');
 
@@ -244,29 +239,34 @@ class SetupControllerStatusTest extends TestCase {
 	}//end testARecordedSeedDoesNotResurrectTheStep()
 
 	/**
-	 * An unprovisioned register blocks the app.
+	 * An unprovisioned register no longer holds the wizard open, but the
+	 * status still says the register is not ready.
+	 *
+	 * Initialising the register is an admin settings action now
+	 * (wizard-dataset-card-load), so no wizard step is required.
 	 *
 	 * @return void
 	 */
-	public function testRegisterCheckIsUnmetWithoutARegister(): void {
+	public function testAMissingRegisterIsReportedNotGated(): void {
 		$data = $this->controller([])->status()->getData();
 
-		$this->assertFalse($data['completed']);
-		$this->assertFalse($data['steps']['register-check']['done']);
+		$this->assertTrue($data['completed']);
+		$this->assertFalse($data['registerReady']);
+		$this->assertArrayNotHasKey('register-check', $data['steps']);
 
-	}//end testRegisterCheckIsUnmetWithoutARegister()
+	}//end testAMissingRegisterIsReportedNotGated()
 
 	/**
-	 * OpenRegister being unreachable is itself an unmet required step.
+	 * OpenRegister being unreachable reads as a register that is not ready.
 	 *
 	 * @return void
 	 */
-	public function testRegisterCheckIsUnmetWhenOpenRegisterIsUnavailable(): void {
+	public function testTheRegisterIsNotReadyWhenOpenRegisterIsUnavailable(): void {
 		$data = $this->controller($this->provisioned(), openRegisterOnline: false)->status()->getData();
 
-		$this->assertFalse($data['steps']['register-check']['done']);
+		$this->assertFalse($data['registerReady']);
 
-	}//end testRegisterCheckIsUnmetWhenOpenRegisterIsUnavailable()
+	}//end testTheRegisterIsNotReadyWhenOpenRegisterIsUnavailable()
 
 	/**
 	 * With the payout integration configured and no signing secret, the step
@@ -622,7 +622,7 @@ class SetupControllerStatusTest extends TestCase {
 			$this->provisioned() + ['demo_data_decided' => 'skipped', 'demo_dataset' => 'none']
 		)->status()->getData();
 		$this->assertTrue($done['steps']['demo-data']['done'], 'a recorded decline finishes the choice');
-		$this->assertTrue($done['steps']['load-demo-data']['done'], 'and leaves nothing to run');
+		$this->assertArrayNotHasKey('load-demo-data', $done['steps'], 'the cards load themselves; no load step is left');
 
 	}//end testDecliningTheDemoDataFinishesTheStep()
 
@@ -808,4 +808,68 @@ class SetupControllerStatusTest extends TestCase {
 
 	}//end testAConfigStepStoresItsFieldsAndSkipsTheRouteParameter()
 
+	/**
+	 * The card's Load button posts `{ dataset }`; the load records the pick.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 */
+	public function testTheCardPostsItsDatasetAndTheLoadRecordsTheChoice(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: ['objects' => 6, 'requested' => 6, 'refused' => 0, 'unchanged' => 0, 'registers' => 0, 'schemas' => 0],
+			requestParams: ['dataset' => 'demo'],
+		);
+
+		$data = $built['controller']->runAction(actionId: 'load-demo-data')->getData();
+
+		$this->assertTrue($data['success']);
+		$this->assertSame('demo', $built['written']['demo_dataset'] ?? null);
+		$this->assertSame('installed', $built['written']['demo_data_decided'] ?? null);
+
+	}//end testTheCardPostsItsDatasetAndTheLoadRecordsTheChoice()
+
+	/**
+	 * A posted dataset no card offers is refused, and nothing loads.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 */
+	public function testAnUnknownPostedDatasetIsRefusedAndNothingLoads(): void {
+		$built = $this->build(
+			config: $this->provisioned() + ['demo_dataset' => 'demo'],
+			demoResult: new \RuntimeException('install must not run'),
+			requestParams: ['dataset' => 'atlantis'],
+		);
+
+		$response = $built['controller']->runAction(actionId: 'load-demo-data');
+
+		$this->assertSame(400, $response->getStatus());
+		$this->assertStringContainsString('atlantis', $response->getData()['message']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAnUnknownPostedDatasetIsRefusedAndNothingLoads()
+
+	/**
+	 * A failed card load stores neither the pick nor the decision.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 */
+	public function testAFailedCardLoadStoresNothing(): void {
+		$built = $this->build(
+			config: $this->provisioned(),
+			demoResult: new \RuntimeException('OpenRegister is not installed.'),
+			requestParams: ['dataset' => 'demo'],
+		);
+
+		$data = $built['controller']->runAction(actionId: 'load-demo-data')->getData();
+
+		$this->assertFalse($data['success']);
+		$this->assertSame([], $built['written']);
+
+	}//end testAFailedCardLoadStoresNothing()
 }//end class

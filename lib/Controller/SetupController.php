@@ -106,9 +106,16 @@ class SetupController extends Controller {
 	/**
 	 * Report per-step setup status for the wizard.
 	 *
-	 * @return DataResponse `{ version, completed, steps: { <id>: { done } } }`.
+	 * No step is required any more. Initialising the register and schemas
+	 * moved to the admin settings page (wizard-dataset-card-load): its
+	 * Re-import configuration button runs the same forced import the
+	 * `init-register` action runs. `registerReady` travels as information,
+	 * not as a step.
+	 *
+	 * @return DataResponse `{ version, completed, registerReady, steps: { <id>: { done } } }`.
 	 *
 	 * @spec openspec/changes/first-time-setup/specs/first-time-setup/spec.md
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function status(): DataResponse {
@@ -128,7 +135,9 @@ class SetupController extends Controller {
 		// "no thanks" impossible to express.
 		$demoDecided = $this->config(key: self::DEMO_DATA_DECIDED_KEY) !== '';
 		$pickedDataset = $this->config(key: self::DATASET_KEY);
-		$completed = $registerDone;
+		// No step is required, so setup is complete by definition. A missing
+		// OpenRegister is the manifest's dependency gate, not a wizard step.
+		$completed = true;
 
 		// Dwangsom callback signing secret. Only meaningful once the payout
 		// integration is configured at all: with no dwangsom schema there is
@@ -151,29 +160,28 @@ class SetupController extends Controller {
 			|| $secretConfigured === true
 			|| $wizardDoneBefore === true;
 
-		if ($completed === true) {
-			$this->appConfig->setValueString('dossiq', 'setup_completed_version', (string)self::SETUP_VERSION);
-		}
+		$this->appConfig->setValueString('dossiq', 'setup_completed_version', (string)self::SETUP_VERSION);
 
 		$response = [
 			'version' => self::SETUP_VERSION,
 			'completed' => $completed,
+			'registerReady' => $registerDone,
 			// The choice step reads its options from here: it declares
 			// `optionsSource: datasets` and no options of its own, so a dataset
 			// missing from this list is a dataset nobody can pick.
 			'datasets' => $this->demoDataService->listChoices(),
+			// Exactly the ids of `manifest.setup.steps`: a step the server
+			// never reports stays open and reopens the wizard.
 			'steps' => [
-				'demo-data' => ['done' => ($pickedDataset !== '')],
-				// "None" is an ANSWER, so the load step is finished the moment
-				// it is chosen: there is nothing left for the operator to run.
-				'load-demo-data' => [
-					'done' => ($demoDecided === true || $pickedDataset === DemoDataService::NONE_DATASET),
-				],
-				'register-check' => ['done' => $registerDone],
+				'welcome' => ['done' => true],
+				// A pick without a load still counts: a wizard that predates
+				// `loadAction` can only record the pick.
+				'demo-data' => ['done' => ($demoDecided === true || $pickedDataset !== '')],
 				// Reported unconditionally so the wizard can tell "configured"
 				// from "never mentioned" — an unreported step is UNKNOWN to
 				// CnAppRoot and never prompts.
 				'dwangsom-secret' => ['done' => $dwangsomSecretDone],
+				'done' => ['done' => true],
 			],
 		];
 
@@ -200,10 +208,10 @@ class SetupController extends Controller {
 	/**
 	 * The first-run report: the minimum this instance needs, and the tour it lost.
 	 *
-	 * REPORTED, never gated. `register-check` stays the only required step,
-	 * because without a register nothing works at all, and an instance an
-	 * administrator deliberately leaves half configured is a legitimate
-	 * instance. An instance nobody can see the state of is not.
+	 * REPORTED, never gated. No wizard step is required: the register is
+	 * imported on install and repaired from the admin settings, and an
+	 * instance an administrator deliberately leaves half configured is a
+	 * legitimate instance. An instance nobody can see the state of is not.
 	 *
 	 * NOT folded into `steps`. A step is something CnSetupWizard prompts for,
 	 * and `testEveryActionableManifestStepIsReported` compares the declared
@@ -309,6 +317,8 @@ class SetupController extends Controller {
 			return $this->skipDemoData();
 		}
 
+		// No longer a wizard step: the admin settings page repairs the register
+		// (wizard-dataset-card-load). Kept for runbooks and scripts.
 		if ($actionId === 'init-register') {
 			$this->settingsService->loadConfiguration(force: true);
 			return new DataResponse(['success' => true, 'message' => 'Register and schemas initialised.']);
@@ -378,17 +388,32 @@ class SetupController extends Controller {
 	}//end runAction()
 
 	/**
-	 * Import the dataset the operator picked in the previous step (ADR-111 rule 4).
+	 * Import the dataset a card's Load button posted as `dataset`, or the
+	 * stored pick when nothing is posted (ADR-111 rule 4).
 	 *
 	 * @param string $actionId The action that asked, which decides whether an
 	 *                         unanswered choice is refused or means the shipped set.
 	 *
 	 * @return DataResponse The outcome, carrying the counts.
 	 *
-	 * @spec exclude Demo-data install action (ADR-111 rule 4); no per-app openspec change yet.
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
 	 */
 	private function loadDataset(string $actionId): DataResponse {
 		$picked = $this->config(key: self::DATASET_KEY);
+
+		// The card's Load button names its dataset in the body. An older wizard
+		// posts nothing and relies on the pick stored a step earlier. Nothing is
+		// stored before the load succeeds: a failed load must leave the step
+		// open for an operator who asked for data and got none.
+		$posted = $this->request->getParam('dataset');
+		if ($posted !== null) {
+			$refusal = $this->refuseDataset(value: $posted);
+			if ($refusal !== null) {
+				return $refusal;
+			}
+
+			$picked = (string)$posted;
+		}
 
 		// The legacy id carries no answer, so it means the shipped dataset. A
 		// caller that posts it has said which one by posting it.
@@ -404,6 +429,7 @@ class SetupController extends Controller {
 		}
 
 		if ($picked === DemoDataService::NONE_DATASET) {
+			$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
 			$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
 
 			return new DataResponse(['success' => true, 'message' => 'No example data was loaded.']);
@@ -418,6 +444,8 @@ class SetupController extends Controller {
 		// Recorded only after the import actually returned. Marking it first
 		// would let a failed install present as a finished step, and an import
 		// that stored nothing now throws above rather than returning zeroes.
+		// Loading IS choosing the set, so the pick is recorded too.
+		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, $picked);
 		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'installed');
 
 		// 🔴 THE COUNTS, ALWAYS, AND BOTH OF THEM. "Demo data installed" with no
@@ -448,6 +476,32 @@ class SetupController extends Controller {
 	}//end loadDataset()
 
 	/**
+	 * Refuse a posted dataset id no dataset answers to.
+	 *
+	 * @param mixed $value The posted value.
+	 *
+	 * @return DataResponse|null The refusal, or null when the dataset is known.
+	 *
+	 * @spec openspec/changes/wizard-dataset-card-load/specs/first-time-setup/spec.md
+	 */
+	private function refuseDataset(mixed $value): ?DataResponse {
+		$named = 'that';
+		if (is_scalar($value) === true) {
+			$named = (string)$value;
+		}
+
+		$known = array_column($this->demoDataService->listChoices(), 'id');
+		if (is_scalar($value) === true && in_array($named, $known, true) === true) {
+			return null;
+		}
+
+		return new DataResponse(
+			['success' => false, 'message' => 'No dataset is called "' . $named . '".'],
+			Http::STATUS_BAD_REQUEST,
+		);
+	}//end refuseDataset()
+
+	/**
 	 * Record that the operator declined the demo dataset.
 	 *
 	 * Its own action so "no thanks" is a decision the wizard can record. Without
@@ -459,9 +513,8 @@ class SetupController extends Controller {
 	 * @spec exclude Demo-data skip action (ADR-111 rule 4); no per-app openspec change yet.
 	 */
 	private function skipDemoData(): DataResponse {
-		// 🔴 IT ANSWERS *BOTH* STEPS. The wizard now has a choice step and a
-		// run-action step; closing only the second leaves the first outstanding,
-		// and CnAppRoot opens the wizard while ANY optional step is outstanding.
+		// Skipping IS choosing "None", so both keys are written: an older
+		// runbook may read either one.
 		$this->appConfig->setValueString('dossiq', self::DATASET_KEY, DemoDataService::NONE_DATASET);
 		$this->appConfig->setValueString('dossiq', self::DEMO_DATA_DECIDED_KEY, 'skipped');
 

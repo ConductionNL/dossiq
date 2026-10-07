@@ -8,7 +8,7 @@
 			:description="
 				t(
 					'dossiq',
-					'What this instance still needs before it can take a case. Reported, never required: only the register check blocks the app.',
+					'What this instance still needs before it can take a case. Reported, never required. Repair the register with the Re-import configuration button.',
 				)
 			"
 			:loading="!storesReady">

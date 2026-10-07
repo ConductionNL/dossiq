@@ -297,7 +297,10 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		const body = await readSetupStatus(page)
 
 		expect(body).not.toBeNull()
-		expect(body.steps).toHaveProperty('register-check')
+		// `register-check` is an admin settings action now, and the dataset
+		// cards load themselves (wizard-dataset-card-load).
+		expect(body.steps).not.toHaveProperty('register-check')
+		expect(body.steps).not.toHaveProperty('load-demo-data')
 		expect(body.steps).toHaveProperty('demo-data')
 		expect(body.steps).toHaveProperty('dwangsom-secret')
 		for (const id of Object.keys(body.steps)) {
@@ -342,9 +345,9 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 				'once the required steps are complete the optional secret step is settled',
 			).toBe(true)
 		} else {
-			// Without a provisioned register the wizard is gating anyway and
-			// the optional step is not what reopens it.
-			expect(second.steps['register-check'].done).toBe(false)
+			// No wizard step is required any more, so this branch should not
+			// run. If it does, the register state is what to read.
+			expect(second.registerReady).toBe(false)
 		}
 	})
 
@@ -530,9 +533,8 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 	// "Optional seed does not gate", which is a different scenario and is still
 	// about an offered `seed` step that no longer exists.
 	//
-	// Nothing about the test body changed in either branch. It still proves
-	// `register-check` is reported, which is the half of REQ-SETUP-PRO-001 that
-	// survives.
+	// It still proves a declared step (`demo-data`) is reported. `register-check`
+	// left the wizard for the admin settings page (wizard-dataset-card-load).
 	// @e2e openspec/specs/first-time-setup/spec.md#no-step-is-offered-that-the-wizard-cannot-fulfil
 	test('the wizard offers no step the seed action cannot fulfil', async ({
 		page,
@@ -552,7 +554,7 @@ test.describe('Setup — every step it offers is one it can finish', () => {
 		expect(
 			Object.keys(before?.steps ?? {}),
 			'the payload must still carry the steps the wizard does declare',
-		).toContain('register-check')
+		).toContain('demo-data')
 
 		const token = await requestToken(page)
 		// `/api/setup/action/{id}` — NOT `/run/{id}`, which answers 405 and whose

@@ -4,8 +4,8 @@
 
   FirstRunTab — the minimum this instance needs before it can take a case.
 
-  Reported, never gated. `register-check` is the only step the setup wizard
-  requires, because without a register nothing works at all. Everything here is
+  Reported, never gated. The setup wizard requires no step; the register is
+  repaired with Re-import configuration on this page. Everything here is
   named, read live, and left to the administrator: an instance somebody
   deliberately leaves half configured is a legitimate instance, and an instance
   nobody can see the state of is not.
