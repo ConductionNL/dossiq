@@ -19,4 +19,4 @@
 ## 4. Verification
 
 - [x] 4.1 composer check:strict, vitest, lint, format, test:l10n, manifest check, build.
-- [ ] 4.2 Live on :8099: close the wizard in one browser context, open dossiq in a fresh context, the wizard stays closed. The intro shows on the dwangsom step.
+- [x] 4.2 Live on :8099: close the wizard in one browser context, open dossiq in a fresh context, the wizard stays closed. The intro shows on the dwangsom step.
