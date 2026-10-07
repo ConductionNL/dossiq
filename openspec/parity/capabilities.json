@@ -3,12 +3,12 @@
 	"corpus": {
 		"repo": "ConductionNL/market-intelligence",
 		"file": "procest/_round4/tools/corpus-rows.json",
-		"rows": 225,
+		"rows": 240,
 		"pending": 164
 	},
 	"comparedOn": "2026-09-26",
-	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-10-02",
+	"rowsAddedOn": "2026-10-07",
+	"reratedOn": "2026-10-07",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -786,6 +786,150 @@
 			"to": "yes",
 			"cause": "corrected",
 			"reason": "Nextcloud Office is the platform office. dossiq#2642 (a4685e7a6) moved case documents into a real Nextcloud folder, and a row click in the case Files tab hands an office file to the Viewer and to Collabora (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:990`, `DashboardController.php:96-99`). `grep -rn WOPI lib src` returns nothing, as it should. Provider nextcloud (gap scan 2026-09-19, pack d, verdict platform)."
+		},
+		{
+			"id": "11.25",
+			"on": "2026-10-07",
+			"from": "partial",
+			"to": "yes",
+			"cause": "built",
+			"reason": "A status declares field rules (lib/Settings/dossiq_register.json:922, StatusTypeForm), publishing writes them onto the lifecycle states (CaseStateFieldRuleProjector.php:188), openregister field-rules-by-state enforces them and the case status strip shows them (CaseStatusDeclarationPanel). With the per-role rules of 13.8, hidden, read-only and required now apply per role and per status."
+		},
+		{
+			"id": "12.14",
+			"on": "2026-10-07",
+			"from": "partial",
+			"to": "yes",
+			"cause": "built",
+			"reason": "integriq listens to every openregister object write (Application.php:287,297) and its broker action publishes the event to Kafka REST, RabbitMQ HTTP or CloudEvents HTTP (EventService.php:1277, lib/Broker/Transport); an administrator picks the broker in the event subscription modal (SubscriptionActionFields.vue:153), so every case write can be streamed without dossiq code."
+		},
+		{
+			"id": "4.9",
+			"on": "2026-10-07",
+			"from": "yes",
+			"to": "partial",
+			"cause": "corrected",
+			"reason": "A handler still tags a document (informatieobject.keywords, edited in DocumentMetadataDialog.vue:114-121 from the Files tab row action), but since the Documents tab was retired on 2026-09-13 the keyword chips and the keyword filter have no caller (collectKeywords and filterGroupsByKeywords in src/utils/dossierHelpers.js), so the case page neither shows nor filters by them."
+		},
+		{
+			"id": "2.53",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). The complaint backend exists (ComplaintService, routes 898-925) but no page reaches it, so a user cannot register a complaint."
+		},
+		{
+			"id": "2.54",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). Suppliers and the contract hand-offs to shillinq and decidiq exist; tenders, bids, evaluation and award do not."
+		},
+		{
+			"id": "3.35",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). Advice and consultations are stored and listed in the queue, but no case tab requests them or shows the answers."
+		},
+		{
+			"id": "3.36",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). The personal queue orders work by urgency and deadline and shows the team workload."
+		},
+		{
+			"id": "5.20",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). dossiq declares the supplier audience to portaliq; the contract endpoints the supplier pages read are not built."
+		},
+		{
+			"id": "7.10",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). The LHS matrix and its recommendation exist; no case screen asks for one or records an override."
+		},
+		{
+			"id": "8.32",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). The penalty accrues and is shown; registering a notice of default and signalling the payout are not reachable."
+		},
+		{
+			"id": "10.20",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). A case carries an Iv3 taakveld; the cost report per taakveld is not built."
+		},
+		{
+			"id": "11.56",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). VTH case types and workflows are seeded; the VTH admin page and the case panels are not placed."
+		},
+		{
+			"id": "11.57",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). An administrator is guided through first-time setup, demo data included."
+		},
+		{
+			"id": "12.28",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "yes",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). A case can be shared with or transferred to another Nextcloud instance from its Sharing tab."
+		},
+		{
+			"id": "14.2",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). Social domain schemas and several pages exist; consent, classification, wijkteam access and seeded case types do not."
+		},
+		{
+			"id": "15.2",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "no",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). The subsidy backend exists but no page reaches it, so a user cannot process a grant."
+		},
+		{
+			"id": "16.2",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). Checklists can be configured; nobody can carry out an inspection with them yet."
+		},
+		{
+			"id": "17.2",
+			"on": "2026-10-07",
+			"from": null,
+			"to": "partial",
+			"cause": "added",
+			"reason": "Spec round row (decision 79). Tenants can be created and moved through their lifecycle; quotas, provisioning and billing are not wired."
 		}
 	],
 	"_competitorRerated": [
@@ -12293,6 +12437,88 @@
 			"addedOn": "2026-09-09"
 		},
 		{
+			"id": "2.53",
+			"area": "case-core",
+			"name": "Register and handle complaints under Awb chapter 9 with deadlines, hearing and disposition",
+			"name_nl": "Klachten registreren en afhandelen volgens Awb hoofdstuk 9 met termijnen, hoorzitting en afdoening",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "lib/Service/ComplaintService.php:154,309,343,387 registers a complaint, runs the Awb 9 deadlines, the hearing and the disposition; appinfo/routes.php:898-925 route them; no file under src/ calls those routes and no page or menu entry starts a complaint",
+				"owner": "ConductionNL/dossiq",
+				"spec": "openspec/specs/complaint-management",
+				"screen": {
+					"board": null,
+					"reason": "not designed: complaint overview with frequency analysis; a complaint itself runs on the case pages"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "none: no page, menu entry or action reaches the complaint routes",
+				"note": "Rated no rather than the partial the reader proposed: the backend is complete and nothing a user can open reaches it, which is the rule this file applied to fourteen rows on 2026-09-25. Missing: a complaint page or case-type entry that starts and works a complaint.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
+			"id": "2.54",
+			"area": "case-core",
+			"name": "Run tenders from publication through evaluation, award and contract management",
+			"name_nl": "Aanbestedingen voeren van publicatie via beoordeling en gunning tot contractbeheer",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "specified",
+				"evidence": "only the supplier* schemas are in the register; the case Contract tab is shillinq's; a contract decision is delegated to decidiq (lib/Service/ContractDecisionDelegationService.php:195, ApprovalGate.php:110); no tender, bid, evaluation, award, eForms/TED or threshold schema or page; the ContractController and ScanExpiringContractsJob the specs name do not exist",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/dossiq-procurement-tender-management",
+					"openspec/specs/dossiq-procurement-publication-platform",
+					"openspec/specs/dossiq-procurement-evaluation-award",
+					"openspec/specs/dossiq-procurement-contract-lifecycle",
+					"openspec/specs/dossiq-procurement-supplier-management",
+					"openspec/specs/dossiq-procurement-compliance",
+					"openspec/specs/dossiq-procurement-spend-analytics-integration",
+					"openspec/specs/dossiq-procurement-system-integration",
+					"openspec/specs/contract-decision-delegation"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: tender pages, full profile"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "case Contract tab (shillinq) and the contract decision raised in decidiq",
+				"note": "Partial covers suppliers and the contract hand-offs only; the tender suite itself (publication, bids, evaluation, award) is not built. Missing: tenders, bids, evaluation, award, eForms/TED, thresholds and supplier pages.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
 			"id": "3.1",
 			"area": "tasks-and-phases",
 			"name": "BPMN process engine",
@@ -13089,6 +13315,89 @@
 			"addedOn": "2026-09-09"
 		},
 		{
+			"id": "3.35",
+			"area": "tasks-and-phases",
+			"name": "Request advice and consultations on a case and track the responses and deadlines",
+			"name_nl": "Advies en consultatie op een zaak aanvragen en de reacties en termijnen bewaken",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "lib/Service/AdviceService.php:110,359 and the ConsultationService routes (appinfo/routes.php:735-745) store requests, responses and deadlines; queue items link to CaseDetail tabs advice and consultations that do not exist; AdviceDetail is read-only; AdviesPanel and AdviceRequestPanel are registered and placed nowhere",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/advice-management",
+					"openspec/specs/consultation-management"
+				],
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqZaakBesluiten",
+						"DqZaak",
+						"DqUwWachtrij"
+					]
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "/my-queue (consultations waiting on you), /advice/:id (AdviceDetail, read-only), Settings > consultation tab",
+				"note": "Missing: a place on the case to request advice or a consultation and to read the answers (the advice and consultations tabs the queue links to). Pending proposal 3.32 covers outside advice.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
+			"id": "3.36",
+			"area": "tasks-and-phases",
+			"name": "Work the personal case queue in order of urgency and deadline, with a team workload summary",
+			"name_nl": "De persoonlijke werkvoorraad afwerken op volgorde van urgentie en termijn, met een overzicht van de teambelasting",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "built",
+				"evidence": "lib/Service/WorkQueueService.php:53-62,137-165,270 orders the queue by urgency and deadline (appinfo/routes.php:379-380); MyWorkCards.vue sorts by urgency and WorkloadSummaryBar shows the team load",
+				"owner": "ConductionNL/dossiq",
+				"spec": "openspec/specs/werkvoorraad-intelligent-queue",
+				"screen": {
+					"canvas": "5NkFW28vZUUij43xzxHg5a",
+					"board": [
+						"DqUwWachtrij",
+						"DqAanMijToegewezen",
+						"DqTeamwachtrij"
+					]
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "My work (MyWorkCards urgency sort, WorkloadSummaryBar)",
+				"note": "The open change one-personal-queue widens what feeds the queue; ordering and the workload summary are built.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
 			"id": "4.1",
 			"area": "documents",
 			"name": "Document as a metadata record holding files",
@@ -13382,7 +13691,7 @@
 			"area": "documents",
 			"name": "Document labels or tags",
 			"name_nl": "Labels of tags op documenten",
-			"dossiq": "yes",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -13403,7 +13712,7 @@
 					"board": "DqZaakDocumenten"
 				},
 				"reachedOn": "#CaseDetail Files tab > row > Document properties",
-				"note": "Re-read 2026-10-07 while writing its spec (document-zaakdossier REQ-ZAK-024): a handler tags a document, but the keywords are no longer shown on the row and the case page has no keyword filter, so the row reads as partial. Missing: keyword chips and a keyword filter on the Files tab (nextcloud-vue files-browser-columns, the same gap as row 4.8). Proposed rating partial (from yes), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body."
+				"note": "Rating moved yes to partial on 2026-10-07 (decision 82), found while writing its spec (document-zaakdossier REQ-ZAK-024): a handler tags a document, but the keywords are no longer shown on the row and the case page has no keyword filter. Missing: keyword chips and a keyword filter on the Files tab (nextcloud-vue files-browser-columns, the same gap as row 4.8)."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 has no tag or label field; the only classification is the fixed category (Indgående, Udgående, Intern) and document type in src/components/EditDocumentDialog.vue:10 | round 2 drive: procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\"",
@@ -14439,6 +14748,42 @@
 			}
 		},
 		{
+			"id": "5.20",
+			"area": "parties-and-contacts",
+			"name": "Suppliers sign in to see their own tenders, contracts and messages",
+			"name_nl": "Leveranciers loggen in en zien hun eigen aanbestedingen, contracten en berichten",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "lib/Portal/PortalContributionProvider.php declares the supplier audience and its collections, rendered by portaliq (ADR-046); the admin page /settings/supplier-users manages supplier accounts; the ContractController endpoints the spec names do not exist",
+				"owner": "ConductionNL/dossiq",
+				"spec": "openspec/specs/supplier-portal",
+				"screen": {
+					"board": null,
+					"reason": "no screen: supplier portal screens belong to the portaliq row"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "Settings > supplier users; supplier pages on the portaliq site",
+				"note": "Missing: the contract endpoints the supplier pages read (ContractController in supplier-portal), and with them a supplier's own contracts.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
 			"id": "6.1",
 			"area": "communication",
 			"name": "Journal notes on a case",
@@ -15373,6 +15718,46 @@
 			}
 		},
 		{
+			"id": "7.10",
+			"area": "decisions",
+			"name": "Pick an enforcement intervention from the national enforcement strategy matrix and record overrides",
+			"name_nl": "Een handhavingsinterventie kiezen uit de Landelijke Handhavingsstrategie en afwijkingen vastleggen",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "LhsController recommend, override and lookup have no caller in src/; the matrix migrates to decision tables (occ); the LhsRecommendations pages are read-only and reachable by URL only",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/enforcement-lhs",
+					"openspec/specs/lhs-decision-table",
+					"openspec/specs/vth-lhso-classification"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: enforcement panel and wizard on a handhaving case"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "LhsRecommendations pages, by URL only (no menu entry, read-only)",
+				"note": "Missing: the enforcement panel or wizard on a handhaving case that asks for a recommendation and records an override.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
 			"id": "8.1",
 			"area": "deadlines",
 			"name": "Legal and service lead time per case type with target date",
@@ -15925,6 +16310,46 @@
 				"zac": "zac@1.0.316 src/main/kotlin/nl/info/client/zgw/shared/ZgwApiService.kt:392-394 einddatumGepland and uiterlijkeEinddatumAfdoening are LocalDate; overdue is a date comparison in src/main/app/src/app/shared/utils/date-conditionals.ts"
 			},
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "8.32",
+			"area": "deadlines",
+			"name": "Register a notice of default, accrue the statutory penalty and signal the payout to finance",
+			"name_nl": "Ingebrekestelling registreren, dwangsom opbouwen en uitbetaling aan financiën doorgeven",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "DwangsomCalculationService accrues the penalty from TermijnTimerFiredListener; NoticeOfDefaultService is routed and has no caller; DwangsomUitbetalingService is never called; the TermijnDashboard audit widget and BezwaarDetail show the amounts, display only",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/dwangsom-calculation",
+					"openspec/specs/ingebrekestelling",
+					"openspec/specs/financial-integration"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: dwangsom and ingebrekestelling card on the case"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "TermijnDashboard audit widget; BezwaarDetail dwangsom fields (display only)",
+				"note": "Missing: registering the notice of default from the case, and the payout signal to finance.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
 		},
 		{
 			"id": "9.1",
@@ -16872,6 +17297,42 @@
 			"addedOn": "2026-09-09"
 		},
 		{
+			"id": "10.20",
+			"area": "reporting",
+			"name": "Report case costs per Iv3 taakveld, with 2023 refinement codes rolled up to their parent",
+			"name_nl": "Zaakkosten rapporteren per Iv3-taakveld, met de verfijningscodes van 2023 samengevoegd onder hun hoofdcode",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "Iv3TaakveldList holds the taakvelden and a picker sets one on the case; there is no Iv3ReportService and no report page",
+				"owner": "ConductionNL/dossiq",
+				"spec": "openspec/specs/iv3-taakveld-2023-refinement",
+				"screen": {
+					"board": null,
+					"reason": "no screen: reporting classification"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "taakveld picker on the case (Iv3TaakveldList)",
+				"note": "Missing: the quarterly aggregation (Iv3ReportService) and a page or export that reports costs per taakveld.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
 			"id": "11.1",
 			"area": "configuration",
 			"name": "Case type editor in the UI",
@@ -17769,7 +18230,7 @@
 			"area": "configuration",
 			"name": "Fields hidden, required or read only by role and case state",
 			"name_nl": "Velden verborgen, verplicht of alleen-lezen per rol en zaakstatus",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -17798,7 +18259,7 @@
 				],
 				"evidence": "role half: field-rules-declared (row 13.8, fieldRoleRules, src/utils/fieldRoleRules.js); state half: a status declares fieldRules (lib/Settings/dossiq_register.json:922, edited in src/views/settings/components/StatusTypeForm.vue via src/utils/statusFieldRules.js), lib/Service/Status/CaseStateFieldRuleProjector.php:188 publishes them onto x-openregister-lifecycle.states.<status>.fields when the case type is published (lib/Service/CaseTypePublishService.php:72), and openregister field-rules-by-state (archived 2026-10-05) enforces them and returns @self.fieldRules (openregister lib/Service/Object/RenderObject.php:2421), which the case page reads (src/services/caseAccessApi.js:571, src/components/case/CaseStatusDeclarationPanel.vue)",
 				"owner": "ConductionNL/openregister",
-				"note": "Re-read 2026-10-07: openregister archived field-rules-by-state on 2026-10-05 and dossiq declares, publishes and shows the rules (what-a-status-declares, still an open change here). Hidden, read-only and required now apply per role and per status. Proposed rating yes (from partial), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body.",
+				"note": "Rating moved partial to yes on 2026-10-07 (decision 82): openregister archived field-rules-by-state on 2026-10-05 and dossiq declares, publishes and shows the rules (what-a-status-declares, still an open change here). Hidden, read-only and required apply per role and per status.",
 				"screen": {
 					"board": null,
 					"reason": "not designed yet: field rules per role and state"
@@ -17857,6 +18318,84 @@
 				"zac": "zac@1.0.316 no kennisbank route in src/main/app/src/app/app-routing.module.ts; 'knowledge' hits are mail acknowledgements (src/main/app/src/app/mail/ontvangstbevestiging)"
 			},
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "11.56",
+			"area": "configuration",
+			"name": "Run permit, supervision and enforcement cases from seeded VTH case types and workflows",
+			"name_nl": "Vergunning-, toezicht- en handhavingszaken afhandelen met ingerichte VTH-zaaktypen en workflows",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "specified",
+				"evidence": "VTH case types and workflows are seeded (appinfo/info.xml:384-385, lib/Settings/vth-templates); the ChecklistsTab admin section works; the LhsRecommendations page has no menu entry; the VTH CaseDetail panels are registered (src/registry.js:1242-1255) and never placed",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/vth-module",
+					"openspec/specs/vth-admin-settings",
+					"openspec/specs/vth-config-foundation",
+					"openspec/specs/vth-workflow-templates",
+					"openspec/specs/vth-case-type-seed"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: VTH settings page under Advanced, and the VTH panels on the case"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "Settings > Checklists; VTH case types available after install",
+				"note": "Missing: the VTH admin page (workflows, leges, beschikking templates, DSO), placing the VTH panels on the case, and callers for the VTH template and DSO intake.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
+			"id": "11.57",
+			"area": "configuration",
+			"name": "Get guided through first-time setup, including loading demo data",
+			"name_nl": "Bij de eerste ingebruikname door de inrichting geleid worden, inclusief het laden van demodata",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "built",
+				"evidence": "src/manifest.json:5-50 declares the setup steps, rendered by CnSetupWizard; lib/Controller/SetupController.php runs the actions server-side and reports their status",
+				"owner": "ConductionNL/dossiq",
+				"spec": "openspec/specs/first-time-setup",
+				"screen": {
+					"board": null,
+					"reason": "not designed: setup wizard for administrators"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "setup wizard on first open (CnSetupWizard)",
+				"note": "Rated yes. It would read partial if the requirement that the wizard waits until the register is ready is held to. The open change wizard-dataset-card-load folds the demo data choice and its load into one step.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
 		},
 		{
 			"id": "12.1",
@@ -18344,7 +18883,7 @@
 			"area": "integrations",
 			"name": "Message broker or event streaming",
 			"name_nl": "Berichtenmakelaar of gebeurtenisstromen",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "partial",
@@ -18359,7 +18898,7 @@
 				"evidence": "integriq lib/AppInfo/Application.php:287,297 listens to openregister ObjectCreatedEvent and ObjectUpdatedEvent, so every case write is an integriq event; lib/Service/EventService.php:1277 dispatches action.kind 'broker' through lib/Broker/BrokerTransportRegistry.php to Kafka REST, RabbitMQ HTTP or CloudEvents HTTP (lib/Broker/Transport/*); an administrator picks the broker in the event subscription modal (src/modals/EventSubscription/SubscriptionActionFields.vue:153)",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/event-broker-transport",
-				"note": "Re-read 2026-10-07: integriq archived event-broker-transport on 2026-09-29. dossiq's own lib/Service/Transitions/WebhookHandler.php stays the per-transition webhook; streaming case events to a broker is integriq's and dossiq consumes it without code of its own. Proposed rating yes (from partial), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body.",
+				"note": "Rating moved partial to yes on 2026-10-07 (decision 82): integriq archived event-broker-transport on 2026-09-29. dossiq's own lib/Service/Transitions/WebhookHandler.php stays the per-transition webhook; streaming case events to a broker is integriq's and dossiq consumes it without code of its own.",
 				"screen": {
 					"board": null,
 					"reason": "backend: event broker transport"
@@ -18682,6 +19221,42 @@
 				"zac": "zac@1.0.316 the same grep over src/main returns nothing | round 3 drive: procest/zac/round3/rows/rows-11-13.md:61 \"no | zero hits for llm, openai, anthropic or mcp under `src/main`\"",
 				"openzaak": "openzaak@1.30.0 the same grep over src/openzaak returns nothing"
 			}
+		},
+		{
+			"id": "12.28",
+			"area": "integrations",
+			"name": "Share or transfer a case to another Nextcloud instance and follow its shared activity",
+			"name_nl": "Een zaak delen met of overdragen aan een andere Nextcloud-omgeving en de gedeelde activiteit volgen",
+			"dossiq": "yes",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "built",
+				"evidence": "CaseSharingTab on the case (src/manifest.json:3497-3502, src/registry.js:1213); lib/Service/Sharing/FederatedCaseShareService.php:96-172 shares a redacted snapshot over openregister's federation leaf and fails closed without it; PublicFederatedTransferPage (src/manifest.json:5372) receives a transfer",
+				"owner": "ConductionNL/dossiq",
+				"spec": "openspec/specs/federated-case-collaboration",
+				"screen": {
+					"board": null,
+					"reason": "not designed: share a case with another organisation over federation (the code reader named DqZaak, whose tab list draws no sharing tab)"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "#CaseDetail Sharing tab (CaseSharingTab); public federated transfer page",
+				"note": "Built on openregister's federation leaf; without it sharing fails closed.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
 		},
 		{
 			"id": "13.1",
@@ -19358,6 +19933,171 @@
 				"zac": "zac@1.0.316 grep -riE 'watcher|volgen|abonne' over src/main/kotlin/nl/info/zac and src/main/app/src/app finds no case follow; signaleringen go to the assignee or its group (admin groepen settings, admin.routes.ts:13)"
 			},
 			"addedOn": "2026-09-09"
+		},
+		{
+			"id": "14.2",
+			"area": "case-plan-and-services",
+			"name": "Handle Wmo, Jeugdwet and Participatiewet cases with consent and special-category data safeguards",
+			"name_nl": "Wmo-, Jeugdwet- en Participatiewetzaken behandelen met toestemming en waarborgen voor bijzondere persoonsgegevens",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "specified",
+				"evidence": "lib/Settings/register.d/50-sociaal-domein.json declares 13 schemas; pages for needs assessments, MDO, re-integration and the data breach register; the family-plan widget and CrossDomainLookupDialog",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/dossiq-sociaal-domein-wmo",
+					"openspec/specs/dossiq-sociaal-domein-jeugdwet",
+					"openspec/specs/dossiq-sociaal-domein-participatiewet",
+					"openspec/specs/dossiq-sociaal-domein-avg-consent"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: indicatiestelling on the case, AVG classification block on New case and consent tracking"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "needs assessment, MDO, re-integration and data breach register pages; family-plan widget",
+				"note": "Missing: the consent and classification UI, wijkteam-only access, seeded Wmo, Jeugdwet and Participatiewet case types, and the anonymised export.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
+			"id": "15.2",
+			"area": "money-on-the-case",
+			"name": "Process grants from application through advances to final settlement",
+			"name_nl": "Subsidies verwerken van aanvraag via voorschotten tot vaststelling",
+			"dossiq": "no",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "specified",
+				"evidence": "lib/Controller/SubsidieController.php and lib/Service/Subsidie with 9 schemas; no page and no caller in src/; VaststellingService no longer appends kosten (ADR-081), contrary to subsidie-settlement-case-costs",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/subsidieverlening-keten",
+					"openspec/specs/subsidie-settlement-case-costs"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: subsidy chain: voorschotten, verplichtingen and vaststelling on the case"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "none: no page or caller reaches the subsidy routes",
+				"note": "Rated no rather than the partial the reader proposed: nothing a user opens reaches the subsidy backend (same rule as the 2026-09-25 rows). subsidie-settlement-case-costs contradicts ADR-081 and needs a decision before it is built.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
+			"id": "16.2",
+			"area": "field-work-and-offline",
+			"name": "Carry out inspections with checklists and photos in the field, also without a connection",
+			"name_nl": "Inspecties met checklists en foto's in het veld uitvoeren, ook zonder verbinding",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "checklist admin CRUD works; submitResult has no caller; the inspection, forms and photos widgets are not placed; the offline leaf is configured and not placed; the FieldEvidence and OfflineSync admin lists exist and their queue is never filled",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/inspection-checklists",
+					"openspec/specs/inspection-forms-via-forms-leaf",
+					"openspec/specs/vth-mobile-inspection",
+					"openspec/specs/mobiel-inspectie-offline"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: inspection panel on a toezicht case, mobile and offline inspection screen"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "Settings > Checklists; FieldEvidence and OfflineSync admin lists",
+				"note": "Missing: an inspection panel on the case that fills a checklist, takes photos and submits the result, and the offline path that feeds the sync queue. Pending proposal 16.1 covers offline.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
+		},
+		{
+			"id": "17.2",
+			"area": "multi-organisation",
+			"name": "Run several tenants with a lifecycle, quotas, billing, onboarding and mandate checks",
+			"name_nl": "Meerdere tenants beheren met levenscyclus, quota, facturatie, onboarding en mandaatcontrole",
+			"dossiq": "partial",
+			"opencase": "unknown",
+			"gzac": "unknown",
+			"zaaksysteem": "unknown",
+			"zac": "unknown",
+			"openzaak": "unknown",
+			"provider": "dossiq",
+			"providerHow": "note-cites-dossiq-code",
+			"built": {
+				"state": "building",
+				"evidence": "tenants CRUD and lifecycle, the onboarding tab and MandateValidationMiddleware work; the provision and usage actions are not wired; no billing UI; quotas are not enforced",
+				"owner": "ConductionNL/dossiq",
+				"spec": [
+					"openspec/specs/multi-tenancy",
+					"openspec/specs/tenant-crud-lifecycle",
+					"openspec/specs/tenant-lifecycle",
+					"openspec/specs/tenant-quotas",
+					"openspec/specs/tenant-billing",
+					"openspec/specs/tenant-onboarding",
+					"openspec/specs/tenant-mandate"
+				],
+				"screen": {
+					"board": null,
+					"reason": "not designed: tenant billing dashboard and onboarding progress page; the rest is backend"
+				},
+				"readOn": "2026-10-07",
+				"reachedOn": "Settings > Tenants (CRUD, lifecycle, onboarding tab)",
+				"note": "Missing: wiring provision and usage, enforcing quotas, and a billing view.",
+				"source": "spec round 2026-10-07, decision 79; rated from code in dossiq/spec-round/r2/groups-11-15-ratings.md"
+			},
+			"evidence": {
+				"opencase": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); OpenCase has not been read against it",
+				"gzac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); GZAC has not been read against it",
+				"zaaksysteem": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); xxllnc Zaken has not been read against it",
+				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
+				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
+			},
+			"addedOn": "2026-10-07"
 		}
 	],
 	"pending": [
