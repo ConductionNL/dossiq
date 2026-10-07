@@ -123,10 +123,12 @@ class InboundEmailJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
 		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
 		} catch (ServiceAccountUnavailableException $e) {
 			// Already logged as an error and told to the admins. Nothing was
 			// read, sent or written; the next run tries again.
@@ -137,15 +139,11 @@ class InboundEmailJob extends TimedJob {
 	/**
 	 * Run a single sweep.
 	 *
-	 * @param mixed $argument Job argument (unused).
-	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
 	 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
 	 */
-	private function work(mixed $argument): void {
+	private function work(): void {
 		try {
 			if ($this->appManager->isInstalled('openregister') === false) {
 				return;

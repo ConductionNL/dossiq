@@ -108,10 +108,12 @@ class PaymentStateProjectionJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
 		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
 		} catch (ServiceAccountUnavailableException $e) {
 			// Already logged as an error and told to the admins. Nothing was
 			// read, sent or written; the next run tries again.
@@ -122,15 +124,11 @@ class PaymentStateProjectionJob extends TimedJob {
 	/**
 	 * Refresh the payment state of every open case.
 	 *
-	 * @param mixed $argument The job argument, unused.
-	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 *
 	 * @spec openspec/changes/fees-and-payments-on-the-case/specs/financial-integration/spec.md#requirement-the-payment-state-is-on-the-case-and-read-from-shillinq-req-fee-02
 	 */
-	private function work(mixed $argument): void {
+	private function work(): void {
 		if ($this->appManager->isInstalled(CasePaymentReader::MONEY_APP) === false) {
 			// No money app, so no money facts to project. Deliberately NOT a
 			// sweep that writes `notRequired` everywhere: an instance that

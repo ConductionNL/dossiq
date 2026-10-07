@@ -80,10 +80,12 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) The job list hands every job an argument; this one takes none.
 	 */
 	protected function run($argument): void {
 		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
 		} catch (ServiceAccountUnavailableException $e) {
 			// Already logged as an error and told to the admins. Nothing was
 			// read, sent or written; the next run tries again.
@@ -94,16 +96,11 @@ class ResetMonthlyQuotasJob extends TimedJob {
 	/**
 	 * Reset monthly quotas for all tenants when their period is due.
 	 *
-	 * @param mixed $argument Job argument (unused).
-	 *
 	 * @return void
-	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
-	 * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
 	 *
 	 * @spec openspec/specs/tenant-quotas/spec.md#requirement-monthly-quota-reset-req-005-d
 	 */
-	private function work(mixed $argument): void {
+	private function work(): void {
 		// IAppManager::getInstalledApps() declares its array return in PHPDoc
 		// only, so normalise defensively before the membership test.
 		$installed = (array)$this->appManager->getInstalledApps();

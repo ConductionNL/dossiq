@@ -84,7 +84,7 @@ class AdviceDeadlineJob extends TimedJob {
 	 */
 	protected function run($argument): void {
 		try {
-			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
 		} catch (ServiceAccountUnavailableException $e) {
 			// Already logged as an error and told to the admins. Nothing was
 			// read, sent or written; the next run tries again.
@@ -95,13 +95,10 @@ class AdviceDeadlineJob extends TimedJob {
 	/**
 	 * Process the advice deadlines, as the service account.
 	 *
-	 * @param mixed $argument The job argument (unused).
-	 *
 	 * @return void
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
 	 */
-	private function work(mixed $argument): void {
+	private function work(): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
 			return;
 		}
