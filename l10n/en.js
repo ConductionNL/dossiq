@@ -4381,6 +4381,7 @@ OC.L10N.register(
         "Nothing processed yet": "Nothing processed yet",
         "Nothing recorded yet": "Nothing recorded yet",
         "Nothing to do on this case right now": "Nothing to do on this case right now",
+        "Nothing to show for your team yet": "Nothing to show for your team yet",
         "Nothing to sign off": "Nothing to sign off",
         "Nothing was deleted": "Nothing was deleted",
         "Notice of Default": "Notice of Default",

@@ -35,6 +35,7 @@ import { TODAY_DELTA_RE } from '@conduction/nextcloud-vue/src/utils/sentinelToke
 import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const MANIFEST_PATH = path.join(ROOT, 'src', 'manifest.json')
@@ -512,7 +513,7 @@ describe('the relative-date tokens the windows are built from', () => {
 function dashboardWidgets() {
 	const byId = {}
 	for (const pageId of ['Dashboard', 'MyWorkHome']) {
-		for (const widget of page(pageId).config.widgets) {
+		for (const widget of pageWidgets(page(pageId))) {
 			byId[widget.id] = widget
 		}
 	}

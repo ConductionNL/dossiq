@@ -1088,7 +1088,6 @@
 			"title": "My Work",
 			"_note": "The app's landing page (dashboard-my-work-split). Was three of the eleven widgets on the combined Dashboard page; split out because the Dashboard answers \"how is the team doing\" while this answers \"what do I do first today\", and a handler opening the app wants the second question, not the first. `slots.widget-my-work` moved here for the same reason `_note` on the old Dashboard page warned about: a `type: \"custom\"` widget resolves ONLY through the page's own top-level `slots` map, never through one nested under `config`.",
 			"config": {
-				"userLayout": true,
 				"appId": "dossiq",
 				"pageId": "MyWorkHome",
 				"description": "Your open tasks, deadlines and open cases",
@@ -1133,223 +1132,523 @@
 						}
 					}
 				],
-				"widgets": [
+				"_viewsNote": "landing-views. The landing page holds two VIEWS behind one switch, My work and My team (nextcloud-vue 2.66.0 page views, `views` and `defaultView`). The chosen view is in the address (`?view=team`) and in the reader's preferences, so a team lead who reads My team opens on it next time. `mine` is what this page showed before, unchanged. `team` holds widgets the Dashboard page already declares, copied without their notes: the shared queue (the Dashboard's `your-teams-queue` preset, the Queue page's own filter) and the team-wide counts and charts. tests/vitest/landingViews.spec.js fails when a copy drifts from the Dashboard's definition. The page's own grid is EMPTY on purpose: the library draws a view's grid below the page's own, and in the full structure the switch sits in the page header. The simple structure puts a greeting on the page grid and lets the greeting draw the switch. `userLayout` IS GONE from this page: a reader's own arrangement covers the page's own grid only, never a view's grid (nextcloud-vue 2.66.0, CnDashboardPage gridSections), so keeping the key would load and save an arrangement of nothing. `kpi-sla-compliance` stays on the Dashboard only: it is gated on roles and on a visibility endpoint, and a view is the wrong place to find out whether the library applies `roles` there.",
+				"viewsLabel": "Whose work",
+				"defaultView": "mine",
+				"views": [
 					{
-						"id": "my-work",
-						"type": "custom",
-						"title": "My work",
-						"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
-						"content": {
-							"limit": 10,
-							"rowRoute": "TaskDetail",
-							"viewAllRoute": {
-								"name": "Tasks"
+						"id": "mine",
+						"label": "My work",
+						"widgets": [
+							{
+								"id": "my-work",
+								"type": "custom",
+								"title": "My work",
+								"_note": "remove-casetask 2.3. This tile read `register: dossiq, schema: caseTask`, a store nothing writes any more. The read answered 200, so the page rendered a table of rows no writer had touched since the engine took over, and it would have gone empty the day that schema is deleted. It now reads OpenRegister's task engine through `useEngineTaskStore`, the seam every other task surface in dossiq already reads. TYPE is the interim. `type: \"custom\"` resolves through the page slot `widget-my-work` in this page's `slots` map, because [blocked: nextcloud-vue 2.46.0 ships a `tasks` entity source for INDEX pages only, `src/composables/indexSources.js`, and no widget equivalent], so no manifest key can name this list. TARGET: back to a generic widget the day the library grows a task source for widgets, at which point `src/views/widgets/MyWorkWidget.vue` and its registry entry are deleted. `limit`, `rowRoute`, `viewAllRoute`, `viewAllLabel` and `emptyText` are kept as written and the component reads every one of them, so the swap back is a retype and not a rewrite. `viewAllRoute` CARRIES NO QUERY, and it used to carry `assignee: @me` plus `isTerminalStatus: false`. remove-casetask 2.2 moved the Tasks index onto `entitySource: \"tasks\"`, and a named source reads NOTHING from the route: `useNamedSource.loadActive()` merges the page's `sourceConfig` with the active quick-filter tab and never looks at `$route.query`, and CnIndexPage's `$route.query` watcher is guarded on `isSelfFetchMode`, which a named source is not. The old query therefore did not narrow the list, it was simply ignored, and a query left in place would claim a filter the page does not apply. View all lands on the index's default All tab; the reader's own tab is Mine, one chip away. It comes back the day a named source grows the `?key=value` grammar `resolveQueryFilters` already gives a self-fetching one. The Case column is NOT kept: the engine answers the case in its `subject` block, that block came back null on all fifty rows the live instance returned on 2026-09-10, and a column blank on every row is the same looks-fine-shows-nothing failure this widget is being fixed for. The cause is in OpenRegister's TaskInboxService, which takes its object mapper as an optional constructor argument and gets null.",
+								"content": {
+									"limit": 10,
+									"rowRoute": "TaskDetail",
+									"viewAllRoute": {
+										"name": "Tasks"
+									},
+									"viewAllLabel": "View all",
+									"emptyText": "You have no open tasks"
+								}
 							},
-							"viewAllLabel": "View all",
-							"emptyText": "You have no open tasks"
-						}
+							{
+								"id": "deadlines",
+								"type": "object-table",
+								"title": "Deadlines",
+								"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"deadline": {
+												"lte": "@today+3d"
+											}
+										},
+										"extend": ["calculations"],
+										"order": {
+											"deadline": "asc"
+										},
+										"limit": 10
+									},
+									"columns": [
+										{
+											"key": "title",
+											"label": "Case",
+											"cellClass": "cn-cell--strong"
+										},
+										{
+											"key": "daysUntilDeadline",
+											"label": "Days left",
+											"formatter": "conditionalPhrase",
+											"formatterOptions": {
+												"negative": "{n} days overdue",
+												"zero": "Due today",
+												"positive": "{n} days remaining"
+											},
+											"cellClass": "cn-cell--muted cn-cell--end"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"rowClass": [
+										{
+											"when": {
+												"field": "daysUntilDeadline",
+												"op": "lt",
+												"value": 0
+											},
+											"class": "cn-row--danger"
+										}
+									],
+									"_viewAllNote": "one-case-list A22, triage item 4. The query is this table's OWN filter in the flat bracket grammar, key for key, and `dashboardViewAllRoutes.spec.js` holds that invariant for every tile: a table that counts one set of cases and a View all that lands on another is the dropped filter this fixes. The nested `{ deadline: { lte } }` form belongs in a `source.filter`, which the widget reads, and NOT in a route query, which `buildQueryString` would JSON-stringify into a literal object string that matches nothing. Note the WINDOW: this table is overdue AND due within three days, wider than the Cases page's Overdue chip, so it deliberately does not carry that chip's filter. `kpi-overdue` is the widget whose count the Overdue chip reproduces exactly, and that equality is asserted. CnIndexPage merges the query into the fetch under the page's own filter, so the filter arrives and the list is right; what it does NOT do is activate a matching chip, because `resolveInitialQuickFilterIndex` reads only `default`. The reader lands on All with the query applied and no chip showing why, and naming a chip from a query needs a nextcloud-vue change.",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"deadline[lte]": "@today+3d"
+										}
+									},
+									"viewAllLabel": "View all",
+									"hideHeader": false,
+									"borderless": true,
+									"emptyText": "No deadlines in the next three days"
+								}
+							},
+							{
+								"id": "open-cases",
+								"type": "object-table",
+								"title": "Open Cases",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"order": {
+											"startDate": "desc"
+										},
+										"limit": 7
+									},
+									"columns": [
+										{
+											"key": "title",
+											"cellClass": "cn-cell--strong"
+										},
+										{
+											"key": "identifier",
+											"cellClass": "cn-cell--muted cn-cell--end"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false"
+										}
+									},
+									"viewAllLabel": "View all",
+									"hideHeader": true,
+									"borderless": true,
+									"emptyText": "No cases found"
+								}
+							},
+							{
+								"id": "followed-cases",
+								"type": "object-table",
+								"title": "Cases you follow",
+								"_note": "case-followers, row 13.18. The cases this reader subscribed to, over OpenRegister's `_watching` lens (object-watchers). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the subscription sits on the case row. No `isFinalStatus` filter, for the reason the chip carries none: you follow a case to hear how it ends. View all leads to the Followed chip on Cases, which is the same lens, so the tile and the list cannot show different sets. It lives on My Work rather than on the Dashboard because following is about what you are keeping an eye on today, which is the question this page answers.",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"_watching": true
+										},
+										"limit": 5
+									},
+									"columns": [
+										{
+											"key": "identifier",
+											"cellClass": "cn-cell--muted"
+										},
+										{
+											"key": "title",
+											"cellClass": "cn-cell--strong"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"_watching": "true"
+										}
+									},
+									"viewAllLabel": "View all",
+									"hideHeader": true,
+									"borderless": true,
+									"emptyText": "Follow a case to keep an eye on it here"
+								}
+							},
+							{
+								"id": "archival-reviews",
+								"type": "custom",
+								"title": "My archival reviews",
+								"icon": "ArchiveOutline",
+								"_note": "The destruction list entries this person has to sign off, read from openregister's /archival/reviews/pending (page slot widget-archival-reviews -> MyArchivalReviews). That endpoint reads the session user id, so no id is sent and nothing is narrowed in the browser: a filter over a wider list would be a different, weaker thing wearing the same label. It fails CLOSED. A failed read draws an error with a retry, never an empty list, because a reviewer with nothing to sign off and an unreachable openregister look identical from an empty array, and only one of them means somebody's work is invisible. It is a custom widget and not an object-table because a destruction list entry is not a dossiq object: it lives on openregister's destruction list, and each of the three answers carries a reason that has to be collected before the post."
+							}
+						],
+						"layout": [
+							{
+								"id": "1",
+								"widgetId": "my-work",
+								"gridX": 0,
+								"gridY": 0,
+								"gridWidth": 4,
+								"gridHeight": 4,
+								"showTitle": true
+							},
+							{
+								"id": "2",
+								"widgetId": "deadlines",
+								"gridX": 4,
+								"gridY": 0,
+								"gridWidth": 4,
+								"gridHeight": 4,
+								"showTitle": true
+							},
+							{
+								"id": "3",
+								"widgetId": "open-cases",
+								"gridX": 8,
+								"gridY": 0,
+								"gridWidth": 4,
+								"gridHeight": 4,
+								"showTitle": true
+							},
+							{
+								"id": "4",
+								"widgetId": "archival-reviews",
+								"gridX": 0,
+								"gridY": 4,
+								"gridWidth": 12,
+								"gridHeight": 4,
+								"showTitle": true
+							},
+							{
+								"id": "5",
+								"widgetId": "followed-cases",
+								"gridX": 0,
+								"gridY": 8,
+								"gridWidth": 4,
+								"gridHeight": 4,
+								"showTitle": true
+							}
+						]
 					},
 					{
-						"id": "deadlines",
-						"type": "object-table",
-						"title": "Deadlines",
-						"_note": "openspec/changes/dashboard-tiles design D1. Replaces `overdue-cases` and `deadline-alerts`, which read `case` with the same `isFinalStatus: false` filter and differed only in the deadline window, so seven of nine rows appeared twice. One window now covers both: everything already past its deadline and everything due within three days, ordered by deadline. The red row is `rowClass`, not the `cn-cell--danger` the design sketched: a column's `cellClass` is one static string, so it cannot carry a per-branch colour, and the spec asks for the ROW to read in the error colour anyway.",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false,
-									"statusHiddenInLists": false,
-									"isDraft": false,
-									"deadline": {
-										"lte": "@today+3d"
+						"id": "team",
+						"label": "My team",
+						"emptyText": "Nothing to show for your team yet",
+						"widgets": [
+							{
+								"id": "your-teams-queue",
+								"type": "object-list",
+								"title": "Your team's queue",
+								"icon": "AccountGroupOutline",
+								"content": {
+									"register": "dossiq",
+									"schema": "case",
+									"filter": {
+										"assignee": "IS NULL",
+										"isFinalStatus": false,
+										"statusHiddenInLists": false,
+										"isDraft": false,
+										"isTemplate": false
+									},
+									"limit": 10,
+									"columns": [
+										{
+											"key": "identifier",
+											"label": "Number"
+										},
+										{
+											"key": "title",
+											"label": "Title"
+										},
+										{
+											"key": "deadline",
+											"label": "Deadline"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"emptyText": "Nothing is waiting in the shared queue"
+								}
+							},
+							{
+								"id": "kpi-open-cases",
+								"type": "stat",
+								"title": "Open Cases",
+								"content": {
+									"label": "Open Cases",
+									"caption": "+{newToday} today",
+									"route": {
+										"name": "Cases"
+									},
+									"icon": "FolderOutline",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "openCount"
+								}
+							},
+							{
+								"id": "kpi-overdue",
+								"type": "stat",
+								"title": "Overdue",
+								"content": {
+									"label": "Overdue",
+									"caption": "action needed",
+									"route": {
+										"name": "Cases",
+										"query": {
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"deadline[lt]": "@today"
+										}
+									},
+									"icon": "AlertCircleOutline",
+									"variant": "error",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "overdueCount"
+								}
+							},
+							{
+								"id": "kpi-completed",
+								"type": "stat",
+								"title": "Completed This Month",
+								"content": {
+									"label": "Completed This Month",
+									"caption": "avg {avgProcessingDays} days",
+									"route": {
+										"name": "Cases",
+										"query": {
+											"endDate[gte]": "@yearStart"
+										}
+									},
+									"icon": "CheckCircleOutline",
+									"variant": "success",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"endpointSource": {
+										"url": "/apps/dossiq/api/dashboard/kpis"
+									},
+									"valueField": "completedCount"
+								}
+							},
+							{
+								"id": "cases-by-status",
+								"type": "chart",
+								"title": "Cases by Status",
+								"content": {
+									"chartKind": "bar",
+									"dataSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"aggregate": {
+											"groupBy": "status",
+											"metric": "count",
+											"labelResolve": {
+												"schema": "statusType",
+												"labelField": "name"
+											}
+										},
+										"drilldown": {
+											"route": "Cases",
+											"filterParam": "status"
+										}
 									}
-								},
-								"extend": ["calculations"],
-								"order": {
-									"deadline": "asc"
-								},
-								"limit": 10
+								}
 							},
-							"columns": [
-								{
-									"key": "title",
-									"label": "Case",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "daysUntilDeadline",
-									"label": "Days left",
-									"formatter": "conditionalPhrase",
-									"formatterOptions": {
-										"negative": "{n} days overdue",
-										"zero": "Due today",
-										"positive": "{n} days remaining"
+							{
+								"id": "cases-by-type",
+								"type": "chart",
+								"title": "Cases by Type",
+								"content": {
+									"chartKind": "bar",
+									"dataSource": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"aggregate": {
+											"groupBy": "caseType",
+											"metric": "count",
+											"labelResolve": {
+												"schema": "caseType",
+												"labelField": "title"
+											}
+										},
+										"drilldown": {
+											"route": "Cases",
+											"filterParam": "caseType"
+										}
+									}
+								}
+							},
+							{
+								"id": "stalled-cases",
+								"type": "object-table",
+								"title": "Stalled Cases",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										},
+										"extend": [
+											"calculations"
+										],
+										"order": {
+											"@self.updated": "asc"
+										},
+										"limit": 5
 									},
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"rowClass": [
-								{
-									"when": {
-										"field": "daysUntilDeadline",
-										"op": "lt",
-										"value": 0
+									"columns": [
+										{
+											"key": "title",
+											"cellClass": "cn-cell--strong"
+										},
+										{
+											"key": "daysSinceActivity",
+											"formatter": "conditionalPhrase",
+											"formatterOptions": {
+												"positive": "{n} days inactive"
+											},
+											"cellClass": "cn-cell--muted cn-cell--end"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false"
+										}
 									},
-									"class": "cn-row--danger"
+									"viewAllLabel": "View all",
+									"hideHeader": true,
+									"borderless": true,
+									"emptyText": "All cases active"
 								}
-							],
-							"_viewAllNote": "one-case-list A22, triage item 4. The query is this table's OWN filter in the flat bracket grammar, key for key, and `dashboardViewAllRoutes.spec.js` holds that invariant for every tile: a table that counts one set of cases and a View all that lands on another is the dropped filter this fixes. The nested `{ deadline: { lte } }` form belongs in a `source.filter`, which the widget reads, and NOT in a route query, which `buildQueryString` would JSON-stringify into a literal object string that matches nothing. Note the WINDOW: this table is overdue AND due within three days, wider than the Cases page's Overdue chip, so it deliberately does not carry that chip's filter. `kpi-overdue` is the widget whose count the Overdue chip reproduces exactly, and that equality is asserted. CnIndexPage merges the query into the fetch under the page's own filter, so the filter arrives and the list is right; what it does NOT do is activate a matching chip, because `resolveInitialQuickFilterIndex` reads only `default`. The reader lands on All with the query applied and no chip showing why, and naming a chip from a query needs a nextcloud-vue change.",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"isFinalStatus": "false",
-									"statusHiddenInLists": "false",
-									"isDraft": "false",
-									"deadline[lte]": "@today+3d"
-								}
+							}
+						],
+						"layout": [
+							{
+								"id": "t1",
+								"widgetId": "kpi-open-cases",
+								"gridX": 0,
+								"gridY": 0,
+								"gridWidth": 4,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
 							},
-							"viewAllLabel": "View all",
-							"hideHeader": false,
-							"borderless": true,
-							"emptyText": "No deadlines in the next three days"
-						}
-					},
-					{
-						"id": "open-cases",
-						"type": "object-table",
-						"title": "Open Cases",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"isFinalStatus": false,
-									"statusHiddenInLists": false,
-									"isDraft": false
-								},
-								"order": {
-									"startDate": "desc"
-								},
-								"limit": 7
+							{
+								"id": "t2",
+								"widgetId": "kpi-overdue",
+								"gridX": 4,
+								"gridY": 0,
+								"gridWidth": 4,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
 							},
-							"columns": [
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								},
-								{
-									"key": "identifier",
-									"cellClass": "cn-cell--muted cn-cell--end"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"isFinalStatus": "false",
-									"statusHiddenInLists": "false",
-									"isDraft": "false"
-								}
+							{
+								"id": "t3",
+								"widgetId": "kpi-completed",
+								"gridX": 8,
+								"gridY": 0,
+								"gridWidth": 4,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
 							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "No cases found"
-						}
-					},
-					{
-						"id": "followed-cases",
-						"type": "object-table",
-						"title": "Cases you follow",
-						"_note": "case-followers, row 13.18. The cases this reader subscribed to, over OpenRegister's `_watching` lens (object-watchers). It is per reader and it resolves inside the query, so the tile costs one call and nothing about the subscription sits on the case row. No `isFinalStatus` filter, for the reason the chip carries none: you follow a case to hear how it ends. View all leads to the Followed chip on Cases, which is the same lens, so the tile and the list cannot show different sets. It lives on My Work rather than on the Dashboard because following is about what you are keeping an eye on today, which is the question this page answers.",
-						"content": {
-							"source": {
-								"register": "dossiq",
-								"schema": "case",
-								"filter": {
-									"_watching": true
-								},
-								"limit": 5
+							{
+								"id": "t4",
+								"widgetId": "your-teams-queue",
+								"gridX": 0,
+								"gridY": 2,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": true
 							},
-							"columns": [
-								{
-									"key": "identifier",
-									"cellClass": "cn-cell--muted"
-								},
-								{
-									"key": "title",
-									"cellClass": "cn-cell--strong"
-								}
-							],
-							"rowRoute": "CaseDetail",
-							"viewAllRoute": {
-								"name": "Cases",
-								"query": {
-									"_watching": "true"
-								}
+							{
+								"id": "t5",
+								"widgetId": "stalled-cases",
+								"gridX": 6,
+								"gridY": 2,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": true
 							},
-							"viewAllLabel": "View all",
-							"hideHeader": true,
-							"borderless": true,
-							"emptyText": "Follow a case to keep an eye on it here"
-						}
-					},
-					{
-						"id": "archival-reviews",
-						"type": "custom",
-						"title": "My archival reviews",
-						"icon": "ArchiveOutline",
-						"_note": "The destruction list entries this person has to sign off, read from openregister's /archival/reviews/pending (page slot widget-archival-reviews -> MyArchivalReviews). That endpoint reads the session user id, so no id is sent and nothing is narrowed in the browser: a filter over a wider list would be a different, weaker thing wearing the same label. It fails CLOSED. A failed read draws an error with a retry, never an empty list, because a reviewer with nothing to sign off and an unreachable openregister look identical from an empty array, and only one of them means somebody's work is invisible. It is a custom widget and not an object-table because a destruction list entry is not a dossiq object: it lives on openregister's destruction list, and each of the three answers carries a reason that has to be collected before the post."
-					}
-				],
-				"layout": [
-					{
-						"id": "1",
-						"widgetId": "my-work",
-						"gridX": 0,
-						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "2",
-						"widgetId": "deadlines",
-						"gridX": 4,
-						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "3",
-						"widgetId": "open-cases",
-						"gridX": 8,
-						"gridY": 0,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "4",
-						"widgetId": "archival-reviews",
-						"gridX": 0,
-						"gridY": 4,
-						"gridWidth": 12,
-						"gridHeight": 4,
-						"showTitle": true
-					},
-					{
-						"id": "5",
-						"widgetId": "followed-cases",
-						"gridX": 0,
-						"gridY": 8,
-						"gridWidth": 4,
-						"gridHeight": 4,
-						"showTitle": true
+							{
+								"id": "t6",
+								"widgetId": "cases-by-status",
+								"gridX": 0,
+								"gridY": 6,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": false
+							},
+							{
+								"id": "t7",
+								"widgetId": "cases-by-type",
+								"gridX": 6,
+								"gridY": 6,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": false
+							}
+						]
 					}
 				],
 				"documentationUrl": "https://dossiq.conduction.nl"

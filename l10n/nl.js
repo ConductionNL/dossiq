@@ -4381,6 +4381,7 @@ OC.L10N.register(
         "Nothing processed yet": "Nog niets verwerkt",
         "Nothing recorded yet": "Nog niets vastgelegd",
         "Nothing to do on this case right now": "Er is nu niets te doen op deze zaak",
+        "Nothing to show for your team yet": "Nog niets te zien voor je team",
         "Nothing to sign off": "Niets om af te tekenen",
         "Nothing was deleted": "Er is niets verwijderd",
         "Notice of Default": "Ingebrekestelling",

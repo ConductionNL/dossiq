@@ -44,8 +44,9 @@ const schema = readJson('tests', 'schemas', 'app-manifest-v2.schema.json')
 
 /** The five pages a handler or a team lead lands on. */
 const DASHBOARDS = [
+	// Not MyWorkHome: its widgets live in its views since landing-views,
+	// and a reader's arrangement covers the page's own grid only.
 	'Dashboard',
-	'MyWorkHome',
 	'Doorlooptijd',
 	'ProcessMiningDashboard',
 	'TermijnDashboard',
@@ -118,6 +119,19 @@ describe('a reader keeps their own arrangement of a dashboard', () => {
 			const widgets = page(id).config.widgets || []
 			expect(widgets.length, `${id} ships no widgets`).toBeGreaterThan(0)
 		}
+	})
+})
+
+describe('the landing page keeps no arrangement of its own', () => {
+	// landing-views: My work and My team are views, and the library keeps a
+	// reader's arrangement for the page's own grid only. The key would load
+	// and save an arrangement of a grid that holds nothing (or a greeting).
+	it('declares no userLayout, and keeps the ids its chosen view is stored under', () => {
+		const home = page('MyWorkHome')
+		expect(Object.hasOwn(home.config, 'userLayout')).toBe(false)
+		expect(home.config.appId).toBe('dossiq')
+		expect(home.config.pageId).toBe('MyWorkHome')
+		expect(home.config.views.length).toBeGreaterThan(0)
 	})
 })
 

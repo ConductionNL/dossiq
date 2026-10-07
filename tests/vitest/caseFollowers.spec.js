@@ -41,6 +41,7 @@ import {
 	isFollowing,
 	objectIdOf,
 } from '../../src/services/watcherApi.js'
+import { pageGrids, pageWidgets } from './helpers/pageViews.js'
 
 const mockShowError = vi.fn()
 
@@ -457,7 +458,7 @@ describe('the lens and the tile', () => {
 
 	it('puts the tile on My Work, pointing at that same chip', () => {
 		const home = page('MyWorkHome')
-		const tile = home.config.widgets.find((w) => w.id === 'followed-cases')
+		const tile = pageWidgets(home).find((w) => w.id === 'followed-cases')
 
 		expect(tile).toBeTruthy()
 		expect(tile.content.source.filter._watching).toBe(true)
@@ -466,15 +467,22 @@ describe('the lens and the tile', () => {
 		expect(tile.content.viewAllRoute.query._watching).toBe('true')
 		expect(tile.content.rowRoute).toBe('CaseDetail')
 		expect(
-			home.config.layout.some((c) => c.widgetId === 'followed-cases'),
+			pageGrids(home).some((grid) =>
+				grid.layout.some((c) => c.widgetId === 'followed-cases'),
+			),
 			'followed-cases has no cell on the My Work grid',
 		).toBe(true)
 	})
 
 	it('fills its rows on both pages: no cell overlaps another', () => {
-		for (const id of ['CaseDetail', 'MyWorkHome']) {
+		// Each grid on its own: the landing page draws its own grid and the
+		// chosen view's below it, so two grids may use the same rows.
+		for (const [id, layout] of [
+			['CaseDetail', page('CaseDetail').config.layout],
+			...pageGrids(page('MyWorkHome')).map((g) => ['MyWorkHome', g.layout]),
+		]) {
 			const grid = new Map()
-			for (const cell of page(id).config.layout) {
+			for (const cell of layout) {
 				expect(
 					cell.gridX + cell.gridWidth,
 					cell.widgetId,

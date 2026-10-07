@@ -24,6 +24,7 @@ import fs from 'fs'
 import path from 'path'
 import { describe, expect, it } from 'vitest'
 import { buildProfiledManifest } from '../../src/utils/structureProfile.js'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8')
@@ -43,10 +44,11 @@ const builtSimple = buildProfiledManifest(
 	fragments,
 	readJson('src', 'menu-layout.simple.json'),
 )
-// The app's own "First today" card, as the simple dashboard ships it.
-const card = builtSimple.pages
-	.find((page) => page.id === 'Dashboard')
-	.config.widgets.find((widget) => widget.id === 'simple-first-today').content
+// The app's own "First today" card, as the simple landing page ships it in
+// its My work view (landing-views).
+const card = pageWidgets(
+	builtSimple.pages.find((page) => page.id === 'MyWorkHome'),
+).find((widget) => widget.id === 'simple-first-today').content
 
 const SEVERITIES = ['error', 'warning', 'info']
 const OPERATORS = ['gt', 'gte', 'lt', 'lte', 'eq', 'neq']
