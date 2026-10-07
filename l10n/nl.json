@@ -2352,6 +2352,7 @@
         "Enter sub-case title…": "Titel van deelzaak invoeren…",
         "Enter task title...": "Voer taaktitel in...",
         "Enter text": "Voer tekst in",
+        "Enter the secret your payment provider signs dwangsom payout callbacks with. Without it, nobody can check that a callback is real. You can also set it later in the admin settings.": "Vul het geheim in waarmee je betaalprovider de terugmeldingen over dwangsomuitbetalingen ondertekent. Zonder dit geheim kan niemand controleren of een terugmelding echt is. Je kunt het ook later instellen in de beheerinstellingen.",
         "Enter value...": "Voer waarde in...",
         "Enter your message...": "Voer uw bericht in...",
         "Enter your message…": "Typ uw bericht…",
