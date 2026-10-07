@@ -34,6 +34,7 @@ use OCA\Dossiq\Listener\LocationBagValidationListener;
 use OCA\Dossiq\Listener\VergunningaanvraagCreatedListener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
+use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
@@ -59,6 +60,12 @@ class IntakeListenerRegistrar {
 		// written by OpenRegister.
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
+			listener: VergunningaanvraagCreatedListener::class
+		);
+		// Integriq writes the activity mapping onto its dso_verzoek in an
+		// update, so the case is made on that write.
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
 			listener: VergunningaanvraagCreatedListener::class
 		);
 

@@ -27,7 +27,9 @@ namespace OCA\Dossiq\Service;
 use DateTimeImmutable;
 use Exception;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use OCA\Dossiq\Service\Dso\DsoStatusChangeNotifier;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCP\IAppConfig;
@@ -66,6 +68,8 @@ class DsoCaseService {
 	 * @param ObjectServiceInterface $objectService The OpenRegister object service (ADR-084)
 	 * @param WorkingDayCalculator $workingDays Weekend and Dutch-holiday
 	 *                                          arithmetic for the statutory deadlines
+	 * @param CaseTypeReferenceResolver $caseTypes The mapped case type reference, to its row
+	 * @param CaseJournal $journal The case's activity record
 	 */
 	public function __construct(
 		private readonly IAppConfig $appConfig,
@@ -74,81 +78,69 @@ class DsoCaseService {
 		private readonly LoggerInterface $logger,
 		private readonly ObjectServiceInterface $objectService,
 		private readonly WorkingDayCalculator $workingDays,
+		private readonly CaseTypeReferenceResolver $caseTypes,
+		private readonly CaseJournal $journal,
 	) {
 	}//end __construct()
 
 	/**
-	 * Create a Dossiq zaak from a DSO vergunningaanvraag.
+	 * Create a Dossiq zaak from a DSO intake record.
 	 *
-	 * Looks up the vergunningaanvraag object, determines the procedure type
-	 * from the activiteiten list, computes the statutory deadline, and
-	 * persists a new zaak in the Dossiq register.
+	 * The record is either integriq's `dso_verzoek` after mapping (it carries
+	 * `mappedCaseTypes`, `mappedTitle`, `submissionDate`, `rawRequest`) or a
+	 * legacy vergunningaanvraag (`title`, `indieningsdatum`, `activiteiten`).
+	 * The listener hands the record it was given; without one it is read from
+	 * the legacy `dso` register.
 	 *
-	 * @param string $permitApplicationId The UUID of the vergunningaanvraag object
+	 * The case is written in the shape the case schema accepts: `caseType` is
+	 * the uuid of the case type the activity mapping names, `status` is that
+	 * type's initial status type, and `dsoStatus` is `submitted`, the DSO-LV
+	 * status DsoDeadlineJob selects on. A record that names no case type that
+	 * resolves writes nothing and throws: a case on a guessed type is worse
+	 * than a verzoek still waiting in integriq's list.
 	 *
-	 * @return array<string,mixed> The created zaak object
+	 * One record makes one case. A second event for the same record answers
+	 * the case the first one made.
 	 *
-	 * @throws \RuntimeException When OpenRegister is unavailable or config is missing
+	 * @param string                    $permitApplicationId The UUID of the intake record
+	 * @param array<string, mixed>|null $permitApplication   The record itself, when the caller holds it
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 * @return array<string,mixed> The created (or already existing) zaak object
+	 *
+	 * @throws \RuntimeException When the record is missing or names no case type that resolves
+	 *
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
-	public function createZaakFromVergunningaanvraag(string $permitApplicationId): array {
+	public function createZaakFromVergunningaanvraag(string $permitApplicationId, ?array $permitApplication = null): array {
 		$objectService = $this->getObjectService();
 
-		$requestSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'dso_vergunningaanvraag_schema',
-			default: ''
-		);
-
-		$permitApplication = $this->findObjectAsArray(
-			objectService: $objectService,
-			register: 'dso',
-			schema: $requestSchema,
-			id: $permitApplicationId
-		);
+		if ($permitApplication === null) {
+			$permitApplication = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: 'dso',
+				schema: $this->config(key: 'dso_vergunningaanvraag_schema'),
+				id: $permitApplicationId
+			);
+		}
 
 		if ($permitApplication === null) {
 			throw new RuntimeException('Vergunningaanvraag not found: ' . $permitApplicationId);
 		}
 
-		$activiteiten = $permitApplication['activiteiten'] ?? [];
-		$procedureType = $this->determineProcedureType(activiteiten: $activiteiten);
+		$register = $this->config(key: 'register');
+		$caseSchema = $this->config(key: 'case_schema');
 
-		$submissionDate = (string)($permitApplication['indieningsdatum'] ?? date('Y-m-d'));
-		$deadlineDate = $this->computeDeadline(
-			submissionDate: $submissionDate,
-			procedureType: $procedureType
+		$existing = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			filters: ['permitApplicationRef' => $permitApplicationId, '_limit' => 1]
 		);
+		if ($existing !== []) {
+			return $existing[0];
+		}
 
-		$register = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'register',
-			default: ''
-		);
-		$caseSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'case_schema',
-			default: ''
-		);
-
-		$case = [
-			'title' => 'Omgevingsvergunning: ' . ($permitApplication['title'] ?? $permitApplicationId),
-			'status' => 'submitted',
-			'caseType' => 'omgevingsvergunning',
-			'procedureType' => $procedureType,
-			'permitApplicationRef' => $permitApplicationId,
-			'indieningsdatum' => $submissionDate,
-			'deadlineDate' => $deadlineDate,
-			'activiteiten' => $activiteiten,
-			'activityLog' => [
-				[
-					'timestamp' => date('c'),
-					'action' => 'zaak_created',
-					'note' => 'Zaak aangemaakt vanuit DSO vergunningaanvraag.',
-				],
-			],
-		];
+		$case = $this->intakeCase(permitApplicationId: $permitApplicationId, permitApplication: $permitApplication);
 
 		// The saveObject() call returns an ObjectEntityInterface (ADR-084); this
 		// method declares `: array`. Normalise, exactly as findObjectAsArray()
@@ -165,8 +157,9 @@ class DsoCaseService {
 			[
 				'app' => Application::APP_ID,
 				'vergunningaanvraagId' => $permitApplicationId,
-				'procedureType' => $procedureType,
-				'deadlineDate' => $deadlineDate,
+				'caseType' => $case['caseType'],
+				'procedureType' => $case['procedureType'],
+				'deadlineDate' => $case['deadlineDate'],
 			]
 		);
 
@@ -174,14 +167,18 @@ class DsoCaseService {
 	}//end createZaakFromVergunningaanvraag()
 
 	/**
-	 * Transition the status of a DSO zaak.
+	 * Transition the DSO status of a DSO zaak.
 	 *
-	 * Loads both the zaak and the linked vergunningaanvraag, updates their
-	 * statuses, appends to the activity log, and dispatches a
-	 * VergunningStatusChangedEvent for downstream listeners.
+	 * `newStatus` is a DSO-LV value (submitted, in_handling, granted, refused,
+	 * withdrawn), and it lands on `dsoStatus`, the field the schema declares
+	 * for it. The case's own `status` is the uuid of a status type and moves
+	 * through StatusTransitionService, never through a DSO value. The write is
+	 * a patch of the fields this act owns, so the case's computed fields are
+	 * not sent back. The linked vergunningaanvraag is synced and a
+	 * VergunningStatusChangedEvent is dispatched for downstream listeners.
 	 *
 	 * @param string $caseId The UUID of the zaak
-	 * @param string $newStatus The target status value
+	 * @param string $newStatus The target DSO status value
 	 * @param string|null $besluitdatum Optional ISO 8601 decision date
 	 * @param string|null $notes Optional explanation text
 	 * @param string $userId The Nextcloud user UID performing the action
@@ -190,7 +187,7 @@ class DsoCaseService {
 	 *
 	 * @throws \RuntimeException When the zaak cannot be found
 	 *
-	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 * @spec openspec/specs/vth-dso-integration/spec.md
 	 */
 	public function transitionStatus(
 		string $caseId,
@@ -201,16 +198,8 @@ class DsoCaseService {
 	): array {
 		$objectService = $this->getObjectService();
 
-		$register = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'register',
-			default: ''
-		);
-		$caseSchema = $this->appConfig->getValueString(
-			app: Application::APP_ID,
-			key: 'case_schema',
-			default: ''
-		);
+		$register = $this->config(key: 'register');
+		$caseSchema = $this->config(key: 'case_schema');
 
 		$case = $this->findObjectAsArray(
 			objectService: $objectService,
@@ -225,39 +214,37 @@ class DsoCaseService {
 
 		$case = $this->normalizeToArray(value: $case);
 
-		$oldStatus = (string)($case['status'] ?? '');
+		$oldStatus = (string)($case['dsoStatus'] ?? '');
 		$requestRef = (string)($case['permitApplicationRef'] ?? '');
 
-		$case['status'] = $newStatus;
+		$changes = ['dsoStatus' => $newStatus];
 		if ($besluitdatum !== null) {
-			$case['besluitdatum'] = $besluitdatum;
+			$changes['besluitdatum'] = $besluitdatum;
 		}
 
 		if ($notes !== null) {
-			$case['notes'] = $notes;
+			$changes['dsoNotes'] = $notes;
 		}
 
-		$logEntry = [
-			'timestamp' => date('c'),
-			'action' => 'status_transition',
+		$entry = [
+			'type' => 'dsoStatusChanged',
 			'userId' => $userId,
 			'oldStatus' => $oldStatus,
 			'newStatus' => $newStatus,
 		];
 		if ($notes !== null) {
-			$logEntry['note'] = $notes;
+			$entry['note'] = $notes;
 		}
 
-		$activityLog = $case['activityLog'] ?? [];
-		$activityLog[] = $logEntry;
-		$case['activityLog'] = $activityLog;
+		$changes[CaseJournal::FIELD] = $this->journal->append(case: $case, entry: $entry)[CaseJournal::FIELD];
 
 		// Same as above: this method returns an array to its caller.
-		$updatedCase = $this->saveObjectAsArray(
+		$updatedCase = $this->patchObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
-			object: $case
+			id: $caseId,
+			changes: $changes
 		) ?? [];
 
 		// Update the linked vergunningaanvraag status when possible.
@@ -281,6 +268,150 @@ class DsoCaseService {
 
 		return $updatedCase;
 	}//end transitionStatus()
+
+	/**
+	 * The case an intake record becomes, in the shape the case schema accepts.
+	 *
+	 * @param string               $permitApplicationId The record's UUID
+	 * @param array<string, mixed> $permitApplication   The record
+	 *
+	 * @return array<string, mixed> The case payload
+	 *
+	 * @throws \RuntimeException When the record names no case type that resolves
+	 */
+	private function intakeCase(string $permitApplicationId, array $permitApplication): array {
+		$caseType = $this->caseTypeFor(permitApplication: $permitApplication);
+		if ($caseType === []) {
+			throw new RuntimeException(
+				'No dossiq case type answers to the activity mapping of vergunningaanvraag ' . $permitApplicationId
+				. ' (mappedCaseTypes: ' . implode(', ', $this->caseTypeReferences(permitApplication: $permitApplication)) . ')'
+			);
+		}
+
+		$activiteiten = $this->listAt(record: $permitApplication, key: 'activiteiten');
+		if ($activiteiten === []) {
+			$activiteiten = $this->listAt(record: $this->listAt(record: $permitApplication, key: 'rawRequest'), key: 'activiteiten');
+		}
+
+		$procedureType = $this->determineProcedureType(activiteiten: $activiteiten);
+
+		$submitted = (string)($permitApplication['submissionDate'] ?? ($permitApplication['indieningsdatum'] ?? ''));
+		$submissionDate = substr($submitted, 0, 10);
+		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $submissionDate) !== 1) {
+			$submissionDate = date('Y-m-d');
+		}
+
+		$name = trim((string)($permitApplication['mappedTitle'] ?? ''));
+		if ($name === '') {
+			$name = trim((string)($permitApplication['title'] ?? ''));
+		}
+
+		if ($name === '') {
+			$name = $permitApplicationId;
+		}
+
+		$case = [
+			'title' => mb_substr('Omgevingsvergunning: ' . $name, 0, 255),
+			'caseType' => $this->caseTypes->idOf(caseType: $caseType),
+			'dsoStatus' => 'submitted',
+			'procedureType' => $procedureType,
+			'permitApplicationRef' => $permitApplicationId,
+			'startDate' => $submissionDate,
+			'deadlineDate' => $this->computeDeadline(submissionDate: $submissionDate, procedureType: $procedureType),
+		];
+
+		$summary = trim((string)($permitApplication['mappedSummary'] ?? ''));
+		if ($summary !== '') {
+			$case['description'] = $summary;
+		}
+
+		$initial = $this->caseTypes->initialStatusOf(caseType: $caseType);
+		if ($initial !== '') {
+			$case['status'] = $initial;
+		}
+
+		return $this->journal->append(
+			case: $case,
+			entry: ['type' => 'dsoIntake', 'note' => 'Zaak aangemaakt vanuit DSO vergunningaanvraag ' . $permitApplicationId . '.']
+		);
+	}//end intakeCase()
+
+	/**
+	 * The first case type the record's activity mapping names that resolves.
+	 *
+	 * @param array<string, mixed> $permitApplication The record
+	 *
+	 * @return array<string, mixed> The case type row, or an empty array
+	 */
+	private function caseTypeFor(array $permitApplication): array {
+		foreach ($this->caseTypeReferences(permitApplication: $permitApplication) as $reference) {
+			$caseType = $this->caseTypes->resolve(reference: $reference);
+			if ($caseType !== []) {
+				return $caseType;
+			}
+		}
+
+		return [];
+	}//end caseTypeFor()
+
+	/**
+	 * The case type references a record carries.
+	 *
+	 * The activity mapping in integriq writes `mappedCaseTypes` (a ZGW zaaktype URL
+	 * or a catalogue identifier per entry). A legacy record may name one in
+	 * `caseType`.
+	 *
+	 * @param array<string, mixed> $permitApplication The record
+	 *
+	 * @return list<string> The references, in the order the record gives them
+	 */
+	private function caseTypeReferences(array $permitApplication): array {
+		$references = [];
+		foreach ($this->listAt(record: $permitApplication, key: 'mappedCaseTypes') as $reference) {
+			if (is_array($reference) === true) {
+				$reference = ($reference['reference'] ?? '');
+			}
+
+			if (is_string($reference) === true && trim($reference) !== '') {
+				$references[] = trim($reference);
+			}
+		}
+
+		$legacy = $permitApplication['caseType'] ?? '';
+		if (is_string($legacy) === true && trim($legacy) !== '') {
+			$references[] = trim($legacy);
+		}
+
+		return $references;
+	}//end caseTypeReferences()
+
+	/**
+	 * The array a record holds under a key, or an empty array.
+	 *
+	 * @param array<string, mixed> $record The record
+	 * @param string               $key    The key
+	 *
+	 * @return array<array-key, mixed> The value when it is an array
+	 */
+	private function listAt(array $record, string $key): array {
+		$value = ($record[$key] ?? []);
+		if (is_array($value) === false) {
+			return [];
+		}
+
+		return $value;
+	}//end listAt()
+
+	/**
+	 * One of this app's config values.
+	 *
+	 * @param string $key The key
+	 *
+	 * @return string The value, or '' when unset
+	 */
+	private function config(string $key): string {
+		return $this->appConfig->getValueString(app: Application::APP_ID, key: $key, default: '');
+	}//end config()
 
 	/**
 	 * Compute the statutory deadline for a vergunningaanvraag.
