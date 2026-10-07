@@ -87,7 +87,9 @@ export default {
 		 * @spec openspec/specs/termijn-pause-extension/spec.md
 		 */
 		url() {
-			return generateUrl('/apps/dossiq/api/settings/background-service-account')
+			return generateUrl(
+				'/apps/dossiq/api/settings/background-service-account',
+			)
 		},
 
 		/**
@@ -107,9 +109,8 @@ export default {
 					{ group: this.account.group },
 				),
 			}
-			const why
-				= reasons[this.account.reason]
-				|| t('dossiq', 'No account is chosen.')
+			const why =
+				reasons[this.account.reason] || t('dossiq', 'No account is chosen.')
 			return (
 				why
 				+ ' '
@@ -160,15 +161,13 @@ export default {
 					userId: this.input,
 				})
 				this.account = { ...this.account, ...(response.data || {}) }
-				this.message = t(
-					'dossiq',
-					'Background jobs now save as {userId}.',
-					{ userId: this.account.userId },
-				)
+				this.message = t('dossiq', 'Background jobs now save as {userId}.', {
+					userId: this.account.userId,
+				})
 				this.messageType = 'success'
 			} catch (error) {
-				this.message
-					= error?.response?.data?.message
+				this.message =
+					error?.response?.data?.message
 					|| t(
 						'dossiq',
 						'The background service account could not be saved.',
