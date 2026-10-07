@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\BackgroundJob;
 
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\Stuf\StufAdapterService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\Job;
@@ -36,6 +38,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * On-demand background job that retries a single StufMessage.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
  */
@@ -46,11 +51,13 @@ class StufRetryJob extends Job {
 	 * @param ITimeFactory $time The time factory.
 	 * @param StufAdapterService $adapter The adapter service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the retry writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private StufAdapterService $adapter,
 		private LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 	}//end __construct()
@@ -65,6 +72,25 @@ class StufRetryJob extends Job {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
 	 */
 	protected function run(mixed $argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * The retry itself, run as the service account.
+	 *
+	 * @param mixed $argument The job payload: {stufMessageId: string, runAt?: int}.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+	 */
+	private function work(mixed $argument): void {
 		$payload = [];
 		if (is_array(value: $argument) === true) {
 			$payload = $argument;
@@ -91,5 +117,5 @@ class StufRetryJob extends Job {
 				context: ['id' => $stufMessageId, 'error' => $e->getMessage()]
 			);
 		}
-	}//end run()
+	}//end work()
 }//end class

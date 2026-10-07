@@ -48,6 +48,8 @@ namespace OCA\Dossiq\BackgroundJob;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Flow\CaseFlowActions;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -55,6 +57,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Hourly job retiring the planned follow-ups that are spent.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
  */
@@ -67,17 +72,38 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 * @param CaseFlowActions $flowActions Owns the retirement rule.
 	 * @param IAppManager $appManager Tells whether OpenRegister is here at all.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
 		private readonly CaseFlowActions $flowActions,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		// Hourly.
 		$this->setInterval(seconds: 3600);
 	}//end __construct()
+
+	/**
+	 * Run once as the background service account.
+	 *
+	 * @param mixed $argument The job argument.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
+	 */
+	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
 
 	/**
 	 * Retire the planned follow-ups that are spent.
@@ -90,7 +116,7 @@ class PlannedFollowUpSweepJob extends TimedJob {
 	 *
 	 * @spec openspec/changes/planned-case-series/specs/workflow-definition-engine/spec.md
 	 */
-	protected function run($argument): void {
+	private function work(mixed $argument): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
 			return;
 		}
@@ -106,5 +132,5 @@ class PlannedFollowUpSweepJob extends TimedJob {
 			'Dossiq: retired ' . $retired . ' planned follow-up(s) that were spent',
 			['app' => Application::APP_ID],
 		);
-	}//end run()
+	}//end work()
 }//end class

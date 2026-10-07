@@ -29,6 +29,7 @@ namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\ResetMonthlyQuotasJob;
 use OCA\Dossiq\Service\OrganisationQuotaLimits;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\TenantQuotaService;
 use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\App\IAppManager;
@@ -131,6 +132,8 @@ class ResetMonthlyQuotasJobTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturn($objectService);
 		$logger = $this->createMock(LoggerInterface::class);
+		$serviceAccount = $this->createMock(BackgroundServiceAccount::class);
+		$serviceAccount->method('runAs')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 
 		$job = new ResetMonthlyQuotasJob(
 			time: $this->createMock(ITimeFactory::class),
@@ -143,6 +146,7 @@ class ResetMonthlyQuotasJobTest extends TestCase {
 			appManager: $appManager,
 			container: $container,
 			logger: $logger,
+			serviceAccount: $serviceAccount,
 		);
 
 		// The run() method is protected; the job framework is what calls it.

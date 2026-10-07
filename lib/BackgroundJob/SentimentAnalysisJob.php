@@ -32,6 +32,8 @@ namespace OCA\Dossiq\BackgroundJob;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\SentimentService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -42,6 +44,9 @@ use Throwable;
 
 /**
  * Timed job that scores contactmoment transcriptions for sentiment.
+ *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T15
  */
@@ -57,6 +62,7 @@ class SentimentAnalysisJob extends TimedJob {
 	 * @param ContactMomentService $contactMomentService The contactmoment service.
 	 * @param IAppManager $appManager The app manager.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the pass writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -65,6 +71,7 @@ class SentimentAnalysisJob extends TimedJob {
 		private readonly ContactMomentService $contactMomentService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		// Every 10 minutes.
@@ -83,6 +90,27 @@ class SentimentAnalysisJob extends TimedJob {
 	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
 	 */
 	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work(argument: $argument));
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * The sentiment analysis pass itself, run as the service account.
+	 *
+	 * @param mixed $argument The job argument.
+	 *
+	 * @return void
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md#requirement-realtime-sentiment-detectie-en-escalatie-aanbeveling
+	 */
+	private function work(mixed $argument): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
 			return;
 		}
@@ -132,7 +160,7 @@ class SentimentAnalysisJob extends TimedJob {
 				);
 			}
 		}
-	}//end run()
+	}//end work()
 
 	/**
 	 * Score a single contactmoment and persist its sentiment.
