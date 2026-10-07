@@ -8,7 +8,7 @@
 	},
 	"comparedOn": "2026-09-26",
 	"rowsAddedOn": "2026-09-09",
-	"reratedOn": "2026-10-07",
+	"reratedOn": "2026-10-02",
 	"dossiqRevision": "024e93d0a",
 	"_rerated": [
 		{
@@ -786,30 +786,6 @@
 			"to": "yes",
 			"cause": "corrected",
 			"reason": "Nextcloud Office is the platform office. dossiq#2642 (a4685e7a6) moved case documents into a real Nextcloud folder, and a row click in the case Files tab hands an office file to the Viewer and to Collabora (nextcloud-vue 2.57.1 `CnFilesBrowser.vue:990`, `DashboardController.php:96-99`). `grep -rn WOPI lib src` returns nothing, as it should. Provider nextcloud (gap scan 2026-09-19, pack d, verdict platform)."
-		},
-		{
-			"id": "12.14",
-			"on": "2026-10-07",
-			"from": "partial",
-			"to": "yes",
-			"cause": "built",
-			"reason": "Case events stream to Kafka, RabbitMQ or a CloudEvents endpoint: integriq's broker action kind (event-broker-transport, archived 2026-09-29) publishes every openregister object event, case writes included, through a broker an administrator picks."
-		},
-		{
-			"id": "11.25",
-			"on": "2026-10-07",
-			"from": "partial",
-			"to": "yes",
-			"cause": "built",
-			"reason": "Fields hidden, required or read only by case state now hold: a status declares fieldRules, publishing the case type writes them onto the case schema, and openregister's field-rules-by-state (archived 2026-10-05) enforces them; the role half was already there."
-		},
-		{
-			"id": "4.9",
-			"on": "2026-10-07",
-			"from": "yes",
-			"to": "partial",
-			"cause": "corrected",
-			"reason": "A handler still tags a document in Document properties on its Files row, but since the Documents tab was retired on 2026-09-13 the keywords show on no row and no filter offers them: collectKeywords() and filterGroupsByKeywords() in src/utils/dossierHelpers.js have no caller. The 2026-09-08 reason described the retired tab."
 		}
 	],
 	"_competitorRerated": [
@@ -13406,7 +13382,7 @@
 			"area": "documents",
 			"name": "Document labels or tags",
 			"name_nl": "Labels of tags op documenten",
-			"dossiq": "partial",
+			"dossiq": "yes",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "yes",
@@ -13427,7 +13403,7 @@
 					"board": "DqZaakDocumenten"
 				},
 				"reachedOn": "#CaseDetail Files tab > row > Document properties",
-				"note": "Re-read 2026-10-07 while writing its spec (document-zaakdossier REQ-ZAK-024): a handler tags a document, but the keywords are no longer shown on the row and the case page has no keyword filter, so the row is partial. Missing: keyword chips and a keyword filter on the Files tab (nextcloud-vue files-browser-columns, the same gap as row 4.8)."
+				"note": "Re-read 2026-10-07 while writing its spec (document-zaakdossier REQ-ZAK-024): a handler tags a document, but the keywords are no longer shown on the row and the case page has no keyword filter, so the row reads as partial. Missing: keyword chips and a keyword filter on the Files tab (nextcloud-vue files-browser-columns, the same gap as row 4.8). Proposed rating partial (from yes), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body."
 			},
 			"evidence": {
 				"opencase": "opencase@1.1.0 lib/Db/Document.php:44-56 has no tag or label field; the only classification is the fixed category (Indgående, Udgående, Intern) and document type in src/components/EditDocumentDialog.vue:10 | round 2 drive: procest/opencase/round2/pages/DocumentCreate.md:15 \"Required: Title, Document category (Inbound, Outbound, Internal).\"",
@@ -17793,7 +17769,7 @@
 			"area": "configuration",
 			"name": "Fields hidden, required or read only by role and case state",
 			"name_nl": "Velden verborgen, verplicht of alleen-lezen per rol en zaakstatus",
-			"dossiq": "yes",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "yes",
@@ -17822,7 +17798,7 @@
 				],
 				"evidence": "role half: field-rules-declared (row 13.8, fieldRoleRules, src/utils/fieldRoleRules.js); state half: a status declares fieldRules (lib/Settings/dossiq_register.json:922, edited in src/views/settings/components/StatusTypeForm.vue via src/utils/statusFieldRules.js), lib/Service/Status/CaseStateFieldRuleProjector.php:188 publishes them onto x-openregister-lifecycle.states.<status>.fields when the case type is published (lib/Service/CaseTypePublishService.php:72), and openregister field-rules-by-state (archived 2026-10-05) enforces them and returns @self.fieldRules (openregister lib/Service/Object/RenderObject.php:2421), which the case page reads (src/services/caseAccessApi.js:571, src/components/case/CaseStatusDeclarationPanel.vue)",
 				"owner": "ConductionNL/openregister",
-				"note": "Re-read 2026-10-07: openregister archived field-rules-by-state on 2026-10-05 and dossiq declares, publishes and shows the rules (what-a-status-declares, still an open change here). Hidden, read-only and required now apply per role and per status.",
+				"note": "Re-read 2026-10-07: openregister archived field-rules-by-state on 2026-10-05 and dossiq declares, publishes and shows the rules (what-a-status-declares, still an open change here). Hidden, read-only and required now apply per role and per status. Proposed rating yes (from partial), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body.",
 				"screen": {
 					"board": null,
 					"reason": "not designed yet: field rules per role and state"
@@ -18368,7 +18344,7 @@
 			"area": "integrations",
 			"name": "Message broker or event streaming",
 			"name_nl": "Berichtenmakelaar of gebeurtenisstromen",
-			"dossiq": "yes",
+			"dossiq": "partial",
 			"opencase": "no",
 			"gzac": "yes",
 			"zaaksysteem": "partial",
@@ -18383,7 +18359,7 @@
 				"evidence": "integriq lib/AppInfo/Application.php:287,297 listens to openregister ObjectCreatedEvent and ObjectUpdatedEvent, so every case write is an integriq event; lib/Service/EventService.php:1277 dispatches action.kind 'broker' through lib/Broker/BrokerTransportRegistry.php to Kafka REST, RabbitMQ HTTP or CloudEvents HTTP (lib/Broker/Transport/*); an administrator picks the broker in the event subscription modal (src/modals/EventSubscription/SubscriptionActionFields.vue:153)",
 				"owner": "ConductionNL/integriq",
 				"change": "integriq/event-broker-transport",
-				"note": "Re-read 2026-10-07: integriq archived event-broker-transport on 2026-09-29. dossiq's own lib/Service/Transitions/WebhookHandler.php stays the per-transition webhook; streaming case events to a broker is integriq's and dossiq consumes it without code of its own.",
+				"note": "Re-read 2026-10-07: integriq archived event-broker-transport on 2026-09-29. dossiq's own lib/Service/Transitions/WebhookHandler.php stays the per-transition webhook; streaming case events to a broker is integriq's and dossiq consumes it without code of its own. Proposed rating yes (from partial), not applied: our-column moves are pinned in tests/vitest/capabilityComparison.spec.js and this round changes no test; see the spec round PR body.",
 				"screen": {
 					"board": null,
 					"reason": "backend: event broker transport"
