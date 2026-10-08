@@ -43,9 +43,16 @@ use Throwable;
  */
 class QuickActionService {
 	/**
-	 * Case type slug used for klacht cases (Awb hoofdstuk 9).
+	 * Case type identifier used for klacht cases (Awb hoofdstuk 9).
+	 *
+	 * The register ships the Awb 9:1 complaint type as `klacht-behandeling`
+	 * (six weeks, initial status `klacht-ontvangen`). The former code
+	 * `klacht_ex_artikel_9_1_awb` named no shipped type, so every complaint
+	 * was refused before it was written.
+	 *
+	 * @spec openspec/changes/dso-single-intake-path/specs/kcc-werkplek-zaaksysteem-bridge/spec.md
 	 */
-	private const KLACHT_ZAAKTYPE = 'klacht_ex_artikel_9_1_awb';
+	private const KLACHT_ZAAKTYPE = 'klacht-behandeling';
 
 	/**
 	 * Constructor.

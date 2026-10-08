@@ -11114,7 +11114,7 @@
 			"featureConfidence": "low",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/ZrcController.php; lib/Controller/DSOIntakeController.php",
+				"evidence": "lib/Controller/ZrcController.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -18556,7 +18556,7 @@
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
-				"evidence": "lib/Controller/DsoController.php; DSOIntakeController.php; lib/Service/DsoIntakeService.php",
+				"evidence": "lib/Controller/DsoController.php; lib/Listener/VergunningaanvraagCreatedListener.php; lib/Service/DsoCaseService.php",
 				"readOn": "2026-09-27",
 				"owner": "ConductionNL/dossiq",
 				"spec": [
@@ -20910,7 +20910,7 @@
 			"status": "pending",
 			"source": "round 4 batch 7",
 			"dossiq": "partial",
-			"dossiqNote": "From a grep: `lib/Service/Transitions/WebhookHandler.php` has no `hmac`, `signature` or `secret`, so outbound calls are unsigned; inbound signatures are verified in `DSOIntakeController.php:54-88` and `DwangsomPaymentCallbackController.php:149-180`, HMAC-SHA256 over the raw body. Vikunja signs with an HMAC secret per webhook (`pkg/models/webhooks.go:64`); Kanboard appends one instance-wide token to the URL as a query parameter. Numbered 6.20 because batch 6 took 6.18 and batch 8 merged first with a 6.19.",
+			"dossiqNote": "From a grep: `lib/Service/Transitions/WebhookHandler.php` has no `hmac`, `signature` or `secret`, so outbound calls are unsigned; inbound signatures are verified in `DwangsomPaymentCallbackController.php:149-180` (a DSO verzoek is signed and verified at integriq), HMAC-SHA256 over the raw body. Vikunja signs with an HMAC secret per webhook (`pkg/models/webhooks.go:64`); Kanboard appends one instance-wide token to the URL as a query parameter. Numbered 6.20 because batch 6 took 6.18 and batch 8 merged first with a 6.19.",
 			"opencase": "no",
 			"gzac": "no",
 			"zaaksysteem": "partial",
@@ -21135,7 +21135,7 @@
 			"status": "pending",
 			"source": "round 4 batch 10",
 			"dossiq": "yes",
-			"dossiqNote": "From a grep: `iframe|embed|widget.js|postMessage` over `lib/ src/` returns UUID and EXIF matches only, and the one public intake endpoint is `lib/Controller/DSOIntakeController.php` (`#[PublicPage]`), which receives DSO submissions from the Omgevingsloket and not a form on the municipality's site. The portal move to portaliq is where this would land. Jira DC documents the issue collector, \"a Jira feedback form into your own website\" with no account for the visitor and hidden fields preset; Zammad drove one in batch 3, one generic form for the whole install, which is why its 1.1 is `partial` and this row would be its `yes`. Easy Redmine is `no`: its only embed is a dashboard iFrame widget, the wrong direction. Row 1.1 asks whether a citizen can file on the product's own portal, which is a different question. Re-rated no to yes on 2026-09-26: the embedded intake chain is wired end to end in portaliq. The embed frame is the Vue entry src/embed (EmbedFrame.vue, EmbedForm.vue; portaliq#1032), served by templates/embed.php at GET /portal/embed (appinfo/routes.php:304). It posts to POST /portal/api/embed/submit (appinfo/routes.php:305); lib/Controller/PortalEmbedController.php:166 submit() calls PortalIntakeQueue::accept() (lib/Service/Intake/PortalIntakeQueue.php:98); lib/BackgroundJob/PortalIntakeDeliveryJob.php:102-140 deliver() creates the case in the form binding's caseRegister and caseSchema (portaliq matrix rows int-embedded-form and sib-dossiq-q1-16). It delivers a case for any form whose binding names a case register and schema.",
+			"dossiqNote": "From a grep: `iframe|embed|widget.js|postMessage` over `lib/ src/` returns UUID and EXIF matches only, and dossiq has no public intake endpoint (DSO submissions arrive through integriq and the case listener), so nothing takes a form on the municipality's site. The portal move to portaliq is where this would land. Jira DC documents the issue collector, \"a Jira feedback form into your own website\" with no account for the visitor and hidden fields preset; Zammad drove one in batch 3, one generic form for the whole install, which is why its 1.1 is `partial` and this row would be its `yes`. Easy Redmine is `no`: its only embed is a dashboard iFrame widget, the wrong direction. Row 1.1 asks whether a citizen can file on the product's own portal, which is a different question. Re-rated no to yes on 2026-09-26: the embedded intake chain is wired end to end in portaliq. The embed frame is the Vue entry src/embed (EmbedFrame.vue, EmbedForm.vue; portaliq#1032), served by templates/embed.php at GET /portal/embed (appinfo/routes.php:304). It posts to POST /portal/api/embed/submit (appinfo/routes.php:305); lib/Controller/PortalEmbedController.php:166 submit() calls PortalIntakeQueue::accept() (lib/Service/Intake/PortalIntakeQueue.php:98); lib/BackgroundJob/PortalIntakeDeliveryJob.php:102-140 deliver() creates the case in the form binding's caseRegister and caseSchema (portaliq matrix rows int-embedded-form and sib-dossiq-q1-16). It delivers a case for any form whose binding names a case register and schema.",
 			"opencase": "no",
 			"gzac": "partial",
 			"zaaksysteem": "no",

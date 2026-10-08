@@ -139,7 +139,7 @@ class QuickActionCaseWritesMatchTheRealSchemaTest extends TestCase {
 	 * @return void
 	 */
 	public function testAComplaintFitsTheRealCaseSchema(): void {
-		$this->service(identifier: 'klacht_ex_artikel_9_1_awb')->executeKlachtRegistreren(
+		$this->service(identifier: 'klacht-behandeling')->executeKlachtRegistreren(
 			caseId: '7f809102-3c4d-4e5f-8a1b-2c3d4e5f6071',
 			summary: 'Niet teruggebeld',
 			burgerId: '999993653'
