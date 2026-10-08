@@ -99,7 +99,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `testTheArrayIsNotChanged` and `testAnObjectThatCannotBeWrittenIsReportedAndTheRunGoesOn`.
   - Through the caller: a test that reads `appinfo/info.xml` and finds the step under
     `<post-migration>`, `testTheCopyStepIsRegistered`.
-- [ ] 4.2 In both `lib/Settings/dossiq_register.json` and `lib/Settings/dossiq_mock_register.json`,
+- [x] 4.2 In both `lib/Settings/dossiq_register.json` and `lib/Settings/dossiq_mock_register.json`,
   describe `auditTrail` on `hearingSession` and `bacAdviceRequest` as the frozen record written before
   this change and copied to OpenRegister's audit trail; bump the register `info.version`
   (REQ-BAT-004).
