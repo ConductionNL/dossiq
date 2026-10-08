@@ -8,7 +8,7 @@ failure line in the PR body.
 
 ## 1. Delete the inert pipeline
 
-- [ ] 1.1 Delete `lib/Middleware/TenantIsolationMiddleware.php` and its registration in
+- [x] 1.1 Delete `lib/Middleware/TenantIsolationMiddleware.php` and its registration in
   `lib/AppInfo/Registrar/MiddlewareRegistrar.php`, with the comments there that describe a
   search_path (REQ-TIS-001).
   - **fails today**: `tests/Unit/Architecture/NoSearchPathTenancyTest.php`
@@ -17,7 +17,7 @@ failure line in the PR body.
   - **fails today**: a registrar test, `tests/Unit/AppInfo/MiddlewareRegistrarTest.php`
     `testTheIsolationMiddlewareIsNotRegistered`, built on a real `IRegistrationContext` double
     that records every `registerMiddleware()` call.
-- [ ] 1.2 Delete `TenantSchemaProvisioner`, `TenantProvisioningService`, `TenantSeedService` and
+- [x] 1.2 Delete `TenantSchemaProvisioner`, `TenantProvisioningService`, `TenantSeedService` and
   `TenantWelcomeMailer`, and `TenantIsolationMiddlewareTest`, `TenantSchemaProvisionerTest` and
   `TenantProvisioningServiceTest`. Remove their entries from
   `tests/Unit/Architecture/catch-return-null.allowlist.json` (REQ-TIS-001).
@@ -34,7 +34,7 @@ failure line in the PR body.
 
 ## 2. The checklist names the control that runs
 
-- [ ] 2.1 In `TenantAuditTrailService::hardeningChecklist()`, `tenant_scoped_queries` and
+- [x] 2.1 In `TenantAuditTrailService::hardeningChecklist()`, `tenant_scoped_queries` and
   `no_tenant_info_leak` cite OpenRegister's organisation row filter (`MagicSearchHandler`,
   multitenancy). Their status is `pass` only when a live call to OpenRegister's
   `SettingsService::isMultiTenancyEnabled()` answers true, and `unverified` when it answers false,
@@ -45,7 +45,7 @@ failure line in the PR body.
     `testTheIsolationItemsCiteTheOpenRegisterRowFilter`,
     `testTheIsolationItemsAreUnverifiedWhenMultitenancyIsOff` and
     `testTheIsolationItemsAreUnverifiedWhenOpenRegisterIsAbsent`.
-- [ ] 2.2 `isolation_pen_test` describes row isolation, not schema isolation, and stays
+- [x] 2.2 `isolation_pen_test` describes row isolation, not schema isolation, and stays
   `unverified` (REQ-TIS-002).
   - **fails today**: `TenantAuditTrailServiceTest`
     `testNoChecklistItemMentionsASchemaOrASearchPath`.
