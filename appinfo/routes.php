@@ -599,7 +599,6 @@ $extra = [
         // tenant resolution — the parts that are not declarative CRUD.
     ['name' => 'tenant#current',   'url' => '/api/tenants/current',                'verb' => 'GET'],
     ['name' => 'tenant#memberships',  'url' => '/api/tenants/memberships',         'verb' => 'GET'],
-    ['name' => 'tenant#switchTenant', 'url' => '/api/tenants/switch',              'verb' => 'POST'],
     ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision',   'verb' => 'POST'],
     ['name' => 'tenant#usage',     'url' => '/api/tenants/{tenantId}/usage',       'verb' => 'GET'],
 

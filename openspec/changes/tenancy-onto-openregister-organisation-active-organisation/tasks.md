@@ -38,7 +38,7 @@ getters are magic; the service returns `null` for a user with no active organisa
   - **fails today**, through the caller: `tests/Unit/Middleware/MandateValidationMiddlewareTest.php`
     `testTheMandateCheckRunsForOpenRegistersActiveOrganisation` and
     `testNoActiveOrganisationLeavesTheRequestUnchecked`, built on the real `TenantContext`.
-- [ ] 2.2 `TenantSessionService::activeTenantId()` answers the active organisation's uuid only when
+- [x] 2.2 `TenantSessionService::activeTenantId()` answers the active organisation's uuid only when
   the user's `tenantUser` memberships list it, and `null` otherwise. Its session key, `switchTo()`
   and `clear()` go (REQ-TAO-002).
   - **fails today**: `tests/Unit/Service/TenantSessionServiceTest.php`

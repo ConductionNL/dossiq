@@ -183,45 +183,6 @@ class TenantController extends Controller {
 	}//end memberships()
 
 	/**
-	 * Switch the session to another tenant the user belongs to.
-	 *
-	 * WHY THIS IS AN ENDPOINT AND NOT A HEADER. The tenant a request acts as
-	 * used to come from `X-Tenant-Id`, which the caller supplies — so the
-	 * caller chose their own tenant and nothing verified they could. Switching
-	 * is now an explicit act whose membership is checked at the moment it
-	 * happens, and the result lives in the session rather than in something the
-	 * next request can retype.
-	 *
-	 * A refusal is deliberately a 403 with no detail about whether the tenant
-	 * exists: telling an outsider "that tenant is real, you just are not on it"
-	 * enumerates the tenant list.
-	 *
-	 * @param string $tenantId The tenant to switch to.
-	 *
-	 * @NoAdminRequired
-	 *
-	 * @return JSONResponse The outcome.
-	 *
-	 * @spec openspec/changes/tenancy-onto-openregister-organisation/proposal.md
-	 */
-	public function switchTenant(string $tenantId = ''): JSONResponse {
-		$user = $this->userSession->getUser();
-		if ($user === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-		}
-
-		if ($this->tenantSession->switchTo($tenantId) === false) {
-			return new JSONResponse(
-				['success' => false, 'error' => 'You cannot act as that tenant'],
-				Http::STATUS_FORBIDDEN
-			);
-		}
-
-		return new JSONResponse(['success' => true, 'active' => $this->tenantSession->activeTenantId()]);
-	}//end switchTenant()
-
-
-	/**
 	 * Check if current user is a platform administrator.
 	 *
 	 * @return bool True if admin

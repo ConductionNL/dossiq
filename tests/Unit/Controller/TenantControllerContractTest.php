@@ -181,59 +181,18 @@ class TenantControllerContractTest extends TestCase {
 	}//end testCurrentReportsAnUnassignedAccountAsASuccessfulNullTenant()
 
 	/**
-	 * An unauthenticated caller cannot switch tenant.
+	 * There is no tenant switch route: switching is OpenRegister's set-active (REQ-TAO-002).
 	 *
 	 * @return void
 	 */
-	public function testSwitchRefusesAnUnauthenticatedCaller(): void {
-		$this->userSession->method('getUser')->willReturn(null);
-		$this->tenantSession->expects($this->never())->method('switchTo');
+	public function testThereIsNoSwitchTenantRoute(): void {
+		$routes = require dirname(__DIR__, 3).'/appinfo/routes.php';
+		$names  = array_column($routes['routes'] ?? [], 'name');
 
-		$response = $this->controller->switchTenant('tenant-a');
-
-		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-	}//end testSwitchRefusesAnUnauthenticatedCaller()
-
-	/**
-	 * A refused switch is a 403 that does not say whether the tenant exists.
-	 *
-	 * Distinguishing "no such tenant" from "not yours" would let an outsider
-	 * enumerate the tenant list one guess at a time, which is a disclosure the
-	 * endpoint has no reason to make.
-	 *
-	 * @return void
-	 */
-	public function testARefusedSwitchDoesNotRevealWhetherTheTenantExists(): void {
-		$this->signIn('alice');
-		$this->tenantSession->method('switchTo')->willReturn(false);
-
-		$response = $this->controller->switchTenant('tenant-b');
-
-		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-		$this->assertStringNotContainsStringIgnoringCase('exist', (string)$response->getData()['error']);
-		$this->assertStringNotContainsStringIgnoringCase('found', (string)$response->getData()['error']);
-	}//end testARefusedSwitchDoesNotRevealWhetherTheTenantExists()
-
-	/**
-	 * A permitted switch reports the tenant that is now active.
-	 *
-	 * The active tenant is read back from the service rather than echoed from
-	 * the request: echoing would report success for a switch that did not
-	 * actually take, which is the one failure a caller cannot detect.
-	 *
-	 * @return void
-	 */
-	public function testAPermittedSwitchReportsTheNewActiveTenant(): void {
-		$this->signIn('alice');
-		$this->tenantSession->method('switchTo')->with('tenant-b')->willReturn(true);
-		$this->tenantSession->method('activeTenantId')->willReturn('tenant-b');
-
-		$response = $this->controller->switchTenant('tenant-b');
-
-		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertTrue($response->getData()['success']);
-		$this->assertSame('tenant-b', $response->getData()['active']);
-	}//end testAPermittedSwitchReportsTheNewActiveTenant()
+		$this->assertNotSame([], $names, 'an empty route table would make this vacuous');
+		$this->assertNotContains('tenant#switchTenant', $names);
+		$this->assertFalse(method_exists(TenantController::class, 'switchTenant'));
+	}//end testThereIsNoSwitchTenantRoute()
 
 	/**
 	 * A failed membership lookup is an error, not an empty list.
