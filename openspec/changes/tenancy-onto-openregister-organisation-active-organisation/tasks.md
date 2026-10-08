@@ -97,11 +97,11 @@ getters are magic; the service returns `null` for a user with no active organisa
   organisation's mandate matrix; suspending it refuses the next dossiq write; an admin reads its
   usage from `GET /apps/openregister/api/organisations/{uuid}/usage`. Cite REQ-TAO-002, REQ-TAO-003
   and REQ-TAO-005.
-- [ ] 4.3 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
+- [x] 4.3 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
   only the unit tests of touched classes with
   `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter '<Class>'` and judge by the
   `Tests:` line, because a green suite exits 1 without a coverage driver.
-- [ ] 4.4 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
+- [x] 4.4 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
   and any other leg `code-quality.yml` requires. Then
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates that ran. The coverage
   guard needs tests for every added statement.
