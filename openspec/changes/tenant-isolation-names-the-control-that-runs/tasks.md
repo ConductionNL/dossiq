@@ -66,11 +66,11 @@ failure line in the PR body.
 
 ## 4. Verify and deliver
 
-- [ ] 4.1 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
+- [x] 4.1 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
   only the unit tests of touched classes with
   `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter '<Class>'` and judge by the
   `Tests:` line, because a green suite exits 1 without a coverage driver.
-- [ ] 4.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
+- [x] 4.2 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
   `npm run lint` and any other leg `code-quality.yml` requires. Then
   `scripts/run-hydra-gates.sh --base origin/development`, count the gates that ran, and paste gate
   23's output: no `search_path` finding, and none of the five deleted paths.
