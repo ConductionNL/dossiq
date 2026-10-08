@@ -31,7 +31,7 @@ getters are magic; the service returns `null` for a user with no active organisa
 
 ## 2. The active tenant is OpenRegister's (Q3)
 
-- [ ] 2.1 `TenantContext` resolves the tenant on first read from
+- [x] 2.1 `TenantContext` resolves the tenant on first read from
   `OrganisationService::getActiveOrganisation()`, projected the way `TenantOrganisationResolver`
   projects an Organisation (`uuid`, `id`, `slug`, `status`). It stays unbound when the service
   answers `null`, throws, or OpenRegister is absent. `bind()` goes (REQ-TAO-002).
@@ -45,7 +45,7 @@ getters are magic; the service returns `null` for a user with no active organisa
     `testTheActiveTenantIsOpenRegistersActiveOrganisation`,
     `testAnActiveOrganisationTheUserHasNoMembershipOfIsNotTheTenant` and
     `testTheServiceKeepsNoSessionKeyOfItsOwn`.
-- [ ] 2.3 `MandateValidationMiddleware` refuses with 403 when the bound organisation's status is not
+- [x] 2.3 `MandateValidationMiddleware` refuses with 403 when the bound organisation's status is not
   `active`, before the action check, for a signed-in user who is not a platform admin, on a
   controller outside the exempt list `TenantMiddleware` had (`SettingsController`,
   `DashboardController`, `TenantController`, OpenRegister's `GenericHealthController` and
