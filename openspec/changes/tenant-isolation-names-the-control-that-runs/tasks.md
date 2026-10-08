@@ -22,7 +22,7 @@ failure line in the PR body.
   `TenantProvisioningServiceTest`. Remove their entries from
   `tests/Unit/Architecture/catch-return-null.allowlist.json` (REQ-TIS-001).
   - **fails today**: `NoSearchPathTenancyTest` `testNoneOfTheFiveDeletedClassesIsNamedUnderLib`.
-- [ ] 1.3 `TenantContext::bind()` takes the tenant only; `getSchemaName()` and the stored schema
+- [x] 1.3 `TenantContext::bind()` takes the tenant only; `getSchemaName()` and the stored schema
   name go. `TenantContextMiddleware` no longer injects `TenantProvisioningService` (REQ-TIS-001, REQ-TIS-004).
   - **fails today**: `tests/Unit/Middleware/TenantContextMiddlewareTest.php`
     `testBindingASessionTenantNeedsNoSchemaName`, and `tests/Unit/Service/TenantContextTest.php`
