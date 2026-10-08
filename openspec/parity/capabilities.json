@@ -10802,7 +10802,8 @@
 				"case-share-via-shares-leaf",
 				"communication-portal-conversation-on-the-case",
 				"leaf-integrations",
-				"zaakportaal-mijngemeente"
+				"zaakportaal-mijngemeente",
+				"portal-contribution"
 			]
 		},
 		{
@@ -10817,7 +10818,10 @@
 				"case-types",
 				"dossiq-store-surface",
 				"property-definition-management",
-				"status-transition-engine"
+				"status-transition-engine",
+				"case-type-navigation",
+				"case-type-seed-data",
+				"zaaktype-versioning"
 			]
 		},
 		{
@@ -10842,7 +10846,8 @@
 				"deelzaak-support",
 				"federated-case-collaboration",
 				"reassignment-bulk-action",
-				"related-case-linking"
+				"related-case-linking",
+				"realtime-updates-ui"
 			]
 		},
 		{
@@ -10886,7 +10891,10 @@
 				"status-transition-engine",
 				"workflow-definition-engine",
 				"workflow-definition-model",
-				"workflow-variants"
+				"workflow-variants",
+				"flow-nodes-to-their-owners",
+				"workflow-definitions-to-flow",
+				"workflow-import-export"
 			]
 		},
 		{
@@ -10895,7 +10903,9 @@
 			"title_nl": "Visuele workflow-editor",
 			"area": "tasks-and-phases",
 			"overlay": "visual-workflow-editor",
-			"specs": []
+			"specs": [
+				"visual-workflow-editor"
+			]
 		},
 		{
 			"slug": "tasks-and-work-queues",
@@ -11117,7 +11127,8 @@
 				"case-access-control",
 				"document-zaakdossier",
 				"handler-vervanging-waarneming",
-				"mandaat-matrix"
+				"mandaat-matrix",
+				"avg-processing-surface"
 			]
 		},
 		{
@@ -11144,7 +11155,8 @@
 			"overlay": "kcc-werkplek-zaaksysteem-bridge",
 			"specs": [
 				"kcc-werkplek-zaaksysteem-bridge",
-				"parties-and-contact-moments-consume-pipelinq"
+				"parties-and-contact-moments-consume-pipelinq",
+				"kcc-klantcontact-integratie"
 			]
 		},
 		{
@@ -11176,7 +11188,8 @@
 				"map-component",
 				"pdok-consumer",
 				"pdok-integration",
-				"wms-wfs-layers"
+				"wms-wfs-layers",
+				"bag-location-save-validation"
 			]
 		},
 		{
@@ -11194,7 +11207,9 @@
 			"area": "communication",
 			"overlay": "case-email-integration",
 			"specs": [
-				"case-email-integration"
+				"case-email-integration",
+				"case-message-opt-out",
+				"email-case-matching"
 			]
 		},
 		{
@@ -11290,7 +11305,11 @@
 				"tenant-lifecycle",
 				"tenant-mandate",
 				"tenant-onboarding",
-				"tenant-quotas"
+				"tenant-quotas",
+				"tenant-auth",
+				"tenant-isolation",
+				"tenant-provisioning",
+				"tenant-schemas"
 			]
 		},
 		{
@@ -11302,7 +11321,10 @@
 			"specs": [
 				"admin-settings",
 				"first-time-setup",
-				"tenant-configuration"
+				"tenant-configuration",
+				"dossiq-config-to-settings",
+				"features-roadmap",
+				"nav-dedup-and-grouping"
 			]
 		},
 		{
@@ -11325,6 +11347,569 @@
 			]
 		}
 	],
+	"internalSpecs": [
+		"app-metadata-claims",
+		"apphost-adoption",
+		"apphost-autoload-prelude",
+		"authz-bypass-fixes",
+		"beta-alignment",
+		"docs-product-pages",
+		"dossiq-app-scaffold",
+		"dossiq-canonical-store-api",
+		"dossiq-case-management",
+		"dossiq-object-store",
+		"dossiq-store-migration",
+		"dossiq-tenant-migration",
+		"external-integration-test-wiring",
+		"frontend-build-hygiene",
+		"frontend-locale-completeness",
+		"master-data-management",
+		"migrate-status-engine-to-or-lifecycle",
+		"open-raadsinformatie",
+		"openregister-integration",
+		"ops-observability",
+		"ori-removal",
+		"parafeerroute-engine",
+		"performance-hardening",
+		"quality-gates",
+		"security-hardening",
+		"spec-anchor-convention",
+		"tenant-compliance",
+		"unit-test-coverage",
+		"vth-quality-docs",
+		"vth-testing",
+		"webhook-steps-through-integriq"
+	],
+	"specScreens": {
+		"ai-oversight-log": {
+			"board": [
+				"DqZaakAssistent"
+			]
+		},
+		"app-metadata-claims": {
+			"board": null,
+			"reason": "metadata: info.xml, README and the features overlay, not a page"
+		},
+		"apphost-adoption": {
+			"board": null,
+			"reason": "plumbing: the data layer and app wiring under every screen"
+		},
+		"apphost-autoload-prelude": {
+			"board": null,
+			"reason": "plumbing: the data layer and app wiring under every screen"
+		},
+		"authz-bypass-fixes": {
+			"board": null,
+			"reason": "security fixes in authorization checks, no page of their own"
+		},
+		"avg-processing-surface": {
+			"board": [
+				"DqPrivacy"
+			]
+		},
+		"bag-location-save-validation": {
+			"board": [
+				"DqZaakLocatie"
+			]
+		},
+		"bag-register-adapter": {
+			"board": [
+				"DqZaakLocatie",
+				"DqInstellingen"
+			]
+		},
+		"beroep-escalation": {
+			"board": [
+				"DqBezwaar",
+				"DqZaaktypen"
+			]
+		},
+		"beta-alignment": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"bezwaar-advisory-committee": {
+			"board": [
+				"DqBezwaar"
+			]
+		},
+		"bezwaar-rest-api": {
+			"board": [
+				"DqBezwaar"
+			]
+		},
+		"brk-woz-register-adapters": {
+			"board": [
+				"DqZaakLocatie",
+				"DqInstellingen"
+			]
+		},
+		"brp-register": {
+			"board": [
+				"DqContact"
+			]
+		},
+		"burger-notifications": {
+			"board": [
+				"DqZaaktype"
+			]
+		},
+		"case-assistant-via-hermiq": {
+			"board": [
+				"DqZaakAssistent"
+			]
+		},
+		"case-message-opt-out": {
+			"board": [
+				"DqZaaktype"
+			]
+		},
+		"case-status-machinery": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: the one write path for a case status"
+		},
+		"case-type-seed-data": {
+			"board": [
+				"DqZaaktypen"
+			]
+		},
+		"contract-decision-delegation": {
+			"board": [
+				"DqContracten"
+			]
+		},
+		"docs-product-pages": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"document-projection": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: keeps ZGW document records in step with the case folder"
+		},
+		"dossiq-app-scaffold": {
+			"board": null,
+			"reason": "plumbing: the data layer and app wiring under every screen"
+		},
+		"dossiq-canonical-store-api": {
+			"board": null,
+			"reason": "plumbing: the data layer and app wiring under every screen"
+		},
+		"dossiq-case-management": {
+			"board": null,
+			"reason": "retired: superseded by case-management and task-management, which are on the case boards"
+		},
+		"dossiq-config-to-settings": {
+			"board": [
+				"DqInstellingen",
+				"DqInstellingenAlgemeen"
+			]
+		},
+		"dossiq-object-store": {
+			"board": null,
+			"reason": "plumbing: the data layer and app wiring under every screen"
+		},
+		"dossiq-procurement-compliance": {
+			"board": [
+				"DqAanbesteding"
+			]
+		},
+		"dossiq-procurement-contract-lifecycle": {
+			"board": [
+				"DqContracten"
+			]
+		},
+		"dossiq-procurement-evaluation-award": {
+			"board": [
+				"DqAanbesteding"
+			]
+		},
+		"dossiq-procurement-publication-platform": {
+			"board": [
+				"DqAanbesteding"
+			]
+		},
+		"dossiq-procurement-spend-analytics-integration": {
+			"board": null,
+			"reason": "events and an export contract for spend analytics in another app, no dossiq page"
+		},
+		"dossiq-procurement-supplier-management": {
+			"board": [
+				"DqContracten"
+			]
+		},
+		"dossiq-procurement-system-integration": {
+			"board": [
+				"DqInstellingen"
+			]
+		},
+		"dossiq-procurement-tender-management": {
+			"board": [
+				"DqAanbesteding"
+			]
+		},
+		"dossiq-sociaal-domein-avg-consent": {
+			"board": [
+				"DqSociaalDomein"
+			]
+		},
+		"dossiq-sociaal-domein-jeugdwet": {
+			"board": [
+				"DqSociaalDomein",
+				"DqZaaktypen"
+			]
+		},
+		"dossiq-sociaal-domein-participatiewet": {
+			"board": [
+				"DqSociaalDomein",
+				"DqZaaktypen"
+			]
+		},
+		"dossiq-store-migration": {
+			"board": null,
+			"reason": "plumbing: the data layer and app wiring under every screen"
+		},
+		"dossiq-tenant-migration": {
+			"board": null,
+			"reason": "migration to OpenRegister organisations, no page of its own"
+		},
+		"dso-omgevingsloket-client": {
+			"board": [
+				"DqInstellingen",
+				"DqVthInstellingen"
+			]
+		},
+		"email-case-matching": {
+			"board": [
+				"DqInstellingen",
+				"DqZaakEmail"
+			]
+		},
+		"enforcement-lhs": {
+			"board": [
+				"DqHandhaving"
+			]
+		},
+		"external-integration-test-wiring": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"features-roadmap": {
+			"board": [
+				"DqFunctionaliteiten"
+			]
+		},
+		"financial-integration": {
+			"board": [
+				"DqTermijnen"
+			]
+		},
+		"flow-nodes-to-their-owners": {
+			"board": [
+				"DqFlow"
+			]
+		},
+		"frontend-build-hygiene": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"frontend-locale-completeness": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"ingebrekestelling": {
+			"board": [
+				"DqTermijnen"
+			]
+		},
+		"inspection-checklists": {
+			"board": [
+				"DqInspectie",
+				"DqVthInstellingen"
+			]
+		},
+		"inspection-forms-via-forms-leaf": {
+			"board": [
+				"DqInspectie"
+			]
+		},
+		"kcc-routing": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: routing rules evaluated by the OpenRegister decision tables"
+		},
+		"kvk-register": {
+			"board": [
+				"DqOrganisatie"
+			]
+		},
+		"lhs-decision-table": {
+			"board": [
+				"DqHandhaving",
+				"DqVthInstellingen"
+			]
+		},
+		"master-data-management": {
+			"board": null,
+			"reason": "annotations only: the steward surface is OpenRegister's"
+		},
+		"mcp-integration": {
+			"board": [
+				"DqInstellingen"
+			]
+		},
+		"migrate-status-engine-to-or-lifecycle": {
+			"board": null,
+			"reason": "migration of the status engine to OpenRegister lifecycles, no page of its own"
+		},
+		"mobiel-inspectie-offline": {
+			"board": [
+				"DqInspectie"
+			]
+		},
+		"objections-appeals-nav-group": {
+			"board": null,
+			"reason": "superseded by case-type-navigation: objections and appeals are case types under Zaken, not a nav group"
+		},
+		"open-raadsinformatie": {
+			"board": null,
+			"reason": "moved: the council information register now lives in decidiq (ori-removal)"
+		},
+		"openregister-integration": {
+			"board": null,
+			"reason": "plumbing: the data layer and app wiring under every screen"
+		},
+		"ops-observability": {
+			"board": null,
+			"reason": "health endpoint for orchestrators, no page"
+		},
+		"ori-removal": {
+			"board": null,
+			"reason": "migration of the ORI register to decidiq, no page of its own"
+		},
+		"parafeerroute-engine": {
+			"board": null,
+			"reason": "retired: its requirements live in case-management, which is on the case boards"
+		},
+		"pdok-consumer": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: routes PDOK calls through OpenRegister"
+		},
+		"pdok-integration": {
+			"board": [
+				"DqZaakLocatie",
+				"DqZakenKaart"
+			]
+		},
+		"performance-hardening": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"portal-contribution": {
+			"board": null,
+			"reason": "no dossiq screen: dossiq provides the data, the portal pages are portaliq's"
+		},
+		"process-step-configuration": {
+			"board": [
+				"DqZaaktype"
+			]
+		},
+		"quality-gates": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"realtime-updates-ui": {
+			"board": [
+				"DqWerkbord"
+			]
+		},
+		"role-based-step-routing": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: role-filtered task generation"
+		},
+		"security-hardening": {
+			"board": null,
+			"reason": "security hardening of portal endpoints and resolvers, no page of its own"
+		},
+		"sla-charts-via-analytics-leaf": {
+			"board": [
+				"DqDoorlooptijd"
+			]
+		},
+		"spec-anchor-convention": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"stuf-integration": {
+			"board": [
+				"DqInstellingen"
+			]
+		},
+		"subsidie-settlement-case-costs": {
+			"board": [
+				"DqSubsidie"
+			]
+		},
+		"subsidieverlening-keten": {
+			"board": [
+				"DqSubsidie"
+			]
+		},
+		"tenant-auth": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: tenant claims in the login token"
+		},
+		"tenant-billing": {
+			"board": [
+				"DqTenant"
+			]
+		},
+		"tenant-compliance": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"tenant-crud-lifecycle": {
+			"board": [
+				"DqTenant"
+			]
+		},
+		"tenant-isolation": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: request-scoped tenant isolation"
+		},
+		"tenant-lifecycle": {
+			"board": [
+				"DqTenant"
+			]
+		},
+		"tenant-mandate": {
+			"board": [
+				"DqTenant"
+			]
+		},
+		"tenant-onboarding": {
+			"board": [
+				"DqTenant"
+			]
+		},
+		"tenant-provisioning": {
+			"board": null,
+			"reason": "backend: runs on the server without a page of its own: schema per tenant and seeding"
+		},
+		"tenant-quotas": {
+			"board": [
+				"DqTenant"
+			]
+		},
+		"tenant-schemas": {
+			"board": null,
+			"reason": "schemas: the data model under the tenant screen"
+		},
+		"termijn-reporting": {
+			"board": [
+				"DqTermijnen"
+			]
+		},
+		"termijn-verification-admin": {
+			"board": [
+				"DqZaaktype"
+			]
+		},
+		"termijnbewaking-schemas": {
+			"board": null,
+			"reason": "schemas: the data model under the deadline screens"
+		},
+		"unit-test-coverage": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"vth-admin-settings": {
+			"board": [
+				"DqVthInstellingen"
+			]
+		},
+		"vth-case-type-seed": {
+			"board": [
+				"DqZaaktypen"
+			]
+		},
+		"vth-config-foundation": {
+			"board": [
+				"DqVthInstellingen"
+			]
+		},
+		"vth-dso-integration": {
+			"board": [
+				"DqVthInstellingen"
+			]
+		},
+		"vth-lhso-classification": {
+			"board": [
+				"DqHandhaving"
+			]
+		},
+		"vth-mobile-inspection": {
+			"board": [
+				"DqInspectie"
+			]
+		},
+		"vth-quality-docs": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"vth-testing": {
+			"board": null,
+			"reason": "engineering: tests, gates or documentation, nothing a user operates"
+		},
+		"vth-workflow-templates": {
+			"board": [
+				"DqZaaktypen"
+			]
+		},
+		"webhook-steps-through-integriq": {
+			"board": null,
+			"reason": "migration of stored webhook steps to Integriq calls, no page of its own"
+		},
+		"wms-wfs-layers": {
+			"board": [
+				"DqZaakLocatie"
+			]
+		},
+		"workflow-definition-model": {
+			"board": [
+				"DqZaaktype"
+			]
+		},
+		"workflow-definitions-to-flow": {
+			"board": [
+				"DqFlow",
+				"DqZaaktype"
+			]
+		},
+		"workflow-import-export": {
+			"board": [
+				"DqZaaktypen",
+				"DqCatalogus"
+			]
+		},
+		"workflow-variants": {
+			"board": [
+				"DqZaaktype"
+			]
+		},
+		"zaaktype-versioning": {
+			"board": [
+				"DqZaaktype",
+				"DqZaaktypeOverzicht"
+			]
+		},
+		"zgw-api-mapping": {
+			"board": null,
+			"reason": "API: the ZGW mapping behind the ZGW APIs"
+		},
+		"zgw-business-rules-compliance": {
+			"board": null,
+			"reason": "API: ZGW business rules on the ZGW APIs"
+		}
+	},
 	"areas": [
 		{
 			"key": "intake",
@@ -11969,8 +12554,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/property-definition-management",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type tabs under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeVelden"
 				}
 			},
 			"evidence": {
@@ -12008,8 +12593,11 @@
 				"evidence": "dossiq_register.json#workflowTemplate; caseType.isDraft/validFrom/validUntil; procest/_round4/discovery/casetype-configurability.md",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type pages under Advanced"
+					"canvas": "design-system",
+					"board": [
+						"DqZaaktypeOverzicht",
+						"DqZaaktype"
+					]
 				}
 			},
 			"evidence": {
@@ -12170,8 +12758,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/case-types",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type pages under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeOverzicht"
 				}
 			},
 			"evidence": {
@@ -12845,8 +13433,8 @@
 				"evidence": "src/manifest.json:641; src/services/createCaseWithDuplicateCheck.js; lib/Service/Intake/DuplicatePolicy.php; lib/Listener/IntakeRequirementsListener.php; dossiq#2900",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: duplicate warning at intake is next wave in vergelijking-dossiq.md"
+					"canvas": "design-system",
+					"board": "DqNieuweZaak"
 				}
 			},
 			"evidence": {
@@ -12975,8 +13563,8 @@
 				"evidence": "src/manifest.json:3187; tests/vitest/caseEditLock.spec.js; nextcloud-vue src/components/CnDetailPage/CnDetailPage.vue; openregister appinfo/routes.php:1243-1244; dossiq#2924 b87d6d3c",
 				"owner": "ConductionNL/openregister",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: no board names the lock holder"
+					"canvas": "design-system",
+					"board": "DqZaakSamenwerken"
 				}
 			},
 			"evidence": {
@@ -13007,8 +13595,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/complaint-management",
 				"screen": {
-					"board": null,
-					"reason": "not designed: complaint overview with frequency analysis; a complaint itself runs on the case pages"
+					"canvas": "design-system",
+					"board": "DqKlachten"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page, menu entry or action reaches the complaint routes",
@@ -13055,8 +13643,11 @@
 					"openspec/specs/contract-decision-delegation"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: tender pages, full profile"
+					"canvas": "design-system",
+					"board": [
+						"DqAanbesteding",
+						"DqContracten"
+					]
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "case Contract tab (shillinq) and the contract decision raised in decidiq",
@@ -13857,8 +14448,8 @@
 				"owner": "ConductionNL/openregister",
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/macro-flows-with-next-item (openregister lane).",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: no board for a macro"
+					"canvas": "design-system",
+					"board": "DqZaakAssistent"
 				}
 			},
 			"evidence": {
@@ -14415,8 +15006,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/woo-llm-anonymisation",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: review of the redaction proposal (capabilities-dossiq.md)"
+					"canvas": "design-system",
+					"board": "DqLakken"
 				}
 			},
 			"evidence": {
@@ -14455,8 +15046,8 @@
 				"evidence": "lib/Service/Zaakdossier/DossierZipExporter.php; lib/Service/EmailArchivalService.php",
 				"owner": "ConductionNL/filinq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: merge to PDF has no board"
+					"canvas": "design-system",
+					"board": "DqDocumentenBeheer"
 				}
 			},
 			"evidence": {
@@ -14632,8 +15223,8 @@
 				"evidence": "register.d/50-subsidie.json#bewijsstuk.fileHashSha256; dossiq#2919 1a2482883",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: the scan verdict on the document row has no board"
+					"canvas": "design-system",
+					"board": "DqDocumentenBeheer"
 				}
 			},
 			"evidence": {
@@ -15066,8 +15657,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/mandaat-matrix",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: organisation tree administration under Advanced"
+					"canvas": "design-system",
+					"board": "DqAfdelingen"
 				}
 			},
 			"evidence": {
@@ -15296,8 +15887,11 @@
 				"owner": "ConductionNL/openregister",
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/external-register-view-leaf (openregister lane).",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: embedded external register view"
+					"canvas": "design-system",
+					"board": [
+						"DqContact",
+						"DqOrganisatie"
+					]
 				}
 			},
 			"evidence": {
@@ -15541,8 +16135,8 @@
 				"evidence": "/api/mail-intake/log/{entryId}/file-on-case; appinfo/routes.php:787; dossiq#3079 fbdadc4f; integriq#2052 e8e127fa8",
 				"owner": "ConductionNL/integriq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: the organisation-wide inbox has no board"
+					"canvas": "design-system",
+					"board": "DqPostvak"
 				}
 			},
 			"evidence": {
@@ -16303,8 +16897,8 @@
 					"openspec/specs/vth-lhso-classification"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: enforcement panel and wizard on a handhaving case"
+					"canvas": "design-system",
+					"board": "DqHandhaving"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "LhsRecommendations pages, by URL only (no menu entry, read-only)",
@@ -16757,8 +17351,8 @@
 				"evidence": "dossiq#2941 b72f2f3f",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: working calendar administration under Advanced"
+					"canvas": "design-system",
+					"board": "DqInstellingenAlgemeen"
 				}
 			},
 			"evidence": {
@@ -16899,8 +17493,8 @@
 					"openspec/specs/financial-integration"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: dwangsom and ingebrekestelling card on the case"
+					"canvas": "design-system",
+					"board": "DqTermijnen"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "TermijnDashboard audit widget; BezwaarDetail dwangsom fields (display only)",
@@ -17307,8 +17901,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/case-search-and-lists",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: the case objects index has no board"
+					"canvas": "design-system",
+					"board": "DqZoekresultaten"
 				}
 			},
 			"evidence": {
@@ -17423,8 +18017,8 @@
 				"change": "openregister/saved-view-count-alert",
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/saved-view-count-alert (openregister lane).",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: saved search alerts"
+					"canvas": "design-system",
+					"board": "DqZoekresultaten"
 				}
 			},
 			"evidence": {
@@ -17580,8 +18174,8 @@
 				"owner": "ConductionNL/dossiq",
 				"change": "2026-07-14-process-mining-bottlenecks",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: process analytics page under Reports"
+					"canvas": "design-system",
+					"board": "DqProcesanalyse"
 				}
 			},
 			"evidence": {
@@ -17614,8 +18208,8 @@
 				"change": "openregister/audit-log-page",
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/audit-log-page (openregister lane).",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: the audit log page is OpenRegister's"
+					"canvas": "design-system",
+					"board": "DqZaakHistorie"
 				}
 			},
 			"evidence": {
@@ -17682,8 +18276,8 @@
 				"change": "openregister/an-export-is-a-file-with-a-life",
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/an-export-is-a-file-with-a-life (openregister lane).",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: export files area"
+					"canvas": "design-system",
+					"board": "DqZoekresultaten"
 				}
 			},
 			"evidence": {
@@ -17923,8 +18517,12 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/case-types",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type pages under Advanced"
+					"canvas": "design-system",
+					"board": [
+						"DqZaaktypeOverzicht",
+						"DqZaaktypeVelden",
+						"DqZaaktype"
+					]
 				}
 			},
 			"evidence": {
@@ -17965,8 +18563,11 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/dossiq-store-surface",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: Store page under Advanced"
+					"canvas": "design-system",
+					"board": [
+						"DqCatalogus",
+						"DqZaaktypen"
+					]
 				}
 			},
 			"evidence": {
@@ -17999,8 +18600,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/property-definition-management",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type tabs under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeVelden"
 				}
 			},
 			"evidence": {
@@ -18225,8 +18826,8 @@
 				"evidence": "lib/Settings/register.d/39-case-type-list-layout.json; dossiq#3112 a7118ddf1; dossiq#3085 87ec6952; nextcloud-vue#1213 93efc0c58",
 				"owner": "ConductionNL/nextcloud-vue",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: list columns per case type under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeVelden"
 				}
 			},
 			"evidence": {
@@ -18267,8 +18868,8 @@
 				"note": "OpenSpec pass 2026-09-27: the missing half the corpus note names shipped with code-lists-from-concepts (dossiq#2913). The partial rating predates it and is due a re-rate in the corpus.",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type tabs under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeVelden"
 				}
 			},
 			"evidence": {
@@ -18377,8 +18978,8 @@
 				"owner": "ConductionNL/openregister",
 				"spec": "openspec/specs/case-configuration-i18n",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: translations tab on the case type under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeOverzicht"
 				}
 			},
 			"evidence": {
@@ -18412,8 +19013,8 @@
 				"note": "OpenSpec pass 2026-09-27: matrix corrected (thematiq lane: existing): thematiq themes every page, dossiq included (ConductionNL/thematiq openspec/changes/archive/2026-07-25-app-token-set-selection); dossiq lib/Service/Tenant/TenantBrandingSanitiser.php read at dossiq 96b8ef8f. Rating stays partial (corrected 2026-09-28).",
 				"spec": "openspec/specs/tenant-configuration",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: tenant branding settings"
+					"canvas": "design-system",
+					"board": "DqInstellingenAlgemeen"
 				}
 			},
 			"evidence": {
@@ -18488,8 +19089,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/admin-settings",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: integration settings under Advanced"
+					"canvas": "design-system",
+					"board": "DqInstellingen"
 				}
 			},
 			"evidence": {
@@ -18529,8 +19130,8 @@
 				"evidence": "dossiq_register.json#caseObject; dossiq#2911 fffc5d7d",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: object type administration under Advanced"
+					"canvas": "design-system",
+					"board": "DqCatalogus"
 				}
 			},
 			"evidence": {
@@ -18639,8 +19240,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/status-transition-engine",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type rules under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeOverzicht"
 				}
 			},
 			"evidence": {
@@ -18673,8 +19274,11 @@
 				"owner": "ConductionNL/dossiq",
 				"change": "2026-09-08-case-type-authoring-extras",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type pages under Advanced"
+					"canvas": "design-system",
+					"board": [
+						"DqZaaktypeVelden",
+						"DqZaaktypeOverzicht"
+					]
 				}
 			},
 			"evidence": {
@@ -18707,8 +19311,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/avg-verwerkingenlogging",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type privacy fields under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeOverzicht"
 				}
 			},
 			"evidence": {
@@ -18748,8 +19352,8 @@
 				"evidence": "dossiq#2915 0c78cefa",
 				"owner": "ConductionNL/dossiq",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: catalogue folders under Advanced"
+					"canvas": "design-system",
+					"board": "DqCatalogus"
 				}
 			},
 			"evidence": {
@@ -18782,8 +19386,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/admin-settings",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: instance settings under Advanced"
+					"canvas": "design-system",
+					"board": "DqInstellingenAlgemeen"
 				}
 			},
 			"evidence": {
@@ -18830,8 +19434,8 @@
 				"owner": "ConductionNL/openregister",
 				"note": "Rating moved partial to yes on 2026-10-07 (decision 82): openregister archived field-rules-by-state on 2026-10-05 and dossiq declares, publishes and shows the rules (what-a-status-declares, still an open change here). Hidden, read-only and required apply per role and per status.",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: field rules per role and state"
+					"canvas": "design-system",
+					"board": "DqZaaktypeVelden"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > case type > status (StatusTypeForm, Field rules) and #CaseDetail status strip (CaseStatusDeclarationPanel)"
@@ -18913,8 +19517,13 @@
 					"openspec/specs/vth-case-type-seed"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: VTH settings page under Advanced, and the VTH panels on the case"
+					"canvas": "design-system",
+					"board": [
+						"DqZaaktypen",
+						"DqVthInstellingen",
+						"DqHandhaving",
+						"DqInspectie"
+					]
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Checklists; VTH case types available after install",
@@ -18951,8 +19560,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/first-time-setup",
 				"screen": {
-					"board": null,
-					"reason": "not designed: setup wizard for administrators"
+					"canvas": "design-system",
+					"board": "DqInstellen"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "setup wizard on first open (CnSetupWizard)",
@@ -19783,8 +20392,8 @@
 					"openspec/specs/case-assistant-via-hermiq"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: the assistant has no surface of its own"
+					"canvas": "design-system",
+					"board": "DqZaakAssistent"
 				}
 			},
 			"evidence": {
@@ -19814,8 +20423,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/federated-case-collaboration",
 				"screen": {
-					"board": null,
-					"reason": "not designed: share a case with another organisation over federation (the code reader named DqZaak, whose tab list draws no sharing tab)"
+					"canvas": "design-system",
+					"board": "DqZaakSamenwerken"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "#CaseDetail Sharing tab (CaseSharingTab); public federated transfer page",
@@ -20005,8 +20614,8 @@
 				"owner": "ConductionNL/openregister",
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/object-level-sharing-and-private-scope (openregister lane).",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: per-document access override"
+					"canvas": "design-system",
+					"board": "DqDocumentenBeheer"
 				}
 			},
 			"evidence": {
@@ -20230,8 +20839,8 @@
 				"owner": "ConductionNL/dossiq",
 				"spec": "openspec/specs/avg-verwerkingenlogging",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: case type privacy fields under Advanced"
+					"canvas": "design-system",
+					"board": "DqZaaktypeOverzicht"
 				}
 			},
 			"evidence": {
@@ -20407,8 +21016,8 @@
 				"owner": "ConductionNL/openregister",
 				"note": "OpenSpec pass 2026-09-27: specified in ConductionNL/openregister openspec/changes/rbac-department-role-matrix (openregister lane).",
 				"screen": {
-					"board": null,
-					"reason": "not designed yet: access control administration"
+					"canvas": "design-system",
+					"board": "DqZaaktypeOverzicht"
 				}
 			},
 			"evidence": {
@@ -20533,8 +21142,8 @@
 					"openspec/specs/dossiq-sociaal-domein-avg-consent"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: indicatiestelling on the case, AVG classification block on New case and consent tracking"
+					"canvas": "design-system",
+					"board": "DqSociaalDomein"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "needs assessment, MDO, re-integration and data breach register pages; family-plan widget",
@@ -20574,8 +21183,8 @@
 					"openspec/specs/subsidie-settlement-case-costs"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: subsidy chain: voorschotten, verplichtingen and vaststelling on the case"
+					"canvas": "design-system",
+					"board": "DqSubsidie"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "none: no page or caller reaches the subsidy routes",
@@ -20617,8 +21226,8 @@
 					"openspec/specs/mobiel-inspectie-offline"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: inspection panel on a toezicht case, mobile and offline inspection screen"
+					"canvas": "design-system",
+					"board": "DqInspectie"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Checklists; FieldEvidence and OfflineSync admin lists",
@@ -20663,8 +21272,8 @@
 					"openspec/specs/tenant-mandate"
 				],
 				"screen": {
-					"board": null,
-					"reason": "not designed: tenant billing dashboard and onboarding progress page; the rest is backend"
+					"canvas": "design-system",
+					"board": "DqTenant"
 				},
 				"readOn": "2026-10-07",
 				"reachedOn": "Settings > Tenants (CRUD, lifecycle, onboarding tab)",
