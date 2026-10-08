@@ -33,10 +33,9 @@ use Throwable;
 /**
  * Resolves a tenant id to an OpenRegister Organisation.
  *
- * WHY THIS EXISTS. The claim and mandate middlewares do not resolve a tenant
- * at all: `TenantClaimValidationMiddleware` reads the already-bound
- * `TenantContext`, and `MandateValidationMiddleware` reads the same id back
- * out of it. The chain has exactly one resolution point,
+ * WHY THIS EXISTS. The mandate middleware does not resolve a tenant at all:
+ * `MandateValidationMiddleware` reads the id back out of the already-bound
+ * `TenantContext`. The chain has exactly one resolution point,
  * `TenantContextMiddleware`, and it used to read dossiq's own `tenant` schema
  * through `TenantSaasService::getById()`. That single read is what moves here.
  *

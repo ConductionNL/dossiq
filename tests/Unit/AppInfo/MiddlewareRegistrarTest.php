@@ -51,6 +51,36 @@ class MiddlewareRegistrarTest extends TestCase {
 	}//end testTheIsolationMiddlewareIsNotRegistered()
 
 	/**
+	 * No tenant claim middleware is registered (REQ-TAO-001).
+	 *
+	 * @return void
+	 */
+	public function testNoClaimMiddlewareIsRegistered(): void {
+		$registered = $this->registrations();
+
+		$this->assertNotEmpty($registered, 'the registrar registered nothing, so the assertion below proves nothing');
+		$this->assertNotContains('OCA\Dossiq\Middleware\TenantClaimValidationMiddleware', $registered);
+	}//end testNoClaimMiddlewareIsRegistered()
+
+	/**
+	 * No tenant middleware is registered: the active organisation is OpenRegister's (REQ-TAO-002).
+	 *
+	 * The refusal of an organisation that is not active lives in the mandate
+	 * middleware, which stays registered.
+	 *
+	 * @return void
+	 */
+	public function testNoTenantMiddlewareIsRegistered(): void {
+		$registered = $this->registrations();
+
+		$this->assertContains('OCA\Dossiq\Middleware\MandateValidationMiddleware', $registered);
+		foreach ($registered as $class) {
+			$short = substr($class, (int) strrpos($class, '\\') + 1);
+			$this->assertStringStartsNotWith('Tenant', $short, $class.' is a tenant middleware');
+		}
+	}//end testNoTenantMiddlewareIsRegistered()
+
+	/**
 	 * Every middleware class the registrar registers, in order.
 	 *
 	 * @return array<int, string>

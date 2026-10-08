@@ -4,7 +4,7 @@
  * Dossiq middleware-chain registrar.
  *
  * Owns the ordered SaaS middleware chain. Order is behaviour here, not style:
- * TenantContext must bind the tenant before the claim and mandate checks read
+ * TenantContext must bind the tenant before the mandate check reads
  * it. Keeping the whole chain in one class makes that ordering reviewable in a
  * single screen. Tenant isolation is OpenRegister's organisation row filter;
  * no middleware here scopes the database.
@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo\Registrar;
 
 use OCA\Dossiq\Middleware\MandateValidationMiddleware;
-use OCA\Dossiq\Middleware\TenantClaimValidationMiddleware;
 use OCA\Dossiq\Middleware\TenantContextMiddleware;
 use OCA\Dossiq\Middleware\TenantMiddleware;
 use OCA\Dossiq\Middleware\ZgwAuthMiddleware;
@@ -58,11 +57,8 @@ class MiddlewareRegistrar {
 		$context->registerMiddleware(class: ZgwAuthMiddleware::class);
 		$context->registerMiddleware(class: TenantMiddleware::class);
 		// SaaS chain (member 04): bind the session's tenant to the request
-		// context, before the claim and mandate checks below read it.
+		// context, before the mandate check below reads it.
 		$context->registerMiddleware(class: TenantContextMiddleware::class);
-		// SaaS chain (member 05): JWT tenant-claim validation against the
-		// request-bound tenant. Forged / cross-tenant JWT → 403.
-		$context->registerMiddleware(class: TenantClaimValidationMiddleware::class);
 		// SaaS chain (member 06): mandate-matrix authorisation gate. Maps the
 		// HTTP verb (and URL hints like /transition) to a matrix action key
 		// and blocks the request on deny.

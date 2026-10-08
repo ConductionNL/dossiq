@@ -14,8 +14,8 @@
  *
  * WHAT CHANGED AND WHY. This used to return the `X-Tenant-Id` header verbatim.
  * The header is supplied by the caller, and the only check that would have
- * caught a forged value — `TenantClaimValidationMiddleware` — returns early
- * unless the request carries a Bearer token. A session-authenticated user
+ * caught a forged value, the tenant claim middleware, returned early unless
+ * the request carried a Bearer token. A session-authenticated user
  * could therefore name any tenant and be believed, because each middleware was
  * individually reasonable and the gap was between them.
  *
