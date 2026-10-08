@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\CaseObjectReference;
 use OCA\Dossiq\Service\Support\FlowDecisionSubject;
+use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCA\OpenRegister\Db\FlowRun;
 use OCA\OpenRegister\Db\FlowRunMapper;
 use OCA\OpenRegister\Service\Flow\FlowRunService;
@@ -65,6 +66,8 @@ interface ConcludedObjectServiceStub {
  * @uses \OCA\Dossiq\Service\Support\FlowDecisionSubject
  */
 class DecisionConcludedListenerTest extends TestCase {
+	use MakesBezwaarAuditTrail;
+
 	/**
 	 * A terminal decidesk outcome for this app materialises the ZGW Besluit.
 	 *
@@ -541,4 +544,81 @@ class DecisionConcludedListenerTest extends TestCase {
 		$listener->handle($this->flowEvent(register: '12', schema: '99'));
 		$listener->handle($this->flowEvent(register: 'pipelinq', schema: 'case'));
 	}//end testAFlowDecisionOnAnotherAppsObjectIsIgnored()
+
+	/**
+	 * A deviating decision writes an Awb art. 7:13 row on the advice request (REQ-BAT-001).
+	 *
+	 * Through the listener, on the real AdvisoryCommitteeService and BezwaarAuditTrail.
+	 *
+	 * @return void
+	 */
+	public function testADeviatingDecisionWritesAnAwb713RowOnTheAdviceRequest(): void {
+		$this->startBezwaarStore();
+		$this->store->seed('bacAdviceRequest', 'req-7', ['bezwaar' => 'bezwaar-1', 'status' => 'advice-issued']);
+
+		$this->listenerOverRealBac(logger: $this->createMock(LoggerInterface::class))
+			->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$context = $this->rowContext(uuid: 'req-7', action: 'dossiq.bezwaar.council-deviation-recorded');
+		$this->assertSame('awb-art-7:13', $context['tag']);
+		$this->assertSame(['decision' => 'bes-2', 'motivatie' => 'Commissie miste de nieuwe feiten'], $context['payload']);
+		$this->assertArrayNotHasKey('auditTrail', $this->store->row('bacAdviceRequest', 'req-7'));
+	}//end testADeviatingDecisionWritesAnAwb713RowOnTheAdviceRequest()
+
+	/**
+	 * A deviation entry that cannot be written is logged by the listener with the entry (REQ-BAT-003).
+	 *
+	 * @return void
+	 */
+	public function testAFailedDeviationEntryIsLoggedWithTheEntry(): void {
+		$this->startBezwaarStore();
+		$this->store->seed('bacAdviceRequest', 'req-7', ['bezwaar' => 'bezwaar-1', 'status' => 'advice-issued']);
+		$this->trail->failsAll = true;
+
+		$logged = [];
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->method('error')->willReturnCallback(
+			static function (string|\Stringable $message, array $context = []) use (&$logged): void {
+				$logged[] = [(string) $message, $context];
+			}
+		);
+
+		$this->listenerOverRealBac(logger: $logger)->handle($this->event(sourceApp: 'procest', status: 'approved'));
+
+		$entries = array_values(array_filter($logged, static fn (array $line): bool => ($line[1]['action'] ?? '') === 'dossiq.bezwaar.council-deviation-recorded'));
+		$this->assertCount(1, $entries, 'the listener must log the unwritten deviation entry once, at error level');
+		$this->assertSame('req-7', $entries[0][1]['object']);
+		$this->assertSame('awb-art-7:13', $entries[0][1]['entry']['tag']);
+		$this->assertSame('Commissie miste de nieuwe feiten', $entries[0][1]['entry']['payload']['motivatie']);
+	}//end testAFailedDeviationEntryIsLoggedWithTheEntry()
+
+	/**
+	 * A listener over the real BAC service, whose decision lookup finds a deviating besluit.
+	 *
+	 * @param LoggerInterface $logger The listener's logger.
+	 *
+	 * @return DecisionConcludedListener The listener.
+	 */
+	private function listenerOverRealBac(LoggerInterface $logger): DecisionConcludedListener {
+		$record = [
+			'decisionRef' => 'dec-1',
+			'case' => 'case-9',
+			'besluitRef' => 'bes-2',
+			'advisoryOpinion' => 'req-7',
+			'followsAdvice' => false,
+			'deviationRationale' => 'Commissie miste de nieuwe feiten',
+		];
+		$objectService = $this->createMock(ConcludedObjectServiceStub::class);
+		$objectService->method('searchObjectsBySlug')->willReturn([$record]);
+
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+
+		return new DecisionConcludedListener(
+			$settings,
+			$this->createMock(BesluitMaterialisationService::class),
+			$this->realAdvisoryService(trail: $this->bezwaarAuditTrail(uid: null)),
+			$logger
+		);
+	}//end listenerOverRealBac()
 }//end class

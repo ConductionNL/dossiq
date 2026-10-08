@@ -16,7 +16,7 @@
  *
  * Per the per-app convention every mutation goes through OpenRegister via
  * the manifest renderer; this service composes those calls and writes the
- * append-only `auditTrail` entries that satisfy Archiefwet 1995.
+ * entries on OpenRegister's audit trail of the advice request, which satisfy Archiefwet 1995.
  *
  * Identity is ALWAYS derived from `IUserSession`. Static error messages
  * only — exception details never bubble to controllers.
@@ -100,7 +100,7 @@ class AdvisoryCommitteeService {
 	 * @param SettingsService $settingsService Schema/register bridge
 	 * @param LoggerInterface $logger Logger
 	 * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
-	 * @param BezwaarAuditTrail $auditTrail Shared append-only audit writer
+	 * @param BezwaarAuditTrail $auditTrail Writes each entry onto OpenRegister's audit trail
 	 * @param PanelIndependenceChecker $independence Awb Art. 7:13 lid 3 panel check
 	 */
 	public function __construct(
@@ -199,9 +199,22 @@ class AdvisoryCommitteeService {
 			]
 		);
 
-		// Append audit entry for panel composition.
-		$record['auditTrail'] = $this->auditTrail->append(
-			existing: [],
+		try {
+			$saved = ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $requestSchema, object: $record) ?? $record);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not create advice request');
+		}
+
+		// The panel composition is a row on the request's own OpenRegister
+		// trail; a request whose entry cannot be written is deleted again.
+		$this->auditTrail->recordForNewRecord(
+			objectService: $objectService,
+			register: $register,
+			schema: $requestSchema,
+			objectUuid: (string)($saved['@self']['id'] ?? ($saved['id'] ?? ($saved['uuid'] ?? ''))),
 			event: 'panel-member-added',
 			payload: [
 				'panel' => $record['panel'],
@@ -210,14 +223,7 @@ class AdvisoryCommitteeService {
 			],
 		);
 
-		try {
-			return ($this->saveObjectAsArray(objectService: $objectService, register: $register, schema: $requestSchema, object: $record) ?? $record);
-		} catch (\Throwable $e) {
-			$this->logger->error(
-				'Dossiq BAC: failed to create advice request: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not create advice request');
-		}
+		return $saved;
 	}//end assignToCommittee()
 
 	/**
@@ -275,7 +281,6 @@ class AdvisoryCommitteeService {
 		// independence (REQ-BAC-2).
 		if ($from === 'assigned' && $newStatus === 'in-deliberation') {
 			$this->guardDeliberationStart(
-				objectService: $objectService,
 				current: $current,
 				requestId: $requestId,
 				register: $register,
@@ -295,32 +300,50 @@ class AdvisoryCommitteeService {
 			);
 		}
 
-		$userId = $this->auditTrail->resolveActor();
-
 		// Compose the update.
 		$update = $this->buildTransitionUpdate(
 			payload: $payload,
-			current: $current,
 			newStatus: $newStatus,
 			adviceDecisionRef: $adviceDecisionRef,
-			userId: $userId,
 		);
 
+		$apply = fn (): array => ($this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $requestSchema,
+			id: (string)$requestId,
+			changes: $update
+		) ?? array_merge($current, $update));
+
 		try {
-			return ($this->patchObjectAsArray(
-				objectService: $objectService,
+			if (isset($update['adviceIssuedAt']) === false) {
+				return $apply();
+			}
+
+			// A terminal state carries the chair's signature: recorded first,
+			// with the chair from the session, then the status moves.
+			return $this->auditTrail->recordThenApply(
 				register: $register,
 				schema: $requestSchema,
-				id: (string)$requestId,
-				changes: $update
-			) ?? array_merge($current, $update));
+				objectUuid: (string)$requestId,
+				event: 'advice-signed-by-chair',
+				payload: [
+					'chair' => $this->auditTrail->resolveActor(),
+					'signatureEvidence' => $update['signatureEvidence'] ?? ($current['signatureEvidence'] ?? null),
+					'conclusion' => $update['conclusion'] ?? ($current['conclusion'] ?? null),
+				],
+				tag: '',
+				apply: $apply,
+			);
+		} catch (BezwaarEntryNotWrittenException $notWritten) {
+			throw $notWritten;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to transition advice request '
 				. $requestId . ': ' . $e->getMessage()
 			);
 			throw new RuntimeException('Could not transition advice request');
-		}
+		}//end try
 	}//end transitionAdviceStatus()
 
 	/**
@@ -373,7 +396,10 @@ class AdvisoryCommitteeService {
 	 *
 	 * @return void
 	 *
+	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; the caller logs it with the entry.
+	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function recordCouncilDeviation(
 		string $requestId,
@@ -401,22 +427,19 @@ class AdvisoryCommitteeService {
 				return;
 			}
 
-			$audit = $this->auditTrail->append(
-				existing: (array)($current['auditTrail'] ?? []),
+			$this->auditTrail->record(
+				register: $register,
+				schema: $requestSchema,
+				objectUuid: $requestId,
 				event: 'council-deviation-recorded',
 				payload: [
 					'decision' => $decisionId,
 					'motivatie' => $rationaleRef,
 				],
+				tag: BezwaarAuditTrail::TAG_BAC_REFERRAL,
 			);
-
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $requestSchema,
-				id: (string)$requestId,
-				changes: ['auditTrail' => $audit]
-			);
+		} catch (BezwaarEntryNotWrittenException $notWritten) {
+			throw $notWritten;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to record council deviation: '
@@ -463,7 +486,6 @@ class AdvisoryCommitteeService {
 	 * @throws GuardFailedException When a panel member is not independent
 	 */
 	private function guardDeliberationStart(
-		object $objectService,
 		array $current,
 		string $requestId,
 		string $register,
@@ -485,31 +507,18 @@ class AdvisoryCommitteeService {
 			return;
 		}
 
-		// Persist the failure to the audit trail before raising.
-		$audit = $this->auditTrail->append(
-			existing: (array)($current['auditTrail'] ?? []),
+		// Recorded before raising, and refused whether or not the entry is
+		// written; an unwritten entry goes to the error log in full.
+		$this->auditTrail->recordRefusal(
+			register: $register,
+			schema: $requestSchema,
+			objectUuid: $requestId,
 			event: 'independence-check-failed',
 			payload: [
 				'conflictingMember' => $independence['member'],
 				'reason' => $independence['reason'],
 			],
 		);
-
-		try {
-			$this->patchObjectAsArray(
-				objectService: $objectService,
-				register: $register,
-				schema: $requestSchema,
-				id: (string)$requestId,
-				changes: ['auditTrail' => $audit]
-			);
-		} catch (\Throwable $auditError) {
-			$this->logger->error(
-				'Dossiq BAC: failed to write audit on '
-				. 'independence failure: '
-				. $auditError->getMessage()
-			);
-		}
 
 		throw new GuardFailedException(
 			failedGuards: [],
@@ -575,22 +584,19 @@ class AdvisoryCommitteeService {
 
 	/**
 	 * Compose the advice-request patch for a lifecycle transition, stamping
-	 * the issue timestamp and chair-signature audit entry on terminal states.
+	 * the issue timestamp on terminal states. The chair's signature is recorded
+	 * on the request's trail by transitionAdviceStatus(), before this patch lands.
 	 *
 	 * @param array<string, mixed> $payload Caller-supplied patch
-	 * @param array<string, mixed> $current Current advice-request record
 	 * @param string $newStatus Target status
 	 * @param string $adviceDecisionRef decidesk Decision reference, or ''
-	 * @param string $userId Acting user UID
 	 *
 	 * @return array<string, mixed> The patch to persist
 	 */
 	private function buildTransitionUpdate(
 		array $payload,
-		array $current,
 		string $newStatus,
 		string $adviceDecisionRef,
-		string $userId,
 	): array {
 		$update = $payload;
 		$update['status'] = $newStatus;
@@ -605,15 +611,6 @@ class AdvisoryCommitteeService {
 
 		$update['adviceIssuedAt'] = (new DateTimeImmutable())
 			->format(DateTimeInterface::ATOM);
-		$update['auditTrail'] = $this->auditTrail->append(
-			existing: (array)($current['auditTrail'] ?? []),
-			event: 'advice-signed-by-chair',
-			payload: [
-				'chair' => $userId,
-				'signatureEvidence' => $update['signatureEvidence'] ?? ($current['signatureEvidence'] ?? null),
-				'conclusion' => $update['conclusion'] ?? ($current['conclusion'] ?? null),
-			],
-		);
 
 		return $update;
 	}//end buildTransitionUpdate()

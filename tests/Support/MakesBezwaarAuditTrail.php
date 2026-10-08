@@ -28,7 +28,10 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Support;
 
+use OCA\Dossiq\Service\AdviceDelegationService;
+use OCA\Dossiq\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
+use OCA\Dossiq\Service\Bezwaar\PanelIndependenceChecker;
 use OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder;
 use OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner;
 use OCA\Dossiq\Service\Bezwaar\HearingService;
@@ -167,6 +170,38 @@ trait MakesBezwaarAuditTrail {
 			owningCase: $owningCase ?? $this->createMock(OwningCaseResolver::class),
 		);
 	}//end realHearingService()
+
+	/**
+	 * The real AdvisoryCommitteeService over the shared store and the given audit writer.
+	 *
+	 * The decidesk delegation and the independence check are not what these
+	 * tests are about, so they are doubled: the decision is raised as `dec-1`,
+	 * and the panel is independent unless a conflict is given.
+	 *
+	 * @param BezwaarAuditTrail $trail    The audit writer.
+	 * @param string|null       $conflict The conflicting panel member, or null for an independent panel.
+	 *
+	 * @return AdvisoryCommitteeService The service.
+	 */
+	private function realAdvisoryService(BezwaarAuditTrail $trail, ?string $conflict = null): AdvisoryCommitteeService {
+		$delegation = $this->createMock(AdviceDelegationService::class);
+		$delegation->method('raiseAdviceDecision')->willReturn('dec-1');
+
+		$independence = $this->createMock(PanelIndependenceChecker::class);
+		$independence->method('check')->willReturn(
+			$conflict === null
+				? ['ok' => true, 'member' => null, 'reason' => '']
+				: ['ok' => false, 'member' => $conflict, 'reason' => 'Lid was eerder betrokken bij het besluit']
+		);
+
+		return new AdvisoryCommitteeService(
+			settingsService: $this->bezwaarSettings(),
+			logger: $this->createMock(LoggerInterface::class),
+			adviceDelegation: $delegation,
+			auditTrail: $trail,
+			independence: $independence,
+		);
+	}//end realAdvisoryService()
 
 	/**
 	 * The context of the one row with this action on this record.

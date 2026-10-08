@@ -62,14 +62,14 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 3. The advisory committee (call sites 12 to 17)
 
-- [ ] 3.1 `assignToCommittee()` (site 13): save, then record `panel-member-added` on the saved
+- [x] 3.1 `assignToCommittee()` (site 13): save, then record `panel-member-added` on the saved
   request; on a failed entry delete it and throw. `autoAssignDefaultCommittee()` keeps answering
   `null` on a throw, so no unrecorded request survives (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller:
     `tests/Unit/Listener/BezwaarAdviceRequestedListenerTest.php`
     `testAnAutoAssignedRequestCarriesItsPanelRowOnItsOwnTrail` and
     `testAnAssignmentWhoseEntryFailsLeavesNoRequest`.
-- [ ] 3.2 `transitionAdviceStatus()` (sites 14, 16, 17): `independence-check-failed` is recorded and
+- [x] 3.2 `transitionAdviceStatus()` (sites 14, 16, 17): `independence-check-failed` is recorded and
   the transition refused even when the entry fails; `advice-signed-by-chair` is recorded before the
   status patch, with the chair from `resolveActor()`; a failed patch writes
   `advice-signed-by-chair-not-applied` and throws. No caller in `lib/` today (REQ-BAT-001,
@@ -78,7 +78,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `testASignedAdviceIsRecordedBeforeTheStatusMoves`,
     `testAFailedStatusWriteLeavesANotAppliedRow` and
     `testAFailedIndependenceCheckIsRecordedAndRefused`.
-- [ ] 3.3 `recordCouncilDeviation()` (site 15): record `council-deviation-recorded`; a failed entry is
+- [x] 3.3 `recordCouncilDeviation()` (site 15): record `council-deviation-recorded`; a failed entry is
   reported to `DecisionConcludedListener`, which logs it at error level with the full entry
   (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller: `tests/Unit/Listener/DecisionConcludedListenerTest.php`
