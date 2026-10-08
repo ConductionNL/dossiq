@@ -29,6 +29,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Support;
 
 use OCA\Dossiq\Service\Bezwaar\BezwaarAuditTrail;
+use OCA\Dossiq\Service\Bezwaar\HearingMinutesRecorder;
+use OCA\Dossiq\Service\Bezwaar\HearingSchedulePlanner;
+use OCA\Dossiq\Service\Bezwaar\HearingService;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IUser;
@@ -41,9 +45,9 @@ trait MakesBezwaarAuditTrail {
 	/**
 	 * The shared object store.
 	 *
-	 * @var InMemoryRegister
+	 * @var RefusableRegister
 	 */
-	private InMemoryRegister $store;
+	private RefusableRegister $store;
 
 	/**
 	 * The audit rows written.
@@ -65,7 +69,7 @@ trait MakesBezwaarAuditTrail {
 	 * @return void
 	 */
 	private function startBezwaarStore(): void {
-		$this->store = new InMemoryRegister();
+		$this->store = new RefusableRegister();
 		$this->trail = new RecordingAuditTrailMapper();
 		$this->auditErrors = [];
 	}//end startBezwaarStore()
@@ -142,6 +146,27 @@ trait MakesBezwaarAuditTrail {
 
 		return $settings;
 	}//end bezwaarSettings()
+
+	/**
+	 * The real HearingService over the shared store and the given audit writer.
+	 *
+	 * @param BezwaarAuditTrail       $trail      The audit writer.
+	 * @param OwningCaseResolver|null $owningCase Resolves a session's case, or null for a double that resolves none.
+	 *
+	 * @return HearingService The service.
+	 */
+	private function realHearingService(BezwaarAuditTrail $trail, ?OwningCaseResolver $owningCase = null): HearingService {
+		$logger = $this->createMock(LoggerInterface::class);
+
+		return new HearingService(
+			settingsService: $this->bezwaarSettings(),
+			logger: $logger,
+			auditTrail: $trail,
+			planner: new HearingSchedulePlanner(),
+			minutes: new HearingMinutesRecorder(auditTrail: $trail),
+			owningCase: $owningCase ?? $this->createMock(OwningCaseResolver::class),
+		);
+	}//end realHearingService()
 
 	/**
 	 * The context of the one row with this action on this record.

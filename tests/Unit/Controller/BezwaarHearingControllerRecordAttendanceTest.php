@@ -32,6 +32,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\BezwaarHearingController;
 use OCA\Dossiq\Service\Bezwaar\HearingService;
 use OCA\Dossiq\Service\CaseAccessGuard;
+use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Tests\Support\MakesBezwaarAuditTrail;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -45,6 +47,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Controller\BezwaarHearingController
  */
 final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
+	use MakesBezwaarAuditTrail;
+
 
 	/**
 	 * Inbound request.
@@ -262,4 +266,49 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 		$this->assertSame(['error' => 'Hearing session not found'], $response->getData());
 	}//end testRuntimeExceptionBecomesBadRequest()
-}//end class
+
+	/**
+	 * A late correction writes an Awb art. 7:7 row with its reason (REQ-BAT-001).
+	 *
+	 * Through the controller, on the real HearingService and BezwaarAuditTrail.
+	 * The hearing was a day ago, so its one-hour grace window has passed.
+	 *
+	 * @return void
+	 */
+	public function testALateCorrectionWritesAnAwb77RowWithItsReason(): void {
+		$this->startBezwaarStore();
+		$this->store->seed('hearingSession', 'session-1', [
+			'case' => 'case-1',
+			'scheduledDate' => (new \DateTimeImmutable('-1 day'))->format(\DateTimeInterface::ATOM),
+			'attendance' => [],
+		]);
+
+		$owningCase = $this->createMock(OwningCaseResolver::class);
+		$owningCase->method('resolve')->willReturn('case-1');
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('handler-1');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->request->method('getParam')->with('entries')->willReturn([
+			['invitee' => 'person-1', 'present' => true, 'correctionReason' => 'Aanwezigheid was niet geregistreerd'],
+		]);
+
+		$controller = new BezwaarHearingController(
+			appName: 'dossiq',
+			request: $this->request,
+			hearingService: $this->realHearingService(trail: $this->bezwaarAuditTrail(uid: 'handler-1'), owningCase: $owningCase),
+			userSession: $this->userSession,
+			caseAccessGuard: $this->caseAccessGuard,
+		);
+		$response = $controller->recordAttendance(sessionId: 'session-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$context = $this->rowContext(uuid: 'session-1', action: 'dossiq.bezwaar.attendance-late-correction');
+		$this->assertSame('awb-art-7:7', $context['tag']);
+		$this->assertSame(
+			['invitee' => 'person-1', 'present' => true, 'correctionReason' => 'Aanwezigheid was niet geregistreerd'],
+			$context['payload']
+		);
+		$this->assertArrayNotHasKey('auditTrail', $this->store->row('hearingSession', 'session-1'));
+		$this->assertCount(1, $this->store->row('hearingSession', 'session-1')['attendance']);
+	}
+}

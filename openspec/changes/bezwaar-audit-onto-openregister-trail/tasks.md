@@ -32,7 +32,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 2. Hearings (call sites 1 to 11)
 
-- [ ] 2.1 `schedule()` (site 2): save, then record `hearing-scheduled` with awb-art-7:2 on the saved
+- [x] 2.1 `schedule()` (site 2): save, then record `hearing-scheduled` with awb-art-7:2 on the saved
   session; on a failed entry delete the saved session and throw (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller:
     `tests/Unit/Listener/BezwaarHearingScheduledListenerTest.php`
@@ -40,22 +40,22 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `BezwaarAuditTrail` with only the OpenRegister seams doubled.
   - **fails today**: `tests/Unit/Service/HearingServiceTest.php`
     `testAHearingWhoseEntryCannotBeWrittenIsDeletedAndRefused`.
-- [ ] 2.2 `waive()` (site 3): the same shape for `hearing-waived` with awb-art-7:3. No caller in
+- [x] 2.2 `waive()` (site 3): the same shape for `hearing-waived` with awb-art-7:3. No caller in
   `lib/` today, so the test drives the method (REQ-BAT-001, REQ-BAT-003).
   - **fails today**: `HearingServiceTest` `testAWaiverWritesAnAwb73RowWithItsReason`.
-- [ ] 2.3 `recordAttendance()` and `HearingMinutesRecorder::appendLateCorrectionAudit()` (sites 4,
+- [x] 2.3 `recordAttendance()` and `HearingMinutesRecorder::appendLateCorrectionAudit()` (sites 4,
   10, 11): record each late correction with awb-art-7:7 before the attendance patch; a failed patch
   writes `attendance-late-correction-not-applied` and throws (REQ-BAT-001, REQ-BAT-003).
   - **fails today**, through the caller:
     `tests/Unit/Controller/BezwaarHearingControllerRecordAttendanceTest.php`
     `testALateCorrectionWritesAnAwb77RowWithItsReason`.
-- [ ] 2.4 `addMinutes()` and `guardRecordingConsent()` (sites 5, 6, 8, 9): `audio-upload-denied`
+- [x] 2.4 `addMinutes()` and `guardRecordingConsent()` (sites 5, 6, 8, 9): `audio-upload-denied`
   with avg-art-6 is recorded and the upload refused even when the entry fails (logged at error with
   the full entry); `verslag-recorded` with awb-art-7:7 is recorded before the minutes patch
   (REQ-BAT-001, REQ-BAT-003).
   - **fails today**: `HearingServiceTest` `testARefusedAudioUploadIsRecordedUnderAvgArt6` and
     `testMinutesAreRecordedBeforeThePatch`.
-- [ ] 2.5 Sites 1 and 7: the constructors keep `BezwaarAuditTrail`; `HearingMinutesRecorder` no
+- [x] 2.5 Sites 1 and 7: the constructors keep `BezwaarAuditTrail`; `HearingMinutesRecorder` no
   longer returns an array for the caller to save (REQ-BAT-001).
   - **fails today**: `tests/Unit/Service/Bezwaar/HearingMinutesRecorderTest.php`
     `testTheRecorderReturnsNoAuditArray`.
