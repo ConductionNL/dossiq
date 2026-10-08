@@ -50,7 +50,7 @@ class QuickActionService {
 	 * `klacht_ex_artikel_9_1_awb` named no shipped type, so every complaint
 	 * was refused before it was written.
 	 *
-	 * @spec openspec/changes/dso-single-intake-path/specs/kcc-werkplek/spec.md
+	 * @spec openspec/changes/dso-single-intake-path/specs/kcc-werkplek-zaaksysteem-bridge/spec.md
 	 */
 	private const KLACHT_ZAAKTYPE = 'klacht-behandeling';
 

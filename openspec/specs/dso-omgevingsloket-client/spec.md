@@ -13,7 +13,7 @@ Convert an inbound DSO Omgevingsloket `vergunningaanvraag` message — delivered
 
 ## Requirements
 
-### REQ-001: DSO vergunningaanvraag intake creates dossiq zaak
+### Requirement: REQ-001: DSO vergunningaanvraag intake creates dossiq zaak
 
 The system SHALL accept a `dsoMessage` array, extract `activiteiten`, `locatie`, `aanvrager`, `bouwkosten`, `procedureType`, `zaaknummer`, and `bijlagen`, build a human-readable title from the activity names, and persist a new dossiq case via OpenRegister with `priority: 'normal'` and `startDate: today`. The result SHALL be `{caseId, dsoZaaknummer, activiteiten, procedureType, deadline}`.
 
@@ -39,7 +39,7 @@ The system SHALL accept a `dsoMessage` array, extract `activiteiten`, `locatie`,
 - WHEN intake succeeds
 - THEN the service SHALL log `'DSO intake processed: case <caseId> (DSO: <dsoZaaknummer>)'`
 
-### REQ-002: DSO-specific case properties stored as side records
+### Requirement: REQ-002: DSO-specific case properties stored as side records
 
 The system SHALL persist DSO-specific properties as separate `case_property` records — one per attribute (`dsoZaaknummer`, `activiteiten`, `locatie`, `bouwkosten`, `procedureType`, `aanvragerNaam`) — rather than denormalising them onto the case. Empty values SHALL be skipped; array `locatie` SHALL be JSON-encoded before storage.
 
@@ -67,7 +67,7 @@ The system SHALL persist DSO-specific properties as separate `case_property` rec
 
 - Side-record storage keeps the case schema lean and lets the property schema evolve independently. The trade-off is that querying DSO cases requires joining `case` to `case_property` filtered by `name`.
 
-### REQ-003: Procedure-type deadline duration lookup
+### Requirement: REQ-003: Procedure-type deadline duration lookup
 
 The system SHALL expose `getDeadlineDuration(procedureType)` returning the ISO 8601 duration for the standard Omgevingswet procedure: `regulier` → `P56D` (8 weeks) and `uiTGEBREID` (typed `uitgebreid`) → `P182D` (26 weeks). Unknown procedure types SHALL fall back to `regulier`.
 
