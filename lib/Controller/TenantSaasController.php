@@ -6,8 +6,8 @@
  * REST API for SaaS tenant CRUD + lifecycle transitions, backed by the
  * `tenant` register schema declared in chain member 01.
  *
- * Separate from `TenantController` (which owns the older OR-Organisation
- * shape and current-tenant resolution). All endpoints here are admin-only
+ * The current tenant and the user's organisations are OpenRegister's
+ * organisation endpoints since Q5 (2026-10-08). All endpoints here are admin-only
  * (Nextcloud SecurityMiddleware default — no `@NoAdminRequired`).
  *
  * @category Controller
@@ -49,7 +49,6 @@ use RuntimeException;
  *   GET    /api/saas/tenants                  → index (list, optional ?status=)
  *   GET    /api/saas/tenants/{tenantId}       → show
  *   PATCH  /api/saas/tenants/{tenantId}       → update (display + optional status)
- *   DELETE /api/saas/tenants/{tenantId}       → destroy
  *   POST   /api/saas/tenants/{tenantId}/status → transition
  *
  * @spec openspec/changes/tenant-zaaksysteem-saas-02-tenant-crud-lifecycle/tasks.md
@@ -173,41 +172,6 @@ class TenantSaasController extends Controller {
 
 		return new JSONResponse(['success' => true, 'tenant' => $row]);
 	}//end update()
-
-	/**
-	 * Delete a tenant. The state machine blocks deletion of non-terminated rows.
-	 *
-	 * @param string $tenantId Tenant UUID.
-	 *
-	 * @return JSONResponse
-	 *
-	 * @spec openspec/changes/tenant-zaaksysteem-saas-02-tenant-crud-lifecycle/tasks.md
-	 */
-	#[AuthorizedAdminSetting(AdminSettings::class)]
-	public function destroy(string $tenantId): JSONResponse {
-		$row = $this->tenantSaasService->getById($tenantId);
-		if ($row === null) {
-			return new JSONResponse(['success' => false, 'error' => 'Not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$current = (string)($row['status'] ?? '');
-		if ($current !== 'terminated') {
-			return new JSONResponse(
-				[
-					'success' => false,
-					'error' => 'Only terminated tenants can be deleted. Transition to terminated first.',
-				],
-				Http::STATUS_CONFLICT
-			);
-		}
-
-		$deleted = $this->tenantSaasService->delete($tenantId);
-		if ($deleted === false) {
-			return new JSONResponse(['success' => false, 'error' => 'Failed to delete tenant'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return new JSONResponse(['success' => true]);
-	}//end destroy()
 
 	/**
 	 * Aggregate a tenant's usage billing for a month (computed, not exported).
