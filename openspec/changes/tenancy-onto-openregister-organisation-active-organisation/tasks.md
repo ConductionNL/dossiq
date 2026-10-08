@@ -77,7 +77,7 @@ getters are magic; the service returns `null` for a user with no active organisa
     `testNoFileUnderSrcCallsTheDossiqTenantApi`, which fails if a `src/` file names
     `/apps/dossiq/api/tenants`.
   - The hydra route-reachability gate must show no dangling route.
-- [ ] 3.2 Delete `lib/Controller/TenantController.php` and its tests, and the `TenantService`
+- [x] 3.2 Delete `lib/Controller/TenantController.php` and its tests, and the `TenantService`
   methods left with no caller: `provisionTenant()`, `getResourceUsage()`, `getTenantForUser()` and
   `getTenantStatus()`. Keep `isPlatformAdmin()` if task 2.3 calls it (REQ-TAO-005).
   - **fails today**: `NoTenantTokenPathTest` `testTenantControllerIsNotUnderLib`, and the hydra

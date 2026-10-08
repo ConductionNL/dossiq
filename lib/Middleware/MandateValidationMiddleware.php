@@ -69,7 +69,8 @@ class MandateValidationMiddleware extends Middleware {
 	/**
 	 * Controllers on which an organisation that is not active is not refused.
 	 *
-	 * The list `TenantMiddleware` had: settings and the dashboard stay
+	 * The list `TenantMiddleware` had, less the deleted tenant controller:
+	 * settings and the dashboard stay
 	 * reachable, and health and metrics are served by the OpenRegister AppHost
 	 * engine (ADR-040), whose dispatched controller is the generic class.
 	 *
@@ -78,7 +79,6 @@ class MandateValidationMiddleware extends Middleware {
 	private const LIFECYCLE_EXEMPT_CONTROLLERS = [
 		'OCA\Dossiq\Controller\SettingsController',
 		'OCA\Dossiq\Controller\DashboardController',
-		'OCA\Dossiq\Controller\TenantController',
 		'OCA\OpenRegister\AppHost\Controller\GenericHealthController',
 		'OCA\OpenRegister\AppHost\Controller\GenericMetricsController',
 	];
@@ -111,9 +111,7 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * @return void
 	 *
-	 * @throws MandateDeniedException When the action is denied.
-	 * @throws OrganisationNotActiveException When the organisation is not active.
-	 *
+	 * @throws MandateDeniedException When the action is denied, or the organisation is not active.
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) $methodName is fixed by
 	 * OCP\AppFramework\Middleware::beforeController(); this middleware
 	 * dispatches on the controller class and the request URI instead.
@@ -172,18 +170,13 @@ class MandateValidationMiddleware extends Middleware {
 	 * @spec openspec/changes/tenant-zaaksysteem-saas-06-mandate-validation/tasks.md
 	 */
 	public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response {
-		if ($exception instanceof OrganisationNotActiveException) {
-			return new JSONResponse(
-				['success' => false, 'error' => $exception->getMessage(), 'status' => $exception->getStatus()],
-				403
-			);
-		}
-
 		if ($exception instanceof MandateDeniedException) {
-			return new JSONResponse(
-				['success' => false, 'error' => $exception->getMessage()],
-				403
-			);
+			$answer = ['success' => false, 'error' => $exception->getMessage()];
+			if ($exception->getLifecycleStatus() !== '') {
+				$answer['status'] = $exception->getLifecycleStatus();
+			}
+
+			return new JSONResponse($answer, 403);
 		}
 
 		// A mandate check that could not run is not a denial. It used to leave
@@ -217,7 +210,7 @@ class MandateValidationMiddleware extends Middleware {
 	 *
 	 * @return void
 	 *
-	 * @throws OrganisationNotActiveException When the organisation is not active.
+	 * @throws MandateDeniedException When the organisation is not active.
 	 */
 	private function refuseAnOrganisationThatIsNotActive(object $controller, string $userId): void {
 		if (in_array(get_class($controller), self::LIFECYCLE_EXEMPT_CONTROLLERS, true) === true) {
@@ -238,7 +231,7 @@ class MandateValidationMiddleware extends Middleware {
 			['userId' => $userId, 'tenantId' => $this->context->getTenantId(), 'status' => $status]
 		);
 
-		throw new OrganisationNotActiveException(status: $status);
+		throw (new MandateDeniedException(message: 'Organisation is '.$status, code: 403))->withLifecycleStatus(status: $status);
 	}//end refuseAnOrganisationThatIsNotActive()
 
 	/**

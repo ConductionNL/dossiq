@@ -27,7 +27,6 @@ namespace OCA\Dossiq\Tests\Unit\Middleware;
 
 use OCA\Dossiq\Middleware\MandateDeniedException;
 use OCA\Dossiq\Middleware\MandateValidationMiddleware;
-use OCA\Dossiq\Middleware\OrganisationNotActiveException;
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
 use OCA\Dossiq\Service\TenantService;
@@ -40,7 +39,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Middleware\MandateValidationMiddleware
- * @covers \OCA\Dossiq\Middleware\OrganisationNotActiveException
+ * @covers \OCA\Dossiq\Middleware\MandateDeniedException
  *
  * @uses \OCA\Dossiq\Service\TenantContext
  * @uses \OCA\Dossiq\Service\TenantSessionService
@@ -232,7 +231,7 @@ class MandateValidationMiddlewareTest extends TestCase {
 		try {
 			$middleware->beforeController(new \stdClass(), 'index');
 			$this->fail('a suspended organisation must be refused');
-		} catch (OrganisationNotActiveException $refusal) {
+		} catch (MandateDeniedException $refusal) {
 			$response = $middleware->afterException(new \stdClass(), 'index', $refusal);
 		}
 
@@ -251,8 +250,9 @@ class MandateValidationMiddlewareTest extends TestCase {
 	public function testARetainedOrganisationIsRefusedOnADossiqRoute(): void {
 		[$middleware] = $this->newGatedMiddleware(context: $this->memberOf(uuid: 'org-a', status: 'retained'));
 
-		$this->expectException(OrganisationNotActiveException::class);
+		$this->expectException(MandateDeniedException::class);
 		$this->expectExceptionCode(403);
+		$this->expectExceptionMessage('Organisation is retained');
 		$middleware->beforeController(new \stdClass(), 'create');
 	}
 
