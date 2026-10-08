@@ -11,9 +11,9 @@ Gate 23 prerequisite, built before the Woo changes (Ruben, 2026-10-08). Resolves
 
 dossiq deletes its schema-per-tenant isolation, which never isolated anything, and its hardening checklist stops citing it: the checklist names OpenRegister's organisation row filter, the control that actually runs, and reports it as verified only when a live probe says it is on.
 
-- Gate 23 (`or-abstraction-anti-patterns`): clears rule 7 `or-capability:tenant-boundary` by content (`search_path` in `TenantIsolationMiddleware` and in `TenantAuditTrailService` lines 276 and 302). Removes five of the 18 rule 4 files and one of the four rule 7 name hits. It does not clear rule 4 or the rule 7 name hits on its own; see `dossiq/tenancy-onto-openregister-organisation`.
+- Gate 23 (`or-abstraction-anti-patterns`): clears rule 7 `or-capability:tenant-boundary` by content (`search_path` in `TenantIsolationMiddleware` and in `TenantAuditTrailService` lines 276 and 302). Removes five of the 18 rule 4 files and one of the four rule 7 name hits. It does not clear rule 4 or the rule 7 name hits on its own; `dossiq/tenancy-onto-openregister-organisation-active-organisation` (https://github.com/ConductionNL/dossiq/issues/3469) builds next and clears the name hits.
 - Resolves https://github.com/ConductionNL/dossiq/issues/2470.
-- Dependencies: none. `dossiq/tenancy-onto-openregister-organisation` builds after this.
+- Dependencies: none. Followed by `dossiq/tenancy-onto-openregister-organisation-active-organisation` (https://github.com/ConductionNL/dossiq/issues/3469) and `dossiq/tenancy-onto-openregister-organisation` (https://github.com/ConductionNL/dossiq/issues/3466).
 - Decisions: Ruben 2026-10-08 (gate 23 work first); ADR-004 ("deleted by dossiq#2470, not exempted"); tenancy decision 3 (the session leads); the removal of `archiveAndDelete()` (termination is non-destructive).
 - Build rules: openspec/woo-build-rules.md
 
@@ -73,8 +73,9 @@ isolation is the row filter.
 - Choosing zaaktype templates by `tier` stays a dossiq concept (tenancy decision 2a). No code runs
   it today: the seeding lived in the unreachable pipeline and only logged. A later change can seed
   beside `TenantService::provisionTenant()` if it is wanted.
-- `TenantContextMiddleware`, `TenantMiddleware` and the claim middleware stay. Their end state is
-  the tenancy change's open decisions Q2 and Q3.
+- `TenantContextMiddleware`, `TenantMiddleware` and the claim middleware stay in this change. Ruben
+  decided their end state on 2026-10-08 (Q2 and Q3): they are deleted by
+  `tenancy-onto-openregister-organisation-active-organisation`, which builds after this one.
 - OpenRegister is not changed.
 
 ## Gate 23 effect
