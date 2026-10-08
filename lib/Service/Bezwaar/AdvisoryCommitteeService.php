@@ -307,36 +307,15 @@ class AdvisoryCommitteeService {
 			adviceDecisionRef: $adviceDecisionRef,
 		);
 
-		$apply = fn (): array => ($this->patchObjectAsArray(
-			objectService: $objectService,
-			register: $register,
-			schema: $requestSchema,
-			id: (string)$requestId,
-			changes: $update
-		) ?? array_merge($current, $update));
-
 		try {
-			if (isset($update['adviceIssuedAt']) === false) {
-				return $apply();
-			}
-
-			// A terminal state carries the chair's signature: recorded first,
-			// with the chair from the session, then the status moves.
-			return $this->auditTrail->recordThenApply(
+			return $this->applyTransition(
+				objectService: $objectService,
 				register: $register,
-				schema: $requestSchema,
-				objectUuid: (string)$requestId,
-				event: 'advice-signed-by-chair',
-				payload: [
-					'chair' => $this->auditTrail->resolveActor(),
-					'signatureEvidence' => $update['signatureEvidence'] ?? ($current['signatureEvidence'] ?? null),
-					'conclusion' => $update['conclusion'] ?? ($current['conclusion'] ?? null),
-				],
-				tag: '',
-				apply: $apply,
+				requestSchema: $requestSchema,
+				requestId: (string)$requestId,
+				current: $current,
+				update: $update,
 			);
-		} catch (BezwaarEntryNotWrittenException $notWritten) {
-			throw $notWritten;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq BAC: failed to transition advice request '
@@ -345,6 +324,60 @@ class AdvisoryCommitteeService {
 			throw new RuntimeException('Could not transition advice request');
 		}//end try
 	}//end transitionAdviceStatus()
+
+	/**
+	 * Write a transition's patch, recording the chair's signature first on a terminal state.
+	 *
+	 * A terminal state carries the chair's signature, with the chair from the
+	 * session. It is recorded before the status moves; a status write that
+	 * then fails leaves an `advice-signed-by-chair-not-applied` row
+	 * (REQ-BAT-003).
+	 *
+	 * @param object               $objectService OpenRegister object service.
+	 * @param string               $register      Register identifier.
+	 * @param string               $requestSchema Advice-request schema identifier.
+	 * @param string               $requestId     Advice request UUID.
+	 * @param array<string, mixed> $current       Current advice-request record.
+	 * @param array<string, mixed> $update        The patch.
+	 *
+	 * @return array<string, mixed> The updated advice request record.
+	 *
+	 * @throws RuntimeException When the signature cannot be recorded; nothing is changed.
+	 */
+	private function applyTransition(
+		object $objectService,
+		string $register,
+		string $requestSchema,
+		string $requestId,
+		array $current,
+		array $update,
+	): array {
+		$apply = fn (): array => ($this->patchObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $requestSchema,
+			id: $requestId,
+			changes: $update
+		) ?? array_merge($current, $update));
+
+		if (isset($update['adviceIssuedAt']) === false) {
+			return $apply();
+		}
+
+		return $this->auditTrail->recordThenApply(
+			register: $register,
+			schema: $requestSchema,
+			objectUuid: $requestId,
+			event: 'advice-signed-by-chair',
+			payload: [
+				'chair' => $this->auditTrail->resolveActor(),
+				'signatureEvidence' => $update['signatureEvidence'] ?? ($current['signatureEvidence'] ?? null),
+				'conclusion' => $update['conclusion'] ?? ($current['conclusion'] ?? null),
+			],
+			tag: '',
+			apply: $apply,
+		);
+	}//end applyTransition()
 
 	/**
 	 * Listener entry-point: when a bezwaar enters status
@@ -396,7 +429,7 @@ class AdvisoryCommitteeService {
 	 *
 	 * @return void
 	 *
-	 * @throws BezwaarEntryNotWrittenException When the entry could not be written; the caller logs it with the entry.
+	 * @throws RuntimeException A BezwaarEntryNotWrittenException when the entry could not be written; the caller logs it with the entry.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
@@ -423,29 +456,31 @@ class AdvisoryCommitteeService {
 				schema: $requestSchema,
 				id: $requestId
 			);
-			if ($current === null) {
-				return;
-			}
-
-			$this->auditTrail->record(
-				register: $register,
-				schema: $requestSchema,
-				objectUuid: $requestId,
-				event: 'council-deviation-recorded',
-				payload: [
-					'decision' => $decisionId,
-					'motivatie' => $rationaleRef,
-				],
-				tag: BezwaarAuditTrail::TAG_BAC_REFERRAL,
-			);
-		} catch (BezwaarEntryNotWrittenException $notWritten) {
-			throw $notWritten;
 		} catch (\Throwable $e) {
 			$this->logger->error(
-				'Dossiq BAC: failed to record council deviation: '
+				'Dossiq BAC: failed to read the advice request for a council deviation: '
 				. $e->getMessage()
 			);
-		}//end try
+			return;
+		}
+
+		if ($current === null) {
+			return;
+		}
+
+		// Outside the try on purpose: an entry that cannot be written goes to
+		// the caller, which logs it with the entry (REQ-BAT-003).
+		$this->auditTrail->record(
+			register: $register,
+			schema: $requestSchema,
+			objectUuid: $requestId,
+			event: 'council-deviation-recorded',
+			payload: [
+				'decision' => $decisionId,
+				'motivatie' => $rationaleRef,
+			],
+			tag: BezwaarAuditTrail::TAG_BAC_REFERRAL,
+		);
 	}//end recordCouncilDeviation()
 
 	/**
@@ -472,9 +507,8 @@ class AdvisoryCommitteeService {
 	/**
 	 * Guard the assigned → in-deliberation transition (REQ-BAC-2): a panel
 	 * must be set and every member must be independent. An independence
-	 * failure is appended to the audit trail before the guard raises.
+	 * failure is recorded on the request's trail before the guard raises.
 	 *
-	 * @param object $objectService OpenRegister object service
 	 * @param array<string, mixed> $current Current advice-request record
 	 * @param string $requestId Advice request UUID
 	 * @param string $register Register identifier

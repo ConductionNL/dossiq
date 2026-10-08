@@ -404,8 +404,49 @@ class HearingService {
 			$merged[] = $entry;
 		}
 
-		// Awb art. 7:7. Each late correction is recorded before the attendance
-		// changes; a correction whose entry cannot be written changes nothing.
+		return $this->writeAttendance(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			sessionId: $sessionId,
+			current: $current,
+			update: [
+				'attendance' => $merged,
+				'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
+			],
+			corrections: $corrections,
+		);
+	}//end recordAttendance()
+
+	/**
+	 * Record each late correction, then write the attendance.
+	 *
+	 * Awb art. 7:7. Each late correction is recorded before the attendance
+	 * changes; a correction whose entry cannot be written changes nothing. A
+	 * patch that fails after the entries leaves an
+	 * `attendance-late-correction-not-applied` row per correction (REQ-BAT-003).
+	 *
+	 * @param object                           $objectService OpenRegister object service.
+	 * @param string                           $register      The register.
+	 * @param string                           $schema        The hearingSession schema.
+	 * @param string                           $sessionId     The session.
+	 * @param array<string, mixed>             $current       The stored session.
+	 * @param array<string, mixed>             $update        The attendance patch.
+	 * @param array<int, array<string, mixed>> $corrections   The late corrections' payloads.
+	 *
+	 * @return array<string, mixed> The updated session.
+	 *
+	 * @throws RuntimeException When an entry or the patch fails.
+	 */
+	private function writeAttendance(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $sessionId,
+		array $current,
+		array $update,
+		array $corrections,
+	): array {
 		foreach ($corrections as $correction) {
 			$this->auditTrail->record(
 				register: $register,
@@ -416,11 +457,6 @@ class HearingService {
 				tag: self::TAG_VERSLAG,
 			);
 		}
-
-		$update = [
-			'attendance' => $merged,
-			'attendanceFrozenAt' => $freezeAt->format(DateTimeInterface::ATOM),
-		];
 
 		try {
 			return ($this->patchObjectAsArray(
@@ -447,7 +483,7 @@ class HearingService {
 			);
 			throw new RuntimeException('Could not record attendance');
 		}//end try
-	}//end recordAttendance()
+	}//end writeAttendance()
 
 	/**
 	 * Attach minutes (verslag) to a hearingSession and promote it to
@@ -537,8 +573,6 @@ class HearingService {
 					changes: $update
 				) ?? array_merge($current, $update)),
 			);
-		} catch (BezwaarEntryNotWrittenException $notWritten) {
-			throw $notWritten;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Dossiq hearing: failed to add minutes: ' . $e->getMessage()

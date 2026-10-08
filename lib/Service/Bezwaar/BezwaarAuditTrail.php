@@ -206,20 +206,22 @@ class BezwaarAuditTrail {
 			);
 		}
 
+		$object = null;
+		$cause = null;
 		try {
 			$object = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService')
 				->find($objectUuid, register: $register, schema: $schema);
 		} catch (Throwable $e) {
-			$object = $e;
+			$cause = $e;
 		}
 
-		if (is_object($object) === false || $object instanceof Throwable) {
+		if (is_object($object) === false) {
 			throw new BezwaarEntryNotWrittenException(
 				action: $action,
 				objectUuid: $objectUuid,
 				entry: $context,
 				reason: 'The bezwaar record '.$objectUuid.' could not be resolved for '.$action,
-				previous: ($object instanceof Throwable) ? $object : null,
+				previous: $cause,
 			);
 		}
 
@@ -319,7 +321,16 @@ class BezwaarAuditTrail {
 		string $tag,
 		callable $apply,
 	): mixed {
-		$this->record(register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag);
+		try {
+			$this->record(register: $register, schema: $schema, objectUuid: $objectUuid, event: $event, payload: $payload, tag: $tag);
+		} catch (BezwaarEntryNotWrittenException $notWritten) {
+			$this->logger->error(
+				'Dossiq bezwaar: entry not written, so the change it records is not made',
+				$notWritten->logContext()
+			);
+
+			throw $notWritten;
+		}
 
 		try {
 			return $apply();

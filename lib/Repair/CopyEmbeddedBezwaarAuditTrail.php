@@ -90,6 +90,8 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 	 * The step's name.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/changes/bezwaar-audit-onto-openregister-trail/specs/bezwaar-awb-audit-trail/spec.md
 	 */
 	public function getName(): string {
 		return 'Copy the embedded bezwaar audit entries onto OpenRegister\'s audit trail';
@@ -165,7 +167,8 @@ class CopyEmbeddedBezwaarAuditTrail implements IRepairStep {
 			}
 
 			$offset += self::PAGE;
-		} while (count($rows) === self::PAGE);
+			$more = (count($rows) === self::PAGE);
+		} while ($more === true);
 
 		$output->info($schema.': '.$copied.' embedded bezwaar audit entries copied, '.count($failed).' records not copied.');
 	}//end copySchema()
