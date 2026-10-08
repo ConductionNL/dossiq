@@ -482,13 +482,14 @@ and seen red; note the failure line in the PR body.
   uuid, refused collisions included. The count goes to the repair output and to
   the log at warning level when it is above zero. `TenantMigrationService`
   computes it, so the command and the repair report the same number. A refused
-  collision stays refused and is counted, never mapped (decision Q1,
-  REQ-TOO-001).
+  collision stays refused and is counted, never mapped. The same step then
+  creates the audit anchor of 6.15 for every Organisation a `tenantUser` row
+  points at that has none (decisions Q1 and Q6, REQ-TOO-001, REQ-TOO-006).
   - **fails today**: `tests/Unit/Repair/MigrateTenantsToOrganisationsTest.php`
     `testTheRepairMigratesAndReportsWhatIsLeft`,
     `testARefusedCollisionIsCountedAsUnmigrated` and
     `testASecondRunMigratesNothingAndReportsZero`, built on the real
-    `TenantMigrationService`.
+    `TenantMigrationService`, and `testAMemberOrganisationWithoutAnAnchorGetsOne`.
   - Through the caller: `testTheMigrationStepIsRegistered`, reading
     `appinfo/info.xml`.
 - [ ] 6.3 Held for a person, and a build session stops here: run
@@ -511,8 +512,11 @@ and seen red; note the failure line in the PR body.
   `lib/Settings/dossiq_register.json` and `lib/Settings/dossiq_mock_register.json`,
   keeping their values (decision 2b). Describe the `tenant` schema as the
   read-only anchor of the tenant audit trail, and bump the register
-  `info.version`. No code writes or deletes a tenant object once 6.9 is built
-  (REQ-TOO-002).
+  `info.version`. Reduce the schema's `required` to `slug` and `displayName`,
+  so an anchor needs no `tier` or `status` (decision 2a keeps `tier` on
+  `tenantConfiguration`). Once 6.9 is built the only write on the schema is the
+  anchor creation of 6.15; nothing updates or deletes a tenant object
+  (decisions Q4 and Q6, REQ-TOO-002).
   - **fails today**: `tests/Unit/Settings/NoPropertyRefsTheTenantSchemaTest.php`
     `testNoPropertyInEitherDescriptorRefsTheTenantSchema` (four hits today) and
     `testTheTenantSchemaIsDescribedAsTheReadOnlyAuditAnchor`.
@@ -555,7 +559,7 @@ and seen red; note the failure line in the PR body.
   (decision Q4, REQ-TOO-002, REQ-TOO-004).
   - **fails today**: `NoRetiredTenantStoreTest`
     `testNoRouteNamesTheTenantSaasController` and
-    `testNoCodeWritesOrDeletesATenantObject`. The hydra route-reachability gate
+    `testOnlyTheAnchorCreationWritesATenantObjectAndNothingDeletesOne`. The hydra route-reachability gate
     must show no dangling route.
 - [ ] 6.10 `src/views/settings/tabs/TenantOnboardingTab.vue` lists tenants from
   OpenRegister's `GET /apps/openregister/api/organisations` instead of
@@ -565,14 +569,43 @@ and seen red; note the failure line in the PR body.
     `TenantOnboardingTab.spec.js` `lists organisations from openregister`,
     asserting the URL the component calls.
 
+### The audit anchor (decision Q6)
+
+- [ ] 6.15 Add `TenantService::ensureAuditAnchor(string $organisationUuid): bool`.
+  It creates, once, a tenant object whose uuid is the Organisation's, with
+  `slug`, `displayName` and `createdAt` from the Organisation, and answers true
+  when the anchor exists afterwards. It never updates or deletes one.
+  `TenantOnboardingService::createOnboarding()` calls it before it writes the
+  onboarding steps, and refuses to write them when it answers false
+  (REQ-TOO-006).
+  - **fails today**, through the caller:
+    `tests/Unit/Controller/TenantOnboardingControllerTest.php`
+    `testInitialisingOnboardingForANewOrganisationCreatesItsAnchor` and
+    `testASecondInitialiseCreatesNoSecondAnchor`, built on the real
+    `TenantOnboardingService` and `TenantService`.
+  - When `remove-casetask` task 7.1 moves onboarding onto the engine `Task`,
+    this call moves with it. Say so in a comment at the call.
+- [ ] 6.16 `TenantAuditTrailService::emit()` anchors a new tenant's entries on
+  the anchor of 6.15, and keeps its fail-closed path: no anchor means no row,
+  an error log and `persisted: false` (REQ-TOO-006).
+  - **fails today**, through the caller:
+    `tests/Unit/Middleware/MandateValidationMiddlewareTest.php`
+    `testAMandateDecisionForANewTenantAnchorsOnItsOnboardingAnchor`.
+  - Stays green, and is added if missing:
+    `tests/Unit/Service/TenantAuditTrailServiceTest.php`
+    `testAnEntryForATenantWithNoAnchorIsNotPersistedAndLogged`.
+
 ### Close out
 
 - [ ] 6.11 Update `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`
   for this change: add `lib/Service/TenantOrganisationResolver.php` under
   "Already consuming OpenRegister" with `(gate 23 rules: 4)`; add
   `lib/Service/TenantMigrationService.php` with `(gate 23 rules: 4)` under a
-  new section that says it runs as a repair step for one release (decision Q1)
-  and goes with task 6.4; record decision Q4 (tenant objects are kept
+  new section that gives its reason (it runs as a repair step for one release,
+  decision Q1) and its sunset: the next dossiq release, when task 6.4 deletes
+  it and this entry. The gate reads only a date and only the ADR-wide `Sunset:`
+  line, so the file's own sunset is stated in words beside the path, and the
+  ADR-wide 2027-03-31 stays the backstop (decision Q7); record decision Q4 (tenant objects are kept
   read-only as the audit anchor); drop `TenantSaasService` and
   `TenantSaasController`; rewrite "Status of the work" to what is merged
   (REQ-TOO-005).
