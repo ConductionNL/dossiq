@@ -18662,8 +18662,8 @@
 				"state": "specified",
 				"evidence": "lib/Service/Auth/SimulatorDigidSamlAdapter.php and SimulatorEHerkenningSamlAdapter.php simulate the login; lib/Service/Auth/LogDigidSamlAdapter.php:97 refuses until the integriq broker is configured; integriq idp-broker-envelope-runtime (archived 2026-09-29) ships the trust table, pseudonym, envelope and exchange",
 				"owner": "ConductionNL/integriq",
-				"change": "integriq/idp-broker-envelope-runtime",
-				"note": "Re-read 2026-10-07: integriq archived idp-broker-envelope-runtime with the SAML Service Provider, the OIDC Relying Party and the Beheer > Authenticatie screen named as not done (its tasks.md, 'Not done'). No citizen logs in with DigiD, eHerkenning or eIDAS yet, so the row stays partial and specified until that vendor work lands.",
+				"change": "integriq/portal-idp-broker-config",
+				"note": "Re-read 2026-10-07: integriq archived idp-broker-envelope-runtime with the SAML Service Provider, the OIDC Relying Party and the Beheer > Authenticatie screen named as not done (its tasks.md, 'Not done'). No citizen logs in with DigiD, eHerkenning or eIDAS yet, so the row stays partial and specified until that vendor work lands. Missing half specified in integriq/portal-idp-broker-config (spec round part 3, 2026-10-07); delivered half: integriq/idp-broker-envelope-runtime.",
 				"screen": {
 					"board": null,
 					"reason": "backend: citizen login through integriq"
