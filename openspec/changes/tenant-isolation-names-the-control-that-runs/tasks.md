@@ -52,7 +52,7 @@ failure line in the PR body.
 
 ## 3. Ending a tenancy deletes nothing
 
-- [ ] 3.1 Remove the `tenantSaas#destroy` route, `TenantSaasController::destroy()` and
+- [x] 3.1 Remove the `tenantSaas#destroy` route, `TenantSaasController::destroy()` and
   `TenantSaasService::delete()`, and the `DELETE` operation in `docs/openapi/tenant-saas.yaml`
   (REQ-TIS-003).
   - **fails today**: `tests/Unit/AppInfo/CanonicalRouteMethodContractTest.php` (or a new

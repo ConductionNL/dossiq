@@ -129,12 +129,6 @@ paths:
         '200': { description: OK }
         '404': { description: Tenant not found }
         '409': { description: Illegal lifecycle transition }
-    delete:
-      summary: Hard-delete a terminated tenant (admin)
-      responses:
-        '200': { description: Deleted }
-        '404': { description: Not found }
-        '409': { description: Tenant must be in 'terminated' status before deletion }
 
   /api/saas/tenants/{tenantId}/onboarding/progress:
     parameters:
