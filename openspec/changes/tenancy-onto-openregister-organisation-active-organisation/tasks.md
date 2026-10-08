@@ -14,7 +14,7 @@ getters are magic; the service returns `null` for a user with no active organisa
 
 ## 1. The token path goes (Q2)
 
-- [ ] 1.1 Delete `lib/Service/TenantJwtService.php`, `lib/Middleware/TenantClaimValidationMiddleware.php`,
+- [x] 1.1 Delete `lib/Service/TenantJwtService.php`, `lib/Middleware/TenantClaimValidationMiddleware.php`,
   `lib/Middleware/TenantClaimMismatchException.php`, the `TenantJwtService` factory in
   `lib/AppInfo/Registrar/SaasServiceRegistrar.php`, the registration in `MiddlewareRegistrar`, and
   `TenantJwtServiceTest` and `TenantClaimValidationMiddlewareTest`. Keep the `jwt_signing_secret`
@@ -24,7 +24,7 @@ getters are magic; the service returns `null` for a user with no active organisa
   - **fails today**: `tests/Unit/AppInfo/MiddlewareRegistrarTest.php`
     `testNoClaimMiddlewareIsRegistered`.
   - Stays green: `PortalAssertionVerifier`'s tests, which read the same secret.
-- [ ] 1.2 In `TenantAuditTrailService::hardeningChecklist()`, drop `claim_validation` and make
+- [x] 1.2 In `TenantAuditTrailService::hardeningChecklist()`, drop `claim_validation` and make
   `no_hardcoded_secrets` cite only classes that exist (REQ-TAO-001).
   - **fails today**: `tests/Unit/Service/TenantAuditTrailServiceTest.php`
     `testNoChecklistItemCitesADeletedTenantClass`.

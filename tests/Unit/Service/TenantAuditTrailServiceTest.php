@@ -220,7 +220,7 @@ class TenantAuditTrailServiceTest extends TestCase {
 
 	public function testHardeningChecklistShape(): void {
 		$items = $this->svc->hardeningChecklist();
-		$this->assertGreaterThanOrEqual(7, count($items));
+		$this->assertGreaterThanOrEqual(6, count($items));
 		foreach ($items as $i) {
 			$this->assertArrayHasKey('key', $i);
 			$this->assertArrayHasKey('description', $i);
@@ -314,6 +314,35 @@ class TenantAuditTrailServiceTest extends TestCase {
 			$text = strtolower($item['description'].' '.$item['evidence']);
 			$this->assertStringNotContainsString('schema', $text, $item['key']);
 			$this->assertStringNotContainsString('search_path', $text, $item['key']);
+		}
+	}
+
+	/**
+	 * No checklist item cites a tenant class this chain deleted (REQ-TAO-001).
+	 *
+	 * @return void
+	 */
+	public function testNoChecklistItemCitesADeletedTenantClass(): void {
+		$deleted = [
+			'TenantJwtService',
+			'TenantClaimValidationMiddleware',
+			'TenantClaimMismatchException',
+			'TenantMiddleware',
+			'TenantContextMiddleware',
+			'TenantController',
+			'TenantIsolationMiddleware',
+		];
+		$items   = $this->makeService()->hardeningChecklist();
+
+		$this->assertNotContains('claim_validation', array_column($items, 'key'), 'no token checks the tenant any more');
+		foreach ($items as $item) {
+			foreach ($deleted as $class) {
+				$this->assertDoesNotMatchRegularExpression(
+					'/\b'.$class.'\b/',
+					$item['description'].' '.$item['evidence'],
+					$item['key'].' cites '.$class
+				);
+			}
 		}
 	}
 }

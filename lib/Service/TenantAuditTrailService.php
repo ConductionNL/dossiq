@@ -321,12 +321,6 @@ class TenantAuditTrailService {
 				'status' => $isolationStatus,
 			],
 			[
-				'key' => 'claim_validation',
-				'description' => 'JWT tenant_id claim is cross-checked against the request tenant',
-				'evidence' => 'TenantClaimValidationMiddleware',
-				'status' => 'pass',
-			],
-			[
 				'key' => 'audit_logged_mutations',
 				'description' => 'Mandate decisions, tenant provisioning, and tenant status changes each write a hash-chained OpenRegister audit row',
 				'evidence' => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry '
@@ -337,7 +331,8 @@ class TenantAuditTrailService {
 			[
 				'key' => 'no_hardcoded_secrets',
 				'description' => 'JWT signing secret + Shillinq credentials resolved from app config',
-				'evidence' => 'Application.php registerService factory for TenantJwtService + ShillinqIntegrationService',
+				'evidence' => 'PortalAssertionVerifier reads jwt_signing_secret from app config; '
+					. 'SaasServiceRegistrar builds ShillinqIntegrationService from app config',
 				'status' => 'pass',
 			],
 			[
