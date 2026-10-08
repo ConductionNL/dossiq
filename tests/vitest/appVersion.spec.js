@@ -90,7 +90,10 @@ describe('appVersion', () => {
 	it('builds against a library that has the helper', () => {
 		const pkg = JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
 		const range = pkg.dependencies['@conduction/nextcloud-vue']
-		const [major, minor, patch] = range.replace(/^[\^~]/, '').split('.').map(Number)
+		const [major, minor, patch] = range
+			.replace(/^[\^~]/, '')
+			.split('.')
+			.map(Number)
 		expect(major).toBe(2)
 		expect(minor * 1000 + patch).toBeGreaterThanOrEqual(73 * 1000 + 1)
 		const installed = require('@conduction/nextcloud-vue/package.json').version
