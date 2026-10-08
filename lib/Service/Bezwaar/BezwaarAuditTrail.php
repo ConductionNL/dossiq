@@ -373,27 +373,6 @@ class BezwaarAuditTrail {
 	}//end recordRefusal()
 
 	/**
-	 * Append one entry to an embedded audit array.
-	 *
-	 * @deprecated Kept only until every call site writes through record();
-	 *             task 1.2 of bezwaar-audit-onto-openregister-trail removes it.
-	 *
-	 * @param array<int, array<string, mixed>> $existing Existing audit entries.
-	 * @param string $event Event slug.
-	 * @param array<string, mixed> $payload Structured payload.
-	 * @param string $tag Awb / AVG tag, or '' for an untagged entry.
-	 *
-	 * @return array<int, array<string, mixed>> The trail with the new entry appended.
-	 *
-	 * @spec openspec/specs/bezwaar-hearing/spec.md
-	 */
-	public function append(array $existing, string $event, array $payload, string $tag = ''): array {
-		$existing[] = $this->entry(event: $event, payload: $payload, tag: $tag);
-
-		return $existing;
-	}//end append()
-
-	/**
 	 * Resolve the acting user UID from IUserSession.
 	 *
 	 * Identity is never taken from caller-supplied data; a session-less

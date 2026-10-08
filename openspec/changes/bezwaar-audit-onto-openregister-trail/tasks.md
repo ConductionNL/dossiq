@@ -25,7 +25,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
     `testTheActorComesFromTheSessionNeverThePayload` and `testRecordThrowsWhenOpenRegisterIsAbsent`.
   - Gate check: gate 23 prints `BezwaarAuditTrail.php` under "writes through OpenRegister's
     AuditTrailMapper, compliant, not counted".
-- [ ] 1.2 Remove `append()`. No code under `lib/` writes the `auditTrail` key of a `hearingSession` or
+- [x] 1.2 Remove `append()`. No code under `lib/` writes the `auditTrail` key of a `hearingSession` or
   `bacAdviceRequest` again, and the five `$current['auditTrail']` reads go (REQ-BAT-001).
   - **fails today**: `tests/Unit/Architecture/NoEmbeddedBezwaarAuditWriteTest.php`
     `testNoBezwaarServiceWritesTheAuditTrailProperty`.
