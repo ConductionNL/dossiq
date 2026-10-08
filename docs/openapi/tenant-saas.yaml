@@ -205,7 +205,7 @@ paths:
 # - 403 mandate denied (MandateValidationMiddleware) or cross-tenant
 #       JWT claim mismatch (TenantClaimValidationMiddleware) or tenant
 #       suspended/terminated (TenantMiddleware)
-# - 404 cross-tenant lookup (TenantIsolationMiddleware search_path)
+# - 404 cross-tenant lookup (OpenRegister organisation row filter returns no row)
 # - 429 request quota exceeded, answered by OpenRegister's TenantQuotaMiddleware
 #       on OpenRegister's own routes. Dossiq's routes carry no request quota:
 #       QuotaEnforcementMiddleware was retired when the request limit moved
