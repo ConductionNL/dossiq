@@ -5,7 +5,7 @@
 dossiq stops keeping a second tenant store beside OpenRegister's `Organisation`: the satellites point at the organisation, the local `tenant` schema and its admin store retire, and the migration that moves the data runs dry and is read by a person before anything is deleted.
 
 - Gate 23 (`or-abstraction-anti-patterns`): this change works on rule 4 (`consume-or-tenant-fleet-wide`, any `Tenant*.php`) and rule 7 (`or-capability:tenant-boundary`). Finishing it does NOT clear either on its own. The 2026-10-08 amend at the end of this proposal names which files it removes, which go with `dossiq/tenant-isolation-names-the-control-that-runs`, and which still wait on a decision.
-- Dependencies: `dossiq/tenant-isolation-names-the-control-that-runs` (issue linked in the spec PR) removes the search_path pipeline and is built first. `dossiq/remove-casetask` task 7.1 owns `tenantOnboardingTask`. Tasks 6.2 and 6.3 are held for a person.
+- Dependencies: `dossiq/tenant-isolation-names-the-control-that-runs` (https://github.com/ConductionNL/dossiq/issues/3465) removes the search_path pipeline and is built first. `dossiq/remove-casetask` task 7.1 owns `tenantOnboardingTask`. Tasks 6.2 and 6.3 are held for a person.
 - Decisions: Ruben 2026-09-11 (2a to 2h and step 3, recorded in tasks.md); Ruben 2026-10-08 (gate 23 work is built before the Woo changes).
 - Debt programme: dossiq#2460. ADR: `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`.
 - Build rules: openspec/woo-build-rules.md
