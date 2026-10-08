@@ -143,11 +143,26 @@ exception never runs ahead of the work.
   every tenant audit entry `TenantAuditTrailService` writes, so existing and new entries for those
   tenants keep resolving. The `tenant` schema stays declared for that reason.
 
+Ruben answered the three points left after that, later the same day:
+
+- **Q5, `TenantController`.** Its `current`, `memberships`, `provision` and `usage` endpoints move
+  to OpenRegister's organisation endpoints (`getActive`, `index`, `activate`, and `usage` with
+  `show`), and the controller is deleted, not exempted
+  (`tenancy-onto-openregister-organisation-active-organisation`).
+- **Q6, the anchor of a new tenant.** When dossiq onboarding is initialised for an Organisation,
+  dossiq creates a read-only tenant object for it, once, so every tenant, old and new, has one place
+  its audit history lives. Creating that anchor is the only write left on the `tenant` schema;
+  nothing updates or deletes one. `TenantAuditTrailService` still writes no row when an anchor is
+  missing.
+- **Q7, the migration cover.** The one-release cover of `TenantMigrationService` under Q1 stays,
+  with its reason and a sunset of the next dossiq release, stated beside its path line when task
+  6.11 adds it. The gate reads only the ADR-wide date, so 2027-03-31 remains the backstop. Task 6.4
+  deletes the class and the line.
+
 Still counted after all of it, and correctly: `TenantOnboardingService` and
-`TenantOnboardingController` (the onboarding `skipped` status mapping in `remove-casetask` task 7.1
-is undecided) and `TenantController` (the end state of its `current`, `memberships`, `provision` and
-`usage` endpoints is undecided). The paragraph "What this exception does not cover" above predates
-these decisions; where it and this section differ, this section is the newer one.
+`TenantOnboardingController`. The onboarding `skipped` status mapping in `remove-casetask` task 7.1
+is the only gate 23 decision left. The paragraph "What this exception does not cover" above
+predates these decisions; where it and this section differ, this section is the newer one.
 
 ## Sunset
 
