@@ -55,7 +55,7 @@ getters are magic; the service returns `null` for a user with no active organisa
     `testASuspendedOrganisationIsRefusedOnADossiqRoute`,
     `testARetainedOrganisationIsRefusedOnADossiqRoute`,
     `testAPlatformAdminIsNotRefused` and `testAUserWithNoOrganisationIsLetThrough`.
-- [ ] 2.4 Delete `TenantMiddleware`, `TenantContextMiddleware`, their registrations and tests, and
+- [x] 2.4 Delete `TenantMiddleware`, `TenantContextMiddleware`, their registrations and tests, and
   the `tenant#switchTenant` route and `TenantController::switchTenant()`. Switching is
   OpenRegister's `POST /api/organisations/{uuid}/set-active`. Check `src/` for a caller of
   `/api/tenants/switch` first and re-point it (REQ-TAO-002, REQ-TAO-003).
