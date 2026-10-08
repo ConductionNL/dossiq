@@ -184,7 +184,7 @@ test.describe('app chrome (ADR-114)', () => {
 	// and tests/vitest/capabilityComparison.spec.js; this test pins the two
 	// things only a browser can: the tab is gone, and the link to its new home
 	// is on the page.
-	test('Features & roadmap links to the comparison instead of carrying it', async ({
+	test('FeaturesRoadmapView links to the comparison instead of carrying it', async ({
 		page,
 	}) => {
 		await page.goto(`${APP_BASE}/features-roadmap`, {
