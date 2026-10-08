@@ -12,6 +12,16 @@
 
 Two things need a person, not an agent: settling the Woo refusal grounds against the law (dossiq `woo-refusal-grounds-list`, task 1, blocks seeding), and the screen-reader pass for row 15.5.
 
+## Before the Woo changes
+
+Hydra gate 23 (or-abstraction-anti-patterns) is red on `development`, and ADR-004 says it should stay red until dossiq stops running its own tenancy and audit trail. Ruben decided on 2026-10-08 that this is built first, in this order:
+
+1. [`tenant-isolation-names-the-control-that-runs`](https://github.com/ConductionNL/dossiq/issues/3465): retires the schema-per-tenant pipeline, which is unreachable, and resolves dossiq#2470.
+2. [`bezwaar-audit-onto-openregister-trail`](https://github.com/ConductionNL/dossiq/issues/3467): Awb hearing and decision entries go through OpenRegister's audit trail.
+3. [`tenancy-onto-openregister-organisation`](https://github.com/ConductionNL/dossiq/issues/3466): dossiq's tenant becomes OpenRegister's organisation. Its second half waits on a person running the migration on real data (tasks 6.2 and 6.3).
+
+Until these land, a dossiq Woo PR shows Hydra Gates red on gate 23 only. Do not try to fix gate 23 inside a Woo PR: an admin merges it past that one known finding.
+
 ## Wave 1
 
 | change | rows | depends on |
