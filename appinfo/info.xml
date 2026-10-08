@@ -68,7 +68,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
 **Ondersteuning:** Voor ondersteuning, neem contact op via support@conduction.nl. Voor een Service Level Agreement (SLA), neem contact op via sales@conduction.nl.
     ]]></description>
-    <version>0.4.47-unstable.20261008090000</version>
+    <version>0.4.47-unstable.20261008200000</version>
     <licence>EUPL-1.2</licence>
     <author mail="info@conduction.nl" homepage="https://www.conduction.nl/">Conduction</author>
     <namespace>Dossiq</namespace>
@@ -683,6 +683,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exist.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
+            <!--
+                Points DSO intake at integriq's dso_verzoek schema when the key
+                was never set (absent). An admin's value, an empty one included,
+                is kept. In BOTH blocks: integriq may come before dossiq or after.
+            -->
+            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
@@ -900,6 +906,12 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 exist.
             -->
             <step>OCA\Dossiq\Repair\SeedContributedCaseTypes</step>
+            <!--
+                Points DSO intake at integriq's dso_verzoek schema when the key
+                was never set (absent). An admin's value, an empty one included,
+                is kept. In BOTH blocks: integriq may come before dossiq or after.
+            -->
+            <step>OCA\Dossiq\Repair\DefaultDsoIntakeSchema</step>
         </install>
     </repair-steps>
 
