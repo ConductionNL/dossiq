@@ -592,16 +592,6 @@ $extra = [
     ['name' => 'cmmnCase#terminate', 'url' => '/api/case/{caseId}/cmmn-plan/terminate', 'verb' => 'POST'],
     ['name' => 'cmmnCase#signal',    'url' => '/api/case/{caseId}/cmmn-plan/signal',    'verb' => 'POST'],
 
-        // Multi-Tenant SaaS — domain endpoints only. Generic tenant CRUD
-        // (list/create/update/destroy) is rendered by the manifest pages
-        // at /settings/tenants and proxied directly to OpenRegister; this
-        // controller keeps provisioning, usage aggregation, and current-
-        // tenant resolution — the parts that are not declarative CRUD.
-    ['name' => 'tenant#current',   'url' => '/api/tenants/current',                'verb' => 'GET'],
-    ['name' => 'tenant#memberships',  'url' => '/api/tenants/memberships',         'verb' => 'GET'],
-    ['name' => 'tenant#provision', 'url' => '/api/tenants/{tenantId}/provision',   'verb' => 'POST'],
-    ['name' => 'tenant#usage',     'url' => '/api/tenants/{tenantId}/usage',       'verb' => 'GET'],
-
         // SaaS Tenant CRUD + lifecycle — backed by the `tenant` register schema
         // (chain member tenant-zaaksysteem-saas-01). Admin-only via the
         // SecurityMiddleware default; #[AuthorizedAdminSetting] on each method.

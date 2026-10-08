@@ -65,7 +65,7 @@ getters are magic; the service returns `null` for a user with no active organisa
 
 ## 3. `TenantController` moves to OpenRegister (Q5)
 
-- [ ] 3.1 Remove the `tenant#current`, `tenant#memberships`, `tenant#provision` and `tenant#usage`
+- [x] 3.1 Remove the `tenant#current`, `tenant#memberships`, `tenant#provision` and `tenant#usage`
   routes and their methods; their OpenRegister equivalents are `organisation#getActive`,
   `organisation#index`, `organisation#activate`, and `organisation#usage` with `organisation#show`
   (see the proposal's table). Re-point any caller in `src/` first; on 2026-10-08 there was none
