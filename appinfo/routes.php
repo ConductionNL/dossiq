@@ -610,7 +610,6 @@ $extra = [
     ['name' => 'tenantSaas#create',  'url' => '/api/saas/tenants',                  'verb' => 'POST'],
     ['name' => 'tenantSaas#show',    'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'GET'],
     ['name' => 'tenantSaas#update',  'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'PATCH'],
-    ['name' => 'tenantSaas#destroy', 'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'DELETE'],
 
         // SaaS metered billing (chain member 10) — aggregate usage + run Shillinq invoicing.
     ['name' => 'tenantSaas#billingSummary', 'url' => '/api/saas/tenants/{tenantId}/billing/{month}',     'verb' => 'GET'],

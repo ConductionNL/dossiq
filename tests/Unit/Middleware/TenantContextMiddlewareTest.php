@@ -26,7 +26,6 @@ namespace OCA\Dossiq\Tests\Unit\Middleware;
 
 use OCA\Dossiq\Middleware\TenantContextMiddleware;
 use OCA\Dossiq\Service\TenantContext;
-use OCA\Dossiq\Service\TenantProvisioningService;
 use OCA\Dossiq\Service\TenantOrganisationResolver;
 use OCA\Dossiq\Service\TenantSessionService;
 use OCP\IRequest;
@@ -76,21 +75,44 @@ class TenantContextMiddlewareTest extends TestCase {
 			}
 		);
 
-		$provisioning = $this->createMock(TenantProvisioningService::class);
-		$provisioning->method('buildSchemaName')->willReturn('tenant_schema');
-
 		$context = new TenantContext();
 
 		$middleware = new TenantContextMiddleware(
 			request: $request,
 			tenantSession: $tenantSession,
 			tenantResolver: $resolver,
-			provisioning: $provisioning,
 			context: $context,
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
 		return [$middleware, $context];
+	}
+
+	/**
+	 * Binding a session tenant needs no schema name (REQ-TIS-004).
+	 *
+	 * The middleware is built without any provisioning service: if it still
+	 * needed one to name a schema, construction would fail here.
+	 *
+	 * @return void
+	 */
+	public function testBindingASessionTenantNeedsNoSchemaName(): void {
+		$parameters = array_map(
+			static fn (\ReflectionParameter $p): string => $p->getName(),
+			(new \ReflectionMethod(TenantContextMiddleware::class, '__construct'))->getParameters()
+		);
+		$this->assertNotContains('provisioning', $parameters);
+
+		[$middleware, $context] = $this->newMiddleware(
+			header: '',
+			sessionTenant: 'tenant-a',
+			known: ['tenant-a'],
+		);
+
+		$middleware->beforeController(new \stdClass(), 'index');
+
+		$this->assertTrue($context->isBound());
+		$this->assertSame('tenant-a', $context->getSlug());
 	}
 
 	/**

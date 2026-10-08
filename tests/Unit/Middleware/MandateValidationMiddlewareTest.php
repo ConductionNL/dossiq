@@ -96,7 +96,7 @@ class MandateValidationMiddlewareTest extends TestCase {
 
 		$context = new TenantContext();
 		if ($boundTenant !== null) {
-			$context->bind(['uuid' => $boundTenant, 'slug' => $boundTenant], 'tenant_' . $boundTenant);
+			$context->bind(['uuid' => $boundTenant, 'slug' => $boundTenant]);
 		}
 
 		$auth = $this->createMock(TenantAuthenticationService::class);
