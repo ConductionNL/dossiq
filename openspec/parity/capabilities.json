@@ -10774,6 +10774,557 @@
 			"kind": "app"
 		}
 	],
+	"features": [
+		{
+			"slug": "case-intake",
+			"title": "Case intake from every channel",
+			"title_nl": "Zaken aanmaken via elk kanaal",
+			"area": "intake",
+			"overlay": null,
+			"specs": [
+				"contacts-domain",
+				"dso-omgevingsloket",
+				"friendly-case-create-form",
+				"kcc-routing",
+				"role-based-step-routing",
+				"role-routing-via-or-rbac",
+				"semantic-case-intake",
+				"zgw-api-mapping"
+			]
+		},
+		{
+			"slug": "zaakportaal-mijngemeente",
+			"title": "Burgerportaal Mijn Zaken",
+			"title_nl": "Burgerportaal Mijn Zaken",
+			"area": "intake",
+			"overlay": "zaakportaal-mijngemeente",
+			"specs": [
+				"case-share-via-shares-leaf",
+				"communication-portal-conversation-on-the-case",
+				"leaf-integrations",
+				"zaakportaal-mijngemeente"
+			]
+		},
+		{
+			"slug": "case-types",
+			"title": "Configurable case types",
+			"title_nl": "Configureerbare zaaktypen",
+			"area": "configuration",
+			"overlay": "case-types",
+			"specs": [
+				"case-management",
+				"case-type-publish-validation",
+				"case-types",
+				"dossiq-store-surface",
+				"property-definition-management",
+				"status-transition-engine"
+			]
+		},
+		{
+			"slug": "case-configuration-i18n",
+			"title": "Multilingual case types",
+			"title_nl": "Meertalige zaaktypen",
+			"area": "configuration",
+			"overlay": "case-configuration-i18n",
+			"specs": [
+				"case-configuration-i18n"
+			]
+		},
+		{
+			"slug": "case-handling",
+			"title": "Handling a case day to day",
+			"title_nl": "Zaken dagelijks behandelen",
+			"area": "case-core",
+			"overlay": null,
+			"specs": [
+				"case-bulk-status-transition",
+				"case-management",
+				"deelzaak-support",
+				"federated-case-collaboration",
+				"reassignment-bulk-action",
+				"related-case-linking"
+			]
+		},
+		{
+			"slug": "document-zaakdossier",
+			"title": "Documents on the case",
+			"title_nl": "Documenten op de zaak",
+			"area": "documents",
+			"overlay": "document-zaakdossier",
+			"specs": [
+				"document-projection",
+				"document-zaakdossier"
+			]
+		},
+		{
+			"slug": "document-editing-and-signing",
+			"title": "Editing, generating and signing documents",
+			"title_nl": "Documenten bewerken, genereren en ondertekenen",
+			"area": "documents",
+			"overlay": null,
+			"specs": [
+				"beschikking-generatie",
+				"beschikking-renders-through-filinq-when-installed",
+				"libresign-besluit-signing",
+				"template-library"
+			]
+		},
+		{
+			"slug": "workflow-definition-engine",
+			"title": "Workflow engine with guards and actions",
+			"title_nl": "Workflow-engine met voorwaarden en acties",
+			"area": "tasks-and-phases",
+			"overlay": "workflow-definition-engine",
+			"specs": [
+				"automatic-actions",
+				"case-status-machinery",
+				"case-types",
+				"cmmn-adaptive-case",
+				"dmn-decision-tables",
+				"milestone-tracking",
+				"process-step-configuration",
+				"status-transition-engine",
+				"workflow-definition-engine",
+				"workflow-definition-model",
+				"workflow-variants"
+			]
+		},
+		{
+			"slug": "visual-workflow-editor",
+			"title": "Visual workflow editor",
+			"title_nl": "Visuele workflow-editor",
+			"area": "tasks-and-phases",
+			"overlay": "visual-workflow-editor",
+			"specs": []
+		},
+		{
+			"slug": "tasks-and-work-queues",
+			"title": "Tasks and work queues",
+			"title_nl": "Taken en werkvoorraad",
+			"area": "tasks-and-phases",
+			"overlay": null,
+			"specs": [
+				"add-work-queue",
+				"case-flow-human-steps",
+				"my-work",
+				"my-work-landing",
+				"task-management",
+				"werkvoorraad-intelligent-queue"
+			]
+		},
+		{
+			"slug": "termijn-binding",
+			"title": "Termijnbewaking",
+			"title_nl": "Termijnbewaking",
+			"area": "deadlines",
+			"overlay": "termijn-binding",
+			"specs": [
+				"case-dashboard-view",
+				"doorlooptijd-dashboard",
+				"milestone-tracking",
+				"termijn-binding",
+				"termijn-escalation",
+				"termijn-pause-extension",
+				"termijn-verification-admin",
+				"termijnbewaking-schemas"
+			]
+		},
+		{
+			"slug": "dwangsom-calculation",
+			"title": "Dwangsom and ingebrekestelling",
+			"title_nl": "Dwangsom en ingebrekestelling",
+			"area": "deadlines",
+			"overlay": "dwangsom-calculation",
+			"specs": [
+				"dwangsom-calculation",
+				"financial-integration",
+				"ingebrekestelling"
+			]
+		},
+		{
+			"slug": "bezwaar-beroep-workflow",
+			"title": "Bezwaar en beroep",
+			"title_nl": "Bezwaar en beroep",
+			"area": "case-core",
+			"overlay": "bezwaar-beroep-workflow",
+			"specs": [
+				"beroep-escalation",
+				"bezwaar-advisory-committee",
+				"bezwaar-beroep-workflow",
+				"bezwaar-decision",
+				"bezwaar-hearing",
+				"bezwaar-lifecycle",
+				"bezwaar-rest-api",
+				"complaint-management",
+				"objections-appeals-nav-group"
+			]
+		},
+		{
+			"slug": "advice-results-and-decisions",
+			"title": "Advice, results and formal decisions",
+			"title_nl": "Advies, resultaten en besluiten",
+			"area": "decisions",
+			"overlay": null,
+			"specs": [
+				"advice-management",
+				"beschikking-generatie",
+				"besluitvorming-leaf",
+				"besluitvorming-workflow",
+				"consultation-management",
+				"dmn-decision-tables",
+				"remaining-decision-delegation",
+				"result-type-management",
+				"roles-decisions",
+				"vth-beschikking-generation",
+				"zgw-brc"
+			]
+		},
+		{
+			"slug": "woo-requests",
+			"title": "Woo requests with redaction and publication",
+			"title_nl": "Woo-verzoeken met lakken en publiceren",
+			"area": "documents",
+			"overlay": null,
+			"specs": [
+				"woo-case-type",
+				"woo-llm-anonymisation",
+				"woo-publication-via-opencatalogi"
+			]
+		},
+		{
+			"slug": "vth-module",
+			"title": "VTH met LHS",
+			"title_nl": "VTH met LHS",
+			"area": "decisions",
+			"overlay": "vth-module",
+			"specs": [
+				"enforcement-lhs",
+				"inspection-checklists",
+				"inspection-forms-via-forms-leaf",
+				"lhs-decision-table",
+				"mobiel-inspectie-offline",
+				"vth-admin-settings",
+				"vth-case-type-seed",
+				"vth-config-foundation",
+				"vth-lhso-classification",
+				"vth-mobile-inspection",
+				"vth-module",
+				"vth-workflow-templates"
+			]
+		},
+		{
+			"slug": "leges-heffingen",
+			"title": "Leges en heffingen",
+			"title_nl": "Leges en heffingen",
+			"area": "intake",
+			"overlay": "leges-heffingen",
+			"specs": []
+		},
+		{
+			"slug": "grants-and-case-costs",
+			"title": "Grants, hours and case costs",
+			"title_nl": "Subsidies, uren en zaakkosten",
+			"area": "reporting",
+			"overlay": null,
+			"specs": [
+				"iv3-taakveld-2023-refinement",
+				"subsidie-settlement-case-costs",
+				"subsidieverlening-keten"
+			]
+		},
+		{
+			"slug": "archief-edepot-handover",
+			"title": "Archivering naar e-Depot",
+			"title_nl": "Archivering naar e-Depot",
+			"area": "documents",
+			"overlay": "archief-edepot-handover",
+			"specs": [
+				"archief-edepot-handover",
+				"the-case-archives-through-openregister"
+			]
+		},
+		{
+			"slug": "zgw-api-mapping",
+			"title": "ZGW API-koppeling",
+			"title_nl": "ZGW API-koppeling",
+			"area": "integrations",
+			"overlay": "zgw-api-mapping",
+			"specs": [
+				"zgw-api-mapping",
+				"zgw-autorisaties-api",
+				"zgw-brc",
+				"zgw-business-rules-compliance",
+				"zgw-openapi-publication"
+			]
+		},
+		{
+			"slug": "stuf-zkn-outbound",
+			"title": "StUF-ZKN-koppeling",
+			"title_nl": "StUF-ZKN-koppeling",
+			"area": "communication",
+			"overlay": "stuf-zkn-outbound",
+			"specs": [
+				"stuf-integration",
+				"stuf-zkn-outbound"
+			]
+		},
+		{
+			"slug": "doorlooptijd-dashboard",
+			"title": "Doorlooptijd-dashboards",
+			"title_nl": "Doorlooptijd-dashboards",
+			"area": "reporting",
+			"overlay": "doorlooptijd-dashboard",
+			"specs": [
+				"dashboard",
+				"prometheus-metrics",
+				"signalering-widgets",
+				"sla-charts-via-analytics-leaf",
+				"termijn-reporting"
+			]
+		},
+		{
+			"slug": "case-history-and-audit",
+			"title": "Case history, audit trail and processing log",
+			"title_nl": "Zaakhistorie, audittrail en verwerkingenlogging",
+			"area": "reporting",
+			"overlay": null,
+			"specs": [
+				"avg-verwerkingenlogging",
+				"case-history-surface"
+			]
+		},
+		{
+			"slug": "case-search-and-lists",
+			"title": "Search and saved lists",
+			"title_nl": "Zoeken en opgeslagen lijsten",
+			"area": "search",
+			"overlay": "case-search-and-lists",
+			"specs": [
+				"case-access-control",
+				"case-list-export-via-or-export-leaf",
+				"case-search-and-lists",
+				"case-search-via-or-unified-search",
+				"unified-search-opens-every-hit-in-dossiq"
+			]
+		},
+		{
+			"slug": "case-access-control",
+			"title": "Access control on the case",
+			"title_nl": "Toegangsrechten op de zaak",
+			"area": "access-and-privacy",
+			"overlay": "case-access-control",
+			"specs": [
+				"case-access-control",
+				"document-zaakdossier",
+				"handler-vervanging-waarneming",
+				"mandaat-matrix"
+			]
+		},
+		{
+			"slug": "parties-and-contacts",
+			"title": "Parties and contacts on the case",
+			"title_nl": "Betrokkenen en contacten op de zaak",
+			"area": "parties-and-contacts",
+			"overlay": null,
+			"specs": [
+				"contacts-domain",
+				"gemachtigde-role-on-every-case-type",
+				"initiator-display",
+				"mandaat-matrix",
+				"partner-organisations",
+				"people-on-the-case",
+				"roles-decisions"
+			]
+		},
+		{
+			"slug": "kcc-werkplek-zaaksysteem-bridge",
+			"title": "KCC-werkplek",
+			"title_nl": "KCC-werkplek",
+			"area": "communication",
+			"overlay": "kcc-werkplek-zaaksysteem-bridge",
+			"specs": [
+				"kcc-werkplek-zaaksysteem-bridge",
+				"parties-and-contact-moments-consume-pipelinq"
+			]
+		},
+		{
+			"slug": "brp-integration",
+			"title": "BRP-koppeling (Haal Centraal)",
+			"title_nl": "BRP-koppeling (Haal Centraal)",
+			"area": "parties-and-contacts",
+			"overlay": "brp-integration",
+			"specs": [
+				"brp-register",
+				"initiator-display",
+				"initiator-selection",
+				"kvk-register"
+			]
+		},
+		{
+			"slug": "case-map-overview",
+			"title": "Kaartweergave met PDOK",
+			"title_nl": "Kaartweergave met PDOK",
+			"area": "case-core",
+			"overlay": "case-map-overview",
+			"specs": [
+				"bag-register-adapter",
+				"brk-woz-register-adapters",
+				"case-location",
+				"case-map-overview",
+				"case-map-via-maps-leaf",
+				"gis-integration",
+				"map-component",
+				"pdok-consumer",
+				"pdok-integration",
+				"wms-wfs-layers"
+			]
+		},
+		{
+			"slug": "case-page-layout-and-forms",
+			"title": "Case page layout and forms per case type",
+			"title_nl": "Zaakpagina-indeling en formulieren per zaaktype",
+			"area": "configuration",
+			"overlay": null,
+			"specs": []
+		},
+		{
+			"slug": "case-email-integration",
+			"title": "Zaakgericht mailen",
+			"title_nl": "Zaakgericht mailen",
+			"area": "communication",
+			"overlay": "case-email-integration",
+			"specs": [
+				"case-email-integration"
+			]
+		},
+		{
+			"slug": "notes-and-case-timeline",
+			"title": "Notes, notifications and the case timeline",
+			"title_nl": "Notities, meldingen en de zaaktijdlijn",
+			"area": "communication",
+			"overlay": null,
+			"specs": [
+				"case-management",
+				"ncvue-w2-leaves-adoption"
+			]
+		},
+		{
+			"slug": "berichtenbox-integration",
+			"title": "Digital post to citizens",
+			"title_nl": "Digitale post aan inwoners",
+			"area": "communication",
+			"overlay": "berichtenbox-integration",
+			"specs": [
+				"berichtenbox-integration",
+				"burger-notifications"
+			]
+		},
+		{
+			"slug": "dso-omgevingsloket",
+			"title": "DSO / Omgevingsloket",
+			"title_nl": "DSO / Omgevingsloket",
+			"area": "integrations",
+			"overlay": "dso-omgevingsloket",
+			"specs": [
+				"dso-omgevingsloket",
+				"dso-omgevingsloket-client",
+				"vth-dso-integration"
+			]
+		},
+		{
+			"slug": "appointment-booking",
+			"title": "Afspraken maken",
+			"title_nl": "Afspraken maken",
+			"area": "integrations",
+			"overlay": "appointment-booking",
+			"specs": [
+				"appointment-booking",
+				"case-appointment-via-calendar-leaf"
+			]
+		},
+		{
+			"slug": "ai-assistance",
+			"title": "AI-assistentie",
+			"title_nl": "AI-assistentie",
+			"area": "configuration",
+			"overlay": "ai-assistance",
+			"specs": [
+				"ai-assistance",
+				"ai-oversight-log",
+				"case-assistant-via-hermiq",
+				"case-knowledge-base",
+				"mcp-integration"
+			]
+		},
+		{
+			"slug": "digid-eherkenning",
+			"title": "DigiD en eHerkenning",
+			"title_nl": "DigiD en eHerkenning",
+			"area": "integrations",
+			"overlay": "digid-eherkenning",
+			"specs": []
+		},
+		{
+			"slug": "dossiq-sociaal-domein-wmo",
+			"title": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
+			"title_nl": "Sociaal domein (Wmo, Jeugdwet, Participatiewet)",
+			"area": "case-plan-and-services",
+			"overlay": "dossiq-sociaal-domein-wmo",
+			"specs": [
+				"dossiq-sociaal-domein-avg-consent",
+				"dossiq-sociaal-domein-jeugdwet",
+				"dossiq-sociaal-domein-participatiewet",
+				"dossiq-sociaal-domein-wmo"
+			]
+		},
+		{
+			"slug": "multi-tenancy",
+			"title": "Multi-tenant SaaS",
+			"title_nl": "Multi-tenant SaaS",
+			"area": "multi-organisation",
+			"overlay": "multi-tenancy",
+			"specs": [
+				"multi-tenancy",
+				"tenant-billing",
+				"tenant-crud-lifecycle",
+				"tenant-lifecycle",
+				"tenant-mandate",
+				"tenant-onboarding",
+				"tenant-quotas"
+			]
+		},
+		{
+			"slug": "setup-and-app-settings",
+			"title": "Setup and app settings",
+			"title_nl": "Inrichting en app-instellingen",
+			"area": "configuration",
+			"overlay": null,
+			"specs": [
+				"admin-settings",
+				"first-time-setup",
+				"tenant-configuration"
+			]
+		},
+		{
+			"slug": "tenders-and-contracts",
+			"title": "Tenders and contract management",
+			"title_nl": "Aanbestedingen en contractbeheer",
+			"area": "case-core",
+			"overlay": null,
+			"specs": [
+				"contract-decision-delegation",
+				"dossiq-procurement-compliance",
+				"dossiq-procurement-contract-lifecycle",
+				"dossiq-procurement-evaluation-award",
+				"dossiq-procurement-publication-platform",
+				"dossiq-procurement-spend-analytics-integration",
+				"dossiq-procurement-supplier-management",
+				"dossiq-procurement-system-integration",
+				"dossiq-procurement-tender-management",
+				"supplier-portal"
+			]
+		}
+	],
 	"areas": [
 		{
 			"key": "intake",
@@ -10916,7 +11467,7 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
+			"feature": "case-intake",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -10950,7 +11501,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "zaakportaal-mijngemeente",
+			"feature": "case-intake",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -10989,7 +11540,7 @@
 			"openzaak": "no",
 			"provider": "filinq",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
+			"feature": "case-intake",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11077,7 +11628,7 @@
 			"openzaak": "no",
 			"provider": "filinq",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
+			"feature": "case-intake",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -11110,8 +11661,8 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "low",
+			"feature": "case-intake",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Controller/ZrcController.php",
@@ -11147,8 +11698,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "low",
+			"feature": "case-intake",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "planned-case-series",
@@ -11191,8 +11742,8 @@
 			"openzaak": "no",
 			"provider": "integriq",
 			"providerHow": "note-names-app",
-			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "low",
+			"feature": "case-intake",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"owner": "ConductionNL/integriq",
@@ -11224,7 +11775,7 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
+			"feature": "case-intake",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -11290,8 +11841,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "low",
+			"feature": "case-intake",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Controller/RoutingController.php; lib/Service/Routing/Strategy/*; lib/Service/Kcc/RoutingEngine.php",
@@ -11328,7 +11879,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "doorlooptijd-dashboard",
+			"feature": "case-intake",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11365,7 +11916,7 @@
 			"openzaak": "yes",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "case-handling",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11443,7 +11994,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
+			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11482,8 +12033,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "case-claim-action",
@@ -11529,8 +12080,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "parties-on-the-case",
@@ -11573,7 +12124,7 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
+			"feature": "case-handling",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11610,7 +12161,7 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "workflow-definition-engine",
+			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11644,7 +12195,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
+			"feature": "case-handling",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11681,8 +12232,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/CaseCopyService.php; lib/Controller/CaseActionsController.php; #CaseDetail/headerActions.copy-case",
@@ -11718,8 +12269,8 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "#CaseDetail/case-sub-cases; lib/Controller/CaseRelationController.php; case.parentCase/relatedCases",
@@ -11789,8 +12340,8 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "/api/case/{caseId}/reopen; appinfo/routes.php:443",
@@ -11823,7 +12374,7 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
+			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11907,7 +12458,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "case-types",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "/case-objects",
@@ -11943,7 +12494,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "document-zaakdossier",
+			"feature": "case-history-and-audit",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -11977,7 +12528,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
+			"feature": "case-handling",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -12019,8 +12570,8 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-access-control",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/InformatieobjectAccessGuard.php",
@@ -12059,8 +12610,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "openregister/favourites-and-recent",
@@ -12109,8 +12660,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "live-updates-on-the-case-page",
@@ -12151,7 +12702,7 @@
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
 			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "high",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "portaliq/change-proposal-queue",
@@ -12191,7 +12742,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "vth-module",
+			"feature": "case-handling",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -12236,8 +12787,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "case-merge",
@@ -12278,8 +12829,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-intake",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "duplicate-warning-at-intake",
@@ -12320,8 +12871,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "pause-reason-with-chasing",
@@ -12365,8 +12916,8 @@
 			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "visual-workflow-editor",
-			"featureConfidence": "medium",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "openregister/relation-types-with-inverses",
@@ -12408,8 +12959,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-handling",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "edit-lock-on-the-case-page",
@@ -12471,7 +13022,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "bezwaar-beroep-workflow",
+			"featureConfidence": "medium"
 		},
 		{
 			"id": "2.54",
@@ -12517,7 +13070,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "tenders-and-contracts",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "3.1",
@@ -12667,8 +13222,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
-			"featureConfidence": "low",
+			"feature": "tasks-and-work-queues",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "openregister/flow-task-forms",
@@ -12712,7 +13267,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
+			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
@@ -12747,7 +13302,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "termijn-binding",
+			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -12785,7 +13340,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
-			"feature": "workflow-definition-engine",
+			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -12827,8 +13382,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
-			"featureConfidence": "low",
+			"feature": "tasks-and-work-queues",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "task-defaults-to-case-handler",
@@ -12903,7 +13458,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "workflow-definition-engine",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/dialogs/CaseStartFlowDialog.vue; /apps/dossiq/api/case/{id}/startable-flows; lib/Flow/DossiqTxCreateSubCaseNode.php",
@@ -12942,7 +13497,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
+			"feature": "workflow-definition-engine",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -12976,8 +13531,8 @@
 			"openzaak": "no",
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
-			"feature": "vth-module",
-			"featureConfidence": "medium",
+			"feature": "case-page-layout-and-forms",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"owner": "ConductionNL/buildiq",
@@ -13009,8 +13564,8 @@
 			"openzaak": "partial",
 			"provider": "decidiq",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
-			"featureConfidence": "high",
+			"feature": "document-editing-and-signing",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "decidiq/document-approval-chain-leaf",
@@ -13051,7 +13606,7 @@
 			"openzaak": "no",
 			"provider": "nextcloud-vue",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
+			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -13084,8 +13639,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "doorlooptijd-dashboard",
-			"featureConfidence": "high",
+			"feature": "workflow-definition-engine",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json#CaseDetail/case-stages; lib/Service/MilestoneService.php",
@@ -13118,8 +13673,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
-			"featureConfidence": "high",
+			"feature": "case-types",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "specified",
 				"change": "openregister/migrate-run-between-versions",
@@ -13160,7 +13715,7 @@
 			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "workflow-definition-engine",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -13194,7 +13749,7 @@
 			"openzaak": "no",
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
+			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -13238,7 +13793,7 @@
 			"openzaak": "no",
 			"provider": "portaliq",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
+			"feature": "tasks-and-work-queues",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -13280,8 +13835,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "workflow-definition-engine",
-			"featureConfidence": "low",
+			"feature": "tasks-and-work-queues",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "openregister/macro-flows-with-next-item",
@@ -13356,7 +13911,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "advice-results-and-decisions",
+			"featureConfidence": "medium"
 		},
 		{
 			"id": "3.36",
@@ -13397,7 +13954,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "tasks-and-work-queues",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "4.1",
@@ -13531,7 +14090,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "document-zaakdossier",
+			"feature": "document-editing-and-signing",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -13568,8 +14127,8 @@
 			"openzaak": "no",
 			"provider": "nextcloud",
 			"providerHow": "gap-scan-verdict",
-			"feature": "document-zaakdossier",
-			"featureConfidence": "low",
+			"feature": "document-editing-and-signing",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"change": "documents-live-on-the-case",
@@ -13606,8 +14165,8 @@
 			"openzaak": "no",
 			"provider": "nextcloud",
 			"providerHow": "note-names-platform",
-			"feature": "document-zaakdossier",
-			"featureConfidence": "low",
+			"feature": "document-editing-and-signing",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"note": "OpenSpec pass 2026-09-27: decided no, outside the fleet. An Office add-in, a Teams app or an Outlook manifest is a separate distributable outside the Nextcloud app model (market-intelligence procest/_ledger/gap-scan/b.json). Forwarding a mail to the intake mailbox, which integriq turns into a case, is the reachable outcome.",
@@ -13775,7 +14334,7 @@
 			"openzaak": "yes",
 			"provider": "nextcloud",
 			"providerHow": "gap-scan-verdict",
-			"feature": "document-zaakdossier",
+			"feature": "document-editing-and-signing",
 			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
@@ -13813,8 +14372,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "document-zaakdossier",
-			"featureConfidence": "low",
+			"feature": "document-editing-and-signing",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php; /api/beschikkingen/{id}/onderteken",
@@ -13847,7 +14406,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "document-zaakdossier",
+			"feature": "woo-requests",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -13989,7 +14548,7 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "document-zaakdossier",
-			"featureConfidence": "high",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "openregister/unified-search-file-content",
@@ -14057,7 +14616,7 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "leges-heffingen",
+			"feature": "document-zaakdossier",
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
@@ -14143,8 +14702,8 @@
 			"openzaak": "partial",
 			"provider": "opencatalogi",
 			"providerHow": "note-names-app",
-			"feature": "zaakportaal-mijngemeente",
-			"featureConfidence": "high",
+			"feature": "woo-requests",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/WooPublicationService.php; lib/Service/PublicationService.php Corrections round 8 (2026-09-28), dossiq#3162: publish writes wooPublication onto the decision at lib/Service/WooPublicationService.php:255-261, but the decision schema at lib/Settings/dossiq_register.json:4010 declares none of the Woo fields and every dossiq schema is magic-mapped (lib/Service/Settings/RegisterStorageDeclaration.php:114), so the reference is dropped on save and withdraw at lib/Service/WooPublicationService.php:406-408 finds no publication, at c8ac742.",
@@ -14177,7 +14736,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "visual-workflow-editor",
+			"feature": "document-zaakdossier",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -14256,8 +14815,8 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "kcc-werkplek-zaaksysteem-bridge",
-			"featureConfidence": "low",
+			"feature": "parties-and-contacts",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json:2485 #CaseDetail People tab section Roles (case-party-roles, CasePartiesWidget) plus headerAction add-party at src/manifest.json:3197 writing a role row with RoleTypePicker",
@@ -14293,8 +14852,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "kcc-werkplek-zaaksysteem-bridge",
-			"featureConfidence": "low",
+			"feature": "parties-and-contacts",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "contacts-domain",
@@ -14371,8 +14930,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
-			"featureConfidence": "high",
+			"feature": "parties-and-contacts",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "openregister/contacts-leaf-cases-panel",
@@ -14416,7 +14975,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-names-dossiq-service",
 			"feature": "brp-integration",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "25-brp-kvk.json#brpPerson.indicatieGeheim",
@@ -14456,8 +15015,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "kcc-werkplek-zaaksysteem-bridge",
-			"featureConfidence": "low",
+			"feature": "case-access-control",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "sensitive-fields-declared",
@@ -14498,8 +15057,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "kcc-werkplek-zaaksysteem-bridge",
-			"featureConfidence": "low",
+			"feature": "parties-and-contacts",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/views/settings/components/OrganisatieRolManager.vue; RolNode.vue; register.d/61-mandaat-matrix.json#organisatieRol",
@@ -14532,8 +15091,8 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "bezwaar-beroep-workflow",
-			"featureConfidence": "medium",
+			"feature": "parties-and-contacts",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "gemachtigde-role-on-every-case-type",
@@ -14574,8 +15133,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "kcc-werkplek-zaaksysteem-bridge",
-			"featureConfidence": "low",
+			"feature": "parties-and-contacts",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json#CaseDetail/initiator",
@@ -14645,7 +15204,7 @@
 			"openzaak": "no",
 			"provider": "integriq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "parties-and-contacts",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -14720,8 +15279,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-map-overview",
-			"featureConfidence": "medium",
+			"feature": "parties-and-contacts",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "openregister/external-register-view-leaf",
@@ -14783,7 +15342,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "tenders-and-contracts",
+			"featureConfidence": "medium"
 		},
 		{
 			"id": "6.1",
@@ -14798,8 +15359,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-email-integration",
-			"featureConfidence": "low",
+			"feature": "notes-and-case-timeline",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json#CaseDetail/case-notes-panel",
@@ -14914,7 +15475,7 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-email-integration",
+			"feature": "notes-and-case-timeline",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -15100,8 +15661,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-email-integration",
-			"featureConfidence": "low",
+			"feature": "notes-and-case-timeline",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Notification/Notifier.php; lib/Service/MentionNotificationService.php",
@@ -15218,7 +15779,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "workflow-definition-engine",
-			"featureConfidence": "high",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Transitions/WebhookHandler.php; lib/Controller/NrcController.php",
@@ -15251,8 +15812,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "bezwaar-beroep-workflow",
-			"featureConfidence": "medium",
+			"feature": "notes-and-case-timeline",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "openregister/files-leaf-save-to-object",
@@ -15346,7 +15907,7 @@
 			"provider": "integriq",
 			"providerHow": "ledger-change",
 			"feature": "stuf-zkn-outbound",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "integriq/zgw-connectors-for-dossiq",
@@ -15386,8 +15947,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "case-email-integration",
-			"featureConfidence": "low",
+			"feature": "notes-and-case-timeline",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "timeline-entries-default-internal",
@@ -15431,8 +15992,8 @@
 			"openzaak": "no",
 			"provider": "pipelinq",
 			"providerHow": "ledger-change",
-			"feature": "case-email-integration",
-			"featureConfidence": "low",
+			"feature": "notes-and-case-timeline",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"owner": "ConductionNL/pipelinq",
@@ -15460,7 +16021,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "workflow-definition-engine",
+			"feature": "advice-results-and-decisions",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -15494,7 +16055,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "visual-workflow-editor",
+			"feature": "advice-results-and-decisions",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -15528,7 +16089,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "workflow-definition-engine",
+			"feature": "advice-results-and-decisions",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -15571,7 +16132,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "berichtenbox-integration",
+			"feature": "advice-results-and-decisions",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -15611,7 +16172,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "document-zaakdossier",
+			"feature": "woo-requests",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -15757,7 +16318,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "vth-module",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "8.1",
@@ -15851,8 +16414,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "termijn-binding",
-			"featureConfidence": "high",
+			"feature": "tasks-and-work-queues",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/store/modules/engineTask.js; src/components/tabs/CaseTasksTab.vue:58",
@@ -15966,7 +16529,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-email-integration",
+			"feature": "termijn-binding",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -16069,7 +16632,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "termijn-binding",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/TermijnTimerService.php; lib/Listener/TermijnTimerFiredListener.php; lib/Repair/ArmTermijnEngineTimers.php",
@@ -16179,7 +16742,7 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "termijn-binding",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "terms-on-the-engine-calendar",
@@ -16351,7 +16914,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "dwangsom-calculation",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "9.1",
@@ -16504,7 +17069,7 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"owner": "ConductionNL/openregister",
@@ -16539,7 +17104,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json:1923 #Cases sidebar enabled, mounting CnIndexSidebar whose Columns tab toggles visible columns",
@@ -16618,7 +17183,7 @@
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/CaseAccessGuard.php",
@@ -16688,7 +17253,7 @@
 			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "brp-integration",
+			"feature": "parties-and-contacts",
 			"featureConfidence": "medium",
 			"built": {
 				"state": "specified",
@@ -16809,7 +17374,7 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "unified-search-opens-every-hit-in-dossiq",
@@ -16851,7 +17416,7 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-search-and-lists",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"owner": "ConductionNL/openregister",
@@ -16969,8 +17534,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "workflow-definition-engine",
-			"featureConfidence": "high",
+			"feature": "case-search-and-lists",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"evidence": "src/components/export/CaseListExportAction.vue",
@@ -17040,7 +17605,7 @@
 			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "case-history-and-audit",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -17108,8 +17673,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "note-names-app",
-			"feature": "case-types",
-			"featureConfidence": "high",
+			"feature": "case-search-and-lists",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "specified",
 				"evidence": "openregister lib/Db/ExportRun.php; openregister appinfo/routes.php:1937",
@@ -17142,7 +17707,7 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "case-history-and-audit",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -17190,8 +17755,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "doorlooptijd-dashboard",
-			"featureConfidence": "low",
+			"feature": "case-history-and-audit",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json:3125 #CaseDetail sidebar tab audit (CnAuditTrailTab over the OpenRegister audit trail, actor and action per row) plus src/manifest.json:2450 case-timeline-panel (case-timeline-pane over notes, calls and messages)",
@@ -17224,7 +17789,7 @@
 			"openzaak": "no",
 			"provider": "nextcloud-vue",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "doorlooptijd-dashboard",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -17266,8 +17831,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "doorlooptijd-dashboard",
-			"featureConfidence": "high",
+			"feature": "grants-and-case-costs",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "hours-onto-humaniq-leaf",
@@ -17332,7 +17897,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "grants-and-case-costs",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "11.1",
@@ -17457,8 +18024,8 @@
 			"openzaak": "no",
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-page-layout-and-forms",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"owner": "ConductionNL/buildiq",
@@ -17543,7 +18110,7 @@
 			"openzaak": "no",
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "case-page-layout-and-forms",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -17576,7 +18143,7 @@
 			"openzaak": "no",
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
-			"feature": "case-map-overview",
+			"feature": "case-page-layout-and-forms",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -17609,7 +18176,7 @@
 			"openzaak": "no",
 			"provider": "buildiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "case-page-layout-and-forms",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -17642,7 +18209,7 @@
 			"openzaak": "no",
 			"provider": "nextcloud-vue",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
+			"feature": "case-page-layout-and-forms",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -17725,7 +18292,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "document-zaakdossier",
+			"feature": "document-editing-and-signing",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -17835,8 +18402,8 @@
 			"openzaak": "no",
 			"provider": "thematiq",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "setup-and-app-settings",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Tenant/TenantBrandingSanitiser.php",
@@ -17870,8 +18437,8 @@
 			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "ai-assistance",
-			"featureConfidence": "medium",
+			"feature": "setup-and-app-settings",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "openregister/feature-toggle-surface",
@@ -17912,7 +18479,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "case-types",
+			"feature": "setup-and-app-settings",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -17947,7 +18514,7 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-types",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "data-model-link",
@@ -18021,8 +18588,8 @@
 			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-access-control",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "openregister/rbac-department-role-matrix",
@@ -18131,8 +18698,8 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-schema",
-			"feature": "case-types",
-			"featureConfidence": "high",
+			"feature": "case-history-and-audit",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Settings/dossiq_register.json:455 caseType.processesPersonalData, :462 personalDataCategories, :483 legalBasis, :497 verwerkingsactiviteit; shown by src/manifest.json:6382 #CaseTypeDetail widget case-type-privacy",
@@ -18165,7 +18732,7 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
+			"feature": "case-types",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -18206,7 +18773,7 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "zaakportaal-mijngemeente",
+			"feature": "setup-and-app-settings",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -18240,8 +18807,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-types",
-			"featureConfidence": "low",
+			"feature": "case-access-control",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"change": "openregister/field-rules-by-state",
@@ -18361,7 +18928,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "vth-module",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "11.57",
@@ -18397,7 +18966,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "setup-and-app-settings",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "12.1",
@@ -18485,7 +19056,7 @@
 			"provider": "integriq",
 			"providerHow": "ledger-change",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "building",
 				"owner": "ConductionNL/integriq",
@@ -18593,7 +19164,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "brp-integration",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php",
@@ -18630,7 +19201,7 @@
 			"provider": "nextcloud",
 			"providerHow": "gap-scan-verdict",
 			"feature": "digid-eherkenning",
-			"featureConfidence": "high",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "decided-no",
 				"evidence": "lib/Service/TenantAuthenticationService.php",
@@ -18735,8 +19306,8 @@
 			"openzaak": "partial",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "zgw-api-mapping",
-			"featureConfidence": "low",
+			"feature": "document-editing-and-signing",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Beschikking/LibresignSigningAdapter.php",
@@ -18769,7 +19340,7 @@
 			"openzaak": "no",
 			"provider": "integriq",
 			"providerHow": "ledger-change",
-			"feature": "document-zaakdossier",
+			"feature": "document-editing-and-signing",
 			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
@@ -18893,8 +19464,8 @@
 			"openzaak": "partial",
 			"provider": "integriq",
 			"providerHow": "ledger-change",
-			"feature": "case-email-integration",
-			"featureConfidence": "high",
+			"feature": "zgw-api-mapping",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"evidence": "integriq lib/AppInfo/Application.php:287,297 listens to openregister ObjectCreatedEvent and ObjectUpdatedEvent, so every case write is an integriq event; lib/Service/EventService.php:1277 dispatches action.kind 'broker' through lib/Broker/BrokerTransportRegistry.php to Kafka REST, RabbitMQ HTTP or CloudEvents HTTP (lib/Broker/Transport/*); an administrator picks the broker in the event subscription modal (src/modals/EventSubscription/SubscriptionActionFields.vue:153)",
@@ -18929,8 +19500,8 @@
 			"openzaak": "no",
 			"provider": "openregister",
 			"providerHow": "note-names-app",
-			"feature": "case-types",
-			"featureConfidence": "high",
+			"feature": "case-search-and-lists",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "decided-no",
 				"owner": "ConductionNL/openregister",
@@ -19000,7 +19571,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json#Integrations (route /settings/integrations) over integriq's connection registry (dossiq/adopt-connection-registry); integriq openspec/specs/connector-catalog/spec.md",
@@ -19034,7 +19605,7 @@
 			"openzaak": "yes",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
-			"feature": "document-zaakdossier",
+			"feature": "zgw-api-mapping",
 			"featureConfidence": "high",
 			"built": {
 				"state": "built",
@@ -19069,7 +19640,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Middleware/ZgwAuthMiddleware.php; lib/Service/ZgwJwtValidator.php; lib/Controller/AcController.php",
@@ -19103,7 +19674,7 @@
 			"provider": "nextcloud",
 			"providerHow": "note-names-platform",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"evidence": "src/manifest.json:2357 #CaseDetail case-files (Nextcloud Files leaf); dossiq writes files through OCP\\Files\\IRootFolder (e.g. lib/Controller/SavedMailController.php:89), so S3 comes only from Nextcloud primary object storage",
@@ -19132,8 +19703,8 @@
 			"openzaak": "no",
 			"provider": "nextcloud",
 			"providerHow": "gap-scan-verdict",
-			"feature": "zgw-api-mapping",
-			"featureConfidence": "low",
+			"feature": "document-editing-and-signing",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"change": "documents-live-on-the-case",
@@ -19171,7 +19742,7 @@
 			"provider": "integriq",
 			"providerHow": "ledger-change",
 			"feature": "zgw-api-mapping",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"owner": "ConductionNL/integriq",
@@ -19258,7 +19829,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "case-handling",
+			"featureConfidence": "medium"
 		},
 		{
 			"id": "13.1",
@@ -19274,7 +19847,7 @@
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-access-control",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Repair/ProvisionAssignedGroups.php",
@@ -19307,8 +19880,8 @@
 			"openzaak": "yes",
 			"provider": "openregister",
 			"providerHow": "ledger-change",
-			"feature": "case-configuration-i18n",
-			"featureConfidence": "medium",
+			"feature": "case-access-control",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Sharing/CaseAccessPolicy.php; lib/Service/CaseAccessGuard.php",
@@ -19417,7 +19990,7 @@
 			"provider": "openregister",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "specified",
 				"change": "openregister/object-level-sharing-and-private-scope",
@@ -19577,8 +20150,8 @@
 			"openzaak": "partial",
 			"provider": "openregister",
 			"providerHow": "note-names-app",
-			"feature": "case-access-control",
-			"featureConfidence": "medium",
+			"feature": "case-history-and-audit",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "src/manifest.json:3125 #CaseDetail sidebar tab audit over the OpenRegister audit trail, which records reads beside writes (tab note: opens unfiltered over writes and reads); citizen lookups logged as action read by lib/Service/Kcc/CitizenLookupRecorder.php:180",
@@ -19648,7 +20221,7 @@
 			"openzaak": "no",
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-schema",
-			"feature": "archief-edepot-handover",
+			"feature": "case-history-and-audit",
 			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
@@ -19683,7 +20256,7 @@
 			"provider": "dossiq",
 			"providerHow": "note-cites-dossiq-code",
 			"feature": "case-access-control",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "built",
 				"evidence": "register.d/62-handler-vervanging.json#substitution; register.d/61-mandaat-matrix.json#mandate; lib/Service/MandaatCheckService.php",
@@ -19761,7 +20334,7 @@
 			"provider": "openregister",
 			"providerHow": "note-names-app",
 			"feature": "case-access-control",
-			"featureConfidence": "medium",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"owner": "ConductionNL/openregister",
@@ -19789,7 +20362,7 @@
 			"provider": "nextcloud",
 			"providerHow": "gap-scan-verdict",
 			"feature": "case-access-control",
-			"featureConfidence": "low",
+			"featureConfidence": "high",
 			"built": {
 				"state": "decided-no",
 				"evidence": "lib/Service/TenantAuditTrailService.php",
@@ -19860,7 +20433,7 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
-			"featureConfidence": "low",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "substituted-work-reaches-my-work",
@@ -19905,7 +20478,7 @@
 			"provider": "dossiq",
 			"providerHow": "ledger-change",
 			"feature": "case-access-control",
-			"featureConfidence": "high",
+			"featureConfidence": "medium",
 			"built": {
 				"state": "built",
 				"change": "case-followers",
@@ -19975,7 +20548,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "dossiq-sociaal-domein-wmo",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "15.2",
@@ -20014,7 +20589,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "grants-and-case-costs",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "16.2",
@@ -20055,7 +20632,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "vth-module",
+			"featureConfidence": "high"
 		},
 		{
 			"id": "17.2",
@@ -20099,7 +20678,9 @@
 				"zac": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Dimpact ZAC has not been read against it",
 				"openzaak": "not checked: row added 2026-10-07 from dossiq's own specs (spec round, decision 79); Open Zaak has not been read against it"
 			},
-			"addedOn": "2026-10-07"
+			"addedOn": "2026-10-07",
+			"feature": "multi-tenancy",
+			"featureConfidence": "high"
 		}
 	],
 	"pending": [
