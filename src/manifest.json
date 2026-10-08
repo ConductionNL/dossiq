@@ -80,6 +80,7 @@
 						"id": "go-cases",
 						"sinceVersion": "0.2.17",
 						"placement": "right",
+						"title": "All your cases",
 						"body": "You work from this list: every case in the organisation, open and closed.",
 						"task": "Click Cases in the menu",
 						"target": {
@@ -96,6 +97,7 @@
 						"sinceVersion": "0.2.17",
 						"placement": "bottom",
 						"allowManualNext": true,
+						"title": "Register a case",
 						"body": "Register your first case. Give it a title, pick a case type, then save. You can add tasks, decisions and documents later.",
 						"task": "Click New and save a case",
 						"target": {
@@ -151,6 +153,7 @@
 						"id": "go-tasks",
 						"sinceVersion": "0.2.17",
 						"placement": "right",
+						"title": "Your own work",
 						"body": "Your work lives here: today's tasks, deadlines and open cases in one place.",
 						"task": "This is your My work section",
 						"target": {

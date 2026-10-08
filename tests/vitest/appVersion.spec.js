@@ -17,7 +17,11 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 const require = createRequire(import.meta.url)
-const { readAppVersion, versionFromInfoXml } = require('../../scripts/appVersion.js')
+const {
+	appVersionDefinition,
+	readAppVersion,
+	versionFromInfoXml,
+} = require('../../scripts/appVersion.js')
 const ROOT = path.resolve(__dirname, '../..')
 
 describe('appVersion', () => {
@@ -40,9 +44,30 @@ describe('appVersion', () => {
 
 	it('is what webpack defines as the appVersion global', () => {
 		const config = readFileSync(path.join(ROOT, 'webpack.config.js'), 'utf8')
-		expect(config).toMatch(/appVersion: JSON\.stringify\(readAppVersion\(\)\)/)
+		expect(config).toMatch(/appVersion: appVersionDefinition\(appId\)/)
 		expect(config).not.toMatch(
 			/appVersion: JSON\.stringify\(process\.env\.npm_package_version\)/,
+		)
+	})
+
+	it('reads the installed version in the browser when the library can', () => {
+		// The release writes its version into info.xml after the bundle is
+		// built, so a build-time literal read "dossiq 0.4.47-unstable" on a
+		// 0.4.48-beta install. The library helper returns an expression that
+		// reads the page's `version` initial state instead.
+		const library = {
+			appVersionDefine: (appId, fallback) =>
+				`read(${JSON.stringify(appId)}, ${JSON.stringify(fallback)})`,
+		}
+		const expected = readAppVersion(ROOT)
+		expect(appVersionDefinition('dossiq', { appRoot: ROOT, library })).toBe(
+			`read("dossiq", ${JSON.stringify(expected)})`,
+		)
+	})
+
+	it('falls back to the info.xml literal on a library without the helper, which is the control', () => {
+		expect(appVersionDefinition('dossiq', { appRoot: ROOT, library: {} })).toBe(
+			JSON.stringify(readAppVersion(ROOT)),
 		)
 	})
 })
