@@ -14,7 +14,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 1. The writer
 
-- [ ] 1.1 Rewrite `lib/Service/Bezwaar/BezwaarAuditTrail.php` as a writer onto OpenRegister.
+- [x] 1.1 Rewrite `lib/Service/Bezwaar/BezwaarAuditTrail.php` as a writer onto OpenRegister.
   `record(string $register, string $schema, string $objectUuid, string $event, array $payload, string $tag = ''): void`
   resolves the `ObjectEntity` through `ObjectService::find()` and calls
   `createAuditTrailEntry(object: ..., action: 'dossiq.bezwaar.' . $event, context: {event, tag?, actor, at, payload})`.
