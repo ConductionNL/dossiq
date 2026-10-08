@@ -37,6 +37,13 @@ class RefusableRegister extends InMemoryRegister {
 	public bool $refuseSaves = false;
 
 	/**
+	 * Every findAll() config asked for, so a test can see the paging.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	public array $findAllCalls = [];
+
+	/**
 	 * Save one row, unless saves are refused.
 	 *
 	 * @param array<string, mixed> $object        The row.
@@ -62,4 +69,20 @@ class RefusableRegister extends InMemoryRegister {
 
 		return parent::saveObject(object: $object, register: $register, schema: $schema, uuid: $uuid, _rbac: $_rbac, _multitenancy: $_multitenancy);
 	}//end saveObject()
+
+	/**
+	 * Every row of the configured schema, one page at a time, as ObjectService::findAll() pages.
+	 *
+	 * @param array<string, mixed> $config        `filters.schema`, `limit` and `offset`.
+	 * @param bool                 $_rbac         Unused.
+	 * @param bool                 $_multitenancy Unused.
+	 *
+	 * @return array<int, array<string, mixed>> The page.
+	 */
+	public function findAll(array $config = [], bool $_rbac = true, bool $_multitenancy = true): array {
+		$this->findAllCalls[] = $config;
+		$rows = array_values($this->rows[(string) ($config['filters']['schema'] ?? '')] ?? []);
+
+		return array_slice($rows, (int) ($config['offset'] ?? 0), (int) ($config['limit'] ?? count($rows)));
+	}//end findAll()
 }//end class

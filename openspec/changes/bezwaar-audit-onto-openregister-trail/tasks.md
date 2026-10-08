@@ -87,7 +87,7 @@ itself. Resolve OpenRegister classes the way `TenantAuditTrailService::getAuditT
 
 ## 4. The entries already stored
 
-- [ ] 4.1 Add `lib/Repair/CopyEmbeddedBezwaarAuditTrail.php` and register it under
+- [x] 4.1 Add `lib/Repair/CopyEmbeddedBezwaarAuditTrail.php` and register it under
   `<post-migration>` in `appinfo/info.xml`. It copies every entry of every `hearingSession` and
   `bacAdviceRequest` `auditTrail` in order, actor `system`, context with the original keys plus
   `migratedFrom: auditTrail` and `migratedIndex`. It finds rows it already wrote with
