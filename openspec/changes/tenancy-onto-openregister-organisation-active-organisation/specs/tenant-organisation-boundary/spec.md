@@ -50,10 +50,35 @@ organisation SHALL be let through, as on a single-tenant install.
 
 `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md` SHALL cover
 `TenantAuthenticationService` for rule 4 with the reason that its lookups stay until they move to
-OpenRegister, and SHALL name none of the five classes this change deletes.
+OpenRegister, and SHALL name none of the six classes this change deletes.
 
 #### Scenario: No tenant boundary finding is left
 - **GIVEN** this change and `tenant-isolation-names-the-control-that-runs` merged on `development`
 - **WHEN** gate 23 runs with `--base origin/development`
 - **THEN** it SHALL report no `or-capability:tenant-boundary` finding
 - **AND** `TenantAuthenticationService.php` SHALL be printed as suppressed for rule 4 only
+- **AND** `TenantController.php` SHALL not be listed
+
+### Requirement: dossiq routes no tenant API of its own (REQ-TAO-005)
+
+Decided by Ruben on 2026-10-08 (Q5). dossiq SHALL NOT ship `TenantController` or any
+`/api/tenants` route. The active organisation, the user's organisations, provisioning and usage
+SHALL be read and changed through OpenRegister's organisation endpoints: `organisation#getActive`,
+`organisation#index`, `organisation#activate`, `organisation#usage` and `organisation#show`. No
+file under `src/` SHALL call `/apps/dossiq/api/tenants`.
+
+#### Scenario: The tenant routes are gone
+- **GIVEN** `appinfo/routes.php` after this change
+- **WHEN** the routes are read
+- **THEN** none SHALL name the `tenant` controller
+
+#### Scenario: Provisioning goes through OpenRegister
+- **GIVEN** an Organisation in `provisioning` and a platform admin
+- **WHEN** the admin calls OpenRegister's `PUT /api/organisations/{uuid}/activate`
+- **THEN** the Organisation SHALL be provisioned and become `active`
+- **AND** dossiq SHALL take no part in the call
+
+#### Scenario: No frontend calls the old API
+- **GIVEN** every file under `src/`
+- **WHEN** it is searched for `/apps/dossiq/api/tenants`
+- **THEN** nothing SHALL be found

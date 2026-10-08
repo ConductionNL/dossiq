@@ -63,26 +63,47 @@ getters are magic; the service returns `null` for a user with no active organisa
     `tests/Unit/Controller/TenantControllerContractTest.php` `testThereIsNoSwitchTenantRoute`.
   - The hydra route-reachability gate must show no dangling route.
 
-## 3. ADR-004 and close out
+## 3. `TenantController` moves to OpenRegister (Q5)
 
-- [ ] 3.1 Update `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`: add
+- [ ] 3.1 Remove the `tenant#current`, `tenant#memberships`, `tenant#provision` and `tenant#usage`
+  routes and their methods; their OpenRegister equivalents are `organisation#getActive`,
+  `organisation#index`, `organisation#activate`, and `organisation#usage` with `organisation#show`
+  (see the proposal's table). Re-point any caller in `src/` first; on 2026-10-08 there was none
+  (REQ-TAO-005).
+  - **fails today**: `tests/Unit/Controller/TenantControllerContractTest.php` replaced by
+    `tests/Unit/AppInfo/TenantRoutesAreGoneTest.php` `testNoRouteNamesTheTenantController`, read
+    from `appinfo/routes.php`.
+  - Guard: `tests/Unit/Architecture/NoDossiqTenantApiCallerTest.php`
+    `testNoFileUnderSrcCallsTheDossiqTenantApi`, which fails if a `src/` file names
+    `/apps/dossiq/api/tenants`.
+  - The hydra route-reachability gate must show no dangling route.
+- [ ] 3.2 Delete `lib/Controller/TenantController.php` and its tests, and the `TenantService`
+  methods left with no caller: `provisionTenant()`, `getResourceUsage()`, `getTenantForUser()` and
+  `getTenantStatus()`. Keep `isPlatformAdmin()` if task 2.3 calls it (REQ-TAO-005).
+  - **fails today**: `NoTenantTokenPathTest` `testTenantControllerIsNotUnderLib`, and the hydra
+    stub-scan and orphan gates show no caller-less method left on `TenantService`.
+
+## 4. ADR-004 and close out
+
+- [ ] 4.1 Update `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`: add
   `lib/Service/TenantAuthenticationService.php` with `(gate 23 rules: 4)` under a section that says
   its membership, role and mandate lookups stay until they move to OpenRegister (Q2); record Q3; drop
-  every path this change deleted; and update "Status of the work" (REQ-TAO-004).
+  every path this change deleted, `TenantController.php` included; and update "Status of the work" (REQ-TAO-004).
   - Evidence: `run-hydra-gates.sh --base origin/development` output for gate 23, pasted in the PR
     body: no `or-capability:tenant-boundary` finding, and `TenantAuthenticationService.php` printed
     as suppressed for rule 4 only.
-- [ ] 3.2 `tests/e2e/tenant-follows-the-active-organisation.spec.ts`: a user who belongs to two
+- [ ] 4.2 `tests/e2e/tenant-follows-the-active-organisation.spec.ts`: a user who belongs to two
   organisations sets one active through OpenRegister, and a dossiq write is checked against that
-  organisation's mandate matrix; suspending it refuses the next dossiq write. Cite REQ-TAO-002 and
-  REQ-TAO-003.
-- [ ] 3.3 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
+  organisation's mandate matrix; suspending it refuses the next dossiq write; an admin reads its
+  usage from `GET /apps/openregister/api/organisations/{uuid}/usage`. Cite REQ-TAO-002, REQ-TAO-003
+  and REQ-TAO-005.
+- [ ] 4.3 `TMPDIR` set to a sibling directory beside the clone, never inside it. While building, run
   only the unit tests of touched classes with
   `./vendor/bin/phpunit -c phpunit-unit.xml --no-coverage --filter '<Class>'` and judge by the
   `Tests:` line, because a green suite exits 1 without a coverage driver.
-- [ ] 3.4 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
+- [ ] 4.4 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`
   and any other leg `code-quality.yml` requires. Then
   `scripts/run-hydra-gates.sh --base origin/development` and count the gates that ran. The coverage
   guard needs tests for every added statement.
-- [ ] 3.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on
+- [ ] 4.5 One PR, `--base development`. Merge development in, never rebase. No `Co-Authored-By` on
   any commit. Done means merged on `development` with CI green.
