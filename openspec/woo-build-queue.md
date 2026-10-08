@@ -17,10 +17,11 @@ Two things need a person, not an agent: settling the Woo refusal grounds against
 Hydra gate 23 (or-abstraction-anti-patterns) is red on `development`, and ADR-004 says it should stay red until dossiq stops running its own tenancy and audit trail. Ruben decided on 2026-10-08 that this is built first, in this order:
 
 1. [`tenant-isolation-names-the-control-that-runs`](https://github.com/ConductionNL/dossiq/issues/3465): retires the schema-per-tenant pipeline, which is unreachable, and resolves dossiq#2470.
-2. [`bezwaar-audit-onto-openregister-trail`](https://github.com/ConductionNL/dossiq/issues/3467): Awb hearing and decision entries go through OpenRegister's audit trail.
-3. [`tenancy-onto-openregister-organisation`](https://github.com/ConductionNL/dossiq/issues/3466): dossiq's tenant becomes OpenRegister's organisation. Its second half waits on a person running the migration on real data (tasks 6.2 and 6.3).
+2. [`tenancy-onto-openregister-organisation-active-organisation`](https://github.com/ConductionNL/dossiq/issues/3469): dossiq's active tenant becomes OpenRegister's active organisation; the tenant token path, the two tenant middlewares and TenantController go.
+3. [`bezwaar-audit-onto-openregister-trail`](https://github.com/ConductionNL/dossiq/issues/3467): Awb hearing and decision entries go through OpenRegister's audit trail. It can be built beside step 2.
+4. [`tenancy-onto-openregister-organisation`](https://github.com/ConductionNL/dossiq/issues/3466): the rest of the tenancy move. It comes last because a person runs its migration dry run on real data (task 6.3) and the migration class is deleted only in the release after (task 6.4).
 
-Until these land, a dossiq Woo PR shows Hydra Gates red on gate 23 only. Do not try to fix gate 23 inside a Woo PR: an admin merges it past that one known finding.
+Until these land, a dossiq Woo PR shows Hydra Gates red on gate 23 only. Do not try to fix gate 23 inside a Woo PR: an admin merges it past that one known finding. After all four, one gate-23 finding stays: TenantOnboardingService and TenantOnboardingController, which wait on the open `skipped` status mapping in `remove-casetask` task 7.1.
 
 ## Wave 1
 
