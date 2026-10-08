@@ -34,6 +34,9 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Cases\CaseSplitStore
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class TermijnServiceTest extends TestCase {
 

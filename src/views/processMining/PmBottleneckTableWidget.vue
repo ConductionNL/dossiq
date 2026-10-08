@@ -26,7 +26,8 @@
 					<tr>
 						<th scope="col">{{ t('dossiq', 'Case type') }}</th>
 						<th scope="col">{{ t('dossiq', 'Status') }}</th>
-						<th scope="col">{{ t('dossiq', 'Median hours') }}</th>
+						<th scope="col">{{ headlineLabel }}</th>
+						<th scope="col">{{ wallLabel }}</th>
 						<th scope="col">{{ t('dossiq', 'Visits') }}</th>
 						<th scope="col">{{ t('dossiq', 'Score') }}</th>
 					</tr>
@@ -35,6 +36,7 @@
 					<tr v-for="(row, idx) in rows" :key="idx">
 						<td>{{ row.caseTypeTitle }}</td>
 						<td>{{ row.statusName }}</td>
+						<td>{{ row.medianWorkingHours }}</td>
 						<td>{{ row.medianHours }}</td>
 						<td>{{ row.visitCount }}</td>
 						<td>{{ row.score }}</td>
@@ -52,7 +54,11 @@
 import { translate as t } from '@nextcloud/l10n'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { pmWidgetMixin } from './pmWidgetMixin.js'
-import { buildBottleneckRows } from './processMiningShaping.js'
+import {
+	buildBottleneckRows,
+	wallHoursLabel,
+	workingHoursLabel,
+} from './processMiningShaping.js'
 
 export default {
 	name: 'PmBottleneckTableWidget',
@@ -65,6 +71,24 @@ export default {
 		 */
 		rows() {
 			return buildBottleneckRows(this.pmCaseTypes, 10)
+		},
+
+		/**
+		 * The headline duration column's title, naming its clock.
+		 *
+		 * @return {string} The title.
+		 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+		 */
+		headlineLabel() {
+			return workingHoursLabel(this.pmStore.clock, (s) => t('dossiq', s))
+		},
+
+		/**
+		 * @return {string} The second column's title, always the wall clock.
+		 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+		 */
+		wallLabel() {
+			return wallHoursLabel((s) => t('dossiq', s))
 		},
 	},
 

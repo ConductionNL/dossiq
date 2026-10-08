@@ -39,7 +39,6 @@ use Psr\Log\LoggerInterface;
  * Provides shared utilities: UUID extraction, URL validation,
  * external URL fetching, OpenRegister lookups, error builders.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md

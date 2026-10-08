@@ -6,6 +6,7 @@
         "identifier": "bvw-raadsbesluit",
         "initialStatusName": "Voorstel opstellen",
         "title": "Raadsbesluit",
+        "category": "Besluitvorming",
         "description": "Formeel besluit van de gemeenteraad, inclusief moties en amendementen",
         "purpose": "Vaststellen van raadsbesluiten en verordeningen",
         "trigger": "Raadsvoorstel ingediend door college of raadslid",

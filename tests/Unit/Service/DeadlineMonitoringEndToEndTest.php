@@ -31,7 +31,8 @@ namespace OCA\Dossiq\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Dossiq\Listener\TermijnTimerFiredListener;
-use OCA\Dossiq\Service\BerichtenboxRoutingService;
+use OCA\Dossiq\Service\Termijn\TermNoticeSender;
+use OCA\Dossiq\Service\CasePriorityRaiseService;
 use OCA\Dossiq\Service\DeadlineEscalationService;
 use OCA\Dossiq\Service\DeadlineExtensionService;
 use OCA\Dossiq\Service\DeadlinePauseService;
@@ -39,11 +40,13 @@ use OCA\Dossiq\Service\DwangsomBezwaarService;
 use OCA\Dossiq\Service\DwangsomCalculationService;
 use OCA\Dossiq\Service\DwangsomUitbetalingService;
 use OCA\Dossiq\Service\NoticeOfDefaultService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TermijnNotificationService;
 use OCA\Dossiq\Service\TermijnService;
 use OCA\OpenRegister\Db\FlowTimer;
 use OCA\OpenRegister\Event\FlowTimerFiredEvent;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -51,6 +54,8 @@ use Psr\Log\LoggerInterface;
  * Drives all 5 termijnbewaking E2E scenarios against the chain.
  */
 class DeadlineMonitoringEndToEndTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private SettingsService $settings;
 	private TermijnService $termService;
@@ -86,24 +91,35 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->termService = new TermijnService($settings, $logger);
 		$this->pauseService = new DeadlinePauseService($this->termService);
-		$this->extService = new DeadlineExtensionService($this->termService);
+		$this->extService = new DeadlineExtensionService(termService: $this->termService, dates: $this->caseDates());
 		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
-		$this->calcService = new DwangsomCalculationService($settings, $logger);
-		$this->outService = new DwangsomUitbetalingService($settings);
+		$this->calcService = new DwangsomCalculationService(settingsService: $settings, logger: $logger, dates: $this->caseDates());
+		$this->outService = new DwangsomUitbetalingService(settingsService: $settings, dates: $this->caseDates());
 		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
 			$this->termService,
-			new BerichtenboxRoutingService($logger),
+			$this->createMock(TermNoticeSender::class),
 			$logger
 		);
 		// The retired daily scan's role is now split: the engine sweep
 		// fires the armed timers, and this listener does the domain side.
+		// These tests are about the term, not the writer: the account runs the
+		// fire as it comes. TermijnTimerFiredListenerServiceAccountTest covers who writes.
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAsWhenNobodyIsSignedIn')->willReturnCallback(static fn (callable $operation): mixed => $operation());
 		$this->firedListener = new TermijnTimerFiredListener(
 			$this->termService,
-			new DeadlineEscalationService($this->termService, $logger),
+			new DeadlineEscalationService(
+				termService: $this->termService,
+				priorityRaiseService: $this->createMock(
+					originalClassName: CasePriorityRaiseService::class
+				),
+				logger: $logger
+			),
 			$this->calcService,
 			$settings,
-			$logger
+			$logger,
+			$account
 		);
 
 		// Seed AWB-default Wmo definition.

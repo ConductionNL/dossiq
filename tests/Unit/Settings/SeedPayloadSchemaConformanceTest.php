@@ -126,7 +126,6 @@ class SeedPayloadSchemaConformanceTest extends TestCase {
 		'templates/bvw-raadsbesluit.json',
 		'templates/omgevingsvergunning.json',
 		'templates/woo-verzoek.json',
-		'templates/woo_verzoek.json',
 		'templates/vth-handhavingszaak.json',
 		'templates/vth-omgevingsvergunning.json',
 		'templates/vth-toezichtzaak.json',

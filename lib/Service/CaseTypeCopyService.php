@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\CaseType\DerivedCaseTypePayload;
+use OCA\Dossiq\Service\CaseType\DerivedCaseTypeReferences;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -61,17 +62,46 @@ class CaseTypeCopyService {
 	];
 
 	/**
+	 * The workflow templates, copied for a VERSION and not for a duplicate.
+	 *
+	 * 🔴 IT IS NOT IN THE LIST ABOVE ON PURPOSE. A duplicate is a second case
+	 * type and starts with no process, which is what its own payload says by
+	 * clearing `workflowDefinition`. A version is the same case type later on,
+	 * and a version that lost the route its cases run is not the same case type
+	 * at all. Copying it for both would change the duplicate gesture as a side
+	 * effect of fixing the version one.
+	 *
+	 * @var string
+	 *
+	 * @spec openspec/changes/case-type-version-chain/specs/zaaktype-versioning/spec.md
+	 */
+	private const WORKFLOW_TEMPLATE_CONFIG_KEY = 'workflow_template_schema';
+
+	/**
+	 * What the copy in progress could not carry.
+	 *
+	 * Held on the instance for the same reason `SeedDataService` holds its
+	 * summary: the refusal becomes visible several frames below the caller that
+	 * reports it.
+	 *
+	 * @var array<int, string>
+	 */
+	private array $notCarried = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param SettingsService        $settingsService Shared OR register/schema resolver.
 	 * @param CaseTypeStore          $store           The app's one row and reference normaliser.
-	 * @param DerivedCaseTypePayload $payloads        What a duplicate and a version look like.
-	 * @param LoggerInterface        $logger          Logger.
+	 * @param DerivedCaseTypePayload    $payloads        What a duplicate and a version look like.
+	 * @param DerivedCaseTypeReferences $references      Pointing the copy at its own children.
+	 * @param LoggerInterface           $logger          Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly CaseTypeStore $store,
 		private readonly DerivedCaseTypePayload $payloads,
+		private readonly DerivedCaseTypeReferences $references,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -101,6 +131,69 @@ class CaseTypeCopyService {
 	}//end copy()
 
 	/**
+	 * Deep-copy a case type and say what the copy could not carry.
+	 *
+	 * 🔑 A COPY THAT SILENTLY DROPPED A CHILD LOOKS EXACTLY LIKE ONE THAT
+	 * CARRIED EVERYTHING. {@see copy()} already logged a warning per child it
+	 * failed on and then returned the new case type as though nothing had
+	 * happened, so an administrator standing up a case type from a template got
+	 * a green tick and found the missing document types weeks later. This is
+	 * the same act with the tally attached; `copy()` is kept for the callers
+	 * that only want the row.
+	 *
+	 * @param string $caseTypeId The source case type's OpenRegister id.
+	 *
+	 * @return array{caseType: array<string, mixed>|null, complete: bool, notCarried: array<int, string>}
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	public function copyReport(string $caseTypeId): array {
+		$this->notCarried = [];
+		$caseType = $this->derive(caseTypeId: $caseTypeId, asVersion: false);
+		$notCarried = $this->takeNotCarried();
+
+		return [
+			'caseType' => $caseType,
+			// A copy whose source did not resolve is not a complete copy
+			// either, and reporting `complete: true` with a null case type
+			// would be the worst of both answers.
+			'complete' => ($caseType !== null && $notCarried === []),
+			'notCarried' => $notCarried,
+		];
+	}//end copyReport()
+
+	/**
+	 * What the copy just finished could not carry, clearing the tally.
+	 *
+	 * A method rather than reading the property inline, because the property is
+	 * filled several frames down inside `derive()` and static analysis cannot
+	 * see that: it narrows the property to the empty array it was initialised
+	 * to and then calls `$notCarried === []` always true. A typed return says
+	 * what the list actually is.
+	 *
+	 * @return array<int, string> The names of what did not come along.
+	 */
+	private function takeNotCarried(): array {
+		$notCarried = $this->notCarried;
+		$this->notCarried = [];
+
+		return $notCarried;
+	}//end takeNotCarried()
+
+	/**
+	 * Whether a case type is offered as a starting point for a new one.
+	 *
+	 * @param array<string, mixed> $caseType The case type row.
+	 *
+	 * @return boolean True when the case type is marked as a template.
+	 *
+	 * @spec openspec/changes/starter-content-and-templates/specs/case-type-seed-data/spec.md
+	 */
+	public function isTemplate(array $caseType): bool {
+		return (($caseType['isTemplate'] ?? false) === true);
+	}//end isTemplate()
+
+	/**
 	 * Start a new version of a published case type.
 	 *
 	 * A version is NOT a duplicate, and the difference is the whole point.
@@ -118,9 +211,12 @@ class CaseTypeCopyService {
 	 * to new cases") was not true. Copying instead leaves the running cases on
 	 * the objects they started under, and pins them there with no extra field
 	 * on the case: the reference they already hold IS the pin. Nothing migrates
-	 * a running case forward, deliberately. Its current status is a row the new
-	 * version does not contain, and its deadline was computed from the old
-	 * version's `processingDeadline`.
+	 * a running case forward BY ITSELF, deliberately. Its current status is a
+	 * row the new version does not contain, and its deadline was computed from
+	 * the old version's `processingDeadline`. Moving one is a deliberate act
+	 * somebody performs and gives a reason for, and it is
+	 * {@see \OCA\Dossiq\Service\CaseType\CaseVersionMove}, never a consequence
+	 * of publishing.
 	 *
 	 * The new version starts as a draft. It becomes the version new cases get
 	 * when it is published, which is when {@see CaseTypePublishService} writes
@@ -205,12 +301,24 @@ class CaseTypeCopyService {
 			newCaseTypeId: $newCaseTypeId
 		);
 
-		$created = $this->repointInitialStatus(
+		$templateMap = [];
+		if ($asVersion === true) {
+			$templateMap = $this->copyChildren(
+				objectService: $objectService,
+				register: $register,
+				configKey: self::WORKFLOW_TEMPLATE_CONFIG_KEY,
+				sourceCaseTypeId: $caseTypeId,
+				newCaseTypeId: $newCaseTypeId
+			);
+		}
+
+		$created = $this->references->repoint(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseTypeSchema,
 			caseType: $created,
-			statusMap: $statusMap
+			statusMap: $statusMap,
+			templateMap: $templateMap
 		);
 
 		$this->logger->info(
@@ -357,57 +465,6 @@ class CaseTypeCopyService {
 
 
 
-	/**
-	 * Point the new case type's initial status at its OWN copy of that status.
-	 *
-	 * Without this the copy files new cases into the SOURCE's status row: the
-	 * children are copied but `initialStatus` still holds the old id, and the
-	 * two are never reconciled. Publish validation catches it (the initial
-	 * status is not one of the type's own statuses) so it never reached a
-	 * running case, but it made every duplicate and every new version ask the
-	 * author to re-pick a status they had already picked.
-	 *
-	 * @param object                $objectService The OpenRegister ObjectService.
-	 * @param string                $register      The register slug.
-	 * @param string                $schema        The case type schema id.
-	 * @param array<string, mixed>  $caseType      The freshly created case type.
-	 * @param array<string, string> $statusMap     Old status id to new status id.
-	 *
-	 * @return array<string, mixed> The case type, repointed when it needed it.
-	 *
-	 * @spec openspec/specs/zaaktype-versioning/spec.md
-	 */
-	private function repointInitialStatus(
-		object $objectService,
-		string $register,
-		string $schema,
-		array $caseType,
-		array $statusMap,
-	): array {
-		$initial = $this->store->referenceId(value: ($caseType['initialStatus'] ?? ''));
-		if ($initial === '' || isset($statusMap[$initial]) === false) {
-			return $caseType;
-		}
-
-		$caseType['initialStatus'] = $statusMap[$initial];
-
-		try {
-			$saved = $objectService->saveObject(
-				object: $caseType,
-				register: $register,
-				schema: $schema,
-			);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'CaseTypeCopyService: could not repoint the initial status',
-				['caseType' => ($caseType['id'] ?? ''), 'exception' => $e->getMessage()]
-			);
-			return $caseType;
-		}
-
-		return $this->store->asRow(value: $saved);
-	}//end repointInitialStatus()
-
 
 	/**
 	 * Copy every child object of one owned sub-schema, re-pointed at the
@@ -460,6 +517,7 @@ class CaseTypeCopyService {
 					'CaseTypeCopyService: failed to copy child object',
 					['schema' => $schema, 'exception' => $e->getMessage()]
 				);
+				$this->notCarried[] = ($configKey . ':' . (string)($child['name'] ?? ($child['title'] ?? $oldId)));
 				continue;
 			}
 
@@ -505,6 +563,10 @@ class CaseTypeCopyService {
 				'CaseTypeCopyService: failed to list child objects',
 				['schema' => $schema, 'exception' => $e->getMessage()]
 			);
+			// A schema the copy could not even LIST is the worst case for a
+			// silent partial: zero children copied is indistinguishable from a
+			// case type that had none.
+			$this->notCarried[] = $schema;
 			return [];
 		}
 

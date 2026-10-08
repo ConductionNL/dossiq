@@ -34,7 +34,10 @@ use OCA\Dossiq\Service\External\Bag\BagAdapterInterface;
 use OCA\Dossiq\Service\External\Bag\BagApiAdapter;
 use OCA\Dossiq\Service\External\Bag\BagResponseMapper;
 use OCA\Dossiq\Service\External\Bag\LogBagAdapter;
+use OCA\Dossiq\Service\External\Bag\PdokBagAdapter;
 use OCA\Dossiq\Service\External\IntegrationMode;
+use OCA\Dossiq\Service\Pdok\PdokBagService;
+use OCA\Dossiq\Service\Pdok\PdokLocatieserverService;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use Psr\Container\ContainerInterface;
 
@@ -78,6 +81,22 @@ class BagRegistrar {
 					return new BagApiAdapter(
 						clientService: $c->get('OCP\\Http\\Client\\IClientService'),
 						mode: $modeService,
+						mapper: $c->get(BagResponseMapper::class),
+						logger: $c->get('Psr\\Log\\LoggerInterface'),
+					);
+				}
+
+				// 🔴 THE DORMANT TIER IS STILL DORMANT BY DEFAULT. An instance
+				// with no Kadaster key was answered LOOKUP_DEFERRED for every
+				// address, so LocationBagValidationListener accepted whatever
+				// a handler typed. `integration.bag.source = pdok` binds the
+				// FREE PDOK BAG mirror instead, which needs no key. One config
+				// value, opt-in, and the tier model is untouched: a fresh
+				// install still calls nothing.
+				if ($modeService->setting(integration: 'bag', key: 'source') === PdokBagAdapter::SOURCE) {
+					return new PdokBagAdapter(
+						bag: $c->get(PdokBagService::class),
+						locatieserver: $c->get(PdokLocatieserverService::class),
 						mapper: $c->get(BagResponseMapper::class),
 						logger: $c->get('Psr\\Log\\LoggerInterface'),
 					);

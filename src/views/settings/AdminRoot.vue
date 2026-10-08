@@ -3,6 +3,40 @@
 		<Settings />
 
 		<CnSettingsSection
+			id="section-first-run"
+			:name="t('dossiq', 'First run')"
+			:description="
+				t(
+					'dossiq',
+					'What this instance still needs before it can take a case. Reported, never required. Repair the register with the Re-import configuration button.',
+				)
+			"
+			:loading="!storesReady">
+			<FirstRunTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			id="section-menu-structure"
+			:name="t('dossiq', 'Menu structure')"
+			:description="
+				t('dossiq', 'Choose how much the menu shows. Simple is the default.')
+			">
+			<MenuStructureTab />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			id="section-prerequisites"
+			:name="t('dossiq', 'Prerequisites')"
+			:description="
+				t(
+					'dossiq',
+					'What dossiq needs to run, and what this instance has. Read live, every time you open this page.',
+				)
+			">
+			<PrerequisitesTab />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('dossiq', 'Case Type Management')"
 			:description="t('dossiq', 'Manage case types and their configurations')"
 			:loading="!storesReady">
@@ -108,6 +142,44 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-archival"
+			:name="t('dossiq', 'Archiving')"
+			:description="
+				t(
+					'dossiq',
+					'How often a reviewer is reminded of the archival decisions they hold. The setting lives in OpenRegister, which runs the archiving process; dossiq keeps no copy of it.',
+				)
+			"
+			:loading="!storesReady">
+			<ArchivalSettingsTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			id="section-search-index"
+			:name="t('dossiq', 'Search index')"
+			:description="
+				t(
+					'dossiq',
+					'The indexes case search reads. They live in OpenRegister, which owns the query layer; dossiq keeps no copy of their state. A stale index is a case nobody finds.',
+				)
+			"
+			:loading="!storesReady">
+			<SearchIndexTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
+			id="section-background-service-account"
+			:name="t('dossiq', 'Background service account')"
+			:description="
+				t(
+					'dossiq',
+					'The account background jobs save as, with the access checks of OpenRegister on.',
+				)
+			">
+			<BackgroundServiceAccountSettings />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-mailbox"
 			:name="t('dossiq', 'Case Email: Shared Mailbox')"
 			:description="
@@ -160,6 +232,19 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			id="section-shipped-configuration"
+			:name="t('dossiq', 'What shipped with dossiq')"
+			:description="
+				t(
+					'dossiq',
+					'Every case type, status, result and role dossiq seeded, and whether you changed it since. A newer shipped version is offered per object and never overwrites a change you made.',
+				)
+			"
+			:loading="!storesReady">
+			<ShippedConfiguration v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			id="section-stuf"
 			:name="t('dossiq', 'StUF-ZKN Endpoints')"
 			:description="
@@ -200,19 +285,26 @@
 
 <script>
 import { CnAdminSettingsShell, CnSettingsSection } from '@conduction/nextcloud-vue'
+import BackgroundServiceAccountSettings from './BackgroundServiceAccountSettings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
 import Settings from './Settings.vue'
+import ShippedConfiguration from './ShippedConfiguration.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import AiSettingsTab from './tabs/AiSettingsTab.vue'
+import ArchivalSettingsTab from './tabs/ArchivalSettingsTab.vue'
 import ChecklistsTab from './tabs/ChecklistsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
+import FirstRunTab from './tabs/FirstRunTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import MenuStructureTab from './tabs/MenuStructureTab.vue'
+import PrerequisitesTab from './tabs/PrerequisitesTab.vue'
+import SearchIndexTab from './tabs/SearchIndexTab.vue'
 import StoreSettingsTab from './tabs/StoreSettingsTab.vue'
 import TenantOnboardingTab from './tabs/TenantOnboardingTab.vue'
 import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
@@ -222,6 +314,9 @@ import { initializeStores } from '../../store/store.js'
 export default {
 	name: 'AdminRoot',
 	components: {
+		BackgroundServiceAccountSettings,
+		FirstRunTab,
+		PrerequisitesTab,
 		TenantOnboardingTab,
 		CnAdminSettingsShell,
 		CnSettingsSection,
@@ -229,16 +324,20 @@ export default {
 		CaseTypeAdmin,
 		ZgwMappingSettings,
 		AiSettingsTab,
+		ArchivalSettingsTab,
+		SearchIndexTab,
 		ChecklistsTab,
 		TermijnDefinitiesTab,
 		MandaatMatrixTab,
 		MandaatMatrixSettingsTab,
+		MenuStructureTab,
 		ConsultationSettingsTab,
 		StoreSettingsTab,
 		FinancialIntegrationTab,
 		EmailSettings,
 		KccIntegrationSettings,
 		DecisionTablesTab,
+		ShippedConfiguration,
 		StufEndpoints,
 		StufAuditLog,
 	},

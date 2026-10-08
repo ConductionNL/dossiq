@@ -1,13 +1,36 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <!--
-	Workflow-board case card — a single draggable Kanban card. Shows the case
-	identifier, truncated title, case-type chip, assignee and a deadline
-	indicator. Emits `dragstart` (with the case id), `click` (open detail),
-	`move` (caseId, newStatusId) from the keyboard-operable "Move to…" menu —
-	the same status-transition path as the drag gesture (WCAG 2.1.1 Keyboard) —
-	and `toggle-select` (caseId) from its selection checkbox, used by the
-	column-scoped bulk-selection UI (case-bulk-status-transition).
+	Workflow-board case card — a single Kanban card. Shows the case identifier,
+	the deadline, the title, the case-type chip, the requester and the handler.
+	Emits `click` (open detail), `contextMenu` (caseId, event) on right-click,
+	`requestMove` (caseId) on the M key, and `toggle-select` (caseId) from its
+	selection checkbox, used by the column-scoped bulk-selection UI
+	(case-bulk-status-transition).
+
+	THE SHAPE IS THE DESIGN'S (DqWerkbord): the number and the deadline on one
+	muted line, the title in bold under it, and the requester on the left of
+	the last line with the handler's picture on the right. The case-type chip
+	stays beside the number because the merged board draws every type in one
+	column; narrowed to one type it is simply repeated.
+
+	Dragging is Sortable's, set up by BoardColumn's list: the card only carries
+	its id in `data-case-id` for the column to read off the dragged element,
+	and the three drag classes styled at the bottom of this file.
+
+	THE CARD CARRIES NO MOVE CONTROL OF ITS OWN ANY MORE, and the M key is why
+	it is still keyboard-operable. It used to hold an NcActions listing every
+	board column, which is one per status NAME across every case type on the
+	instance: two hundred items on a real register, nearly all of them statuses
+	this case cannot reach. Moving is now asked for — right-click, or M on the
+	focused card — and answered by a dialog the board fills from the engine's
+	offer for THIS case.
+
+	The M key is the WCAG 2.1.1 path the menu used to be (dragging is
+	mouse-only), so it is named in the card's aria-label: a gesture with no
+	visible control has to be announced or it does not exist. A right-click is
+	also reachable from the keyboard via Shift+F10 / the Menu key, but that is
+	a fallback, not the affordance.
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
@@ -21,13 +44,15 @@
 			'case-card--selection-mode': selectionMode,
 			'case-card--selected': selected,
 		}"
-		draggable="true"
 		role="button"
 		tabindex="0"
-		@dragstart="onDragStart"
+		:data-case-id="caseItem.id"
+		:aria-label="ariaLabel"
 		@click="$emit('click', caseItem.id)"
+		@contextmenu.prevent="$emit('contextMenu', caseItem.id, $event)"
 		@keydown.enter="$emit('click', caseItem.id)"
-		@keydown.space.prevent="$emit('click', caseItem.id)">
+		@keydown.space.prevent="$emit('click', caseItem.id)"
+		@keydown.m.prevent="$emit('requestMove', caseItem.id)">
 		<NcCheckboxRadioSwitch
 			class="case-card__select"
 			:modelValue="selected"
@@ -47,14 +72,6 @@
 			<span v-if="caseTypeName" class="case-card__type">{{
 				caseTypeName
 			}}</span>
-		</div>
-		<p class="case-card__title">
-			{{ caseItem.title || '—' }}
-		</p>
-		<div class="case-card__footer">
-			<span class="case-card__assignee">
-				{{ caseItem.assignee || t('dossiq', 'Unassigned') }}
-			</span>
 			<span
 				v-if="deadlineLabel"
 				class="case-card__deadline"
@@ -62,57 +79,51 @@
 				{{ deadlineLabel }}
 			</span>
 		</div>
-
-		<!-- Keyboard-operable status move control (REQ-KBD-01). Separate
-			focusable control from the card body's open-detail action; stop
-			propagation so activating it never also fires the card's own
-			click/open handler. -->
-		<NcActions
-			v-if="otherColumns.length > 0"
-			class="case-card__move-actions"
-			:inline="0"
-			@click.stop
-			@keydown.stop>
-			<template #icon>
-				<ArrowRightBoldCircleOutline :size="18" />
-			</template>
-			<NcActionButton
-				v-for="col in otherColumns"
-				:key="col.id"
-				@click="$emit('move', caseItem.id, col.id)">
-				{{ t('dossiq', 'Move to {status}', { status: col.name }) }}
-			</NcActionButton>
-		</NcActions>
+		<!-- Not a paragraph: the NL Design paragraph sheet sets a paragraph's
+			weight, and the title is bold (DqWerkbord). -->
+		<div class="case-card__title">
+			{{ caseItem.title || '—' }}
+		</div>
+		<div class="case-card__footer">
+			<span class="case-card__requester">
+				{{ requesterLabel }}
+			</span>
+			<NcAvatar
+				v-if="caseItem.assignee"
+				class="case-card__assignee"
+				:user="caseItem.assignee"
+				:size="26"
+				:disableMenu="true"
+				:disableTooltip="false" />
+			<span v-else class="case-card__assignee case-card__assignee--none">
+				{{ t('dossiq', 'Unassigned') }}
+			</span>
+		</div>
 	</div>
 </template>
 
 <script>
-import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue'
-import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
+import { NcAvatar, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { cardDueSeverity } from '../../utils/cardDueSeverity.js'
 import { getDaysRemaining } from '../../utils/caseHelpers.js'
-import { columnsExcludingCurrent } from '../../utils/workflowBoardHelpers.js'
 
 export default {
 	name: 'CaseCard',
 	components: {
-		NcActions,
-		NcActionButton,
+		NcAvatar,
 		NcCheckboxRadioSwitch,
-		ArrowRightBoldCircleOutline,
+	},
+
+	inject: {
+		/** The built manifest, for the board page's own `config.dueRule`. */
+		cnManifest: { default: null },
 	},
 
 	props: {
-		/** The case object: { id, identifier, title, caseType, assignee, deadline }. */
+		/** The case object: { id, identifier, title, caseType, assignee, deadline, initiatorDisplayName }. */
 		caseItem: { type: Object, required: true },
 		/** Resolved case-type display name (parent resolves from the type map). */
 		caseTypeName: { type: String, default: '' },
-		/**
-		 * All board columns (status types), used to populate the "Move to…"
-		 * menu with every status other than this card's current one.
-		 *
-		 * @type {Array<{id: string, name: string}>}
-		 */
-		columns: { type: Array, default: () => [] },
 		/** Whether this card is currently in the bulk-selection set. */
 		selected: { type: Boolean, default: false },
 		/**
@@ -123,16 +134,64 @@ export default {
 		selectionMode: { type: Boolean, default: false },
 	},
 
-	emits: ['click', 'dragstart', 'move', 'toggle-select'],
+	emits: ['click', 'contextMenu', 'requestMove', 'toggle-select'],
 	computed: {
 		/**
-		 * Status columns the card can move to — every column except the one
-		 * it is currently in.
+		 * The board's due rule, declared on the `WorkflowBoard` page.
 		 *
-		 * @return {Array<{id: string, name: string}>}
+		 * The simple structure declares one that counts today as late. The
+		 * full structure declares none, and the card keeps its own rule.
+		 *
+		 * @return {object|null}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
 		 */
-		otherColumns() {
-			return columnsExcludingCurrent(this.columns, this.caseItem.status)
+		dueRule() {
+			const pages = this.cnManifest?.pages
+			const board = Array.isArray(pages)
+				? pages.find((page) => page.id === 'WorkflowBoard')
+				: null
+			return board?.config?.dueRule ?? null
+		},
+
+		/**
+		 * What the card announces, including how to move it.
+		 *
+		 * The move gesture is named here because it has no visible control to
+		 * find: dragging is a mouse gesture, and `m` is the keyboard one. An
+		 * affordance a screen-reader user cannot discover is not an
+		 * affordance, and this is the only place left that can say it.
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+		 */
+		ariaLabel() {
+			return this.t(
+				'dossiq',
+				'Case {identifier}: {title}. Press Enter to open, or M to move it to another status.',
+				{
+					identifier: this.caseItem.identifier || this.caseItem.id,
+					title: this.caseItem.title || '',
+				},
+			)
+		},
+
+		/**
+		 * Who asked for the case, as the case carries it (the materialised
+		 * `initiatorDisplayName`), or the handler's id when the case names no
+		 * requester, so the line is never empty.
+		 *
+		 * @return {string}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
+		 */
+		requesterLabel() {
+			const requester = this.caseItem.initiatorDisplayName
+			if (typeof requester === 'string' && requester.trim() !== '') {
+				return requester
+			}
+			return this.caseItem.assignee || this.t('dossiq', 'Unassigned')
 		},
 
 		/**
@@ -146,15 +205,15 @@ export default {
 		},
 
 		/**
-		 * Deadline severity: overdue (<0), warning (<=3), or ok.
+		 * Deadline severity: overdue, warning or ok, by the board's due rule.
+		 * Without a rule: overdue after the deadline, a warning within three days.
 		 *
 		 * @return {string|null}
+		 *
+		 * @spec openspec/changes/simple-list-and-dashboard/specs/dashboard/spec.md#REQ-DASH-027
 		 */
 		deadlineSeverity() {
-			if (this.daysRemaining === null) return null
-			if (this.daysRemaining < 0) return 'overdue'
-			if (this.daysRemaining <= 3) return 'warning'
-			return 'ok'
+			return cardDueSeverity(this.daysRemaining, this.dueRule)
 		},
 
 		/**
@@ -184,23 +243,6 @@ export default {
 				: ''
 		},
 	},
-
-	methods: {
-		/**
-		 * Stash the dragged case id on the dataTransfer payload and notify the
-		 * parent board so it can track the in-flight card.
-		 *
-		 * @param {DragEvent} event The native dragstart event
-		 * @return {void}
-		 */
-		onDragStart(event) {
-			if (event.dataTransfer) {
-				event.dataTransfer.effectAllowed = 'move'
-				event.dataTransfer.setData('text/plain', String(this.caseItem.id))
-			}
-			this.$emit('dragstart', this.caseItem.id)
-		},
-	},
 }
 </script>
 
@@ -210,22 +252,21 @@ export default {
 	background: var(--color-main-background);
 	border: 1px solid var(--color-border);
 	border-left: 3px solid var(--color-border);
-	border-radius: var(--border-radius);
-	padding: 10px 12px;
+	border-radius: var(--border-radius-large, var(--border-radius));
+	padding: 12px 14px;
 	margin-bottom: 8px;
 	cursor: grab;
+	/* A button, and Sortable's pointer drag would otherwise select its text. */
+	user-select: none;
 	transition:
 		box-shadow 0.15s ease,
 		background 0.15s ease;
 }
 
-.case-card__move-actions {
-	position: absolute;
-	top: 4px;
-	right: 4px;
-}
-
-.case-card__select {
+/* Two classes: NcCheckboxRadioSwitch sets `position: relative` on its own
+   root at the same scoped weight, and whichever sheet loads last won, so the
+   checkbox sometimes took a row of its own above the number. */
+.case-card .case-card__select {
 	position: absolute;
 	top: 2px;
 	left: 2px;
@@ -261,17 +302,17 @@ export default {
 
 .case-card__header {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
 	gap: 8px;
-	margin-bottom: 4px;
+	margin-bottom: 6px;
 	/* Space for the absolutely-positioned .case-card__select checkbox. */
-	padding-left: 26px;
+	padding-inline-start: 26px;
+	font-size: 12px;
+	color: var(--color-text-maxcontrast);
 }
 
 .case-card__identifier {
-	font-weight: bold;
-	font-size: 12px;
+	white-space: nowrap;
 }
 
 .case-card__type {
@@ -283,12 +324,22 @@ export default {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
-	max-width: 50%;
+	min-width: 0;
+}
+
+.case-card__deadline {
+	margin-inline-start: auto;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
 }
 
 .case-card__title {
-	font-size: 13px;
-	margin: 0 0 6px;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--color-main-text);
+	margin: 0 0 8px;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	display: -webkit-box;
@@ -301,24 +352,30 @@ export default {
 	justify-content: space-between;
 	align-items: center;
 	gap: 8px;
+	min-height: 26px;
 }
 
-.case-card__assignee {
-	font-size: 12px;
+.case-card__requester {
+	font-size: 13px;
 	color: var(--color-text-maxcontrast);
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
 
-.case-card__deadline {
+.case-card__assignee {
+	flex: none;
+}
+
+.case-card__assignee--none {
 	font-size: 12px;
-	font-weight: 600;
+	color: var(--color-text-maxcontrast);
 	white-space: nowrap;
 }
 
 .case-card__deadline--overdue {
 	color: var(--color-error);
+	font-weight: 700;
 }
 
 .case-card__deadline--warning {
@@ -329,10 +386,35 @@ export default {
 	color: var(--color-text-maxcontrast);
 }
 
+/* Sortable's three drag classes, named in BoardColumn's list options. */
+.case-card--chosen {
+	cursor: grabbing;
+}
+
+/* The placeholder left where the card would land. */
+.case-card--ghost {
+	opacity: 0.35;
+	border-style: dashed;
+	background: var(--color-background-hover);
+	box-shadow: none;
+}
+
+/* The clone under the pointer. */
+.case-card--dragging {
+	opacity: 0.95;
+	transform: rotate(1.5deg) scale(1.02);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+	cursor: grabbing;
+}
+
 @media (prefers-reduced-motion: reduce) {
 	.case-card,
-	.case-card__select {
+	.case-card .case-card__select {
 		transition: none;
+	}
+
+	.case-card--dragging {
+		transform: none;
 	}
 }
 </style>

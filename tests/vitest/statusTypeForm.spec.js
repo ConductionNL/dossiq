@@ -55,12 +55,18 @@ describe('emptyStatusTypeForm', () => {
 		expect(Object.keys(emptyStatusTypeForm(3)).sort()).toEqual([
 			'checklist',
 			'colour',
+			'derivedWhen',
 			'description',
+			'fieldRules',
 			'hiddenInLists',
 			'isFinal',
+			'maximumDwell',
 			'name',
 			'order',
+			'publicDescription',
+			'publicLabel',
 			'role',
+			'waitingOn',
 		])
 	})
 
@@ -206,10 +212,72 @@ describe('formToStatusType', () => {
 			role: 'in-progress',
 			colour: 'orange',
 			hiddenInLists: false,
+			waitingOn: 'applicant',
+			maximumDwell: 20,
+			publicLabel: 'We beoordelen uw aanvraag',
+			publicDescription: 'U hoort binnen twee weken van ons.',
 			checklist: [{ title: 'Check id', required: true }],
+			// Both of these are here because a property the mapping does not
+			// know is destroyed on the next save, in silence. `derivedWhen`
+			// shipped on the schema and off the mapping and was wiped by every
+			// save and every reorder until this list caught it.
+			fieldRules: [
+				{ rule: 'required', field: 'motivering', groups: [], message: '' },
+			],
+			derivedWhen: [
+				{ kind: 'fieldPresent', field: 'description', label: 'the summary' },
+			],
 		}
 
 		expect(formToStatusType(statusTypeToForm(stored))).toEqual(stored)
+	})
+
+	it('leaves the applicant fields empty on a status nobody has annotated', () => {
+		// The direction that matters. The form must not copy `name` into
+		// `publicLabel` to show the author what will be rendered: the copy
+		// would be stored on the next save, and from then on nobody could tell
+		// a label somebody chose from one the form guessed. The placeholder on
+		// the field does that job, in the browser, without writing anything.
+		const form = statusTypeToForm({ name: 'Ontvangen', order: 1 })
+
+		expect(form.publicLabel).toBe('')
+		expect(form.publicDescription).toBe('')
+		expect(formToStatusType(form).publicLabel).toBe('')
+		expect(formToStatusType(form).publicDescription).toBe('')
+	})
+
+	it('keeps a declared public label through a reorder', () => {
+		// Reordering writes the WHOLE row back through this same mapping, so a
+		// property missing from either direction is dropped off every row a
+		// drag moves. That is how the colour and the checklist nearly went.
+		const stored = {
+			name: 'Toets register B',
+			order: 3,
+			publicLabel: 'We beoordelen uw aanvraag',
+		}
+
+		expect(formToStatusType(statusTypeToForm(stored)).publicLabel).toBe(
+			'We beoordelen uw aanvraag',
+		)
+	})
+
+	it('opens a row that predates the declarations as undeclared, not as a guess', () => {
+		// The direction that matters: a status nobody has annotated must not
+		// come back claiming to wait on somebody, and a maximum of zero would
+		// breach every case the instant it entered the status.
+		const older = { name: 'Ontvangen', order: 1 }
+		const form = statusTypeToForm(older)
+
+		expect(form.waitingOn).toBe('')
+		expect(form.maximumDwell).toBe('')
+		expect(formToStatusType(form).waitingOn).toBe('')
+		expect(formToStatusType(form).maximumDwell).toBe('')
+		expect(
+			formToStatusType(statusTypeToForm({ maximumDwell: 0 })).maximumDwell,
+		).toBe('')
+		expect(
+			formToStatusType(statusTypeToForm({ waitingOn: 'nobody' })).waitingOn,
+		).toBe('')
 	})
 
 	it('carries the reorder path through the same mapping', () => {

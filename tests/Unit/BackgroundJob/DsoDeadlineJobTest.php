@@ -23,8 +23,11 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\BackgroundJob;
 
 use OCA\Dossiq\BackgroundJob\DsoDeadlineJob;
+use OCA\Dossiq\Service\Lifecycle\CaseJournal;
 use OCA\Dossiq\Service\WorkingDayCalculator;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IUserSession;
 use OCP\IAppConfig;
 use OCP\Notification\IManager as INotificationManager;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -72,6 +75,18 @@ interface DsoDeadlineObjectServiceStub {
 	 * @return array<string,mixed>
 	 */
 	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
+
+	/**
+	 * Merge fields into a stored object.
+	 *
+	 * @param string $objectId The object id
+	 * @param array<string,mixed> $data The fields to change
+	 * @param string $register Register slug
+	 * @param string $schema Schema slug
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function patchObject(string $objectId, array $data, string $register, string $schema): array;
 }//end interface
 
 /**
@@ -79,6 +94,7 @@ interface DsoDeadlineObjectServiceStub {
  *
  * @covers \OCA\Dossiq\BackgroundJob\DsoDeadlineJob
  * @uses \OCA\Dossiq\Service\WorkingDayCalculator
+ * @uses \OCA\Dossiq\Service\Lifecycle\CaseJournal
  */
 class DsoDeadlineJobTest extends TestCase {
 
@@ -145,6 +161,8 @@ class DsoDeadlineJobTest extends TestCase {
 			notificationManager: $this->notificationManager,
 			logger: $this->logger,
 			workingDays: new WorkingDayCalculator(),
+			serviceAccount: $this->passThroughAccount(),
+			journal: new CaseJournal($this->createMock(IUserSession::class)),
 		);
 	}//end buildJob()
 
@@ -206,12 +224,10 @@ class DsoDeadlineJobTest extends TestCase {
 		$cases = [
 			[
 				'id' => 'zaak-overdue-1',
-				'status' => 'submitted',
-				'caseType' => 'omgevingsvergunning',
+				'dsoStatus' => 'submitted',
 				'deadlineDate' => $pastDeadline,
-				'assigneeUserId' => '',
+				'assignee' => '',
 				'deadlineOverdue' => false,
-				'activityLog' => [],
 			],
 		];
 
@@ -220,10 +236,10 @@ class DsoDeadlineJobTest extends TestCase {
 			->method('searchObjectsBySlug')
 			->willReturn($cases);
 
-		// saveObject throws for this zaak — the job must swallow it.
+		// The overdue patch throws for this zaak, and the job must swallow it.
 		$objectServiceMock
 			->expects($this->once())
-			->method('saveObject')
+			->method('patchObject')
 			->willThrowException(new \RuntimeException('DB write failed'));
 
 		$this->container
@@ -259,4 +275,16 @@ class DsoDeadlineJobTest extends TestCase {
 		// If we reach this assertion, the exception was swallowed correctly.
 		$this->assertTrue(true);
 	}//end testRunCatchesExceptionsPerTask()
+
+	/**
+	 * A service account that just runs the operation.
+	 *
+	 * @return BackgroundServiceAccount
+	 */
+	private function passThroughAccount(): BackgroundServiceAccount {
+		$account = $this->createMock(BackgroundServiceAccount::class);
+		$account->method('runAs')->willReturnCallback(static fn (callable $operation): mixed => $operation());
+
+		return $account;
+	}//end passThroughAccount()
 }//end class

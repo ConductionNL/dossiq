@@ -209,6 +209,65 @@ class EvidenceMetadataService {
 		?array $caseAddress = null,
 		?array $gpsReading = null,
 	): array {
+		$this->refuseCaptureOverItsLimit(type: $type, extra: $extra);
+
+		$gps = $this->classifyGps(reading: $gpsReading, caseAddress: $caseAddress);
+
+		$transcriptionStatus = 'not_applicable';
+		if ($type === 'voice_memo') {
+			$transcriptionStatus = 'pending';
+		}
+
+		$capturedAt = ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM));
+
+		$payload = [
+			'inspectionRef' => $inspectionRef,
+			'type' => $type,
+			'localBlobRef' => ((string)($extra['localBlobRef'] ?? '')),
+			'cloudUrl' => null,
+			'capturedAt' => $capturedAt,
+			'transcription' => null,
+			'transcriptionStatus' => $transcriptionStatus,
+			'tags' => ($extra['tags'] ?? []),
+			'sensitivityLevel' => ((string)($extra['sensitivityLevel'] ?? 'internal')),
+		];
+
+		// 🔴 A SENSORLESS CAPTURE WITH NO FALLBACK CARRIES NO LOCATION AT ALL.
+		// classifyGps() answers `lat: null, lon: null` when the device had no
+		// fix and no case address was passed, and this method wrote that block
+		// out as it stood. The schema declares lat and lon as numbers, so the
+		// nulls either fail validation or land as zeroes, and a photo at 0,0
+		// is a photo in the Gulf of Guinea. An absent block says the honest
+		// thing: nobody knows where this was taken.
+		if ($gps['location']['lat'] !== null && $gps['location']['lon'] !== null) {
+			$payload['gpsLocation'] = [
+				'lat' => $gps['location']['lat'],
+				'lon' => $gps['location']['lon'],
+				'accuracy' => $gps['location']['accuracy'],
+				'timestamp' => $capturedAt,
+			];
+		}
+
+		return $payload;
+	}//end buildEvidencePayload()
+
+	/**
+	 * Refuse a capture that is over the limit declared for its kind.
+	 *
+	 * A photo over the compression target and a memo over five minutes are
+	 * different things to fix, so they carry different sentences: one message
+	 * over both helps neither.
+	 *
+	 * @param string               $type  The kind of capture.
+	 * @param array<string, mixed> $extra What the device sent with it.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException When the capture is over its limit.
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#task-8
+	 */
+	private function refuseCaptureOverItsLimit(string $type, array $extra): void {
 		if ($type === 'photo' && isset($extra['byteSize']) === true
 			&& $this->isPhotoWithinTarget(byteSize: (int)$extra['byteSize']) === false
 		) {
@@ -220,32 +279,5 @@ class EvidenceMetadataService {
 		) {
 			throw new InvalidArgumentException('Voice memo duration exceeds 5-minute limit');
 		}
-
-		$gps = $this->classifyGps(reading: $gpsReading, caseAddress: $caseAddress);
-
-		$transcriptionStatus = 'not_applicable';
-		if ($type === 'voice_memo') {
-			$transcriptionStatus = 'pending';
-		}
-
-		$payload = [
-			'inspectionRef' => $inspectionRef,
-			'type' => $type,
-			'localBlobRef' => ((string)($extra['localBlobRef'] ?? '')),
-			'cloudUrl' => null,
-			'gpsLocation' => [
-				'lat' => $gps['location']['lat'],
-				'lon' => $gps['location']['lon'],
-				'accuracy' => $gps['location']['accuracy'],
-				'timestamp' => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
-			],
-			'capturedAt' => ($extra['capturedAt'] ?? (new DateTimeImmutable())->format(DateTimeInterface::ATOM)),
-			'transcription' => null,
-			'transcriptionStatus' => $transcriptionStatus,
-			'tags' => ($extra['tags'] ?? []),
-			'sensitivityLevel' => ((string)($extra['sensitivityLevel'] ?? 'internal')),
-		];
-
-		return $payload;
-	}//end buildEvidencePayload()
+	}//end refuseCaptureOverItsLimit()
 }//end class

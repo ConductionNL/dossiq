@@ -10,59 +10,32 @@
 		</NcNoteCard>
 
 		<div class="setting-row">
-			<label for="email_imap_host">{{ t('dossiq', 'IMAP host') }}</label>
-			<NcInputField
-				id="email_imap_host"
-				v-model="form.email_imap_host"
-				:disabled="!writable || loading"
-				placeholder="imap.gemeente.nl" />
-		</div>
-
-		<div class="setting-row">
-			<label for="email_imap_port">{{ t('dossiq', 'IMAP port') }}</label>
-			<NcInputField
-				id="email_imap_port"
-				v-model="form.email_imap_port"
-				type="number"
-				:disabled="!writable || loading"
-				placeholder="993" />
-		</div>
-
-		<div class="setting-row">
 			<NcSelect
-				v-model="encryptionOption"
-				:inputLabel="t('dossiq', 'Encryption')"
-				:options="encryptionOptions"
-				:disabled="!writable || loading"
-				:clearable="false" />
-		</div>
-
-		<div class="setting-row">
-			<label for="email_imap_username">{{ t('dossiq', 'Username') }}</label>
-			<NcInputField
-				id="email_imap_username"
-				v-model="form.email_imap_username"
-				:disabled="!writable || loading"
-				placeholder="zaken@gemeente.nl" />
-		</div>
-
-		<div class="setting-row">
-			<label for="email_imap_password">{{ t('dossiq', 'Password') }}</label>
-			<NcInputField
-				id="email_imap_password"
-				v-model="form.email_imap_password"
-				type="password"
-				:disabled="!writable || loading"
-				:placeholder="passwordPlaceholder" />
+				v-model="mailAccountOption"
+				:inputLabel="t('dossiq', 'Intake mail account')"
+				:options="mailAccountOptions"
+				:loading="accountsLoading"
+				:disabled="!writable || loading || !mailAvailable"
+				:placeholder="t('dossiq', 'Pick the mailbox intake reads')"
+				data-testid="email-mail-account" />
 			<p class="setting-help">
 				{{
 					t(
 						'dossiq',
-						'Stored securely (masked in the API and occ config). Leave as *** to keep the saved password.',
+						'Nextcloud Mail keeps the account and the password. Pick the mailbox dossiq reads. Dossiq stores no password of its own.',
 					)
 				}}
 			</p>
 		</div>
+
+		<NcNoteCard v-if="!mailAvailable" type="warning">
+			{{
+				t(
+					'dossiq',
+					'The Mail app is not installed, so intake reads nothing. Your messages stay in the mailbox and none are lost. Install Mail to start reading them.',
+				)
+			}}
+		</NcNoteCard>
 
 		<div class="setting-row">
 			<label for="email_imap_folder">{{
@@ -72,7 +45,8 @@
 				id="email_imap_folder"
 				v-model="form.email_imap_folder"
 				:disabled="!writable || loading"
-				placeholder="INBOX" />
+				placeholder="INBOX"
+				data-testid="email-intake-folder" />
 		</div>
 
 		<div class="setting-row">
@@ -235,6 +209,66 @@
 			</p>
 		</div>
 
+		<div class="setting-row">
+			<label for="email_intake_role">{{
+				t('dossiq', 'Group that runs intake')
+			}}</label>
+			<NcInputField
+				id="email_intake_role"
+				v-model="form.email_intake_role"
+				:disabled="!writable || loading"
+				placeholder="zaakbehandelaars"
+				data-testid="email-intake-role" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Only this group and administrators read the intake log. Only they release a held message. The log keeps the original of every message the mailbox received. Leave it empty and only administrators can read it.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_intake_blocklist">{{
+				t('dossiq', 'Senders that may not open a case')
+			}}</label>
+			<NcInputField
+				id="email_intake_blocklist"
+				v-model="form.email_intake_blocklist"
+				:disabled="!writable || loading"
+				placeholder="spam@voorbeeld.nl, @voorbeeld.nl"
+				data-testid="email-intake-blocklist" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'List addresses, or whole domains written as @voorbeeld.nl. A blocked sender opens no case by mail. They can still mail a colleague. The allow half of this list is Nextcloud Mail\u2019s trusted senders.',
+					)
+				}}
+			</p>
+		</div>
+
+		<div class="setting-row">
+			<label for="email_intake_junk_rules">{{
+				t('dossiq', 'Junk rules')
+			}}</label>
+			<NcInputField
+				id="email_intake_junk_rules"
+				v-model="form.email_intake_junk_rules"
+				:disabled="!writable || loading"
+				placeholder="X-Spam-Status: Yes"
+				data-testid="email-intake-junk-rules" />
+			<p class="setting-help">
+				{{
+					t(
+						'dossiq',
+						'Write one rule per line: a header name, a colon, the text to find. Plain text on its own is matched against the subject. A message a rule calls junk is held, never deleted. The intake log names the rule that held it.',
+					)
+				}}
+			</p>
+		</div>
+
 		<div class="email-settings__actions">
 			<NcButton
 				variant="primary"
@@ -248,16 +282,6 @@
 						? t('dossiq', 'Saving…')
 						: t('dossiq', 'Save mailbox settings')
 				}}
-			</NcButton>
-
-			<NcButton
-				variant="secondary"
-				:disabled="testing || loading"
-				@click="testConnection">
-				<template #icon>
-					<NcLoadingIcon v-if="testing" :size="20" />
-				</template>
-				{{ t('dossiq', 'Test connection') }}
 			</NcButton>
 		</div>
 
@@ -282,11 +306,19 @@ import { useObjectStore } from '../../store/modules/object.js'
 /**
  * Shared case-email mailbox admin settings.
  *
- * Renders ONLY shared-mailbox IMAP + transport fields and a Test-connection
- * button. No per-user SMTP send fields. The password is masked (`***`) on
- * load and only sent when explicitly changed.
+ * 🔴 THERE IS NO PASSWORD FIELD, AND THAT IS THE CHANGE. This form used to ask
+ * for an IMAP host, a username and a password, and dossiq stored all three.
+ * Nextcloud Mail owns the account, the credential and the OAuth connection now,
+ * so an administrator picks one of its accounts and names a folder. A form that
+ * still offered a password would keep writing one into appconfig, which is why
+ * the field goes in the same change that deletes the stored value.
  *
- * @spec openspec/specs/case-email-integration/spec.md
+ * The Test-connection button went with the host it dialled. It opened a socket
+ * to whatever address was stored and reported reachability, which on an
+ * instance-wide setting is a port prober. What replaced it is a listing of the
+ * accounts Nextcloud Mail holds.
+ *
+ * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
  */
 export default {
 	name: 'EmailSettings',
@@ -303,15 +335,10 @@ export default {
 		return {
 			loading: true,
 			saving: false,
-			testing: false,
 			writable: true,
 			testResult: null,
 			form: {
-				email_imap_host: '',
-				email_imap_port: '993',
-				email_imap_encryption: 'ssl',
-				email_imap_username: '',
-				email_imap_password: '',
+				email_mail_account_id: '',
 				email_imap_folder: 'INBOX',
 				email_transport: '',
 				email_poll_interval: '300',
@@ -320,7 +347,18 @@ export default {
 				email_from_address: '',
 				email_from_name: '',
 				email_recipient_allowlist: '',
+				email_intake_blocklist: '',
+				email_intake_junk_rules: '',
+				email_intake_role: '',
 			},
+
+			// The Nextcloud Mail accounts intake can be pointed at. Empty is a
+			// real answer and not an error: an instance without the Mail app
+			// has none, and the form says so rather than offering a picker
+			// nothing can fill.
+			mailAccounts: [],
+			mailAvailable: true,
+			accountsLoading: false,
 
 			// Email-to-case matching has its own endpoint, which validates the
 			// pattern before anything is stored.
@@ -336,28 +374,50 @@ export default {
 
 			caseTypes: [],
 			caseTypesLoading: false,
-
-			encryptionOptions: [
-				{ id: 'ssl', label: 'SSL/TLS' },
-				{ id: 'tls', label: 'STARTTLS' },
-				{ id: 'none', label: t('dossiq', 'None') },
-			],
 		}
 	},
 
 	computed: {
-		/** @spec openspec/specs/case-email-integration/spec.md */
-		encryptionOption: {
+		/**
+		 * The Nextcloud Mail accounts an administrator can point intake at.
+		 *
+		 * @return {Array<object>} The options.
+		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 */
+		mailAccountOptions() {
+			return this.mailAccounts.map((account) => ({
+				id: String(account.id),
+				label: account.email
+					? `${account.name} (${account.email})`
+					: String(account.name || account.id),
+			}))
+		},
+
+		/**
+		 * The account currently picked, if the instance names one.
+		 *
+		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 */
+		mailAccountOption: {
+			/**
+			 * @return {object|null} The chosen option.
+			 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+			 */
 			get() {
 				return (
-					this.encryptionOptions.find(
-						(o) => o.id === this.form.email_imap_encryption,
-					) || this.encryptionOptions[0]
+					this.mailAccountOptions.find(
+						(o) => o.id === String(this.form.email_mail_account_id),
+					) || null
 				)
 			},
 
+			/**
+			 * @param {object|null} option The chosen option.
+			 * @return {void}
+			 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+			 */
 			set(option) {
-				this.form.email_imap_encryption = option ? option.id : 'ssl'
+				this.form.email_mail_account_id = option ? option.id : ''
 			},
 		},
 
@@ -426,13 +486,6 @@ export default {
 				this.matching.email_case_matching_enabled = value ? 'yes' : 'no'
 			},
 		},
-
-		/** @spec openspec/specs/case-email-integration/spec.md */
-		passwordPlaceholder() {
-			return this.form.email_imap_password === '***'
-				? t('dossiq', 'Saved (masked)')
-				: t('dossiq', 'Enter password')
-		},
 	},
 
 	/**
@@ -445,6 +498,7 @@ export default {
 		await this.load()
 		await this.loadMatching()
 		await this.loadCaseTypes()
+		await this.loadMailAccounts()
 	},
 
 	methods: {
@@ -574,11 +628,10 @@ export default {
 				if ((await this.saveMatching()) === false) {
 					return
 				}
+				// Every value here is an id, a folder name or a policy. There
+				// is no mask to preserve and no secret to withhold, because
+				// dossiq no longer holds one.
 				const payload = { ...this.form }
-				// Never resend the mask back as a real password.
-				if (payload.email_imap_password === '') {
-					delete payload.email_imap_password
-				}
 				const response = await fetch(
 					generateUrl('/apps/dossiq/api/settings/email'),
 					{
@@ -614,46 +667,32 @@ export default {
 			}
 		},
 
-		/** @spec openspec/specs/case-email-integration/spec.md */
-		async testConnection() {
-			this.testing = true
-			this.testResult = null
+		/**
+		 * Read the Nextcloud Mail accounts intake can be pointed at.
+		 *
+		 * An empty list is a real answer. When the Mail app is absent the form
+		 * says intake is unavailable rather than offering an empty picker that
+		 * looks like a mailbox nobody configured.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/inbound-mail-filters/specs/inbound-mail-filters/spec.md
+		 */
+		async loadMailAccounts() {
+			this.accountsLoading = true
 			try {
 				const response = await fetch(
-					generateUrl('/apps/dossiq/api/settings/email/test-imap'),
-					{
-						method: 'POST',
-						headers: {
-							'Content-Type': 'application/json',
-							requesttoken: OC.requestToken,
-						},
-					},
+					generateUrl('/apps/dossiq/api/settings/email/mail-accounts'),
+					{ headers: { 'OCS-APIRequest': 'true' } },
 				)
 				const data = await response.json()
-				if (data && data.ok === true) {
-					this.testResult = {
-						type: 'success',
-						message: t('dossiq', 'Connection successful.'),
-					}
-				} else {
-					const detail =
-						data && (data.detail || data.error)
-							? data.detail || data.error
-							: t('dossiq', 'unknown error')
-					this.testResult = {
-						type: 'error',
-						message: t('dossiq', 'Connection failed: {detail}', {
-							detail,
-						}),
-					}
-				}
-			} catch (error) {
-				this.testResult = {
-					type: 'error',
-					message: error.message || t('dossiq', 'Connection failed.'),
-				}
+				this.mailAvailable = data?.available !== false
+				this.mailAccounts = data?.accounts || []
+			} catch {
+				// Non-fatal: the picker stays empty and the stored account id
+				// keeps working, which is safer than clearing it.
+				this.mailAccounts = []
 			} finally {
-				this.testing = false
+				this.accountsLoading = false
 			}
 		},
 	},

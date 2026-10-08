@@ -6,8 +6,9 @@
  * REST API for inter-departmental consultation management. Provides CRUD,
  * lifecycle transitions and deadline extension for adviesaanvragen.
  *
- * The advisory body directory lives on {@see AdvisoryBodyController} and the
- * token-based external surface on {@see ConsultationPublicController}.
+ * The advisory body directory lives on {@see AdvisoryBodyController}. An
+ * advisory body outside the organisation answers over an OpenRegister access
+ * link, which is minted and collected on {@see ConsultationLinkController}.
  * Authentication, resolution and the authorization rules are delegated to
  * {@see ConsultationAccessGuard} (ADR-022) — this controller only maps a
  * guard outcome or a service result onto a response.
@@ -298,4 +299,5 @@ class ConsultationController extends Controller {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 	}//end approveExtension()
+
 }//end class

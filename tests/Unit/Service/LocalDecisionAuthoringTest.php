@@ -91,6 +91,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Listener/BezwaarDecisionListener.php' => 'Fail-closed guard: reverts a bezwaar status when no published decision exists; probes decision records, never authors one.',
 		'lib/Controller/BrcController.php' => 'ZGW Besluiten API (BRC): external registry writes besluit RECORDS the API mandates; record store compliance, not deliberation.',
 		'lib/Repair/LinkInFlightRemainingDecisionsRepair.php' => 'One-time idempotent migration linking in-flight records to their decidiq decisions.',
+		'lib/Repair/RewriteWooPublicationSummaries.php' => 'Idempotent upgrade step that rewrites only the old "WOO besluit voor zaak <uuid>" description on existing Woo besluit records to the wording WOODecisionService already writes; changes words, decides nothing.',
 		'lib/Service/BesluitMigrationService.php' => 'Operator-invoked, idempotent MOVE of besluit records this app already holds onto decidiq\'s Decision (dossiq#1837): it names the decision slug to read the source rows and writes each one back through decidiq, deliberating nothing.',
 		'lib/Repair/LoadDefaultZgwMappings.php' => 'Seeds ZGW mapping configuration naming the decision schema; writes mappings, not decisions.',
 		'lib/Service/Bezwaar/BeroepService.php' => 'Derives beroep deadlines FROM the contested appealDecision; reads the record, writes the beroep.',
@@ -99,12 +100,13 @@ class LocalDecisionAuthoringTest extends TestCase {
 		'lib/Service/MandaatImportService.php' => 'Imports the mandateringsbesluit; same configuration reasoning as MandaatRepository.',
 		'lib/Service/WOODecisionService.php' => 'BLOCKED-2 (see the change tasks): authors the Woo besluit locally because decidiq has no woo-decision type yet. The raise moves to the delegation seam when decidiq grows one; the assembly and the Art. 5.1/5.2 guard stay either way.',
 		'lib/Service/WooPublicationService.php' => 'Publication stamping of the Woo besluit record; grey area C-3 (publication mechanics), pending the ruling recorded in the change.',
+		'lib/Woo/WooCaseLedger.php' => 'Reads which decision on a case carries a wooSummary, and writes only the case\'s publication state (woo-publish-decision-from-the-case D-1, D-2); authors no decision.',
 	];
 
 	/**
-	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The first two
-	 * are deprecated stock (dossiq-decisions-to-decidiq) and shrink to empty
-	 * when openregister flow-decision-tables lands; the KCC entry is a
+	 * The CLOSED allowlist of DecisionTableEvaluator consumers. The first one
+	 * is deprecated stock (dossiq-decisions-to-decidiq) and leaves
+	 * when its endpoint moves to OpenRegister; the KCC entry is a
 	 * sanctioned non-decision consumer and stays. A new entry needs the same
 	 * argument the KCC one made: rules that are not case verdicts, evaluated
 	 * on the SHARED engine with the domain dialect kept app-side.
@@ -112,7 +114,6 @@ class LocalDecisionAuthoringTest extends TestCase {
 	 * @var array<string, string>
 	 */
 	private const ALLOWED_EVALUATOR_CONSUMERS = [
-		'lib/Service/Transitions/EvaluateDecisionHandler.php' => 'The live evaluateDecision transition action, until flow-decision-tables lands in OpenRegister.',
 		'lib/Controller/DecisionTableController.php' => 'The standalone /api/decisions/{id}/evaluate endpoint, until flow-decision-tables lands in OpenRegister.',
 		'lib/Service/Kcc/RoutingTableEvaluator.php' => 'SANCTIONED, not deprecated stock: KCC contact-moment routing compiled onto the shared evaluator (kcc-routing-onto-or-decision-tables). Routing a call is triage, not a case verdict; the alternative to this consumer is the private matcher wave 4 retires.',
 	];
@@ -155,7 +156,7 @@ class LocalDecisionAuthoringTest extends TestCase {
 		self::assertSame(
 			[],
 			$offenders,
-			"These files write decision-schema objects locally. dossiq owns cases; decidiq owns decisions. Raise the decision in decidiq via ContractDecisionDelegationService (or the dossiq.requestDecision flow node) and let BesluitMaterialisationService record the outcome. Only when the file verifiably records rather than decides may it join ALLOWED_DECISION_WRITERS, with the reason:\n - "
+			"These files write decision-schema objects locally. dossiq owns cases; decidiq owns decisions. Raise the decision in decidiq via ContractDecisionDelegationService (or Decidiq's decidiq.request-decision flow step) and let BesluitMaterialisationService record the outcome. Only when the file verifiably records rather than decides may it join ALLOWED_DECISION_WRITERS, with the reason:\n - "
 			. implode("\n - ", $offenders)
 		);
 

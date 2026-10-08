@@ -14,7 +14,7 @@
       "informatieobject": {
         "slug": "informatieobject",
         "icon": "FileDocumentOutline",
-        "version": "1.1.0",
+        "version": "1.2.0",
         "title": "Informatieobject",
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
         "x-schema-org": "DigitalDocument",
@@ -48,7 +48,8 @@
             "facetable": true,
             "default": "draft",
             "description": "ZGW DRC document status lifecycle (forward-only)",
-            "enum": ["draft", "final", "archived"]
+            "enum": ["draft", "final", "archived"],
+            "x-enum-labels": {"draft": "Draft", "final": "Final", "archived": "Archived"}
           },
           "informatieobjecttype": {"type": "string", "title": "Information Object Type Reference", "facetable": true, "maxLength": 255, "description": "Reference to an informatieobjecttype from the catalog"},
           "keywords": {
@@ -65,9 +66,10 @@
             "facetable": true,
             "default": "internal",
             "description": "Whether the document came in, went out or stayed internal. Maps one to one onto zaaksysteem Richting and gzac richting.",
-            "enum": ["incoming", "outgoing", "internal"]
+            "enum": ["incoming", "outgoing", "internal"],
+            "x-enum-labels": {"incoming": "Incoming", "outgoing": "Outgoing", "internal": "Internal"}
           },
-          "creatiedatum":         {"type": "string", "title": "Creation Date", "format": "date", "description": "Creation date (ISO 8601)"},
+          "creatiedatum":         {"type": "string", "title": "Creation date", "format": "date", "description": "Creation date (ISO 8601)"},
           "bronorganisatie":      {"type": "string", "title": "Source Organization", "maxLength": 64, "description": "RSIN of the source organization"},
           "taal":                 {"type": "string", "title": "Language", "maxLength": 3, "default": "nld", "description": "ISO 639-2/B language code"},
           "description":          {"type": "string", "title": "Description", "description": "Free-text description"},
@@ -79,7 +81,7 @@
             "properties": {
               "algorithm": {"type": "string", "title": "Integrity Algorithm", "default": "sha256", "description": "Hash algorithm (fixed sha256)"},
               "value":    {"type": "string", "title": "Integrity Value", "maxLength": 128, "description": "Hex-encoded SHA-256 hash"},
-              "date":     {"type": "string", "title": "Registration Date", "format": "date-time", "description": "Hash computation timestamp"}
+              "date":     {"type": "string", "title": "Registration date", "format": "date-time", "description": "Hash computation timestamp"}
             }
           },
           "lockedOn":        {"type": "string", "title": "Locked On", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},
@@ -103,7 +105,7 @@
             "description": "Nature of the relation",
             "enum": ["Hoort at omgekeerd", "Legt vast, omgekeerd"]
           },
-          "registrationDate":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
+          "registrationDate":   {"type": "string", "title": "Registration date", "format": "date-time", "description": "When the link was registered"}
         }
       },
       "besluitinformatieobject": {
@@ -117,7 +119,7 @@
         "properties": {
           "decision":            {"type": "string", "title": "Decision Reference", "facetable": true, "maxLength": 255, "description": "Reference to the besluit"},
           "informatieobject":   {"type": "string", "title": "Information Object Reference", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
-          "registrationDate":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
+          "registrationDate":   {"type": "string", "title": "Registration date", "format": "date-time", "description": "When the link was registered"}
         }
       },
       "informatieobjecttype": {

@@ -1,0 +1,78 @@
+{
+  "_note": "case-sharing-mints-access-links. A case share is an OpenRegister access link (openregister#3817), so the share record stops describing a token dossiq mints and starts pointing at the link OpenRegister owns. `accessLinkId` is what a revoke or a pause addresses, `accessLinkUuid` is the actor the audit trail writes (`link:<uuid>`), and `accessLinkUrl` is the only thing the handler copies. `status` is declared here because `CaseSharingService::revokeShare()` has been writing it since the share surface was built and the schema never carried it: an undeclared property is dropped in silence, so the revocation persisted its date and its author and lost the word that made the row read as revoked. `shareType` gains `link`; the enum is a list, and ADR-037 concatenates lists, so `token` and `partner` keep their places. A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "caseShare": {
+        "properties": {
+          "shareType": {
+            "enum": [
+              "link"
+            ],
+            "title": "Share type",
+            "description": "How this case is shared: a public access link, a partner organisation handover, or the retired token. ADR-037 concatenates enum values, so `token` and `partner` keep their places."
+          },
+          "accessLinkId": {
+            "type": "integer",
+            "title": "Access link",
+            "description": "The id of the OpenRegister access link this share was minted as. A revoke and a pause address the link by this id.",
+            "visible": true
+          },
+          "accessLinkUuid": {
+            "type": "string",
+            "title": "Access link uuid",
+            "description": "The uuid of the OpenRegister access link. Every use of the link is written to the audit trail with this uuid as the actor, so this is what an officer searches on afterwards.",
+            "visible": true
+          },
+          "accessLinkUrl": {
+            "type": "string",
+            "title": "Link to send",
+            "description": "The address the holder opens. It is the only part of the link a handler ever copies.",
+            "visible": true
+          },
+          "capabilities": {
+            "type": "string",
+            "title": "What the holder may do",
+            "description": "Comma-separated list of what the link grants: read, comment, upload. Reading is always granted. Anything not named here is refused by OpenRegister with a 403.",
+            "visible": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused",
+              "revoked"
+            ],
+            "default": "active",
+            "title": "Status",
+            "description": "Whether the share still opens. A paused share can be switched back on, a revoked one cannot.",
+            "visible": true
+          },
+          "sharedDocuments": {
+            "type": "string",
+            "title": "Documents on this share",
+            "description": "JSON-encoded list of the documents shared beside the case, each with its file id, its own link id and the address to send. A holder of one of those links receives that document and nothing else of the case.",
+            "visible": true
+          },
+          "advisoryBody": {
+            "type": "string",
+            "title": "Advisory body",
+            "description": "The organisation asked for advice, when this share carries an external consultation. It is what names the advice on the case once it comes back.",
+            "visible": true
+          },
+          "consultationId": {
+            "type": "string",
+            "title": "Consultation",
+            "description": "The consultation this share was minted for, when it was minted for one.",
+            "visible": true
+          },
+          "lastCollectedNote": {
+            "type": "integer",
+            "title": "Last collected note",
+            "description": "The id of the newest comment already collected onto the consultation. It is what stops a second collection recording the same advice twice.",
+            "visible": true
+          }
+        }
+      }
+    }
+  }
+}

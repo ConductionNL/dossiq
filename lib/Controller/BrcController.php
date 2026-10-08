@@ -31,6 +31,7 @@ namespace OCA\Dossiq\Controller;
 
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\ZgwService;
+use OCA\Dossiq\Service\Zgw\ZgwSearchScope;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
@@ -49,12 +50,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.TooManyPublicMethods)
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- * @SuppressWarnings(PHPMD.ExcessiveClassLength)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
- * @SuppressWarnings(PHPMD.CyclomaticComplexity)
- * @SuppressWarnings(PHPMD.NPathComplexity)
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
@@ -96,7 +92,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function index(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -127,7 +123,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function create(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -166,7 +162,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -192,7 +188,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -237,7 +233,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -284,7 +280,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 30, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_WRITE, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -328,7 +324,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -373,7 +369,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	#[AnonRateLimit(limit: 120, period: 60)]
+	#[AnonRateLimit(limit: ZgwService::RATE_LIMIT_READ, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -554,10 +550,6 @@ class BrcController extends ZgwController {
 	 * DRC register with objectType=besluit.
 	 *
 	 * @return JSONResponse
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-	 * @SuppressWarnings(PHPMD.NPathComplexity)
-	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
 	 */
 	private function createBesluitInformatieObject(): JSONResponse {
 		$objectService = $this->zgwService->getObjectService();
@@ -697,6 +689,9 @@ class BrcController extends ZgwController {
 	 * @param string $decisionUrl The besluit URL to match OIOs against
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function deleteOiosForDecision(string $decisionUrl): void {
 		$objectService = $this->zgwService->getObjectService();
@@ -709,11 +704,23 @@ class BrcController extends ZgwController {
 			return;
 		}
 
+		// An unsearchable scope answers with an empty page and no error
+		// ({@see ZgwSearchScope}), so the besluit goes and every OIO that
+		// pointed at it survives as an orphan. Name it instead.
+		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
+		if ($oioScope === null) {
+			$this->zgwService->getLogger()->error(
+				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
+				. 'so the OIOs of ' . $decisionUrl . ' are being left behind as orphans'
+			);
+			return;
+		}
+
 		try {
 			$query = $objectService->buildSearchQuery(
 				requestParams: ['object' => $decisionUrl],
-				register: $oioMappingConfig['sourceRegister'],
-				schema: $oioMappingConfig['sourceSchema']
+				register: $oioScope->register,
+				schema: $oioScope->schema
 			);
 			$result = $objectService->searchObjectsPaginated(query: $query);
 
@@ -813,6 +820,9 @@ class BrcController extends ZgwController {
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return void
+	 * @SuppressWarnings(PHPMD.StaticAccess) ZgwSearchScope::fromMapping() is a named
+	 *  constructor on a value object, not a service call. Injecting it would put a
+	 *  collaborator in four controllers to answer one question about their own config.
 	 */
 	private function deleteOioByDecisionAndIo(string $decisionUrl, string $ioUrl): void {
 		$objectService = $this->zgwService->getObjectService();
@@ -825,14 +835,23 @@ class BrcController extends ZgwController {
 			return;
 		}
 
+		$oioScope = ZgwSearchScope::fromMapping(mappingConfig: $oioMappingConfig);
+		if ($oioScope === null) {
+			$this->zgwService->getLogger()->error(
+				'brc-005b: objectinformatieobject mapping has no searchable register/schema, '
+				. 'so the OIO for ' . $ioUrl . ' is being left behind as an orphan'
+			);
+			return;
+		}
+
 		try {
 			$query = $objectService->buildSearchQuery(
 				requestParams: [
 					'object' => $decisionUrl,
 					'document' => $ioUrl,
 				],
-				register: $oioMappingConfig['sourceRegister'],
-				schema: $oioMappingConfig['sourceSchema']
+				register: $oioScope->register,
+				schema: $oioScope->schema
 			);
 			$result = $objectService->searchObjectsPaginated(query: $query);
 
@@ -861,8 +880,6 @@ class BrcController extends ZgwController {
 	 * @param string $uuid The besluit UUID to delete
 	 *
 	 * @return JSONResponse
-	 *
-	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 */
 	private function destroyDecision(string $uuid): JSONResponse {
 		$objectService = $this->zgwService->getObjectService();

@@ -1,6 +1,82 @@
 <template>
 	<div class="share-tab">
-		<h3>{{ t('dossiq', 'Partner shares') }}</h3>
+		<!--
+			Links to people with no account. Each one is an OpenRegister
+			access link (#3817): OpenRegister owns the address, the expiry,
+			the password and the revoke, and records every use on the case
+			as `link:<uuid>`.
+		-->
+		<h3>{{ t('dossiq', 'Links') }}</h3>
+
+		<div v-if="linksLoading" class="share-tab__loading">
+			<NcLoadingIcon :size="20" />
+			{{ t('dossiq', 'Loading links') }}
+		</div>
+
+		<div v-else-if="links.length === 0" class="share-tab__empty">
+			<p>{{ t('dossiq', 'Nobody outside can open this case yet.') }}</p>
+		</div>
+
+		<ul v-else class="share-tab__list">
+			<li v-for="link in links" :key="link.id" class="share-tab__item">
+				<div class="share-tab__item-header">
+					<span
+						class="share-tab__type-badge"
+						:class="`share-tab__type-badge--${link.state}`">
+						{{ stateLabel(link.state) }}
+					</span>
+					<span class="share-tab__label">{{
+						link.label || t('dossiq', 'Unnamed link')
+					}}</span>
+				</div>
+				<div class="share-tab__item-details">
+					<span>{{ capabilityLabel(link.capabilities) }}</span>
+					<span>{{
+						t('dossiq', 'Created by {who}', { who: link.createdBy })
+					}}</span>
+					<span v-if="link.expiresAt">{{
+						t('dossiq', 'Stops working on {date}', {
+							date: link.expiresAt,
+						})
+					}}</span>
+					<span v-if="link.advisoryBody">{{
+						t('dossiq', 'Asked for advice from {body}', {
+							body: link.advisoryBody,
+						})
+					}}</span>
+				</div>
+				<div class="share-tab__item-actions">
+					<NcButton @click="$emit('previewLink', link)">
+						{{ t('dossiq', 'See what they see') }}
+					</NcButton>
+					<NcButton
+						v-if="link.state === 'live' || link.state === 'paused'"
+						@click="$emit('pauseLink', link)">
+						{{
+							link.state === 'paused'
+								? t('dossiq', 'Switch back on')
+								: t('dossiq', 'Switch off')
+						}}
+					</NcButton>
+					<NcButton
+						v-if="link.state !== 'revoked'"
+						variant="error"
+						@click="$emit('revokeLink', link)">
+						{{ t('dossiq', 'Revoke') }}
+					</NcButton>
+				</div>
+			</li>
+		</ul>
+
+		<div class="share-tab__actions">
+			<NcButton variant="primary" @click="$emit('createLink')">
+				{{ t('dossiq', 'Share by link') }}
+			</NcButton>
+		</div>
+
+		<h3 class="share-tab__partner-heading">
+			{{ t('dossiq', 'Partner shares') }}
+		</h3>
 
 		<!--
 			Partner-organisation handovers only (zaak-domain). Public
@@ -140,6 +216,17 @@ export default {
 			default: () => [],
 		},
 
+		/** Access links on this case, each carrying its own `state`. */
+		links: {
+			type: Array,
+			default: () => [],
+		},
+
+		linksLoading: {
+			type: Boolean,
+			default: false,
+		},
+
 		loading: {
 			type: Boolean,
 			default: false,
@@ -159,6 +246,10 @@ export default {
 
 	emits: [
 		'revoke',
+		'createLink',
+		'revokeLink',
+		'pauseLink',
+		'previewLink',
 		'create-partner-share',
 		'transfer-case',
 		'create-federated-share',
@@ -167,6 +258,41 @@ export default {
 	],
 
 	methods: {
+		/**
+		 * @param {string} state one of live, paused, expired, revoked.
+		 * @return {string} what the handler reads on the badge.
+		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-the-sharing-tab-names-each-links-state-and-a-holder-never-reads-case-internals-req-cal-04
+		 */
+		stateLabel(state) {
+			const labels = {
+				live: t('dossiq', 'Open'),
+				paused: t('dossiq', 'Switched off'),
+				expired: t('dossiq', 'Expired'),
+				revoked: t('dossiq', 'Revoked'),
+			}
+			return labels[state] || state
+		},
+
+		/**
+		 * @param {string} capabilities the comma-separated capability list.
+		 * @return {string} what the holder may do, in words.
+		 * @spec openspec/changes/case-sharing-mints-access-links/specs/case-share-via-shares-leaf/spec.md#requirement-a-case-share-mints-an-openregister-access-link-req-cal-01
+		 */
+		capabilityLabel(capabilities) {
+			const labels = {
+				read: t('dossiq', 'read'),
+				comment: t('dossiq', 'comment'),
+				upload: t('dossiq', 'add a document'),
+			}
+			const granted = String(capabilities || 'read')
+				.split(',')
+				.map((entry) => labels[entry.trim()] || entry.trim())
+				.filter((entry) => entry !== '')
+			return t('dossiq', 'The holder may {what}', {
+				what: granted.join(', '),
+			})
+		},
+
 		/**
 		 * @param {string} level the permission level slug.
 		 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P2.2
@@ -213,6 +339,26 @@ export default {
 	border-radius: var(--border-radius);
 	font-size: 12px;
 	font-weight: bold;
+}
+
+.share-tab__partner-heading {
+	margin-top: 24px;
+}
+
+.share-tab__type-badge--live {
+	background: var(--color-success-hover);
+	color: var(--color-success-text);
+}
+
+.share-tab__type-badge--paused,
+.share-tab__type-badge--expired {
+	background: var(--color-warning-hover);
+	color: var(--color-warning-text);
+}
+
+.share-tab__type-badge--revoked {
+	background: var(--color-error-hover);
+	color: var(--color-error-text);
 }
 
 .share-tab__type-badge--partner {

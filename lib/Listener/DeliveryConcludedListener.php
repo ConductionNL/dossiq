@@ -33,6 +33,8 @@ namespace OCA\Dossiq\Listener;
 
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -40,6 +42,8 @@ use Psr\Log\LoggerInterface;
 /**
  * Projects integriq's terminal delivery outcome onto the case publication
  * record.
+ *
+ * @implements IEventListener<Event>
  *
  * @psalm-suppress UnusedClass -- registered via ListenerRegistrar by FQN string.
  *
@@ -58,12 +62,14 @@ class DeliveryConcludedListener implements IEventListener {
 	 *
 	 * @param SettingsService $settingsService Resolves the ObjectService + register config.
 	 * @param LoggerInterface $logger Logger.
+	 * @param BackgroundServiceAccount $serviceAccount Writes for integriq's background work, which has no user.
 	 *
 	 * @return void
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 	}//end __construct()
 
@@ -77,6 +83,29 @@ class DeliveryConcludedListener implements IEventListener {
 	 * @spec openspec/changes/dossiq-delivers-nothing/specs/besluitvorming-delivery/spec.md
 	 */
 	public function handle(Event $event): void {
+		try {
+			// Integriq raises this from its own background work, with nobody
+			// signed in, and OpenRegister refuses a write from nobody. A
+			// signed-in caller keeps writing as themselves.
+			$this->serviceAccount->runAsWhenNobodyIsSignedIn(operation: fn () => $this->answer(event: $event));
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// written; integriq's delivery record stays the source of truth,
+			// and the case's publication shows the delivery as still requested.
+			return;
+		}
+	}//end handle()
+
+	/**
+	 * Answer the event, as whoever is writing.
+	 *
+	 * @param Event $event The integriq event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dossiq-delivers-nothing/specs/besluitvorming-delivery/spec.md
+	 */
+	private function answer(Event $event): void {
 		// The event class is integriq's and optional at runtime; instanceof on
 		// an absent class is simply false (no autoload error), and this
 		// listener is only registered when the class exists. The declaration
@@ -112,7 +141,7 @@ class DeliveryConcludedListener implements IEventListener {
 				['app' => Application::APP_ID, 'error' => $e->getMessage()]
 			);
 		}//end try
-	}//end handle()
+	}//end answer()
 
 	/**
 	 * Write the terminal delivery status onto the case's publication record.

@@ -31,20 +31,28 @@ use Throwable;
 /**
  * Gives a case its number when OpenRegister has not.
  *
- * THE NUMBER IS DECLARED, NOT COMPUTED — AND THAT IS WHY THIS EXISTS.
- * `case.identifier` carries an `x-openregister-calculations` entry using the
- * `sequence` operator, so on an OpenRegister that ships that operator this
- * service never writes anything: it reads the case back, finds the number
- * already there, and returns. On an OpenRegister that predates it, the same
- * declaration evaluates to nothing and every case is filed without a number —
- * which is the state the change set out to end, and which no gate can see,
- * because a schema declaration naming an operator the engine does not know
- * fails at evaluation time, in the register, not at import.
+ * THE NUMBER IS DECLARED, NOT COMPUTED, AND THAT IS WHY THIS EXISTS.
+ * `case.identifier` carries `x-openregister-generated` (sequence `case`,
+ * format `{year}-{seq:4}`, `resetOn: year`), so on an OpenRegister that reads
+ * that annotation this service never writes anything: it reads the case back,
+ * finds the number already there, and returns. On an OpenRegister that
+ * predates the annotation, an unknown `x-` key on a property is simply not
+ * read, every case is filed without a number, and no gate in dossiq can see
+ * it, because the silence is in the register rather than at import.
+ *
+ * That version boundary MOVED with this change and the hedge moved with it.
+ * The service was written against an engine whose `x-openregister-calculations`
+ * did not know the `sequence` operator; the calculation entry is gone
+ * (openregister#3785 supersedes it) and the boundary is now the annotation.
  *
  * So this is a BACKFILL, not a second numbering scheme. It fills only an empty
- * `identifier` and it produces exactly the shape the calculation produces,
- * `YYYY-NNNN` off the case's start year. When the two ever run against the
- * same case, the calculation wins by arriving first.
+ * `identifier` and produces the same shape the annotation renders,
+ * `YYYY-NNNN`, off the case's start year. Where the two disagree is the year:
+ * the annotation renders the FILING year and this backfill reads the start
+ * date, because it has no counter of its own and has to scope its MAX to
+ * something the case carries. A case whose start date sits in a different year
+ * from its creation is the only case where the two differ, and only on an
+ * instance old enough to need the backfill at all.
  *
  * @psalm-suppress UnusedClass
  *
@@ -57,9 +65,10 @@ class CaseNumberService {
 	/**
 	 * How wide the sequence half of a case number is.
 	 *
-	 * Four digits, matching `pad: 4` in the schema's calculation. A year that
-	 * runs past 9999 cases keeps counting rather than wrapping — a number that
-	 * repeats is worse than a number that is five digits long.
+	 * Four digits, matching `{seq:4}` in the schema's generated-identifier
+	 * format. A year that runs past 9999 cases keeps counting rather than
+	 * wrapping, which is what `{seq:n}` does too: a number that repeats is
+	 * worse than a number that is five digits long.
 	 */
 	private const PAD = 4;
 

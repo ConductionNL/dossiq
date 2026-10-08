@@ -1,0 +1,171 @@
+{
+  "_note": "task-dependencies-and-the-next-planned-action, gap register rows 3.27 and 3.28. A fragment rather than an edit of dossiq_register.json, per ADR-037, because several lanes are touching this app at once and the monolith is where they collide. THE CHAIN LIVES ON THE TYPE AND NOT ON THE CASE (D-5): what follows what is a property of how the organisation works, so it is administered once and every case gets it. THE CHAIN IS SCHEDULED AND NOT CREATED IN ADVANCE (D-6): creating the whole sequence up front produces a list of future actions that are wrong the moment one of them is skipped, so each completion plans exactly the next one and the plan is always one step long and always right.",
+  "components": {
+    "registers": {
+      "dossiq": {
+        "schemas": [
+          "plannedActionType",
+          "plannedAction"
+        ]
+      }
+    },
+    "schemas": {
+      "milestoneDefinition": {
+        "version": "1.1.0",
+        "properties": {
+          "ownerRole": {
+            "type": "string",
+            "maxLength": 255,
+            "facetable": true,
+            "title": "Owner role",
+            "description": "The role on the case that owns this milestone. The person holding the role on a case owns the milestone on that case, so the timeline survives a change of handler. A milestone naming no role has no owner rather than a guessed one."
+          }
+        }
+      },
+      "plannedActionType": {
+        "slug": "plannedActionType",
+        "icon": "CalendarArrowRight",
+        "version": "1.0.0",
+        "x-schema-org": "schema:Action",
+        "title": "Planned action type",
+        "description": "A kind of work that is planned on a case, and what follows it",
+        "type": "object",
+        "required": [
+          "identifier",
+          "label"
+        ],
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "maxLength": 255,
+            "facetable": true,
+            "title": "Identifier",
+            "description": "The slug the successor declaration and the API refer to."
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Label",
+            "description": "What a handler reads on the case, for example Send the confirmation or Call after ten days."
+          },
+          "caseType": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "caseType",
+            "facetable": true,
+            "title": "Case type",
+            "description": "The case type this action belongs to. An action type naming none is offered on every case type."
+          },
+          "successor": {
+            "type": "string",
+            "maxLength": 255,
+            "facetable": true,
+            "title": "Next action",
+            "description": "The identifier of the action type planned when an action of this type is completed. A type declaring none ends the chain."
+          },
+          "successorOffsetWorkingDays": {
+            "type": "integer",
+            "default": 0,
+            "title": "Days until the next action",
+            "description": "Working days between completing an action of this type and the date its successor is planned for."
+          },
+          "ownerRole": {
+            "type": "string",
+            "maxLength": 255,
+            "facetable": true,
+            "title": "Owner role",
+            "description": "The role on the case that owns an action of this type. Resolved per case, so the plan survives a change of handler."
+          }
+        }
+      },
+      "plannedAction": {
+        "slug": "plannedAction",
+        "icon": "CalendarClock",
+        "version": "1.0.0",
+        "x-schema-org": "schema:PlanAction",
+        "title": "Planned action",
+        "description": "The next piece of work planned on a case, with an owner and a date",
+        "type": "object",
+        "required": [
+          "case",
+          "actionType",
+          "plannedFor"
+        ],
+        "properties": {
+          "case": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "case",
+            "onDelete": "CASCADE",
+            "facetable": true,
+            "title": "Case",
+            "description": "The case this action is planned on."
+          },
+          "actionType": {
+            "type": "string",
+            "maxLength": 255,
+            "facetable": true,
+            "title": "Action type",
+            "description": "The identifier of the plannedActionType this action is of."
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Label",
+            "description": "The type's label as it stood when the action was planned, so a renamed type does not rewrite what was planned last March."
+          },
+          "owner": {
+            "type": "string",
+            "maxLength": 255,
+            "facetable": true,
+            "title": "Owner",
+            "description": "Who is to do it, resolved from the type's role on the case at the moment it was planned."
+          },
+          "plannedFor": {
+            "type": "string",
+            "format": "date",
+            "facetable": true,
+            "title": "Planned for",
+            "description": "The date the action is planned for, counted on the working calendar."
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "planned",
+              "completed",
+              "cancelled"
+            ],
+            "x-enum-order": [
+              "planned",
+              "completed",
+              "cancelled"
+            ],
+            "default": "planned",
+            "facetable": true,
+            "title": "State",
+            "description": "Whether the action is still to be done, has been done, or was dropped. Completing one plans its successor; cancelling one ends the chain without planning anything."
+          },
+          "completedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed at",
+            "description": "When the action was completed, which is the date its successor is counted from."
+          },
+          "completedBy": {
+            "type": "string",
+            "maxLength": 255,
+            "title": "Completed by",
+            "description": "Who completed it."
+          },
+          "plannedFrom": {
+            "type": "string",
+            "format": "uuid",
+            "$ref": "plannedAction",
+            "title": "Planned from",
+            "description": "The action whose completion planned this one, empty for the first of a chain. It is what makes a chain readable backwards without a separate log."
+          }
+        }
+      }
+    }
+  }
+}

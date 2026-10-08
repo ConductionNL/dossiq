@@ -36,6 +36,7 @@ use OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator;
 use OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder;
 use OCA\Dossiq\Service\ProcessMiningService;
 use OCA\Dossiq\Service\SettingsService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -46,8 +47,11 @@ use PHPUnit\Framework\TestCase;
  * @uses \OCA\Dossiq\Service\ProcessMining\ThroughputTrendCalculator
  * @uses \OCA\Dossiq\Service\ProcessMining\TransitionMatrixBuilder
  * @uses \OCA\Dossiq\Service\Support\SearchesObjects
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ProcessMiningServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private FakeTermijnStore $objects;
 	private ProcessMiningService $service;
 
@@ -73,9 +77,10 @@ class ProcessMiningServiceTest extends TestCase {
 
 		$this->service = new ProcessMiningService(
 			new ProcessMiningDataLoader($settings),
-			new DwellTimeAnalyzer(),
+			new DwellTimeAnalyzer(dates: $this->caseDates()),
 			new TransitionMatrixBuilder(),
-			new ThroughputTrendCalculator(),
+			new ThroughputTrendCalculator(dates: $this->caseDates()),
+			$this->caseDates(),
 		);
 	}//end setUp()
 

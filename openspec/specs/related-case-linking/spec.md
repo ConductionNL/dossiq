@@ -132,5 +132,5 @@ rule, not resurrecting the deleted component.
 - **WHEN** a handler opens the case detail and selects the Related cases panel
 - **THEN** the panel MUST list the relation with the target's title and status
 
-@e2e exclude The add-relation flow and the masking branch are retired at the UI level, so the scenarios that covered them are gone with the component; the listing scenario above is covered by `tests/e2e/spec-coverage/related-case-linking.spec.ts`.
+@e2e exclude NOT MET BY THE RUNNING APP, measured 2026-09-11. A relation made through `POST /api/cases/{id}/relations` is stored as `relatedCases: [{caseId, aardRelatie}]`, and that is where it stops: the case's `@self.relations` names caseType, deadline, startDate and identifier only, and `/uses` does not return the target. The generic `case-related` widget lists what OpenRegister resolves through `/uses` and `/used`, so the Related tab showed the case TYPE and never the related case. Listing the relation needs the widget to read `relatedCases`, or OpenRegister to extract it; until one of the two lands there is nothing a browser can assert here. The add-relation flow and the masking branch were retired with the bespoke component and are not coming back as scenarios.
 

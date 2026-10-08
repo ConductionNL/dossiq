@@ -82,6 +82,23 @@ vi.mock('@nextcloud/vue', () => ({
 			return h('span')
 		},
 	}),
+	// `CaseTypeList.vue` fills `CnIndexPage`'s `#empty` slot with this. A
+	// `vi.mock` factory REPLACES the module rather than extending it, so a
+	// named import the factory omits throws while the component is still being
+	// imported. That reddens the file as "0 test" with no assertion having run,
+	// which is why the tally above it reads 1312 passed and not 1315 — the
+	// three tests here did not fail, they never started. Every component this
+	// file mounts has to find each of its `@nextcloud/vue` imports here.
+	NcEmptyContent: defineComponent({
+		name: 'NcEmptyContent',
+		props: {
+			name: { type: String, default: '' },
+			description: { type: String, default: '' },
+		},
+		render() {
+			return h('div', { class: 'nc-empty-content-stub' }, this.name)
+		},
+	}),
 }))
 
 vi.mock('../../src/store/modules/object.js', () => ({
@@ -128,14 +145,29 @@ describe('CaseTypeList row click', () => {
 
 	it('relies on a rule the library still has: selectable without rowClickToView only selects', () => {
 		const source = readFileSync(CN_INDEX_PAGE_SOURCE, 'utf8')
+		// nextcloud-vue 2.60.0 moved the rule out of `onRowClick` into
+		// `routeClickedRow`, shared with the middle click, and reads it through
+		// `rowClickOpens`. Both halves are pinned: without `rowClickToView`
+		// nothing opens, and a click that does not open selects and stops.
+		const opens = source.slice(
+			source.indexOf('rowClickOpens() {'),
+			source.indexOf(
+				'if (this.isNamedSource',
+				source.indexOf('rowClickOpens() {'),
+			),
+		)
 		const handler = source.slice(
-			source.indexOf('onRowClick(row) {'),
-			source.indexOf("this.$emit('row-click', row)"),
+			source.indexOf('routeClickedRow(row, event) {'),
+			source.indexOf('// A named source knows where its rows live.'),
 		)
 
-		expect(handler, 'CnIndexPage.onRowClick should still exist').not.toBe('')
+		expect(opens, 'CnIndexPage.rowClickOpens should still exist').not.toBe('')
+		expect(opens).toMatch(/if \(!this\.rowClickToView\) \{\s*return false\s*\}/)
+		expect(handler, 'CnIndexPage.routeClickedRow should still exist').not.toBe(
+			'',
+		)
 		expect(handler).toMatch(
-			/if \(this\.selectable && !this\.rowClickToView\) \{\s*this\.onSelect\([^\n]*\)\s*return\s*\}/,
+			/if \(this\.selectable && !this\.rowClickOpens\) \{[\s\S]*this\.onSelect\([^\n]*\)[\s\S]*return false\s*\}/,
 		)
 	})
 

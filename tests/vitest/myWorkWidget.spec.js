@@ -3,7 +3,10 @@
 // SPDX-License-Identifier: EUPL-1.2
 
 /**
- * The Dashboard's My work tile, over OpenRegister's task engine.
+ * The My Work landing page's My work tile, over OpenRegister's task engine.
+ *
+ * dashboard-my-work-split (2026-09-13) moved this tile off the Dashboard page
+ * onto the My Work landing page (`MyWorkHome`, route `/`).
  *
  * remove-casetask 2.3. The tile was a `type: "object-table"` widget reading
  * `register: dossiq, schema: caseTask`, and that read kept answering 200
@@ -30,6 +33,7 @@ import fs from 'fs'
 import path from 'path'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
+import { pageWidgets } from './helpers/pageViews.js'
 
 const ROOT = path.resolve(__dirname, '../..')
 
@@ -63,6 +67,14 @@ vi.mock('../../src/store/modules/engineTask.js', async (importOriginal) => ({
 	useEngineTaskStore: () => storeStub,
 }))
 
+// The list variant toasts its completions. The real module pulls
+// @nextcloud/vue's stylesheets in through a path the test build does not
+// inline, so it is stubbed here as workflowBoardDrag.spec.js stubs it.
+vi.mock('@nextcloud/dialogs', () => ({
+	showError: vi.fn(),
+	showSuccess: vi.fn(),
+}))
+
 const { default: MyWorkWidget } =
 	await import('../../src/views/widgets/MyWorkWidget.vue')
 
@@ -71,10 +83,10 @@ const manifest = JSON.parse(
 )
 const registrySource = fs.readFileSync(path.join(ROOT, 'src/registry.js'), 'utf8')
 
-/** The Dashboard page as the manifest declares it. */
-const dashboard = manifest.pages.find((p) => p.id === 'Dashboard')
+/** The My Work landing page as the manifest declares it. */
+const myWorkPage = manifest.pages.find((p) => p.id === 'MyWorkHome')
 /** The tile's manifest entry, which is also the component's config. */
-const myWork = dashboard.config.widgets.find((w) => w.id === 'my-work')
+const myWork = pageWidgets(myWorkPage).find((w) => w.id === 'my-work')
 
 /**
  * One engine row, in the engine's own vocabulary.
@@ -343,8 +355,8 @@ describe('the manifest-to-registry chain the tile hangs on', () => {
 	it('maps the page slot beside config, where CnPageRenderer reads it', () => {
 		// Under `config` it is accepted by the schema and never read, and the
 		// widget renders the "Widget not available" placeholder in silence.
-		expect(dashboard.slots['widget-my-work']).toBe('MyWorkWidget')
-		expect(Object.hasOwn(dashboard.config, 'slots')).toBe(false)
+		expect(myWorkPage.slots['widget-my-work']).toBe('MyWorkWidget')
+		expect(Object.hasOwn(myWorkPage.config, 'slots')).toBe(false)
 	})
 
 	it('answers that slot name with a registry entry', () => {

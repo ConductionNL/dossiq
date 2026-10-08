@@ -32,13 +32,17 @@ use DateTimeImmutable;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Task\EngineTaskInbox;
 use OCA\Dossiq\Service\WorkQueueService;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Dossiq\Service\WorkQueueService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class WorkQueueServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	private FakeWorkQueueStore $objects;
 
@@ -98,7 +102,12 @@ class WorkQueueServiceTest extends TestCase {
 			}
 		};
 
-		$this->service = new WorkQueueService($settings, $engineTasks, $this->createMock(LoggerInterface::class));
+		$this->service = new WorkQueueService(
+			settingsService: $settings,
+			engineTasks: $engineTasks,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			dates: $this->caseDates(),
+		);
 	}//end setUp()
 
 	// ── Pure scoreItem() tests ──────────────────────────────────────────

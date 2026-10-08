@@ -1,0 +1,1240 @@
+{
+	"_meta": {
+		"spdx-license": "EUPL-1.2",
+		"spdx-copyright": "2026 Conduction B.V.",
+		"description": "The SIMPLE structure profile, and the default one (openspec/changes/simple-structure-profile). `menu-layout.json` is the FULL profile and is untouched: an administrator brings it back with the setting `menu_structure`. Both profiles are built from the same manifest and the same fragments, so nothing is deleted and every page stays routable; this file only decides what the navigation offers first. THE FOUR STANDARD KEYS (`relocations`, `removals`, `settingsSection`, `integrationsSection`) go to the library's buildManifest exactly as the full file's do. `relocations` is ABSENT on purpose, and must stay absent rather than become `{}`. The simple menu is flat, nine entries, the first group without a caption and the other two under one each, as DqZijbalk draws them, so nothing moves under a parent. And the library's relocation step ends by dropping every entry that has no route, no href, no action and no children, which is what a caption is: with any `relocations` object at all, the captions disappear. THE TWO PROFILE KEYS are read by src/utils/structureProfile.js, because buildManifest's layout has no word for either. `menu` is merged BEFORE the manifest's own menu. buildManifest merges entries by id and the FIRST definition of a key wins, so an entry here that carries only `id` and `order` takes its label, icon and route from the manifest and keeps the order written here, and an entry the manifest does not know (the two captions, Woo requests) is simply added. `pages` holds page overlays: `configAppend` appends items to a list in the page's config, by key. It is how My work and the dashboard gain the links that replace the three entries this profile takes out of the menu. A link, not a waiver: tests/vitest/structureProfile.spec.js fails when an entry is removed here and no reachable page links to its route.",
+		"removalsNote": "The first eight are the full profile's own removals, repeated because buildManifest takes ONE list; the spec fails when the two drift. The last three are this profile's: `PersonalQueueMenu` (Your queue) and `MyWork` (Assigned to me) are reached from the My work page, and `EndOfDayMenu` (Close out your day) from My work and from the dashboard. `SettingsGroup` is an empty shell in the manifest (a label and no route). The full profile loses it to the relocation step's clean-up; this profile has no relocation step, so it is removed by name.",
+		"settingsNote": "The first six are the full profile's. `CasesDeletedMenu`, `CaseObjectsMenu` and `MailIntakeLogMenu` join them here: a recycle bin, an object register and an intake log are set-up and inspection, not daily work.",
+		"wooNote": "`WooRequestsMenu` opens the Cases page narrowed to the Woo request case type. The uuid is the FIXED one lib/Settings/register.d/81-woo-verzoek.json seeds and WooRequestIntake opens requests on, so it is the same on every instance. The spec fails when the two disagree.",
+		"footerNote": "The footer keeps Reports, Documentation, Store and Features & roadmap. The library's navigation has no help menu to move them under (nextcloud-vue development, 2026-10-05: CnAppNav renders main, footer and settings, and `actionsMenu.showHelpLinks` belongs to a detail page)."
+	},
+	"removals": [
+		"SubsidiesGroup",
+		"CaseMap",
+		"Analytics",
+		"TermijnDashboardMenu",
+		"ProcessMiningDashboardMenu",
+		"TenantsMenu",
+		"SubstitutionAdminMenu",
+		"BezwaarCommitteesMenu",
+		"PersonalQueueMenu",
+		"MyWork",
+		"EndOfDayMenu",
+		"SettingsGroup"
+	],
+	"removalsReplacedBy": {
+		"SubsidiesGroup": "Cases",
+		"CaseMap": "Cases",
+		"Analytics": "Reports",
+		"TermijnDashboardMenu": "Reports",
+		"ProcessMiningDashboardMenu": "Reports",
+		"TenantsMenu": "openregister:organisation",
+		"SubstitutionAdminMenu": "Cases",
+		"BezwaarCommitteesMenu": "decidiq:GovernanceBodies"
+	},
+	"settingsSection": [
+		"TenantsMenu",
+		"WmsLayersMenu",
+		"LhsRecommendationsMenu",
+		"BezwaarCommitteesMenu",
+		"SubstitutionAdminMenu",
+		"IntegrationsMenu",
+		"CasesDeletedMenu",
+		"CaseObjectsMenu",
+		"MailIntakeLogMenu"
+	],
+	"integrationsSection": ["AvgRegisterLink", "AiOversightLink", "DataModelLink"],
+	"menu": [
+		{
+			"id": "Dashboard",
+			"order": 10
+		},
+		{
+			"id": "WorkGroup",
+			"order": 12,
+			"count": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"assignee": "@me",
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false
+				}
+			}
+		},
+		{
+			"id": "Queue",
+			"label": "Team queue",
+			"order": 14,
+			"count": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"assignee": "IS NULL",
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false,
+					"isTemplate": false
+				}
+			}
+		},
+		{
+			"id": "CasesCaption",
+			"type": "caption",
+			"label": "Cases",
+			"order": 20
+		},
+		{
+			"id": "Cases",
+			"order": 22
+		},
+		{
+			"id": "WorkflowBoard",
+			"label": "Board",
+			"order": 24
+		},
+		{
+			"id": "Tasks",
+			"order": 26
+		},
+		{
+			"id": "WooRequestsMenu",
+			"label": "Woo requests",
+			"icon": "FileEyeOutline",
+			"route": "Cases",
+			"query": {
+				"caseType": "3c0f5a00-0000-4000-a000-00000000a001"
+			},
+			"order": 28
+		},
+		{
+			"id": "RelationsCaption",
+			"type": "caption",
+			"label": "Relations",
+			"order": 40
+		},
+		{
+			"id": "Contacts",
+			"order": 42
+		},
+		{
+			"id": "OrganisationsMenu",
+			"order": 44
+		},
+		{
+			"id": "Documentation",
+			"label": "Help and explanation",
+			"icon": "HelpCircleOutline"
+		}
+	],
+	"nav": {
+		"brand": {
+			"name": "dossiq",
+			"caption": "@theming.name",
+			"logo": "@theming.emblem|@theming.logo"
+		},
+		"primaryAction": {
+			"label": "New case",
+			"icon": "Plus",
+			"action": {
+				"id": "nav-new-case",
+				"label": "New case",
+				"icon": "Plus",
+				"type": "open-form",
+				"size": "large",
+				"columns": 2,
+				"includeFields": [
+					"caseType",
+					"title",
+					"requester",
+					"description",
+					"assignee",
+					"impact",
+					"urgency",
+					"confidentiality",
+					"intakeChannel",
+					"startDate",
+					"plannedEndDate"
+				],
+				"fieldOverrides": {
+					"description": {
+						"widget": "textarea"
+					},
+					"requester": {
+						"widget": "InitiatorPicker",
+						"label": "Requester"
+					}
+				},
+				"register": "dossiq",
+				"schema": "case",
+				"createOverride": "caseCreateWithDuplicateCheck",
+				"onSuccessRoute": "CaseDetail",
+				"successMessage": "Case created.",
+				"props": {
+					"assignee": "@me",
+					"confidentiality": "vertrouwelijk"
+				}
+			}
+		},
+		"card": {
+			"title": "Close out your day",
+			"text": "See what is still open today and get it ready for tomorrow.",
+			"link": {
+				"label": "To the day close",
+				"route": "EndOfDay"
+			}
+		},
+		"footer": ["settings", "Documentation"]
+	},
+	"pages": [
+		{
+			"id": "MyWorkHome",
+			"_note": "The landing page in the simple structure (openspec/changes/landing-views). It carries what the dashboard carried in this structure until 7 October 2026: the greeting with its My work / My team switch, First today, four counts of MY cases, the week, my cases per step, my tasks and continue working (openspec/changes/simple-list-and-dashboard, whose notes on each widget still hold). THE SWITCH NOW CHANGES VIEWS, NOT PAGES. Its options carry `view` (nextcloud-vue 2.66.0 page views): My work is the `mine` view, My team the `team` view the manifest declares on this page. Before, My work opened the dashboard and My team the team queue, two pages with two headers, and the greeting stood over an empty area. THE GREETING IS THE PAGE'S OWN GRID, the views are drawn below it. `configPatch` replaces only the `mine` view's widgets and layout, so `team` stays the manifest's, one definition for both structures. `mine` keeps two widgets of the full My work page that nothing in the design replaces: Cases you follow and My archival reviews. Deadlines, Open Cases and the task table are not repeated: the week, the counts, First today and My tasks already show the same cases. THE PAGE HEADER STAYS. The dashboard hid it (`showHeader: false`), but this page's header carries the links that stand in for the menu entries this profile removes (Your queue, Assigned to me, Close out your day), and a hidden header hides them too. `simple-my-tasks` is a custom widget, so the page gains its slot.",
+			"config": {
+				"widgets": [
+					{
+						"id": "simple-greeting",
+						"type": "header",
+						"title": "Greeting",
+						"content": {
+							"greeting": true,
+							"showDate": true,
+							"ground": true,
+							"views": {
+								"ariaLabel": "Whose work",
+								"options": [
+									{
+										"label": "My work",
+										"view": "mine"
+									},
+									{
+										"label": "My team",
+										"view": "team"
+									}
+								]
+							}
+						}
+					}
+				],
+				"layout": [
+					{
+						"id": "s1",
+						"widgetId": "simple-greeting",
+						"gridX": 0,
+						"gridY": 0,
+						"gridWidth": 12,
+						"gridHeight": 2,
+						"showTitle": false
+					}
+				],
+				"description": "Your work today, then the team",
+				"showWidgetActions": false
+			},
+			"configPatch": {
+				"views": {
+					"mine": {
+						"widgets": [
+							{
+								"id": "simple-first-today",
+								"type": "banner",
+								"title": "First today",
+								"content": {
+									"layout": "attention",
+									"variant": "error",
+									"kicker": "First today",
+									"title": "Cases past their deadline",
+									"reason": "{value} of your cases are past their deadline or end today.",
+									"visibleWhen": {
+										"source": {
+											"register": "dossiq",
+											"schema": "case",
+											"filter": {
+												"assignee": "@me",
+												"isFinalStatus": false,
+												"statusHiddenInLists": false,
+												"isDraft": false,
+												"deadline[lt]": "@today+1d"
+											}
+										},
+										"op": "gt",
+										"value": 0
+									},
+									"actions": [
+										{
+											"label": "Open these cases",
+											"route": {
+												"name": "Cases",
+												"query": {
+													"assignee": "@me",
+													"isFinalStatus": "false",
+													"statusHiddenInLists": "false",
+													"isDraft": "false",
+													"deadline[lt]": "@today+1d"
+												}
+											}
+										},
+										{
+											"label": "Open the board",
+											"route": "WorkflowBoard",
+											"primary": true
+										}
+									],
+									"text": "Cases past their deadline"
+								}
+							},
+							{
+								"id": "simple-my-open",
+								"type": "stat",
+								"title": "My open cases",
+								"content": {
+									"label": "My open cases",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false"
+										}
+									},
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-due-soon",
+								"type": "stat",
+								"title": "Due this week",
+								"content": {
+									"label": "Due this week",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"deadline": {
+												"gte": "@today",
+												"lt": "@today+7d"
+											}
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"deadline[gte]": "@today",
+											"deadline[lt]": "@today+7d"
+										}
+									},
+									"variant": "warning",
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-waiting",
+								"type": "stat",
+								"title": "Awaiting applicant",
+								"content": {
+									"label": "Awaiting applicant",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false,
+											"waitingOnApplicant": true
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "false",
+											"statusHiddenInLists": "false",
+											"isDraft": "false",
+											"waitingOnApplicant": "true"
+										}
+									},
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-closed-month",
+								"type": "stat",
+								"title": "Closed this month",
+								"content": {
+									"label": "Closed this month",
+									"format": {
+										"style": "decimal",
+										"decimals": 0
+									},
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"metric": "count",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": true,
+											"endDate": {
+												"gte": "@monthStart"
+											}
+										}
+									},
+									"route": {
+										"name": "Cases",
+										"query": {
+											"assignee": "@me",
+											"isFinalStatus": "true",
+											"endDate[gte]": "@monthStart"
+										}
+									},
+									"variant": "success",
+									"layout": "stacked"
+								}
+							},
+							{
+								"id": "simple-week",
+								"type": "week-strip",
+								"title": "Deadlines this week",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										}
+									},
+									"dateField": "deadline",
+									"titleField": "title",
+									"metaFields": ["identifier"],
+									"itemRoute": "CaseDetail",
+									"lateWhen": {
+										"op": "lte",
+										"value": 0
+									},
+									"emptyText": "No deadlines"
+								}
+							},
+							{
+								"id": "simple-my-tasks",
+								"type": "custom",
+								"title": "My tasks",
+								"_note": "`variant: list` is the opt-in checkbox list of the DqDashboard board (a box, the task, its case on a muted second line, the due date on the right). Ticking a box completes the task through useEngineTaskStore.invoke(uuid, 'complete'), the task page's own path. Without the key MyWorkWidget draws the table, which is what the full profile and the My work page keep.",
+								"content": {
+									"variant": "list",
+									"limit": 10,
+									"rowRoute": "TaskDetail",
+									"viewAllRoute": {
+										"name": "Tasks"
+									},
+									"viewAllLabel": "View all",
+									"emptyText": "You have no open tasks"
+								}
+							},
+							{
+								"id": "simple-per-step",
+								"type": "stacked-bar",
+								"title": "My cases per step",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"groupBy": "statusRole",
+										"filter": {
+											"assignee": "@me",
+											"isFinalStatus": false,
+											"statusHiddenInLists": false,
+											"isDraft": false
+										}
+									},
+									"order": [
+										"intake",
+										"pending-info",
+										"in-progress",
+										"review"
+									],
+									"labels": {
+										"intake": "Received",
+										"pending-info": "Waiting for information",
+										"in-progress": "In handling",
+										"review": "Decision"
+									},
+									"emptyText": "You have no open cases"
+								}
+							},
+							{
+								"id": "simple-continue",
+								"type": "object-table",
+								"title": "Continue working",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"_recent": true
+										},
+										"limit": 3
+									},
+									"columns": [
+										{
+											"key": "title",
+											"cellClass": "cn-cell--strong",
+											"secondary": "identifier"
+										},
+										{
+											"key": "status",
+											"label": "Status",
+											"formatter": "statusTypeName",
+											"widget": "statusBadge"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"_recent": "true"
+										}
+									},
+									"viewAllLabel": "View all",
+									"hideHeader": true,
+									"borderless": true,
+									"emptyText": "Cases you open show up here"
+								}
+							},
+							{
+								"id": "followed-cases",
+								"type": "object-table",
+								"title": "Cases you follow",
+								"content": {
+									"source": {
+										"register": "dossiq",
+										"schema": "case",
+										"filter": {
+											"_watching": true
+										},
+										"limit": 5
+									},
+									"columns": [
+										{
+											"key": "identifier",
+											"cellClass": "cn-cell--muted"
+										},
+										{
+											"key": "title",
+											"cellClass": "cn-cell--strong"
+										}
+									],
+									"rowRoute": "CaseDetail",
+									"viewAllRoute": {
+										"name": "Cases",
+										"query": {
+											"_watching": "true"
+										}
+									},
+									"viewAllLabel": "View all",
+									"hideHeader": true,
+									"borderless": true,
+									"emptyText": "Follow a case to keep an eye on it here"
+								}
+							},
+							{
+								"id": "archival-reviews",
+								"type": "custom",
+								"title": "My archival reviews",
+								"icon": "ArchiveOutline"
+							}
+						],
+						"layout": [
+							{
+								"id": "s2",
+								"widgetId": "simple-first-today",
+								"gridX": 0,
+								"gridY": 0,
+								"gridWidth": 12,
+								"gridHeight": 2,
+								"showTitle": false,
+								"sizeToContent": true,
+								"borderless": true
+							},
+							{
+								"id": "s3",
+								"widgetId": "simple-my-open",
+								"gridX": 0,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s4",
+								"widgetId": "simple-due-soon",
+								"gridX": 3,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s5",
+								"widgetId": "simple-waiting",
+								"gridX": 6,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s6",
+								"widgetId": "simple-closed-month",
+								"gridX": 9,
+								"gridY": 2,
+								"gridWidth": 3,
+								"gridHeight": 2,
+								"showTitle": false,
+								"dateChip": false
+							},
+							{
+								"id": "s7",
+								"widgetId": "simple-week",
+								"gridX": 0,
+								"gridY": 4,
+								"gridWidth": 8,
+								"gridHeight": 4,
+								"showTitle": true,
+								"headerLink": {
+									"label": "All deadlines",
+									"route": "Cases",
+									"query": {
+										"assignee": "@me",
+										"isFinalStatus": "false",
+										"statusHiddenInLists": "false",
+										"isDraft": "false",
+										"deadline[gte]": "@today",
+										"deadline[lt]": "@today+7d"
+									}
+								}
+							},
+							{
+								"id": "s8",
+								"widgetId": "simple-my-tasks",
+								"gridX": 8,
+								"gridY": 4,
+								"gridWidth": 4,
+								"gridHeight": 12,
+								"showTitle": true,
+								"headerLink": {
+									"label": "All tasks",
+									"route": "Tasks"
+								}
+							},
+							{
+								"id": "s9",
+								"widgetId": "simple-per-step",
+								"gridX": 0,
+								"gridY": 8,
+								"gridWidth": 8,
+								"gridHeight": 3,
+								"showTitle": true,
+								"headerLink": {
+									"label": "To the board",
+									"route": "WorkflowBoard"
+								}
+							},
+							{
+								"id": "s10",
+								"widgetId": "simple-continue",
+								"gridX": 0,
+								"gridY": 11,
+								"gridWidth": 8,
+								"gridHeight": 5,
+								"showTitle": true
+							},
+							{
+								"id": "s11",
+								"widgetId": "followed-cases",
+								"gridX": 0,
+								"gridY": 16,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": true
+							},
+							{
+								"id": "s12",
+								"widgetId": "archival-reviews",
+								"gridX": 6,
+								"gridY": 16,
+								"gridWidth": 6,
+								"gridHeight": 4,
+								"showTitle": true
+							}
+						]
+					}
+				}
+			},
+			"configAppend": {
+				"headerActions": [
+					{
+						"id": "open-your-queue",
+						"type": "open-page",
+						"label": "Your queue",
+						"icon": "ClipboardListOutline",
+						"target": "PersonalQueue"
+					},
+					{
+						"id": "open-assigned-to-me",
+						"type": "open-page",
+						"label": "Assigned to me",
+						"icon": "ClipboardAccountOutline",
+						"target": "MyWork"
+					},
+					{
+						"id": "open-end-of-day",
+						"type": "open-page",
+						"label": "Close out your day",
+						"icon": "ClipboardCheckOutline",
+						"target": "EndOfDay"
+					}
+				]
+			},
+			"slots": {
+				"widget-simple-my-tasks": "MyWorkWidget"
+			}
+		},
+		{
+			"id": "CaseDetail",
+			"_note": "The case page in the simple structure (openspec/changes/simple-case-page). The full structure has no overlay, so its page is today's page. STAGE: `statusRole` is the role of the status the case sits in (statusType.role), materialised on the case. A status without a role leaves it empty: no what-now card, no stage button, and Lifecycle stays the first entry of the More menu, as it is today. THREE STEPS OF THE DESIGN HAVE NO ACTION OF THEIR OWN IN DOSSIQ and are not invented here: recording a decision (decidiq owns it), publishing as a step (Publish exists, and hangs on wooPublicationStatus, not on a role) and closing as one act (it is a choice inside the Lifecycle dialog). All three open the Lifecycle dialog under the label Next step. THE PILL ABOVE THE TITLE IS THE CASE NUMBER, in the `typePill` place: the case holds its case type as a uuid and no name, so there is no type to show there, and the number is what a handler looks for first. NO COUNTS ON TABS: the case carries no count of its documents, messages or tasks. THE SIX SIDEBAR TABS STAY IN THE SIDEBAR: they are sidebar components, and the tab strip holds widgets. `case-rebind` IS IN THE CASE GROUP AND NOT ADMIN ONLY: who may change a case's type is decided by its own permission endpoint (`mayRebind`), in both structures. The simple structure regroups actions. It does not change who may do what. The same rule keeps `case-version-move` and `cross-domain-lookup` in the Case group: the design lists both as admin actions, but today any handler may use them, and `adminOnly` would take them away. Only the two inspect actions are admin only, and both were already gated on the admin probe. EVERY STAGE WITH A CARD HAS A BUTTON THAT CANNOT HIDE. The intake stage first pointed at Claim, and Claim hides once the case has a handler: a case in intake with a handler showed a finished checklist and no button (live check, 5 October 2026). The library's fallback for a hidden stage action is the page's `primaryAction`, which is a link and cannot open a dialog, so the stage itself names Next step, which opens the Lifecycle dialog and has no condition. Claim stays in the Case group. Waiting for information keeps Remind, whose only condition is that the case is not archived. THREE TILES LEFT THE GRID: beside the side column the grid is narrow and drew number, type and deadline as three full-width cards. The number is the pill, the deadline is the first card of the side column, and the type is in the Overview tab. Hours booked takes the full row. THE HEADER IS A CARD THAT HOLDS THE STAGES (`headerCard`, `headerWidget: case-stages`, nextcloud-vue 2.65.0), so the stages leave the grid. THE BANNER STACK (favourite, follow, new since you looked, what this status asks, attention) moves to the bottom of the side column: DqZaak draws nothing between the header and the tabs, and the column keeps every one of those controls in reach.",
+			"config": {
+				"stageField": "statusRole",
+				"primaryActionByStage": {
+					"intake": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					},
+					"pending-info": "case-remind",
+					"in-progress": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					},
+					"review": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					},
+					"closed": {
+						"type": "open-modal",
+						"target": "CaseLifecycleMenuDialog",
+						"label": "Next step",
+						"icon": "PlayCircleOutline",
+						"id": "stage-next-step"
+					}
+				},
+				"quickActions": [
+					"send-digital-post",
+					"generate-document",
+					"log-contact"
+				],
+				"actionsMenu": {
+					"showRefresh": false,
+					"showHelpLinks": false,
+					"label": "More"
+				},
+				"statusPill": {
+					"field": "statusPublicLabel"
+				},
+				"nextStep": {
+					"stages": {
+						"intake": {
+							"title": "What now? Take the case on",
+							"after": "Then: handling",
+							"checklist": [
+								{
+									"label": "Choose a handler",
+									"doneField": "assignee"
+								},
+								{
+									"label": "Complete the case details",
+									"doneWhen": {
+										"field": "isIncomplete",
+										"op": "neq",
+										"value": true
+									}
+								}
+							]
+						},
+						"pending-info": {
+							"title": "What now? Wait for the applicant",
+							"after": "Then: handling",
+							"checklist": [
+								{
+									"label": "The applicant has answered",
+									"doneWhen": {
+										"field": "waitingOnApplicant",
+										"op": "neq",
+										"value": true
+									}
+								}
+							]
+						},
+						"in-progress": {
+							"title": "What now? Handle the case",
+							"after": "Then: the decision",
+							"checklist": [
+								{
+									"label": "Choose a handler",
+									"doneField": "assignee"
+								},
+								{
+									"label": "Complete the case details",
+									"doneWhen": {
+										"field": "isIncomplete",
+										"op": "neq",
+										"value": true
+									}
+								},
+								{
+									"label": "The applicant has answered",
+									"doneWhen": {
+										"field": "waitingOnApplicant",
+										"op": "neq",
+										"value": true
+									}
+								}
+							]
+						},
+						"review": {
+							"title": "What now? Decide",
+							"after": "Then: close the case",
+							"checklist": [
+								{
+									"label": "Write the decision document",
+									"doneField": "besluitDocument"
+								},
+								{
+									"label": "Record the decision",
+									"doneField": "decisions"
+								}
+							]
+						},
+						"closed": {
+							"title": "What now? Close out",
+							"checklist": [
+								{
+									"label": "Record the result",
+									"doneField": "result"
+								},
+								{
+									"label": "Archive the case",
+									"doneField": "@self.archived"
+								}
+							]
+						}
+					}
+				},
+				"sideColumn": [
+					"case-tile-deadline",
+					{
+						"id": "side-requester",
+						"type": "data",
+						"title": "Requester",
+						"content": {
+							"title": "Requester",
+							"columns": 1,
+							"include": [
+								"initiatorDisplayName",
+								"initiatorType",
+								"intakeChannel"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
+					},
+					{
+						"id": "side-handling",
+						"type": "data",
+						"title": "Handling",
+						"content": {
+							"title": "Handling",
+							"columns": 1,
+							"include": [
+								"assignee",
+								"assignedGroupPublicName",
+								"startDate"
+							],
+							"hideEmpty": true,
+							"editable": false
+						}
+					},
+					"case-banner-stack"
+				],
+				"typePill": {
+					"field": "identifier"
+				},
+				"showTypeEyebrow": false,
+				"breadcrumb": {
+					"label": "All cases",
+					"route": "Cases"
+				},
+				"headerCard": true,
+				"headerWidget": "case-stages"
+			},
+			"configPatch": {
+				"headerActions": {
+					"case-claim": {
+						"group": "Case"
+					},
+					"case-release": {
+						"group": "Case"
+					},
+					"case-hand-over": {
+						"group": "Case"
+					},
+					"add-party": {
+						"group": "Case"
+					},
+					"link-object": {
+						"group": "Case"
+					},
+					"case-acknowledgement-met": {
+						"group": "Case"
+					},
+					"plan-follow-up": {
+						"group": "Case"
+					},
+					"case-remind": {
+						"group": "Case"
+					},
+					"start-flow": {
+						"group": "Case"
+					},
+					"case-split": {
+						"group": "Case"
+					},
+					"case-merge": {
+						"group": "Case"
+					},
+					"copy-case": {
+						"group": "Case"
+					},
+					"woo-publish": {
+						"group": "Publication"
+					},
+					"woo-withdraw": {
+						"group": "Publication"
+					},
+					"woo-publication-open": {
+						"group": "Publication"
+					},
+					"export-dossier": {
+						"group": "Dossier"
+					},
+					"case-rebind": {
+						"group": "Case"
+					},
+					"case-version-move": {
+						"group": "Case"
+					},
+					"cross-domain-lookup": {
+						"group": "Case"
+					},
+					"case-inspect-raw": {
+						"adminOnly": true
+					},
+					"case-inspect-runs": {
+						"adminOnly": true
+					}
+				},
+				"widgets": {
+					"case-stages": {
+						"content": {
+							"currentField": "status",
+							"orientation": "horizontal",
+							"size": "small",
+							"ariaLabel": "Case progress",
+							"stagesSource": {
+								"register": "dossiq",
+								"schema": "statusType",
+								"filter": {
+									"caseType": "@object.caseType"
+								},
+								"orderBy": "order",
+								"labelField": "name",
+								"descriptionField": "description",
+								"finalField": "isFinal",
+								"limit": 50
+							},
+							"transition": {
+								"kind": "lifecycle"
+							},
+							"unreachableReason": "Not possible from the current status",
+							"variant": "bars"
+						}
+					},
+					"case-panels": {
+						"content": {
+							"ariaLabel": "Case details",
+							"maxVisibleTabs": 5,
+							"moreLabel": "More",
+							"tabs": [
+								{
+									"widgetId": "case-data-panel",
+									"label": "Overview"
+								},
+								{
+									"widgetId": "case-files",
+									"label": "Documents"
+								},
+								{
+									"widgetId": "case-communication-panel",
+									"label": "Contact"
+								},
+								{
+									"widgetId": "case-work-panel",
+									"label": "Tasks"
+								},
+								{
+									"widgetId": "case-timeline-panel",
+									"label": "History"
+								},
+								{
+									"widgetId": "case-notes-panel",
+									"label": "Notes",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-people-panel",
+									"label": "People",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-email-panel",
+									"label": "Email",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-decisions-panel",
+									"label": "Decisions",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-related-panel",
+									"label": "Related",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-custody-panel",
+									"label": "Custody",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-archival-panel",
+									"label": "Archiving",
+									"overflow": true
+								},
+								{
+									"widgetId": "case-knowledge-panel",
+									"label": "Knowledge",
+									"overflow": true
+								}
+							],
+							"variant": "segmented"
+						}
+					}
+				},
+				"layout": {
+					"kpi-1": null,
+					"kpi-2": null,
+					"kpi-5": null,
+					"3": null,
+					"6": {
+						"gridX": 9,
+						"gridY": 4,
+						"gridWidth": 3,
+						"gridHeight": 2
+					},
+					"case-banners": null
+				}
+			}
+		},
+		{
+			"id": "Dashboard",
+			"_note": "The dashboard in the simple structure. Since openspec/changes/landing-views it is the dashboard of the full structure: the greeting, First today and the counts of MY cases moved to the landing page (MyWorkHome), whose My work / My team switch now changes views on that page instead of opening this one. The one thing this overlay still adds is the link to Close out your day, because this profile takes that entry out of the menu.",
+			"configAppend": {
+				"headerActions": [
+					{
+						"id": "open-end-of-day",
+						"type": "open-page",
+						"label": "Close out your day",
+						"icon": "ClipboardCheckOutline",
+						"target": "EndOfDay"
+					}
+				]
+			}
+		},
+		{
+			"id": "Cases",
+			"_note": "The cases list in the simple structure (openspec/changes/simple-list-and-dashboard). FIVE VIEWS WITH COUNTS lead the strip: All, Mine, Due this week, Waiting on the applicant, Woo requests. The other fifteen lenses are NOT removed. They sit behind the overflow chip, in their own order, because Archived and My drafts are each the only way back to what they show. SIX COLUMNS: number, title, type, status, handler, deadline. The handler cell shows the user id beside the picture: the case holds no display name for its handler. The deadline is red from the day it ends (`lte 0`), the same rule the board uses.",
+			"config": {
+				"quickFilterMaxVisible": 5,
+				"folderSidebar": null,
+				"columns": [
+					{
+						"key": "title",
+						"label": "Case",
+						"cellClass": "cn-cell--strong",
+						"secondary": "{identifier} · {initiatorDisplayName}"
+					},
+					{
+						"key": "caseType",
+						"label": "Case type",
+						"formatter": "caseTypeName"
+					},
+					{
+						"key": "status",
+						"label": "Status",
+						"formatter": "statusTypeName",
+						"widget": "statusBadge"
+					},
+					{
+						"key": "assignee",
+						"label": "Handler",
+						"widget": "avatar",
+						"widgetProps": {
+							"user": true
+						}
+					},
+					{
+						"key": "deadline",
+						"label": "Deadline",
+						"widget": "date",
+						"widgetProps": {
+							"variantWhen": [
+								{
+									"op": "lte",
+									"value": 0,
+									"variant": "error"
+								},
+								{
+									"op": "lte",
+									"value": 5,
+									"variant": "warning"
+								}
+							]
+						}
+					}
+				],
+				"showTitle": true,
+				"countSubtitle": "{total} cases",
+				"showViewToggle": false,
+				"headerFilters": false
+			},
+			"configPatch": {
+				"quickFilters": {
+					"All": {
+						"showCount": true
+					},
+					"Mine": {
+						"showCount": true
+					},
+					"Due this week": {
+						"showCount": true
+					},
+					"Waiting on the applicant": {
+						"showCount": true
+					}
+				}
+			},
+			"configAppend": {
+				"quickFilters": [
+					{
+						"label": "Woo requests",
+						"filter": {
+							"caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+							"statusHiddenInLists": false,
+							"isDraft": false
+						},
+						"showCount": true
+					}
+				]
+			},
+			"configOrder": {
+				"quickFilters": [
+					"All",
+					"Mine",
+					"Due this week",
+					"Waiting on the applicant",
+					"Woo requests"
+				]
+			},
+			"title": "All cases"
+		},
+		{
+			"id": "WorkflowBoard",
+			"_note": "The board is dossiq's own component, not the library's board, so the library's `dueRule` does not reach it by itself. CaseCard reads this rule and decides with it. Today counts as late here (`lte 0`). Without a rule, which is the full structure, a card is late only after its deadline.",
+			"config": {
+				"dueRule": {
+					"field": "deadline",
+					"variantWhen": [
+						{
+							"op": "lte",
+							"value": 0,
+							"variant": "error"
+						},
+						{
+							"op": "lte",
+							"value": 3,
+							"variant": "warning"
+						}
+					]
+				},
+				"showDashboardLink": false
+			}
+		}
+	]
+}

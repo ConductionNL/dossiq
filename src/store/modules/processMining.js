@@ -73,6 +73,23 @@ export const useProcessMiningStore = defineStore('processMining', {
 		 * @spec openspec/changes/page-topology-cleanup/specs/analytics-dashboard-surface/spec.md
 		 */
 		throughputTrend: (state) => state.report?.throughputTrend || [],
+		/**
+		 * Which clock the report's working-hours numbers are on.
+		 *
+		 * The server publishes it with the payload rather than leaving the
+		 * page to assume, because working hours counted on the organisation
+		 * calendar and working hours counted as working days times eight are
+		 * different measurements that render identically.
+		 *
+		 * Defaults to the wall clock, which is what a report from a server
+		 * that predates this is: unconverted. Saying so is honest; assuming
+		 * the calendar would label 65 hours as 65 working hours.
+		 *
+		 * @param {object} state The Pinia store state.
+		 * @return {string} One of working-calendar, working-days-times-eight, wall-clock.
+		 * @spec openspec/changes/dwell-time-on-the-working-calendar/specs/doorlooptijd-dashboard/spec.md
+		 */
+		clock: (state) => state.report?.clock || 'wall-clock',
 	},
 
 	actions: {

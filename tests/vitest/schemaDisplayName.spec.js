@@ -104,6 +104,9 @@ function loadSchemas() {
 	return configuration.components.schemas
 }
 
+/** The annotation whose `map` is keyed by vocabulary role, not by schema. */
+const EXTENDS_FORM_KEY = 'x-openregister-extends-form'
+
 /**
  * Every schema slug a property tree points at with `$ref`.
  *
@@ -114,11 +117,17 @@ function refTargets(node) {
 	if (Array.isArray(node)) return node.flatMap(refTargets)
 	if (isPlainObject(node) === false) return []
 
-	return Object.entries(node).flatMap(([key, value]) =>
-		key === '$ref' && typeof value === 'string'
+	return Object.entries(node).flatMap(([key, value]) => {
+		// `x-openregister-extends-form.map` is keyed by VOCABULARY ROLE, and
+		// one of those roles is `$ref`: it says which definition field carries
+		// the schema a field points at. Walking into it reads `"$ref": "ref"`
+		// as a reference to a schema called `ref`, and the check then fails on
+		// a fragment nobody was ever going to declare.
+		if (key === EXTENDS_FORM_KEY) return []
+		return key === '$ref' && typeof value === 'string'
 			? [value.split('/').pop()]
-			: refTargets(value),
-	)
+			: refTargets(value)
+	})
 }
 
 /**

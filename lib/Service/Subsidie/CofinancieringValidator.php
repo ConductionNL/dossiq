@@ -56,7 +56,17 @@ class CofinancieringValidator {
 	public function sumBedragen(array $rows): float {
 		$sum = 0.0;
 		foreach ($rows as $row) {
-			$sum += (float)($row['amount'] ?? 0);
+			// 🔴 `bedrag` FIRST, BECAUSE THAT IS WHAT THE SCHEMA DECLARES.
+			// `subsidieAanvraag.coFinancingList` says `[{partij, bedrag,
+			// percentage}]`, and this method read `amount` only. Nothing
+			// reported the mismatch because nothing called this class: its own
+			// suite was written against the implementation rather than the
+			// declaration, so the test and the code agreed with each other and
+			// neither agreed with the data. Every real row would have summed to
+			// zero and every declared budget would have been refused.
+			// `amount` is still read as a fallback, for that suite and for any
+			// row an earlier caller may have written in its shape.
+			$sum += (float)($row['bedrag'] ?? ($row['amount'] ?? 0));
 		}
 
 		return round($sum, 2);

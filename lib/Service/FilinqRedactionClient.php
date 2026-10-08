@@ -32,9 +32,12 @@
  * `queued` it replaced. So the outcome is `redacted` only when filinq handed
  * back an anonymised file id.
  *
- * Each outcome also carries the detection backend that was actually in force,
- * read from OpenRegister rather than from filinq's status. See
- * {@see detectionBackend()} for why that distinction matters.
+ * Each outcome also carries the detection backend that was actually in force:
+ * the one filinq's own detection report names when it carries one, else read
+ * from OpenRegister rather than from filinq's status. See
+ * {@see detectionBackend()} for why that distinction matters. A run filinq
+ * refuses because no detector is live is the outcome `detection_unavailable`,
+ * not an exception (dossiq#3191).
  *
  * @category Service
  * @package  OCA\Dossiq\Service
@@ -121,13 +124,6 @@ class FilinqRedactionClient {
 	 *
 	 * @throws RuntimeException When filinq is absent, the file cannot be located, or filinq refuses.
 	 *
-	 * @psalm-suppress MixedMethodCall filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedArrayAccess filinq is an optional cross-app dependency.
-	 * @psalm-suppress MixedAssignment filinq is an optional cross-app dependency.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver over the
-	 *      app-id and namespace rename map.
-	 *
 	 * @spec openspec/specs/woo-case-type/spec.md
 	 */
 	public function redact(string $caseId, array $document): array {
@@ -138,6 +134,7 @@ class FilinqRedactionClient {
 
 		$fileId = $this->resolveFileId(document: $document);
 		$userId = $this->actingUserId();
+		$entities = [];
 
 		try {
 			$extraction = (array)$service->extractAndDetectEntities($fileId);
@@ -151,6 +148,18 @@ class FilinqRedactionClient {
 				$userId
 			);
 		} catch (Throwable $e) {
+			$refusal = $this->detectorRefusal(error: $e);
+			if ($refusal !== null) {
+				// No live detector: filinq wrote nothing. Not a broken filinq
+				// and not a clean document, so it is an outcome with its own
+				// repair (switch detection on), not an exception (dossiq#3191).
+				$this->logger->warning(
+					'Filinq refused a Woo redaction: no live entity detector',
+					['app' => Application::APP_ID, 'caseId' => $caseId, 'fileId' => $fileId, 'reason' => $refusal['detectionUnavailable']]
+				);
+				return $refusal + ['sourceFileId' => $fileId, 'entityCount' => count($entities)];
+			}
+
 			$this->logger->warning(
 				'Filinq refused a Woo redaction',
 				[
@@ -164,7 +173,8 @@ class FilinqRedactionClient {
 		}
 
 		$anonymisedFileId = ($result['anonymizedFileId'] ?? ($result['fileId'] ?? null));
-		$backend = $this->detectionBackend();
+		$detection = $this->detectionReport(result: $result);
+		$backend = ($detection['backend'] ?? $this->detectionBackend());
 
 		$this->logger->info(
 			'Filinq processed a Woo document',
@@ -177,15 +187,7 @@ class FilinqRedactionClient {
 			]
 		);
 
-		$status = 'redacted';
-		if ($entities === []) {
-			$status = 'no_entities_detected';
-		} elseif ($anonymisedFileId === null) {
-			// Filinq detected entities and then named no output file. Whatever
-			// happened, this document's bytes are still the ones a person
-			// assessed as deels openbaar, so the outcome is not `redacted`.
-			$status = 'no_output_produced';
-		}
+		$status = $this->statusOf(entities: $entities, anonymisedFileId: $anonymisedFileId, detection: $detection);
 
 		return [
 			// A run that detected nothing produced a file whose content is the
@@ -202,9 +204,100 @@ class FilinqRedactionClient {
 			'entityCount' => count($entities),
 			'anonymizedFileId' => $anonymisedFileId,
 			'detectionBackend' => $backend,
+			'detectionOutcome' => ($detection['outcome'] ?? null),
 			'warning' => ($result['warning'] ?? null),
 		];
 	}//end redact()
+
+	/**
+	 * The outcome word for a run filinq completed.
+	 *
+	 * @param array<mixed>              $entities         What extraction detected.
+	 * @param mixed                     $anonymisedFileId The file filinq named, or null.
+	 * @param array<string, mixed>|null $detection        Filinq's own detection report, or null.
+	 *
+	 * @return string `redacted`, `no_entities_detected` or `no_output_produced`.
+	 */
+	private function statusOf(array $entities, mixed $anonymisedFileId, ?array $detection): string {
+		// Filinq's own `nothing_found` counts as much as an empty entity list:
+		// either way the file's content is the original's.
+		if ($entities === [] || ($detection['outcome'] ?? null) === 'nothing_found') {
+			return 'no_entities_detected';
+		}
+
+		if ($anonymisedFileId === null) {
+			// Filinq detected entities and then named no output file. Whatever
+			// happened, this document's bytes are still the ones a person
+			// assessed as deels openbaar, so the outcome is not `redacted`.
+			return 'no_output_produced';
+		}
+
+		return 'redacted';
+	}//end statusOf()
+
+	/**
+	 * Filinq's report of the detector that looked, when its result carries one.
+	 *
+	 * Filinq (anonymisation-fails-closed-without-a-detector) adds `detection`
+	 * with `backend`, `entitiesRedacted` and `outcome` to every completed run.
+	 * An older filinq carries none, and the caller falls back to OpenRegister.
+	 *
+	 * @param array<string, mixed> $result Filinq's anonymisation result.
+	 *
+	 * @return array{backend?: string, outcome?: string}|null
+	 */
+	private function detectionReport(array $result): ?array {
+		$detection = ($result['detection'] ?? null);
+		if (is_array($detection) === false) {
+			return null;
+		}
+
+		$report = [];
+		foreach (['backend', 'outcome'] as $key) {
+			if (is_string(($detection[$key] ?? null)) === true && $detection[$key] !== '') {
+				$report[$key] = $detection[$key];
+			}
+		}
+
+		return $report;
+	}//end detectionReport()
+
+	/**
+	 * The outcome for filinq's detector refusal, or null for any other error.
+	 *
+	 * Recognised by name, not by `instanceof`: filinq is optional and its
+	 * namespace moves with its app id, so this class never names it. The
+	 * refusal carries `getReason()` (`detection_disabled`,
+	 * `detection_backend_unavailable`, `detection_state_unknown`) and
+	 * `getBackend()` ('' when unknown).
+	 *
+	 * @param Throwable $error What filinq threw.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function detectorRefusal(Throwable $error): ?array {
+		$class = get_class($error);
+		$short = substr($class, (int)strrpos($class, '\\') + 1);
+		if ($short !== 'DetectionUnavailableException'
+			|| method_exists($error, 'getReason') === false
+			|| method_exists($error, 'getBackend') === false
+		) {
+			return null;
+		}
+
+		$backend = (string)$error->getBackend();
+		if ($backend === '') {
+			$backend = null;
+		}
+
+		return [
+			'status' => 'detection_unavailable',
+			'detectionUnavailable' => (string)$error->getReason(),
+			'detectionBackend' => $backend,
+			'anonymizedFileId' => null,
+			'warning' => null,
+		];
+	}//end detectorRefusal()
 
 	/**
 	 * The detection backend that was actually in force for this run.
@@ -226,10 +319,6 @@ class FilinqRedactionClient {
 	 *
 	 * @return string|null The effective method, or null when OpenRegister
 	 *                     cannot be asked.
-	 *
-	 * @psalm-suppress MixedMethodCall OpenRegister is resolved by class name.
-	 * @psalm-suppress MixedAssignment OpenRegister is resolved by class name.
-	 * @psalm-suppress MixedPropertyFetch OpenRegister is resolved by class name.
 	 */
 	private function detectionBackend(): ?string {
 		try {

@@ -11,6 +11,13 @@
   file under src/modals/ per ADR-004), and links each row to the
   DeelzaakDetail view.
 
+  Deleting the parent takes ONE path now, the plain confirmation. The
+  orphan-warning modal that used to unlink the children and then delete the
+  parent is gone: REQ-CM-35 refuses the delete of a case that still has
+  sub-cases, so a client that unlinked them first was deciding a question the
+  server now answers. The refusal comes back from the server and is shown in
+  the confirmation dialog, naming every rule that holds the case.
+
   @spec openspec/changes/deelzaak-support/tasks.md#T05
   @spec openspec/changes/deelzaak-support/tasks.md#T09
 -->
@@ -122,13 +129,6 @@
 			@created="onSubCaseCreated"
 			@close="showCreate = false" />
 
-		<DeelzaakDeleteWarningModal
-			v-if="showDeleteWarning && parentCaseId"
-			:parentCaseId="parentCaseId"
-			:subCaseCount="totalCount"
-			@deleted="onParentDeleted"
-			@close="showDeleteWarning = false" />
-
 		<CnConfirmDialog
 			v-if="showDeleteConfirm"
 			ref="deleteConfirmDialog"
@@ -149,12 +149,11 @@ import Delete from 'vue-material-design-icons/Delete.vue'
 import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutline.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import DeelzaakCreateModal from '../../modals/DeelzaakCreateModal.vue'
-import DeelzaakDeleteWarningModal from '../../modals/DeelzaakDeleteWarningModal.vue'
 import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
-import { requiresOrphanWarning } from '../../utils/deelzaakHelpers.js'
+import { refusalMessage } from '../../utils/deelzaakHelpers.js'
 
 export default {
 	name: 'DeelzaakList',
@@ -167,7 +166,6 @@ export default {
 		FolderMultipleOutline,
 		Plus,
 		DeelzaakCreateModal,
-		DeelzaakDeleteWarningModal,
 		CnConfirmDialog,
 	},
 
@@ -186,7 +184,6 @@ export default {
 			statusTypeCache: {},
 			loading: true,
 			showCreate: false,
-			showDeleteWarning: false,
 			showDeleteConfirm: false,
 		}
 	},
@@ -394,17 +391,15 @@ export default {
 		},
 
 		/**
-		 * Delete the parent case. When it still has sub-cases, open the
-		 * orphan-warning modal (which unlinks the children, then deletes);
-		 * otherwise take the standard confirm-and-delete path (REQ-DZS-006).
+		 * Ask before deleting the parent case.
 		 *
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 * One path, whether or not the case has sub-cases: the server decides
+		 * whether this case may go (REQ-CM-35) and says why when it may not,
+		 * so the client no longer forks on a count it read a moment ago.
+		 *
+		 * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
 		 */
 		onDeleteParent() {
-			if (requiresOrphanWarning(this.totalCount)) {
-				this.showDeleteWarning = true
-				return
-			}
 			this.showDeleteConfirm = true
 		},
 
@@ -412,7 +407,12 @@ export default {
 		 * Confirm-handler for the CnConfirmDialog opened by onDeleteParent().
 		 * Runs the actual delete and reports the outcome back to the dialog.
 		 *
-		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 * A refused delete is the interesting outcome: the guard's sentence
+		 * names every rule that holds the case, so it goes in the dialog
+		 * verbatim. The generic line is the fallback for a failure that
+		 * carried no sentence, never a replacement for one that did.
+		 *
+		 * @spec openspec/changes/case-delete-guard/specs/case-management/spec.md
 		 */
 		async onConfirmDeleteParent() {
 			try {
@@ -422,10 +422,7 @@ export default {
 			} catch (err) {
 				console.error('[DeelzaakList] parent delete failed', err)
 				this.$refs.deleteConfirmDialog.setResult({
-					error: t(
-						'dossiq',
-						'The case could not be deleted. Please try again.',
-					),
+					error: refusalMessage(err),
 				})
 			}
 		},
@@ -435,7 +432,6 @@ export default {
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
 		 */
 		onParentDeleted(deletedId) {
-			this.showDeleteWarning = false
 			this.$router.push({ name: 'Cases' })
 		},
 	},

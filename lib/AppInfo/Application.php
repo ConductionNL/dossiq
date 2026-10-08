@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\AppInfo;
 
 use OCA\Dossiq\AppInfo\Registrar\BootRegistrar;
+use OCA\Dossiq\AppInfo\Registrar\LifecycleRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ListenerRegistrar;
 use OCA\Dossiq\AppInfo\Registrar\ServiceRegistrar;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
@@ -91,6 +92,10 @@ class Application extends App implements IBootstrap {
 			'OCA\OpenRegister\Service\ObjectService'
 		);
 
+		// The background jobs write as an account an admin picks, never as
+		// Anonymous and never with RBAC off; the overview says when none is set.
+		$context->registerSetupCheck(\OCA\Dossiq\SetupCheck\BackgroundServiceAccountCheck::class);
+
 		// Storage seam for the Dutch-to-English value migration. The repair step
 		// depends on the interface so its own logic can be exercised against a
 		// fake; only this binding knows the database.
@@ -98,6 +103,9 @@ class Application extends App implements IBootstrap {
 			\OCA\Dossiq\Repair\ValueMigrationPort::class,
 			\OCA\Dossiq\Repair\DbValueMigrationPort::class
 		);
+
+		// What this app hands to OpenRegister's lifecycle engine.
+		(new LifecycleRegistrar())->register(context: $context);
 		(new ServiceRegistrar())->register(context: $context);
 		(new ListenerRegistrar())->register(context: $context);
 	}//end register()

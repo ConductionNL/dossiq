@@ -25,6 +25,7 @@ namespace OCA\Dossiq\Tests\Unit\Service\Kcc;
 use OCA\Dossiq\Service\Kcc\ContactMomentService;
 use OCA\Dossiq\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -32,8 +33,11 @@ use Psr\Log\LoggerInterface;
  * Unit tests for ContactMomentService payload building.
  *
  * @covers \OCA\Dossiq\Service\Kcc\ContactMomentService
+ * @uses \OCA\Dossiq\Service\CaseDateNormaliser
  */
 class ContactMomentServiceTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 
 	private ContactMomentService $service;
 
@@ -43,7 +47,7 @@ class ContactMomentServiceTest extends TestCase {
 	protected function setUp(): void {
 		$settings = $this->createMock(SettingsService::class);
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->service = new ContactMomentService($settings, $logger);
+		$this->service = new ContactMomentService(settingsService: $settings, logger: $logger, dates: $this->caseDates());
 	}//end setUp()
 
 	/**

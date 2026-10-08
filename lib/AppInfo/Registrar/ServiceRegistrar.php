@@ -64,5 +64,10 @@ class ServiceRegistrar {
 		(new SubstitutableAdapterRegistrar())->register(context: $context);
 		(new AuthAdapterRegistrar())->register(context: $context);
 		(new ExternalRegisterRegistrar())->register(context: $context);
+
+		// The inbound mail gateway, the filter order and the synchronisation
+		// listener. The pipeline cannot be autowired: an autowired one would be
+		// EMPTY, which accepts every message and looks exactly like one that ran.
+		(new MailIntakeRegistrar())->register(context: $context);
 	}//end register()
 }//end class

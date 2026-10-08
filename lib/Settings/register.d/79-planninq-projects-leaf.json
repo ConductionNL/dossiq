@@ -1,0 +1,14 @@
+{
+  "_note": "projects-from-planninq-on-the-case (dossiq#3190). The case declares planninq's projects leaf, so a handler sees and starts the projects run for a case without dossiq querying planninq's register. Planninq owns projects and their hand-over of files to the case; dossiq holds no copy. `linkedTypes` is a LIST and fragments concatenate lists, so this adds the one id.",
+  "components": {
+    "schemas": {
+      "case": {
+        "configuration": {
+          "linkedTypes": [
+            "planninq-projects"
+          ]
+        }
+      }
+    }
+  }
+}

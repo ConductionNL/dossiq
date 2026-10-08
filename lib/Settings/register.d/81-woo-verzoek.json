@@ -1,0 +1,502 @@
+{
+  "_note": "woo-request-from-a-portal-dossier (hydra woo-citizen-journey C5), design D1 and D3. Seeds the Woo request case type the template library only offered: eight statuses, four result types (woo-case-type requires them), the intake properties and portal windows open in its first two statuses. The fixed uuid is what WooRequestIntake opens a resident's request on. case.wooRequest carries the request itself: what was asked, for which period, where it came from and the dossier it was started from, which the publish side reads to bring the decision back. Every reference is the fixed uuid of the row it names: OpenRegister refuses a slug in a uuid-format property, and on 30 Sep the first import skipped every row of this file for that reason.",
+  "components": {
+    "schemas": {
+      "case": {
+        "properties": {
+          "wooRequest": {
+            "type": "object",
+            "title": "Woo request",
+            "description": "What the resident asked for in a Woo request, for which period, where the request came from (portal or pipelinq) and the dossier it was started from. Written once by WooRequestIntake.",
+            "visible": false,
+            "properties": {
+              "onderwerp": {
+                "type": "string",
+                "title": "Subject",
+                "description": "What the request is about, in the resident's words."
+              },
+              "omschrijving": {
+                "type": "string",
+                "title": "Description",
+                "description": "What the resident asks for."
+              },
+              "periodeVan": {
+                "type": "string",
+                "format": "date",
+                "title": "Period from",
+                "description": "Start of the period the request is about."
+              },
+              "periodeTot": {
+                "type": "string",
+                "format": "date",
+                "title": "Period to",
+                "description": "End of the period the request is about."
+              },
+              "origin": {
+                "type": "string",
+                "enum": [
+                  "portal",
+                  "pipelinq"
+                ],
+                "title": "Origin",
+                "description": "Where the request was started."
+              },
+              "originReference": {
+                "type": "string",
+                "title": "Origin reference",
+                "description": "The ticket or other record the request came from."
+              },
+              "collectionId": {
+                "type": "string",
+                "title": "Source dossier",
+                "description": "The opencatalogi collection the request was started from, if any."
+              },
+              "documentSoorten": {
+                "type": "array",
+                "title": "Kinds of document",
+                "description": "Which kinds of document the resident is looking for. Each value is one of besluiten, rapporten, correspondentie or alles.",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "besluiten",
+                    "rapporten",
+                    "correspondentie",
+                    "alles"
+                  ]
+                }
+              },
+              "toelichting": {
+                "type": "string",
+                "title": "Further explanation",
+                "description": "Anything else the resident wanted to tell us about the request."
+              },
+              "verzoekerNaam": {
+                "type": "string",
+                "title": "Requester name",
+                "description": "The name the resident gave when they sent the request. It is kept as given, so a later change to their profile does not rewrite the file."
+              },
+              "verzoekerEmail": {
+                "type": "string",
+                "title": "Requester e-mail address",
+                "description": "The address the resident gave when they sent the request, for the answer to this request."
+              },
+              "verzoekerType": {
+                "type": "string",
+                "enum": [
+                  "burger",
+                  "journalist",
+                  "organisatie"
+                ],
+                "title": "Requester kind",
+                "description": "Who the resident says they are asking as: burger, journalist or organisatie. It is what they chose, not a judgement we make."
+              }
+            }
+          }
+        }
+      }
+    },
+    "objects": [
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "caseType",
+          "version": "1.1.0",
+          "slug": "woo-verzoek"
+        },
+        "title": "Woo-verzoek",
+        "description": "Behandeling van verzoeken op grond van de Wet open overheid",
+        "purpose": "Transparante afhandeling van informatieverzoeken conform de WOO",
+        "trigger": "Ontvangst van een WOO-verzoek van een burger, journalist of organisatie",
+        "subject": "Openbaarmaking van overheidsinformatie",
+        "processingDeadline": "P28D",
+        "confidentiality": "intern",
+        "isDraft": false,
+        "extensionAllowed": true,
+        "extensionPeriod": "P14D",
+        "publicationRequired": true,
+        "internalOrExternal": "extern",
+        "handlerAction": "Beoordelen en beslissen op WOO-verzoek",
+        "origin": "indienen",
+        "id": "3c0f5a00-0000-4000-a000-00000000a001",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000a001",
+        "identifier": "woo-verzoek",
+        "category": "Transparantie",
+        "initialStatus": "3c0f5a00-0000-4000-a000-00000000b001",
+        "verwerkingsactiviteit": "behandelen-woo-verzoek",
+        "legalBasis": "legal_obligation",
+        "portalAmendmentWindow": {
+          "openStatuses": [
+            "3c0f5a00-0000-4000-a000-00000000b001",
+            "3c0f5a00-0000-4000-a000-00000000b002"
+          ],
+          "closedReason": "Uw verzoek is al in behandeling. Wilt u iets aanvullen? Stuur ons een bericht."
+        },
+        "portalDocumentWindow": {
+          "openStatuses": [
+            "3c0f5a00-0000-4000-a000-00000000b001",
+            "3c0f5a00-0000-4000-a000-00000000b002",
+            "3c0f5a00-0000-4000-a000-00000000b003",
+            "3c0f5a00-0000-4000-a000-00000000b004"
+          ],
+          "closedReason": "Wij beoordelen de documenten al. Stuur ons een bericht als u nog iets heeft."
+        },
+        "portalWithdrawal": {
+          "openStatuses": [
+            "3c0f5a00-0000-4000-a000-00000000b001",
+            "3c0f5a00-0000-4000-a000-00000000b002"
+          ],
+          "targetStatus": "3c0f5a00-0000-4000-a000-00000000b008",
+          "closedReason": "Uw verzoek is al in behandeling en kan niet meer online worden ingetrokken. Neem contact met ons op.",
+          "confirmText": "Weet u zeker dat u uw Woo-verzoek wilt intrekken?"
+        },
+        "decisionTypes": [
+          "3c0f5a00-0000-4000-a000-00000000d001"
+        ]
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "decisionType",
+          "slug": "woo-verzoek-besluit-type"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000d001",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000d001",
+        "name": "WOO-besluit",
+        "description": "Besluit op een verzoek op grond van de Wet open overheid",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "publicationRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-ontvangst"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b001",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b001",
+        "name": "Ontvangst",
+        "description": "Verzoek ontvangen, ontvangstbevestiging verzenden",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 1,
+        "isFinal": false,
+        "role": "intake",
+        "colour": "blue",
+        "publicLabel": "Ontvangen",
+        "publicDescription": "Uw verzoek is binnen. Wij sturen u een ontvangstbevestiging."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-ontvankelijkheid"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b002",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b002",
+        "name": "Beoordeling ontvankelijkheid",
+        "description": "Controleren of het verzoek aan de formele vereisten voldoet",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 2,
+        "isFinal": false,
+        "role": "in-progress",
+        "colour": "blue",
+        "publicLabel": "In behandeling",
+        "publicDescription": "Wij kijken of uw verzoek compleet is."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-zoeken"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b003",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b003",
+        "name": "Zoeken documenten",
+        "description": "Zoeken en verzamelen van relevante documenten",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 3,
+        "isFinal": false,
+        "role": "in-progress",
+        "colour": "orange",
+        "publicLabel": "In behandeling",
+        "publicDescription": "Wij zoeken de documenten waar uw verzoek over gaat."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-beoordelen"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b004",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b004",
+        "name": "Beoordelen documenten",
+        "description": "Per document beoordelen of openbaarmaking mogelijk is",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 4,
+        "isFinal": false,
+        "role": "in-progress",
+        "colour": "orange",
+        "publicLabel": "In behandeling",
+        "publicDescription": "Wij beoordelen per document of het openbaar kan."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-lakken"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b005",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b005",
+        "name": "Lakken / Anonimiseren",
+        "description": "Gevoelige informatie in documenten anonimiseren",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 5,
+        "isFinal": false,
+        "role": "in-progress",
+        "colour": "orange",
+        "publicLabel": "In behandeling",
+        "publicDescription": "Wij maken gegevens onleesbaar die niet openbaar mogen."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-besluit"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b006",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b006",
+        "name": "Besluit",
+        "description": "Formeel besluit nemen over openbaarmaking",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 6,
+        "isFinal": false,
+        "role": "review",
+        "colour": "purple",
+        "publicLabel": "Besluit",
+        "publicDescription": "Wij nemen een besluit op uw verzoek."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-publicatie"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b007",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b007",
+        "name": "Publicatie",
+        "description": "Goedgekeurde documenten publiceren in de leeskamer",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 7,
+        "isFinal": false,
+        "role": "in-progress",
+        "colour": "green",
+        "publicLabel": "Besluit genomen",
+        "publicDescription": "Het besluit en de openbare documenten worden gepubliceerd."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "statusType",
+          "slug": "woo-verzoek-afgehandeld"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000b008",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000b008",
+        "name": "Afgehandeld",
+        "description": "Zaak is afgerond",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "order": 8,
+        "isFinal": true,
+        "role": "closed",
+        "colour": "grey",
+        "publicLabel": "Afgehandeld",
+        "publicDescription": "Uw verzoek is afgehandeld."
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "woo-verzoek-openbaar-gemaakt"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000c001",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000c001",
+        "name": "Openbaar gemaakt",
+        "description": "De gevraagde documenten zijn openbaar gemaakt.",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "woo-verzoek-deels-openbaar-gemaakt"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000c002",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000c002",
+        "name": "Deels openbaar gemaakt",
+        "description": "Een deel van de gevraagde informatie is openbaar gemaakt. Wat niet openbaar is, staat met de reden in het besluit.",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "woo-verzoek-niet-openbaar-gemaakt"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000c003",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000c003",
+        "name": "Niet openbaar gemaakt",
+        "description": "De gevraagde documenten zijn niet openbaar gemaakt. De reden staat in het besluit.",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "resultType",
+          "slug": "woo-verzoek-ingetrokken"
+        },
+        "id": "3c0f5a00-0000-4000-a000-00000000c004",
+        "uuid": "3c0f5a00-0000-4000-a000-00000000c004",
+        "name": "Ingetrokken",
+        "description": "Het verzoek is ingetrokken.",
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "archivalAction": "vernietigen",
+        "archivalPeriod": "P5Y"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-verzoekernaam"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "verzoekerNaam",
+        "definition": "Naam van de verzoeker",
+        "description": "Volledige naam van de persoon of organisatie die het WOO-verzoek indient",
+        "propertyType": "string",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-verzoekeremail"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "verzoekerEmail",
+        "definition": "E-mailadres van de verzoeker",
+        "description": "Contactgegevens van de verzoeker voor correspondentie",
+        "propertyType": "email",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-verzoekertype"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "verzoekerType",
+        "definition": "Type verzoeker",
+        "description": "Categorie: burger, journalist of organisatie",
+        "propertyType": "string",
+        "isRequired": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-onderwerp"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "onderwerp",
+        "definition": "Onderwerp van het verzoek",
+        "description": "Het onderwerp waarover informatie wordt gevraagd",
+        "propertyType": "string",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-periodevan"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "periodeVan",
+        "definition": "Periode van",
+        "description": "Begindatum van de periode waarop het verzoek betrekking heeft",
+        "propertyType": "date",
+        "isRequired": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-periodetot"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "periodeTot",
+        "definition": "Periode tot",
+        "description": "Einddatum van de periode waarop het verzoek betrekking heeft",
+        "propertyType": "date",
+        "isRequired": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-bestuurlijkeaangelegenheid"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "bestuurlijkeAangelegenheid",
+        "definition": "Bestuurlijke aangelegenheid",
+        "description": "De bestuurlijke aangelegenheid waarop het verzoek betrekking heeft",
+        "propertyType": "string",
+        "isRequired": false
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-receiptdate"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "receiptDate",
+        "definition": "Ontvangstdatum",
+        "description": "Datum waarop het WOO-verzoek is ontvangen (voor termijnberekening)",
+        "propertyType": "date",
+        "isRequired": true
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-gewenstevorm"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "gewensteVorm",
+        "definition": "Gewenste vorm van verstrekking",
+        "description": "Hoe de verzoeker de documenten wil ontvangen: papier, digitaal of inzage",
+        "propertyType": "string",
+        "isRequired": false,
+        "defaultValue": "digitaal"
+      },
+      {
+        "@self": {
+          "register": "dossiq",
+          "schema": "propertyDefinition",
+          "slug": "woo-verzoek-verdagingreden"
+        },
+        "caseType": "3c0f5a00-0000-4000-a000-00000000a001",
+        "name": "verdagingReden",
+        "definition": "Reden verdaging",
+        "description": "Reden voor de verlenging van de beslistermijn",
+        "propertyType": "string",
+        "isRequired": false
+      }
+    ]
+  }
+}

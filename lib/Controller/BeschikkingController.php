@@ -38,6 +38,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Controller;
 
+use OCA\Dossiq\Controller\Support\TranslatesRefusals;
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\BeschikkingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -54,6 +56,8 @@ use RuntimeException;
  * @spec openspec/changes/beschikking-generatie/tasks.md#T05
  */
 class BeschikkingController extends Controller {
+	use TranslatesRefusals;
+
 	/**
 	 * Constructor.
 	 *
@@ -200,6 +204,8 @@ class BeschikkingController extends Controller {
 		try {
 			$result = $this->decisionService->akkoord($id, $approvedBy);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			return $this->refused(op: 'approved', e: $e);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'approved', e: $e);
 		} catch (\Throwable $e) {
@@ -233,6 +239,12 @@ class BeschikkingController extends Controller {
 		try {
 			$result = $this->decisionService->onderteken($id, $tspProvider, $uid);
 			return new JSONResponse($result);
+		} catch (RefusedException $e) {
+			// The coordinator seat, and anything else that refuses with a rule
+			// rather than a sentinel. Caught BEFORE RuntimeException, which
+			// RefusedException extends: the other order would answer every
+			// refusal with mapRuntime()'s default 500.
+			return $this->refused(op: 'onderteken', e: $e);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'onderteken', e: $e);
 		} catch (\Throwable $e) {

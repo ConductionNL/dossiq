@@ -60,6 +60,8 @@ class WooCategoryMapper {
 	 */
 	private const DECISION_TYPE_MAP = [
 		'WOO-besluit' => self::DEFAULT_CATEGORY,
+		// The seeded WOO-besluit decision type, by the uuid a decision now carries.
+		'3c0f5a00-0000-4000-a000-00000000d001' => self::DEFAULT_CATEGORY,
 	];
 
 	/**

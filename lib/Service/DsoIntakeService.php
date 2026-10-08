@@ -194,7 +194,6 @@ class DsoIntakeService {
 			'title' => $title,
 			'description' => $description,
 			'startDate' => date('Y-m-d'),
-			'priority' => 'normal',
 			'dsoZaaknummer' => $dsoZaaknummer,
 			'activiteiten' => $activityStr,
 			'activityNames' => $activityNames,
@@ -234,7 +233,6 @@ class DsoIntakeService {
 			'title' => $mappedData['title'] ?? 'Omgevingsvergunning',
 			'description' => $mappedData['description'] ?? '',
 			'startDate' => $mappedData['startDate'] ?? date('Y-m-d'),
-			'priority' => $mappedData['priority'] ?? 'normal',
 		];
 
 		// OpenRegister's signature is

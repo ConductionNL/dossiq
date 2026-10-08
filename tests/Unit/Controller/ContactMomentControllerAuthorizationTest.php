@@ -36,6 +36,8 @@ use OCA\Dossiq\Controller\ContactMomentController;
 use OCA\Dossiq\Service\BurgerIdentificationService;
 use OCA\Dossiq\Service\CaseVoorbladService;
 use OCA\Dossiq\Service\CitizenLookupGuard;
+use OCA\Dossiq\Service\Kcc\CitizenLookupRecorder;
+use OCA\Dossiq\Service\Kcc\GuardedCitizenLookup;
 use OCA\Dossiq\Service\ContactMomentService;
 use OCA\Dossiq\Service\DoorverbindingService;
 use OCA\Dossiq\Service\QuickActionService;
@@ -49,6 +51,7 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for the citizen-lookup guard on ContactMomentController.
  *
  * @covers \OCA\Dossiq\Controller\ContactMomentController
+ * @uses \OCA\Dossiq\Service\Kcc\GuardedCitizenLookup
  */
 class ContactMomentControllerAuthorizationTest extends TestCase {
 
@@ -96,6 +99,13 @@ class ContactMomentControllerAuthorizationTest extends TestCase {
 	private function controllerWithGuard(bool $allowed): ContactMomentController {
 		$guard = $this->createMock(CitizenLookupGuard::class);
 		$guard->method('isCitizenLookupAllowed')->willReturn($allowed);
+		// The redaction is exercised in CitizenLookupGuardTest; here it must
+		// only be a pass-through, or an assertion about the payload would be
+		// measuring the double instead of the controller.
+		$guard->method('redactForCaller')->willReturnCallback(
+			static fn (\OCP\IUser $user, array $payload): array => $payload
+		);
+		$guard->method('revealedFieldsFor')->willReturn([]);
 
 		return new ContactMomentController(
 			appName: 'dossiq',
@@ -106,7 +116,12 @@ class ContactMomentControllerAuthorizationTest extends TestCase {
 			transferService: $this->transferService,
 			burgerService: $this->burgerService,
 			userSession: $this->userSession,
-			citizenLookupGuard: $guard,
+			// A REAL GuardedCitizenLookup over the SAME guard double the
+			// assertions below are about. Only the wiring line moved.
+			lookups: new GuardedCitizenLookup(
+				$guard,
+				$this->createMock(CitizenLookupRecorder::class),
+			),
 		);
 	}//end controllerWithGuard()
 

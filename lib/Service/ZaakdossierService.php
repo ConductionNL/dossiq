@@ -35,7 +35,9 @@ use DomainException;
 use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\Support\SearchesObjects;
+use OCA\Dossiq\Service\Zaakdossier\CorrespondentWriter;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectMetadataNormaliser;
+use OCA\Dossiq\Service\Zaakdossier\DocumentRecordStore;
 use OCA\Dossiq\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -101,7 +103,6 @@ class ZaakdossierService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service (config + ObjectService).
-	 * @param ZgwDocumentService $documentService Binary file storage service.
 	 * @param InformatieobjectAccessGuard $accessGuard Classification access guard.
 	 * @param InformatieobjectStatusLifecycle $statusLifecycle Per-document status state machine.
 	 * @param InformatieobjectMetadataNormaliser $normaliser Coerces the freely
@@ -109,14 +110,17 @@ class ZaakdossierService {
 	 *                                                       direction onto the
 	 *                                                       schema.
 	 * @param LoggerInterface $logger Logger.
+	 * @param DocumentRecordStore $recordStore Records and joins, and the file on the case.
+	 * @param CorrespondentWriter $correspondents Who a document came from and went to.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly ZgwDocumentService $documentService,
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly InformatieobjectStatusLifecycle $statusLifecycle,
 		private readonly InformatieobjectMetadataNormaliser $normaliser,
 		private readonly LoggerInterface $logger,
+		private readonly DocumentRecordStore $recordStore,
+		private readonly CorrespondentWriter $correspondents,
 	) {
 	}//end __construct()
 
@@ -164,48 +168,54 @@ class ZaakdossierService {
 
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
 
-		$now = date('Y-m-d\TH:i:s');
-		$hash = hash('sha256', $content);
-
-		$informatieobject = [
-			'title' => (string)($metadata['title'] ?? $fileName),
-			'fileName' => $fileName,
-			'bestandsomvang' => strlen($content),
-			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
-			'vertrouwelijkheidaanduiding' => $classification,
-			'auteur' => (string)($metadata['auteur'] ?? ''),
-			'status' => 'draft',
-			'informatieobjecttype' => $type,
-			'direction' => $this->normaliser->direction(value: ($metadata['direction'] ?? null)),
-			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
-			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
-			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
-			'taal' => (string)($metadata['taal'] ?? 'nld'),
-			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
-			'integrity' => [
-				'algorithm' => 'sha256',
-				'value' => $hash,
-				'date' => $now,
-			],
-		];
-
-		$saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $infoSchema);
-		$infoId = $this->resolveSavedUuid(saved: $saved);
-
-		// Persist the binary content under the informatieobject UUID folder.
-		$this->documentService->storeRaw(uuid: $infoId, fileName: $fileName, content: $content);
-
-		$this->stampFileId(
-			objectService: $objectService,
-			informatieobject: $informatieobject,
-			infoId: $infoId,
-			fileName: $fileName,
-			register: $register,
-			infoSchema: $infoSchema,
+		// Who the document came from and who it went to, resolved against the
+		// parties this case has. See CorrespondentWriter::resolveFor().
+		$direction = $this->normaliser->direction(value: ($metadata['direction'] ?? null));
+		$correspondents = $this->correspondents->resolveFor(
+			caseId: $caseId,
+			sender: ($metadata['sender'] ?? null),
+			recipients: ($metadata['recipients'] ?? null),
+			direction: $direction,
 		);
 
-		// Create the case <-> document join.
-		$this->createJoin(caseId: $caseId, infoObjectId: $infoId);
+		$informatieobject = $this->uploadedRecord(
+			fileName: $fileName,
+			content: $content,
+			metadata: $metadata,
+			type: $type,
+			classification: $classification,
+			direction: $direction,
+			correspondents: $correspondents,
+		);
+
+		// Documents live on the case: the file is stored on the CASE first, so
+		// the node listener may already have projected a record for it by the
+		// time this runs; that record gets the metadata, and only when there is
+		// none is one created here.
+		$fileId = $this->recordStore->storeFileOnObject(objectId: $caseId, fileName: $fileName, content: $content);
+		$existing = [];
+		if ($fileId > 0) {
+			$existing = ($this->recordStore->findRecord(fileId: $fileId) ?? []);
+			$informatieobject['fileId'] = $fileId;
+		}
+
+		$infoId = (string)($existing['id'] ?? '');
+		unset($existing['id'], $existing['@self']);
+		$record = array_merge($existing, $informatieobject);
+		if ($infoId !== '') {
+			$objectService->saveObject(object: $record, register: $register, schema: $infoSchema, uuid: $infoId);
+		}
+
+		if ($infoId === '') {
+			$saved = $objectService->saveObject(object: $record, register: $register, schema: $infoSchema);
+			$infoId = $this->resolveSavedUuid(saved: $saved);
+		}
+
+		// Create the case <-> document join, unless the listener already did.
+		$this->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoId);
+
+		// One dispatch row per correspondent: the audit of the send itself.
+		$this->correspondents->recordDispatches(caseId: $caseId, documentId: $infoId, correspondents: $correspondents);
 
 		$this->logger->info(
 			'Dossiq dossier: uploaded informatieobject ' . $infoId . ' for case ' . $caseId,
@@ -220,68 +230,68 @@ class ZaakdossierService {
 			'vertrouwelijkheidaanduiding' => $classification,
 			'informatieobjecttype' => $type,
 			'direction' => $informatieobject['direction'],
+			'sender' => $informatieobject['sender'],
+			'recipients' => $informatieobject['recipients'],
 			'keywords' => $informatieobject['keywords'],
 			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadDocument()
 
 	/**
-	 * Write the Nextcloud file id back onto a just-stored informatieobject.
+	 * The record an uploaded document gets.
 	 *
-	 * The schema has always declared `fileId` and nothing ever wrote it, so
-	 * every uploaded document carried none, and VersionHistoryPanel returns
-	 * EARLY when it is absent: it renders "No previous versions" rather than an
-	 * error, so the Versions action looked correct on every document in the
-	 * dossier while never asking the versions API anything.
+	 * The counterpart of {@see DocumentDefaults::forNewFile()}, which says the
+	 * same thing for a file somebody dropped in the case folder. Split out so
+	 * `uploadDocument()` reads as the steps of an upload rather than as one
+	 * long literal in the middle of them.
 	 *
-	 * 🔴 THE WHOLE OBJECT, NOT JUST THE FIELD. `saveObject()` REPLACES the
-	 * stored object with what it is handed; there is no merge or patch mode.
-	 * Passing `['fileId' => $fileId]` with a uuid threw every other property
-	 * away, and the informatieobject schema requires four of them, so
-	 * OpenRegister refused the write with:
+	 * @param string $fileName The file name.
+	 * @param string $content The bytes, for the size and the hash.
+	 * @param array<string, mixed> $metadata The submitted metadata.
+	 * @param string $type The document type uuid.
+	 * @param string $classification The confidentiality, already checked.
+	 * @param string $direction The direction, already coerced onto the enum.
+	 * @param array{sender: string, recipients: array<int, string>} $correspondents Who it is from and to.
 	 *
-	 *     The required properties (title, fileName,
-	 *     vertrouwelijkheidaanduiding, informatieobjecttype) are missing.
+	 * @return array<string, mixed> The record to store.
 	 *
-	 * `DossierUploadHandler::uploadOne()` catches that, so the upload reported
-	 * `success: false` per file while the controller still answered 201
-	 * Created. Nothing on the Documents tab ever appeared and the dossier came
-	 * back `{"total":0,"groups":[],"informatieobjecten":[]}`, with no error
-	 * anywhere a user could see. It took document generation down too, because
-	 * MergeTemplateHandler files its rendered template through this method.
-	 *
-	 * @param mixed                $objectService    The OpenRegister object service.
-	 * @param array<string, mixed> $informatieobject The document as it was stored.
-	 * @param string               $infoId           Its uuid.
-	 * @param string               $fileName         The stored file name.
-	 * @param string               $register         The register id.
-	 * @param string               $infoSchema       The informatieobject schema id.
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/specs/document-zaakdossier/spec.md
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
 	 */
-	private function stampFileId(
-		mixed $objectService,
-		array $informatieobject,
-		string $infoId,
+	private function uploadedRecord(
 		string $fileName,
-		string $register,
-		string $infoSchema,
-	): void {
-		$fileId = $this->resolveFileId(infoId: $infoId, fileName: $fileName);
-		if ($fileId <= 0) {
-			return;
-		}
+		string $content,
+		array $metadata,
+		string $type,
+		string $classification,
+		string $direction,
+		array $correspondents,
+	): array {
+		$now = date('Y-m-d\TH:i:s');
 
-		$informatieobject['fileId'] = $fileId;
-		$objectService->saveObject(
-			object: $informatieobject,
-			register: $register,
-			schema: $infoSchema,
-			uuid: $infoId
-		);
-	}//end stampFileId()
+		return [
+			'title' => (string)($metadata['title'] ?? $fileName),
+			'fileName' => $fileName,
+			'bestandsomvang' => strlen($content),
+			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
+			'vertrouwelijkheidaanduiding' => $classification,
+			'auteur' => (string)($metadata['auteur'] ?? ''),
+			'status' => 'draft',
+			'informatieobjecttype' => $type,
+			'direction' => $direction,
+			'sender' => $correspondents['sender'],
+			'recipients' => $correspondents['recipients'],
+			'keywords' => $this->normaliser->keywords(value: ($metadata['keywords'] ?? null)),
+			'creatiedatum' => (string)($metadata['creatiedatum'] ?? date('Y-m-d')),
+			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
+			'taal' => (string)($metadata['taal'] ?? 'nld'),
+			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
+			'integrity' => [
+				'algorithm' => 'sha256',
+				'value' => hash('sha256', $content),
+				'date' => $now,
+			],
+		];
+	}//end uploadedRecord()
 
 	/**
 	 * Link an existing informatieobject to a case without duplicating the document.
@@ -398,14 +408,16 @@ class ZaakdossierService {
 	 * so the service stays testable without a user context.
 	 *
 	 * @param string $caseId The case (zaak) UUID.
+	 * @param string $correspondent Narrow to the documents naming this party, or '' for all.
 	 *
 	 * @return array<string, mixed> Structure with `total`, `groups` and `informatieobjecten`.
 	 *
 	 * @throws \RuntimeException When OpenRegister is unavailable or config missing.
 	 *
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T02
+	 * @spec openspec/changes/document-correspondents/specs/document-zaakdossier/spec.md#requirement-req-zak-015-the-correspondents-are-on-screen-and-can-be-filtered
 	 */
-	public function getDossierForCase(string $caseId): array {
+	public function getDossierForCase(string $caseId, string $correspondent = ''): array {
 		[$objectService, $register] = $this->requireRegister();
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
 		$infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
@@ -436,7 +448,17 @@ class ZaakdossierService {
 			}
 		}
 
-		return $this->groupByType(documents: $documents);
+		// Every row carries who the document was from and to, named. The
+		// parties are read once for the whole listing rather than once per
+		// document, which is the difference between one OpenRegister read and
+		// forty to draw one column.
+		return $this->groupByType(
+			documents: $this->correspondents->describeAll(
+				caseId: $caseId,
+				documents: $documents,
+				correspondent: $correspondent,
+			)
+		);
 	}//end getDossierForCase()
 
 	/**
@@ -544,6 +566,16 @@ class ZaakdossierService {
 			};
 		}
 
+		$updateData = array_merge(
+			$updateData,
+			$this->correspondents->applyEdit(
+				documentId: $infoObjectId,
+				current: $current,
+				metadata: $metadata,
+				direction: (string)($updateData['direction'] ?? ($current['direction'] ?? '')),
+			)
+		);
+
 		if (empty($updateData) === true) {
 			return ['id' => $infoObjectId, 'updated' => false];
 		}
@@ -561,6 +593,7 @@ class ZaakdossierService {
 
 		return array_merge(['id' => $infoObjectId, 'updated' => true], $updateData);
 	}//end updateMetadata()
+
 
 	/**
 	 * Fetch a single informatieobject as an array.
@@ -617,34 +650,6 @@ class ZaakdossierService {
 
 		return 'intern';
 	}//end resolveDefaultClassification()
-
-	/**
-	 * The Nextcloud file id backing a just-stored document.
-	 *
-	 * A store that succeeded and an id that cannot be read back are different
-	 * failures, and neither is worth losing the upload over: the document and
-	 * its file are already there, and only the version history depends on the
-	 * id, so an unreadable id is logged and the upload stands.
-	 *
-	 * @param string $infoId The informatieobject UUID.
-	 * @param string $fileName The stored filename.
-	 *
-	 * @return int The file id, or 0 when it cannot be resolved.
-	 *
-	 * @spec openspec/specs/document-zaakdossier/spec.md
-	 */
-	private function resolveFileId(string $infoId, string $fileName): int {
-		try {
-			return $this->documentService->getFileId(uuid: $infoId, fileName: $fileName);
-		} catch (\Throwable $e) {
-			$this->logger->warning(
-				'Dossiq dossier: stored ' . $fileName . ' but could not read its file id',
-				['app' => Application::APP_ID, 'exception' => $e->getMessage()],
-			);
-
-			return 0;
-		}
-	}//end resolveFileId()
 
 	/**
 	 * Create a zaakinformatieobject join object.

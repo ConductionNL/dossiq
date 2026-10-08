@@ -96,8 +96,6 @@ class DecisionTableController extends Controller {
 	 *
 	 * @NoAdminRequired
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */
 	public function index(): JSONResponse {
@@ -119,8 +117,6 @@ class DecisionTableController extends Controller {
 	 * Create a decision table (admin only).
 	 *
 	 * @return JSONResponse
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */
@@ -147,8 +143,6 @@ class DecisionTableController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @psalm-suppress PossiblyUnusedMethod
-	 *
 	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */
 	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
@@ -173,8 +167,6 @@ class DecisionTableController extends Controller {
 	 * @param string $id The table id.
 	 *
 	 * @return JSONResponse
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */
@@ -204,8 +196,6 @@ class DecisionTableController extends Controller {
 	 * @return JSONResponse
 	 *
 	 * @NoAdminRequired
-	 *
-	 * @psalm-suppress PossiblyUnusedMethod
 	 *
 	 * @spec openspec/specs/dmn-decision-tables/spec.md
 	 */

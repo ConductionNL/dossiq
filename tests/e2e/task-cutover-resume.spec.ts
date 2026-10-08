@@ -32,7 +32,8 @@ import type { APIRequestContext } from '@playwright/test'
  * `FlowTaskBridge::continueRun()`, which signals the run and may even advance
  * it inside the request. Measured on a clean rig (openregister 2.0.18, dossiq
  * 0.4.10, 2026-09-11) by commenting the dossiq registration out of
- * `WorkflowListenerRegistrar` and repeating the whole chain: the run resumed
+ * `TaskListenerRegistrar` (it was `WorkflowListenerRegistrar` until 2026-09-20)
+ * and repeating the whole chain: the run resumed
  * and the case advanced identically, and the run's `context.signal` read `[]`
  * both ways, which is OpenRegister's empty payload rather than dossiq's. A
  * temporary log line in the dossiq listener confirmed it does fire; its payload
@@ -52,7 +53,7 @@ import type { APIRequestContext } from '@playwright/test'
  * instance and each followed by a restore that went green again.
  *
  *   a. Dossiq's listener registration commented out of
- *      `WorkflowListenerRegistrar`. BOTH TESTS STILL PASSED. That is the
+ *      `TaskListenerRegistrar`. BOTH TESTS STILL PASSED. That is the
  *      finding above, not a hole in the assertions: OpenRegister's listener
  *      does the same work, so no assertion on the run or the case can tell the
  *      two apart.

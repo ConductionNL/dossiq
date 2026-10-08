@@ -266,13 +266,10 @@ class AdvisoryBodyService {
 	 * x-openregister-notifications schema configuration on the consultation
 	 * schema" (ADR-031). Neither had a caller.
 	 *
-	 * The read half IS live: `ConsultationPublicController::publicResponseGet`
-	 * / `publicResponsePost` serve `/api/public/consultations/{token}` and
-	 * `Consultation\ConsultationRepository` looks a consultation up by
-	 * `secureToken`. Because nothing ever minted one, that public surface can
-	 * never be entered — which is a capability gap, reported as such, not a
-	 * reason to add a public-token minter with no route and no guard in front
-	 * of it. Wiring the notification stub would have been worse still: it
-	 * would have made "no mail is sent" look like "mail is sent".
+	 * The read half stayed live for months on the strength of that, serving a
+	 * token nothing had ever minted, so the surface could not be entered at
+	 * all. case-sharing-mints-access-links deleted it. An advisory body now
+	 * receives an OpenRegister access link declaring `comment` (#3817), which
+	 * is minted by a route, guarded, and audited as `link:<uuid>`.
 	 */
 }//end class

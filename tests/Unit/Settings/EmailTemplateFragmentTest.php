@@ -142,12 +142,16 @@ class EmailTemplateFragmentTest extends TestCase {
 	}//end testNoParallelEmailSchemaInvented()
 
 	/**
-	 * EmailSettings delegates the shared-mailbox config keys but NOT the
-	 * sensitive password key.
+	 * EmailSettings delegates the intake config keys and no credential at all.
+	 *
+	 * 🔴 THE ASSERTION GOT STRONGER, NOT WEAKER. It used to say the password
+	 * was not DELEGATED, which left it stored and merely un-delegated. Nextcloud
+	 * Mail holds the account now, so there is no host, no username and no
+	 * password to delegate or to store, and all three are asserted absent.
 	 *
 	 * @return void
 	 */
-	public function testDelegatedSettingsScopeKeysWithoutPassword(): void {
+	public function testDelegatedSettingsScopeKeysCarryNoCredential(): void {
 		$settings = new EmailSettings(
 			$this->createMock(IAppManager::class),
 			$this->createMock(IInitialState::class),
@@ -159,9 +163,12 @@ class EmailTemplateFragmentTest extends TestCase {
 		$this->assertArrayHasKey(Application::APP_ID, $authorized);
 
 		$keys = $authorized[Application::APP_ID];
-		$this->assertContains('email_imap_host', $keys);
+		$this->assertContains('email_mail_account_id', $keys);
+		$this->assertContains('email_imap_folder', $keys);
 		$this->assertContains('email_transport', $keys);
 		$this->assertContains('email_poll_interval', $keys);
-		$this->assertNotContains('email_imap_password', $keys, 'sensitive password must not be delegated');
-	}//end testDelegatedSettingsScopeKeysWithoutPassword()
+		$this->assertNotContains('email_imap_password', $keys, 'no mailbox password is stored any more');
+		$this->assertNotContains('email_imap_username', $keys, 'no mailbox username is stored any more');
+		$this->assertNotContains('email_imap_host', $keys, 'Nextcloud Mail holds the connection');
+	}//end testDelegatedSettingsScopeKeysCarryNoCredential()
 }//end class

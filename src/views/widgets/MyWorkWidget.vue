@@ -21,7 +21,67 @@
 	@spec openspec/specs/signalering-widgets/spec.md
 -->
 <template>
+	<div v-if="isList" class="dossiq-task-list" data-testid="my-work-task-list">
+		<p v-if="loading && !rows.length" class="dossiq-task-list__empty">
+			{{ t('dossiq', 'Loading tasks') }}
+		</p>
+		<p v-else-if="!rows.length" class="dossiq-task-list__empty">
+			{{ emptyText }}
+		</p>
+		<ul v-else class="dossiq-task-list__rows">
+			<li
+				v-for="row in rows"
+				:key="rowKey(row)"
+				class="dossiq-task-list__row"
+				data-testid="my-work-task-row">
+				<input
+					type="checkbox"
+					class="dossiq-task-list__check"
+					:checked="completing.includes(rowKey(row))"
+					:disabled="completing.includes(rowKey(row))"
+					:aria-label="
+						t('dossiq', 'Mark {title} as done', { title: row.title })
+					"
+					data-testid="my-work-task-check"
+					@change="complete(row, $event)" />
+				<span class="dossiq-task-list__body">
+					<a
+						class="dossiq-task-list__title"
+						:href="taskHref(row)"
+						@click.prevent="openTask(row)"
+						>{{ row.title }}</a
+					>
+					<span class="dossiq-task-list__meta">
+						<span class="dossiq-task-list__case">{{
+							caseTitleOf(row)
+						}}</span>
+						<span
+							class="dossiq-task-list__due"
+							:class="{
+								'dossiq-task-list__due--urgent': isUrgent(row),
+							}"
+							>{{ dueLabel(row) }}</span
+						>
+					</span>
+					<span
+						v-if="row.substitutedMarker"
+						class="dossiq-task-list__case">
+						{{ row.substitutedMarker }}
+					</span>
+				</span>
+			</li>
+		</ul>
+		<NcButton
+			v-if="substitutedTasks.length"
+			variant="tertiary"
+			data-testid="substituted-toggle-widget"
+			:aria-pressed="String(showSubstituted)"
+			@click="toggleSubstituted">
+			{{ substitutedToggleLabel }}
+		</NcButton>
+	</div>
 	<CnDataTable
+		v-else
 		:rows="rows"
 		:columns="columns"
 		:loading="loading"
@@ -33,19 +93,40 @@
 			<router-link class="cn-data-table__view-all" :to="viewAllRoute">
 				{{ viewAllLabel }}
 			</router-link>
+			<NcButton
+				v-if="substitutedTasks.length"
+				variant="tertiary"
+				data-testid="substituted-toggle-widget"
+				:aria-pressed="String(showSubstituted)"
+				@click="toggleSubstituted">
+				{{ substitutedToggleLabel }}
+			</NcButton>
 		</template>
 	</CnDataTable>
 </template>
 
 <script>
 import { CnDataTable } from '@conduction/nextcloud-vue'
-import { translate as t } from '@nextcloud/l10n'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { getCanonicalLocale, translate as t } from '@nextcloud/l10n'
+import { NcButton } from '@nextcloud/vue'
+import { fetchSubstitutedWork } from '../../services/substitutionApi.js'
 import {
 	isTerminal,
 	signedDaysUntilDue,
 	useEngineTaskStore,
 } from '../../store/modules/engineTask.js'
-import { taskRouteFor } from '../../utils/caseTaskPaneHelpers.js'
+import { taskIdOf, taskRouteFor } from '../../utils/caseTaskPaneHelpers.js'
+import {
+	applySubstitutedFilter,
+	asSubstitutedItems,
+	buildSubstitutedMap,
+	mergeSubstitutedCases,
+	readShowSubstituted,
+	substitutedFor,
+	substitutedUntil,
+	writeShowSubstituted,
+} from '../../utils/substitutionHelpers.js'
 
 /** How many rows the tile shows when the manifest names no limit. */
 const DEFAULT_LIMIT = 10
@@ -55,6 +136,7 @@ export default {
 
 	components: {
 		CnDataTable,
+		NcButton,
 	},
 
 	props: {
@@ -88,6 +170,14 @@ export default {
 			tasks: [],
 			/** The read's own failure, when the read threw rather than returned. */
 			failure: '',
+			/** Open tasks routed here by an active substitution. */
+			substitutedTasks: [],
+			/** `task:<id>` -> the routing context, for the marker and the filter. */
+			substitutedMap: {},
+			/** Whether substituted rows are listed; remembered per browser. */
+			showSubstituted: readShowSubstituted(),
+			/** Keys of the rows whose completion is on its way to the engine. */
+			completing: [],
 		}
 	},
 
@@ -106,6 +196,23 @@ export default {
 		 */
 		content() {
 			return this.widget?.content ?? {}
+		},
+
+		/**
+		 * Whether the tile draws the checkbox list instead of the table.
+		 *
+		 * OPT-IN, read from the manifest's `content.variant`. Only the simple
+		 * profile's dashboard declares `"list"` (src/menu-layout.simple.json,
+		 * `simple-my-tasks`), after the DqDashboard board: a checkbox, the
+		 * task, its case on a second muted line and the due date on the right.
+		 * Every other placement declares nothing and keeps the table, so the
+		 * full profile and the My work page render exactly as before.
+		 *
+		 * @return {boolean} True for the list variant.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
+		isList() {
+			return this.content.variant === 'list'
 		},
 
 		/**
@@ -183,18 +290,45 @@ export default {
 		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		columns() {
-			return [
+			const columns = [
 				{
 					key: 'title',
 					label: t('dossiq', 'Task'),
 					cellClass: 'cn-cell--strong',
 				},
-				{
-					key: 'daysLeft',
-					label: t('dossiq', 'Days left'),
-					cellClass: 'cn-cell--muted cn-cell--end',
-				},
 			]
+
+			// Only when there is substituted work to mark. A column that is
+			// blank on every row for everyone who has no waarneming is the
+			// same empty-cell noise the Case column was removed for.
+			if (this.substitutedTasks.length > 0) {
+				columns.push({
+					key: 'substitutedMarker',
+					label: t('dossiq', 'Standing in for'),
+					cellClass: 'cn-cell--muted',
+				})
+			}
+
+			columns.push({
+				key: 'daysLeft',
+				label: t('dossiq', 'Days left'),
+				cellClass: 'cn-cell--muted cn-cell--end',
+			})
+
+			return columns
+		},
+
+		/**
+		 * The toggle's label, which says what clicking it does.
+		 *
+		 * @return {string} The button text.
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		substitutedToggleLabel() {
+			if (this.showSubstituted === true) {
+				return t('dossiq', 'Hide substituted work')
+			}
+			return t('dossiq', 'Show substituted work')
 		},
 
 		/**
@@ -215,19 +349,176 @@ export default {
 		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		rows() {
-			return this.tasks.map((task) => ({
+			// The reader's own rows are passed through untouched: only the
+			// substituted ones carry the `type` half of the map key, and an own
+			// row that carries none simply misses the map, which is what it is.
+			const merged = mergeSubstitutedCases(this.tasks, this.substitutedTasks)
+			const visible = applySubstitutedFilter(
+				merged,
+				this.substitutedMap,
+				this.showSubstituted,
+			)
+
+			return visible.map((task) => ({
 				...task,
-				daysUntilDue: signedDaysUntilDue(task),
-				daysLeft: this.daysLeftPhrase(signedDaysUntilDue(task)),
+				daysUntilDue: this.daysUntilDueOf(task),
+				daysLeft: this.daysLeftPhrase(this.daysUntilDueOf(task)),
+				substitutedMarker: this.markerFor(task),
 			}))
 		},
 	},
 
+	/**
+	 * Both reads, side by side: the reader's own open tasks and whatever an
+	 * active substitution routes here. Neither waits on the other.
+	 *
+	 * @return {void}
+	 *
+	 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+	 */
 	mounted() {
 		this.fetchData()
+		this.loadSubstitutedWork()
 	},
 
 	methods: {
+		t,
+
+		/**
+		 * A stable key for a row, the same id the verbs and routes take.
+		 *
+		 * @param {object} row A shaped row.
+		 * @return {string} The key.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
+		rowKey(row) {
+			return taskIdOf(row)
+		},
+
+		/**
+		 * The case a task sits on, for the list's second line.
+		 *
+		 * The engine answers it in the row's `subject` block. When that block
+		 * is empty the line stays empty rather than showing a uuid.
+		 *
+		 * @param {object} row A shaped row.
+		 * @return {string} The case title, or ''.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
+		caseTitleOf(row) {
+			return String(row?.subject?.title ?? '').trim()
+		},
+
+		/**
+		 * Whether the due date reads in the error colour: due today or late.
+		 *
+		 * @param {object} row A shaped row.
+		 * @return {boolean} True when the deadline is today or past.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
+		isUrgent(row) {
+			return typeof row?.daysUntilDue === 'number' && row.daysUntilDue <= 0
+		},
+
+		/**
+		 * The list's due date, short: Today, Tomorrow, a day and a month, or
+		 * how late the task is.
+		 *
+		 * @param {object} row A shaped row.
+		 * @return {string} The label.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
+		dueLabel(row) {
+			const days = row?.daysUntilDue
+			if (typeof days !== 'number') {
+				return t('dossiq', 'No deadline')
+			}
+			if (days < 0) {
+				return t('dossiq', '{n} days overdue', { n: Math.abs(days) })
+			}
+			if (days === 0) {
+				return t('dossiq', 'Today')
+			}
+			if (days === 1) {
+				return t('dossiq', 'Tomorrow')
+			}
+			const due = new Date(row?.dueDate ?? '')
+			if (isNaN(due.getTime())) {
+				return t('dossiq', '{n} days remaining', { n: days })
+			}
+			return new Intl.DateTimeFormat(getCanonicalLocale(), {
+				day: 'numeric',
+				month: 'short',
+			}).format(due)
+		},
+
+		/**
+		 * The task page's address, so the title is a real link.
+		 *
+		 * @param {object} row A shaped row.
+		 * @return {string} The href, or '#' when the row cannot be routed.
+		 * @spec openspec/specs/dashboard/spec.md
+		 */
+		taskHref(row) {
+			const route = taskRouteFor(row, {
+				rowRoute: this.content.rowRoute || 'TaskDetail',
+			})
+			if (route === null || typeof this.$router?.resolve !== 'function') {
+				return '#'
+			}
+			return this.$router.resolve(route).href
+		},
+
+		/**
+		 * Complete a task from its checkbox.
+		 *
+		 * THE SAME PATH THE TASK PAGE TAKES: `useEngineTaskStore.invoke(uuid,
+		 * 'complete')`, which posts to dossiq's own complete endpoint, so the
+		 * case type's required answers and effects are checked exactly as on
+		 * the task page. A refusal shows the engine's own message and the box
+		 * unticks again; a completion drops the row and reads the list anew.
+		 *
+		 * @param {object} row The ticked row.
+		 * @param {Event} event The change event, to undo a refused tick.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/dashboard/spec.md
+		 * @spec openspec/specs/task-management/spec.md
+		 */
+		async complete(row, event) {
+			const id = this.rowKey(row)
+			if (id === '' || this.completing.includes(id)) {
+				return
+			}
+
+			this.completing = [...this.completing, id]
+			try {
+				const updated = await this.engineTasks.invoke(id, 'complete')
+				if (updated === null) {
+					if (event?.target) {
+						event.target.checked = false
+					}
+					showError(
+						this.engineTasks.error
+							|| t('dossiq', 'Could not complete {title}', {
+								title: row.title,
+							}),
+					)
+					return
+				}
+
+				showSuccess(
+					t('dossiq', 'Task {title} finished', { title: row.title }),
+				)
+				this.tasks = this.tasks.filter((task) => taskIdOf(task) !== id)
+				this.substitutedTasks = this.substitutedTasks.filter(
+					(task) => taskIdOf(task) !== id,
+				)
+				await this.fetchData()
+			} finally {
+				this.completing = this.completing.filter((key) => key !== id)
+			}
+		},
+
 		/**
 		 * How far a row is from its deadline, in words.
 		 *
@@ -250,6 +541,95 @@ export default {
 				return t('dossiq', 'Due today')
 			}
 			return t('dossiq', '{n} days remaining', { n: days })
+		},
+
+		/**
+		 * How far a row is from its deadline, in signed days.
+		 *
+		 * `signedDaysUntilDue` reads the two counters the engine's own inbox
+		 * API computes. A substituted row does not come from there: it comes
+		 * from `/api/substitutions/work`, which answers the register's
+		 * vocabulary (`dueDate`) and no counters at all. Without the fallback
+		 * every substituted task reads "No deadline" beside a deadline it has,
+		 * which is the same looks-fine-shows-nothing cell this tile was
+		 * rewritten to remove.
+		 *
+		 * @param {object} task A merged task row.
+		 * @return {number|null} Days left, negative when overdue, null when the
+		 *   row carries no deadline at all.
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		daysUntilDueOf(task) {
+			const counted = signedDaysUntilDue(task)
+			if (counted !== null) {
+				return counted
+			}
+
+			const due = new Date(task?.dueDate ?? '')
+			if (isNaN(due.getTime())) {
+				return null
+			}
+
+			const startOfToday = new Date()
+			startOfToday.setHours(0, 0, 0, 0)
+			return Math.ceil((due.getTime() - startOfToday.getTime()) / 86400000)
+		},
+
+		/**
+		 * The marker naming whose task this is, and until when.
+		 *
+		 * Empty on the reader's own rows, which is how the column stays
+		 * readable: a marker on every row would mark nothing.
+		 *
+		 * @param {object} row A merged task row.
+		 * @return {string} The marker text, or ''.
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		markerFor(row) {
+			const absentee = substitutedFor(this.substitutedMap, row)
+			if (absentee === '') {
+				return ''
+			}
+			const until = substitutedUntil(this.substitutedMap, row)
+			if (until === '') {
+				return t('dossiq', 'for {name}', { name: absentee })
+			}
+			return t('dossiq', 'for {name}, until {date}', {
+				name: absentee,
+				date: until,
+			})
+		},
+
+		/**
+		 * Show or hide the substituted rows, and remember which.
+		 *
+		 * @return {void}
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		toggleSubstituted() {
+			this.showSubstituted = !this.showSubstituted
+			writeShowSubstituted(this.showSubstituted)
+		},
+
+		/**
+		 * Ask the resolver what an active substitution routes to this reader.
+		 *
+		 * Scope and the reader's own OpenRegister permissions were applied
+		 * server-side, so every row returned may be shown. A failure leaves the
+		 * tile with the reader's own tasks rather than emptying it.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/substituted-work-reaches-my-work/specs/handler-vervanging-waarneming/spec.md
+		 */
+		async loadSubstitutedWork() {
+			try {
+				const work = await fetchSubstitutedWork()
+				this.substitutedMap = buildSubstitutedMap(work.cases, work.tasks)
+				this.substitutedTasks = asSubstitutedItems(work.tasks, 'task')
+			} catch {
+				this.substitutedTasks = []
+				this.substitutedMap = {}
+			}
 		},
 
 		/**
@@ -326,3 +706,93 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/*
+ * The list variant, after the DqDashboard board's My tasks card. Theme
+ * variables only, so every token set paints it in its own colours. The side
+ * padding is the dashboard card header's 16px, so the rows line up under the
+ * card title.
+ */
+.dossiq-task-list {
+	display: flex;
+	flex-direction: column;
+	padding: 0 16px 10px;
+}
+
+.dossiq-task-list__rows {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.dossiq-task-list__row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px 0;
+}
+
+/* The card header already draws a line under the title, so the first row
+ * carries none of its own and the rows are separated from each other. */
+.dossiq-task-list__row + .dossiq-task-list__row {
+	border-top: 1px solid var(--color-border);
+}
+
+.dossiq-task-list__check {
+	flex: none;
+	width: 20px;
+	height: 20px;
+	margin: 1px 0 0;
+	accent-color: var(--color-primary-element);
+	cursor: pointer;
+}
+
+.dossiq-task-list__body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.dossiq-task-list__title {
+	color: var(--color-main-text);
+	font-size: 15px;
+	line-height: 1.35;
+	text-decoration: none;
+}
+
+.dossiq-task-list__title:hover,
+.dossiq-task-list__title:focus-visible {
+	text-decoration: underline;
+}
+
+.dossiq-task-list__meta {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.dossiq-task-list__case {
+	color: var(--color-text-maxcontrast);
+	font-size: 13px;
+}
+
+.dossiq-task-list__due {
+	flex: none;
+	color: var(--color-text-maxcontrast);
+	font-weight: 500;
+}
+
+.dossiq-task-list__due--urgent {
+	color: var(--color-text-error, var(--color-error-text));
+	font-weight: 700;
+}
+
+.dossiq-task-list__empty {
+	margin: 12px 0;
+	color: var(--color-text-maxcontrast);
+}
+</style>

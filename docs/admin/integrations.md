@@ -26,7 +26,6 @@ One app-config key selects the adapter tier per integration, plus tier-specific 
 | `integration.kvk.baseUrl` | default `https://api.kvk.nl/test/api` | unset (uses default) |
 | `integration.kvk.apiKey` | default = public test key (below) | unset (uses default) |
 | `integration.dso.baseUrl` | `https://service.pre.omgevingswet.overheid.nl` | unset |
-| `dso_lv_auth_token` (existing) | DSO-LV bearer token | unset (warn + empty headers) |
 | `integration.digid.mode` | `log` \| `simulator` | `log` |
 
 Set a tier with, e.g.:
@@ -71,8 +70,14 @@ An unknown or unset mode always falls back to `log`.
 ### DSO / Omgevingswet — beta (config-ready seam)
 
 - **Test env**: pre-productie / oefenomgeving `https://service.pre.omgevingswet.overheid.nl`.
-- **Seam**: `DsoLvAuthService` reads `dso_lv_auth_token` (bearer) and `integration.dso.baseUrl`;
-  when unset it warns and returns empty headers (fail-open, no external call).
+- **Seam**: `integration.dso.baseUrl`, read the same way every other integration reads its
+  settings, through `IntegrationMode::setting(integration: 'dso', key: 'baseUrl')`.
+- **There is no DSO client yet, and the bearer token key is gone.** `DsoLvAuthService` held
+  `dso_lv_auth_token` and built an `Authorization: Bearer` header, and nothing in the app ever
+  asked it for one: no file under `lib/` that touches DSO uses `IClientService`, so dossiq makes
+  no outbound DSO call at all. DSO today is INBOUND — `DSOIntakeController` is a public webhook
+  authenticated with the shared `dso_webhook_secret`, which is a different mechanism. The token
+  key comes back with the client that needs it, named for whatever it actually sends.
 - **Access request**: the DSO pre-prod endpoint is **certificate-bound** — it needs the DSO
   aansluittraject (service request via the Ontwikkelaarsportaal → client_id + test API key,
   ~5 working days per step) plus a PKIoverheid OIN/HRN certificate. **This is a formal

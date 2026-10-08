@@ -252,12 +252,21 @@ The system MUST provide a list view for tasks with search, sorting, and filterin
 
 **Tier**: MVP
 
+AMENDED 2026-09-11, for the row's own fields. The list is the ENGINE's inbox
+(dossiq#2408, #2457), and its columns are Task, Subject, State, Priority, Due
+and Assignee. Two clauses below were written for the deleted `caseTask` schema
+and are corrected rather than left for a test to assert around: the case
+reference is the case TITLE, because the Subject column resolves
+`subject.title` for the object the task hangs off and no case identifier is
+rendered; and the due date is a relative label, "Due in {days} days", built by
+`taskDueLabel` in @conduction/nextcloud-vue.
+
 #### Scenario: View the global task list
 
 - GIVEN 23 tasks exist across 8 cases
 - WHEN the user navigates to the Tasks section (via Mijn werk → Alle taken)
 - THEN the system MUST display a paginated list of tasks
-- AND each task row MUST show: title, parent case reference (ID + title), status, assignee, due date, and priority
+- AND each task row MUST show: title, the case it hangs off (by title), state, assignee, due date, and priority
 
 #### Scenario: View tasks for a specific case
 
@@ -1038,6 +1047,253 @@ with no single value for a facet or a column to read.
 - **GIVEN** an open task assigned to another user and a completed task
 - **WHEN** you choose the chip All
 - **THEN** the list SHALL show both tasks
+
+### Requirement: REQ-TASK-020 You set a reminder for a colleague from the case
+
+`#CaseDetail` SHALL offer Remind, a form asking who, when and what, that
+creates an engine task on the case with that assignee, due date and title
+and `kind: reminder`. The task SHALL appear on Tasks, on My work of the
+assignee and on the case's Work tab, and the assignee SHALL receive the
+platform's assignment notification.
+
+#### Scenario: A reminder reaches a colleague
+@e2e tests/e2e/case-reminder.spec.ts
+
+- **GIVEN** an open case and a colleague Anna
+- **WHEN** you press Remind, pick Anna, the 3rd and "Call the applicant", and save
+- **THEN** a task "Call the applicant" due the 3rd assigned to Anna SHALL exist on the case
+- **AND** Anna SHALL see it under Mine on Tasks
+
+#### Scenario: A reminder is closed like a task
+@e2e tests/e2e/case-reminder.spec.ts
+
+- **GIVEN** a reminder task on a case
+- **WHEN** you complete it on the Work tab
+- **THEN** it SHALL leave the open tasks of the case
+
+### Requirement: REQ-TASK-019 A task on a case defaults to the case handler
+
+When a transition or a flow step creates a task and its authored assignee
+and fallback both name nobody, the task SHALL be assigned to the case's
+`assignee`; when the case has none, to the case's `assignedGroup`; only
+when both are empty SHALL the task be unassigned. An action with
+`assignee: "none"` SHALL create an unassigned task regardless.
+
+#### Scenario: The handler gets the task
+@e2e tests/e2e/task-defaults-to-case-handler.spec.ts
+
+- **GIVEN** a case assigned to you and a transition whose action names no assignee
+- **WHEN** the transition runs
+- **THEN** the created task SHALL be assigned to you
+- **AND** it SHALL appear under Mine on Tasks
+
+#### Scenario: The team gets the task when there is no handler
+@e2e exclude covered by AssigneeResolverTest::testFallsBackToAssignedGroup over a case fixture
+
+- **GIVEN** a case with no assignee and team Permits
+- **WHEN** a task is created without an authored assignee
+- **THEN** the task SHALL carry team Permits as its assignee group
+
+#### Scenario: An action opts out
+@e2e exclude covered by AssigneeResolverTest::testNoneStaysUnassigned
+
+- **GIVEN** an action with `assignee: "none"` on an assigned case
+- **WHEN** the task is created
+- **THEN** it SHALL have no assignee
+
+### Requirement: REQ-TASK-021 The Tasks index has five search fields
+
+The `#Tasks` sidebar SHALL offer filters on case, assignee, due date range,
+state and priority. Each SHALL be answered by the engine inbox server-side;
+no filter SHALL be applied over a fetched page. A lens and a field SHALL
+compose, and both SHALL be carried in the URL.
+
+#### Scenario: Narrow to one case
+@e2e tests/e2e/task-search-fields.spec.ts
+
+- **GIVEN** tasks on two cases
+- **WHEN** you pick one case in the sidebar
+- **THEN** only that case's tasks SHALL remain
+- **AND** the URL SHALL carry the case filter
+
+#### Scenario: Due window inside a lens
+@e2e tests/e2e/task-search-fields.spec.ts
+
+- **GIVEN** the Mine lens is active
+- **WHEN** you set due between next Monday and Friday
+- **THEN** only your tasks due in that week SHALL remain
+
+#### Scenario: A filter the engine lacks is not faked
+@e2e exclude structural; covered by a vitest asserting every declared sidebar field has a store mapping to an inbox argument
+
+- **GIVEN** the sidebar declaration
+- **WHEN** the store mapping is read
+- **THEN** every declared field SHALL map to an inbox argument
+
+### Requirement: A task reaches a team before it reaches a person (REQ-TASK-042)
+
+A case type SHALL declare candidate groups and candidate users per task. A
+task with candidates and no assignee SHALL be offered to every candidate
+and SHALL be claimable by one of them, with the claim recorded. Whether the
+task engine answers a claim act SHALL be asked of the engine rather than
+assumed: where it answers one, the claim affordance SHALL be rendered on
+every task waiting for a candidate; where it does not, no affordance SHALL
+be rendered and the surface showing the task SHALL say that nobody can pick
+it up there yet. dossiq SHALL NOT silently assign a task it presented as
+claimable.
+
+#### Scenario: a task sits with a team until somebody takes it
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task declaring the candidate group Juridische Zaken
+- **WHEN** the task is created
+- **THEN** it SHALL have no assignee
+- **AND** it SHALL be listed for every member of that group
+
+#### Scenario: claiming is recorded
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** an unclaimed task with candidates
+- **WHEN** a member claims it
+- **THEN** they SHALL be its assignee
+- **AND** the claim SHALL record who and when
+
+#### Scenario: an unhonoured declaration is stated, not faked
+@e2e exclude The engine on the e2e instance answers a claim act, so the unhonoured branch cannot be produced there. Asserted in tests/Unit/Service/Task/TaskCandidatesTest.php::testAnEngineWithoutAClaimActSaysSoRatherThanAssigning.
+
+- **GIVEN** a task engine that answers no claim act
+- **WHEN** a handler opens a case carrying a task with a candidate group
+- **THEN** the task SHALL name the group it is meant for
+- **AND** it SHALL say that nobody can pick it up there yet
+- **AND** no claim affordance SHALL be rendered
+
+### Requirement: A task type declares what completing it does (REQ-TASK-043)
+
+A task SHALL declare its effects as named handlers from the action
+registry. Completing the task SHALL run them. Publishing SHALL refuse a
+task naming a handler the registry does not have. Completing SHALL be
+refused when a declared handler cannot be resolved, rather than completing
+without the effect. Resuming a suspended term SHALL be one of the
+available effects.
+
+#### Scenario: finishing the task sends the letter
+@e2e exclude Sending needs a mail server the e2e instance does not have, so a green assertion here would prove the handler ran and not that a letter left. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php::testCompletingRunsTheDeclaredEffects.
+
+- **GIVEN** a task declaring a send effect
+- **WHEN** a handler completes it
+- **THEN** the letter SHALL be sent
+
+#### Scenario: finishing the aanvulling task resumes the term
+@e2e exclude Needs a paused statutory term, which takes the whole aanvulling flow to produce. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php and lib/Service/Transitions/ResumeTermHandler.php's own path in tests/Unit/Service/DeadlinePauseExtensionServiceTest.php.
+
+- **GIVEN** a suspended term and a task declaring the resume effect
+- **WHEN** the task is completed
+- **THEN** the term SHALL resume
+
+#### Scenario: an unresolvable effect refuses the completion
+@e2e exclude A handler cannot be unregistered on a running instance. Asserted in tests/Unit/Service/Task/TaskEffectsTest.php::testAnUnresolvableEffectIsNamed.
+
+- **GIVEN** a task whose declared handler cannot be resolved
+- **WHEN** a handler completes it
+- **THEN** the completion SHALL be refused
+- **AND** the refusal SHALL name the handler
+
+#### Scenario: an unknown handler refuses publication
+@e2e exclude Publishing a workflow is an admin API call with no surface of its own yet. Asserted in tests/Unit/Service/Task/PerTaskConfigurationTest.php::testAnUnknownEffectRefusesPublication.
+
+- **GIVEN** a case type declaring an effect the registry does not have
+- **WHEN** it is published
+- **THEN** publication SHALL refuse, naming the handler
+
+### Requirement: A task is completed where you already are (REQ-TASK-044)
+
+Every open task on a case SHALL be completable on the case page without a
+route change, not only the first one. A task carrying a form SHALL show
+that form in place. A required field left empty SHALL refuse the
+completion with a 4xx carrying `{message, error}` naming the field. The
+same completion SHALL be offered from the task list once the component
+library provides a row action.
+
+#### Scenario: the second open task is completed on the case
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a case with three open tasks
+- **WHEN** a handler completes the second
+- **THEN** it SHALL complete without leaving the case page
+
+#### Scenario: the form is filled in place
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a hoorzitting task carrying a verslag form
+- **WHEN** a handler opens it on the case
+- **THEN** the form SHALL be shown there
+- **AND** completing it SHALL store the verslag on the task
+
+#### Scenario: a blank required field refuses
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task form with a required field left empty
+- **WHEN** a handler completes the task
+- **THEN** it SHALL be refused
+- **AND** the refusal SHALL name the field
+
+### Requirement: A file uploaded in a task form binds to the task (REQ-TASK-045)
+
+A file uploaded inside a task form SHALL be held against the task while the
+task is open, SHALL be removable while it is open, and SHALL become a
+document on the case when the task completes, recording which task
+produced it. A file SHALL NOT remain reachable only from a closed task.
+
+#### Scenario: the upload waits with the task
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** an open task with a file uploaded in its form
+- **WHEN** the case documents are read
+- **THEN** the file SHALL NOT yet be among them
+
+#### Scenario: completing the task publishes the file to the case
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** the same task
+- **WHEN** it is completed
+- **THEN** the file SHALL be a document on the case
+- **AND** it SHALL record the task it came from
+
+#### Scenario: a file is removed while the task is open
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** an open task with an uploaded file
+- **WHEN** a handler removes it
+- **THEN** it SHALL be gone from the task
+
+### Requirement: A task shows its own number, due date and lock (REQ-TASK-046)
+
+Wherever a task is shown, it SHALL carry its own number, its own due date
+and its own lock state. Where the task engine provides no number or no
+lock, dossiq SHALL show the engine's identifier and SHALL state that a
+number and a lock are not available, and SHALL NOT invent either.
+
+#### Scenario: a task is referred to by its own number
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task carrying a number from the engine
+- **WHEN** it is shown on the case and in the list
+- **THEN** both SHALL show that number
+
+#### Scenario: a missing number is stated, not invented
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task engine answering no number
+- **WHEN** the task is shown
+- **THEN** the engine identifier SHALL be shown
+- **AND** dossiq SHALL NOT generate a number of its own
+
+#### Scenario: the due date is the task's own
+@e2e tests/e2e/task-as-a-first-class-record.spec.ts
+
+- **GIVEN** a task with a lead time shorter than the case term
+- **WHEN** the task is shown
+- **THEN** its due date SHALL be its own, not the case deadline
 
 ## Accessibility
 

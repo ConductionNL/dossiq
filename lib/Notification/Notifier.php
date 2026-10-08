@@ -137,6 +137,21 @@ class Notifier implements INotifier {
 	public const SUBJECT_STUF_PERMANENT_ERROR = 'stuf_permanent_error';
 
 	/**
+	 * The applicant changed, added to or answered on their case in the portal.
+	 */
+	public const SUBJECT_APPLICANT_RESPONDED = 'applicant_responded';
+
+	/**
+	 * The applicant withdrew their case in the portal.
+	 */
+	public const SUBJECT_APPLICANT_WITHDREW = 'applicant_withdrew';
+
+	/**
+	 * The background jobs have no usable service account, so they wrote nothing.
+	 */
+	public const SUBJECT_BACKGROUND_ACCOUNT_MISSING = 'background_service_account_missing';
+
+	/**
 	 * Every subject key this notifier can render.
 	 *
 	 * A subject that is not on this list is refused in `prepare()`, and
@@ -163,6 +178,9 @@ class Notifier implements INotifier {
 		self::SUBJECT_STUF_CIRCUIT_OPEN,
 		self::SUBJECT_STUF_TIMEOUT,
 		self::SUBJECT_STUF_PERMANENT_ERROR,
+		self::SUBJECT_APPLICANT_RESPONDED,
+		self::SUBJECT_APPLICANT_WITHDREW,
+		self::SUBJECT_BACKGROUND_ACCOUNT_MISSING,
 	];
 
 	/**
@@ -249,6 +267,13 @@ class Notifier implements INotifier {
 			self::SUBJECT_STUF_CIRCUIT_OPEN,
 			self::SUBJECT_STUF_TIMEOUT,
 			self::SUBJECT_STUF_PERMANENT_ERROR => $this->stufText(subjectKey: $subjectKey, l: $l),
+			self::SUBJECT_APPLICANT_RESPONDED,
+			self::SUBJECT_APPLICANT_WITHDREW => $this->applicantText(
+				subjectKey: $subjectKey,
+				subjectRaw: $subjectRaw,
+				l: $l,
+			),
+			self::SUBJECT_BACKGROUND_ACCOUNT_MISSING => $this->backgroundAccountText(l: $l),
 			default => $this->noteMentionText(subjectRaw: $subjectRaw, l: $l),
 		};
 
@@ -513,6 +538,20 @@ class Notifier implements INotifier {
 	}//end deadlineText()
 
 	/**
+	 * The text for an admin while the background jobs have no service account.
+	 *
+	 * @param \OCP\IL10N $l The recipient's localisation.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 */
+	private function backgroundAccountText(\OCP\IL10N $l): array {
+		return [
+			$l->t('Dossiq background jobs have no service account'),
+			$l->t('Reminders on suspended terms are not sent and nothing is saved until you choose an account in the Dossiq settings.'),
+		];
+	}//end backgroundAccountText()
+
+	/**
 	 * The three StUF wordings.
 	 *
 	 * These go to every member of the admin group, so they name the thing an
@@ -547,4 +586,48 @@ class Notifier implements INotifier {
 			$l->t('Too many failures in a row. Check the endpoint settings.'),
 		];
 	}//end stufText()
+
+	/**
+	 * The two wordings for what the applicant did in the portal.
+	 *
+	 * The act decides the sentence, so the handler knows before opening the
+	 * case whether to look for a changed answer, a new document or a task
+	 * answer. A withdrawal carries what the applicant said, shown as given
+	 * because it is their words; without it the handler still gets the next
+	 * step.
+	 *
+	 * @param string $subjectKey The subject key being rendered.
+	 * @param array<string,mixed> $subjectRaw The stored subject parameters
+	 *                                        (`caseId`, `identifier`, `act`, `reason`).
+	 * @param \OCP\IL10N $l The recipient-language localisation.
+	 *
+	 * @return array{0:string,1:string} The [subject, message] pair.
+	 *
+	 * @spec openspec/specs/portal-contribution/spec.md
+	 */
+	private function applicantText(string $subjectKey, array $subjectRaw, \OCP\IL10N $l): array {
+		if ($subjectKey === self::SUBJECT_APPLICANT_WITHDREW) {
+			$reason = trim((string)($subjectRaw['reason'] ?? ''));
+			if ($reason !== '') {
+				return [
+					$l->t('The applicant withdrew a case you handle'),
+					$l->t('Reason given: %s', [$reason]),
+				];
+			}
+
+			return [
+				$l->t('The applicant withdrew a case you handle'),
+				$l->t('Open the case to close it the way its case type prescribes.'),
+			];
+		}
+
+		$message = match ((string)($subjectRaw['act'] ?? '')) {
+			'amendment' => $l->t('The applicant changed an answer in the portal. Open the case to see what changed.'),
+			'document' => $l->t('The applicant added a document in the portal. Open the case to read it.'),
+			'task-answer' => $l->t('The applicant answered a task in the portal. Open the case to see the answer.'),
+			default => $l->t('Open the case to see what the applicant did.'),
+		};
+
+		return [$l->t('The applicant responded on a case you handle'), $message];
+	}//end applicantText()
 }//end class

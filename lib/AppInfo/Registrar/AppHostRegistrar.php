@@ -98,16 +98,17 @@ class AppHostRegistrar {
 	 */
 	public function register(IRegistrationContext $context): void {
 		// ADR-040 load-order prelude. OC_App::getEnabledApps() sort()s the app
-		// list and Coordinator::registerApps() walks THAT sorted list calling
-		// OC_App::registerAutoloading($appId) and then $app->register() one app
-		// at a time, so an app registers before the PSR-4 prefix of every
+		// list and Coordinator::registerApps() walks THAT sorted list registering
+		// each app's autoloader and then calling $app->register() one app at a
+		// time, so an app registers before the PSR-4 prefix of every
 		// alphabetically-LATER app exists. `dossiq` sorts after `openregister`
 		// so this happens to hold today — by alphabet, not by design — and the
 		// guard below cannot tell "OpenRegister absent" from "OpenRegister's
 		// prefix not registered yet": both answer FALSE and both silently skip
 		// the entire engine. Registering the prefix ourselves removes the
-		// dependency on ordering; registerAutoloading() is idempotent, so on the
-		// current ordering this costs nothing.
+		// dependency on ordering (public IAppManager + a PSR-4 loader; the
+		// private OC_App::registerAutoloading() is gone in Nextcloud 35). It is
+		// idempotent, so on the current ordering this costs nothing.
 		OpenRegisterAutoloader::register();
 
 		if (class_exists(Bootstrap::class) === false) {

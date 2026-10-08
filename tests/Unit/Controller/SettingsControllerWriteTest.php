@@ -27,6 +27,8 @@ use OCA\Dossiq\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\IGroupManager;
 use OCP\IL10N;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\IRequest;
 use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -112,9 +114,14 @@ class SettingsControllerWriteTest extends TestCase {
 		$response = $this->controller()->update();
 
 		$this->assertSame(
-			['success' => true, 'config' => $stored],
-			$response->getData(),
-			'update() must return the config the service actually stored, not the submission'
+			expected: Http::STATUS_OK,
+			actual: $response->getStatus(),
+			message: 'A write that landed answers 200 (REQ-QG-CRN-2).'
+		);
+		$this->assertSame(
+			expected: ['success' => true, 'config' => $stored],
+			actual: $response->getData(),
+			message: 'update() must return the config the service actually stored, not the submission'
 		);
 	}//end testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig()
 
@@ -140,9 +147,14 @@ class SettingsControllerWriteTest extends TestCase {
 		$response = $this->controller()->create();
 
 		$this->assertSame(
-			['success' => true, 'config' => $stored],
-			$response->getData(),
-			'create() must produce the same written result as update()'
+			expected: Http::STATUS_OK,
+			actual: $response->getStatus(),
+			message: 'The legacy alias answers the same status as the method it delegates to.'
+		);
+		$this->assertSame(
+			expected: ['success' => true, 'config' => $stored],
+			actual: $response->getData(),
+			message: 'create() must produce the same written result as update()'
 		);
 	}//end testCreateDelegatesToUpdateAndStillWrites()
 
@@ -165,9 +177,42 @@ class SettingsControllerWriteTest extends TestCase {
 		$response = $this->controller()->update();
 
 		$this->assertSame(
-			['success' => true, 'config' => ['unchanged' => true]],
-			$response->getData()
+			expected: Http::STATUS_OK,
+			actual: $response->getStatus()
+		);
+		$this->assertSame(
+			expected: ['success' => true, 'config' => ['unchanged' => true]],
+			actual: $response->getData()
 		);
 	}//end testEmptySubmissionStillReachesTheService()
 
+	/**
+	 * The refusal branch of this write is the attribute, and it is asserted.
+	 *
+	 * `update()` and `create()` carry no in-method authorisation check: the
+	 * refusal is `#[AuthorizedAdminSetting]`, enforced by the framework before
+	 * the body runs. A suite that asserts the pass status and nothing else
+	 * would stay green if the attribute were dropped and the settings write
+	 * became open to any signed-in user.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/refusals-carry-a-status/specs/quality-gates/spec.md
+	 */
+	public function testTheSettingsWriteRefusesEveryoneButAnAdmin(): void {
+		foreach (['update', 'create'] as $endpoint) {
+			$attributes = (new \ReflectionMethod(SettingsController::class, $endpoint))->getAttributes();
+			$names = array_map(static fn (\ReflectionAttribute $a): string => $a->getName(), $attributes);
+
+			$this->assertContains(
+				needle: AuthorizedAdminSetting::class,
+				haystack: $names,
+				message: sprintf(
+					'%s() writes app config, so its refusal is #[AuthorizedAdminSetting]. '
+					. 'Without it the framework lets any signed-in user through.',
+					$endpoint
+				)
+			);
+		}//end foreach
+	}//end testTheSettingsWriteRefusesEveryoneButAnAdmin()
 }//end class

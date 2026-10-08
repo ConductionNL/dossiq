@@ -1,0 +1,28 @@
+{
+	"version": 1,
+	"items": [
+		{
+			"id": "cases-past-deadline",
+			"title": "Cases past their deadline",
+			"reason": "{value} of your cases are past their deadline or end today.",
+			"severity": "error",
+			"source": {
+				"register": "dossiq",
+				"schema": "case",
+				"filter": {
+					"assignee": "@me",
+					"isFinalStatus": false,
+					"statusHiddenInLists": false,
+					"isDraft": false,
+					"deadline[lt]": "@today+1d"
+				}
+			},
+			"op": "gt",
+			"value": 0,
+			"action": {
+				"label": "Open these cases",
+				"path": "/cases"
+			}
+		}
+	]
+}

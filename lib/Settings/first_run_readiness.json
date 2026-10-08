@@ -1,0 +1,49 @@
+{
+    "_comment": [
+        "The minimum an instance needs before it can take a case, declared once and read live.",
+        "NOT in src/manifest.json, though the change asked for it there: the v2 app-manifest schema",
+        "sets additionalProperties:false at the top level and on the setup block, in all three copies",
+        "that matter (tests/schemas/, @conduction/nextcloud-vue 3.1.0, and the .github hydra-gates",
+        "vendored copy synced in ConductionNL/.github#776). A readiness key added to the manifest",
+        "would fail validate-manifest.js and gate 22 on the day it shipped. Carrying the readiness",
+        "block in the manifest needs a nextcloud-vue schema change first, which is the follow-up.",
+        "",
+        "Each item names the screen an administrator goes to in order to satisfy it. The declared",
+        "list and the list SetupController reports agree in both directions, asserted by",
+        "SetupDeclaredMatchesReportedTest: an item rendered but never reported cannot be answered,",
+        "and an item reported that no screen satisfies cannot be acted on."
+    ],
+    "version": 1,
+    "items": [
+        {
+            "id": "organisation",
+            "title": "An organisation",
+            "body": "Cases, documents and calendars all hang off an organisation. OpenRegister holds it.",
+            "screen": "/settings/admin/openregister"
+        },
+        {
+            "id": "mail-account",
+            "title": "A mail account",
+            "body": "Pick the shared mailbox the app sends from and reads case mail out of.",
+            "screen": "/settings#case-email"
+        },
+        {
+            "id": "published-case-type",
+            "title": "A published case type",
+            "body": "Every case follows a case type. A draft type takes no cases.",
+            "screen": "/casetypes"
+        },
+        {
+            "id": "role-with-holder",
+            "title": "A role someone holds",
+            "body": "A role with nobody in it decides nothing. Give at least one role a holder.",
+            "screen": "/settings#roles"
+        },
+        {
+            "id": "working-calendar",
+            "title": "A working calendar",
+            "body": "Terms are counted in working days. Without a calendar every deadline is a guess.",
+            "screen": "/settings#termijnen"
+        }
+    ]
+}

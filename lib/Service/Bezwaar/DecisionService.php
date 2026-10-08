@@ -163,10 +163,19 @@ class DecisionService {
 
 		$this->validator->assertDraftable(payload: $payload);
 
+		// 🔴 `bezwaar`, NOT `objectionProceeding`. The schema declares the link
+		// as `bezwaar` and REQUIRES it; `objectionProceeding` is the name of
+		// the SCHEMA it $refs, not of the property. Written under the wrong
+		// name the link is an undeclared key, which OpenRegister drops in
+		// silence, so every draft stored a decision belonging to no bezwaar and
+		// publish() then read an empty objection id. Nothing reported it,
+		// because nothing ever called either method. `bacAdviceRequest` had the
+		// identical defect and needed a backfill; this one is caught before a
+		// row exists.
 		$record = array_merge(
 			$payload,
 			[
-				'objectionProceeding' => $objectionId,
+				'bezwaar' => $objectionId,
 				'status' => 'draft',
 			]
 		);
@@ -187,6 +196,81 @@ class DecisionService {
 			throw new RuntimeException('Could not draft bezwaarDecision');
 		}
 	}//end draft()
+
+	/**
+	 * The case a bezwaar belongs to, for the per-case guard.
+	 *
+	 * A controller cannot authorise a decision on an objection without one:
+	 * `CaseAccessGuard` answers per CASE, and an objection names its case.
+	 * Answering null denies, which is the posture every other bezwaar surface
+	 * takes on an unresolvable id.
+	 *
+	 * @param string $objectionId UUID of the bezwaar.
+	 *
+	 * @return string|null The case uuid, or null when it cannot be resolved.
+	 *
+	 * @spec openspec/specs/bezwaar-decision/spec.md
+	 */
+	public function caseIdForObjection(string $objectionId): ?string {
+		$objectionId = trim($objectionId);
+		if ($objectionId === '') {
+			return null;
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
+		if ($objectService === null || $register === '' || $objectionSchema === '') {
+			return null;
+		}
+
+		$objection = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $objectionSchema,
+			id: $objectionId
+		);
+
+		$caseId = trim((string)($objection['case'] ?? ''));
+
+		if ($caseId === '') {
+			return null;
+		}
+
+		return $caseId;
+	}//end caseIdForObjection()
+
+	/**
+	 * The case a drafted decision belongs to, through its bezwaar.
+	 *
+	 * @param string $decisionId UUID of the bezwaarDecision.
+	 *
+	 * @return string|null The case uuid, or null when it cannot be resolved.
+	 *
+	 * @spec openspec/specs/bezwaar-decision/spec.md
+	 */
+	public function caseIdForDecision(string $decisionId): ?string {
+		$decisionId = trim($decisionId);
+		if ($decisionId === '') {
+			return null;
+		}
+
+		$objectService = $this->settingsService->getObjectService();
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$decisionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_decision_schema');
+		if ($objectService === null || $register === '' || $decisionSchema === '') {
+			return null;
+		}
+
+		$decision = $this->findObjectAsArray(
+			objectService: $objectService,
+			register: $register,
+			schema: $decisionSchema,
+			id: $decisionId
+		);
+
+		return $this->caseIdForObjection(objectionId: (string)($decision['bezwaar'] ?? ''));
+	}//end caseIdForDecision()
 
 	/**
 	 * Publish a draft bezwaarDecision by delegating the *deciding* to decidesk.
@@ -240,7 +324,7 @@ class DecisionService {
 		// raised on an Awb-invalid payload.
 		$this->validator->assertPublishable(decision: $current);
 
-		$objectionId = (string)($current['objectionProceeding'] ?? '');
+		$objectionId = (string)($current['bezwaar'] ?? '');
 
 		// REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
 		// decidesk DecisionRequestedEvent. Fail closed — never author the besluit

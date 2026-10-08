@@ -70,6 +70,7 @@
 
 <script>
 import { CnDetailWidgetHost } from '@conduction/nextcloud-vue'
+import { unfittedWidget } from './unfittedWidget.js'
 
 /**
  * CaseSectionsWidget: a tab panel that holds more than one widget.
@@ -187,7 +188,7 @@ export default {
 				.map((entry, index) => ({
 					key: entry.widget.id || `${entry.widget.type}-${index}`,
 					label: entry.label || entry.widget.title || '',
-					widget: entry.widget,
+					widget: unfittedWidget(entry.widget),
 				}))
 		},
 	},

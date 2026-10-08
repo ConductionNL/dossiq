@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service\Transitions;
 
+use OCA\Dossiq\Exception\RefusedException;
 use OCA\Dossiq\Service\Archival\ArchivalNominationDeriver;
 use OCA\Dossiq\Service\CaseTypeResolver;
 use OCA\Dossiq\Service\SettingsService;
@@ -106,7 +107,11 @@ class CaseResultWriter {
 				return null;
 			}
 
-			throw new RuntimeException('result_type_required');
+			throw new RefusedException(
+				rule: 'result-type-required',
+				sentence: 'Pick a result before closing this case.',
+				status: RefusedException::STATUS_UNPROCESSABLE,
+			);
 		}
 
 		$result = $this->writeResult(caseId: $caseId, resultTypeId: $resultTypeId);

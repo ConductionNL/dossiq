@@ -195,13 +195,6 @@ class BeschikkingGenerationService {
 	 * beschikking PDF.
 	 *
 	 * @return object|null
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
-	 *      over the app-id and namespace rename map; the answer depends on the
-	 *      instance, not on any state this service holds.
-	 *
-	 * @psalm-suppress MixedReturnStatement
-	 * @psalm-suppress MixedInferredReturnType
 	 */
 	private function resolveDocumentService(): ?object {
 		$service = FleetAppId::getService(

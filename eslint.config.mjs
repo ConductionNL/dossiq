@@ -241,7 +241,11 @@ export default [
 		//
 		// ⚠️ `.js` and `.cjs` ONLY. A `scripts/*.mjs` is genuinely ESM and must
 		// keep the default `sourceType`, or `import` stops parsing there.
-		files: ['scripts/**/*.js', 'scripts/**/*.cjs'],
+		//
+		// `tools/` is the same kind of file and joins the same block: a
+		// CommonJS Node CLI that prints its report. `tools/merge-l10n.js` is a
+		// git merge driver, so git, not a browser, is what runs it.
+		files: ['scripts/**/*.js', 'scripts/**/*.cjs', 'tools/**/*.js', 'tools/**/*.cjs'],
 		languageOptions: {
 			sourceType: 'commonjs',
 			globals: {

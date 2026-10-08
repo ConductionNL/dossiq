@@ -1,0 +1,245 @@
+{
+  "_note": "intake-triage-and-refusal (round 4 cluster 35, candidates C-intake-8, C-intake-42, C-case-core-10, C-intake-5, C-intake-22, C-intake-33). What a case must answer before it exists is DECLARED on the case type and not added to case.required (design D-1): case.required is global, and a gemeente's internal case types have no communication channel to record. The declaration splits into two lists because a field a handler cannot know yet and a field that compiles into an access rule are different acts (design D-2). assigneeNarrowing is read by the picker AND enforced on the write, because a narrowing that only exists on screen is not a narrowing (design D-3). refusalDestination exists so a refused case lands somewhere, per Awb 2:3 (design D-4). The sleep fields sit on mailIntakeEntry rather than on case, because a sleep is on something not yet accepted and must never read as a suspension of a statutory term (design D-5). intakeDestinations is the fan-out declaration; it names a case type and a department per destination and waits on buildiq forms-per-case-type for the form half and on openregister relation-types-with-inverses for a named inverse (design D-6). A fragment rather than an edit to dossiq_register.json, per ADR-037, because several dossiq lanes build against that file at once.",
+  "components": {
+    "schemas": {
+      "caseType": {
+        "properties": {
+          "intakeRequirements": {
+            "type": "object",
+            "title": "Intake requirements",
+            "description": "Which fields must be answered before a case of this type can exist, and which before it is complete.",
+            "x-notes": "Two lists, not one. A field on the first list refuses creation, because a case that cannot be reached is worse than a case that was never made. A field on the second is recorded as knowingly incomplete, which is what lifecycle-acts-on-the-case already does for the phone intake.",
+            "properties": {
+              "requiredBeforeCreation": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "default": [
+                  "communicationChannel",
+                  "confidentiality"
+                ],
+                "title": "Required before the case exists",
+                "description": "Case fields that must carry a value or the case is not created. The channel and the confidentiality by default, because both are what the Woo and the Archiefwet later ask about."
+              },
+              "requiredBeforeComplete": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Required before the case is complete",
+                "description": "Case fields a handler may not know yet. A case without them is created and reads incomplete."
+              }
+            }
+          },
+          "caseClassification": {
+            "type": "object",
+            "title": "Classification",
+            "description": "The classification facets a case of this type carries, and whether the classification is an access rule.",
+            "x-notes": "OpenCase's clause is the test: an unclassified case is unreachable rather than merely untidy. Where classificationIsAccessRule is on, the classification joins requiredBeforeCreation whether or not it is listed there, and an unresolvable scheme refuses creation per ADR-102 rather than creating a case nobody can reach.",
+            "properties": {
+              "scheme": {
+                "type": "string",
+                "title": "Classification scheme",
+                "description": "The named scheme the classification values come from. A scheme this instance does not know refuses creation rather than creating an unreachable case."
+              },
+              "classificationIsAccessRule": {
+                "type": "boolean",
+                "default": false,
+                "title": "The classification is an access rule",
+                "description": "On, a case of this type cannot exist without a classification, because the classification is what decides who can reach it."
+              },
+              "facets": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "classification",
+                    "sensitivity",
+                    "actionFacet",
+                    "insightLevel"
+                  ]
+                },
+                "title": "Declared facets",
+                "description": "Which of the four facets a case of this type records."
+              }
+            }
+          },
+          "assigneeNarrowing": {
+            "type": "object",
+            "title": "Who may handle this",
+            "description": "The groups and the people that may be chosen as the handler when a case of this type is created. Declaring neither keeps every choice.",
+            "x-notes": "Read by the picker and enforced on the write. A picker that lists three groups over an API that accepts thirty is a narrowing that only exists on screen (design D-3). A refusal names this declaration so an administrator can fix the case type rather than guess.",
+            "properties": {
+              "allowedGroups": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Allowed teams",
+                "description": "The teams a case of this type may be assigned to. Empty means every team."
+              },
+              "allowedUsers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "title": "Allowed handlers",
+                "description": "The people a case of this type may be assigned to. Empty means everyone."
+              }
+            }
+          },
+          "refusalDestination": {
+            "type": "object",
+            "title": "Where a refused case goes",
+            "description": "The department and the role a case refused at intake is handed to. Awb 2:3 says a refused case has somewhere to go.",
+            "x-notes": "Refusal is an outcome of routing beside its five destinations (design D-4). A case type declaring no destination cannot refuse at all: the refusal is itself refused and says the destination is not configured, because a refusal that goes nowhere is a lost case.",
+            "properties": {
+              "department": {
+                "type": "string",
+                "title": "Department",
+                "description": "The department a refused case is handed to."
+              },
+              "role": {
+                "type": "string",
+                "title": "Role",
+                "description": "The role within that department that picks it up."
+              }
+            }
+          },
+          "intakeDestinations": {
+            "type": "array",
+            "title": "Intake destinations",
+            "description": "The cases one submission of this intake form opens, one per destination.",
+            "x-notes": "GLPI's form destinations, narrowed to what dossiq can hold today. The relation between the created cases uses the existing related-cases link because openregister relation-types-with-inverses does not exist yet, so the relation carries no inverse name. The form itself waits on buildiq forms-per-case-type; until it lands the destinations are declared on the intake case type.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "title": "Destination",
+                  "description": "What this destination is called where a handler reads it."
+                },
+                "caseType": {
+                  "type": "string",
+                  "format": "uuid",
+                  "$ref": "caseType",
+                  "title": "Case type",
+                  "description": "The kind of case this destination opens."
+                },
+                "department": {
+                  "type": "string",
+                  "title": "Department",
+                  "description": "The department the opened case belongs to."
+                },
+                "enabled": {
+                  "type": "boolean",
+                  "default": true,
+                  "title": "Enabled",
+                  "description": "Off stops this destination opening a case, without removing what it was for."
+                }
+              }
+            }
+          }
+        }
+      },
+      "case": {
+        "properties": {
+          "classification": {
+            "type": "string",
+            "title": "Classification",
+            "facetable": true,
+            "description": "The classification this case carries, from the scheme its case type names."
+          },
+          "sensitivity": {
+            "type": "string",
+            "title": "Sensitivity",
+            "facetable": true,
+            "description": "How sensitive the content of this case is."
+          },
+          "actionFacet": {
+            "type": "string",
+            "title": "Action facet",
+            "description": "What kind of act this case is, where the case type declares the facet."
+          },
+          "insightLevel": {
+            "type": "string",
+            "title": "Insight level",
+            "description": "How much of this case may be seen, where the case type declares the facet."
+          },
+          "intakeRefusal": {
+            "type": "object",
+            "title": "Refused at intake",
+            "description": "Whether this case was refused at intake, by whom, why, and where it went.",
+            "x-notes": "A refused case stays in the register and stays findable in search. A refusal that deletes or hides is not a refusal, it is a loss, and Awb 2:3 asks the opposite.",
+            "properties": {
+              "refused": {
+                "type": "boolean",
+                "title": "Refused",
+                "description": "Whether this case was refused at intake."
+              },
+              "reason": {
+                "type": "string",
+                "title": "Reason",
+                "description": "Why it was refused, in the refuser's own words."
+              },
+              "refusedBy": {
+                "type": "string",
+                "title": "Refused by",
+                "description": "Who refused it."
+              },
+              "refusedAt": {
+                "type": "string",
+                "format": "date-time",
+                "title": "Refused at",
+                "description": "When it was refused."
+              },
+              "department": {
+                "type": "string",
+                "title": "Handed to department",
+                "description": "The department it was handed to."
+              },
+              "role": {
+                "type": "string",
+                "title": "Handed to role",
+                "description": "The role that picks it up."
+              }
+            }
+          },
+          "intakeSubmission": {
+            "type": "string",
+            "title": "Submission",
+            "visible": false,
+            "description": "The submission this case was opened from, where one submission opened several cases."
+          }
+        }
+      },
+      "mailIntakeEntry": {
+        "properties": {
+          "sleepUntil": {
+            "type": "string",
+            "format": "date",
+            "title": "Asleep until",
+            "description": "The date this triage item comes back to the queue. Until then it is out of the queue."
+          },
+          "sleepReason": {
+            "type": "string",
+            "title": "Reason for sleeping",
+            "description": "Why nothing is done until that date."
+          },
+          "sleptBy": {
+            "type": "string",
+            "title": "Slept by",
+            "description": "Who put it to sleep."
+          },
+          "sleptAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Slept at",
+            "description": "When they put it to sleep."
+          }
+        }
+      }
+    }
+  }
+}

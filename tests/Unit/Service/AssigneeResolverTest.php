@@ -209,6 +209,148 @@ class AssigneeResolverTest extends TestCase {
 	}//end testNothingAuthoredNamesNobody()
 
 	/**
+	 * Nothing authored, but the case has a handler: the handler gets it.
+	 *
+	 * 🔴 THIS IS THE STEP THAT WAS MISSING, AND IT FAILED SILENTLY. An action
+	 * that named no assignee produced a task addressed to '', which drops the
+	 * task schema's `taskAssigned` notification on the floor: the work exists,
+	 * it sits on a case with a named handler, and nobody is told.
+	 *
+	 * @return void
+	 */
+	public function testTheCaseHandlerGetsTheTaskWhenNothingElseNamesAnybody(): void {
+		self::assertSame(
+			expected: 'alice',
+			actual: $this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
+		);
+	}//end testTheCaseHandlerGetsTheTaskWhenNothingElseNamesAnybody()
+
+	/**
+	 * A dead template and a dead fallback still land on the case handler.
+	 *
+	 * @return void
+	 */
+	public function testADeadPrimaryAndFallbackStillLandOnTheHandler(): void {
+		self::assertSame(
+			expected: 'alice',
+			actual: $this->resolver->resolve(
+				primary: '{{ case.responsible }}',
+				fallback: '{{ case.caseTypeOwner }}',
+				case: ['id' => 'c', 'assignee' => 'alice']
+			)
+		);
+	}//end testADeadPrimaryAndFallbackStillLandOnTheHandler()
+
+	/**
+	 * An authored assignee still wins over the case handler.
+	 *
+	 * The default is the LAST step, never an override: a case type that says
+	 * who reviews a permit must keep saying it.
+	 *
+	 * @return void
+	 */
+	public function testAnAuthoredAssigneeStillWinsOverTheCaseHandler(): void {
+		self::assertSame(
+			expected: 'carol',
+			actual: $this->resolver->resolve(primary: 'carol', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
+		);
+		self::assertSame(
+			expected: 'behandelaars',
+			actual: $this->resolver->resolve(
+				primary: '{{ case.responsible }}',
+				fallback: 'behandelaars',
+				case: ['id' => 'c', 'assignee' => 'alice']
+			)
+		);
+	}//end testAnAuthoredAssigneeStillWinsOverTheCaseHandler()
+
+	/**
+	 * An expanded handler reference answers its id, never "Array".
+	 *
+	 * @return void
+	 */
+	public function testAnExpandedHandlerReferenceAnswersItsId(): void {
+		self::assertSame(
+			expected: 'alice',
+			actual: $this->resolver->resolve(
+				primary: '',
+				fallback: '',
+				case: ['id' => 'c', 'assignee' => ['id' => 'alice', 'displayName' => 'Alice']]
+			)
+		);
+	}//end testAnExpandedHandlerReferenceAnswersItsId()
+
+	/**
+	 * A case with no handler and no fallback still names nobody.
+	 *
+	 * The default must not invent a principal. A silent fall back to whoever
+	 * happened to trigger the transition would put the actor's name on work
+	 * that is not theirs.
+	 *
+	 * @return void
+	 */
+	public function testACaseWithNoHandlerStillNamesNobody(): void {
+		self::assertSame(expected: '', actual: $this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c']));
+	}//end testACaseWithNoHandlerStillNamesNobody()
+
+	/**
+	 * The reserved word "none" keeps a task unclaimed on an assigned case.
+	 *
+	 * @return void
+	 */
+	public function testNoneStaysUnassigned(): void {
+		self::assertSame(
+			expected: '',
+			actual: $this->resolver->resolve(
+				primary: 'none',
+				fallback: 'behandelaars',
+				case: ['id' => 'c', 'assignee' => 'alice']
+			)
+		);
+		self::assertSame(
+			expected: '',
+			actual: $this->resolver->resolve(primary: '  NONE  ', fallback: '', case: ['id' => 'c', 'assignee' => 'alice'])
+		);
+	}//end testNoneStaysUnassigned()
+
+	/**
+	 * The team a case names is the last declared step, and its own answer.
+	 *
+	 * 🔴 IT IS NOT A SECOND GUESS AT THE PERSON. The task schema keeps the
+	 * team in its own field; writing a group id into the person field is a
+	 * task addressed to a principal nothing answers to.
+	 *
+	 * @return void
+	 */
+	public function testFallsBackToAssignedGroup(): void {
+		self::assertSame(
+			expected: 'rol-7',
+			actual: $this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => 'rol-7'])
+		);
+		self::assertSame(
+			expected: 'rol-7',
+			actual: $this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => ['id' => 'rol-7', 'name' => 'Vergunningen']])
+		);
+		self::assertSame(expected: '', actual: $this->resolver->resolveTeam(case: ['id' => 'c']));
+		self::assertNotSame(
+			expected: 'Array',
+			actual: $this->resolver->resolveTeam(case: ['id' => 'c', 'assignedGroup' => ['name' => 'V']])
+		);
+	}//end testFallsBackToAssignedGroup()
+
+	/**
+	 * A team is never answered as the person.
+	 *
+	 * @return void
+	 */
+	public function testATeamIsNeverAnsweredAsThePerson(): void {
+		self::assertSame(
+			expected: '',
+			actual: $this->resolver->resolve(primary: '', fallback: '', case: ['id' => 'c', 'assignedGroup' => 'rol-7'])
+		);
+	}//end testATeamIsNeverAnsweredAsThePerson()
+
+	/**
 	 * The refusal clause distinguishes no fallback from a dead one.
 	 *
 	 * Two different problems for the reader: one is a declaration that never

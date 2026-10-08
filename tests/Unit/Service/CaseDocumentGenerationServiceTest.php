@@ -3,263 +3,204 @@
 /**
  * Unit tests for CaseDocumentGenerationService.
  *
- * The service is the seam between the Generate document button and
- * MergeTemplateHandler's no-targetField branch, so what is worth protecting is
- * the SHAPE of the config it hands over: a template body, the template's name
- * as the title, its document type resolved to a catalogue row, and no
- * `targetField` at all. A `targetField` slipping in here would write the
- * letter into a case field and file nothing, which looks like success.
- *
- * @category Tests
- * @package  OCA\Dossiq\Tests\Unit\Service
- *
- * @author    Conduction B.V. <info@conduction.nl>
- * @copyright 2026 Conduction B.V.
- * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
- *
- * @link https://github.com/ConductionNL/dossiq
+ * The Generate document button asks Filinq for the document by dispatching
+ * the real DocumentGenerationRequestedEvent, and files what Filinq stored.
+ * What is worth protecting: the request carries the template in Filinq's
+ * syntax, the case as its object and the metadata the dossier needs; a
+ * template the case cannot fill refuses before anything is asked; and an
+ * instance where nobody answers the event says Filinq is required instead of
+ * reporting a document that does not exist.
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
- * @spec openspec/specs/template-library/spec.md
+ * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Dossiq\Tests\Unit\Service;
 
-use OCA\Dossiq\Service\Actions\ActionResult;
-use OCA\Dossiq\Service\Actions\MergeTemplateHandler;
 use OCA\Dossiq\Service\CaseDocumentGenerationService;
+use OCA\Dossiq\Service\Flow\RetiredTemplateSyntax;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\TemplateLibraryService;
 use OCA\Dossiq\Service\Transitions\CaseStatusStore;
+use OCA\Dossiq\Service\Zaakdossier\GeneratedDocumentFiler;
+use OCA\Filinq\Event\DocumentGenerationRequestedEvent;
+use OCP\EventDispatcher\Event;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Dossiq\Service\CaseDocumentGenerationService
- *
  * @uses \OCA\Dossiq\Service\Actions\ActionResult
+ * @uses \OCA\Dossiq\Service\Flow\RetiredTemplateSyntax
  */
 class CaseDocumentGenerationServiceTest extends TestCase {
 
 	/**
-	 * The action config the handler double was handed, or null.
+	 * The request event the service dispatched, or null.
+	 *
+	 * @var DocumentGenerationRequestedEvent|null
+	 */
+	private ?DocumentGenerationRequestedEvent $request = null;
+
+	/**
+	 * What the filer was asked to file, or null.
 	 *
 	 * @var array<string, mixed>|null
 	 */
-	private ?array $dispatched = null;
-
-	/**
-	 * The case the handler double was handed, or null.
-	 *
-	 * @var array<string, mixed>|null
-	 */
-	private ?array $dispatchedCase = null;
-
-	/**
-	 * Reset the recorders.
-	 *
-	 * @return void
-	 */
-	protected function setUp(): void {
-		$this->dispatched = null;
-		$this->dispatchedCase = null;
-	}//end setUp()
+	private ?array $filed = null;
 
 	/**
 	 * A service over stubbed collaborators.
 	 *
 	 * @param array<string, mixed>|null $template The template the library holds.
-	 * @param array<string, mixed>|null $case The case the store holds.
-	 * @param array<int, array<string, mixed>> $types The catalogue rows.
+	 * @param array<string, mixed>|null $case     The case the store holds.
+	 * @param string                    $filinq   How "Filinq" answers: `ok`, `error` or `absent`.
 	 *
 	 * @return CaseDocumentGenerationService The service under test.
 	 */
-	private function service(?array $template, ?array $case, array $types = []): CaseDocumentGenerationService {
+	private function service(?array $template, ?array $case, string $filinq = 'ok'): CaseDocumentGenerationService {
 		$templates = $this->createMock(TemplateLibraryService::class);
 		$templates->method('loadTemplate')->willReturn($template);
 
 		$cases = $this->createMock(CaseStatusStore::class);
 		$cases->method('loadCase')->willReturn($case);
 
-		$objectService = new class($types) {
-			/**
-			 * @param array<int, array<string, mixed>> $rows The catalogue rows.
-			 */
-			public function __construct(private array $rows) {
-			}
-
-			/**
-			 * @param string               $register The register slug.
-			 * @param string               $schema   The schema slug.
-			 * @param array<string, mixed> $filters  The filters.
-			 *
-			 * @return array<int, array<string, mixed>> The rows.
-			 */
-			public function searchObjectsBySlug(string $register, string $schema, array $filters): array {
-				unset($register, $schema, $filters);
-
-				return $this->rows;
-			}
-		};
-
 		$settings = $this->createMock(SettingsService::class);
-		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getObjectService')->willReturn(null);
 		$settings->method('getConfigValue')->willReturnCallback(
-			static function (string $key, string $default = ''): string {
-				$map = [
-					'register' => 'dossiq',
-					'dossier_informatieobjecttype_schema' => 'informatieobjecttype',
-				];
+			static fn (string $key, string $default = ''): string => (['register' => '12', 'case_schema' => '34'][$key] ?? $default)
+		);
 
-				return ($map[$key] ?? $default);
+		$events = $this->createMock(IEventDispatcher::class);
+		$events->method('dispatchTyped')->willReturnCallback(
+			function (Event $event) use ($filinq): void {
+				self::assertInstanceOf(DocumentGenerationRequestedEvent::class, $event);
+				$this->request = $event;
+				if ($filinq === 'ok') {
+					$event->setResult(['fileId' => 77, 'mime' => 'application/pdf', 'name' => 'Ontvangstbevestiging.pdf']);
+				}
+
+				if ($filinq === 'error') {
+					$event->setError('Template rendering failed');
+				}
 			}
 		);
 
-		$handler = $this->createMock(MergeTemplateHandler::class);
-		$handler->method('handle')->willReturnCallback(
-			function (array $actionConfig, array $caseArg, array $context): ActionResult {
-				unset($context);
-				$this->dispatched = $actionConfig;
-				$this->dispatchedCase = $caseArg;
+		$filer = $this->createMock(GeneratedDocumentFiler::class);
+		$filer->method('file')->willReturnCallback(
+			function (string $caseId, int $fileId, string $title, string $mime, array $metadata): array {
+				$this->filed = ['caseId' => $caseId, 'fileId' => $fileId, 'title' => $title, 'mime' => $mime, 'metadata' => $metadata];
 
-				return new ActionResult(succeeded: true, data: ['informatieobject' => 'inf-1']);
+				return ['id' => 'inf-1'];
 			}
 		);
 
-		return new CaseDocumentGenerationService(
-			cases: $cases,
-			templates: $templates,
-			settingsService: $settings,
-			handler: $handler,
-		);
+		$l10n = $this->createMock(IL10N::class);
+		$l10n->method('t')->willReturnArgument(0);
+
+		return new CaseDocumentGenerationService($cases, $templates, $settings, $events, $filer, new RetiredTemplateSyntax(), $l10n);
 	}//end service()
 
 	/**
-	 * The handler is asked to file, not to write a case field.
+	 * A library template.
+	 *
+	 * @return array<string, mixed> The template.
+	 */
+	private function template(): array {
+		return ['title' => 'Ontvangstbevestiging', 'documentType' => 'type-uuid', 'body' => 'Beste {{case.title}}, wij ontvingen uw aanvraag.'];
+	}//end template()
+
+	/**
+	 * The button asks Filinq, files the result, and answers with the informatieobject.
 	 *
 	 * @return void
 	 */
-	public function testTheHandlerIsCalledWithoutATargetField(): void {
-		$result = $this->service(
-			['id' => 'ontvangstbevestiging', 'title' => 'Ontvangstbevestiging', 'body' => 'Beste lezer'],
-			['id' => 'case-1', 'title' => 'Kapvergunning'],
-		)->generate(caseId: 'case-1', templateId: 'ontvangstbevestiging');
+	public function testTheDocumentIsRequestedFromFilinqAndFiledOnTheCase(): void {
+		$result = $this->service($this->template(), ['id' => 'case-1', 'title' => 'Dakkapel'])->generate('case-1', 'tpl');
 
-		$this->assertTrue($result->succeeded);
-		$this->assertArrayNotHasKey('targetField', $this->dispatched);
-		$this->assertSame('Beste lezer', $this->dispatched['template']);
-		$this->assertSame('Ontvangstbevestiging', $this->dispatched['templateName']);
-		$this->assertSame('case-1', $this->dispatchedCase['id']);
-	}//end testTheHandlerIsCalledWithoutATargetField()
+		self::assertTrue($result->succeeded, (string)$result->error);
+		self::assertSame(['informatieobject' => 'inf-1', 'case' => 'case-1'], $result->data);
+
+		self::assertNotNull($this->request);
+		self::assertSame('dossiq', $this->request->getRequestingApp());
+		$request = $this->request->getRequest();
+		self::assertSame('Beste {{ item.title }}, wij ontvingen uw aanvraag.', $request['template']);
+		self::assertTrue($request['storeFile']);
+		self::assertSame(['register' => '12', 'schema' => '34', 'id' => 'case-1'], $request['object']);
+		self::assertTrue($request['metadata'][GeneratedDocumentFiler::FILED_BY_CALLER]);
+		self::assertSame('type-uuid', $request['metadata']['informatieobjecttype']);
+
+		self::assertSame(77, $this->filed['fileId']);
+		self::assertSame('case-1', $this->filed['caseId']);
+		self::assertSame('Ontvangstbevestiging', $this->filed['title']);
+	}//end testTheDocumentIsRequestedFromFilinqAndFiledOnTheCase()
 
 	/**
-	 * REQ-005: a template's documentType resolves to the catalogue row's id.
+	 * Nobody answers the event: the refusal names Filinq, and nothing is filed.
 	 *
 	 * @return void
 	 */
-	public function testTheDocumentTypeResolvesToTheCatalogueRow(): void {
-		$this->service(
-			[
-				'id' => 'ontvangstbevestiging',
-				'title' => 'Ontvangstbevestiging',
-				'body' => 'Beste lezer',
-				'documentType' => 'Ontvangstbevestiging',
-			],
-			['id' => 'case-1'],
-			[['id' => 'iot-7', 'description' => 'Ontvangstbevestiging']],
-		)->generate(caseId: 'case-1', templateId: 'ontvangstbevestiging');
+	public function testWithoutFilinqTheButtonSaysFilinqIsRequired(): void {
+		$result = $this->service($this->template(), ['id' => 'case-1', 'title' => 'X'], filinq: 'absent')->generate('case-1', 'tpl');
 
-		$this->assertSame('iot-7', $this->dispatched['documentType']);
-	}//end testTheDocumentTypeResolvesToTheCatalogueRow()
+		self::assertFalse($result->succeeded);
+		self::assertStringContainsString('Filinq', (string)$result->error);
+		self::assertNull($this->filed);
+	}//end testWithoutFilinqTheButtonSaysFilinqIsRequired()
 
 	/**
-	 * A type the catalogue does not hold is passed through by name.
-	 *
-	 * The Documents tab renders an unresolved type as its raw value, so the
-	 * column reads Ontvangstbevestiging rather than going blank.
+	 * Filinq refused: its reason is passed on, and nothing is filed.
 	 *
 	 * @return void
 	 */
-	public function testAnUnknownDocumentTypeIsPassedThroughByName(): void {
-		$this->service(
-			[
-				'id' => 'verdagingsbrief',
-				'title' => 'Verdagingsbrief',
-				'body' => 'Beste lezer',
-				'documentType' => 'Verdagingsbrief',
-			],
-			['id' => 'case-1'],
-			[],
-		)->generate(caseId: 'case-1', templateId: 'verdagingsbrief');
+	public function testFilinqsErrorIsPassedOn(): void {
+		$result = $this->service($this->template(), ['id' => 'case-1', 'title' => 'X'], filinq: 'error')->generate('case-1', 'tpl');
 
-		$this->assertSame('Verdagingsbrief', $this->dispatched['documentType']);
-	}//end testAnUnknownDocumentTypeIsPassedThroughByName()
+		self::assertFalse($result->succeeded);
+		self::assertSame('document_generation_failed: Template rendering failed', $result->error);
+		self::assertNull($this->filed);
+	}//end testFilinqsErrorIsPassedOn()
 
 	/**
-	 * A template the library does not hold generates nothing.
+	 * A placeholder the case cannot fill refuses before Filinq is asked.
 	 *
 	 * @return void
 	 */
-	public function testAnUnknownTemplateGeneratesNothing(): void {
-		$result = $this->service(null, ['id' => 'case-1'])
-			->generate(caseId: 'case-1', templateId: 'nope');
+	public function testAHoleInTheLetterRefusesBeforeAnythingIsAsked(): void {
+		$result = $this->service($this->template(), ['id' => 'case-1'])->generate('case-1', 'tpl');
 
-		$this->assertFalse($result->succeeded);
-		$this->assertSame('template_not_found', $result->error);
-		$this->assertNull($this->dispatched);
-	}//end testAnUnknownTemplateGeneratesNothing()
+		self::assertFalse($result->succeeded);
+		self::assertSame('missing_template_field:case.title', $result->error);
+		self::assertNull($this->request);
+	}//end testAHoleInTheLetterRefusesBeforeAnythingIsAsked()
 
 	/**
-	 * A zaaktype bundle has no body, so it cannot be rendered as a letter.
-	 *
-	 * The library holds both kinds — the picker lists everything it returns —
-	 * so picking a case-type bundle must say so rather than file an empty
-	 * document.
+	 * An unknown template or case generates nothing.
 	 *
 	 * @return void
 	 */
-	public function testATemplateWithNoBodyGeneratesNothing(): void {
-		$result = $this->service(
-			['id' => 'omgevingsvergunning', 'title' => 'Omgevingsvergunning', 'caseType' => []],
-			['id' => 'case-1'],
-		)->generate(caseId: 'case-1', templateId: 'omgevingsvergunning');
-
-		$this->assertFalse($result->succeeded);
-		$this->assertSame('template_has_no_body', $result->error);
-		$this->assertNull($this->dispatched);
-	}//end testATemplateWithNoBodyGeneratesNothing()
+	public function testAnUnknownTemplateOrCaseGeneratesNothing(): void {
+		self::assertSame('template_not_found', $this->service(null, ['id' => 'c'])->generate('c', 'tpl')->error);
+		self::assertSame('case_not_found', $this->service($this->template(), null)->generate('c', 'tpl')->error);
+		self::assertSame('template_has_no_body', $this->service(['body' => ' '], ['id' => 'c'])->generate('c', 'tpl')->error);
+		self::assertNull($this->request);
+	}//end testAnUnknownTemplateOrCaseGeneratesNothing()
 
 	/**
-	 * A case that cannot be read generates nothing.
-	 *
-	 * @return void
-	 */
-	public function testAnUnreadableCaseGeneratesNothing(): void {
-		$result = $this->service(
-			['id' => 'ontvangstbevestiging', 'title' => 'Ontvangstbevestiging', 'body' => 'Beste lezer'],
-			null,
-		)->generate(caseId: 'case-1', templateId: 'ontvangstbevestiging');
-
-		$this->assertFalse($result->succeeded);
-		$this->assertSame('case_not_found', $result->error);
-		$this->assertNull($this->dispatched);
-	}//end testAnUnreadableCaseGeneratesNothing()
-
-	/**
-	 * A case read without its own id still files against the requested case.
+	 * A case read without its id still files against the requested case.
 	 *
 	 * @return void
 	 */
 	public function testACaseWithoutAnIdStillFilesAgainstTheRequestedCase(): void {
-		$this->service(
-			['id' => 'ontvangstbevestiging', 'title' => 'Ontvangstbevestiging', 'body' => 'Beste lezer'],
-			['title' => 'Kapvergunning'],
-		)->generate(caseId: 'case-9', templateId: 'ontvangstbevestiging');
+		$this->service($this->template(), ['title' => 'X'])->generate('case-9', 'tpl');
 
-		$this->assertSame('case-9', $this->dispatchedCase['id']);
+		self::assertSame('case-9', $this->filed['caseId']);
+		self::assertSame('case-9', $this->request->getRequest()['data']['id']);
 	}//end testACaseWithoutAnIdStillFilesAgainstTheRequestedCase()
 }//end class

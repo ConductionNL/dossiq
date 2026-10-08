@@ -33,6 +33,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\DashboardController;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
@@ -58,7 +60,12 @@ class DashboardControllerServiceWorkerTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();
 		$request = $this->createMock(IRequest::class);
-		$this->controller = new DashboardController(request: $request, initialState: $this->createMock(IInitialState::class));
+		$this->controller = new DashboardController(
+			request: $request,
+			initialState: $this->createMock(originalClassName: IInitialState::class),
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+		);
 	}//end setUp()
 
 	/**

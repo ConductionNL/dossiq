@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use OCA\Dossiq\Service\Support\LanguageMapText;
 use RuntimeException;
 
 /**
@@ -94,15 +95,23 @@ class CaseTypeResolver {
 		'personalDataCategories',
 		'legalBasis',
 		'verwerkingsactiviteit',
+		'defaultImpact',
+		'defaultUrgency',
+		'priorityMatrix',
+		'duplicatePolicy',
 	];
 
 	/**
 	 * Constructor.
 	 *
-	 * @param CaseTypeStore $store Every OpenRegister read this resolver performs.
+	 * @param CaseTypeStore   $store Every OpenRegister read this resolver performs.
+	 * @param LanguageMapText $text  How a translatable title or name is read, the same for every reader.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	public function __construct(
 		private readonly CaseTypeStore $store,
+		private readonly LanguageMapText $text = new LanguageMapText(),
 	) {
 	}//end __construct()
 
@@ -426,11 +435,13 @@ class CaseTypeResolver {
 	 * @param array<string, mixed> $ancestor The case type it was declared on.
 	 *
 	 * @return array<string, mixed> The row, with `origin` and `originCaseType`.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	private function tag(array $row, string $origin, array $ancestor): array {
 		$row['origin'] = $origin;
 		$row['originCaseType'] = $this->store->rowId(row: $ancestor);
-		$row['originCaseTypeTitle'] = (string)($ancestor['title'] ?? '');
+		$row['originCaseTypeTitle'] = $this->text->textOf(value: ($ancestor['title'] ?? null));
 
 		return $row;
 	}//end tag()
@@ -440,10 +451,17 @@ class CaseTypeResolver {
 	 *
 	 * @param array<string, mixed> $row The row.
 	 *
+	 * `name` and `title` are `translatable`, so a row from `searchObjects()`
+	 * carries a language map. Cast to a string, every map read "Array" and
+	 * every status of a case type merged into ONE row. The key reads the map
+	 * the same way for every reader (Dutch first), so it stays stable.
+	 *
 	 * @return string The lower-cased, trimmed name, or the id when it has none.
+	 *
+	 * @spec openspec/changes/beta-quality-report-green/specs/zaaktype-versioning/spec.md
 	 */
 	private function mergeKey(array $row): string {
-		$name = trim((string)($row['name'] ?? ($row['title'] ?? '')));
+		$name = $this->text->textOf(value: ($row['name'] ?? ($row['title'] ?? null)));
 		if ($name === '') {
 			return 'id:' . $this->store->rowId(row: $row);
 		}

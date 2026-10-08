@@ -27,6 +27,7 @@ namespace OCA\Dossiq\Middleware;
 
 use OCA\Dossiq\Service\TenantAuthenticationService;
 use OCA\Dossiq\Service\TenantContext;
+use OCA\Dossiq\Exception\RefusedException;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
 use OCP\IRequest;
@@ -128,7 +129,8 @@ class MandateValidationMiddleware extends Middleware {
 	}//end beforeController()
 
 	/**
-	 * Translate `MandateDeniedException` to a 403 JSON response.
+	 * Translate a mandate denial to 403, and a mandate check that could not run
+	 * to the status its refusal carries.
 	 *
 	 * @param \OCP\AppFramework\Controller $controller Controller.
 	 * @param string $methodName Method name.
@@ -149,6 +151,21 @@ class MandateValidationMiddleware extends Middleware {
 			return new JSONResponse(
 				['success' => false, 'error' => $exception->getMessage()],
 				403
+			);
+		}
+
+		// A mandate check that could not run is not a denial. It used to leave
+		// here as 403 "No active mandate matrix for tenant", which reads as a
+		// decision about the caller rather than a failure of the store.
+		if ($exception instanceof RefusedException) {
+			return new JSONResponse(
+				[
+					'success' => false,
+					'message' => $exception->getSentence(),
+					'error' => $exception->getRule(),
+					'code' => $exception->getMessage(),
+				],
+				$exception->getStatus()
 			);
 		}
 

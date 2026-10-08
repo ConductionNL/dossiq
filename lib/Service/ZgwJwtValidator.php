@@ -39,8 +39,6 @@ use Psr\Log\LoggerInterface;
  * verification contract locally, using the Consumer's stored shared secret
  * (publicKey) and OpenRegister's public validatePayload() for iat/exp checks.
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZgwJwtValidator {

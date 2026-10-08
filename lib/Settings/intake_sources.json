@@ -1,0 +1,50 @@
+{
+    "$comment": "The places a case can arrive from, as objects in OpenRegister's `intake-sources` register (schema `intake-source`, seeded there by OpenRegister's own SeedIntakeSourceRegister repair step). Dossiq contributes the channels it handles; the register and the schema are not dossiq's. `kind` is the TRANSPORT and takes only the three values the schema declares: a portal, an API caller, a KCC desk and a DSO message all arrive over HTTP, so all four are `endpoint` and the `slug` is what tells them apart. `enabled: false` is the switch, not a delete: a source switched off stops being polled and stays listed, so turning a channel off never loses what it was. Every source ships DISABLED, because a source that starts polling on install would poll a mailbox nobody configured. `connection` names an integriq connection by slug rather than holding a credential, and is filled in by whoever configures the channel.",
+    "sources": [
+        {
+            "slug": "dossiq-mail",
+            "title": "Mail",
+            "kind": "mailbox",
+            "description": "Post that arrives by email, through the Nextcloud Mail account the intake filters watch.",
+            "enabled": false,
+            "targetRegister": "dossiq",
+            "targetSchema": "case"
+        },
+        {
+            "slug": "dossiq-portal",
+            "title": "Portal",
+            "kind": "endpoint",
+            "description": "A request a resident or a business submitted on the portal, arriving as a portal contribution.",
+            "enabled": false,
+            "targetRegister": "dossiq",
+            "targetSchema": "case"
+        },
+        {
+            "slug": "dossiq-api",
+            "title": "API",
+            "kind": "endpoint",
+            "description": "A case another system opened over the API, its own reference kept on the record.",
+            "enabled": false,
+            "targetRegister": "dossiq",
+            "targetSchema": "case"
+        },
+        {
+            "slug": "dossiq-kcc",
+            "title": "Contact centre",
+            "kind": "endpoint",
+            "description": "A case a contact centre agent opened on the caller's behalf, from the KCC desk.",
+            "enabled": false,
+            "targetRegister": "dossiq",
+            "targetSchema": "case"
+        },
+        {
+            "slug": "dossiq-dso",
+            "title": "DSO",
+            "kind": "endpoint",
+            "description": "A request handed over by the Digitaal Stelsel Omgevingswet (DSO), through the statutory gateway.",
+            "enabled": false,
+            "targetRegister": "dossiq",
+            "targetSchema": "case"
+        }
+    ]
+}

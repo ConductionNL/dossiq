@@ -26,7 +26,6 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Controller;
 
 use OCA\Dossiq\Controller\StatusTransitionController;
-use OCA\Dossiq\Service\BulkStatusTransitionService;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
@@ -56,11 +55,6 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase {
 	private StatusTransitionService $transitionEngine;
 
 	/**
-	 * @var BulkStatusTransitionService&MockObject
-	 */
-	private BulkStatusTransitionService $bulkEngine;
-
-	/**
 	 * @var IUserSession&MockObject
 	 */
 	private IUserSession $userSession;
@@ -85,7 +79,6 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase {
 	protected function setUp(): void {
 		$this->request = $this->createMock(IRequest::class);
 		$this->transitionEngine = $this->createMock(StatusTransitionService::class);
-		$this->bulkEngine = $this->createMock(BulkStatusTransitionService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$caseAccessGuard = $this->createMock(CaseAccessGuard::class);
@@ -95,7 +88,6 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase {
 			'dossiq',
 			$this->request,
 			$this->transitionEngine,
-			$this->bulkEngine,
 			$this->userSession,
 			$this->logger,
 			$caseAccessGuard,

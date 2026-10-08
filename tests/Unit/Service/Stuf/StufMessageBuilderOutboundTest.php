@@ -31,6 +31,7 @@ use OCA\Dossiq\Service\Stuf\VrijBerichtNotRegisteredException;
 use OCA\Dossiq\Service\Stuf\ZaaktypeNotMappedException;
 use OCA\Dossiq\Service\StufMessageBuilder;
 use PHPUnit\Framework\MockObject\MockObject;
+use OCA\Dossiq\Tests\Support\MakesCaseDateNormaliser;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -38,6 +39,8 @@ use Psr\Log\LoggerInterface;
  * Tests for StufMessageBuilder outbound methods.
  */
 class StufMessageBuilderOutboundTest extends TestCase {
+	use MakesCaseDateNormaliser;
+
 	private StufMessageBuilder $builder;
 
 	/**
@@ -91,7 +94,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 		$this->vault = $this->createMock(StufVaultService::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 		$this->vault->method('resolveSecret')->willReturn('test-password');
-		$this->builder = new StufMessageBuilder($this->logger, $this->vault);
+		$this->builder = new StufMessageBuilder(logger: $this->logger, vault: $this->vault, dates: $this->caseDates());
 	}//end setUp()
 
 	/**

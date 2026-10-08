@@ -31,6 +31,8 @@ namespace OCA\Dossiq\Tests\Unit\Controller;
 use OCA\Dossiq\Controller\CaseLifecycleController;
 use OCA\Dossiq\Service\CaseAccessGuard;
 use OCA\Dossiq\Service\CaseLifecycleService;
+use OCA\Dossiq\Service\SettingsService;
+use OCA\OpenRegister\Exception\HookStoppedException;
 use OCA\Dossiq\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -70,6 +72,13 @@ class CaseLifecycleControllerTest extends TestCase {
 	private StatusTransitionService $engine;
 
 	/**
+	 * The bridge to OpenRegister, which owns the recycle state.
+	 *
+	 * @var SettingsService&MockObject
+	 */
+	private SettingsService $settingsService;
+
+	/**
 	 * The session.
 	 *
 	 * @var IUserSession&MockObject
@@ -92,6 +101,7 @@ class CaseLifecycleControllerTest extends TestCase {
 		$this->lifecycle = $this->createMock(CaseLifecycleService::class);
 		$this->guard = $this->createMock(CaseAccessGuard::class);
 		$this->engine = $this->createMock(StatusTransitionService::class);
+		$this->settingsService = $this->createMock(SettingsService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->request = $this->createMock(IRequest::class);
 
@@ -120,6 +130,7 @@ class CaseLifecycleControllerTest extends TestCase {
 			$this->lifecycle,
 			$this->guard,
 			$this->engine,
+			$this->settingsService,
 			$this->userSession,
 			$this->createMock(LoggerInterface::class),
 		);
@@ -258,4 +269,161 @@ class CaseLifecycleControllerTest extends TestCase {
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testTheStateReadIsGuarded()
+
+	/**
+	 * REQ-CRW-01: a permitted delete goes to OpenRegister's recycle state, and
+	 * the controller writes no deletion marker of its own.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testDeleteHandsTheCaseToOpenRegister(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$objectService = $this->recordingObjectService();
+		$this->wireOpenRegister(objectService: $objectService);
+
+		$response = $this->controller()->delete(caseId: 'case-7');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('deleted', $response->getData()['state']);
+		$this->assertSame(['case-7', 'dossiq', 'case'], $objectService->seen);
+	}//end testDeleteHandsTheCaseToOpenRegister()
+
+	/**
+	 * REQ-CRW-01: the delete guard still refuses what it refused before. Its
+	 * veto arrives as OpenRegister's HookStoppedException, and the case does
+	 * not enter the recycle state.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testDeleteReportsTheGuardsRefusal(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(true);
+		$this->wireOpenRegister(
+			objectService: new class {
+				/**
+				 * Refuse the delete the way a stopped pre-persist hook does.
+				 *
+				 * @param string $uuid The object UUID.
+				 * @param string $register The register.
+				 * @param string $schema The schema.
+				 *
+				 * @return bool Never returns.
+				 *
+				 * @throws HookStoppedException Always.
+				 */
+				public function deleteObject(string $uuid, string $register, string $schema): bool {
+					throw new HookStoppedException(
+						'You cannot delete this case yet.',
+						['blockedBy' => ['open-term']]
+					);
+				}
+			}
+		);
+
+		$response = $this->controller()->delete(caseId: 'case-held');
+
+		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
+		$this->assertSame('case_held', $response->getData()['code']);
+	}//end testDeleteReportsTheGuardsRefusal()
+
+	/**
+	 * REQ-CRW-01: the delete is guarded per case like every other gesture.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testDeleteIsRefusedWithoutCaseAccess(): void {
+		$this->guard->method('hasCaseMutationAccess')->willReturn(false);
+		$this->settingsService->expects($this->never())->method('getObjectService');
+
+		$response = $this->controller()->delete(caseId: 'case-1');
+
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testDeleteIsRefusedWithoutCaseAccess()
+
+	/**
+	 * REQ-CRW-01: dossiq ships no soft delete of its own. Nothing under `lib/`
+	 * WRITES a deletion marker, a purge date or a retention period, so the
+	 * recycle state has exactly one implementation and it is OpenRegister's.
+	 *
+	 * Reading those keys is the whole point of this change, so the needles are
+	 * the assignment spellings and not the array-access ones. A test that
+	 * banned the word would fail on the reader it is supposed to protect.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/case-recycle-window/specs/case-management/spec.md
+	 */
+	public function testDossiqShipsNoSoftDeleteOfItsOwn(): void {
+		$root = dirname(__DIR__, 3) . '/lib';
+		$writes = [];
+		$files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($root));
+		foreach ($files as $file) {
+			if ($file->isFile() === false || $file->getExtension() !== 'php') {
+				continue;
+			}
+
+			$body = (string)file_get_contents($file->getPathname());
+			foreach (['->setDeleted(', "'purgeDate' =>", "'retentionPeriod' =>"] as $needle) {
+				if (str_contains($body, $needle) === true) {
+					$writes[] = $file->getFilename() . ': ' . $needle;
+				}
+			}
+		}
+
+		$this->assertSame([], $writes);
+	}//end testDossiqShipsNoSoftDeleteOfItsOwn()
+
+	/**
+	 * An object service that records the delete it was asked for.
+	 *
+	 * @return object The recorder, carrying a public `seen` triple.
+	 */
+	private function recordingObjectService(): object {
+		return new class {
+
+			/**
+			 * The uuid, register and schema of the last delete.
+			 *
+			 * @var array<int, string>
+			 */
+			public array $seen = [];
+
+			/**
+			 * Record the delete rather than performing one.
+			 *
+			 * @param string $uuid The object UUID.
+			 * @param string $register The register.
+			 * @param string $schema The schema.
+			 *
+			 * @return bool Always true.
+			 */
+			public function deleteObject(string $uuid, string $register, string $schema): bool {
+				$this->seen = [$uuid, $register, $schema];
+				return true;
+			}
+		};
+	}//end recordingObjectService()
+
+	/**
+	 * Point the settings bridge at one object service and a configured register.
+	 *
+	 * @param object $objectService The stand-in for OpenRegister's object service.
+	 *
+	 * @return void
+	 */
+	private function wireOpenRegister(object $objectService): void {
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnCallback(
+			static fn (string $key, string $default = ''): string => match ($key) {
+				'register' => 'dossiq',
+				'case_schema' => 'case',
+				default => $default,
+			}
+		);
+	}//end wireOpenRegister()
 }//end class

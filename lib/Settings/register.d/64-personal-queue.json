@@ -1,0 +1,139 @@
+{
+	"components": {
+		"registers": {
+			"dossiq": {
+				"schemas": [
+					"workDigest",
+					"queueMention"
+				]
+			}
+		},
+		"schemas": {
+			"workDigest": {
+				"slug": "workDigest",
+				"icon": "EmailNewsletter",
+				"version": "1.0.0",
+				"title": "Work digest",
+				"description": "One person's daily digest of what is waiting on them. Written only when their queue is not empty, so a row here means a message went out and the absence of a row means nothing was said (one-personal-queue).",
+				"type": "object",
+				"required": [
+					"person",
+					"day",
+					"waiting"
+				],
+				"properties": {
+					"person": {
+						"type": "string",
+						"title": "Person",
+						"description": "Nextcloud user id of the person the digest is for",
+						"facetable": true,
+						"maxLength": 255
+					},
+					"day": {
+						"type": "string",
+						"title": "Day",
+						"format": "date",
+						"description": "The day the digest covers"
+					},
+					"waiting": {
+						"type": "integer",
+						"title": "Waiting",
+						"description": "How many things were waiting on this person when the digest was composed"
+					},
+					"late": {
+						"type": "integer",
+						"title": "Late",
+						"default": 0,
+						"description": "How many of those were already past their date"
+					},
+					"summary": {
+						"type": "string",
+						"title": "Summary",
+						"maxLength": 1024,
+						"description": "The first few items by name, so the message says something concrete"
+					}
+				},
+				"x-openregister-notifications": {
+					"workDigestReady": {
+						"trigger": {
+							"type": "created"
+						},
+						"enabled": true,
+						"channels": [
+							"nc-notification"
+						],
+						"recipients": [
+							{
+								"kind": "field",
+								"field": "person"
+							}
+						],
+						"subject": {
+							"nl": "{{waiting}} dingen wachten op je, waarvan {{late}} te laat",
+							"en": "{{waiting}} things are waiting on you, {{late}} of them late"
+						}
+					}
+				}
+			},
+			"queueMention": {
+				"slug": "queueMention",
+				"icon": "At",
+				"version": "1.0.0",
+				"title": "Mention on the queue",
+				"description": "A record that one person was named in a note, so the mention can be waited on rather than only rung. Closes when the reader opens what they were mentioned in; it is never dismissed (one-personal-queue).",
+				"type": "object",
+				"required": [
+					"person",
+					"subjectId"
+				],
+				"properties": {
+					"person": {
+						"type": "string",
+						"title": "Person",
+						"description": "Nextcloud user id of the person who was mentioned",
+						"facetable": true,
+						"maxLength": 255
+					},
+					"actor": {
+						"type": "string",
+						"title": "Mentioned by",
+						"description": "Nextcloud user id of the person who wrote the note",
+						"maxLength": 255
+					},
+					"subjectType": {
+						"type": "string",
+						"title": "Subject type",
+						"default": "case",
+						"description": "What the note was written on, usually a case",
+						"maxLength": 64
+					},
+					"subjectId": {
+						"type": "string",
+						"title": "Subject",
+						"description": "Identifier of the object the note was written on",
+						"facetable": true,
+						"maxLength": 255
+					},
+					"noteId": {
+						"type": "string",
+						"title": "Note",
+						"description": "Identifier of the note carrying the mention",
+						"maxLength": 255
+					},
+					"mentionedAt": {
+						"type": "string",
+						"title": "Mentioned at",
+						"format": "date-time",
+						"description": "When the mention was written"
+					},
+					"acknowledgedAt": {
+						"type": "string",
+						"title": "Acknowledged at",
+						"format": "date-time",
+						"description": "When the reader opened what they were mentioned in; empty while the mention is still waiting"
+					}
+				}
+			}
+		}
+	}
+}

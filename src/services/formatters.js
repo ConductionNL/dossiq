@@ -13,30 +13,11 @@
 // here. (`mapFormatters.js` is the separate registry for `type:"map"`
 // marker formatting.)
 
-import { t } from '@nextcloud/l10n'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
 import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
-
-// The five states an integration card may show. Keys are the stored enum
-// values; the values are the English SOURCE strings, translated on each call
-// rather than here — a module-level `t()` runs before the catalogue is
-// registered and would freeze every label in English on a Dutch instance.
-// Kept here rather than read from the schema's `x-enum-labels` because a
-// formatter is handed the VALUE and never the property, so the schema is not
-// reachable from this seat.
-//
-// `simulated` is the one this page needed and did not have. A seam bound to a
-// mock adapter is not `unavailable` — it answers, it succeeds, it returns an
-// id — and calling it `configured` is the exact claim this page exists to stop
-// the app from making. Simulated says what it is.
-const INTEGRATION_STATUS_LABELS = {
-	configured: 'Configured',
-	unconfigured: 'Not configured',
-	unavailable: 'Not available',
-	simulated: 'Simulated',
-	error: 'Error',
-}
+import { approvalMarkerLabel } from './approvalMarker.js'
+import { scanVerdictLabel } from './scanVerdict.js'
 
 // Guard so each lookup collection is fetched at most once per page load.
 const lookupFetchStarted = {}
@@ -120,37 +101,6 @@ function lookupRelatedName(type, uuid) {
 
 export default {
 	/**
-	 * The five states an integration card may show, as the label a reader
-	 * understands. An unknown value renders itself rather than an empty cell:
-	 * a status the app cannot name is still a status the admin should see.
-	 *
-	 * @param {string} value The `status` enum value.
-	 * @return {string} The label, or the raw value when it is not one of the five.
-	 * @spec openspec/specs/admin-settings/spec.md
-	 */
-	integrationStatus: (value) => {
-		const source = INTEGRATION_STATUS_LABELS[value]
-		return source ? t('dossiq', source) : String(value ?? '')
-	},
-
-	/**
-	 * The text of the Open settings link on an integration row.
-	 *
-	 * Empty when the connection has no settings section, which is what makes
-	 * the cell fall through to plain text and offer nothing to click. A
-	 * connection configured by an app-config key rather than a form has nowhere
-	 * to send a reader, so its row names the key in its message instead.
-	 *
-	 * @param {string} value The row's `settingsUrl`.
-	 * @return {string} The link text, or '' when there is no destination.
-	 * @spec openspec/specs/admin-settings/spec.md
-	 */
-	integrationSettingsLabel: (value) =>
-		typeof value === 'string' && value.length > 0
-			? t('dossiq', 'Open settings')
-			: '',
-
-	/**
 	 * Human label for a case's `caseType` UUID reference.
 	 *
 	 * @param {string} value The caseType UUID.
@@ -184,6 +134,24 @@ export default {
 	 * @return {string}
 	 */
 	statusTypeName: (value) => lookupRelatedName('statusType', value),
+
+	/**
+	 * What the virus scanner recorded about a document row.
+	 *
+	 * Read, never inferred: the value is whatever `ScanVerdictReader`
+	 * answered, and a row carrying nothing reads Not scanned rather than
+	 * blank, because a blank cell in a Scan column reads as reassurance.
+	 *
+	 * @param {object|string} value The verdict, or the bare state.
+	 * @return {string} The sentence.
+	 * @spec openspec/changes/scan-verdict-on-the-row/specs/document-zaakdossier/spec.md
+	 */
+	scanVerdict: (value) => scanVerdictLabel(value),
+	// approval-chain-on-the-document REQ-BVL-005. The value is the marker the
+	// approval-markers endpoint answered for this document, or undefined for a
+	// document nobody routed, which renders NOTHING rather than a word: an
+	// empty marker and "Approved" are different rows.
+	approvalChain: (value) => approvalMarkerLabel(value),
 
 	/**
 	 * Sub-case count badge for a case row in the case list. Returns "N

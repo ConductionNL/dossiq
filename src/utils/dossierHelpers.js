@@ -105,6 +105,29 @@ export function isClassificationAllowed(defaultLevel, requestedLevel) {
 }
 
 /**
+ * Confidentiality dropdown options, lowest to highest, shared by the upload
+ * metadata dialog and the bulk confidentiality-change dialog so the two
+ * pickers cannot drift apart.
+ *
+ * @param {(app: string, text: string) => string} t The bound translate function.
+ * @return {Array<{id: string, label: string}>} The options.
+ * @spec openspec/specs/document-zaakdossier/spec.md
+ */
+export function classificationOptions(t) {
+	const labels = {
+		openbaar: t('dossiq', 'Public'),
+		beperkt_openbaar: t('dossiq', 'Limited public'),
+		intern: t('dossiq', 'Internal'),
+		zaakvertrouwelijk: t('dossiq', 'Case-confidential'),
+		vertrouwelijk: t('dossiq', 'Confidential'),
+		confidentieel: t('dossiq', 'Restricted'),
+		geheim: t('dossiq', 'Secret'),
+		zeer_geheim: t('dossiq', 'Top secret'),
+	}
+	return CONFIDENTIALITY_HIERARCHY.map((id) => ({ id, label: labels[id] }))
+}
+
+/**
  * Group documents by informatieobjecttype with counts.
  *
  * @param {Array} documents The documents to group.

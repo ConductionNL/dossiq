@@ -46,9 +46,18 @@ class WOODecisionService {
 	use SearchesObjects;
 
 	/**
-	 * Decision type name for WOO besluiten.
+	 * The seeded WOO-besluit decision type (register.d/81-woo-verzoek.json),
+	 * which the Woo request case type lists in its `decisionTypes`.
+	 *
+	 * 🔴 THE UUID, NOT THE NAME. `decision.decisionType` is a uuid reference
+	 * to a decisionType row; the name `WOO-besluit` was refused by
+	 * OpenRegister on the first real save (e2e Woo journey, portaliq#1001),
+	 * so assembling a decision answered 500.
+	 *
+	 * @var string
 	 */
-	private const DECISION_TYPE_TITLE = 'WOO-besluit';
+	public const DECISION_TYPE_ID = '3c0f5a00-0000-4000-a000-00000000d001';
+
 
 	/**
 	 * Constructor.
@@ -117,9 +126,11 @@ class WOODecisionService {
 		$besluitData = array_merge(
 			[
 				'case' => $caseId,
-				'decisionType' => self::DECISION_TYPE_TITLE,
+				'decisionType' => self::DECISION_TYPE_ID,
 				'decisionDate' => date('Y-m-d'),
-				'description' => 'WOO besluit voor zaak ' . $caseId,
+				'description' => self::publicationSummary(
+					caseTitle: $this->readCaseTitle(objectService: $objectService, register: $register, caseId: $caseId),
+				),
 				'wooSummary' => $summary,
 				'weigeringsgronden' => $weigeringsgronden,
 				'assessmentCount' => count($assessments),
@@ -129,6 +140,8 @@ class WOODecisionService {
 		);
 
 		$decision = $objectService->saveObject(object: $besluitData, register: $register, schema: $decisionSchema);
+
+		$this->markCaseReady(objectService: $objectService, register: $register, caseId: $caseId);
 
 		$this->logger->info(
 			'WOO besluit assembled for case ' . $caseId . ': decision ' . $decision->getUuid(),
@@ -143,6 +156,113 @@ class WOODecisionService {
 			'assessmentCount' => count($assessments),
 		];
 	}//end assembleDecision()
+
+	/**
+	 * The line a resident reads under the title of the published decision.
+	 *
+	 * OpenCatalogi shows a publication's `summary` under its title on the
+	 * public site and in search results, and the publication takes it from the
+	 * decision's `description` (WooPublicationService::buildPayload()). It
+	 * used to read "WOO besluit voor zaak <uuid>", so a resident read a code.
+	 * It names the request by the case's title instead, and never prints an id.
+	 *
+	 * @param string $caseTitle The case's title, or '' when it has none.
+	 *
+	 * @return string The summary.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	public static function publicationSummary(string $caseTitle): string {
+		$title = trim($caseTitle);
+		if ($title === '') {
+			return 'Besluit op een Woo-verzoek';
+		}
+
+		return 'Besluit op het Woo-verzoek "' . $title . '"';
+	}//end publicationSummary()
+
+	/**
+	 * The title of the case, or '' when it cannot be read.
+	 *
+	 * A case that cannot be read costs the summary its title, not the decision.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register The dossiq register.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return string The title.
+	 *
+	 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
+	 */
+	private function readCaseTitle(object $objectService, string $register, string $caseId): string {
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if ($caseSchema === '') {
+			return '';
+		}
+
+		try {
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				id: $caseId,
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'WOODecisionService: the case title could not be read for the decision summary',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+			);
+			return '';
+		}
+
+		$title = $case['title'] ?? '';
+		if (is_string($title) === false) {
+			return '';
+		}
+
+		return $title;
+	}//end readCaseTitle()
+
+	/**
+	 * The case can now be published: it reads `wooPublicationStatus: ready`
+	 * (woo-publish-decision-from-the-case design D-2), which is what shows the
+	 * Publish (Woo) header action. A decision that was published before keeps
+	 * the case's `published` state; re-assembling does not unpublish.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register The dossiq register.
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-publish-decision-from-the-case/specs/woo-publication-via-opencatalogi/spec.md#requirement-publication-status-surfaced-on-the-woo-assessment-view
+	 */
+	private function markCaseReady(object $objectService, string $register, string $caseId): void {
+		try {
+			$case = $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->settingsService->getConfigValue('case_schema'),
+				id: $caseId,
+			);
+			if ($case === null || ($case['wooPublicationStatus'] ?? '') === 'published') {
+				return;
+			}
+
+			$this->patchObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $this->settingsService->getConfigValue('case_schema'),
+				id: $caseId,
+				changes: ['wooPublicationStatus' => 'ready'],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'WOODecisionService: the case could not show that its decision is ready to publish',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()],
+			);
+		}
+	}//end markCaseReady()
 
 	/**
 	 * Guard that every document of a case carries an assessment.

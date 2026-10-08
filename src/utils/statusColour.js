@@ -129,6 +129,39 @@ export function statusColourStyle(colour) {
 }
 
 /**
+ * The inline style a status BADGE carries: a soft tint with the hue's dark
+ * text over it, the way the Zuiddrecht workplace boards draw every status
+ * pill (DqTokens "Statuskleuren": zachte vlakken met donkere tekst).
+ *
+ * A full hue becomes its own `-light` tint as the background, with the hue
+ * darkened towards the main text as the text: `color-mix(in srgb, <hue> 65%,
+ * <text>)`. A `-light` tint stays what it was: the tint with the main text.
+ *
+ * Computed on the fallback ramps, text on tint: blue 7.20:1, green 6.50:1,
+ * orange 5.20:1, red 7.01:1, purple 9.45:1, grey 7.30:1 (all AA). The full
+ * hue with white text, which this replaces, gave orange 3.22:1 and green
+ * 4.52:1; and under a set whose primary text token is dark (Zuiddrecht:
+ * `--color-primary-element-text` reads as the ink there) the old badge drew
+ * ink on blue at 2.2:1. The settings swatches keep `statusColourStyle`: a
+ * swatch shows the hue itself, a badge shows the status.
+ *
+ * @param {unknown} colour The stored `statusType.colour`.
+ * @return {{backgroundColor: string, color: string}} The style object.
+ *
+ * @spec openspec/specs/case-types/spec.md
+ */
+export function statusBadgeStyle(colour) {
+	const name = normaliseStatusColour(colour)
+	if (isLightStatusColour(name)) {
+		return statusColourStyle(name)
+	}
+	return {
+		backgroundColor: statusColourToken(`${name}-light`),
+		color: `color-mix(in srgb, ${statusColourToken(name)} 65%, var(--color-main-text, #1b1c1d))`,
+	}
+}
+
+/**
  * The colour a merged board column takes.
  *
  * The Workflow board merges every non-final status that shares a NAME into one

@@ -1,0 +1,1114 @@
+[
+  {
+    "row": "1.2",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/manifest.json#Dashboard/headerActions.new-case. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "1.7",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/ZrcController.php; lib/Controller/DSOIntakeController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "1.12",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/RoutingController.php; lib/Service/Routing/Strategy/*; lib/Service/Kcc/RoutingEngine.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "1.13",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/manifest.json#Dashboard/headerActions.new-case; lib/Dashboard/StartCaseWidget.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.2",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: dossiq_register.json#propertyDefinition; src/views/settings/tabs/PropertiesTab.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.6",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: src/manifest.json#Cases/bulkActions.reassign; src/dialogs/BulkTransitionDialog.vue; lib/Service/Bulk/BulkJobHandoff.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.7",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: dossiq_register.json#statusType; src/views/settings/tabs/StatusesTab.vue; procest/_round4/discovery/casetype-configurability.md; StatusesTab.vue:47. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.8",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: dossiq_register.json#case.tags. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.9",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/CaseCopyService.php; lib/Controller/CaseActionsController.php; #CaseDetail/headerActions.copy-case. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.10",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: #CaseDetail/case-sub-cases; lib/Controller/CaseRelationController.php; case.parentCase/relatedCases. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.11",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/DeadlinePauseService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.12",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: /api/case/{caseId}/reopen; appinfo/routes.php:443. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.14",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: dossiq_register.json#case-location; src/manifest.json#CaseDetail/case-location-map; src/components/map/LocationPicker.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.15",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: /case-objects. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.18",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/InformatieobjectAccessGuard.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.2",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/settings/tabs/StatusesTab.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.3",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Transitions/ChecklistGuard.php; procest/_round4/discovery/casetype-configurability.md; StatusTypeForm.vue:118. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.6",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/components/tabs/CaseTasksTab.vue:58 task.dueDate with the overdue mark. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.9",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Transitions/*Handler.php; lib/Flow/DossiqTx*Node.php; DossiqMergeTemplateNode.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.10",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/dialogs/CaseStartFlowDialog.vue; /apps/dossiq/api/case/{id}/startable-flows; lib/Flow/DossiqTxCreateSubCaseNode.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.11",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: register.d/95-dmn-decision-tables.json#decisionTable; lib/Service/Dmn/DecisionTableService.php; src/views/settings/tabs/DecisionTablesTab.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.15",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: src/manifest.json#CaseDetail/case-stages; lib/Service/MilestoneService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.1",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: register.d/70-document-zaakdossier.json#informatieobject; dossiq_register.json#document; lib/Service/ZaakdossierService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.4",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Flow/DossiqMergeTemplateNode.php; lib/Service/BeschikkingGenerationService.php; lib/Controller/TemplateController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.7",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/modals/DocumentMetadataDialog.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.9",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: 70-document-zaakdossier.json#informatieobject.keywords. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.12",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Beschikking/LibresignSigningAdapter.php; /api/beschikkingen/{id}/onderteken. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.13",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/WOORedactionService.php; WOOAnonymisationAssistService.php; src/dialogs/RedactionAssistDialog.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.3",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php; src/components/initiator/InitiatorPicker.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.5",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: 25-brp-kvk.json#brpPerson.indicatieGeheim. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.7",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/settings/components/OrganisatieRolManager.vue; RolNode.vue; register.d/61-mandaat-matrix.json#organisatieRol. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.9",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/manifest.json#CaseDetail/initiator. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.10",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: dossiq_register.json#case-location; lib/Controller/BagController.php; BrkController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "6.1",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: src/manifest.json#CaseDetail/case-notes-panel. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "6.3",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/cases/components/CaseEmailTab.vue; /api/email/{caseId}/send-template; dossiq_register.json#emailTemplate. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "6.8",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Notification/Notifier.php; lib/Service/MentionNotificationService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "6.11",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Transitions/WebhookHandler.php; lib/Controller/NrcController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "7.1",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: dossiq_register.json#resultType; src/views/settings/tabs/ResultsTab.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "7.2",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: register.d/95-dmn-decision-tables.json#decisionTable; lib/Controller/DecisionTableController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "7.3",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: dossiq_register.json#decision; register.d/30-beschikking.json#beschikking; src/manifest.json#CaseDetail/case-decisions-panel. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "7.4",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/dialogs/BeschikkingComposerDialog.vue; lib/Service/BeschikkingGenerationService.php; lib/Flow/DossiqRequestDecisionNode.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "7.5",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/WOOAssessmentController.php; lib/Service/WOODocumentAssessmentService.php; src/views/doorlooptijd/widgets/DtWooWidget.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "7.6",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/manifest.json#BezwaarDetail; lib/Service/Bezwaar/*. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.1",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: register.d/60-termijnbewaking.json#deadlineDefinition; src/views/settings/tabs/TermijnDefinitiesTab.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.2",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: src/manifest.json#CaseDetail/case-tile-deadline; src/manifest.json#Dashboard/kpi-overdue; src/manifest.json#Doorlooptijd/dt-atrisk. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.3",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: lib/Service/Task/TaskDeclaration.php (task.leadTimeDays); src/store/modules/engineTask.js; src/components/tabs/CaseTasksTab.vue:58. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.5",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/DeadlineExtensionService.php; /api/termijn/instances/{id}/verleng; caseType.extensionAllowed/extensionPeriod. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.6",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/BackgroundJob/DeadlineNotificationDispatchJob.php; lib/Service/TermijnNotificationService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.8",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: register.d/65-milestone-tracking.json#milestoneDefinition; lib/Service/MilestoneService.php; src/manifest.json#CaseDetail/case-stages. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.9",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/TermijnTimerService.php; lib/Listener/TermijnTimerFiredListener.php; lib/Repair/ArmTermijnEngineTimers.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.10",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/DeadlinePauseService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "9.8",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/manifest.json#Cases. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "10.2",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Dashboard/*Widget.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "10.3",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/components/export/CaseListExportAction.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "10.4",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/manifest.json#ProcessMiningDashboard; lib/Service/ProcessMiningService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "10.6",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: /api/dashboard/kpis; /api/reports/process-mining; /api/metrics. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.1",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/settings/CaseTypeDetail.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.3",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: dossiq_register.json#propertyDefinition; PropertiesTab.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.11",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/TemplateController.php; lib/Service/TemplateLibraryService.php; lib/Controller/VTHTemplateController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.12",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/casetypes/components/EmailTemplateAdmin.vue; dossiq_register.json#emailTemplate; lib/Controller/EmailTemplateController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.16",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/settings/StufEndpoints.vue; ZgwMappingSettings.vue; KccIntegrationSettings.vue; tabs/StoreSettingsTab.vue; tabs/FinancialIntegrationTab.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.18",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/settings/components/WorkflowValidationBanner.vue; /api/case-definitions/validate. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.20",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Transitions/GuardRegistry.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.21",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/CaseTypeResolver.php; tests/e2e/case-type-parent-chain.spec.ts. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.24",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: src/views/settings/tabs/GeneralTab.vue; lib/Controller/SettingsController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.1",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/ZrcController.php; ZtcController.php; DrcController.php; BrcController.php; lib/Service/External/Zgw/*. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.2",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/NrcController.php; lib/Service/NotificatieService.php; dossiq_register.json#abonnement. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.4",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Stuf/*; lib/Controller/StufController.php; src/views/settings/StufEndpoints.vue. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.5",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/DsoController.php; DSOIntakeController.php; lib/Service/DsoIntakeService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.6",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/External/Brp/HaalCentraalBrpAdapter.php; External/Kvk/KvkApiAdapter.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.10",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Beschikking/LibresignSigningAdapter.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.13",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/AppointmentService.php; AppointmentBackend/JccBackend.php; QmaticBackend.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.16",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Service/Pdok/PdokLocatieserverService.php; PdokBagService.php; lib/Controller/BagController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.18",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Controller/ZgwOpenApiController.php; lib/Settings/dossiq_register.json. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.19",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: lib/Middleware/ZgwAuthMiddleware.php; lib/Service/ZgwJwtValidator.php; lib/Controller/AcController.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "13.4",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: register.d/62-handler-vervanging.json#substitution.endDate. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "13.12",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence holds: register.d/62-handler-vervanging.json#substitution; register.d/61-mandaat-matrix.json#mandate; lib/Service/MandaatCheckService.php. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "13.13",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Rated yes with built.state none; re-read at db27acb6e. The cited evidence had moved and now reads: lib/Service/Sharing/CaseAccessLinkService.php; register.d/50-zaakportaal.json. built.state set to built.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.5",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: Nextcloud Office (richdocuments) opens a case document in the browser from the Files surface the case page uses; dossiq carries no WOPI code and should not. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/b.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.10",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: Nextcloud sharing (files_sharing) shares a case file with a user, with permissions and expiry, reached through Show in Files on every row. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/b.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.11",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: Nextcloud files_lock locks and unlocks a file from the files browser, and Collabora locks a document while it is open; dossiq's drc lock is the ZGW API contract, not a second mechanism. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/b.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.15",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: Nextcloud's trash bin takes a case file deleted from the case page, and restore lives there. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/b.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.16",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: the Nextcloud Viewer previews a case file when its row is opened, with thumbnails from /core/preview. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/b.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.23",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: case files are ordinary Nextcloud files in the case folder, so the Files app shows them; a storage wrapper would be a second answer to where a case file lives. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/b.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.21",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: Nextcloud Office (richdocuments) opens case documents from the Files surface; grep for WOPI in lib and src returns nothing, as it should. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/d.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.7",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: Nextcloud's user_saml and oidc apps authenticate the staff session and dossiq mounts no login of its own; the tenant eHerkenning half is dossiq's and exists. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/d.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "13.15",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform-provided: Nextcloud's two-factor providers, per-group enforcement and the session list in personal settings answer the row; the tenant half (tenantUser.mfaEnabled, TenantAuditTrailService) is dossiq's and exists. Gap scan of 2026-09-19, market-intelligence procest/_ledger/gap-scan/d.json, verdict platform. built.owner and provider set to Nextcloud.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.5",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Recorded no in openspec/changes/competitor-parity-2026-09/proposal.md, section Deliberate no's: the lenses shipped and what is left is one Team chip whose value nextcloud-vue cannot resolve yet. The gap scan (pack a) reads it the same way.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.6",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Owed to nextcloud/server in the index, outside the fleet: an Office add-in, a Teams app or an Outlook manifest is a separate distributable outside the Nextcloud app model (gap scan pack b). Forwarding a mail to the intake mailbox, which integriq turns into a case, is the reachable outcome.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.20",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Owed to nextcloud/server: primary object storage puts the instance on S3, and case documents are Nextcloud files in the case folder, so they land wherever the instance stores files (gap scan pack d, verdict platform).",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.4",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The missing half the corpus note names, a one-click claim, shipped with case-claim-action (dossiq#2723): Claim and Release header actions on the case page and a Claim row action on Queue and Cases, behind CaseAssignmentService. The partial rating predates it and is due a re-rate in the corpus.",
+    "change": "case-claim-action",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.17",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The missing half the corpus note names, a general delete guard, shipped with case-delete-guard (dossiq#2729): CaseDeleteGuardListener is registered in ObjectListenerRegistrar and refuses the delete of a case with an open term, naming the rule. case-recycle-window (open, 9 of 9) sits behind it. The partial rating is due a re-rate in the corpus.",
+    "change": "case-delete-guard",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "2.22",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The missing half the corpus note names, a raw data and variables view, shipped with admin-inspect-entry (dossiq#2912): the Inspect raw data and Inspect flow runs header actions on the case page. The partial rating is due a re-rate in the corpus.",
+    "change": "admin-inspect-entry",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.6",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The missing half, the BSN and the special-category fields behind an extra permission, shipped with sensitive-fields-declared (dossiq#2926, register.d/25-brp-kvk.json and 50-sociaal-domein.json). The partial rating is due a re-rate in the corpus.",
+    "change": "sensitive-fields-declared",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.8",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The missing half, the generic Gemachtigde role type with its Represented by column, is open task 3.7 of the open change gemachtigde-role-on-every-case-type, which carries it.",
+    "change": "gemachtigde-role-on-every-case-type",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "5.12",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The missing half the corpus note names, dispatch as schema only, shipped with document-correspondents (dossiq#2905): src/services/documentCorrespondents.js writes and shows senders and recipients. The partial rating is due a re-rate in the corpus.",
+    "change": "document-correspondents",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.10",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The missing half the corpus note names, a shared code list, shipped with code-lists-from-concepts (dossiq#2913): a property takes its choices from a concept scheme (src/services/conceptScheme.js, PropertiesTab.vue). The partial rating is due a re-rate in the corpus.",
+    "change": "code-lists-from-concepts",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.20",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Partial and built. The zip export has a surface (dossiq#3078). The missing half, XML, SIP and TMLO or MDTO, is openregister's e-Depot handover; dossiq's consumer half, the archiving tab and the reviewer worklist over openregister's archiving process, is the open change the-case-archives-through-openregister (10 of 12).",
+    "change": "the-case-archives-through-openregister",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "12.17",
+    "matrix": "dossiq",
+    "decision": "existing",
+    "reason": "Matrix corrected. The gap scan of 2026-09-19 (pack d, verdict sibling-has) finds the connector framework held and shipped by integriq and consumed by dossiq through the Integrations page; the archived change pluggable-integration-registry closed 14 of 14 tasks and adopt-connection-registry (open) moves the page onto integriq's registry. built.state set to built; the partial rating is due a re-rate in the corpus.",
+    "change": "2026-09-08-pluggable-integration-registry",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "1.8",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (zaaksysteem); a repeating series is the missing half.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.7",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (zac); assigning a task to another user or a team is the missing half.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "3.8",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (gzac).",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.3",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built. Download and restore of a version ship (dossiq#3078); the missing half, viewing an old version in place, only OpenCase offers (zaaksysteem's yes rests on download and restore), and dossiq#3078 dropped that clause on purpose.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.19",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (zaaksysteem).",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.4",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (opencase).",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "8.12",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. No competitor rates it yes; administering a holiday without a release is the missing half.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "9.11",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (gzac).",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "10.11",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. No competitor rates it yes; the gap scan (pack c) puts the hours in humaniq's leaf, which dossiq places.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.17",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (zaaksysteem).",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "11.23",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (zaaksysteem); folders for attributes and templates are the missing half.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "13.8",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. One competitor rates it yes (zaaksysteem).",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "4.18",
+    "matrix": "dossiq",
+    "decision": "defer",
+    "reason": "One competitor rates it yes (opencase), no demand, outside the core area (intake and case core). The gap scan (pack b, verdict sibling-needs) puts the comment surface in nextcloud-vue, change file-comments-in-the-files-browser.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "6.7",
+    "matrix": "dossiq",
+    "decision": "build",
+    "reason": "Partial and built; the missing half is dossiq's inbox contract. The 2026-09-26 reading found dossiq writes content, sentAt and readByRecipientAt where portaliq's inbox reads body, receivedAt and read, and no attachment reaches the resident (portaliq#702). Built with the three portaliq rows on the same contribution, where two competitors rate the missing half yes.",
+    "change": "communication-portal-conversation-on-the-case",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "int-case-system",
+    "matrix": "opencatalogi",
+    "decision": "build",
+    "reason": "Partial and built; three competitors rate it yes (xxllnc, iprox, decos). dossiq's WooPublicationService creates the publication and attaches the disclosable documents, but src/services/wooPublicationApi.js publishWooDecision has no caller, so nobody can start it from the case.",
+    "change": "woo-publish-decision-from-the-case",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "woo-from-case",
+    "matrix": "opencatalogi",
+    "decision": "build",
+    "reason": "Partial and built; three competitors rate it yes (xxllnc, iprox, decos), and the woo area is in the core of the opencatalogi matrix. The publish and withdraw endpoints exist and no screen reaches them.",
+    "change": "woo-publish-decision-from-the-case",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "wr-deadline",
+    "matrix": "opencatalogi",
+    "decision": "existing",
+    "reason": "The owner ships it through the generic term engine: the Woo request case type (2026-06-13-woo-case-type, lib/Settings/templates/woo-verzoek.json) declares processingDeadline P28D with a P14D extension, so every Woo case gets its computed deadline, the escalation ladder (DeadlineEscalationService, fired by TermijnTimerFiredListener) and the dt-woo widget on the Doorlooptijd page. The Woo-specific WOODeadlineCheckJob is dark: it filters status on the names open and in_handling while status is a uuid reference, and reads handler, which the case schema does not have. Listed for the coordinator to set built.state built; the dark job is reported, not fixed here.",
+    "change": "2026-06-13-woo-case-type",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "wr-intake",
+    "matrix": "opencatalogi",
+    "decision": "existing",
+    "reason": "The owner ships it: the Woo request case type (2026-06-13-woo-case-type, lib/Settings/templates/woo-verzoek.json) takes a Nextcloud Forms intake form through caseType.intakeFormRef like every case type (FormsIntakeService, change leaf-integrations, dossiq row 1.1 built). Listed for the coordinator to set built.state built.",
+    "change": "leaf-integrations",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "wr-search-sources",
+    "matrix": "opencatalogi",
+    "decision": "build",
+    "reason": "Tender demand (TenderNed 391449, De Connectie marktconsultatie REQ1 and REQ11). Nothing searches other systems for a Woo request today; a disclosure batch takes a document list the caller already has.",
+    "change": "woo-requests-gather-documents-from-sources",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "tpl-in-case",
+    "matrix": "filinq",
+    "decision": "defer",
+    "reason": "Partial, built, no demand. No competitor rates it yes.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "d-work-queue",
+    "matrix": "launchpad",
+    "decision": "build",
+    "reason": "Tender demand (TenderNed 296963, 237144, 416075) and two competitors rate it yes (Workspace 365, Microsoft Viva). dossiq's start-page widgets are legacy IWidget classes that render only through a JavaScript bridge, so no item list with a click-through reaches another dashboard.",
+    "change": "widgets-my-open-cases-on-the-start-page",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "cmp-act-ask-question-case",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "Partial and built; two competitors rate it yes (Open Inwoner, xxllnc PIP). A resident can send a message about a case only from the messages page with the case uuid typed by hand, and the answer shows in the inbox, not on the case.",
+    "change": "communication-portal-conversation-on-the-case",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "cmp-int-objection",
+    "matrix": "portaliq",
+    "decision": "defer",
+    "reason": "One competitor rates it yes (xxllnc PIP), no demand, outside the core area of the portaliq matrix (sign-in and identity). dossiq's createBezwaar action is declared and guarded; the rendering trace and the Awb term check are the missing half.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "dem-cl-case-outcome-explained",
+    "matrix": "portaliq",
+    "decision": "existing",
+    "reason": "Matrix corrected. Shipped on 2026-09-27 in 9489ca2c6 (fixes dossiq#3143): mijnZaken projects resultPublicLabel and resultPublicDescription, calculated from the result record's publicExplanation, under labelled columns. The portaliq row read a tree from before it (971735b03e); listed for the coordinator to set built with this evidence.",
+    "change": null,
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "dem-tnd-portal-talk-on-case",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "Tender demand (TenderNed 397282, Gemeente Molenlanden: portal communication is added to the case automatically). Messages carry the case, but the reply form asks the resident to type the case uuid and there is no reply from a message or from the case.",
+    "change": "communication-portal-conversation-on-the-case",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "sib-dossiq-6-7",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "Partial and built; two competitors rate it yes (nl-portal, xxllnc PIP). The field contract differs (dossiq writes content, sentAt and readByRecipientAt; portaliq reads body, receivedAt and read), so only the subject shows, and attachments never render (portaliq#702).",
+    "change": "communication-portal-conversation-on-the-case",
+    "decidedOn": "2026-09-27"
+  },
+  {
+    "row": "cases-my-cases-page",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "kind cases and closedField on mijnZaken. Portaliq change cases-my-cases-page (merged, T08 hands this half to dossiq) lists no dossiq case until mijnZaken declares kind cases and closedField endDate; dossiq#3152 records it live (PortalCaseListReader keeps only kind cases). Reading the code also showed the case collection is served to no audience a portal login carries (dossiq answers citizen, DigiD sessions carry client, eHerkenning supplier), so the change serves it to those too. No dossiq change covers it. Build: a half a merged sibling change depends on.",
+    "change": "portal-case-list-declarations",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "signin-eherkenning-branch",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "branchField on the case collection. Portaliq change signin-eherkenning-branch (merged, T07 hands this half to dossiq) needs a case app to store the branch a business filed under and declare branchField; until then a branch-restricted session sees none of its cases. The case schema has no branch field. Build: a half a merged sibling change depends on.",
+    "change": "portal-case-list-declarations",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "identity-ways-in-screens",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "referenceField on the case collection. Portaliq change identity-ways-in-screens (merged) needs the case app to declare which field holds the case number for a reference session. The change declares referenceField identifier and portalIdentityKind on the case type, and admits reference on no case type while portaliq issues a reference link without checking the address against the case. Build: a half a merged sibling change depends on.",
+    "change": "portal-case-list-declarations",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "what-the-citizen-may-write-on-their-own-case",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "citizenWrite update action. Portaliq changes what-the-citizen-may-write-on-their-own-case, case-actions-withdraw-screen and withdrawing-your-own-case-from-the-portal (merged) depend on a dossiq update action on case carrying citizenWrite and on the case type declaring portalWritable, the two windows and portalWithdrawal; without it CitizenCaseController answers 403 portal-writes-not-declared for every dossiq case (dossiq#3152). No dossiq change covers it. Build: a half merged sibling changes depend on.",
+    "change": "portal-citizen-writes-on-the-case",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "partner-tasks-in-the-portal",
+    "matrix": "portaliq",
+    "decision": "existing",
+    "reason": "ask-partner row action. Portaliq change partner-tasks-in-the-portal asks dossiq to declare ask-partner and retire ExternalConsultationResponse (dossiq row 3.19). Open dossiq change case-sharing-mints-access-links covers row 3.19 by capability on another road: an external party answers a case through an OpenRegister access link with the comment capability, and it already deleted the ExternalConsultationResponse token page (its tasks 5.1 to 5.4). Whether dossiq should also declare portaliq's partner-audience ask-partner as a second road is a product question, not a gap.",
+    "change": "case-sharing-mints-access-links",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "change-proposal-queue",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "propose-change row action. Portaliq change change-proposal-queue (merged) hands dossiq the propose-change action with its proposable list and the queue on the case page (dossiq row 2.21). The dossiq umbrella competitor-parity-2026-09 lists this half without a change, and case-sharing-mints-access-links leaves the portal queue for 2.21 out. Build: a half a merged sibling change depends on.",
+    "change": "portal-change-proposals-on-the-case",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "identity-profile-page",
+    "matrix": "portaliq",
+    "decision": "build",
+    "reason": "contact-details listener. Portaliq change identity-profile-page (merged) raises PortalContactDetailsChangedEvent when a resident sets their contact channel and says a case app that sends letters listens for it; dossiq reads case.communicationChannel as the recorded choice (CaseTypeAcknowledgement::channelFor) and nothing sets it from the portal. Build: a half a merged sibling change depends on. The listener stays inert until portaliq emits the event.",
+    "change": "portal-contact-channel-follows-the-resident",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "inbox-notifications-and-preferences",
+    "matrix": "portaliq",
+    "decision": "existing",
+    "reason": "client-write listener. Portaliq change inbox-notifications-and-preferences asks dossiq for a listener on PortalClientWriteEvent that tells the handler about a resident's amendment, document or task answer. Built without an OpenSpec change by dossiq#3144 (commit 9d8fde86a): lib/Listener/PortalClientWriteListener.php hands each act to ApplicantPortalActs, which records it on the timeline with a follow-up and notifies the assignee. It hears nothing until portal-citizen-writes-on-the-case lets portaliq accept the writes.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "integration-case-bridge",
+    "matrix": "planninq",
+    "decision": "build",
+    "reason": "planninq projects leaf on the case schema. Planninq change integration-case-bridge (merged) asks dossiq to add planninq-projects to the case schema's linked types so the Projects panel shows on the case page; its rows int-project-from-case and int-archive-to-case carry tender demand (TenderNed 365739). No dossiq change places it. Build: a half a merged sibling change depends on.",
+    "change": "projects-from-planninq-on-the-case",
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "11.14",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "TenantBrandingSanitiser parallel path, the half the thematiq lane handed to dossiq: branding is thematiq's (row 11.14 provider thematiq, built.owner ConductionNL/thematiq; hydra ADR-010 openspec/architecture/adr-010-nl-design.md, theme switching through the nldesign token sets), so dossiq builds no branding of its own. The parallel path is unreached code, not a capability: TenantConfigurationService::getThemingTokens(), sanitiseBranding() and sanitiseCustomCss(), and the TenantBrandingSanitiser behind them, have no caller in lib/ or src/ at c8ac7427e. Removing it is inherited debt for the sweep.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "4.18",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Single competitor, no demand. Only opencase rates it yes (zaaksysteem partial, no client code), there is no tender, feature request or roadmap row, and document notes sit outside the core area (intake and case core). Reversible: set back to none if demand appears.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "6.16",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform capability another product provides: the matrix provider is pipelinq and built.owner is ConductionNL/pipelinq, and no competitor ships it. dossiq builds nothing here; pipelinq owns the survey if one is ever wanted.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "12.22",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform capability another product provides: inbound cloud events belong to integriq (provider integriq, built.owner ConductionNL/integriq). dossiq builds nothing here.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  },
+  {
+    "row": "13.14",
+    "matrix": "dossiq",
+    "decision": "decided-no",
+    "reason": "Platform capability another product provides: list access filtering is openregister's (provider openregister, built.owner ConductionNL/openregister). dossiq builds nothing here.",
+    "change": null,
+    "decidedOn": "2026-09-28"
+  }
+]

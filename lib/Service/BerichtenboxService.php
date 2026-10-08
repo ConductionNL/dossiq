@@ -29,8 +29,10 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use DateTime;
+use OCA\Dossiq\Service\Berichtenbox\BerichtenboxJournal;
 use OCA\Dossiq\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
-use OCA\Dossiq\Service\Support\OwningCaseResolver;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -39,6 +41,9 @@ use Psr\Log\LoggerInterface;
  * Service for sending messages to Mijn Overheid Berichtenbox.
  *
  * @spec openspec/specs/berichtenbox-integration/spec.md
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The class over the limit is the background
+ *   service account's refusal: a letter with nobody signed in is recorded as that account or not sent.
  */
 class BerichtenboxService {
 	/**
@@ -48,16 +53,19 @@ class BerichtenboxService {
 	 * @param IAppManager $appManager The Nextcloud app manager.
 	 * @param ContainerInterface $container The DI container.
 	 * @param LoggerInterface $logger The logger.
-	 * @param OwningCaseResolver $owningCase Resolves a message's owning case.
 	 * @param BerichtenboxAdapterInterface $adapter The transport this instance has.
+	 * @param BerichtenboxJournal $journal What a send leaves behind for a reader.
+	 * @param BackgroundServiceAccount $serviceAccount Who records the letter when nobody
+	 *        is signed in: OpenRegister refuses a write from nobody.
 	 */
 	public function __construct(
 		private SettingsService $settingsService,
 		private IAppManager $appManager,
 		private ContainerInterface $container,
 		private LoggerInterface $logger,
-		private readonly OwningCaseResolver $owningCase,
 		private readonly BerichtenboxAdapterInterface $adapter,
+		private readonly BerichtenboxJournal $journal,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 	}//end __construct()
 
@@ -70,10 +78,12 @@ class BerichtenboxService {
 	 * @param string $body Plain text message body.
 	 * @param string $typeCode Bericht type code.
 	 * @param string|null $attachmentFileId Optional Nextcloud file ID of the attachment.
+	 * @param string $category What the letter is: `case-update` (default), `besluit` or `statutory`.
 	 *
 	 * @return array<string, mixed> The stored message record or an error payload.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-digital-post-carries-a-category-to-integriq-req-coo-004
 	 */
 	public function sendMessage(
 		string $caseId,
@@ -82,6 +92,50 @@ class BerichtenboxService {
 		string $body,
 		string $typeCode,
 		?string $attachmentFileId = null,
+		string $category = 'case-update',
+	): array {
+		// A send with nobody signed in (a flow, an occ run) records the letter
+		// as the background service account, or OpenRegister refuses the
+		// record after the letter already left. Without a usable account it
+		// stops before the adapter is asked, so no letter leaves unrecorded.
+		try {
+			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
+				operation: fn (): array => $this->send(
+					caseId: $caseId,
+					bsn: $bsn,
+					subject: $subject,
+					body: $body,
+					typeCode: $typeCode,
+					attachmentFileId: $attachmentFileId,
+					category: $category,
+				)
+			);
+		} catch (ServiceAccountUnavailableException $e) {
+			return ['error' => 'No background service account is set, so the letter was not sent.'];
+		}
+	}//end sendMessage()
+
+	/**
+	 * Send one letter and record it, as whoever is acting.
+	 *
+	 * @param string      $caseId           The case UUID.
+	 * @param string      $bsn              Citizen BSN.
+	 * @param string      $subject          Message subject.
+	 * @param string      $body             Plain text message body.
+	 * @param string      $typeCode         Bericht type code.
+	 * @param string|null $attachmentFileId Optional Nextcloud file ID of the attachment.
+	 * @param string      $category         What the letter is.
+	 *
+	 * @return array<string, mixed> The stored message record or an error payload.
+	 */
+	private function send(
+		string $caseId,
+		string $bsn,
+		string $subject,
+		string $body,
+		string $typeCode,
+		?string $attachmentFileId,
+		string $category,
 	): array {
 		// Validate inputs.
 		$errors = $this->validateMessage(bsn: $bsn, subject: $subject, body: $body);
@@ -102,33 +156,81 @@ class BerichtenboxService {
 			// Placeholder -- actual file reading via IRootFolder.
 		}
 
-		// Send via whichever adapter this instance has. On an instance with no
-		// `berichtenbox_adapter` configured that is the mock, which succeeds and
-		// sends nothing: the Integrations page carries the Simulated row that
-		// says so, and the log carries the warning the registrar wrote at boot.
-		$result = $this->adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent);
+		// Send via whichever adapter this instance has. The default is
+		// IntegriqAdapter, which dispatches integriq's typed send command and
+		// refuses rather than simulating; the mock is still selectable by
+		// naming it in `berichtenbox_adapter`, and it is no longer what an
+		// instance that configured nothing silently gets.
+		// The category travels to integriq, which decides on it (the category
+		// decides, not the channel; hydra decision 4). dossiq does not ask a
+		// second time here: integriq's digital post listener is the one check.
+		$result = $this->adapter->sendMessage($bsn, $subject, $body, $typeCode, $attachmentContent, $category, $caseId);
+
+		// 🔴 A REFUSAL IS NOT A DELIVERY, AND THE DIFFERENCE IS THE WHOLE
+		// CHANGE. A refused send gets a message record too, because a handler
+		// who pressed Send must be able to see what happened to the letter
+		// they wrote, but it carries status `refused`, no external message id
+		// and a reason, and its timeline entry is INTERNAL rather than public:
+		// telling a citizen on the portal that we tried to write to them and
+		// failed is not what the portal is for.
+		$refused = (($result['refused'] ?? false) === true);
 
 		// Store message record.
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
 
-		$messageData = [
-			'caseId' => $caseId,
-			'bsn' => $bsn,
-			'subject' => $subject,
-			'body' => $body,
-			'berichtTypeCode' => $typeCode,
-			'attachmentFileId' => $attachmentFileId,
-			'externalMessageId' => $result['messageId'] ?? null,
-			'status' => $result['status'] ?? 'sent',
-			'sentAt' => $result['sentAt'] ?? (new DateTime())->format('c'),
-		];
+		$messageData = $this->journal->messageRecord(
+			caseId: $caseId,
+			bsn: $bsn,
+			subject: $subject,
+			body: $body,
+			typeCode: $typeCode,
+			attachmentFileId: $attachmentFileId,
+			result: $result,
+		);
 
 		$saved = $objectService->saveObject(
 			object: $messageData,
 			register: (int)$register,
 			schema: (int)$schema,
 		);
+
+		$this->journal->recordSend(caseId: $caseId, subject: $subject, result: $result, messageData: $messageData);
+
+		$this->logSendOutcome(caseId: $caseId, result: $result);
+
+		$stored = $saved->jsonSerialize();
+		if ($refused === true) {
+			// The caller is a controller answering a handler who just pressed
+			// Send. It has to be able to tell a refusal from a send WITHOUT
+			// reading a status string it would have to know the vocabulary of.
+			$stored['refused'] = true;
+			$stored['error'] = (string)($result['error'] ?? '');
+			$stored['code'] = (string)($result['code'] ?? 'refused');
+		}
+
+		return $stored;
+	}//end send()
+
+
+
+	/**
+	 * Log what became of the send, at the level the outcome deserves.
+	 *
+	 * @param string               $caseId The case.
+	 * @param array<string, mixed> $result What the adapter answered.
+	 *
+	 * @return void
+	 */
+	private function logSendOutcome(string $caseId, array $result): void {
+		if ((($result['refused'] ?? false) === true)) {
+			$this->logger->warning(
+				'Dossiq: digital post was not sent',
+				['caseId' => $caseId, 'reason' => (string)($result['error'] ?? '')]
+			);
+
+			return;
+		}
 
 		$this->logger->info(
 			'Dossiq: Berichtenbox message sent',
@@ -137,9 +239,164 @@ class BerichtenboxService {
 				'messageId' => $result['messageId'] ?? '',
 			]
 		);
+	}//end logSendOutcome()
 
-		return $saved->jsonSerialize();
-	}//end sendMessage()
+	/**
+	 * Record what became of a letter integriq is tracking.
+	 *
+	 * Called by {@see \OCA\Dossiq\Listener\DigitalPostDeliveredListener} on
+	 * integriq's status event. The event fires on EVERY status change, `failed`
+	 * and `read` included, so this writes whatever it is told rather than only
+	 * the happy path: a letter that failed and a letter nobody has opened are
+	 * two different things a handler needs to see, and neither is `sent`.
+	 *
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 * @param string $status            The status it moved to.
+	 * @param string $lastError         The provider's reason, when it failed.
+	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
+	 *
+	 * @return bool True when a stored message was updated.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$simulated` decides nothing.
+	 *  It is written straight onto the stored message as `simulated` and is never
+	 *  read in a condition anywhere in this method, so there is no second
+	 *  responsibility to split out: a `recordSimulatedDeliveryStatus()` twin
+	 *  would be this method again with one literal changed. The value is data
+	 *  about which binding handled the letter, which is exactly what a handler
+	 *  reading the message needs to see.
+	 *
+	 * @spec openspec/specs/berichtenbox-integration/spec.md
+	 */
+	public function recordDeliveryStatus(
+		string $externalMessageId,
+		string $status,
+		string $lastError = '',
+		bool $simulated = false,
+	): bool {
+		// Integriq raises the status event from its own background work, with
+		// nobody signed in, so the update writes as the background service
+		// account. Without a usable account nothing is written: the account
+		// already logged that and told the admins.
+		try {
+			return $this->serviceAccount->runAsWhenNobodyIsSignedIn(
+				operation: fn (): bool => $this->recordStatus(
+					externalMessageId: $externalMessageId,
+					status: $status,
+					lastError: $lastError,
+					simulated: $simulated,
+				)
+			);
+		} catch (ServiceAccountUnavailableException $e) {
+			return false;
+		}
+	}//end recordDeliveryStatus()
+
+	/**
+	 * Record one status, as whoever is acting.
+	 *
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 * @param string $status            The status it moved to.
+	 * @param string $lastError         The provider's reason, when it failed.
+	 * @param bool   $simulated         Whether the binding that handled it sends nothing.
+	 *
+	 * @return bool True when a stored message was updated.
+	 *
+	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) `$simulated` is data written onto the message, see recordDeliveryStatus().
+	 */
+	private function recordStatus(
+		string $externalMessageId,
+		string $status,
+		string $lastError,
+		bool $simulated,
+	): bool {
+		if (trim($externalMessageId) === '' || trim($status) === '') {
+			return false;
+		}
+
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return false;
+		}
+
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
+
+		$data = $this->storedMessage(
+			objectService: $objectService,
+			externalMessageId: $externalMessageId,
+			register: (int)$register,
+			schema: (int)$schema,
+		);
+		if ($data === null) {
+			return false;
+		}
+
+		$data['status'] = $status;
+		$data['lastError'] = $lastError;
+		$data['simulated'] = $simulated;
+		if ($status === 'read') {
+			$data['readAt'] = (new DateTime())->format('c');
+		}
+
+		$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
+
+		$this->journal->recordStatus(
+			data: $data,
+			externalMessageId: $externalMessageId,
+			status: $status,
+			lastError: $lastError,
+		);
+
+		return true;
+	}//end recordStatus()
+
+	/**
+	 * The stored message integriq is tracking under this external id, as an array.
+	 *
+	 * Integriq tracks messages for every app on the instance. One we did not
+	 * send is not ours to record, and it is not an error, so an absent row and
+	 * a row in a shape this cannot read both answer null.
+	 *
+	 * @param object $objectService     The OpenRegister object service.
+	 * @param string $externalMessageId The id integriq tracks the message by.
+	 * @param int    $register          The register the messages live in.
+	 * @param int    $schema            The message schema.
+	 *
+	 * @return array<string, mixed>|null The stored message, or null.
+	 */
+	private function storedMessage(
+		object $objectService,
+		string $externalMessageId,
+		int $register,
+		int $schema,
+	): ?array {
+		$matches = $objectService->findAll(
+			[
+				'filters' => [
+					'register' => $register,
+					'schema' => $schema,
+					'externalMessageId' => $externalMessageId,
+				],
+			],
+		);
+
+		if ($matches === []) {
+			return null;
+		}
+
+		$data = $matches[0];
+		if (is_object($data) === true && method_exists($data, 'jsonSerialize') === true) {
+			$data = $data->jsonSerialize();
+		}
+
+		if (is_array($data) === false) {
+			return null;
+		}
+
+		return $data;
+	}//end storedMessage()
+
+
 
 	/**
 	 * Get sent messages for a case.
@@ -163,110 +420,6 @@ class BerichtenboxService {
 			['filters' => ['register' => (int)$register, 'schema' => (int)$schema, 'caseId' => $caseId]],
 		);
 	}//end getMessagesForCase()
-
-	/**
-	 * Get all messages whose read-status still needs to be polled.
-	 *
-	 * Returns messages with status 'sent' or 'unread_flagged' that carry an
-	 * externalMessageId (i.e. they were actually delivered to Berichtenbox).
-	 *
-	 * @return array<int, mixed> List of pending message records.
-	 *
-	 * @spec openspec/specs/berichtenbox-integration/spec.md
-	 */
-	public function getPendingMessages(): array {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return [];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
-
-		$sent = $objectService->findAll(
-			['filters' => ['register' => (int)$register, 'schema' => (int)$schema, 'status' => 'sent']],
-		);
-
-		$flagged = $objectService->findAll(
-			['filters' => ['register' => (int)$register, 'schema' => (int)$schema, 'status' => 'unread_flagged']],
-		);
-
-		return array_merge($sent, $flagged);
-	}//end getPendingMessages()
-
-	/**
-	 * Resolve the case a stored message belongs to.
-	 *
-	 * `poll()` takes only a message id, so there is nothing in its signature to
-	 * authorise against. This resolves the owning case so the controller can
-	 * apply the same per-case guard as the rest of the file. It returns null —
-	 * which the caller treats as DENY — whenever the message cannot be
-	 * resolved, so an unknown id is not an existence oracle either.
-	 *
-	 * @param string $messageId The OpenRegister message UUID.
-	 *
-	 * @return string|null The owning case UUID, or null when unresolvable.
-	 *
-	 * @spec openspec/specs/authz-bypass-fixes/spec.md
-	 */
-	public function getCaseIdForMessage(string $messageId): ?string {
-		return $this->owningCase->resolve(
-			objectId: $messageId,
-			schemaKey: 'berichtenbox_message_schema',
-			caseField: 'caseId',
-		);
-	}//end getCaseIdForMessage()
-
-	/**
-	 * Poll read status for a message.
-	 *
-	 * @param string $messageId The OpenRegister message UUID.
-	 *
-	 * @return array<string, mixed> The message record, possibly updated with read status.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-	 */
-	public function pollReadStatus(string $messageId): array {
-		$objectService = $this->getObjectService();
-		if ($objectService === null) {
-			return ['error' => 'OpenRegister not available'];
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('berichtenbox_message_schema');
-
-		$message = $objectService->find($messageId, register: (int)$register, schema: (int)$schema);
-		$data = $message->jsonSerialize();
-
-		if (empty($data['externalMessageId']) === true) {
-			return $data;
-		}
-
-		$status = $this->adapter->getReadStatus($data['externalMessageId']);
-
-		$data['readPolledAt'] = (new DateTime())->format('c');
-
-		if (($status['read'] ?? false) === true) {
-			$data['status'] = 'read';
-			$data['readAt'] = $status['readAt'];
-			$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
-
-			return $data;
-		}
-
-		// Check if unread for > 7 days.
-		if (empty($data['sentAt']) === false) {
-			$sentAt = new DateTime($data['sentAt']);
-			$diff = (new DateTime())->diff($sentAt)->days;
-			if ($diff >= 7 && $data['status'] !== 'unread_flagged') {
-				$data['status'] = 'unread_flagged';
-			}
-		}
-
-		$objectService->saveObject(object: $data, register: (int)$register, schema: (int)$schema);
-
-		return $data;
-	}//end pollReadStatus()
 
 	/**
 	 * Validate a BSN using the 11-proef.

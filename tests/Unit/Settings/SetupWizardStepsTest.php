@@ -60,7 +60,11 @@ class SetupWizardStepsTest extends TestCase {
 	}
 
 	/**
-	 * The `run-action` steps the wizard offers, in order.
+	 * The steps the wizard offers that post a setup action, in order.
+	 *
+	 * A `run-action` step posts its `action`. A cards choice step posts its
+	 * `loadAction` from each card's Load button (wizard-dataset-card-load), so
+	 * it is held to the same rule.
 	 *
 	 * @return array<int, array{id: string, action: string}> The steps.
 	 */
@@ -68,13 +72,20 @@ class SetupWizardStepsTest extends TestCase {
 		$steps = [];
 		foreach ((array)((array)($this->manifest()['setup'] ?? []))['steps'] ?? [] as $step) {
 			$step = (array)$step;
-			if ((string)($step['type'] ?? '') !== 'run-action') {
+			$action = '';
+			if ((string)($step['type'] ?? '') === 'run-action') {
+				$action = (string)($step['action'] ?? '');
+			} else if (isset($step['loadAction']) === true) {
+				$action = (string)$step['loadAction'];
+			}
+
+			if ($action === '') {
 				continue;
 			}
 
 			$steps[] = [
 				'id' => (string)($step['id'] ?? ''),
-				'action' => (string)($step['action'] ?? ''),
+				'action' => $action,
 			];
 		}
 
@@ -82,7 +93,7 @@ class SetupWizardStepsTest extends TestCase {
 	}
 
 	/**
-	 * Every `run-action` step names an action SetupController handles.
+	 * Every action-posting step names an action SetupController handles.
 	 *
 	 * An unhandled id falls through to the controller's `Unknown setup action`
 	 * branch, which answers 404 — the same shape of dead step, arrived at a
@@ -92,7 +103,7 @@ class SetupWizardStepsTest extends TestCase {
 	 */
 	public function testEveryRunActionStepNamesAnActionTheControllerHandles(): void {
 		$steps = $this->runActionSteps();
-		$this->assertGreaterThan(0, count($steps), 'The sweep found no run-action steps, so an all-clear says nothing');
+		$this->assertGreaterThan(0, count($steps), 'The sweep found no action-posting steps, so an all-clear says nothing');
 
 		$controller = (string)file_get_contents(self::ROOT . '/lib/Controller/SetupController.php');
 

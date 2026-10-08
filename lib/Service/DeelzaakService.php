@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Service;
 
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -48,13 +49,51 @@ class DeelzaakService {
 	 * @param SettingsService $settingsService Shared OR/settings resolver.
 	 * @param LoggerInterface $logger Logger.
 	 * @param CaseObjectReader $caseReader Single-object case/caseType lookups.
+	 * @param SubCaseDeriver $deriver Creates a sub-case as a derivation of its parent.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
 		private readonly CaseObjectReader $caseReader,
+		private readonly SubCaseDeriver $deriver,
 	) {
 	}//end __construct()
+
+	/**
+	 * Create a sub-case as a derivation of its parent.
+	 *
+	 * The guards run first and unchanged: a sub-case that may not be created is
+	 * not created, whatever the parent would have passed down. Only then does
+	 * OpenRegister derive it, which is what applies the inheritance the case
+	 * schema declares on `parentCase` and records what the child took.
+	 *
+	 * This exists because the modal used to save an ordinary case with
+	 * `parentCase` filled in. That creates the hierarchy and nothing else: no
+	 * inherited confidentiality, no inherited handler, and no record of either.
+	 * A sub-case that quietly starts more open than its parent is a disclosure,
+	 * and nothing in the old path could have shown it happening.
+	 *
+	 * @param string $parentCaseUuid Parent case UUID.
+	 * @param string $childCaseTypeId The sub-case's case type.
+	 * @param array<string, mixed> $childData The sub-case as the form filled it in.
+	 *
+	 * @return array{ok: bool, reason?: string, object?: array<string, mixed>, inherited?: array<string, mixed>, inheritanceApplied?: bool}
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function createSubCase(string $parentCaseUuid, string $childCaseTypeId, array $childData): array {
+		$refusal = $this->validateCreate(
+			parentCaseUuid: $parentCaseUuid,
+			childCaseTypeId: $childCaseTypeId
+		);
+		if ($refusal['ok'] === false) {
+			return $refusal;
+		}
+
+		$childData['caseType'] = $childCaseTypeId;
+
+		return $this->deriver->derive(parentCaseUuid: $parentCaseUuid, childData: $childData);
+	}//end createSubCase()
 
 	/**
 	 * Fetch every sub-case linked to the given parent.

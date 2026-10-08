@@ -6,20 +6,33 @@ status: done
 
 ## Purpose
 
-The Features & roadmap page answers two different questions, and it keeps them
-apart. "What can dossiq do, and is it stable" is the feature list and the
-roadmap. "How does dossiq compare to the alternatives" is the capability
-comparison. Losing either one to the other is a regression: the first is what a
-user checks before relying on a capability, the second is what a procurement
-officer checks before choosing a system at all.
+Two different questions, kept apart. "What can dossiq do, and is it stable" is
+the feature list and the roadmap, on the in-app Features & roadmap page. "How
+does dossiq compare to the alternatives" is the capability comparison, on the
+public docs site. Losing either one to the other is a regression: the first is
+what a user checks before relying on a capability, the second is what a
+procurement officer checks before choosing a system at all.
+
+The comparison was a second tab on the in-app page until 2026-10-07. Ruben
+ruled that how an app compares belongs on its public site and not in the app,
+for every app. The in-app page links to it, so it stays one click away.
 
 The comparison is a vendor-authored comparison of other people's software, so
-the page states its own limits before it states a score.
+the comparison page states its own limits before it states a score.
 
-**Surface**: `src/manifest.json#FeaturesRoadmap` (`type: "custom"`,
-`component: "FeaturesRoadmapView"`), route `/features-roadmap`, reachable from
-the footer menu entry `FeaturesRoadmapMenu`. No top-level navigation entry:
-ADR-097 caps the main menu at six and the page has never needed one.
+**Surfaces**:
+
+- In the app: `src/manifest.json#FeaturesRoadmap` (`type: "custom"`,
+  `component: "FeaturesRoadmapView"`), route `/features-roadmap`, reachable
+  from the footer menu entry `FeaturesRoadmapMenu`. No top-level navigation
+  entry: ADR-097 caps the main menu at six and the page has never needed one.
+- On the docs site: `docs/src/pages/compare.js`, served in English at
+  `https://dossiq.conduction.nl/compare` and in Dutch at `/nl/compare`, and
+  linked from the navbar. It renders
+  `docs/src/components/CapabilityComparison`, which imports
+  `openspec/parity/capabilities.json` and `src/utils/capabilityComparison.js`
+  directly. Nothing is copied at build time, so the docs page and the data
+  cannot drift.
 
 ## Requirements
 
@@ -27,8 +40,24 @@ ADR-097 caps the main menu at six and the page has never needed one.
 
 The page SHALL render the library's `CnFeaturesAndRoadmapPage` with the feature
 list dossiq provides through initial state (`features_roadmap_features`, from
-`docs/features.json`, ADR-018). Adding the comparison SHALL NOT remove or
+`docs/features.json`, ADR-018). Linking to the comparison SHALL NOT remove or
 replace the features tab or the roadmap tab.
+
+### Requirement: The page MUST link to the comparison on the public site
+
+The in-app page SHALL NOT render the capability comparison. It SHALL carry one
+link to the comparison page on the docs site, so the surface that left the app
+stays reachable from where a user used to find it. The link SHALL open in a new
+tab, SHALL say so in text tied to the link, and SHALL point a Dutch reader at
+the Dutch page.
+
+#### Scenario: The comparison is one link away
+
+- **GIVEN** a user opens `/features-roadmap`
+- **WHEN** the page loads
+- **THEN** the page MUST NOT render the comparison tables or its caveats
+- **AND** a link reading "How dossiq compares to other case systems" MUST point at `/compare` on the docs site
+- **AND** the link MUST open in a new tab
 
 #### Scenario: Features page renders controls
 
@@ -40,8 +69,8 @@ replace the features tab or the roadmap tab.
 
 ### Requirement: The page MUST present the capability comparison by area
 
-The page SHALL offer a second section that compares dossiq against the systems
-in `src/data/capabilityComparison.json` across every capability in that file.
+The comparison page on the docs site SHALL compare dossiq against the systems
+in `openspec/parity/capabilities.json` across every capability in that file.
 Capabilities SHALL be grouped by their area, and an area SHALL open to reveal
 its rows. Each row SHALL show its number, the capability, and a rating for
 every system.
@@ -55,6 +84,12 @@ those products is one that says nobody looked. Hiding it would show a reader
 the other systems scored over fewer rows than ours with nothing to explain the
 difference.
 
+A reader SHALL be able to search the rows by name or number and filter them by
+dossiq's rating. The totals SHALL stay over the whole list while a filter is
+on, because a total over a filtered list reads as a different score.
+
+@e2e exclude The comparison renders on the Docusaurus site, which the app's Playwright suite does not drive. The grouping and tallies are asserted in tests/vitest/capabilityComparison.spec.js, and `npm run build` in docs/ prerenders the page.
+
 #### Scenario: Areas summarise before they expand
 
 - **GIVEN** a user opens the comparison section
@@ -64,7 +99,7 @@ difference.
 
 ### Requirement: The comparison MUST state its own limits
 
-The comparison section SHALL state, before any score:
+The comparison page SHALL state, before any score:
 
 1. That only open source software the team could install and run itself was
    compared, that the named systems are the whole field, and that a product's
@@ -112,6 +147,8 @@ The comparison section SHALL state, before any score:
    states the bias in general; this states it against the named column a reader
    is about to compare with, which is the only form they can act on. A caveat
    they meet after the totals is a caveat they meet too late.
+
+@e2e exclude The comparison renders on the Docusaurus site, which the app's Playwright suite does not drive. Every caveat is asserted against the module the page renders from in tests/vitest/capabilityComparisonCopy.spec.js.
 
 #### Scenario: An added row is not counted as a correction
 
@@ -184,7 +221,7 @@ The comparison section SHALL state, before any score:
 
 ### Requirement: The comparison data MUST match the audit it came from
 
-`src/data/capabilityComparison.json` is generated once, offline, from a private
+`openspec/parity/capabilities.json` is re-issued offline from a private
 audit repository, so no CI job can regenerate it and diff the result. The data
 SHALL therefore be guarded by assertions: the row count, unique ids, every row
 filed under a declared area, every rating drawn from the known set, and the
@@ -198,8 +235,9 @@ row that understates our score for free. And a row carrying a competitor
 `unknown` for every competitor, the column added last included: it was read
 before those rows existed, so it is as empty on them as the rest. That pins the value to its only honest cause.
 
-Every caveat SHALL additionally be asserted against the rendered component, not
-only end to end. Each one is a plain paragraph inside a note card, and deleting
+Every caveat SHALL additionally be asserted against the module the docs page
+renders from (`docs/src/components/CapabilityComparison/comparisonCopy.js`), not
+only by building the site. Each one is a plain paragraph inside a note card, and deleting
 one while editing the panel around it breaks nothing a build can see. The
 caveats bound to a named column SHALL be asserted from the data that declares
 them, so removing the declaration removes the caveat AND reddens the test
@@ -224,8 +262,10 @@ instead of quietly removing only the caveat.
 Capability names and area names SHALL carry a Dutch variant beside the English
 one (`name_nl` beside `name`), the shape `docs/features.json` already uses. The
 page SHALL render the Dutch variant for a Dutch locale and fall back to English
-when a Dutch variant is absent or blank. Page chrome SHALL be translated
-through `t('dossiq', …)` and `l10n/nl.json`.
+when a Dutch variant is absent or blank. The docs page SHALL render Dutch under
+the site's `nl` locale, with its sentences from the `NL` table in
+`docs/src/components/CapabilityComparison/comparisonCopy.js`. The in-app link
+SHALL be translated through `t('dossiq', …)` and `l10n/nl.json`.
 
 @e2e exclude The e2e instance runs one locale, so a Dutch render cannot be driven there. The locale selection is asserted directly in tests/vitest/capabilityComparison.spec.js (groupByArea with nl).
 

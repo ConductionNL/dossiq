@@ -44,6 +44,8 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
+use OCP\EventDispatcher\IEventDispatcher;
+use OCP\IAppConfig;
 use OCP\IRequest;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -52,6 +54,7 @@ use PHPUnit\Framework\TestCase;
  * Wire-contract tests for DashboardController's SPA shell endpoints.
  *
  * @covers \OCA\Dossiq\Controller\DashboardController
+ * @uses \OCA\Dossiq\Service\Settings\MenuStructure
  */
 class DashboardControllerContractTest extends TestCase {
 
@@ -78,7 +81,12 @@ class DashboardControllerContractTest extends TestCase {
 		parent::setUp();
 
 		$this->request = $this->createMock(IRequest::class);
-		$this->controller = new DashboardController(request: $this->request, initialState: $this->createMock(IInitialState::class));
+		$this->controller = new DashboardController(
+			request: $this->request,
+			initialState: $this->createMock(originalClassName: IInitialState::class),
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+		);
 	}//end setUp()
 
 	/**
@@ -134,7 +142,12 @@ class DashboardControllerContractTest extends TestCase {
 					$provided[$key] = $data;
 				}
 			);
-		$controller = new DashboardController(request: $this->request, initialState: $initialState);
+		$controller = new DashboardController(
+			request: $this->request,
+			initialState: $initialState,
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			eventDispatcher: $this->createMock(originalClassName: IEventDispatcher::class),
+		);
 
 		$controller->page();
 

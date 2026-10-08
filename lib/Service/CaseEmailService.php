@@ -28,11 +28,16 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
+use InvalidArgumentException;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Exception\RecipientOptedOutException;
 use OCA\Dossiq\Service\Email\CaseContactDirectory;
 use OCA\Dossiq\Service\Email\CaseEmailAttachmentResolver;
 use OCA\Dossiq\Service\Email\CaseEmailRepository;
+use OCA\Dossiq\Service\Email\CaseMailOptOut;
 use OCA\Dossiq\Service\Email\RecipientAllowlist;
+use OCA\Dossiq\Service\Timeline\CaseTimeline;
+use OCA\Dossiq\Service\Timeline\TimelineKinds;
 use OCP\IAppConfig;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
@@ -42,7 +47,21 @@ use RuntimeException;
 /**
  * Service for case-integrated email functionality.
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) The twelfth and thirteenth
+ * types are CaseTimeline and TimelineKinds, and they replaced nothing: a sent
+ * mail now also records a line on the case timeline, which is a new fact about
+ * this class rather than a new way of doing an old one. Control: per-file phpmd
+ * on this file at 43150ddf is clean, and reports thirteen here, so the two are
+ * exactly what crossed the threshold. The alternatives are worse than the
+ * suppression. Naming the kind as a bare string would drop TimelineKinds and
+ * take the drift guard with it, and an undeclared kind is refused, caught and
+ * logged rather than shown. Moving the call behind a per-writer method on
+ * CaseTimeline would drop TimelineKinds here and make that class know the shape
+ * of every writer in the app, which is the coupling this rule exists to stop,
+ * moved somewhere it is not measured.
+ *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+ * @spec openspec/changes/one-timeline-on-the-case/specs/case-history-surface/spec.md
  */
 class CaseEmailService {
 
@@ -62,6 +81,16 @@ class CaseEmailService {
 	private const ESCAPE_NONE = 'none';
 
 	/**
+	 * The categories a case mail can carry. A handler picks the first two;
+	 * a template may also declare `statutory`.
+	 */
+	private const CATEGORIES = [
+		OptOutGate::CATEGORY_CASE_UPDATE,
+		OptOutGate::CATEGORY_BESLUIT,
+		OptOutGate::CATEGORY_STATUTORY,
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IMailer $mailer Nextcloud mailer
@@ -71,6 +100,8 @@ class CaseEmailService {
 	 * @param CaseContactDirectory $contactDirectory Contact addresses registered on a case
 	 * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
 	 * @param RecipientAllowlist $allowlist Outbound recipient policy
+	 * @param CaseTimeline $timeline The one seam that writes a timeline entry
+	 * @param CaseMailOptOut $optOut Asks integriq first and places its unsubscribe link
 	 */
 	public function __construct(
 		private readonly IMailer $mailer,
@@ -80,6 +111,8 @@ class CaseEmailService {
 		private readonly CaseContactDirectory $contactDirectory,
 		private readonly CaseEmailAttachmentResolver $attachmentResolver,
 		private readonly RecipientAllowlist $allowlist,
+		private readonly CaseTimeline $timeline,
+		private readonly CaseMailOptOut $optOut,
 	) {
 	}//end __construct()
 
@@ -91,12 +124,16 @@ class CaseEmailService {
 	 * @param string $subject Email subject
 	 * @param string $body Email body (HTML or plain text)
 	 * @param array<string> $attachments File paths to attach
+	 * @param string $category What the mail is: `case-update` (default), `besluit` or `statutory`
 	 *
 	 * @return array<string, mixed> Send result with message ID
 	 *
 	 * @throws \RuntimeException If sending fails
+	 * @throws RecipientOptedOutException If integriq says this person may not be sent it
+	 * @throws InvalidArgumentException If the category is not one a case mail can carry
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * @spec openspec/changes/opt-out-before-send/specs/case-message-opt-out/spec.md#requirement-case-mail-asks-integriq-before-it-is-sent-req-coo-001
 	 */
 	public function sendEmail(
 		string $caseId,
@@ -104,7 +141,12 @@ class CaseEmailService {
 		string $subject,
 		string $body,
 		array $attachments = [],
+		string $category = OptOutGate::CATEGORY_CASE_UPDATE,
 	): array {
+		if (in_array($category, self::CATEGORIES, true) === false) {
+			throw new InvalidArgumentException('invalid-category');
+		}
+
 		// H6 / C4: Fail loudly if from-address is not configured — never fall back to
 		// the reserved example.nl domain which would cause bounces and expose config errors.
 		$fromAddress = $this->resolveFromAddress();
@@ -135,12 +177,24 @@ class CaseEmailService {
 			fromAddress: $fromAddress,
 		);
 
+		// Ask integriq after the allow-list and before anything is built or
+		// sent (opt-out-before-send). A refusal leaves no mail and no record.
+		$decision = $this->optOut->decide(recipient: $to, category: $category, caseId: $caseId);
+		if ($decision['send'] === false) {
+			$this->logger->info(
+				'Case mail not sent: integriq said this person may not be sent it',
+				['app' => Application::APP_ID, 'caseId' => $caseId, 'category' => $category, 'code' => $decision['code']]
+			);
+			throw new RecipientOptedOutException(reasonCode: $decision['code'], reason: $decision['reason']);
+		}
+
+		$unsubscribe = $decision['unsubscribe'];
+
 		$message = $this->mailer->createMessage();
 		$message->setFrom([$fromAddress => $fromName]);
 		$message->setTo([$to]);
 		$message->setSubject($subject);
-		$message->setHtmlBody($body);
-		$message->setPlainBody(strip_tags($body));
+		$this->optOut->dress(message: $message, body: $body, unsubscribe: $unsubscribe);
 
 		// H5: Resolve attachments via IUserFolder to restrict file access to the
 		// calling user's own files and prevent path traversal outside their folder.
@@ -148,8 +202,7 @@ class CaseEmailService {
 
 		$this->dispatchMessage(message: $message, caseId: $caseId);
 
-		// Record the sent email as a case document.
-		$messageId = $this->repository->recordSentEmail(
+		$messageId = $this->recordSentEmail(
 			caseId: $caseId,
 			fromAddress: $fromAddress,
 			to: $to,
@@ -169,6 +222,52 @@ class CaseEmailService {
 			'sentAt' => date('Y-m-d\TH:i:s'),
 		];
 	}//end sendEmail()
+
+	/**
+	 * Record a mail that went out about a case: the stored message and the timeline line.
+	 *
+	 * The half of sending that is dossiq's own. A mail this service sends
+	 * comes through here, and so does one an OpenRegister flow step sent
+	 * about a dossiq case ({@see \OCA\Dossiq\Listener\FlowEmailSentListener}),
+	 * so the case reads the same whichever way the mail left.
+	 *
+	 * @param string $caseId      The case UUID.
+	 * @param string $fromAddress The envelope sender, or empty when it is not known here.
+	 * @param string $to          The recipient.
+	 * @param string $subject     The subject, as sent.
+	 * @param string $body        The body, as sent.
+	 *
+	 * @return string The stored message id.
+	 *
+	 * @spec openspec/changes/flow-nodes-to-their-owners/specs/flow-nodes-to-their-owners/spec.md
+	 */
+	public function recordSentEmail(string $caseId, string $fromAddress, string $to, string $subject, string $body): string {
+		// Record the sent email as a case document.
+		$messageId = $this->repository->recordSentEmail(
+			caseId: $caseId,
+			fromAddress: $fromAddress,
+			to: $to,
+			subject: $subject,
+			body: $body,
+		);
+
+		// PUBLIC: the recipient already has this message in their own inbox,
+		// so hiding its line from the timeline they are shown would only hide
+		// it from the person who has it.
+		$this->timeline->record(
+			caseId: $caseId,
+			kind: TimelineKinds::MAIL_OUT,
+			message: $subject,
+			fields: [
+				'recipient' => $to,
+				'subject' => $subject,
+				'documentId' => (string)$messageId,
+			],
+			visibility: CaseTimeline::PUBLIC_ENTRY,
+		);
+
+		return (string)$messageId;
+	}//end recordSentEmail()
 
 	/**
 	 * Resolve the configured envelope from-address.
@@ -316,10 +415,52 @@ class CaseEmailService {
 		$caseData = $this->repository->loadCaseVariables(caseId: $caseId);
 
 		// Resolve template variables.
-		$subject = $this->resolveVariables(template: $template['subjectPattern'] ?? '', data: $caseData);
-		$body = $this->resolveVariables(template: $template['body'] ?? '', data: $caseData);
+		$subjectPattern = (string)($template['subjectPattern'] ?? '');
+		$bodyPattern = (string)($template['body'] ?? '');
 
-		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
+		// 🔴 REFUSED RATHER THAN SENT WITH A HOLE IN IT. `substituteVariables()`
+		// leaves a placeholder nothing answers exactly as it found it, which is
+		// the right call for a preview and the wrong one for a mail: the
+		// transport accepts it, the send reports success, and the only person
+		// who learns of the defect is the citizen reading `{{contactNaam}}` in
+		// their letter. dossiq#2950 found six shipped templates in that state
+		// and nobody had reported one in 35 days.
+		//
+		// `findUnresolvedVariables()` has been sitting beside this method since
+		// both were written, asked only by the preview endpoint. This is the
+		// send path asking it.
+		$unresolved = array_values(
+			array_unique(
+				array_merge(
+					$this->findUnresolvedVariables(template: $subjectPattern, data: $caseData),
+					$this->findUnresolvedVariables(template: $bodyPattern, data: $caseData)
+				)
+			)
+		);
+
+		if ($unresolved !== []) {
+			// A RuntimeException that is not the transport sentinel becomes a
+			// 400 carrying its message, which is what this is: caller-fixable,
+			// and the fix is to name a placeholder the case can answer.
+			throw new RuntimeException(
+				'Email not sent: the template names '
+				. implode(', ', array_map(static fn (string $n): string => '{{' . $n . '}}', $unresolved))
+				. ', which this case cannot fill.'
+			);
+		}
+
+		$subject = $this->resolveVariables(template: $subjectPattern, data: $caseData);
+		$body = $this->resolveVariables(template: $bodyPattern, data: $caseData);
+
+		// The template says what it is; anything it does not say, or says
+		// wrongly, is a case-update and respects the opt-out. Never exempt
+		// by accident.
+		$category = (string)($template['messageCategory'] ?? '');
+		if (in_array($category, self::CATEGORIES, true) === false) {
+			$category = OptOutGate::CATEGORY_CASE_UPDATE;
+		}
+
+		return $this->sendEmail(caseId: $caseId, to: $to, subject: $subject, body: $body, category: $category);
 	}//end sendFromTemplate()
 
 	/**

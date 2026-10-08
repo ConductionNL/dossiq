@@ -1,0 +1,28 @@
+{
+  "components": {
+    "schemas": {
+      "widget": {
+        "configuration": {
+          "x-openregister-calculations": {
+            "hostHiddenHere": {
+              "type": "boolean",
+              "materialise": true,
+              "expression": { "prop": "@ref.gadget.hiddenSomewhere" }
+            }
+          }
+        },
+        "properties": {
+          "title": { "type": "string" },
+          "hostHiddenHere": { "type": "boolean", "readOnly": true }
+        }
+      },
+      "gadget": {
+        "properties": {
+          "hiddenSomewhere": { "type": "boolean" },
+          "showOnPoster": { "type": "boolean" },
+          "weight": { "type": "integer" }
+        }
+      }
+    }
+  }
+}

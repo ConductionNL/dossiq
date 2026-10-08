@@ -38,7 +38,9 @@ A property that carries an `order`, or that a manifest `include`/`columns` list 
 
 `case.caseType` SHALL declare `x-openregister-extends-form`, naming `propertyDefinition` as the definitions schema filtered by the chosen case type, and `caseProperty` as the values schema keyed `case` / `propertyDefinition` / `value`.
 
-When a case type is chosen, the form SHALL render one field per property definition of that type, each with the widget its declared `propertyType` implies and its `defaultValue` seeded. A definition name that is identifier-shaped SHALL be rendered in sentence case, keeping acronyms whole; a name containing a space SHALL be shown exactly as it was typed. Changing the case type SHALL drop the previous type's answers. Answers SHALL be written as `caseProperty` rows AFTER the case exists, never as properties of the case itself.
+When a case type is chosen, the form SHALL render one field per property definition of that type, each with the widget its declared `propertyType` implies and its `defaultValue` seeded. A definition name that is identifier-shaped SHALL be rendered in sentence case, keeping acronyms whole; a name containing a space SHALL be shown exactly as it was typed. Changing the case type SHALL drop the previous type's answers. Answers SHALL be written into the case's own `properties` array, in the same write that creates the case, each entry naming the definition it answers, that definition's name and the value. An answer SHALL NOT be written as a dynamic key beside the case's declared properties, where OpenRegister drops an undeclared key with a 200 and no error anywhere.
+
+This sentence used to require the opposite: `caseProperty` rows written AFTER the case exists, never on the case itself. `f7c9f87c` moved the declaration to `mode: array` once nextcloud-vue 2.35.0 shipped array mode, so the answers now save in the same write as the case instead of a second write that can be left behind. The `caseProperty` schema still exists and still holds the rows `FoldCasePropertiesOntoCase` projected, deliberately undeleted so the projection can be redone; nothing writes a new one. A case filed today SHALL therefore carry no `caseProperty` row.
 
 #### Scenario: Choosing a case type adds its questions
 
@@ -47,11 +49,26 @@ When a case type is chosen, the form SHALL render one field per property definit
 - **THEN** the form SHALL gain a number field labelled "Plafond" holding 800000
 - **AND** a dropdown labelled "Interim report frequency" offering that definition's enum values
 
-#### Scenario: Answers are stored against the case, not in it
+#### Scenario: A definition name is shown as words
+
+- **GIVEN** a case type with a definition named `auditorsStatementThreshold` and
+  another whose name contains a space
+- **WHEN** a handler chooses that case type in the New case dialog
+- **THEN** the identifier-shaped one SHALL be labelled `Auditors statement threshold`
+- **AND** the one containing a space SHALL be shown exactly as it was typed
+
+> **Added 2026-09-12.** REQ-FCF-003's prose has always carried this SHALL, and
+> no scenario stated it, so the test proving it had nothing to cite and pointed
+> at REQ-FCF-006's heading instead. That anchor resolves to no scenario at all,
+> and REQ-FCF-006 is about two columns and a full-width widget, so anchoring
+> there would have credited a layout rule to a labelling test.
+
+#### Scenario: Answers are stored on the case, not as a dynamic key
 
 - **GIVEN** a handler has answered a case type question and pressed Create
-- **THEN** the case SHALL be created without any dynamic key among its own properties
-- **AND** one `caseProperty` row SHALL exist referencing the created case, the property definition, and the answer
+- **THEN** the created case SHALL carry one entry in its own `properties` array naming the property definition, that definition's name and the answer
+- **AND** the case SHALL carry no dynamic key of its own for that answer, neither the definition's name nor its uuid
+- **AND** no `caseProperty` row SHALL exist for that case
 
 ### Requirement: REQ-FCF-004 The Properties Tab Writes What The Schema Declares
 
@@ -115,3 +132,26 @@ A property the New case action does not ask for SHALL remain editable on the cas
 - **THEN** there SHALL be no parent case field
 - **WHEN** they open an existing case
 - **THEN** the core case data SHALL offer a parent case field
+
+### Requirement: The create form warns about likely duplicates (REQ-FCF-10)
+
+The `case` schema SHALL declare dedup rules (requester and type within 30
+days; address and type; subject similarity). The New case form SHALL show
+the platform's matches as a warning with links before save.
+`caseType.duplicatePolicy` SHALL be `warn` or `block`; under `block` only
+`dossiq-coordinators` may continue, with a reason recorded on the case.
+
+#### Scenario: A likely duplicate is shown
+@e2e tests/e2e/duplicate-warning.spec.ts
+
+- **GIVEN** an open case for requester Jan of type Kapvergunning filed this week
+- **WHEN** you start a new Kapvergunning for Jan
+- **THEN** the form SHALL show the open case as a likely duplicate with a link
+
+#### Scenario: Block stops a handler, not a coordinator
+@e2e tests/e2e/duplicate-warning.spec.ts
+
+- **GIVEN** the case type's policy is block and a match is shown
+- **WHEN** a handler tries to save
+- **THEN** Save SHALL be disabled
+- **AND** a coordinator SHALL be offered Continue anyway with a reason

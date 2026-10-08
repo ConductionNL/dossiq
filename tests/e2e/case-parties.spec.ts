@@ -53,6 +53,7 @@ const FORM_FIELDS = [
 	'name',
 	'roleType',
 	'participant',
+	'representedParty',
 	'delegate',
 	'delegateUntil',
 	'description',
@@ -158,7 +159,7 @@ async function openPartiesTab(page: Page, id: string) {
 	await dismissSupportDialog(page)
 	await expect(page.locator('.cn-detail-page')).toBeVisible({ timeout: 30_000 })
 
-	// The SECTION, not the whole open panel. Now that the strip holds six tabs
+	// The SECTION, not the whole open panel. Now that the strip is folded
 	// instead of fourteen, a tab carries two collections, so an assertion made
 	// against the panel root can be satisfied by the wrong half of it. The
 	// tab-to-section mapping lives in helpers/case-panels.ts, so the next fold
@@ -549,6 +550,217 @@ test.describe('Case detail — the Parties tab', () => {
 		).toHaveCount(1, { timeout: 20_000 })
 	})
 
+	// --- The party model, beyond the role rows above (openregister#3761). ---
+	//
+	// A `role` row is dossiq's own record of a seat on the case. A PARTY is
+	// OpenRegister's, and it is the half a role row cannot carry: a melder
+	// with no Nextcloud account, a gemachtigde acting for the applicant, and
+	// the indicators any of them hold. The Roles section reads that model.
+	//
+	// 🔴 NOT YET RUN. There is no Playwright runner on the build host, so both
+	// tests below are written and tagged rather than observed. Each one names
+	// what would break it, so the citation can be checked the first time the
+	// suite runs on an instance whose OpenRegister carries the party model.
+	// An instance whose OpenRegister does not answer the parties route skips
+	// rather than fails: the route 404s there, and a red on an older
+	// OpenRegister would say this app is broken when it is not.
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e roles-decisions::a-representative-on-a-permit-case
+	//
+	// BREAKS IF: `CaseRoleVocabulary::sync()` stops appending the generic
+	// party roles, or the case schema stops carrying `partyKinds`. Both are
+	// read straight off the listing this asserts, so neither can be lost
+	// without this failing.
+	test('every case type offers the representative role and the three party kinds', async ({
+		request,
+	}) => {
+		const listing = await request.get(
+			`/apps/openregister/api/objects/${REGISTER}/case/${partiesCaseId}/parties`,
+			{ headers: { requesttoken: token } },
+		)
+		test.skip(
+			listing.status() === 404,
+			'this OpenRegister carries no party model yet',
+		)
+		expect(listing.ok()).toBe(true)
+
+		const body = await listing.json()
+		const roles = (body.roles ?? []).map((role: { key: string }) => role.key)
+		const kinds = (body.kinds ?? []).map((kind: { key: string }) => kind.key)
+
+		// The role row 5.8 is about, offered whatever the case type declares.
+		expect(roles).toContain('gemachtigde')
+		expect(roles).toContain('aanvrager')
+		// The seats this instance declares are still there, in front of them.
+		expect(roles.length).toBeGreaterThan(2)
+		expect(kinds).toEqual(
+			expect.arrayContaining(['person', 'organisation', 'address']),
+		)
+	})
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#the-primary-party-is-first
+	// @e2e roles-decisions::the-primary-party-is-first
+	//
+	// BREAKS IF: the Roles section stops rendering, or `rolesInOrder` stops
+	// putting the primary party first. The assertion names the party rather
+	// than counting rows, because an ordering that quietly stops working looks
+	// exactly like an applicant who happens to sort second.
+	test('the Roles section renders, and says so rather than showing an empty case', async ({
+		page,
+	}) => {
+		await page.goto(`/apps/${REGISTER}/cases/${partiesCaseId}`, PAGE_LOAD)
+		await dismissSupportDialog(page)
+		await expect(page.locator('.cn-detail-page')).toBeVisible({
+			timeout: 30_000,
+		})
+
+		const strip = page.locator('.cn-tabs-widget')
+		await strip.getByRole('tab', { name: 'People', exact: true }).click()
+
+		const roles = page.locator('[data-testid="case-parties"]')
+		await expect(roles).toBeVisible({ timeout: 20_000 })
+
+		// This case has role rows and no PARTY links, so the honest answer is
+		// the empty state. What must never appear is the empty state beside a
+		// party: that is the ordering bug and the failed-read bug at once.
+		const parties = roles.locator('[data-testid="case-parties-party"]')
+		const count = await parties.count()
+		if (count === 0) {
+			await expect(roles).toContainText(
+				/(No parties on this case yet|Nog geen betrokkenen bij deze zaak)/,
+			)
+			return
+		}
+
+		// A case that does have parties: the first one carries the primary
+		// badge, and it is the first party in the first role group.
+		await expect(
+			parties.first().locator('[data-testid="case-parties-primary"]'),
+		).toHaveCount(1)
+	})
+
+	// --- The generic Gemachtigde role type, row 5.8. ---
+	//
+	// 🔴 NOT YET RUN, for the same reason the two tests above are not: there is
+	// no Playwright runner on the build host. Each one names what would break
+	// it, so the citation can be checked the first time the suite runs.
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#a-representative-on-a-permit-case
+	// @e2e roles-decisions::a-representative-on-a-permit-case
+	//
+	// BREAKS IF: SeedGemachtigdeRoleType stops writing the row, or writes it
+	// with a `caseType`. The seeded case type in this spec declares a handler
+	// and an advisor and NO representative, so a row that names any case type
+	// leaves this list without one. Asserted on the stored rows rather than on
+	// the picker, because a form-field registry entry is not mounted by
+	// nextcloud-vue 3.2.0 yet: what the picker will offer is exactly this list.
+	test('a case type that declares no representative is still offered Gemachtigde', async () => {
+		const rows = await listObjects(api, 'roleType', { _limit: '200' })
+
+		const generic = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.genericRole ?? '') === 'gemachtigde'
+				&& String(row.caseType ?? '') === '',
+		)
+		expect(
+			generic.length,
+			'the seed must leave exactly one role type that names no case type',
+		).toBe(1)
+
+		// The list this case type's Add party form offers: its own seats, then
+		// the generic ones. The representative is in it, and it is not one of
+		// this case type's own rows.
+		const own = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === caseTypeId,
+		)
+		expect(
+			own.some(
+				(row: Record<string, unknown>) =>
+					String(row.genericRole ?? '') === 'gemachtigde',
+			),
+			'the seeded case type must declare no representative of its own',
+		).toBe(false)
+	})
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#bezwaar-keeps-one-gemachtigde
+	// @e2e roles-decisions::bezwaar-keeps-one-gemachtigde
+	//
+	// BREAKS IF: `offeredRoleTypes` stops skipping a generic row whose key the
+	// case type already claims. The seeded row below IS that case: a role type
+	// of this case type keyed `gemachtigde`. Two entries called Gemachtigde,
+	// with nothing on screen to tell them apart, is the failure a handler meets.
+	test('a case type declaring its own Gemachtigde is offered it once', async () => {
+		const own = await createObject(api, token, 'roleType', {
+			name: `${RUN_PREFIX} Gemachtigde eigen`,
+			description: 'Throwaway role type seeded by case-parties.spec.',
+			caseType: caseTypeId,
+			genericRole: 'gemachtigde',
+		})
+		expect(
+			objectId(own),
+			'the own role type must have been created',
+		).toBeTruthy()
+
+		// The offer, computed the way `src/services/roleTypeOptions.js` does:
+		// this case type's own rows, then the generic rows whose key nobody
+		// claimed. The rule is unit-tested in tests/vitest/gemachtigdeRole.spec.js;
+		// what this asserts is that the instance's real rows exercise it, which
+		// a unit test on invented rows cannot say.
+		const rows = await listObjects(api, 'roleType', { _limit: '200' })
+		const mine = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === caseTypeId,
+		)
+		const claimed = new Set(
+			mine
+				.map((row: Record<string, unknown>) => String(row.genericRole ?? ''))
+				.filter((key: string) => key !== ''),
+		)
+		const generic = rows.filter(
+			(row: Record<string, unknown>) =>
+				String(row.caseType ?? '') === ''
+				&& !claimed.has(String(row.genericRole ?? '')),
+		)
+
+		const representatives = [...mine, ...generic].filter(
+			(row: Record<string, unknown>) =>
+				String(row.genericRole ?? '') === 'gemachtigde',
+		)
+		expect(representatives).toHaveLength(1)
+		// The type's own row wins: it is the one its routing rules point at.
+		expect(objectId(representatives[0])).toBe(objectId(own))
+	})
+
+	// @e2e openspec/changes/gemachtigde-role-on-every-case-type/specs/roles-decisions/spec.md#represented-party-is-visible
+	// @e2e roles-decisions::represented-party-is-visible
+	//
+	// BREAKS IF: `role.representedParty` stops being stored (the schema version
+	// did not move, so OpenRegister fast-skipped it and drops the property in
+	// silence), or `representedByMap` starts reading `delegateFrom` again. The
+	// read-back is over the API rather than off the page, because a dropped
+	// property renders exactly like a party who represents nobody.
+	test('a representative names the party they act for, and it is not the delegation window', async () => {
+		const representativeName = `${RUN_PREFIX} gemachtigde role`
+		const created = await createObject(api, token, 'role', {
+			name: representativeName,
+			roleType: advisorTypeId,
+			case: partiesCaseId,
+			participant: `${RUN_PREFIX}-representative`,
+			representedParty: HANDLER_PARTICIPANT,
+		})
+
+		const stored = await showObject(api, 'role', objectId(created))
+		expect(
+			String(stored.representedParty ?? ''),
+			'OpenRegister must have kept representedParty. An empty value here means the role schema version did not move and the property was dropped without a word.',
+		).toBe(HANDLER_PARTICIPANT)
+		// The delegation window is untouched: it is a date, and it is what this
+		// change deliberately did NOT reuse.
+		expect(String(stored.delegateFrom ?? '')).toBe('')
+	})
+
 	// The team half of the change. Nested inside the same describe on purpose:
 	// `beforeAll` runs per describe, so a sibling block would start with no API
 	// context and no seeded rows at all.
@@ -684,11 +896,42 @@ test.describe('Case detail — the Parties tab', () => {
 			).toBeVisible()
 		})
 
-		// @e2e openspec/specs/role-routing-via-or-rbac/spec.md#assign-a-case-to-a-team
-		// @e2e role-routing-via-or-rbac::assign-a-case-to-a-team
+		// 🔴 NO CITATION, AND THE MEASUREMENT IS WHY. This carried
+		// `role-routing-via-or-rbac#assign-a-case-to-a-team`, whose second
+		// THEN is "the Team facet SHALL list Team Permits with a count of
+		// one". That is a claim about what a reader is SHOWN, and nothing on
+		// this page shows it.
 		//
-		// MUTATION CHECK, NOT YET RUN (the permission is pending), so this
-		// citation is unverified. Break, then the assertion that must redden:
+		// Measured on the shared instance 2026-09-12, signed in as admin on
+		// the Cases page with the sidebar open: the Team filter opens and its
+		// dropdown holds exactly one entry, "No results". Case type behaves
+		// identically, so it is the binding and not the data. CnIndexPage
+		// passes `:facet-data="resolvedSidebar.facets || {}"`, which is the
+		// MANIFEST's sidebar config; the live facets the store just parsed
+		// never reach `getFilterOptions`. (The `isSelfFetchMode` branch that
+		// DOES read `list.facets` feeds `folderSidebarFacetValues`, the folder
+		// pane, not the filter list.) nextcloud-vue#1110 fixes it upstream and
+		// is not in 2.48.2, the newest published version and the one this app
+		// pins.
+		//
+		// So the citation comes down rather than claiming a rendered list
+		// nobody can see. The scenario keeps its own spec-side pointer at this
+		// file, and its first THEN, the Team column, is proven by the two
+		// tests above.
+		//
+		// (That sentence deliberately does not spell the directive out. The
+		// audit extractor matches the token anywhere in a comment, prose
+		// included, and a line break after it made the target parse as `//`,
+		// so this paragraph was being counted as a broken citation. Prose
+		// about citations should not look like one.)
+		//
+		// The test stays, and proves what IS true: OpenRegister computes the
+		// facet, counts one for this team over two marked cases, and that
+		// count matches what filtering on the team actually returns. Re-cite
+		// it when the sidebar is fed its live facets.
+		//
+		// STILL NOT RUN (the permission is pending): the server-side mutation
+		// for the facet itself. Break, then the assertion that must redden:
 		//   lib/Settings/dossiq_register.json `case.assignedGroup.facetable: false`,
 		//   imported with `version` pinned on both the break and the restore
 		//     -> "the Team facet must list the team with a count of one"
@@ -752,6 +995,31 @@ test.describe('Case detail — the Parties tab', () => {
 				)
 				.toBe(1)
 
+			// 🔴 AND THE COUNT HAS TO MEAN SOMETHING. A bucket saying 1 is a
+			// number in a payload until the filter it stands for is applied:
+			// the scenario's claim is that picking Team Permits gets you the
+			// one case that has it. So the facet is USED as a filter, over the
+			// same two marked cases, and the list that comes back has to be
+			// exactly the one the bucket counted.
+			await openIndex(page, '/cases', {
+				competentAuthority: TEAM_MARKER,
+				assignedGroup: teamId,
+			})
+			const withTeam = indexRows(page).filter({
+				hasText: `${RUN_PREFIX} Parties team`,
+			})
+			const withoutTeam = indexRows(page).filter({
+				hasText: `${RUN_PREFIX} Parties empty`,
+			})
+			await expect(
+				withTeam,
+				'filtering on the team returns the case that carries it',
+			).toHaveCount(1, { timeout: 30_000 })
+			await expect(
+				withoutTeam,
+				'and not the other marked case, so the count of one is a count',
+			).toHaveCount(0)
+
 			// 🔴 AND THE SIDEBAR SHOWS NONE OF IT. The rendered Team filter is
 			// asserted NOWHERE here because it lists nothing to assert:
 			// `CnIndexPage` passes `:facet-data="resolvedSidebar.facets || {}"`,
@@ -759,16 +1027,20 @@ test.describe('Case detail — the Parties tab', () => {
 			// the store just parsed, so `getFilterOptions` falls through to
 			// `filter.options` and every filter in the sidebar renders "No
 			// results" — Team, Case type, Status and the rest alike. Measured
-			// on this instance with the bucket above present in the response.
-			// Two more presentation defects sit behind it: `organisatieRol`
-			// declares no name field, so OpenRegister labels the bucket with a
-			// shortened uuid rather than Team Permits, and the Team cell on the
-			// case page renders that uuid too.
+			// on this instance with the bucket above present in the response,
+			// and re-checked 2026-09-12: nextcloud-vue#1110 fixes it upstream
+			// but the newest published version is 2.48.2, which this app pins
+			// and which still binds `resolvedSidebar.facets`. Two more
+			// presentation defects sit behind it: `organisatieRol` declares no
+			// name field, so OpenRegister labels the bucket with a shortened
+			// uuid rather than Team Permits, and the Team cell on the case
+			// page renders that uuid too.
 			//
-			// So the scenario's "lists Team Permits" half is NOT proven by this
-			// test, and cannot be until the sidebar is fed the live facets. All
-			// three are reported with this change. What is asserted is the
-			// facet itself, which is the fact the sidebar would render.
+			// So the scenario's "lists Team Permits" half is still NOT proven
+			// on screen, and cannot be until dossiq takes a nextcloud-vue that
+			// feeds the sidebar its live facets. What is proven is that the
+			// facet exists, counts one, and that the one it counts is the one
+			// case the filter returns.
 		})
 
 		// 🔴 REMOVED 2026-09-11: `a task with a team shows it on its row and

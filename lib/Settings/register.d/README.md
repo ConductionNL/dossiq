@@ -15,9 +15,16 @@ shared-file contention.
 
 `SettingsService::loadConfiguration()` reads `dossiq_register.json` (the base),
 then deep-merges every `register.d/*.json` file on top, in **sorted filename
-order**. A short hash of the applied fragment set is folded into the import
-version (`<version>+frag.<hash>`) so that adding, changing, or removing a
-fragment forces OpenRegister's `ConfigurationService` to re-import.
+order**.
+
+Adding, changing or removing a fragment forces OpenRegister's
+`ConfigurationService` to re-import, because OpenRegister hashes the merged
+configuration itself and skips on hash equality. The fragment hash the merger
+returns is deliberately **not** folded into the import version any more:
+`version_compare` treats `+…` as further version parts and compares them
+lexically, so whether the gate fired depended on how two hashes happened to
+sort. `SettingsService::readEffectiveConfiguration()` carries the full
+reasoning.
 
 ## Merge semantics
 

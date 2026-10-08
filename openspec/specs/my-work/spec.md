@@ -4,6 +4,14 @@ status: done
 
 # My Work Specification
 
+**Name collision, read before editing either file.** This spec is about the
+`/my-work` case index — labelled "Assigned to me" in the navigation since
+`add-work-queue`, and still called "My Work" here because that was its name
+when this spec was written. The app's *landing page* (route `/`, nav label
+"My work") is a different surface, specified in
+`openspec/specs/my-work-landing/spec.md`. If you are looking for the widgets a
+handler sees on opening the app, that is the other file.
+
 ## Purpose
 
 My Work is the personal starting point for a case handler: the list of cases
@@ -22,8 +30,12 @@ filtering, sorting, the sidebar and navigation behave identically.
 **Scope note (2026-07):** My Work was simplified from a bespoke cases+tasks
 "werkvoorraad" board (urgency grouping, filter tabs, show-completed) to a
 standard `CnIndexPage` card list of assigned cases. Task aggregation, urgency
-grouping and cross-app (Pipelinq) workload were dropped from this view; the
-personal-workload dashboard widgets (below) remain the at-a-glance surface.
+grouping and cross-app (Pipelinq) workload were dropped from this view.
+
+**Update 2026-09-13 (dashboard-my-work-split):** the personal-workload
+dashboard widgets this note used to point at have moved off the Dashboard
+onto the new My Work landing page (`openspec/specs/my-work-landing/spec.md`,
+route `/`) — they are no longer on `/dashboard`.
 
 **Competitive context**: Dimpact ZAC provides a configurable worklist with
 signaling cards and real-time updates; xxllnc Zaken uses phase-bound task
@@ -50,16 +62,18 @@ base filter `{ assignee: <current uid> }`). It is a `type: "custom"` manifest
 page because the stock index base-filter resolves only `@route.*` tokens, not
 the `@me` current-user token; the wrapper injects the resolved uid.
 
+#### Scenario: View assigned cases
 @e2e exclude Requires cases pre-assigned to the current user; the data-dependent
 list contents are not assertable without pre-seeded per-user data.
 
-#### Scenario: View assigned cases
 - GIVEN user "Jan" is `assignee` on 3 cases and on 0 other cases
 - WHEN Jan navigates to "My Work"
 - THEN the system MUST display exactly those 3 cases
 - AND a case where Jan is NOT the assignee MUST NOT appear
 
 #### Scenario: Card and table view
+@e2e tests/e2e/spec-coverage/my-work.spec.ts
+
 - GIVEN Jan is viewing My Work
 - THEN the list MUST default to card view and offer a card/table toggle
 - AND the table view MUST show the columns: identifier, title, case type,
@@ -190,6 +204,169 @@ on both indexes.
 - **WHEN** you choose the chip Mine
 - **THEN** only Mine SHALL be active
 - **AND** the list SHALL show no unassigned case
+
+### Requirement: One queue holds everything waiting on a person (REQ-QUEUE-02)
+
+A person's queue SHALL hold, from the declared sources, the cases assigned
+to them, the cases where they hold the coordinator seat, their open tasks,
+consultations asked of them, approvals awaiting their signature, mentions
+of them, and work they cover for an absent colleague. An item SHALL leave
+the queue when the thing it points at is done, taken over or withdrawn. A
+person SHALL NOT be able to dismiss an item whose work still stands.
+
+#### Scenario: a caseworker opens one page, not six
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a handler with assigned cases, a coordinator seat, two open tasks and one consultation
+- **WHEN** they open their queue
+- **THEN** all of them SHALL be listed
+
+#### Scenario: an item closes with its work
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a queue item pointing at an open task
+- **WHEN** the task is completed
+- **THEN** the item SHALL leave the queue
+
+#### Scenario: a person cannot dismiss live work
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a queue item for a case still assigned to the person
+- **WHEN** they try to remove it
+- **THEN** it SHALL stay
+- **AND** they SHALL be offered to hide its group for today instead
+
+#### Scenario: covering for an absent colleague reaches the queue
+@e2e exclude Needs a second account and an active substitution window. The shared e2e instance signs in as one user, and seeding an absence there routes a real colleague's real work to the test account; the routing itself is covered by `SubstitutionServiceTest` and the queue side by `QueueSourceContractTest::testCoveredWorkIsMarked`.
+
+- **GIVEN** a handler covering for an absent colleague
+- **WHEN** they open their queue
+- **THEN** the colleague's waiting work SHALL be listed and marked as covered
+
+### Requirement: A daily digest arrives only when there is something to say (REQ-QUEUE-03)
+
+dossiq SHALL send a person a daily digest of their open work, at a time
+they choose, over the platform's notification dialect. A person with an
+empty queue SHALL receive no digest. The digest SHALL name what is waiting
+and what is overdue and SHALL link into the queue. It SHALL NOT repeat the
+assignment notice. It SHALL be switchable off through the platform's
+notification preferences.
+
+#### Scenario: the digest arrives at the chosen time
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a handler with four waiting items and a chosen time of 08:00
+- **WHEN** the digest job runs
+- **THEN** they SHALL receive one message naming those four
+
+#### Scenario: an empty queue sends nothing
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a handler with an empty queue
+- **WHEN** the digest job runs
+- **THEN** they SHALL receive no message
+
+#### Scenario: the digest is not the assignment notice
+@e2e exclude The two messages are different code paths with no shared browser surface: the notice is the register's `caseAssigned` notification and the digest is the `workDigest` record. Covered by `DailyDigestJobTest::testAPersonWithWaitingWorkGetsOneDigest`, which asserts the digest names the waiting count rather than one case.
+
+- **GIVEN** a case assigned to a handler this morning
+- **WHEN** the digest runs that evening
+- **THEN** the digest SHALL list the case
+- **AND** it SHALL NOT be the assignment notice message
+
+#### Scenario: a person switches it off where they switch off everything else
+@e2e exclude Asserting that NO message was sent needs the job to run in the browser's own hour, which a Playwright run cannot arrange. Covered by `DailyDigestJobTest::testAPersonWhoSwitchedItOffGetsNothing`.
+
+- **GIVEN** a handler who disabled the digest in the notification preferences
+- **WHEN** the digest job runs
+- **THEN** they SHALL receive no message
+
+### Requirement: One screen closes out the day (REQ-QUEUE-04)
+
+dossiq SHALL offer a screen listing everything a person touched today,
+with a place to record an update per item. Where humaniq is present, the
+screen SHALL place humaniq's hours leaf per item so time is recorded
+there. dossiq SHALL NOT store hours. Where humaniq is absent, the screen
+SHALL show no time field.
+
+#### Scenario: everything touched today, in one place
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a handler who touched five cases and two tasks today
+- **WHEN** they open the end-of-day screen
+- **THEN** all seven SHALL be listed
+
+#### Scenario: an update is recorded per item
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** the end-of-day screen
+- **WHEN** a handler writes an update against one case
+- **THEN** it SHALL be recorded on that case
+
+#### Scenario: time goes to humaniq, or nowhere
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** an instance with humaniq present
+- **WHEN** a handler records time on an item
+- **THEN** it SHALL be written through humaniq's hours leaf
+
+#### Scenario: no humaniq, no time field
+@e2e exclude Requires an instance WITHOUT humaniq, and the e2e instance is shared, so uninstalling an app for one spec breaks every other suite on it. Covered by `tests/vitest/endOfDayScreen.spec.js`, "shows the time box only when the leaf is really there".
+
+- **GIVEN** an instance without humaniq
+- **WHEN** the end-of-day screen is opened
+- **THEN** no time field SHALL be offered
+
+### Requirement: A person plans an item with no case (REQ-QUEUE-05)
+
+A person SHALL be able to plan an item on their own agenda without
+attaching it to a case, optionally from a template. It SHALL be a calendar
+event on that person's calendar, SHALL reach their queue as a declared
+source, and SHALL NOT be a case, SHALL NOT enter any case count, and SHALL
+NOT appear in any case report.
+
+#### Scenario: a planned item with no case
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a handler
+- **WHEN** they plan an item from a template with no case
+- **THEN** it SHALL appear on their calendar and in their queue
+
+#### Scenario: it is not a case
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a planned item with no case
+- **WHEN** the open case count and the case list are read
+- **THEN** it SHALL be in neither
+
+### Requirement: A person keeps a private stage on a shared case (REQ-QUEUE-06)
+
+A person SHALL be able to set their own stage on a case, visible only to
+them. It SHALL NOT change the case's status, SHALL NOT be visible to any
+other person, and SHALL NOT enter any report. The case page SHALL show the
+case's own status prominently and the personal stage as private to the
+reader.
+
+#### Scenario: a personal triage lane on a shared case
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a case shared by two handlers
+- **WHEN** the first sets their personal stage to Wachten op advies
+- **THEN** the second SHALL NOT see it
+
+#### Scenario: the case's own status is unchanged
+@e2e tests/e2e/one-personal-queue.spec.ts
+
+- **GIVEN** a case in status In behandeling
+- **WHEN** a handler sets a personal stage
+- **THEN** the case status SHALL still read In behandeling
+
+#### Scenario: a personal stage is not a report dimension
+@e2e exclude A report cannot group by a field that does not exist on the object, and the stage is stored in the reader's own preferences. Covered structurally by `PersonalStageTest::testTheServiceCannotReachTheObjectStore`, which asserts the service has no register dependency at all.
+
+- **GIVEN** cases carrying personal stages
+- **WHEN** a status report is run
+- **THEN** it SHALL group by the case status only
 
 ## Non-Functional Requirements
 

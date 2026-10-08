@@ -16,7 +16,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -37,7 +37,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-case-type/tasks.md#task-8
+ * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
  */
 class WOORedactionService {
 
@@ -66,6 +66,9 @@ class WOORedactionService {
 	private const MANUAL_REASONS = [
 		'no_entities_detected' => 'filinq_detected_no_entities',
 		'no_output_produced' => 'filinq_produced_no_redacted_file',
+		// Filinq refused the run: no entity detector was live, so it wrote
+		// nothing. The repair is to switch detection on (dossiq#3191).
+		'detection_unavailable' => 'filinq_has_no_live_detector',
 	];
 
 	/**
@@ -87,13 +90,7 @@ class WOORedactionService {
 	 *
 	 * @return bool True if Docudesk is available
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
-	 * @SuppressWarnings(PHPMD.StaticAccess) FleetAppId is a stateless resolver
-	 * over the app-id RENAME MAP: it answers what an app is called on THIS
-	 * instance, where the same app may still carry its old id. Injecting it
-	 * would add a constructor dependency to say the same thing, and the
-	 * lookup is duck-typed by design — an id nothing answers to must return
-	 * null rather than fail, which is what makes a cross-app call optional.
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
 	 */
 	public function isDocuDeskInstalled(): bool {
 		return FleetAppId::isEnabledForUser($this->appManager, self::DOCUMENT_APP);
@@ -110,7 +107,7 @@ class WOORedactionService {
 	 *
 	 * @return array<string, mixed> Redaction result with mode and per-document status
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
 	 */
 	public function queueForRedaction(string $caseId, array $documents): array {
 		if (empty($documents) === true) {
@@ -225,7 +222,7 @@ class WOORedactionService {
 	 *
 	 * @return array<string, mixed> Manual redaction metadata
 	 *
-	 * @spec openspec/changes/woo-case-type/tasks.md#task-8
+	 * @spec openspec/changes/archive/2026-06-13-woo-case-type/tasks.md#task-8
 	 */
 	private function manualRedactionFallback(string $caseId, array $documents): array {
 		$manual = [];

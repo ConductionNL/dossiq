@@ -12,6 +12,14 @@
 // hiddenInLists, and every checklist item becomes a task on the case — and none
 // of them could be set without hand-editing register JSON.
 //
+// Two more landed with citizen-status-labels: `publicLabel` and
+// `publicDescription`, the words the applicant reads instead of the internal
+// name. Both normalise to the empty string, because empty is what makes them
+// additive: a status that declares neither reads to the applicant exactly as
+// it did, and the form must not invent a label by copying the name into the
+// field. The copy would then be stored, and nobody could tell a label somebody
+// chose from one the form guessed.
+//
 // The shape lives here rather than in the tab so the normalising can be tested
 // without mounting anything. Normalising is the part that matters: a status row
 // saved before these properties existed carries none of them, and the form has
@@ -20,6 +28,7 @@
 // @spec openspec/specs/case-types/spec.md
 
 import { STATUS_COLOURS } from './statusColour.js'
+import { pruneFieldRules } from './statusFieldRules.js'
 
 /**
  * The roles a status may declare, in the schema's own order.
@@ -35,6 +44,49 @@ export const STATUS_ROLES = [
 	'closed',
 	'stranded',
 ]
+
+/**
+ * Who a status may declare the case is waiting on.
+ *
+ * The applicant and a third party are DIFFERENT values, because the Awb treats
+ * them differently: a hersteltermijn suspends the beslistermijn and an advice
+ * request does not. There is no fourth value for "not declared" — an empty
+ * declaration means the case is ours to move, which is what keeps the team
+ * count usable on a case type nobody has annotated.
+ */
+export const STATUS_WAITING_ON = ['us', 'applicant', 'thirdParty']
+
+/**
+ * Whether a value is one of the three the schema enumerates.
+ *
+ * @param {unknown} waitingOn The candidate value.
+ * @return {boolean} True when the value is in the list.
+ *
+ * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ */
+export function isWaitingOn(waitingOn) {
+	return typeof waitingOn === 'string' && STATUS_WAITING_ON.includes(waitingOn)
+}
+
+/**
+ * A maximum dwell as the form holds it.
+ *
+ * Zero, a negative and anything unreadable all become the empty string, which
+ * is "no maximum". A maximum of zero would breach every case the instant it
+ * entered the status, so honouring it would be worse than refusing it.
+ *
+ * @param {unknown} maximumDwell The candidate value.
+ * @return {number|string} A positive whole number, or '' for no maximum.
+ *
+ * @spec openspec/changes/what-a-status-declares/specs/status-transition-engine/spec.md
+ */
+export function normaliseMaximumDwell(maximumDwell) {
+	const days = Number(maximumDwell)
+	if (!Number.isFinite(days) || days < 1) {
+		return ''
+	}
+	return Math.floor(days)
+}
 
 /**
  * Whether a value is one of the roles the schema enumerates.
@@ -60,12 +112,18 @@ export function emptyStatusTypeForm(order = 1) {
 	return {
 		name: '',
 		description: '',
+		publicLabel: '',
+		publicDescription: '',
 		order,
 		isFinal: false,
 		role: '',
 		colour: '',
 		hiddenInLists: false,
+		waitingOn: '',
+		maximumDwell: '',
 		checklist: [],
+		fieldRules: [],
+		derivedWhen: [],
 	}
 }
 
@@ -128,12 +186,19 @@ export function statusTypeToForm(statusType) {
 		caseType: row.caseType,
 		name: typeof row.name === 'string' ? row.name : '',
 		description: typeof row.description === 'string' ? row.description : '',
+		publicLabel: typeof row.publicLabel === 'string' ? row.publicLabel : '',
+		publicDescription:
+			typeof row.publicDescription === 'string' ? row.publicDescription : '',
 		order: Number.isFinite(Number(row.order)) ? Number(row.order) : 0,
 		isFinal: row.isFinal === true || row.isFinal === 'true',
 		role: isStatusRole(row.role) ? row.role : '',
 		colour: STATUS_COLOURS.includes(row.colour) ? row.colour : '',
 		hiddenInLists: row.hiddenInLists === true || row.hiddenInLists === 'true',
+		waitingOn: isWaitingOn(row.waitingOn) ? row.waitingOn : '',
+		maximumDwell: normaliseMaximumDwell(row.maximumDwell),
 		checklist: pruneChecklist(row.checklist),
+		fieldRules: pruneFieldRules(row.fieldRules),
+		derivedWhen: Array.isArray(row.derivedWhen) ? row.derivedWhen : [],
 	}
 }
 
@@ -144,6 +209,14 @@ export function statusTypeToForm(statusType) {
  * schema declares and nothing else, so a row that arrived carrying dead
  * properties leaves without them.
  *
+ * 🔴 A SCHEMA PROPERTY MISSING FROM BOTH HALVES IS DESTROYED ON THE NEXT SAVE,
+ * in silence. `derivedWhen` shipped on the schema with no authoring surface and
+ * was absent here, so opening a status and pressing Save, or simply dragging a
+ * status to reorder it, wrote the row back without its conditions and the
+ * derivation quietly stopped. It is carried through untouched now, and
+ * `fieldRules` was added to both halves the same day it was added to the
+ * schema. Add a property to the schema, add it here.
+ *
  * @param {object} form The form.
  * @return {object} The object to save.
  *
@@ -153,12 +226,18 @@ export function formToStatusType(form) {
 	const payload = {
 		name: String(form.name ?? '').trim(),
 		description: String(form.description ?? '').trim(),
+		publicLabel: String(form.publicLabel ?? '').trim(),
+		publicDescription: String(form.publicDescription ?? '').trim(),
 		order: Number(form.order) || 0,
 		isFinal: form.isFinal === true,
 		role: isStatusRole(form.role) ? form.role : '',
 		colour: STATUS_COLOURS.includes(form.colour) ? form.colour : '',
 		hiddenInLists: form.hiddenInLists === true,
+		waitingOn: isWaitingOn(form.waitingOn) ? form.waitingOn : '',
+		maximumDwell: normaliseMaximumDwell(form.maximumDwell),
 		checklist: pruneChecklist(form.checklist),
+		fieldRules: pruneFieldRules(form.fieldRules),
+		derivedWhen: Array.isArray(form.derivedWhen) ? form.derivedWhen : [],
 	}
 
 	if (form.id) {

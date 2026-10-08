@@ -33,6 +33,8 @@ use RuntimeException;
  * @covers \OCA\Dossiq\Service\DwangsomBezwaarService
  *
  * @uses \OCA\Dossiq\Service\TermijnService
+ * @uses \OCA\Dossiq\Service\Termijn\TermDefinitions
+ * @uses \OCA\Dossiq\Service\Termijn\TermInstanceStore
  */
 class DwangsomBezwaarServiceTest extends TestCase {
 	private FakeTermijnStore $objects;

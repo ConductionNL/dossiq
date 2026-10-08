@@ -16,7 +16,9 @@ The doorlooptijd (processing time) dashboard provides SLA adherence analytics fo
 - **Cases**: OpenRegister schema `case` — fields: `startDate`, `endDate`, `deadline`, `plannedEndDate`, `status`, `caseType`
 - **Case Types**: OpenRegister schema `caseType` — field: `processingDeadline` (ISO 8601 duration, e.g., `P30D`)
 - **Status Types**: OpenRegister schema `statusType` — field: `isFinal` (boolean)
+
 ## Requirements
+
 ### Requirement: SLA compliance rate widget [V1]
 
 The doorlooptijd dashboard SHALL display an overall SLA compliance rate as a prominent KPI, showing the percentage of completed cases that finished within their case type's `processingDeadline`.
@@ -194,6 +196,13 @@ page-level container, with the chart/table data-shaping logic extracted to a
 pure helper module (`chartShaping.js`). Decomposition MUST NOT change the
 rendered behaviour, the data fetched, or the displayed strings.
 
+RETITLED 2026-09-11. The heading is the manifest page title, "Processing time",
+and has been since page-topology-cleanup (A3) made this a real `type: dashboard`
+page whose header comes from the manifest. The scenario below asked for
+"Processing Time Analytics", a string no component renders any more: it survives
+only as an l10n key. Three tests cited this scenario and all three asserted the
+title the page carries, so the requirement was the stale half, not the tests.
+
 #### Scenario: Doorlooptijd page renders heading
 - **GIVEN** an authenticated user on the Dossiq app
 - **WHEN** they navigate to the doorlooptijd page
@@ -236,3 +245,72 @@ The doorlooptijd dashboard SHALL handle the case when no data is available grace
 - **WHEN** all case types have no `processingDeadline` configured
 - **THEN** the system MUST display a message: "No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking."
 
+### Requirement: Dwell and processing time count working hours, and say so [V1]
+
+`DwellTimeAnalyzer` SHALL report each interval as working hours on the
+organisation calendar and as wall-clock hours. The Process mining and
+Processing time pages SHALL show working hours as the headline column,
+wall-clock hours beside it, and SHALL name the clock in each column header.
+Dwell SHALL be reported per phase and per assignee.
+
+#### Scenario: A weekend is not working time
+@e2e exclude covered by ElapsedBusinessHoursTest (openregister) and DwellOnTheWorkingCalendarTest: Friday 16:00 to Monday 09:00 on the seeded nl-national calendar
+
+- **GIVEN** a phase entered Friday 16:00 and left Monday 09:00
+- **WHEN** dwell is computed on the organisation calendar
+- **THEN** working hours SHALL be 1 and wall-clock hours SHALL be 65
+
+#### Scenario: The page says which clock it counted on
+@e2e tests/e2e/dwell-time-clock.spec.ts
+
+- **GIVEN** an instance without the engine calendar
+- **WHEN** the report is drawn
+- **THEN** the working-hours column SHALL be titled so that it names the
+  approximation, and SHALL NOT be titled Working hours
+
+#### Scenario: The page names the clock
+@e2e tests/e2e/dwell-time-clock.spec.ts
+
+- **GIVEN** the Process mining page
+- **WHEN** you read the dwell table
+- **THEN** the headline column SHALL be titled Working hours
+- **AND** a second column SHALL be titled Wall-clock hours
+
+#### Scenario: Per assignee
+@e2e tests/e2e/dwell-time-clock.spec.ts
+
+- **GIVEN** status records by two handlers
+- **WHEN** you read the dwell table by handler
+- **THEN** both handlers SHALL be listed with their working hours
+- **AND** time no status record attributed SHALL be listed under its own row
+  rather than dropped
+
+### Requirement: Time in a status is held on the case, sortable and filterable (REQ-SDW-01)
+
+The case SHALL hold the time spent in its current status and the total time
+spent in each status it has visited, written as the status changes and
+counted on the organisation's working calendar. The work list SHALL sort and
+filter on those numbers. The process mining page SHALL read the same numbers
+rather than computing a second set.
+
+#### Scenario: A handler sorts the work list by time in status
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** a queue of cases in the same status for different lengths of time
+- **WHEN** the handler sorts by time in the current status
+- **THEN** the longest-standing case SHALL be first
+
+#### Scenario: The filter finds cases over a threshold
+@e2e tests/e2e/what-a-status-declares.spec.ts
+
+- **GIVEN** four cases more than twenty working days in their current status
+- **WHEN** the work list is filtered on that threshold
+- **THEN** exactly those four SHALL be returned
+
+#### Scenario: The page and the list agree
+@e2e exclude unit; DwellTimeAnalyzerTest
+
+- **GIVEN** a case with three status visits
+- **WHEN** the process mining page and the case are read
+- **THEN** the per-status totals SHALL be identical
+- **AND** both SHALL be counted on the working calendar

@@ -109,8 +109,25 @@ describe('statusType carries a colour and a list visibility', () => {
 	it('moves the schema version, or OpenRegister fast-skips the import', () => {
 		// A property added to a register JSON is inert until the register is
 		// re-imported, and OpenRegister skips a schema whose version did not
-		// change. 1.1.0 was the version that shipped the checklist.
-		expect(schema('statusType').version).toBe('1.2.0')
+		// change. 1.1.0 shipped the checklist. 1.3.0 was claimed twice, by
+		// what-a-status-declares (derivedWhen, waitingOn, maximumDwell) and by
+		// phase-terms (phaseTermDays, phaseTermShare), each unaware of the
+		// other. The merged schema carries both sets, so it has to move past
+		// either: an instance that already imported one lane's 1.3.0 would
+		// fast-skip the other's and every property in it would be inert.
+		// 1.5.0 adds `fieldRules`, which an instance that stopped at 1.4.0
+		// would never import: the status form would offer the rules, the rows
+		// would carry them, and the publish would project nothing.
+		//
+		// THE LITERAL PIN IS GONE, and the clause this test always meant is
+		// what is asserted instead: the version MOVED past the checklist's
+		// 1.1.0 and past the twice-claimed 1.3.0. Pinned to one number, the
+		// test reddened on the next lane to touch statusType for a reason that
+		// had nothing to do with the property it was guarding, which is how it
+		// arrived on this branch red (statusType is at 1.6.0 and nothing in
+		// this change touches it).
+		const [major, minor] = schema('statusType').version.split('.').map(Number)
+		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1005)
 	})
 })
 
@@ -247,6 +264,167 @@ describe('the CaseTypeDetail page', () => {
 	})
 })
 
+describe('the case type page shows its version chain', () => {
+	/**
+	 * One widget of the page.
+	 *
+	 * @param {string} id The widget id.
+	 * @return {object|undefined} The widget entry.
+	 */
+	const widget = (id) =>
+		page('CaseTypeDetail').config.widgets.find((entry) => entry.id === id)
+
+	/**
+	 * One header action of the page.
+	 *
+	 * @param {string} id The action id.
+	 * @return {object|undefined} The action.
+	 */
+	const action = (id) =>
+		page('CaseTypeDetail').config.headerActions.find((entry) => entry.id === id)
+
+	it('filters the chain on the shared identifier, not on this row', () => {
+		// 🔴 `@objectId` would ask for the versions of THIS row, which is one
+		// row, so the panel would always show a chain of one and nothing would
+		// say it was the wrong question. Two rows are versions of one zaaktype
+		// when they share ZGW's `identificatie`.
+		const chain = widget('case-type-chain')
+		expect(chain.type).toBe('object-list')
+		expect(chain.content.schema).toBe('caseType')
+		expect(chain.content.filter).toEqual({ identifier: '@object.identifier' })
+		expect(chain.content.sort).toEqual({ field: 'version', dir: 'desc' })
+	})
+
+	it('binds every chain column to a real caseType property', () => {
+		// A column bound to a property the schema does not declare renders a
+		// dash in every row without saying so.
+		const properties = schema('caseType').properties
+		for (const column of widget('case-type-chain').content.columns) {
+			expect(properties, `caseType.${column.key}`).toHaveProperty(column.key)
+		}
+	})
+
+	it('shows the chain ABOVE the workflow template list', () => {
+		// The two are easy to confuse: one lists versions of the case type, the
+		// other lists revisions of its workflow. The order is what makes the
+		// difference readable.
+		const cellFor = (id) =>
+			page('CaseTypeDetail').config.layout.find((c) => c.widgetId === id)
+		expect(cellFor('case-type-chain').gridY).toBeLessThan(
+			cellFor('case-type-versions').gridY,
+		)
+	})
+
+	it('opens New version through a dialog, so it lands on the draft', () => {
+		// An api-call refreshes the page you are already on, so the person who
+		// asked for a new version would be left on the old one.
+		expect(action('case-type-new-version').type).toBe('open-modal')
+		expect(action('case-type-new-version').target).toBe(
+			'CaseTypeNewVersionDialog',
+		)
+		expect(registrySource).toContain('CaseTypeNewVersionDialog: {')
+	})
+
+	it('offers New version on a published type, never on a draft', () => {
+		expect(action('case-type-new-version').visibleWhen).toEqual({
+			field: 'isDraft',
+			op: 'neq',
+			value: true,
+		})
+	})
+
+	it('deprecates through the server, never by writing @today into a date', () => {
+		// 🔴 An `object-op` merges its `values` into the row VERBATIM: the token
+		// is not resolved for that action type, so `validUntil: "@today"` would
+		// have stored that literal string in a date field with nothing
+		// refusing it.
+		const deprecate = action('case-type-deprecate')
+		expect(deprecate.type).toBe('api-call')
+		expect(deprecate.op).toBeUndefined()
+		expect(deprecate.values).toBeUndefined()
+		expect(deprecate.url).toBe('/apps/dossiq/api/case-types/@objectId/deprecate')
+		expect(deprecate.method).toBe('POST')
+		expect(deprecate.confirm).toBe(true)
+	})
+
+	it('shows Deprecate only where a published successor exists', () => {
+		// The local operator set is eq/neq/gt/gte/lt/lte with no is-set, and
+		// `supersededBy neq null` reads TRUE on an unset field, which is the
+		// opposite of what it means. Counting the successors asks the same
+		// question and can answer it.
+		const when = action('case-type-deprecate').visibleWhen
+		expect(when.source.schema).toBe('caseType')
+		expect(when.source.filter).toEqual({
+			previousVersion: '@objectId',
+			isDraft: false,
+		})
+		expect(when.op).toBe('gt')
+		expect(when.value).toBe(0)
+	})
+})
+
+describe('the Case types index shows one row per case type', () => {
+	/**
+	 * The index's chips.
+	 *
+	 * @return {Array<object>} The quick filters.
+	 */
+	const chips = () => page('CaseTypes').config.quickFilters
+
+	it('defaults to the version nothing has superseded', () => {
+		const current = chips().find((chip) => chip.default === true)
+		expect(current.label).toBe('Current versions')
+		expect(current.filter).toEqual({ supersededBy: 'IS NULL' })
+	})
+
+	it('spells the empty test as the sentinel the Queue page uses', () => {
+		// `assignee: "IS NULL"` is the literal sentinel every OpenRegister
+		// condition builder matches by value. A different spelling here would
+		// contribute no condition at all and list every version.
+		const queue = page('Queue').config.filter.assignee
+		expect(chips()[0].filter.supersededBy).toBe(queue)
+	})
+
+	it('offers a chip that drops the filter entirely', () => {
+		const all = chips().find((chip) => chip.label === 'All versions')
+		expect(all).toBeDefined()
+		expect(all.filter).toEqual({})
+		expect(all.default).toBeUndefined()
+	})
+
+	it('filters on a real, facetable caseType property', () => {
+		expect(schema('caseType').properties).toHaveProperty('supersededBy')
+		expect(schema('caseType').properties.supersededBy.facetable).toBe(true)
+	})
+})
+
+describe('a running case can move along the chain', () => {
+	/**
+	 * One header action of the case page.
+	 *
+	 * @param {string} id The action id.
+	 * @return {object|undefined} The action.
+	 */
+	const action = (id) =>
+		page('CaseDetail').config.headerActions.find((entry) => entry.id === id)
+
+	it('opens the move through a dialog that shows the preview', () => {
+		// A confirm-gated api-call would be a button that rewrites a case's
+		// vocabulary on trust: the preview is the act's substance.
+		expect(action('case-version-move').type).toBe('open-modal')
+		expect(action('case-version-move').target).toBe('CaseVersionMoveDialog')
+		expect(registrySource).toContain('CaseVersionMoveDialog: {')
+	})
+
+	it('hides the move on a closed case', () => {
+		expect(action('case-version-move').visibleWhen).toEqual({
+			field: 'isFinalStatus',
+			op: 'neq',
+			value: true,
+		})
+	})
+})
+
 describe('the Case types index groups by category', () => {
 	it('derives its folders from the rows’ own category values', () => {
 		// `source: "facet"` does not exist. CnIndexPage resolves register,
@@ -281,7 +459,105 @@ describe('an attribute without a case type is shared', () => {
 	})
 
 	it('moves the propertyDefinition version, or the loosening is inert', () => {
-		expect(schema('propertyDefinition').version).toBe('1.2.0')
+		// OpenRegister re-imports a schema when its version moves, so the
+		// loosened `required` list only reaches an installed instance if this
+		// number is ahead of the one that shipped with `caseType` required.
+		// The assertion used to pin the literal `1.2.0`, which made every
+		// later edit of the schema red for the wrong reason: the clause is
+		// that the version MOVED, not that it stopped at that number.
+		const [major, minor] = schema('propertyDefinition')
+			.version.split('.')
+			.map(Number)
+		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1002)
+	})
+})
+
+describe('attributes are in folders', () => {
+	// attribute-catalogue-folders, gap register row 11.23. Case types were in
+	// folders and attributes were a flat list, and every failure below is one
+	// nothing reports at runtime: a folder sidebar over a property that is not
+	// facetable renders whatever happens to be on the loaded page, a category
+	// the schema does not declare is dropped by OpenRegister on save without a
+	// word, and a menu entry pointing at a page id that does not exist warns
+	// only to the console.
+	const attributes = () => page('PropertyDefinitions')
+
+	it('declares category on propertyDefinition, facetable', () => {
+		const category = schema('propertyDefinition').properties.category
+		expect(category).toBeDefined()
+		expect(category.type).toBe('string')
+		expect(category.facetable).toBe(true)
+		expect(category.title).toBe('Category')
+	})
+
+	it('defaults the category rather than leaving it empty', () => {
+		// CnFolderSidebar's `fieldTree()` skips a row whose grouping value is
+		// null, undefined or empty, so there is no empty bucket to label and
+		// an attribute with no category would have no folder at all. The
+		// default is what puts it under Uncategorised.
+		expect(schema('propertyDefinition').properties.category.default).toBe(
+			'Uncategorised',
+		)
+	})
+
+	it('moves the propertyDefinition version so the property is imported', () => {
+		const [major, minor] = schema('propertyDefinition')
+			.version.split('.')
+			.map(Number)
+		expect(major * 1000 + minor).toBeGreaterThanOrEqual(1004)
+	})
+
+	it('gives the attributes their own index page', () => {
+		expect(attributes()).toBeDefined()
+		expect(attributes().type).toBe('index')
+		expect(attributes().config.schema).toBe('propertyDefinition')
+		expect(attributes().config.register).toBe('dossiq')
+	})
+
+	it('folders the index on category, in the shape CaseTypes uses', () => {
+		const folders = attributes().config.folderSidebar
+		expect(folders.source).toBe('field')
+		expect(folders.field).toBe('category')
+		expect(folders.filterField).toBe('category')
+		expect(folders.allLabel).toBe('All attributes')
+	})
+
+	it('shows the category as a column too', () => {
+		expect(attributes().config.columns).toContain('category')
+		expect(attributes().config.columns).toContain('name')
+	})
+
+	it('binds every column to a property the schema declares', () => {
+		const properties = Object.keys(schema('propertyDefinition').properties)
+		for (const column of attributes().config.columns) {
+			expect(
+				properties,
+				`${column} is a propertyDefinition property`,
+			).toContain(column)
+		}
+	})
+
+	it('offers no view action, because there is no detail page for one', () => {
+		expect(attributes().config.showViewAction).toBe(false)
+		expect(
+			manifest.pages.find((p) => p.id === 'PropertyDefinitionDetail'),
+		).toBeUndefined()
+	})
+
+	it('reaches the page from the settings menu, with a registered icon', () => {
+		const entry = manifest.menu.find(
+			(item) => item.id === 'PropertyDefinitionsMenu',
+		)
+		expect(entry).toBeDefined()
+		expect(entry.route).toBe('PropertyDefinitions')
+		expect(entry.section).toBe('settings')
+		expect(
+			manifest.pages.some((p) => p.id === entry.route),
+			'the menu names a page that exists',
+		).toBe(true)
+		expect(iconsSource, `${entry.icon} in src/icons.js`).toContain(
+			`vue-material-design-icons/${entry.icon}.vue`,
+		)
 	})
 })
 
@@ -343,7 +619,7 @@ describe('the personal data block', () => {
 	})
 })
 
-describe('the four header actions', () => {
+describe('the header actions', () => {
 	/**
 	 * One header action of the case type page.
 	 *
@@ -353,10 +629,20 @@ describe('the four header actions', () => {
 	const action = (id) =>
 		page('CaseTypeDetail').config.headerActions.find((entry) => entry.id === id)
 
-	it('offers Export, Import, Duplicate and Publish', () => {
+	it('offers Export, Import, Duplicate, New version, Deprecate and Publish', () => {
+		// Sentence case throughout, and the order is the one an author meets
+		// them in: what the type IS, then what to do with it, then the two acts
+		// that make the next version and close the last one.
 		expect(
 			page('CaseTypeDetail').config.headerActions.map((a) => a.label),
-		).toEqual(['Export', 'Import', 'Duplicate', 'Publish'])
+		).toEqual([
+			'Export',
+			'Import',
+			'Duplicate',
+			'New version',
+			'Deprecate',
+			'Publish',
+		])
 	})
 
 	it('declares no action of a type the library cannot dispatch', () => {

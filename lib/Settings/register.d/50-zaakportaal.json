@@ -37,7 +37,7 @@
                         "description": "Pseudonymous subject reference of the sender (BSN/KvK hash), never the raw BSN. Used for IDOR scoping."
                     },
                     "senderName": {
-                        "title": "Sender Name",
+                        "title": "Sender name",
                         "type": "string",
                         "description": "Display name of the sender."
                     },
@@ -69,7 +69,7 @@
                         "description": "Direction of the message."
                     },
                     "sentAt": {
-                        "title": "Sent On",
+                        "title": "Sent on",
                         "type": "string",
                         "format": "date-time",
                         "description": "When the message was sent."
@@ -85,11 +85,38 @@
             "portaalVerzoek": {
                 "slug": "portaalVerzoek",
                 "icon": "FileDocumentEditOutline",
-                "version": "1.0.0",
+                "version": "1.1.0",
                 "x-schema-org": "schema:Action",
-                "title": "Portaal Verzoek",
+                "title": "Portal request",
                 "description": "A citizen-initiated request submitted via the Mijn gemeente portal: a bezwaarschrift (objection), klachtschrift (complaint) or subsidie-aanvraag. Creates a new bezwaar/klacht/subsidie case in Dossiq.",
                 "type": "object",
+                "configuration": {
+                    "x-openregister-dedup": {
+                        "blockingKeys": [
+                            "submitterRef",
+                            "kind"
+                        ],
+                        "matchRules": [
+                            {
+                                "field": "subject",
+                                "method": "normalized",
+                                "weight": 0.6
+                            },
+                            {
+                                "field": "subject",
+                                "method": "levenshtein",
+                                "weight": 0.2
+                            },
+                            {
+                                "field": "category",
+                                "method": "exact",
+                                "weight": 0.2
+                            }
+                        ],
+                        "threshold": 0.6,
+                        "onCreate": "warn"
+                    }
+                },
                 "required": [
                     "kind",
                     "submitterRef"
@@ -160,7 +187,7 @@
                         "description": "When the request was submitted."
                     },
                     "withinTerm": {
-                        "title": "Within Deadline",
+                        "title": "Within deadline",
                         "type": "boolean",
                         "description": "Whether the request was filed within the statutory deadline."
                     },
@@ -211,7 +238,7 @@
                         "description": "Whether email notifications are active."
                     },
                     "emailAddress": {
-                        "title": "Email Address",
+                        "title": "Email address",
                         "type": "string",
                         "description": "The notification email address."
                     },

@@ -30,8 +30,8 @@ declare(strict_types=1);
 
 namespace OCA\Dossiq\Service;
 
-use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
+use OCA\Dossiq\Service\CaseType\CaseTypeReferenceResolver;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -53,11 +53,18 @@ class QuickActionService {
 	 * @param SettingsService $settingsService The settings service.
 	 * @param ContactMomentService $contactMomentService The contactmoment service.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseDateNormaliser $dates The one date write path.
+	 * @param CaseTypeReferenceResolver $caseTypes The case type code, to its row.
+	 * @param TermijnTimerService|null $timerService The engine calendar bridge; a
+	 *        statutory term end lands on a day the administered calendar works.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly ContactMomentService $contactMomentService,
 		private readonly LoggerInterface $logger,
+		private readonly CaseDateNormaliser $dates,
+		private readonly CaseTypeReferenceResolver $caseTypes,
+		private readonly ?TermijnTimerService $timerService = null,
 	) {
 	}//end __construct()
 
@@ -110,12 +117,10 @@ class QuickActionService {
 
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
-		$record = [
-			'caseType' => $caseType,
+		$record = $this->caseTypeFields(reference: $caseType) + [
 			'initiator' => $burgerId,
 			'sourceChannel' => 'kcc_telefoon',
-			'status' => 'intake',
-			'startDate' => date('c'),
+			'startDate' => $this->dates->todayAsCalendarDate(),
 			'title' => (string)($details['title'] ?? ('Melding via KCC: ' . $caseType)),
 			'description' => (string)($details['description'] ?? ''),
 		];
@@ -154,15 +159,17 @@ class QuickActionService {
 
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
-		// Awb 9:11: six weeks (42 days) decision term.
-		$deadline = (new DateTimeImmutable('today'))->modify('+42 days')->format('Y-m-d');
+		// Awb 9:11: six weeks (42 days) decision term, landing on a day the
+		// organisation's calendar calls a working day (Awt art. 1).
+		$raw = $this->dates->today()->modify('+42 days');
+		$deadline = $this->dates->formatCalendarDate(
+			moment: ($this->timerService?->rollTermEndFor(date: $raw) ?? $raw)
+		);
 
-		$record = [
-			'caseType' => self::KLACHT_ZAAKTYPE,
+		$record = $this->caseTypeFields(reference: self::KLACHT_ZAAKTYPE) + [
 			'initiator' => $burgerId,
 			'sourceChannel' => 'kcc_telefoon',
-			'status' => 'intake',
-			'startDate' => date('c'),
+			'startDate' => $this->dates->todayAsCalendarDate(),
 			'deadline' => $deadline,
 			'title' => 'Klacht (Awb 9:1)',
 			'description' => $summary,
@@ -214,7 +221,7 @@ class QuickActionService {
 			],
 		);
 
-		return ['burgerId' => $burgerId, 'window' => $window, 'scheduledAt' => date('c')];
+		return ['burgerId' => $burgerId, 'window' => $window, 'scheduledAt' => $this->dates->nowAsMoment()];
 	}//end executeBelTerug()
 
 	/**
@@ -239,6 +246,38 @@ class QuickActionService {
 			throw new RuntimeException('Case not found');
 		}
 	}//end loadCase()
+
+	/**
+	 * The case type and opening status a new case is written with.
+	 *
+	 * The case schema declares both as uuid references. A caller holds a
+	 * code (a catalogue identifier, a zaaktype URL or the uuid itself), so it
+	 * is resolved here; a code that names no case type is refused before
+	 * anything is written. The status is the type's initial status type,
+	 * because the type's prefill block fills a form and does not run on a
+	 * write.
+	 *
+	 * @param string $reference The case type code.
+	 *
+	 * @return array{caseType: string, status?: string} The fields.
+	 *
+	 * @throws RuntimeException When no case type answers to the code.
+	 */
+	private function caseTypeFields(string $reference): array {
+		$caseType = $this->caseTypes->resolve(reference: $reference);
+		$caseTypeId = $this->caseTypes->idOf(caseType: $caseType);
+		if ($caseTypeId === '') {
+			throw new RuntimeException('No case type answers to "' . $reference . '"');
+		}
+
+		$fields = ['caseType' => $caseTypeId];
+		$initial = $this->caseTypes->initialStatusOf(caseType: $caseType);
+		if ($initial !== '') {
+			$fields['status'] = $initial;
+		}
+
+		return $fields;
+	}//end caseTypeFields()
 
 	/**
 	 * Resolve the ObjectService, register and case schema.

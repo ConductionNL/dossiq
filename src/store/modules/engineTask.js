@@ -43,6 +43,17 @@ import { defineStore } from 'pinia'
 export const FLOW_TASKS_URL = '/apps/openregister/api/flow-tasks'
 
 /**
+ * Dossiq's own task routes: the ones with a dossiq half to them.
+ *
+ * Completing a task runs what the case type declared completing it does, and
+ * refuses when a required field is empty or a declared effect resolves to
+ * nothing. Claiming and the rest are the engine's alone.
+ *
+ * @spec openspec/changes/task-as-a-first-class-record/specs/task-management/spec.md
+ */
+export const DOSSIQ_TASKS_URL = '/apps/dossiq/api/case-tasks'
+
+/**
  * The states the engine treats as terminal.
  *
  * The same three `caseTask`'s lifecycle declared final, because it is the
@@ -329,6 +340,11 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 				['assignee', 'assignee'],
 				['dueDate', 'dueAt'],
 				['priority', 'priority'],
+				// What sort of work this is, as the surface that made it named
+				// it. The engine carries and indexes it and attaches no
+				// behaviour to any value, so `reminder` is a label the Tasks
+				// index can facet on and nothing else treats specially.
+				['kind', 'kind'],
 			]) {
 				const value = String(task[from] ?? '').trim()
 				if (value !== '') {
@@ -378,8 +394,19 @@ export const useEngineTaskStore = defineStore('dossiqEngineTask', {
 			this.loading = true
 			this.error = null
 			try {
+				// 🔑 COMPLETE GOES THROUGH DOSSIQ, EVERY OTHER VERB GOES
+				// STRAIGHT TO THE ENGINE. Completing a task is the one verb
+				// with a dossiq half: the case type declared a form whose
+				// required fields must be answered and effects that must
+				// resolve, and both are refusals dossiq can make while the
+				// handler is still looking at the form. dossiq's endpoint
+				// makes them and then hands the completion to the engine, so
+				// there is still exactly one completion path and not two that
+				// have to agree.
 				const url = generateUrl(
-					`${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,
+					action === 'complete'
+						? `${DOSSIQ_TASKS_URL}/${encodeURIComponent(id)}/complete`
+						: `${FLOW_TASKS_URL}/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,
 				)
 				const response = await axios.post(url, body)
 				this.task = response.data?.results ?? response.data ?? null

@@ -24,6 +24,7 @@ substitute is notified on registration and the resolution primitive exists), and
 endpoints exist and are tested).
 
 ## Requirements
+
 ### Requirement: Substitution records MUST be first-class OpenRegister objects
 
 The system SHALL store vervanging/waarneming registrations as objects of a dedicated `substitution` schema in OpenRegister (no app-local tables), capturing absentee, substitute, period, scope, reason, and status.
@@ -67,7 +68,7 @@ While a substitution is active (status `active` and today within the period), th
 
 #### Scenario: Waarnemer sees substituted work in My Work
 
-@e2e exclude the My Work integration this scenario describes has no call site. `fetchSubstitutedWork()` in `src/services/substitutionApi.js` is never called, and every helper in `src/utils/substitutionHelpers.js` — `buildSubstitutedMap`, `mergeSubstitutedCases`, `substitutedFor` and the show/hide filter — is imported by nothing; neither `src/views/MyWorkCards.vue` nor `src/views/widgets/MyWorkWidget.vue` mentions substitution at all. So My Work shows the reader their own work only, nothing is marked "waargenomen voor" and there is no control to filter by. `handler-vervanging-waarneming.spec.ts` cited this scenario on a test asserting an Urgency button and the absence of a 500, with the toggle click inside an `if` that stood down when the toggle was absent, which it always is. The routing half of the requirement, that the resolver hands the substitute the absentee's in-scope work and withholds the rest, is covered against the `#scope-limited-substitution-only-routes-matching-items` scenario. Restore a citation here when a My Work surface reads the resolver.
+@e2e tests/e2e/spec-coverage/handler-vervanging-waarneming.spec.ts
 
 - **GIVEN** an active substitution where Marieke covers Jan with scope `all`
 - **WHEN** Marieke opens My Work
@@ -195,3 +196,39 @@ A user with the dossiq coordinator role SHALL be able to permanently transfer al
 - **THEN** the response MUST report per-item success/failure
 - **AND** failed items MUST remain assigned to the original handler and be re-runnable
 
+### Requirement: Substituted work is on My work, marked and hideable
+
+My work SHALL call `fetchSubstitutedWork()` and list the returned cases and
+tasks among the signed-in user's own, each marked with the absent handler's
+name, and SHALL offer a toggle to hide them. The marker SHALL name the
+absentee and the substitution's end date.
+
+#### Scenario: A waarnemer sees the absentee's case
+@e2e tests/e2e/spec-coverage/handler-vervanging-waarneming.spec.ts
+
+- **GIVEN** an active substitution naming you as waarnemer for Anna
+- **AND** a case assigned to Anna inside the substitution's scope
+- **WHEN** you open My work
+- **THEN** the case SHALL be listed with the marker "for Anna"
+- **AND** hiding substituted work SHALL remove it from the list
+
+### Requirement: Leave in humaniq sets the substitution period
+
+When the absentee has an approved humaniq leave request covering today,
+the substitution SHALL be active for the leave's period. Without one, the
+substitution's own dates SHALL rule. humaniq being absent SHALL leave the
+typed dates in force.
+
+#### Scenario: Leave extends the period
+@e2e exclude cross-app fixture; covered by SubstitutionServiceTest::testLeaveOverridesTypedPeriod over a leave stub
+
+- **GIVEN** a substitution typed to end yesterday and an approved leave ending next week
+- **WHEN** the resolver runs today
+- **THEN** the substitution SHALL be active
+
+#### Scenario: No humaniq, no change
+@e2e exclude covered by SubstitutionServiceTest::testWithoutHumaniqTypedDatesRule
+
+- **GIVEN** humaniq is not installed
+- **WHEN** the resolver runs
+- **THEN** the typed dates SHALL rule and one info line SHALL be logged

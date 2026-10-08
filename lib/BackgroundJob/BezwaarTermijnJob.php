@@ -8,6 +8,9 @@
  * then archives the corresponding beschikking via the BeschikkingService and
  * deactivates the trigger so it is not processed twice (idempotent).
  *
+ * It runs as the background service account, because cron has no user and
+ * OpenRegister refuses a write from nobody.
+ *
  * @category BackgroundJob
  * @package  OCA\Dossiq\BackgroundJob
  *
@@ -32,6 +35,8 @@ namespace OCA\Dossiq\BackgroundJob;
 use DateTimeImmutable;
 use OCA\Dossiq\AppInfo\Application;
 use OCA\Dossiq\Service\BeschikkingService;
+use OCA\Dossiq\Service\ServiceAccount\BackgroundServiceAccount;
+use OCA\Dossiq\Service\ServiceAccount\ServiceAccountUnavailableException;
 use OCA\Dossiq\Service\SettingsService;
 use OCA\Dossiq\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -58,6 +63,7 @@ class BezwaarTermijnJob extends TimedJob {
 	 * @param SettingsService $settingsService The settings service.
 	 * @param IAppManager $appManager The app manager.
 	 * @param LoggerInterface $logger The logger.
+	 * @param BackgroundServiceAccount $serviceAccount The account the run writes as.
 	 */
 	public function __construct(
 		ITimeFactory $time,
@@ -65,6 +71,7 @@ class BezwaarTermijnJob extends TimedJob {
 		private readonly SettingsService $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
+		private readonly BackgroundServiceAccount $serviceAccount,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: 86400);
@@ -78,8 +85,26 @@ class BezwaarTermijnJob extends TimedJob {
 	 * @return void
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T12
 	 */
 	protected function run($argument): void {
+		try {
+			$this->serviceAccount->runAs(operation: fn () => $this->work());
+		} catch (ServiceAccountUnavailableException $e) {
+			// Already logged as an error and told to the admins. Nothing was
+			// read, sent or written; the next run tries again.
+			return;
+		}
+	}//end run()
+
+	/**
+	 * Run the bezwaartermijn check, as the service account.
+	 *
+	 * @return void
+	 *
+	 */
+	private function work(): void {
 		if (in_array('openregister', $this->appManager->getInstalledApps(), true) === false) {
 			return;
 		}
@@ -129,7 +154,7 @@ class BezwaarTermijnJob extends TimedJob {
 				['app' => Application::APP_ID],
 			);
 		}
-	}//end run()
+	}//end work()
 
 	/**
 	 * Process a single bezwaarTrigger: archive the beschikking when its

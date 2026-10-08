@@ -27,6 +27,7 @@ declare(strict_types=1);
 namespace OCA\Dossiq\Tests\Unit\Service;
 
 use OCA\Dossiq\Service\Deelzaak\CaseObjectReader;
+use OCA\Dossiq\Service\Deelzaak\SubCaseDeriver;
 use OCA\Dossiq\Service\DeelzaakService;
 use OCA\Dossiq\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -38,6 +39,7 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Dossiq\Service\DeelzaakService
  *
  * @uses \OCA\Dossiq\Service\Deelzaak\CaseObjectReader
+ * @uses \OCA\Dossiq\Service\Deelzaak\SubCaseDeriver
  */
 class DeelzaakServiceTest extends TestCase {
 
@@ -89,6 +91,10 @@ class DeelzaakServiceTest extends TestCase {
 			settingsService: $this->settingsService,
 			logger: $this->logger,
 			caseReader: new CaseObjectReader(
+				settingsService: $this->settingsService,
+				logger: $this->logger,
+			),
+			deriver: new SubCaseDeriver(
 				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),
