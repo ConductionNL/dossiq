@@ -348,7 +348,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 		).toHaveURL(new RegExp(`/cases/${keyboardCaseId}`), { timeout: 30_000 })
 	})
 
-	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006g-drag-path-unchanged-new
+	// @e2e openspec/specs/dashboard/spec.md#scenario-dash-v1-006g-drag-path-shares-the-move-new
 	test('dragging a card onto another column still moves the case', async ({
 		page,
 	}) => {
