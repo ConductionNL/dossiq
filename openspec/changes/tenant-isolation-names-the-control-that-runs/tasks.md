@@ -58,7 +58,7 @@ failure line in the PR body.
   - **fails today**: `tests/Unit/AppInfo/CanonicalRouteMethodContractTest.php` (or a new
     `TenantRoutesTest`) `testNoRouteDeletesATenant`, read from `appinfo/routes.php`.
   - The hydra route-reachability gate must show no dangling route.
-- [ ] 3.2 Replace the `TENANT_SCHEMA_DELETED` paragraph in
+- [x] 3.2 Replace the `TENANT_SCHEMA_DELETED` paragraph in
   `docs/leverancier-zaakportaal/deployment.md` with what an operator does see when a tenancy ends:
   the status change and its audit entry (REQ-TIS-003).
   - Check: `git grep TENANT_SCHEMA_DELETED` and `git grep archiveAndDelete -- docs` return
