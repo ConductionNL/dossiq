@@ -14,4 +14,4 @@
 
 ## 3. Verify
 
-- [ ] 3.1 Live: fresh install with integriq sets the key and a verzoek becomes one case; an emptied key stays empty after a second upgrade; without integriq the setup check warns
+- [x] 3.1 Live: fresh install with integriq sets the key and a verzoek becomes one case; an emptied key stays empty after a second upgrade; without integriq the setup check warns
