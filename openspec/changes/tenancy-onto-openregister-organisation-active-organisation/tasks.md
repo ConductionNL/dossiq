@@ -85,7 +85,7 @@ getters are magic; the service returns `null` for a user with no active organisa
 
 ## 4. ADR-004 and close out
 
-- [ ] 4.1 Update `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`: add
+- [x] 4.1 Update `openspec/architecture/adr-004-tenant-cluster-adr-022-exception.md`: add
   `lib/Service/TenantAuthenticationService.php` with `(gate 23 rules: 4)` under a section that says
   its membership, role and mandate lookups stay until they move to OpenRegister (Q2); record Q3; drop
   every path this change deleted, `TenantController.php` included; and update "Status of the work" (REQ-TAO-004).
