@@ -203,11 +203,9 @@ class StufEnvelopeInspector {
 	 * @param string $subject The envelope XML.
 	 *
 	 * @return string The trimmed capture, or the empty string when no match.
-	 *
-	 * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
-	 * out-parameter, which PHPMD does not model.
 	 */
 	private function firstMatch(string $pattern, string $subject): string {
+		$matches = [];
 		if (preg_match(pattern: $pattern, subject: $subject, matches: $matches) !== 1) {
 			return '';
 		}
