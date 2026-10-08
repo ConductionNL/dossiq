@@ -55,4 +55,47 @@ function readAppVersion(appRoot = path.resolve(__dirname, '..')) {
 	return fallback
 }
 
-module.exports = { readAppVersion, versionFromInfoXml }
+/**
+ * Load `@conduction/nextcloud-vue/webpack`, or null when it is not installed.
+ *
+ * @return {object|null} The build-helper module.
+ */
+function loadLibraryWebpackHelpers() {
+	try {
+		return require('@conduction/nextcloud-vue/webpack')
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The `appVersion` define for webpack.
+ *
+ * A build cannot know the version it will be installed as: the release
+ * workflow writes the release into `appinfo/info.xml` after the bundle is
+ * built, so dossiq 0.4.48-beta still said "dossiq 0.4.47-unstable" in the
+ * settings footer. The library's `appVersionDefine()` returns an expression
+ * that reads the installed version from the page's `version` initial state
+ * (provided by DashboardController) in the browser, with the info.xml version
+ * as fallback. A library without that helper gets the info.xml literal, as
+ * before.
+ *
+ * @param {string} appId The app id.
+ * @param {object} [options] Options.
+ * @param {string} [options.appRoot] The app checkout root.
+ * @param {object|null} [options.library] The library's webpack helpers; read
+ *   from node_modules when omitted.
+ * @return {string} The code webpack pastes in for `appVersion`.
+ * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+ */
+function appVersionDefinition(appId, options = {}) {
+	const buildVersion = readAppVersion(options.appRoot)
+	const library =
+		options.library === undefined ? loadLibraryWebpackHelpers() : options.library
+	if (library && typeof library.appVersionDefine === 'function') {
+		return library.appVersionDefine(appId, buildVersion)
+	}
+	return JSON.stringify(buildVersion)
+}
+
+module.exports = { appVersionDefinition, readAppVersion, versionFromInfoXml }

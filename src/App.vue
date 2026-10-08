@@ -9,6 +9,7 @@
 		:cellWidgets="cellWidgets"
 		appId="dossiq"
 		:translate="translateForApp"
+		:notificationLabels="notificationLabels"
 		:permissions="permissions">
 		<!--
 			Host-mounted object sidebar (decidesk pattern). CnAppRoot
@@ -63,6 +64,7 @@ import { CnAppRoot, CnObjectSidebar } from '@conduction/nextcloud-vue'
 import { translate as ncT } from '@nextcloud/l10n'
 import { reactive } from 'vue'
 import { initializeStores } from './store/store.js'
+import { notificationLabels } from './utils/notificationLabels.js'
 import { currentPermissions } from './utils/permissions.js'
 
 export default {
@@ -174,6 +176,18 @@ export default {
 			// in full to the same account. See `utils/permissions.js` for why
 			// the list is never empty and for what this does NOT close.
 			return currentPermissions()
+		},
+
+		/**
+		 * Labels for dossiq's notification rules in the user-settings pane,
+		 * so a person reads "A case is assigned to me" rather than
+		 * "caseAssigned".
+		 *
+		 * @return {{[key: string]: string}} Labels keyed `<schema>.<key>`.
+		 * @spec openspec/changes/notification-labels-and-tour-titles/specs/notification-labels/spec.md
+		 */
+		notificationLabels() {
+			return notificationLabels()
 		},
 	},
 
