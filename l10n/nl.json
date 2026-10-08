@@ -5818,7 +5818,7 @@
         "Role schema": "Rolschema",
         "Role type": "Roltype",
         "Role types:": "Roltypen:",
-        "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the three roles TenantProvisioningService creates and the only three the mandate matrix recognises; a member holding any other value is refused on every write.": "Rol binnen de tenant: tenant_admin, case_handler of viewer. Dit zijn de drie rollen die TenantProvisioningService aanmaakt en de enige drie die de mandaatmatrix kent; een lid met een andere waarde wordt bij elke schrijfactie geweigerd.",
+        "Role within the tenant: one of tenant_admin, case_handler or viewer. These are the only three roles the mandate matrix recognises; a member holding any other value is refused on every write.": "Rol binnen de tenant: tenant_admin, case_handler of viewer. Dit zijn de enige drie rollen die de mandaatmatrix kent; een lid met een andere waarde wordt bij elke schrijfactie geweigerd.",
         "Roles": "Rollen",
         "Roll to the next ordinary day": "Doorschuiven naar de eerstvolgende gewone dag",
         "Rollen": "Rollen",

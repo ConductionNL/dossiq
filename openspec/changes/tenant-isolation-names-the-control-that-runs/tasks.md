@@ -27,7 +27,7 @@ failure line in the PR body.
   - **fails today**: `tests/Unit/Middleware/TenantContextMiddlewareTest.php`
     `testBindingASessionTenantNeedsNoSchemaName`, and `tests/Unit/Service/TenantContextTest.php`
     `testBindTakesTheTenantOnly`.
-- [ ] 1.4 Rewrite the `tenantUser.role` description in both register descriptors so it names no
+- [x] 1.4 Rewrite the `tenantUser.role` description in both register descriptors so it names no
   deleted class, and bump the register `info.version` (REQ-TIS-001).
   - **fails today**: `NoSearchPathTenancyTest`
     `testNeitherDescriptorNamesADeletedPipelineClass`.
